@@ -1,0 +1,12 @@
+group = 'com.antigravity.valhalla.smb'
+version = '1.0'
+apply plugin: 'com.android.library'
+android {
+    namespace = 'com.antigravity.valhalla.smb'
+    compileSdk = 35
+    ndkVersion = '28.2.13676358'
+    defaultConfig { minSdk = 24 }
+    externalNativeBuild {
+        cmake { path = '../src/CMakeLists.txt' }
+    }
+}

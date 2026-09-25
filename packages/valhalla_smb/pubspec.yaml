@@ -1,0 +1,30 @@
+name: valhalla_smb
+description: Bounded SMB2/3 directory and range reads using pinned libsmb2.
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: ^3.10.0
+dependencies:
+  ffi: ^2.1.4
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+flutter:
+  licenses:
+    - NOTICE
+    - vendor/libsmb2/COPYING
+    - vendor/libsmb2/LICENCE-LGPL-2.1.txt
+  plugin:
+    platforms:
+      android:
+        ffiPlugin: true
+      ios:
+        ffiPlugin: true
+      macos:
+        ffiPlugin: true
+      windows:
+        ffiPlugin: true
+      linux:
+        ffiPlugin: true

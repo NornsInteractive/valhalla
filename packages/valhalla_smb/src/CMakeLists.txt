@@ -1,0 +1,21 @@
+cmake_minimum_required(VERSION 3.10)
+project(valhalla_smb LANGUAGES C)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(ENABLE_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(ENABLE_LIBKRB5 OFF CACHE BOOL "" FORCE)
+set(ENABLE_GSSAPI OFF CACHE BOOL "" FORCE)
+# Link the library target without installing upstream headers/static archives
+# into Flutter's runtime bundle (or the host's default /usr/local prefix).
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../vendor/libsmb2" "libsmb2" EXCLUDE_FROM_ALL)
+add_library(valhalla_smb SHARED valhalla_smb.c)
+target_link_libraries(valhalla_smb PRIVATE smb2)
+target_include_directories(valhalla_smb PRIVATE ../vendor/libsmb2/include)
+set_target_properties(valhalla_smb PROPERTIES C_STANDARD 11)
+if(ANDROID)
+  # Support devices using 16 KiB pages without raising the minimum Android API.
+  set_property(TARGET valhalla_smb APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-z,max-page-size=16384")
+endif()
+if(WIN32)
+  target_link_libraries(valhalla_smb PRIVATE ws2_32)
+endif()

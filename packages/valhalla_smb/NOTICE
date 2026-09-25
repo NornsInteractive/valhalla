@@ -1,0 +1,10 @@
+This package contains libsmb2, copyright Ronnie Sahlberg and contributors,
+licensed under LGPL-2.1-or-later. See vendor/libsmb2/LICENCE-LGPL-2.1.txt
+and vendor/libsmb2/COPYING for the complete upstream notices.
+
+Source: https://github.com/sahlberg/libsmb2
+Tag: libsmb2-6.2
+Commit: d67e213a5c4e7e4969fd81f0b95e4ca5831fbba1
+The upstream source is included without modifications. The bridge and build
+recipes are provided in source form so the native library can be rebuilt.
+Upstream's CMake project version for this tag is 6.1.0.

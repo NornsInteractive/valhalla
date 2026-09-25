@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Localized copy for the SSH keep-alive foreground service notification.
+
+  Kept in Android resources rather than the Flutter ARB files because the
+  notification is rendered by the Android system while the app is in the
+  background, where the Flutter engine's localization delegates are not
+  reachable. The `values-zh` counterpart must stay in exact key parity.
+-->
+<resources>
+    <string name="keep_alive_channel_name">Connection keep-alive</string>
+    <string name="keep_alive_channel_description">Keeps SSH and agent sessions connected in the background</string>
+    <string name="keep_alive_title">Valhalla is keeping your sessions alive</string>
+    <plurals name="keep_alive_body">
+        <item quantity="one">%d active session</item>
+        <item quantity="other">%d active sessions</item>
+    </plurals>
+
+    <!--
+      Transfer-completed notification. Fired when a download/upload finishes
+      while the app is in the background; tapping it opens the transfer list.
+    -->
+    <string name="transfer_complete_channel_name">Transfer results</string>
+    <string name="transfer_complete_channel_description">Tells you when a file upload or download finishes in the background</string>
+    <plurals name="transfer_complete_title">
+        <item quantity="one">%d transfer complete</item>
+        <item quantity="other">%d transfers complete</item>
+    </plurals>
+    <string name="transfer_complete_body">Tap to view the transfer list</string>
+
+    <!-- Download progress and status notifications -->
+    <string name="download_channel_name">Downloads</string>
+    <string name="download_channel_description">Download progress and notifications</string>
+    <string name="download_status_running">Downloading</string>
+    <string name="download_status_paused">Paused</string>
+    <string name="download_status_failed">Download failed</string>
+    <string name="download_status_queued">Queued</string>
+    <string name="download_status_canceled">Canceled</string>
+</resources>

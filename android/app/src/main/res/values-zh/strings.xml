@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Chinese counterpart of `values/strings.xml`. Keys must stay identical.
+-->
+<resources>
+    <string name="keep_alive_channel_name">连接保活</string>
+    <string name="keep_alive_channel_description">在后台保持 SSH 与 Agent 会话连接</string>
+    <string name="keep_alive_title">Valhalla 正在保持会话连接</string>
+    <plurals name="keep_alive_body">
+        <!-- 中文无复数变化，两个 quantity 必须都存在以满足 Android 校验。 -->
+        <item quantity="one">%d 个活跃会话</item>
+        <item quantity="other">%d 个活跃会话</item>
+    </plurals>
+
+    <!-- 传输完成通知：app 在后台时文件传输完成会发它，点击打开传输列表。 -->
+    <string name="transfer_complete_channel_name">传输结果</string>
+    <string name="transfer_complete_channel_description">文件在后台上传或下载完成时通知你</string>
+    <plurals name="transfer_complete_title">
+        <item quantity="one">%d 个传输已完成</item>
+        <item quantity="other">%d 个传输已完成</item>
+    </plurals>
+    <string name="transfer_complete_body">点击查看传输列表</string>
+
+    <!-- 下载进度与状态通知 -->
+    <string name="download_channel_name">下载</string>
+    <string name="download_channel_description">下载进度与通知</string>
+    <string name="download_status_running">下载中</string>
+    <string name="download_status_paused">已暂停</string>
+    <string name="download_status_failed">下载失败</string>
+    <string name="download_status_queued">等待中</string>
+    <string name="download_status_canceled">已取消</string>
+</resources>
