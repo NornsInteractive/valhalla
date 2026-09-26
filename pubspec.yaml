@@ -64,6 +64,7 @@ dependencies:
   xml: ^6.6.1
   crypto: ^3.0.7
   pointycastle: ^4.0.0
+  dart_mosh: ^0.0.4
   upnp_client: 1.5.0
   valhalla_smb:
     path: packages/valhalla_smb
