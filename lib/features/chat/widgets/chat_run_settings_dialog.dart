@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/design/motion_widgets.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../data/models/chat_run_settings.dart';
 
@@ -130,9 +132,7 @@ class _ChatRunSettingsDialogState extends State<ChatRunSettingsDialog> {
                   Expanded(
                     child: Text(
                       context.l10n.chatRunSettingsTitle,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: theme.textTheme.titleMedium,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -156,180 +156,215 @@ class _ChatRunSettingsDialogState extends State<ChatRunSettingsDialog> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Model Selection
-                    Text(
-                      context.l10n.chatRunSettingsModel,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.outline,
+                    Entrance(
+                      index: 0,
+                      child: Text(
+                        context.l10n.chatRunSettingsModel,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     if (!widget.isStructuredSend)
-                      InputDecorator(
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      Entrance(
+                        index: 0,
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(VRadius.input),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            enabled: false,
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                          child: Text(
+                            context.l10n.chatRunSettingsInteractiveCli,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
                           ),
-                          enabled: false,
-                        ),
-                        child: Text(
-                          context.l10n.chatRunSettingsInteractiveCli,
-                          style: TextStyle(color: theme.colorScheme.outline),
                         ),
                       )
                     else
-                      DropdownButtonFormField<String?>(
-                        key: const Key('chat_run_settings_model_dropdown'),
-                        isExpanded: true,
-                        initialValue: _selectedModelId,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                        ),
-                        items: [
-                          DropdownMenuItem<String?>(
-                            value: null,
-                            child: Text(context.l10n.chatRunSettingsDefault),
-                          ),
-                          ...widget.capabilities.models.map(
-                            (model) => DropdownMenuItem<String?>(
-                              value: model.id,
-                              child: Text(
-                                model.label,
-                                overflow: TextOverflow.ellipsis,
+                      Entrance(
+                        index: 0,
+                        child: DropdownButtonFormField<String?>(
+                          key: const Key('chat_run_settings_model_dropdown'),
+                          isExpanded: true,
+                          initialValue: _selectedModelId,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                VRadius.input,
                               ),
                             ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                           ),
-                        ],
-                        onChanged: (val) {
-                          setState(() {
-                            _selectedModelId = val;
-                          });
-                        },
+                          items: [
+                            DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text(context.l10n.chatRunSettingsDefault),
+                            ),
+                            ...widget.capabilities.models.map(
+                              (model) => DropdownMenuItem<String?>(
+                                value: model.id,
+                                child: Text(
+                                  model.label,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedModelId = val;
+                            });
+                          },
+                        ),
                       ),
                     const SizedBox(height: 20),
 
                     // Reasoning Level Selection
-                    Text(
-                      context.l10n.chatRunSettingsReasoning,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.outline,
+                    Entrance(
+                      index: 1,
+                      child: Text(
+                        context.l10n.chatRunSettingsReasoning,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     if (!widget.isStructuredSend)
-                      InputDecorator(
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      Entrance(
+                        index: 1,
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(VRadius.input),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            enabled: false,
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                          child: Text(
+                            context.l10n.chatRunSettingsInteractiveCli,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
                           ),
-                          enabled: false,
-                        ),
-                        child: Text(
-                          context.l10n.chatRunSettingsInteractiveCli,
-                          style: TextStyle(color: theme.colorScheme.outline),
                         ),
                       )
                     else
-                      DropdownButtonFormField<String?>(
-                        key: const Key('chat_run_settings_reasoning_dropdown'),
-                        isExpanded: true,
-                        initialValue: _selectedReasoningId,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      Entrance(
+                        index: 1,
+                        child: DropdownButtonFormField<String?>(
+                          key: const Key(
+                            'chat_run_settings_reasoning_dropdown',
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                        ),
-                        items: [
-                          DropdownMenuItem<String?>(
-                            value: null,
-                            child: Text(context.l10n.chatRunSettingsDefault),
-                          ),
-                          ...widget.capabilities.reasoningLevels.map(
-                            (reasoning) => DropdownMenuItem<String?>(
-                              value: reasoning.id,
-                              child: Text(
-                                reasoning.label,
-                                overflow: TextOverflow.ellipsis,
+                          isExpanded: true,
+                          initialValue: _selectedReasoningId,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                VRadius.input,
                               ),
                             ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                           ),
-                        ],
-                        onChanged: (val) {
-                          setState(() {
-                            _selectedReasoningId = val;
-                          });
-                        },
+                          items: [
+                            DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text(context.l10n.chatRunSettingsDefault),
+                            ),
+                            ...widget.capabilities.reasoningLevels.map(
+                              (reasoning) => DropdownMenuItem<String?>(
+                                value: reasoning.id,
+                                child: Text(
+                                  reasoning.label,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedReasoningId = val;
+                            });
+                          },
+                        ),
                       ),
                     const SizedBox(height: 20),
 
                     // Operation Permissions Policy
-                    Text(
-                      context.l10n.chatRunSettingsPermissions,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.outline,
+                    Entrance(
+                      index: 2,
+                      child: Text(
+                        context.l10n.chatRunSettingsPermissions,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(
-                          color: theme.colorScheme.outlineVariant,
+                    Entrance(
+                      index: 2,
+                      child: Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(VRadius.card),
+                          side: BorderSide(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
                         ),
-                      ),
-                      child: RadioGroup<OperationPermissionPolicy>(
-                        groupValue: _selectedPolicy,
-                        onChanged: _handlePermissionChange,
-                        child: Column(
-                          children: [
-                            RadioListTile<OperationPermissionPolicy>(
-                              key: const Key('chat_permission_ask_every_time'),
-                              title: Text(
-                                context.l10n.chatPermissionAskEveryTime,
-                                style: const TextStyle(fontSize: 14),
+                        child: RadioGroup<OperationPermissionPolicy>(
+                          groupValue: _selectedPolicy,
+                          onChanged: _handlePermissionChange,
+                          child: Column(
+                            children: [
+                              RadioListTile<OperationPermissionPolicy>(
+                                key: const Key('chat_permission_ask_every_time'),
+                                title: Text(
+                                  context.l10n.chatPermissionAskEveryTime,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                                value: OperationPermissionPolicy.askEveryTime,
                               ),
-                              value: OperationPermissionPolicy.askEveryTime,
-                            ),
-                            const Divider(height: 1),
-                            RadioListTile<OperationPermissionPolicy>(
-                              key: const Key('chat_permission_auto_allow_safe'),
-                              title: Text(
-                                context.l10n.chatPermissionAutoAllowSafe,
-                                style: const TextStyle(fontSize: 14),
+                              const Divider(height: 1),
+                              RadioListTile<OperationPermissionPolicy>(
+                                key: const Key(
+                                  'chat_permission_auto_allow_safe',
+                                ),
+                                title: Text(
+                                  context.l10n.chatPermissionAutoAllowSafe,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                                value: OperationPermissionPolicy.autoAllowSafe,
                               ),
-                              value: OperationPermissionPolicy.autoAllowSafe,
-                            ),
-                            const Divider(height: 1),
-                            RadioListTile<OperationPermissionPolicy>(
-                              key: const Key('chat_permission_auto_allow_all'),
-                              title: Text(
-                                context.l10n.chatPermissionAutoAllowAll,
-                                style: const TextStyle(fontSize: 14),
+                              const Divider(height: 1),
+                              RadioListTile<OperationPermissionPolicy>(
+                                key: const Key(
+                                  'chat_permission_auto_allow_all',
+                                ),
+                                title: Text(
+                                  context.l10n.chatPermissionAutoAllowAll,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                                value: OperationPermissionPolicy.autoAllowAll,
                               ),
-                              value: OperationPermissionPolicy.autoAllowAll,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),

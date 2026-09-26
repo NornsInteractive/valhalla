@@ -47,9 +47,7 @@ class NasQueueSheet extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Text(
                     '${context.nasQueue} (${queue.length})',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: theme.textTheme.titleMedium,
                   ),
                   const Spacer(),
                   IconButton(
@@ -144,7 +142,7 @@ class NasQueueSheet extends ConsumerWidget {
                         item.title ?? item.name,
                         style: TextStyle(
                           fontWeight: isCurrent
-                              ? FontWeight.bold
+                              ? FontWeight.w600
                               : FontWeight.normal,
                           color: isCurrent ? theme.colorScheme.primary : null,
                           fontSize: 13,

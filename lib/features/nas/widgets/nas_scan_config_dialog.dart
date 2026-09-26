@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/nas_provider.dart';
 import '../../../core/providers/nas_sources_provider.dart';
@@ -238,9 +239,7 @@ class _NasScanConfigDialogState extends ConsumerState<NasScanConfigDialog> {
                   Expanded(
                     child: Text(
                       context.l10n.nasConfigDialogTitle,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: theme.textTheme.titleMedium,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -268,7 +267,6 @@ class _NasScanConfigDialogState extends ConsumerState<NasScanConfigDialog> {
                       Text(
                         context.l10n.nasIncludePaths,
                         style: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
                           color: theme.colorScheme.outline,
                         ),
                       ),
@@ -289,7 +287,7 @@ class _NasScanConfigDialogState extends ConsumerState<NasScanConfigDialog> {
                         border: Border.all(
                           color: theme.colorScheme.outlineVariant,
                         ),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(VRadius.input),
                       ),
                       alignment: Alignment.center,
                       child: Text(
@@ -312,7 +310,7 @@ class _NasScanConfigDialogState extends ConsumerState<NasScanConfigDialog> {
                               alpha: 0.3,
                             ),
                           ),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(VRadius.input),
                           color: theme.colorScheme.surfaceContainerLowest,
                         ),
                         child: Column(
@@ -337,25 +335,25 @@ class _NasScanConfigDialogState extends ConsumerState<NasScanConfigDialog> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: theme.colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(
+                                        VRadius.pill,
+                                      ),
                                     ),
                                     child: Text(
                                       context.l10n.nasScopeBadge,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: theme
-                                            .colorScheme
-                                            .onPrimaryContainer,
-                                      ),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: theme
+                                                .colorScheme
+                                                .onPrimaryContainer,
+                                          ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       incPath,
-                                      style: const TextStyle(
-                                        fontFamily: 'JetBrains Mono',
+                                      style: monoTextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -402,27 +400,26 @@ class _NasScanConfigDialogState extends ConsumerState<NasScanConfigDialog> {
                                           color:
                                               theme.colorScheme.errorContainer,
                                           borderRadius: BorderRadius.circular(
-                                            4,
+                                            VRadius.pill,
                                           ),
                                         ),
                                         child: Text(
                                           context.l10n.nasExcludedBadge,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: theme
-                                                .colorScheme
-                                                .onErrorContainer,
-                                          ),
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                                color: theme
+                                                    .colorScheme
+                                                    .onErrorContainer,
+                                              ),
                                         ),
                                       ),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
                                           excPath,
-                                          style: TextStyle(
-                                            fontFamily: 'JetBrains Mono',
+                                          style: monoTextStyle(
                                             fontSize: 12,
+                                            fontWeight: FontWeight.w400,
                                             color: theme.colorScheme.error,
                                           ),
                                           overflow: TextOverflow.ellipsis,
@@ -455,7 +452,6 @@ class _NasScanConfigDialogState extends ConsumerState<NasScanConfigDialog> {
                       Text(
                         context.l10n.nasExcludePaths,
                         style: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
                           color: theme.colorScheme.outline,
                         ),
                       ),
@@ -486,7 +482,7 @@ class _NasScanConfigDialogState extends ConsumerState<NasScanConfigDialog> {
                             border: Border.all(
                               color: theme.colorScheme.outlineVariant,
                             ),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(VRadius.input),
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -508,7 +504,7 @@ class _NasScanConfigDialogState extends ConsumerState<NasScanConfigDialog> {
                               border: Border.all(
                                 color: theme.colorScheme.outlineVariant,
                               ),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(VRadius.input),
                             ),
                             child: Row(
                               children: [
@@ -523,26 +519,26 @@ class _NasScanConfigDialogState extends ConsumerState<NasScanConfigDialog> {
                                     horizontal: 6,
                                     vertical: 1,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.errorContainer,
-                                    borderRadius: BorderRadius.circular(4),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.errorContainer,
+                                  borderRadius: BorderRadius.circular(
+                                    VRadius.pill,
                                   ),
-                                  child: Text(
-                                    context.l10n.nasExcludedBadge,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.colorScheme.onErrorContainer,
-                                    ),
+                                ),
+                                child: Text(
+                                  context.l10n.nasExcludedBadge,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onErrorContainer,
                                   ),
+                                ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     excPath,
-                                    style: const TextStyle(
-                                      fontFamily: 'JetBrains Mono',
+                                    style: monoTextStyle(
                                       fontSize: 12,
+                                      fontWeight: FontWeight.w400,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),

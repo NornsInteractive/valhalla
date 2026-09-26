@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/constants/layout_breakpoints.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/logging/sanitizer.dart';
 import '../../core/providers/commands_provider.dart';
 import '../../data/models/quick_command.dart';
 import '../../infrastructure/ssh/ssh_client_manager.dart';
 import '../../widgets/danger_confirm_dialog.dart';
+import '../../widgets/state_views.dart';
+import '../../widgets/valhalla_card.dart';
 
 class QuickCommandsView extends ConsumerStatefulWidget {
   const QuickCommandsView({super.key});
@@ -179,9 +183,7 @@ class _QuickCommandsViewState extends ConsumerState<QuickCommandsView> {
             children: [
               Text(
                 context.l10n.cmdExecutionChannel,
-                style: context.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: context.textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               ListTile(
@@ -230,16 +232,8 @@ class _QuickCommandsViewState extends ConsumerState<QuickCommandsView> {
       builder: (_) => Center(
         key: const Key('cmd_loading_dialog'),
         child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text(context.l10n.cmdExecutingRemote),
-              ],
-            ),
+          child: LoadingStateView(
+            message: context.l10n.cmdExecutingRemote,
           ),
         ),
       ),
@@ -286,8 +280,8 @@ class _QuickCommandsViewState extends ConsumerState<QuickCommandsView> {
             Icon(
               result.isSuccess ? Icons.check_circle : Icons.error,
               color: result.isSuccess
-                  ? const Color(0xFF10B981)
-                  : const Color(0xFFEF4444),
+                  ? context.vSuccess
+                  : context.vDanger,
             ),
             const SizedBox(width: 8),
             Text(
@@ -306,7 +300,10 @@ class _QuickCommandsViewState extends ConsumerState<QuickCommandsView> {
               children: [
                 Text(
                   context.l10n.stateExitCode(result.exitCode),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: monoTextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 if (result.stdout.isNotEmpty) ...[
                   const SizedBox(height: 8),
@@ -316,12 +313,11 @@ class _QuickCommandsViewState extends ConsumerState<QuickCommandsView> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F141C),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(VRadius.input),
                     ),
                     child: Text(
                       result.stdout,
-                      style: const TextStyle(
-                        fontFamily: 'JetBrains Mono',
+                      style: monoTextStyle(
                         fontSize: 12,
                         color: Colors.white70,
                       ),
@@ -336,17 +332,16 @@ class _QuickCommandsViewState extends ConsumerState<QuickCommandsView> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E1014),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(VRadius.input),
                       border: Border.all(
-                        color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                        color: context.vDanger.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Text(
                       result.stderr,
-                      style: const TextStyle(
-                        fontFamily: 'JetBrains Mono',
+                      style: monoTextStyle(
                         fontSize: 12,
-                        color: Color(0xFFFCA5A5),
+                        color: const Color(0xFFFCA5A5),
                       ),
                     ),
                   ),
@@ -358,12 +353,11 @@ class _QuickCommandsViewState extends ConsumerState<QuickCommandsView> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F141C),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(VRadius.input),
                     ),
-                    child: const Text(
+                    child: Text(
                       '(No Output)',
-                      style: TextStyle(
-                        fontFamily: 'JetBrains Mono',
+                      style: monoTextStyle(
                         fontSize: 12,
                         color: Colors.white70,
                       ),
@@ -397,43 +391,49 @@ class _QuickCommandsViewState extends ConsumerState<QuickCommandsView> {
       body: Column(
         children: [
           // 搜索与过滤
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (val) =>
-                  ref.read(commandsProvider.notifier).setSearchQuery(val),
-              decoration: InputDecoration(
-                hintText: 'Search commands or tags...',
-                prefixIcon: const Icon(Icons.search, size: 18),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
+          Entrance(
+            index: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (val) =>
+                    ref.read(commandsProvider.notifier).setSearchQuery(val),
+                decoration: InputDecoration(
+                  hintText: 'Search commands or tags...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(VRadius.input),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                 ),
               ),
             ),
           ),
 
           // 分类 Chip 列表
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: cmdState.categories.map((cat) {
-                final isSelected = cmdState.selectedCategory == cat;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: FilterChip(
-                    selected: isSelected,
-                    label: Text(cat),
-                    onSelected: (_) =>
-                        ref.read(commandsProvider.notifier).setCategory(cat),
-                  ),
-                );
-              }).toList(),
+          Entrance(
+            index: 1,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: cmdState.categories.map((cat) {
+                  final isSelected = cmdState.selectedCategory == cat;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      selected: isSelected,
+                      label: Text(cat),
+                      onSelected: (_) =>
+                          ref.read(commandsProvider.notifier).setCategory(cat),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -483,23 +483,18 @@ class _QuickCommandsViewState extends ConsumerState<QuickCommandsView> {
     QuickCommand cmd, {
     bool isGrid = false,
   }) {
-    return Card(
-      elevation: 1,
-      margin: isGrid ? EdgeInsets.zero : null,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: cmd.isDangerous
-            ? const BorderSide(color: Colors.red, width: 1.5)
-            : BorderSide.none,
-      ),
+    final danger = context.vDanger;
+    return ValhallaCard(
+      margin: isGrid ? EdgeInsets.zero : const EdgeInsets.all(4),
+      borderColor: cmd.isDangerous ? danger.withValues(alpha: 0.55) : null,
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: cmd.isDangerous
-              ? Colors.red.withValues(alpha: 0.15)
+              ? danger.withValues(alpha: 0.15)
               : context.colorScheme.primaryContainer,
           child: Icon(
             cmd.isDangerous ? Icons.warning : Icons.terminal,
-            color: cmd.isDangerous ? Colors.red : context.colorScheme.primary,
+            color: cmd.isDangerous ? danger : context.colorScheme.primary,
             size: 20,
           ),
         ),
@@ -508,20 +503,17 @@ class _QuickCommandsViewState extends ConsumerState<QuickCommandsView> {
             Flexible(
               child: Text(
                 cmd.title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: context.textTheme.titleSmall,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             if (cmd.isDangerous) ...[
               const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(4),
+                  color: danger,
+                  borderRadius: BorderRadius.circular(VRadius.pill),
                 ),
                 child: const Text(
                   'HIGH RISK',
@@ -541,17 +533,16 @@ class _QuickCommandsViewState extends ConsumerState<QuickCommandsView> {
             const SizedBox(height: 4),
             Text(
               cmd.description,
-              style: const TextStyle(fontSize: 12),
+              style: context.textTheme.bodySmall,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Text(
               cmd.command,
-              style: const TextStyle(
-                fontFamily: 'JetBrains Mono',
+              style: monoTextStyle(
                 fontSize: 11,
-                color: Colors.grey,
+                color: context.colorScheme.onSurfaceVariant,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/layout_breakpoints.dart';
+import '../../../core/design/motion.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/settings_provider.dart';
 
@@ -138,10 +140,7 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
                 Expanded(
                   child: Text(
                     context.l10n.accentColorDialogTitle,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: context.textTheme.titleLarge,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -181,7 +180,7 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
           maxHeight: MediaQuery.sizeOf(context).height * 0.85,
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(VRadius.dialog),
           child: Scaffold(
             backgroundColor: context.colorScheme.surface,
             resizeToAvoidBottomInset: true,
@@ -196,10 +195,7 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
                   Expanded(
                     child: Text(
                       context.l10n.accentColorDialogTitle,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: context.textTheme.titleLarge,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -294,7 +290,7 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
         // 2. Live preview card
         Text(
           context.l10n.accentColorPreview,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          style: context.textTheme.titleSmall,
         ),
         const SizedBox(height: 6),
         Container(
@@ -305,7 +301,7 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
                 : (_activeMode == AppThemeMode.dark
                       ? const Color(0xFF1E1E1E)
                       : const Color(0xFFF5F5F5)),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(VRadius.card),
             border: Border.all(
               color: context.colorScheme.outline.withValues(alpha: 0.2),
             ),
@@ -328,10 +324,9 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
                   children: [
                     Text(
                       '#${_colorToHex(_currentColor)}',
-                      style: TextStyle(
-                        fontFamily: 'JetBrains Mono',
+                      style: monoTextStyle(
                         fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                         color: _activeMode == AppThemeMode.light
                             ? Colors.black87
                             : Colors.white,
@@ -380,7 +375,7 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
         // 3. Preset color swatches
         Text(
           context.l10n.accentColorPresets,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          style: context.textTheme.titleSmall,
         ),
         const SizedBox(height: 6),
         Wrap(
@@ -390,25 +385,44 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
             final isCurrent =
                 (preset.color.toARGB32() & 0xFFFFFF) ==
                 (_currentColor.toARGB32() & 0xFFFFFF);
-            return InkWell(
-              onTap: () => _updateCurrentColor(preset.color),
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: preset.color,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isCurrent
-                        ? context.colorScheme.onSurface
-                        : Colors.transparent,
-                    width: 2.5,
+            return AnimatedScale(
+              scale: isCurrent ? 1.1 : 1.0,
+              duration: VTiming.base,
+              curve: VCurves.springish,
+              child: InkWell(
+                onTap: () => _updateCurrentColor(preset.color),
+                borderRadius: BorderRadius.circular(VRadius.pill),
+                child: AnimatedContainer(
+                  width: 32,
+                  height: 32,
+                  duration: VTiming.base,
+                  curve: VCurves.emphasized,
+                  decoration: BoxDecoration(
+                    color: preset.color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isCurrent
+                          ? context.colorScheme.onSurface
+                          : Colors.transparent,
+                      width: 2.5,
+                    ),
+                    boxShadow: isCurrent
+                        ? [
+                            BoxShadow(
+                              color: preset.color.withValues(alpha: 0.45),
+                              blurRadius: 10,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : const [],
+                  ),
+                  child: AnimatedOpacity(
+                    duration: VTiming.fast,
+                    curve: VCurves.emphasized,
+                    opacity: isCurrent ? 1 : 0,
+                    child: const Icon(Icons.check, color: Colors.white, size: 16),
                   ),
                 ),
-                child: isCurrent
-                    ? const Icon(Icons.check, color: Colors.white, size: 16)
-                    : null,
               ),
             );
           }).toList(),
@@ -418,11 +432,11 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
         // 4. Large HSV Color Palette (SV 2D Plane)
         Text(
           context.l10n.accentColorHsvPicker,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          style: context.textTheme.titleSmall,
         ),
         const SizedBox(height: 6),
         ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(VRadius.input),
           child: SizedBox(
             height: paletteHeight,
             width: double.infinity,
@@ -470,7 +484,7 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
         Container(
           height: 28,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(VRadius.pill),
             gradient: const LinearGradient(
               colors: [
                 Color(0xFFFF0000),
@@ -515,14 +529,14 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
         // 6. Hex Input
         Text(
           context.l10n.accentColorHexCode,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          style: context.textTheme.titleSmall,
         ),
         const SizedBox(height: 6),
         TextField(
           key: const Key('accent_hex_input'),
           controller: _hexController,
           maxLength: 6,
-          style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13),
+          style: monoTextStyle(fontSize: 13),
           decoration: InputDecoration(
             prefixText: '# ',
             counterText: '',
@@ -532,7 +546,9 @@ class _ThemeAccentColorDialogState extends State<ThemeAccentColorDialog> {
               horizontal: 12,
               vertical: 10,
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(VRadius.input),
+            ),
           ),
           onChanged: (val) {
             final clean = val.replaceAll('#', '').trim();

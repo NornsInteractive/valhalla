@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/design/motion_widgets.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/providers/nas_provider.dart';
 import '../../../core/services/nas_download_service.dart';
 import '../../../infrastructure/sftp/sftp_client_service.dart';
@@ -44,9 +46,7 @@ class NasDownloadsSheet extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Text(
                     context.nasTabDownloads,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: theme.textTheme.titleMedium,
                   ),
                   const Spacer(),
                   IconButton(
@@ -123,10 +123,10 @@ class NasDownloadsSheet extends ConsumerWidget {
       case NasDownloadStatus.completed:
         if (task.error != null) {
           statusText = context.nasDownloadCompletedWithOpenError;
-          statusColor = Colors.orangeAccent;
+          statusColor = context.vWarning;
         } else {
           statusText = context.nasDownloadCompleted;
-          statusColor = const Color(0xFF10B981);
+          statusColor = context.vSuccess;
         }
         break;
       case NasDownloadStatus.cancelled:
@@ -162,14 +162,20 @@ class NasDownloadsSheet extends ConsumerWidget {
         children: [
           const SizedBox(height: 4),
           if (task.status == NasDownloadStatus.downloading)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(value: progress, minHeight: 4),
-            ),
+            progress != null
+                ? AnimatedProgressBar(value: progress, height: 4)
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(VRadius.pill),
+                    child: const LinearProgressIndicator(minHeight: 4),
+                  ),
           const SizedBox(height: 4),
           Text(
             statusText,
-            style: TextStyle(fontSize: 11, color: statusColor),
+            style: monoTextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: statusColor,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -200,7 +206,7 @@ class NasDownloadsSheet extends ConsumerWidget {
               icon: Icon(
                 task.error != null ? Icons.refresh : Icons.open_in_new,
                 size: 18,
-                color: task.error != null ? Colors.orangeAccent : null,
+                color: task.error != null ? context.vWarning : null,
               ),
               tooltip: task.error != null
                   ? context.nasRetryOpen

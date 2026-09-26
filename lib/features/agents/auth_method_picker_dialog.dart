@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/design/motion_widgets.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../infrastructure/acp/acp_client_adapter.dart';
 
@@ -42,29 +43,32 @@ class _AuthMethodPickerDialogState extends State<_AuthMethodPickerDialog> {
     return AlertDialog(
       title: Text(
         context.l10n.agentAuthPickerTitle(widget.agentName),
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        style: context.textTheme.titleMedium,
       ),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),
         child: SingleChildScrollView(
-          child: RadioGroup<String>(
-            groupValue: _selectedId,
-            onChanged: (val) {
-              setState(() => _selectedId = val);
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: widget.methods.map((method) {
-                return RadioListTile<String>(
-                  title: Text(method.name),
-                  subtitle:
-                      (method.description != null &&
-                          method.description!.isNotEmpty)
-                      ? Text(method.description!)
-                      : null,
-                  value: method.id,
-                );
-              }).toList(),
+          child: Entrance(
+            index: 0,
+            child: RadioGroup<String>(
+              groupValue: _selectedId,
+              onChanged: (val) {
+                setState(() => _selectedId = val);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: widget.methods.map((method) {
+                  return RadioListTile<String>(
+                    title: Text(method.name),
+                    subtitle:
+                        (method.description != null &&
+                            method.description!.isNotEmpty)
+                        ? Text(method.description!)
+                        : null,
+                    value: method.id,
+                  );
+                }).toList(),
+              ),
             ),
           ),
         ),

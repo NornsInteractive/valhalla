@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/nas_metadata_provider.dart';
 import '../../core/providers/nas_provider.dart';
@@ -245,10 +247,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 ),
                 child: Text(
                   context.l10n.nasOpenMethodPrompt,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+                  style: context.textTheme.titleSmall,
                 ),
               ),
               const Divider(),
@@ -389,10 +388,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
               padding: const EdgeInsets.all(16),
               child: Text(
                 context.l10n.nasTabPlaylists,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+                style: context.textTheme.titleMedium,
               ),
             ),
             const Divider(height: 1),
@@ -666,7 +662,10 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         child: Column(
           children: [
             // Top Action Toolbar
-            _buildTopBar(context, state, sourcesState, activeSource),
+            Entrance(
+              index: 0,
+              child: _buildTopBar(context, state, sourcesState, activeSource),
+            ),
             if (state.isScanning)
               const LinearProgressIndicator(
                 key: Key('nas_scanning_indicator'),
@@ -675,7 +674,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             const Divider(height: 1),
 
             // Search Bar Row (with debounce)
-            _buildSearchBar(context, state),
+            Entrance(index: 1, child: _buildSearchBar(context, state)),
             const Divider(height: 1),
 
             // Active Scope Breadcrumbs (if folder, artist, album, or playlist is set)
@@ -683,10 +682,10 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 state.artist != null ||
                 state.album != null ||
                 state.playlistId != null)
-              _buildScopeBreadcrumbs(context, state),
+              Entrance(index: 2, child: _buildScopeBreadcrumbs(context, state)),
 
             // Media Center Tabs
-            _buildTabBar(context, state),
+            Entrance(index: 3, child: _buildTabBar(context, state)),
             const Divider(height: 1),
 
             // Error Banner (if any)
@@ -760,7 +759,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: theme.colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(VRadius.input),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -782,9 +781,8 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                     constraints: BoxConstraints(maxWidth: isNarrow ? 90 : 120),
                     child: Text(
                       currentSource?.name ?? context.nasSources,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSecondaryContainer,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -1055,7 +1053,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           ),
           prefixIcon: const Icon(Icons.search, size: 20),
           hintText: context.l10n.nasSearchHint,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(VRadius.input),
+          ),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
                   key: const Key('nas_search_clear_button'),
@@ -1116,9 +1116,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           Expanded(
             child: Text(
               title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
+              style: theme.textTheme.titleSmall?.copyWith(
                 color: theme.colorScheme.onPrimaryContainer,
               ),
               overflow: TextOverflow.ellipsis,
@@ -1213,9 +1211,8 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           Expanded(
             child: Text(
               errorText,
-              style: TextStyle(
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onErrorContainer,
-                fontSize: 13,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -1265,17 +1262,14 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
               const SizedBox(height: 16),
               Text(
                 context.l10n.nasEmptyConfigTitle,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               Text(
                 context.l10n.nasEmptyConfigDesc,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.outline,
-                  fontSize: 13,
                 ),
               ),
               const SizedBox(height: 24),
@@ -1352,17 +1346,14 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
               const SizedBox(height: 16),
               Text(
                 context.l10n.nasNoIndexTitle,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               Text(
                 context.l10n.nasNoIndexDesc,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.outline,
-                  fontSize: 13,
                 ),
               ),
               const SizedBox(height: 24),
@@ -1413,17 +1404,14 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
               color: theme.colorScheme.outline,
             ),
             const SizedBox(height: 16),
-            Text(
-              context.nasNoSources,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text(context.nasNoSources, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
               context.nasNoSourcesDesc,
               textAlign: TextAlign.center,
-              style: TextStyle(color: theme.colorScheme.outline, fontSize: 13),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
             ),
             Wrap(
               spacing: 12,
@@ -1463,68 +1451,69 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Quick Stats Banner
-          Container(
-            key: const Key('nas_quick_stats'),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.3),
+          Entrance(
+            index: 0,
+            child: Container(
+              key: const Key('nas_quick_stats'),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(VRadius.card),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                ),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.insights_rounded,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      context.l10n.nasQuickStats,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.insights_rounded,
+                        size: 18,
+                        color: theme.colorScheme.primary,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _buildStatPill(
-                      context,
-                      label: context.l10n.nasStatTotal,
-                      value: totals.total.toString(),
-                      icon: Icons.all_inclusive,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildStatPill(
-                      context,
-                      label: context.l10n.nasStatPhotos,
-                      value: totals.images.toString(),
-                      icon: Icons.image,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildStatPill(
-                      context,
-                      label: context.l10n.nasStatVideos,
-                      value: totals.videos.toString(),
-                      icon: Icons.movie,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildStatPill(
-                      context,
-                      label: context.l10n.nasStatMusic,
-                      value: totals.audio.toString(),
-                      icon: Icons.audiotrack,
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: 8),
+                      Text(
+                        context.l10n.nasQuickStats,
+                        style: theme.textTheme.titleSmall,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _buildStatPill(
+                        context,
+                        label: context.l10n.nasStatTotal,
+                        value: totals.total.toString(),
+                        icon: Icons.all_inclusive,
+                      ),
+                      const SizedBox(width: 8),
+                      _buildStatPill(
+                        context,
+                        label: context.l10n.nasStatPhotos,
+                        value: totals.images.toString(),
+                        icon: Icons.image,
+                      ),
+                      const SizedBox(width: 8),
+                      _buildStatPill(
+                        context,
+                        label: context.l10n.nasStatVideos,
+                        value: totals.videos.toString(),
+                        icon: Icons.movie,
+                      ),
+                      const SizedBox(width: 8),
+                      _buildStatPill(
+                        context,
+                        label: context.l10n.nasStatMusic,
+                        value: totals.audio.toString(),
+                        icon: Icons.audiotrack,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -1536,13 +1525,30 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           _buildPaginationFooter(context, state),
 
           if (state.isLoading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Shimmer(
+                child: Column(
+                  children: const [
+                    SkeletonListTile(),
+                    SkeletonListTile(),
+                    SkeletonListTile(),
+                  ],
+                ),
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// 组列表 / 分页加载骨架屏 (替代转圈)。
+  Widget _buildSkeletonList() {
+    return Shimmer(
+      child: ListView.builder(
+        padding: const EdgeInsets.all(8),
+        itemCount: 6,
+        itemBuilder: (_, _) => const SkeletonListTile(),
       ),
     );
   }
@@ -1569,8 +1575,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           const SizedBox(width: 16),
           Text(
             '${state.items.length} / ${state.matchingCount}',
-            style: TextStyle(
+            style: monoTextStyle(
               fontSize: 12,
+              fontWeight: FontWeight.w500,
               color: Theme.of(context).colorScheme.outline,
             ),
           ),
@@ -1603,7 +1610,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(VRadius.input),
         ),
         child: Column(
           children: [
@@ -1611,7 +1618,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             const SizedBox(height: 4),
             Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: monoTextStyle(fontSize: 14, fontWeight: FontWeight.w700),
             ),
             Text(
               label,
@@ -1676,9 +1683,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           onOpenExternal: () => _openExternal(item),
         );
       },
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(VRadius.input),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(VRadius.input),
         child: Container(
           color: theme.colorScheme.surfaceContainerHighest,
           child: Stack(
@@ -1688,13 +1695,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 future: ref.read(nasProvider.notifier).thumbnailPath(item),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
+                    return Shimmer(child: const SkeletonBox());
                   }
                   final localPath = snapshot.data;
                   if (localPath != null && File(localPath).existsSync()) {
@@ -1716,7 +1717,13 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                     horizontal: 6,
                     vertical: 4,
                   ),
-                  color: Colors.black54,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black87],
+                    ),
+                  ),
                   child: Text(
                     item.name,
                     style: const TextStyle(color: Colors.white, fontSize: 11),
@@ -1787,17 +1794,13 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                     children: [
                       Text(
                         scopedTitle,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                        style: theme.textTheme.titleMedium,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         context.l10n.nasItemCount(displayTracks.length),
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.outline,
                         ),
                       ),
@@ -1819,7 +1822,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 ? Center(
                     child: Text(
                       context.l10n.nasNoSearchResults,
-                      style: TextStyle(color: theme.colorScheme.outline),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -1847,7 +1852,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
               color: theme.colorScheme.secondaryContainer.withValues(
                 alpha: 0.5,
               ),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(VRadius.input),
             ),
             child: Row(
               children: [
@@ -1924,7 +1929,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         Expanded(
           child: _musicGroup != null
               ? (_loadingGroups && _musicGroups.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
+                    ? _buildSkeletonList()
                     : Column(
                         children: [
                           Expanded(
@@ -2000,8 +2005,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           const SizedBox(width: 16),
           Text(
             '${_musicGroups.length}',
-            style: TextStyle(
+            style: monoTextStyle(
               fontSize: 12,
+              fontWeight: FontWeight.w500,
               color: Theme.of(context).colorScheme.outline,
             ),
           ),
@@ -2042,17 +2048,13 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                     children: [
                       Text(
                         state.folder!,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                        style: theme.textTheme.titleMedium,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         context.l10n.nasItemCount(state.items.length),
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.outline,
                         ),
                       ),
@@ -2074,7 +2076,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 ? Center(
                     child: Text(
                       context.l10n.nasNoSearchResults,
-                      style: TextStyle(color: theme.colorScheme.outline),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -2092,7 +2096,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
     }
 
     if (_loadingFolders && _folderGroups.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildSkeletonList();
     }
 
     if (_folderGroups.isEmpty) {
@@ -2104,7 +2108,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             const SizedBox(height: 12),
             Text(
               context.l10n.nasNoIndexTitle,
-              style: TextStyle(color: theme.colorScheme.outline),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
             ),
           ],
         ),
@@ -2124,7 +2130,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 margin: const EdgeInsets.only(bottom: 8),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(VRadius.card),
                   side: BorderSide(
                     color: theme.colorScheme.outlineVariant.withValues(
                       alpha: 0.5,
@@ -2133,13 +2139,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 ),
                 child: ListTile(
                   leading: Icon(Icons.folder, color: theme.colorScheme.primary),
-                  title: Text(
-                    g.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
+                  title: Text(g.name, style: theme.textTheme.titleSmall),
                   subtitle: Text(context.l10n.nasItemCount(g.count)),
                   trailing: const Icon(Icons.chevron_right, size: 18),
                   onTap: () {
@@ -2175,8 +2175,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           const SizedBox(width: 16),
           Text(
             '${_folderGroups.length}',
-            style: TextStyle(
+            style: monoTextStyle(
               fontSize: 12,
+              fontWeight: FontWeight.w500,
               color: Theme.of(context).colorScheme.outline,
             ),
           ),
@@ -2210,7 +2211,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             const SizedBox(height: 12),
             Text(
               context.l10n.nasNoFavorites,
-              style: TextStyle(color: Theme.of(context).colorScheme.outline),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
             ),
           ],
         ),
@@ -2250,10 +2253,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             children: [
               Text(
                 context.l10n.nasTabPlaylists,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
               FilledButton.icon(
                 key: const Key('nas_create_playlist_button'),
@@ -2279,7 +2279,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                       const SizedBox(height: 12),
                       Text(
                         context.l10n.nasNoPlaylists,
-                        style: TextStyle(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.outline,
                         ),
                       ),
@@ -2297,7 +2297,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                       margin: const EdgeInsets.only(bottom: 8),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(VRadius.card),
                         side: BorderSide(
                           color: Theme.of(
                             context,
@@ -2369,15 +2369,11 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                   children: [
                     Text(
                       playlist?.name ?? 'Playlist',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Text(
                       context.l10n.nasItemCount(totalCount),
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.outline,
                       ),
                     ),
@@ -2399,7 +2395,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
               ? Center(
                   child: Text(
                     context.l10n.nasNoPlaylists,
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                     ),
                   ),
@@ -2496,7 +2492,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(VRadius.input),
         side: BorderSide(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),
@@ -2515,7 +2511,11 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         ),
         subtitle: Text(
           '${SftpFileItem.formatBytes(item.sizeBytes)} · ${_formatEpoch(item.modifiedEpoch)}',
-          style: TextStyle(fontSize: 11, color: theme.colorScheme.outline),
+          style: monoTextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+            color: theme.colorScheme.outline,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -2559,7 +2559,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                         Icon(
                           isFav ? Icons.favorite : Icons.favorite_border,
                           size: 18,
-                          color: isFav ? Colors.redAccent : null,
+                          color: isFav ? ctx.vDanger : null,
                         ),
                         const SizedBox(width: 8),
                         Text(ctx.l10n.nasTabFavorites),
@@ -2617,7 +2617,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                   icon: Icon(
                     isFav ? Icons.favorite : Icons.favorite_border,
                     size: 18,
-                    color: isFav ? Colors.redAccent : theme.colorScheme.outline,
+                    color: isFav ? context.vDanger : theme.colorScheme.outline,
                   ),
                   tooltip: context.l10n.nasTabFavorites,
                   onPressed: () => _toggleFavorite(item),

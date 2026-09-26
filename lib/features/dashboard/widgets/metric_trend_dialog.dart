@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/layout_breakpoints.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/server_provider.dart';
 import '../../../widgets/state_views.dart';
@@ -56,10 +57,10 @@ class MetricTrendSheet extends ConsumerWidget {
     };
   }
 
-  Color _getValueColor(double pct) {
-    if (pct >= 85) return const Color(0xFFEF4444);
-    if (pct >= 70) return Colors.amber;
-    return const Color(0xFF10B981);
+  Color _getValueColor(BuildContext context, double pct) {
+    if (pct >= 85) return context.vDanger;
+    if (pct >= 70) return context.vWarning;
+    return context.vSuccess;
   }
 
   Widget _buildStatColumn(
@@ -143,23 +144,23 @@ class MetricTrendSheet extends ConsumerWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.15),
+                  color: context.vDanger.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.cloud_off_rounded,
                       size: 16,
-                      color: Colors.red,
+                      color: context.vDanger,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         context.l10n.metricsTrendStopped,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.red,
+                          color: context.vDanger,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -252,7 +253,7 @@ class MetricTrendSheet extends ConsumerWidget {
                           context,
                           context.l10n.resourceUsed,
                           formatKiB(used),
-                          _getValueColor(pct),
+                          _getValueColor(context, pct),
                         ),
                         _buildStatColumn(
                           context,
@@ -277,7 +278,7 @@ class MetricTrendSheet extends ConsumerWidget {
                         backgroundColor:
                             context.colorScheme.surfaceContainerHighest,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          _getValueColor(pct),
+                          _getValueColor(context, pct),
                         ),
                       ),
                     ),
@@ -294,23 +295,23 @@ class MetricTrendSheet extends ConsumerWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.15),
+                    color: context.vWarning.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.warning_amber_rounded,
                         size: 16,
-                        color: Colors.amber,
+                        color: context.vWarning,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           context.l10n.resourceDiskScanPartial,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.amber,
+                            color: context.vWarning,
                           ),
                         ),
                       ),
@@ -429,13 +430,13 @@ class MetricTrendSheet extends ConsumerWidget {
                             context,
                             context.l10n.resourceUsed,
                             '${pct.toStringAsFixed(1)}%',
-                            _getValueColor(pct),
+                            _getValueColor(context, pct),
                           ),
                           _buildStatColumn(
                             context,
                             'Idle',
                             '${idlePct.toStringAsFixed(1)}%',
-                            const Color(0xFF10B981),
+                            context.vSuccess,
                           ),
                           _buildStatColumn(
                             context,
@@ -454,7 +455,7 @@ class MetricTrendSheet extends ConsumerWidget {
                           backgroundColor:
                               context.colorScheme.surfaceContainerHighest,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            _getValueColor(pct),
+                            _getValueColor(context, pct),
                           ),
                         ),
                       ),
@@ -487,13 +488,13 @@ class MetricTrendSheet extends ConsumerWidget {
                             context,
                             context.l10n.resourceUsed,
                             '${pct.toStringAsFixed(1)}%',
-                            _getValueColor(pct),
+                            _getValueColor(context, pct),
                           ),
                           _buildStatColumn(
                             context,
                             context.l10n.resourceAvailable,
                             '${availPct.toStringAsFixed(1)}%',
-                            const Color(0xFF10B981),
+                            context.vSuccess,
                           ),
                           _buildStatColumn(
                             context,
@@ -512,7 +513,7 @@ class MetricTrendSheet extends ConsumerWidget {
                           backgroundColor:
                               context.colorScheme.surfaceContainerHighest,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            _getValueColor(pct),
+                            _getValueColor(context, pct),
                           ),
                         ),
                       ),
@@ -627,7 +628,7 @@ class MetricTrendSheet extends ConsumerWidget {
                                 fontFamily: 'JetBrains Mono',
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: _getValueColor(proc.cpuPercent),
+                                color: _getValueColor(context, proc.cpuPercent),
                               ),
                             ),
                             Text(
@@ -645,7 +646,7 @@ class MetricTrendSheet extends ConsumerWidget {
                                 fontFamily: 'JetBrains Mono',
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: _getValueColor(proc.memoryPercent),
+                                color: _getValueColor(context, proc.memoryPercent),
                               ),
                             ),
                             Text(

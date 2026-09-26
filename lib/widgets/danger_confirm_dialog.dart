@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/security/command_safety.dart';
 
+/// 高危命令二次确认弹窗。
+///
+/// 红色语义锁: danger 级恒定红, warning 级恒定琥珀; 不随种子色漂移。
 class DangerConfirmDialog extends StatelessWidget {
   final String command;
   final CommandRisk risk;
@@ -52,9 +56,10 @@ class DangerConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDanger = risk.level == CommandRiskLevel.danger;
-    final primaryColor = isDanger
-        ? const Color(0xFFEF4444) // Crimson Red
-        : const Color(0xFFF59E0B); // Amber
+    final primaryColor = context.vDanger;
+    final warningColor = context.vWarning;
+    final tone = isDanger ? primaryColor : warningColor;
+    final dark = Theme.of(context).brightness == Brightness.dark;
 
     final title =
         customTitle ??
@@ -70,24 +75,21 @@ class DangerConfirmDialog extends StatelessWidget {
 
     return AlertDialog(
       icon: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: primaryColor.withValues(alpha: 0.12),
-          shape: BoxShape.circle,
+          color: tone.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(VRadius.card),
+          border: Border.all(color: tone.withValues(alpha: 0.3)),
         ),
         child: Icon(
           isDanger ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
-          color: primaryColor,
-          size: 32,
+          color: tone,
+          size: 28,
         ),
       ),
       title: Text(
         title,
-        style: TextStyle(
-          color: primaryColor,
-          fontWeight: FontWeight.bold,
-          fontSize: 17,
-        ),
+        style: context.textTheme.titleMedium?.copyWith(color: tone),
         textAlign: TextAlign.center,
       ),
       content: ConstrainedBox(
@@ -97,68 +99,52 @@ class DangerConfirmDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                warningText,
-                style: const TextStyle(fontSize: 13, height: 1.4),
-              ),
+              Text(warningText, style: context.textTheme.bodyMedium),
               if (risk.matchedPattern != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: VSpace.md),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 10,
+                    vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: primaryColor.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
+                    color: tone.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(VRadius.input),
+                    border: Border.all(color: tone.withValues(alpha: 0.3), width: 1),
                   ),
                   child: Text(
                     context.l10n.riskPatternMatched(risk.matchedPattern!),
-                    style: TextStyle(
-                      fontFamily: 'JetBrains Mono',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: primaryColor,
-                    ),
+                    style: monoTextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: tone),
                   ),
                 ),
               ],
-              const SizedBox(height: 12),
+              const SizedBox(height: VSpace.lg),
               Text(
                 context.l10n.riskCommandPreview,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: context.colorScheme.outline,
+                style: context.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: VSpace.sm),
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F141C),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: primaryColor.withValues(alpha: 0.4),
-                    width: 1,
-                  ),
+                  color: dark ? const Color(0xFF07080B) : const Color(0xFF1A1E26),
+                  borderRadius: BorderRadius.circular(VRadius.input),
+                  border: Border.all(color: tone.withValues(alpha: 0.35), width: 1),
                 ),
                 child: SelectableText(
                   command,
-                  style: const TextStyle(
-                    fontFamily: 'JetBrains Mono',
+                  style: monoTextStyle(
                     fontSize: 12,
-                    color: Color(0xFFE2E8F0),
+                    color: const Color(0xFFE2E8F0),
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
               if (extraContent != null) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: VSpace.lg),
                 extraContent!,
               ],
             ],
@@ -175,7 +161,7 @@ class DangerConfirmDialog extends StatelessWidget {
         FilledButton(
           key: confirmButtonKey,
           style: FilledButton.styleFrom(
-            backgroundColor: primaryColor,
+            backgroundColor: tone,
             foregroundColor: Colors.white,
           ),
           onPressed: () => Navigator.pop(context, true),

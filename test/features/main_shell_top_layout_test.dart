@@ -13,6 +13,8 @@ import 'package:valhalla/features/servers/server_form_dialog.dart';
 import 'package:valhalla/features/settings/widgets/theme_accent_color_dialog.dart';
 import 'package:valhalla/features/shell/main_shell.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import 'package:valhalla/core/design/motion_widgets.dart';
+import 'package:valhalla/core/design/tokens.dart';
 
 class _FakeSftpNotifier extends SftpNotifier {
   @override
@@ -236,7 +238,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(Drawer), findsNothing);
-      final stack = tester.widget<IndexedStack>(find.byType(IndexedStack));
+      final stack = tester.widget<AnimatedIndexedStack>(find.byType(AnimatedIndexedStack));
       expect(stack.index, 3);
     });
 
@@ -253,7 +255,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(Drawer), findsNothing);
-      final stack = tester.widget<IndexedStack>(find.byType(IndexedStack));
+      final stack = tester.widget<AnimatedIndexedStack>(find.byType(AnimatedIndexedStack));
       expect(stack.index, 5);
     });
 
@@ -270,7 +272,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(Drawer), findsNothing);
-      final stack = tester.widget<IndexedStack>(find.byType(IndexedStack));
+      final stack = tester.widget<AnimatedIndexedStack>(find.byType(AnimatedIndexedStack));
       expect(stack.index, 6);
     });
 
@@ -287,8 +289,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(Drawer), findsNothing);
-      final stack = tester.widget<IndexedStack>(
-        find.byType(IndexedStack).first,
+      final stack = tester.widget<AnimatedIndexedStack>(
+        find.byType(AnimatedIndexedStack).first,
       );
       expect(stack.index, 7);
     });
@@ -351,8 +353,8 @@ void main() {
         expect(tester.takeException(), isNull);
 
         // IndexedStack 对应子页面
-        final stack = tester.widget<IndexedStack>(
-          find.byType(IndexedStack).first,
+        final stack = tester.widget<AnimatedIndexedStack>(
+          find.byType(AnimatedIndexedStack).first,
         );
         expect(stack.index, expectedStackIndex);
 
@@ -506,7 +508,7 @@ void main() {
 
       // 点击主题色（第二个色块）
       final accentInkWells = find.byWidgetPredicate(
-        (w) => w is InkWell && w.borderRadius == BorderRadius.circular(20),
+        (w) => w is InkWell && w.borderRadius == BorderRadius.circular(VRadius.pill),
       );
       expect(accentInkWells, findsNWidgets(AppAccentColor.values.length));
       await tester.tap(accentInkWells.at(1));

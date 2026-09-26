@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import '../core/design/motion_widgets.dart';
+import '../core/design/tokens.dart';
 
 enum StatusType { online, offline, running, warning, danger }
 
+/// 语义状态徽标: 胶囊底 + 呼吸状态点。
+///
+/// 点只表达真实状态语义 (在线 / 运行中 / 告警), 颜色锁定语义色不随种子色漂移。
 class StatusBadge extends StatelessWidget {
   final String label;
   final StatusType type;
@@ -16,52 +21,39 @@ class StatusBadge extends StatelessWidget {
     this.fontSize = 11.0,
   });
 
-  Color _getColor() {
-    switch (type) {
-      case StatusType.online:
-        return const Color(0xFF10B981); // Emerald Green
-      case StatusType.offline:
-        return const Color(0xFF6B7280); // Cool Grey
-      case StatusType.running:
-        return const Color(0xFF0EA5E9); // Sky Blue
-      case StatusType.warning:
-        return const Color(0xFFF59E0B); // Amber
-      case StatusType.danger:
-        return const Color(0xFFEF4444); // Crimson Red
-    }
-  }
+  Color _color(Brightness brightness) => switch (type) {
+    StatusType.online => VColors.success(brightness),
+    StatusType.offline => VColors.info(brightness),
+    StatusType.running => VColors.info(brightness),
+    StatusType.warning => VColors.warning(brightness),
+    StatusType.danger => VColors.danger(brightness),
+  };
 
   @override
   Widget build(BuildContext context) {
-    final color = _getColor();
+    final color = _color(Theme.of(context).brightness);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: EdgeInsets.symmetric(
+        horizontal: showDot ? 9 : 10,
+        vertical: 3.5,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
+        borderRadius: BorderRadius.circular(VRadius.pill),
+        border: Border.all(color: color.withValues(alpha: 0.32), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (showDot) ...[
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.4),
-                    blurRadius: 3,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
+            PulseDot(
+              color: color,
+              size: 6,
+              // 只有在线 / 运行中呼吸, 静态状态不闪。
+              pulse: type == StatusType.online || type == StatusType.running,
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 6),
           ],
           Text(
             label,

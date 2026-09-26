@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../terminal/widgets/shared_terminal_canvas.dart';
 import '../../core/constants/layout_breakpoints.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/logging/sanitizer.dart';
 import '../../core/providers/agent_registry_provider.dart';
@@ -15,6 +17,7 @@ import '../../infrastructure/acp/agent_environment_service.dart';
 import '../agents/agent_management_view.dart';
 import '../../widgets/remote_directory_picker_dialog.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/valhalla_card.dart';
 import '../../core/providers/commands_provider.dart';
 import '../../data/models/chat_launch_preference.dart';
 import 'widgets/chat_run_settings_dialog.dart';
@@ -372,9 +375,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                 const SizedBox(height: 16),
                 Text(
                   context.l10n.cliNoAgentsConfigured,
-                  style: context.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: context.textTheme.titleMedium,
                 ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
@@ -396,7 +397,14 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
       return Scaffold(
         body: Row(
           children: [
-            SizedBox(width: 320, child: _buildSidebar(context, cliState)),
+            SizedBox(
+              width: 320,
+              // Material 底色面板: 与 AI 会话侧栏一致, ListTile ink 落点正确。
+              child: Material(
+                color: context.colorScheme.surfaceContainerLowest,
+                child: _buildSidebar(context, cliState),
+              ),
+            ),
             const VerticalDivider(width: 1),
             Expanded(child: _buildMainContent(context, cliState)),
           ],
@@ -407,7 +415,10 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
     return Scaffold(
       drawer: Drawer(
         child: SafeArea(
-          child: _buildSidebar(context, cliState, isDrawer: true),
+          child: Material(
+            color: context.colorScheme.surfaceContainerLowest,
+            child: _buildSidebar(context, cliState, isDrawer: true),
+          ),
         ),
       ),
       body: Column(
@@ -431,10 +442,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                   Expanded(
                     child: Text(
                       cliState.activeAgent!.name,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: context.textTheme.titleSmall,
                       overflow: TextOverflow.ellipsis,
                     ),
                   )
@@ -484,125 +492,134 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
     return Column(
       children: [
         // Top section: Agent Dropdown
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    context.l10n.cliSelectAgent,
-                    style: context.textTheme.labelSmall?.copyWith(
-                      color: context.colorScheme.outline,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    key: const Key('cli_sidebar_settings_button'),
-                    icon: const Icon(Icons.settings_outlined, size: 18),
-                    tooltip: context.l10n.manageAgents,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () => _openAgentManagement(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      key: const Key('cli_agent_dropdown'),
-                      isExpanded: true,
-                      initialValue: state.activeAgent?.id,
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+        Entrance(
+          index: 0,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      context.l10n.cliSelectAgent,
+                      style: context.textTheme.labelSmall?.copyWith(
+                        color: context.colorScheme.outline,
                       ),
-                      items: state.agents.map((agent) {
-                        final serverId = state.serverId;
-                        String? defaultAgentId;
-                        try {
-                          defaultAgentId = serverId != null
-                              ? ref
-                                    .read(localStorageServiceProvider)
-                                    .getDefaultAgentId(serverId, cli: true)
-                              : null;
-                        } catch (_) {}
-                        final isDefault = agent.id == defaultAgentId;
-                        return DropdownMenuItem<String>(
-                          value: agent.id,
-                          child: Text(
-                            isDefault
-                                ? '${agent.name} (${agent.cliCommand}) · ${context.l10n.defaultBadge}'
-                                : '${agent.name} (${agent.cliCommand})',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (id) {
-                        if (id != null) {
-                          notifier.selectAgent(id);
-                        }
-                      },
                     ),
-                  ),
-                  if (state.activeAgent != null) ...[
-                    const SizedBox(width: 6),
-                    Builder(
-                      builder: (ctx) {
-                        final serverId = state.serverId;
-                        String? defaultAgentId;
-                        try {
-                          defaultAgentId = serverId != null
-                              ? ref
-                                    .read(localStorageServiceProvider)
-                                    .getDefaultAgentId(serverId, cli: true)
-                              : null;
-                        } catch (_) {}
-                        final isDefault =
-                            state.activeAgent?.id == defaultAgentId;
-                        return IconButton(
-                          key: const Key('cli_set_default_agent_button'),
-                          icon: Icon(
-                            isDefault
-                                ? Icons.star_rounded
-                                : Icons.star_outline_rounded,
-                            color: isDefault
-                                ? context.colorScheme.primary
-                                : context.colorScheme.outline,
-                          ),
-                          tooltip: isDefault
-                              ? context.l10n.isDefaultAgent
-                              : context.l10n.setAsDefaultAgent,
-                          onPressed: () async {
-                            final currentId = state.activeAgent?.id;
-                            if (currentId == null) return;
-                            await notifier.setDefaultAgent(
-                              currentId == defaultAgentId ? null : currentId,
-                            );
-                            setState(() {});
-                          },
-                        );
-                      },
+                    IconButton(
+                      key: const Key('cli_sidebar_settings_button'),
+                      icon: const Icon(Icons.settings_outlined, size: 18),
+                      tooltip: context.l10n.manageAgents,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _openAgentManagement(context),
                     ),
                   ],
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        key: const Key('cli_agent_dropdown'),
+                        isExpanded: true,
+                        initialValue: state.activeAgent?.id,
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(VRadius.input),
+                          ),
+                        ),
+                        items: state.agents.map((agent) {
+                          final serverId = state.serverId;
+                          String? defaultAgentId;
+                          try {
+                            defaultAgentId = serverId != null
+                                ? ref
+                                      .read(localStorageServiceProvider)
+                                      .getDefaultAgentId(serverId, cli: true)
+                                : null;
+                          } catch (_) {}
+                          final isDefault = agent.id == defaultAgentId;
+                          return DropdownMenuItem<String>(
+                            value: agent.id,
+                            child: Text(
+                              isDefault
+                                  ? '${agent.name} (${agent.cliCommand}) · ${context.l10n.defaultBadge}'
+                                  : '${agent.name} (${agent.cliCommand})',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (id) {
+                          if (id != null) {
+                            notifier.selectAgent(id);
+                          }
+                        },
+                      ),
+                    ),
+                    if (state.activeAgent != null) ...[
+                      const SizedBox(width: 6),
+                      Builder(
+                        builder: (ctx) {
+                          final serverId = state.serverId;
+                          String? defaultAgentId;
+                          try {
+                            defaultAgentId = serverId != null
+                                ? ref
+                                      .read(localStorageServiceProvider)
+                                      .getDefaultAgentId(serverId, cli: true)
+                                : null;
+                          } catch (_) {}
+                          final isDefault =
+                              state.activeAgent?.id == defaultAgentId;
+                          return IconButton(
+                            key: const Key('cli_set_default_agent_button'),
+                            icon: Icon(
+                              isDefault
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
+                              color: isDefault
+                                  ? context.colorScheme.primary
+                                  : context.colorScheme.outline,
+                            ),
+                            tooltip: isDefault
+                                ? context.l10n.isDefaultAgent
+                                : context.l10n.setAsDefaultAgent,
+                            onPressed: () async {
+                              final currentId = state.activeAgent?.id;
+                              if (currentId == null) return;
+                              await notifier.setDefaultAgent(
+                                currentId == defaultAgentId ? null : currentId,
+                              );
+                              setState(() {});
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
 
         // Environment status & Guide Banner
         if (state.activeAgent != null)
-          _buildAgentEnvironmentGuide(context, state.activeAgent!, registry),
+          Entrance(
+            index: 1,
+            child: _buildAgentEnvironmentGuide(
+              context,
+              state.activeAgent!,
+              registry,
+            ),
+          ),
 
         // Session list controls (Only if hasHistory == true)
         if (state.hasHistory) ...[
@@ -711,7 +728,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                         vertical: 8,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(VRadius.input),
                       ),
                     ),
                     style: const TextStyle(fontSize: 12),
@@ -744,24 +761,25 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
           const Divider(height: 16),
 
           // Sessions List Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Row(
-              children: [
-                Text(
-                  context.l10n.cliSessionsHeader,
-                  style: context.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+          Entrance(
+            index: 2,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Row(
+                children: [
+                  Text(
+                    context.l10n.cliSessionsHeader,
+                    style: context.textTheme.titleSmall,
                   ),
-                ),
-                const Spacer(),
-                if (state.isLoading)
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-              ],
+                  const Spacer(),
+                  if (state.isLoading)
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                ],
+              ),
             ),
           ),
 
@@ -797,32 +815,26 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
 
     if (!isUnready) return const SizedBox.shrink();
 
+    final warning = context.vWarning;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+        color: warning.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(VRadius.input),
+        border: Border.all(color: warning.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.warning_amber_rounded,
-                color: Colors.amber,
-                size: 16,
-              ),
+              Icon(Icons.warning_amber_rounded, color: warning, size: 16),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   context.l10n.cliAgentNeedsSetup,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: context.textTheme.labelMedium,
                 ),
               ),
             ],
@@ -864,6 +876,21 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
             textAlign: TextAlign.center,
           ),
         ),
+      );
+    }
+
+    // 首次加载: 按会话行形状铺骨架, 替代转圈。
+    if (state.sessions.isEmpty) {
+      return ListView(
+        padding: const EdgeInsets.symmetric(vertical: VSpace.sm),
+        children: const [
+          SkeletonListTile(),
+          SkeletonListTile(),
+          SkeletonListTile(),
+          SkeletonListTile(),
+          SkeletonListTile(),
+          SkeletonListTile(),
+        ],
       );
     }
 
@@ -915,7 +942,11 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                   session.cwd!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 10),
+                  style: monoTextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                    color: context.colorScheme.outline,
+                  ),
                 )
               : null,
           trailing: Row(
@@ -981,7 +1012,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                 Expanded(
                   child: Text(
                     context.l10n.cliTerminalRunning,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: context.textTheme.titleSmall,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -1098,18 +1129,18 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
               margin: const EdgeInsets.all(12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber),
+                color: context.vWarning.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(VRadius.input),
+                border: Border.all(color: context.vWarning.withValues(alpha: 0.45)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning, color: Colors.amber, size: 20),
+                  Icon(Icons.warning, color: context.vWarning, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       context.l10n.cliHistorySdkMissing,
-                      style: const TextStyle(fontSize: 13),
+                      style: context.textTheme.bodyMedium,
                     ),
                   ),
                   FilledButton(
@@ -1153,27 +1184,23 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
 
   Widget _buildApprovalsSection(BuildContext context, CliChatState state) {
     final notifier = ref.read(cliChatProvider.notifier);
+    final warning = context.vWarning;
 
     return Container(
-      color: Colors.amber.withValues(alpha: 0.1),
-      padding: const EdgeInsets.all(12),
+      color: warning.withValues(alpha: 0.08),
+      padding: const EdgeInsets.all(VSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.admin_panel_settings,
-                color: Colors.amber,
-                size: 20,
-              ),
+              PulseDot(color: warning, size: 7),
               const SizedBox(width: 8),
+              Icon(Icons.admin_panel_settings, color: warning, size: 20),
+              const SizedBox(width: 4),
               Text(
                 context.l10n.cliApprovalsTitle,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: context.textTheme.titleSmall,
               ),
             ],
           ),
@@ -1188,59 +1215,56 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
               detailsPretty = approval.details.toString();
             }
 
-            return Card(
+            return ValhallaCard(
               margin: const EdgeInsets.symmetric(vertical: 4),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      approval.method,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        fontFamily: 'JetBrains Mono',
+              padding: const EdgeInsets.all(VSpace.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    approval.method,
+                    style: monoTextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E1E),
+                      borderRadius: BorderRadius.circular(VRadius.input),
+                    ),
+                    child: Text(
+                      detailsPretty,
+                      style: monoTextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white70,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E1E),
-                        borderRadius: BorderRadius.circular(4),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        key: Key('cli_approval_decline_${approval.id}'),
+                        onPressed: () =>
+                            notifier.respondApproval(approval.id, false),
+                        child: Text(context.l10n.cliApprovalDecline),
                       ),
-                      child: Text(
-                        detailsPretty,
-                        style: const TextStyle(
-                          fontFamily: 'JetBrains Mono',
-                          fontSize: 11,
-                          color: Colors.white70,
-                        ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        key: Key('cli_approval_allow_${approval.id}'),
+                        onPressed: () =>
+                            notifier.respondApproval(approval.id, true),
+                        child: Text(context.l10n.cliApprovalAllow),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          key: Key('cli_approval_decline_${approval.id}'),
-                          onPressed: () =>
-                              notifier.respondApproval(approval.id, false),
-                          child: Text(context.l10n.cliApprovalDecline),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton(
-                          key: Key('cli_approval_allow_${approval.id}'),
-                          onPressed: () =>
-                              notifier.respondApproval(approval.id, true),
-                          child: Text(context.l10n.cliApprovalAllow),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             );
           }),
@@ -1422,7 +1446,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                         vertical: 10,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(VRadius.input),
                       ),
                     ),
                     onSubmitted: (_) => _handleSend(),
@@ -1430,22 +1454,27 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                 ),
                 const SizedBox(width: 8),
                 if (state.isSending)
-                  FilledButton.icon(
-                    key: const Key('cli_stop_button'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      shape: const CircleBorder(),
-                      padding: const EdgeInsets.all(12),
+                  PressableScale(
+                    child: FilledButton.icon(
+                      key: const Key('cli_stop_button'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: context.colorScheme.error,
+                        foregroundColor: context.colorScheme.onError,
+                        shape: const CircleBorder(),
+                        padding: const EdgeInsets.all(12),
+                      ),
+                      onPressed: () => notifier.stop(),
+                      icon: const Icon(Icons.stop, size: 20),
+                      label: const SizedBox.shrink(),
                     ),
-                    onPressed: () => notifier.stop(),
-                    icon: const Icon(Icons.stop, color: Colors.white, size: 20),
-                    label: const SizedBox.shrink(),
                   )
                 else
-                  IconButton.filled(
-                    key: const Key('cli_send_button'),
-                    onPressed: _handleSend,
-                    icon: const Icon(Icons.send_rounded),
+                  PressableScale(
+                    child: IconButton.filled(
+                      key: const Key('cli_send_button'),
+                      onPressed: _handleSend,
+                      icon: const Icon(Icons.send_rounded),
+                    ),
                   ),
               ],
             ),
@@ -1609,7 +1638,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                     children: [
                       Text(
                         skill.label,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: ctx.textTheme.titleSmall,
                       ),
                       if (skill.description != null &&
                           skill.description!.trim().isNotEmpty)
@@ -1662,13 +1691,13 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                     children: [
                       Text(
                         cmd.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: ctx.textTheme.titleSmall,
                       ),
                       Text(
                         cmd.command,
-                        style: TextStyle(
-                          fontFamily: 'JetBrains Mono',
+                        style: monoTextStyle(
                           fontSize: 11,
+                          fontWeight: FontWeight.w400,
                           color: ctx.colorScheme.outline,
                         ),
                         maxLines: 1,
@@ -1736,7 +1765,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
         color: context.colorScheme.surfaceContainerHighest.withValues(
           alpha: 0.5,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(VRadius.card),
         border: Border.all(
           color: context.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
@@ -1754,10 +1783,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
               const SizedBox(width: 8),
               Text(
                 context.l10n.cliDraftWorkingDirLabel,
-                style: context.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: context.colorScheme.onSurface,
-                ),
+                style: context.textTheme.titleSmall,
               ),
               const Spacer(),
               if (hasDraft)
@@ -1780,14 +1806,14 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
               color: context.colorScheme.surface,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(VRadius.input),
               border: Border.all(color: context.colorScheme.outlineVariant),
             ),
             child: Text(
               hasDraft ? state.draftCwd! : context.l10n.cliDefaultWorkingDir,
-              style: TextStyle(
-                fontFamily: 'JetBrains Mono',
+              style: monoTextStyle(
                 fontSize: 12,
+                fontWeight: FontWeight.w400,
                 color: hasDraft
                     ? context.colorScheme.onSurface
                     : context.colorScheme.outline,

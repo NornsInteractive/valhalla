@@ -10,6 +10,7 @@ import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/shell/main_shell.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import 'package:valhalla/core/design/motion_widgets.dart';
 
 class _FakeSftpNotifier extends SftpNotifier {
   @override
@@ -83,8 +84,8 @@ void main() {
         settingsState: const SettingsState(startupSection: AppSection.terminal),
       );
 
-      final stack = tester.widget<IndexedStack>(
-        find.byType(IndexedStack).first,
+      final stack = tester.widget<AnimatedIndexedStack>(
+        find.byType(AnimatedIndexedStack).first,
       );
       expect(stack.index, 2); // Terminal is index 2
     });
@@ -135,8 +136,8 @@ void main() {
         await tester.tap(settingsIcon);
         await tester.pumpAndSettle();
 
-        final stack = tester.widget<IndexedStack>(
-          find.byType(IndexedStack).first,
+        final stack = tester.widget<AnimatedIndexedStack>(
+          find.byType(AnimatedIndexedStack).first,
         );
         expect(stack.index, 7); // Settings is index 7
       },
@@ -171,8 +172,8 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(tester.takeException(), isNull);
-        final stack = tester.widget<IndexedStack>(
-          find.byType(IndexedStack).first,
+        final stack = tester.widget<AnimatedIndexedStack>(
+          find.byType(AnimatedIndexedStack).first,
         );
         expect(stack.index, 3); // Files is index 3
       },

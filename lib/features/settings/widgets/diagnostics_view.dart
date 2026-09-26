@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/services/app_diagnostics.dart';
 
@@ -20,6 +21,9 @@ class DiagnosticsView extends StatefulWidget {
       context: context,
       builder: (ctx) => Dialog(
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(VRadius.dialog),
+        ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800, maxHeight: 650),
           child: DiagnosticsView(diagnostics: diagnostics, isDialog: true),
@@ -78,7 +82,7 @@ class _DiagnosticsViewState extends State<DiagnosticsView> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(context.l10n.diagnosticsExportSuccess(path)),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: context.vSuccess,
           ),
         );
       }
@@ -118,9 +122,7 @@ class _DiagnosticsViewState extends State<DiagnosticsView> {
                 Expanded(
                   child: Text(
                     context.l10n.diagnosticsTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: theme.textTheme.titleMedium,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -181,7 +183,7 @@ class _DiagnosticsViewState extends State<DiagnosticsView> {
         // Main Log Area
         Expanded(
           child: Container(
-            color: const Color(0xFF0F141C),
+            color: theme.colorScheme.surfaceContainerLow,
             padding: const EdgeInsets.all(12),
             child: _buildLogBody(theme),
           ),
@@ -253,7 +255,7 @@ class _DiagnosticsViewState extends State<DiagnosticsView> {
       return Center(
         child: Text(
           context.l10n.diagnosticsEmpty,
-          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+          style: TextStyle(color: theme.colorScheme.outline, fontSize: 13),
         ),
       );
     }
@@ -262,12 +264,11 @@ class _DiagnosticsViewState extends State<DiagnosticsView> {
       reverse: true, // auto-scroll to end of logs
       child: SelectableText(
         text,
-        style: const TextStyle(
-          fontFamily: 'JetBrains Mono',
+        style: monoTextStyle(
           fontSize: 11,
-          height: 1.4,
-          color: Color(0xFFE2E8F0),
-        ),
+          fontWeight: FontWeight.w400,
+          color: theme.colorScheme.onSurface,
+        ).copyWith(height: 1.4),
       ),
     );
   }

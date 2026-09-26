@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/design/motion_widgets.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/reconnect_provider.dart';
 import '../../../core/utils/reconnect_backoff.dart';
@@ -103,99 +105,46 @@ class _ConnectionStatusBannerState
 
     // 1. Reconnecting
     if (state.status == ReconnectStatus.reconnecting) {
-      return Container(
+      return _banner(
+        context,
         key: const Key('reconnectingBanner'),
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: Colors.amber.withValues(alpha: 0.18),
-        child: Row(
-          children: [
-            const Icon(Icons.sync, size: 18, color: Colors.amber),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                l10n.sshStatusReconnecting(state.attempt),
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.amber,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (state.nextDelay != null) ...[
-              const SizedBox(width: 8),
-              _BannerCountdown(
+        color: context.vWarning,
+        leading: Icon(Icons.sync, size: 18, color: context.vWarning),
+        message: l10n.sshStatusReconnecting(state.attempt),
+        trailing: state.nextDelay != null
+            ? _BannerCountdown(
                 key: ValueKey(
                   'countdown_${state.attempt}_${state.nextDelay!.inSeconds}',
                 ),
                 initialDelay: state.nextDelay!,
-              ),
-            ],
-          ],
-        ),
+              )
+            : null,
       );
     }
 
     // 2. Just recovered to connected (transient, ~2 seconds)
     if (_showReconnected) {
-      return Container(
+      return _banner(
+        context,
         key: const Key('reconnectedBanner'),
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: const Color(0xFF10B981).withValues(alpha: 0.18),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.check_circle_outline,
-              size: 18,
-              color: Color(0xFF10B981),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                l10n.sshStatusReconnected,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF10B981),
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+        color: context.vSuccess,
+        leading: Icon(
+          Icons.check_circle_outline,
+          size: 18,
+          color: context.vSuccess,
         ),
+        message: l10n.sshStatusReconnected,
       );
     }
 
     // 3. Not retryable (Host key changed)
     if (!state.retryable) {
-      return Container(
+      return _banner(
+        context,
         key: const Key('hostKeyChangedBanner'),
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: context.colorScheme.errorContainer.withValues(alpha: 0.7),
-        child: Row(
-          children: [
-            Icon(
-              Icons.gpp_bad_outlined,
-              size: 18,
-              color: context.colorScheme.error,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                l10n.sshStatusHostKeyChanged,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: context.colorScheme.onErrorContainer,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
+        color: context.vDanger,
+        leading: Icon(Icons.gpp_bad_outlined, size: 18, color: context.vDanger),
+        message: l10n.sshStatusHostKeyChanged,
       );
     }
 
@@ -206,35 +155,69 @@ class _ConnectionStatusBannerState
     // 「用户主动断开」。少了这个判断，冷启动第一帧就会挂一条「已断开」，
     // 用户什么都没做却被告知断开。
     if (!controller.userIntent && controller.hasEverStarted) {
-      return Container(
+      return _banner(
+        context,
         key: const Key('disconnectedManualBanner'),
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: context.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.5,
+        color: context.colorScheme.outline,
+        leading: Icon(
+          Icons.link_off,
+          size: 18,
+          color: context.colorScheme.outline,
         ),
-        child: Row(
-          children: [
-            Icon(Icons.link_off, size: 18, color: context.colorScheme.outline),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                l10n.sshStatusDisconnectedManual,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: context.colorScheme.outline,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
+        message: l10n.sshStatusDisconnectedManual,
       );
     }
 
     // 5. Otherwise, do not display
     return const SizedBox.shrink();
+  }
+
+  /// 细长状态横幅: 语义色 12% 染色底 + 1px 描边 + VRadius.input 圆角,
+  /// 出现时做一次性 Entrance (fade + slide), 尊重"减少动态效果"。
+  Widget _banner(
+    BuildContext context, {
+    required Key key,
+    required Color color,
+    required Widget leading,
+    required String message,
+    Widget? trailing,
+  }) {
+    return Entrance(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        child: Container(
+          key: key,
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(VRadius.input),
+            border: Border.all(color: color.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            children: [
+              leading,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 8),
+                trailing,
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -295,10 +278,10 @@ class _BannerCountdownState extends State<_BannerCountdown> {
     if (_remainingSeconds <= 0) return const SizedBox.shrink();
     return Text(
       '(${_remainingSeconds}s)',
-      style: const TextStyle(
+      style: monoTextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w500,
-        color: Colors.amber,
+        color: context.vWarning,
       ),
     );
   }

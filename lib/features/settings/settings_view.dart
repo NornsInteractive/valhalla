@@ -1,6 +1,8 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/auto_connect_provider.dart';
 import '../../core/providers/reconnect_provider.dart';
@@ -24,81 +26,142 @@ class SettingsView extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildSectionTitle(
-          context,
-          context.l10n.settingsAppearance,
-          Icons.palette,
+        Entrance(
+          index: 0,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(
+                context,
+                context.l10n.settingsAppearance,
+                Icons.palette,
+              ),
+              _buildThemeModeCard(context, settings, notifier),
+              const SizedBox(height: 12),
+              _buildAccentColorCard(context, settings, notifier),
+            ],
+          ),
         ),
-        _buildThemeModeCard(context, settings, notifier),
-        const SizedBox(height: 12),
-        _buildAccentColorCard(context, settings, notifier),
         const SizedBox(height: 24),
 
-        _buildSectionTitle(
-          context,
-          context.l10n.settingsLanguage,
-          Icons.translate,
+        Entrance(
+          index: 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(
+                context,
+                context.l10n.settingsLanguage,
+                Icons.translate,
+              ),
+              _buildLanguageCard(context, settings, notifier),
+            ],
+          ),
         ),
-        _buildLanguageCard(context, settings, notifier),
         const SizedBox(height: 24),
 
-        _buildSectionTitle(
-          context,
-          context.l10n.settingsAiOps,
-          Icons.psychology,
+        Entrance(
+          index: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(
+                context,
+                context.l10n.settingsAiOps,
+                Icons.psychology,
+              ),
+              _buildAiOpsCard(context, settings, notifier),
+            ],
+          ),
         ),
-        _buildAiOpsCard(context, settings, notifier),
         const SizedBox(height: 24),
 
-        _buildSectionTitle(
-          context,
-          context.l10n.settingsSecurity,
-          Icons.security,
+        Entrance(
+          index: 3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(
+                context,
+                context.l10n.settingsSecurity,
+                Icons.security,
+              ),
+              _buildSecurityCard(context, ref),
+            ],
+          ),
         ),
-        _buildSecurityCard(context, ref),
         const SizedBox(height: 24),
 
-        _buildSectionTitle(
-          context,
-          context.l10n.settingsAutoConnect,
-          Icons.power_settings_new,
+        Entrance(
+          index: 4,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(
+                context,
+                context.l10n.settingsAutoConnect,
+                Icons.power_settings_new,
+              ),
+              const _AutoConnectCard(),
+            ],
+          ),
         ),
-        const _AutoConnectCard(),
         const SizedBox(height: 24),
 
-        _buildSectionTitle(
-          context,
-          context.l10n.settingsNavigation,
-          Icons.navigation_outlined,
+        Entrance(
+          index: 5,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(
+                context,
+                context.l10n.settingsNavigation,
+                Icons.navigation_outlined,
+              ),
+              _buildNavigationCard(context, settings, notifier),
+            ],
+          ),
         ),
-        _buildNavigationCard(context, settings, notifier),
         const SizedBox(height: 24),
 
-        _buildSectionTitle(
-          context,
-          context.l10n.settingsDiagnostics,
-          Icons.bug_report_outlined,
+        Entrance(
+          index: 6,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(
+                context,
+                context.l10n.settingsDiagnostics,
+                Icons.bug_report_outlined,
+              ),
+              _buildDiagnosticsCard(context, ref),
+            ],
+          ),
         ),
-        _buildDiagnosticsCard(context, ref),
         const SizedBox(height: 32),
 
-        Center(
-          child: OutlinedButton.icon(
-            icon: const Icon(Icons.restart_alt, size: 16),
-            label: Text(context.l10n.settingsResetDefault),
-            onPressed: () {
-              notifier.resetDefaults();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(context.l10n.settingsResetSuccess)),
-              );
-            },
+        Entrance(
+          index: 7,
+          child: Center(
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.restart_alt, size: 16),
+              label: Text(context.l10n.settingsResetDefault),
+              onPressed: () {
+                notifier.resetDefaults();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(context.l10n.settingsResetSuccess)),
+                );
+              },
+            ),
           ),
         ),
         const SizedBox(height: 16),
         Center(
           child: Text(
             'Valhalla v1.0.0-stable · Antigravity AI',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            style: context.textTheme.bodySmall?.copyWith(
+              color: context.colorScheme.outline,
+            ),
           ),
         ),
       ],
@@ -111,11 +174,6 @@ class SettingsView extends ConsumerWidget {
 
     return Card(
       key: const Key('settings_diagnostics_card'),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: theme.colorScheme.outlineVariant),
-      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -135,18 +193,12 @@ class SettingsView extends ConsumerWidget {
                     children: [
                       Text(
                         context.l10n.settingsDiagnostics,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: context.textTheme.titleSmall,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         context.l10n.settingsDiagnosticsDesc,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                        style: context.textTheme.bodySmall,
                       ),
                     ],
                   ),
@@ -178,7 +230,7 @@ class SettingsView extends ConsumerWidget {
                             content: Text(
                               context.l10n.diagnosticsExportSuccess(path),
                             ),
-                            backgroundColor: const Color(0xFF10B981),
+                            backgroundColor: context.vSuccess,
                           ),
                         );
                       }
@@ -209,9 +261,13 @@ class SettingsView extends ConsumerWidget {
         children: [
           Icon(icon, size: 18, color: context.colorScheme.primary),
           const SizedBox(width: 8),
-          Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          Expanded(
+            child: Text(
+              title,
+              style: context.textTheme.titleMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -447,7 +503,7 @@ class SettingsView extends ConsumerWidget {
         const SizedBox(width: 3),
         Text(
           '$label: $hexText',
-          style: const TextStyle(fontSize: 10, fontFamily: 'JetBrains Mono'),
+          style: monoTextStyle(fontSize: 10, fontWeight: FontWeight.w400),
         ),
       ],
     );
@@ -636,7 +692,7 @@ class SettingsView extends ConsumerWidget {
               'Agent Client Protocol v1.0 (stdio over SSH)',
               style: TextStyle(fontSize: 11),
             ),
-            trailing: const Icon(Icons.check, color: Color(0xFF10B981)),
+            trailing: Icon(Icons.check, color: context.vSuccess),
           ),
         ],
       ),
@@ -714,13 +770,13 @@ class SettingsView extends ConsumerWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      color: context.vSuccess.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(VRadius.input),
                     ),
                     child: Text(
                       '$count',
-                      style: const TextStyle(
-                        color: Color(0xFF10B981),
+                      style: TextStyle(
+                        color: context.vSuccess,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
@@ -785,7 +841,7 @@ class SettingsView extends ConsumerWidget {
               '清除平台安全存储中的私钥与会话密码',
               style: TextStyle(fontSize: 11),
             ),
-            trailing: const Icon(Icons.delete_outline, color: Colors.red),
+            trailing: Icon(Icons.delete_outline, color: context.vDanger),
             onTap: () {},
           ),
         ],

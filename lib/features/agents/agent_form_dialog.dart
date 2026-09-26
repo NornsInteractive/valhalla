@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/constants/layout_breakpoints.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/agent_registry_provider.dart';
 import '../../core/providers/infrastructure_providers.dart';
@@ -366,7 +368,6 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
             child: Text(
               title,
               style: context.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
                 color: context.colorScheme.primary,
               ),
               overflow: TextOverflow.ellipsis,
@@ -392,12 +393,12 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
           child: FilledButton(
             onPressed: _isSaving ? null : _handleSave,
             child: _isSaving
-                ? const SizedBox(
+                ? SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: context.colorScheme.onPrimary,
                     ),
                   )
                 : Text(
@@ -419,45 +420,54 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
         children: [
           // Group 1: Preset selector (only for new agents)
           if (!_isEditing) ...[
-            _buildSectionHeader(
-              context,
-              context.l10n.agentPresetTitle,
-              Icons.auto_awesome_outlined,
+            Entrance(
+              index: 0,
+              child: _buildSectionHeader(
+                context,
+                context.l10n.agentPresetTitle,
+                Icons.auto_awesome_outlined,
+              ),
             ),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                _buildPresetChoice(
-                  AgentPresetType.claudeCode,
-                  context.l10n.agentPresetClaudeCode,
-                ),
-                _buildPresetChoice(
-                  AgentPresetType.codex,
-                  context.l10n.agentPresetCodex,
-                ),
-                _buildPresetChoice(
-                  AgentPresetType.openCode,
-                  context.l10n.agentPresetOpenCode,
-                ),
-                _buildPresetChoice(
-                  AgentPresetType.agy,
-                  context.l10n.agentPresetAgy,
-                ),
-                _buildPresetChoice(
-                  AgentPresetType.custom,
-                  context.l10n.agentPresetCustom,
-                ),
-              ],
+            Entrance(
+              index: 0,
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _buildPresetChoice(
+                    AgentPresetType.claudeCode,
+                    context.l10n.agentPresetClaudeCode,
+                  ),
+                  _buildPresetChoice(
+                    AgentPresetType.codex,
+                    context.l10n.agentPresetCodex,
+                  ),
+                  _buildPresetChoice(
+                    AgentPresetType.openCode,
+                    context.l10n.agentPresetOpenCode,
+                  ),
+                  _buildPresetChoice(
+                    AgentPresetType.agy,
+                    context.l10n.agentPresetAgy,
+                  ),
+                  _buildPresetChoice(
+                    AgentPresetType.custom,
+                    context.l10n.agentPresetCustom,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 10),
           ],
 
           // Group 2: Basic info
-          _buildSectionHeader(
-            context,
-            context.l10n.agentGroupBasic,
-            Icons.badge_outlined,
+          Entrance(
+            index: 1,
+            child: _buildSectionHeader(
+              context,
+              context.l10n.agentGroupBasic,
+              Icons.badge_outlined,
+            ),
           ),
           TextFormField(
             controller: _nameController,
@@ -465,7 +475,9 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
               labelText: '${context.l10n.agentNameLabel} *',
               hintText: context.l10n.agentNameHint,
               prefixIcon: const Icon(Icons.badge_outlined, size: 18),
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
             ),
             validator: (val) {
               if (val == null || val.trim().isEmpty) {
@@ -481,16 +493,21 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
               labelText: context.l10n.agentDescriptionLabel,
               hintText: context.l10n.agentDescriptionHint,
               prefixIcon: const Icon(Icons.description_outlined, size: 18),
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
             ),
           ),
           const SizedBox(height: 10),
 
           // Group: Execution Target (host vs docker)
-          _buildSectionHeader(
-            context,
-            context.l10n.agentExecutionTarget,
-            Icons.dns_outlined,
+          Entrance(
+            index: 2,
+            child: _buildSectionHeader(
+              context,
+              context.l10n.agentExecutionTarget,
+              Icons.dns_outlined,
+            ),
           ),
           SegmentedButton<String>(
             segments: [
@@ -535,7 +552,7 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
             const SizedBox(height: 12),
             Text(
               context.l10n.agentContainerBinding,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              style: context.textTheme.titleSmall,
             ),
             const SizedBox(height: 6),
             SegmentedButton<String>(
@@ -595,8 +612,7 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                     Text(
                       context.l10n.agentLoadingContainers,
                       key: const Key('agent_loading_containers'),
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: context.textTheme.bodySmall?.copyWith(
                         color: context.colorScheme.outline,
                       ),
                     ),
@@ -608,24 +624,25 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                 key: const Key('agent_containers_error'),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                  color: context.vDanger.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(VRadius.input),
+                  border: Border.all(
+                    color: context.vDanger.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 16,
-                      color: Colors.red,
-                    ),
+                    Icon(Icons.error_outline, size: 16, color: context.vDanger),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         context.l10n.agentContainersLoadFailed(
                           _containersError!,
                         ),
-                        style: const TextStyle(fontSize: 11, color: Colors.red),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: context.vDanger,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -660,7 +677,9 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                         decoration: InputDecoration(
                           labelText: context.l10n.agentContainerReferenceHint,
                           isDense: true,
-                          border: const OutlineInputBorder(),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(VRadius.input),
+                          ),
                           prefixIcon: const Icon(Icons.layers, size: 18),
                         ),
                         initialValue:
@@ -695,9 +714,9 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                             value: val,
                             child: Text(
                               display,
-                              style: const TextStyle(
-                                fontFamily: 'JetBrains Mono',
+                              style: monoTextStyle(
                                 fontSize: 12,
+                                fontWeight: FontWeight.w400,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -735,9 +754,11 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                 labelText: '${context.l10n.agentContainerReference} *',
                 hintText: context.l10n.agentContainerReferenceHint,
                 prefixIcon: const Icon(Icons.pin, size: 18),
-                border: const OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(VRadius.input),
+                ),
               ),
-              style: const TextStyle(fontFamily: 'JetBrains Mono'),
+              style: monoTextStyle(fontSize: 13, fontWeight: FontWeight.w400),
               onChanged: (val) {
                 _containerRefDebounce?.cancel();
                 final trimmed = val.trim();
@@ -806,10 +827,10 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                                       .agentContainerUsersFailed(
                                         _containerUsersError!,
                                       ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.error_outline,
                                     size: 18,
-                                    color: Colors.red,
+                                    color: context.vDanger,
                                   ),
                                 )
                               : null),
@@ -818,12 +839,14 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                             _containerUsersError!,
                           )
                         : null,
-                    helperStyle: const TextStyle(
-                      color: Colors.red,
+                    helperStyle: TextStyle(
+                      color: context.vDanger,
                       fontSize: 11,
                     ),
                     helperMaxLines: 2,
-                    border: const OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(VRadius.input),
+                    ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 10,
                       vertical: 12,
@@ -847,9 +870,9 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                           value: u.executionValue,
                           child: Text(
                             '${u.name} · UID ${u.uid} · GID ${u.gid}',
-                            style: const TextStyle(
-                              fontFamily: 'JetBrains Mono',
+                            style: monoTextStyle(
                               fontSize: 12,
+                              fontWeight: FontWeight.w400,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -881,13 +904,15 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                     helperText: context.l10n.agentContainerUserHelper,
                     helperMaxLines: 2,
                     prefixIcon: const Icon(Icons.person_outline, size: 18),
-                    border: const OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(VRadius.input),
+                    ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 10,
                       vertical: 12,
                     ),
                   ),
-                  style: const TextStyle(fontFamily: 'JetBrains Mono'),
+                  style: monoTextStyle(fontSize: 13, fontWeight: FontWeight.w400),
                 );
 
                 if (isNarrow) {
@@ -917,10 +942,13 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
           const SizedBox(height: 10),
 
           // Group 3: Commands
-          _buildSectionHeader(
-            context,
-            context.l10n.agentGroupCommands,
-            Icons.terminal_outlined,
+          Entrance(
+            index: 3,
+            child: _buildSectionHeader(
+              context,
+              context.l10n.agentGroupCommands,
+              Icons.terminal_outlined,
+            ),
           ),
           TextFormField(
             controller: _cliController,
@@ -930,9 +958,11 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
               labelText: '${context.l10n.agentCliCommandLabel} *',
               hintText: context.l10n.agentCliCommandHint,
               prefixIcon: const Icon(Icons.terminal, size: 18),
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
             ),
-            style: const TextStyle(fontFamily: 'JetBrains Mono'),
+            style: monoTextStyle(fontSize: 13, fontWeight: FontWeight.w400),
             validator: (val) {
               if (val == null || val.trim().isEmpty) {
                 return context.l10n.agentCliRequired;
@@ -950,17 +980,22 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
               hintText: context.l10n.agentAcpCommandHint,
               helperText: context.l10n.agentAcpOptional,
               prefixIcon: const Icon(Icons.cable, size: 18),
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
             ),
-            style: const TextStyle(fontFamily: 'JetBrains Mono'),
+            style: monoTextStyle(fontSize: 13, fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 10),
 
           // Group 4: Install & Login
-          _buildSectionHeader(
-            context,
-            context.l10n.agentGroupAuth,
-            Icons.verified_user_outlined,
+          Entrance(
+            index: 4,
+            child: _buildSectionHeader(
+              context,
+              context.l10n.agentGroupAuth,
+              Icons.verified_user_outlined,
+            ),
           ),
           TextFormField(
             controller: _installController,
@@ -970,9 +1005,11 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
               labelText: context.l10n.agentInstallCommandLabel,
               hintText: context.l10n.agentInstallCommandHint,
               prefixIcon: const Icon(Icons.download_outlined, size: 18),
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
             ),
-            style: const TextStyle(fontFamily: 'JetBrains Mono'),
+            style: monoTextStyle(fontSize: 13, fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -986,9 +1023,11 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                 Icons.download_for_offline_outlined,
                 size: 18,
               ),
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
             ),
-            style: const TextStyle(fontFamily: 'JetBrains Mono'),
+            style: monoTextStyle(fontSize: 13, fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -999,9 +1038,11 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
               labelText: context.l10n.agentLoginCheckCommandLabel,
               hintText: context.l10n.agentLoginCheckCommandHint,
               prefixIcon: const Icon(Icons.fact_check_outlined, size: 18),
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
             ),
-            style: const TextStyle(fontFamily: 'JetBrains Mono'),
+            style: monoTextStyle(fontSize: 13, fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -1012,9 +1053,11 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
               labelText: context.l10n.agentLoginCommandLabel,
               hintText: context.l10n.agentLoginCommandHint,
               prefixIcon: const Icon(Icons.login_outlined, size: 18),
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
             ),
-            style: const TextStyle(fontFamily: 'JetBrains Mono'),
+            style: monoTextStyle(fontSize: 13, fontWeight: FontWeight.w400),
           ),
         ],
       ),
@@ -1094,10 +1137,7 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                   Expanded(
                     child: Text(
                       dialogTitle,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: context.textTheme.titleMedium,
                     ),
                   ),
                   IconButton(

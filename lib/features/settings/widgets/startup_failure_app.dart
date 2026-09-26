@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/logging/sanitizer.dart';
 import '../../../core/services/app_diagnostics.dart';
@@ -22,15 +23,21 @@ class StartupFailureApp extends StatefulWidget {
 class _StartupFailureAppState extends State<StartupFailureApp> {
   @override
   Widget build(BuildContext context) {
+    // 独立主题: 正常主题系统可能尚未初始化 (启动失败场景), 只能本地种子生成,
+    // 但表面/圆角/语义色全部走 ColorScheme, 不再硬编码。
+    final scheme = ColorScheme.fromSeed(
+      seedColor: Colors.deepPurple,
+      brightness: Brightness.dark,
+    );
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.dark,
-        colorSchemeSeed: Colors.deepPurple,
-        scaffoldBackgroundColor: const Color(0xFF0F141C),
+        colorScheme: scheme,
+        scaffoldBackgroundColor: scheme.surface,
       ),
       home: _StartupFailureScreen(
         retry: widget.retry,
@@ -90,7 +97,7 @@ class _StartupFailureScreenState extends State<_StartupFailureScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(context.l10n.diagnosticsExportSuccess(path)),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: context.vSuccess,
           ),
         );
       }
@@ -147,9 +154,7 @@ class _StartupFailureScreenState extends State<_StartupFailureScreen> {
                   // Title
                   Text(
                     context.l10n.startupFailed,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: theme.textTheme.headlineSmall,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 10),
@@ -172,7 +177,7 @@ class _StartupFailureScreenState extends State<_StartupFailureScreen> {
                         color: theme.colorScheme.errorContainer.withValues(
                           alpha: 0.4,
                         ),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(VRadius.input),
                         border: Border.all(
                           color: theme.colorScheme.error.withValues(alpha: 0.5),
                         ),
@@ -209,7 +214,7 @@ class _StartupFailureScreenState extends State<_StartupFailureScreen> {
                         color: theme.colorScheme.errorContainer.withValues(
                           alpha: 0.4,
                         ),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(VRadius.input),
                       ),
                       child: Text(
                         _retryError!,
@@ -228,12 +233,12 @@ class _StartupFailureScreenState extends State<_StartupFailureScreen> {
                     key: const Key('startup_retry_button'),
                     onPressed: _isRetrying ? null : _handleRetry,
                     icon: _isRetrying
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: theme.colorScheme.onPrimary,
                             ),
                           )
                         : const Icon(Icons.refresh, size: 18),

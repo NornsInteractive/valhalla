@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/layout_breakpoints.dart';
+import '../../../core/design/tokens.dart';
+import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/nas_install_provider.dart';
 import '../../../core/providers/server_provider.dart';
 import '../../../core/services/nas_install_service.dart';
@@ -253,9 +255,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
                       task != null
                           ? context.nasInstallTaskTitle
                           : context.nasInstallTitle,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: theme.textTheme.titleMedium,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -300,7 +300,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.errorContainer,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(VRadius.input),
                   ),
                   child: Row(
                     children: [
@@ -496,7 +496,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
         // Product Selection
         Text(
           context.nasInstallProduct,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: context.textTheme.titleSmall,
         ),
         const SizedBox(height: 8),
         SegmentedButton<NasInstallProduct>(
@@ -527,7 +527,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
         // Target Server
         Text(
           context.nasSshServer,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: context.textTheme.titleSmall,
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
@@ -699,16 +699,14 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
               plan.canInstall
                   ? Icons.verified_outlined
                   : Icons.warning_amber_rounded,
-              color: plan.canInstall ? const Color(0xFF10B981) : Colors.orange,
+              color: plan.canInstall ? context.vSuccess : context.vWarning,
               size: 20,
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 context.nasInstallPlanTitle,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: theme.textTheme.titleSmall,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -720,9 +718,8 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
         if (plan.blockers.isNotEmpty) ...[
           Text(
             context.nasInstallBlockersTitle,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.redAccent,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: context.vDanger,
             ),
           ),
           const SizedBox(height: 6),
@@ -730,7 +727,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: theme.colorScheme.errorContainer.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(VRadius.input),
               border: Border.all(color: theme.colorScheme.error),
             ),
             child: Column(
@@ -740,10 +737,10 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.cancel,
                         size: 14,
-                        color: Colors.redAccent,
+                        color: context.vDanger,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -769,7 +766,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(VRadius.input),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -817,7 +814,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
         // Technical Compose Preview Box
         Text(
           context.nasInstallComposePreview,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          style: theme.textTheme.titleSmall,
         ),
         const SizedBox(height: 6),
         Container(
@@ -826,16 +823,16 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
           height: 150,
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.black87,
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFF0F141C),
+            borderRadius: BorderRadius.circular(VRadius.input),
           ),
           child: SingleChildScrollView(
             child: Text(
               plan.composePreview,
-              style: const TextStyle(
-                color: Color(0xFF6EE7B7),
-                fontFamily: 'JetBrains Mono',
+              style: monoTextStyle(
                 fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: VColors.successDark,
               ),
             ),
           ),
@@ -845,7 +842,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
         // Steps
         Text(
           context.nasInstallPlannedSteps,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          style: theme.textTheme.titleSmall,
         ),
         const SizedBox(height: 6),
         ...plan.steps.map((st) {
@@ -875,7 +872,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
           const SizedBox(height: 12),
           Text(
             context.nasInstallGuidanceNotes,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            style: theme.textTheme.titleSmall,
           ),
           const SizedBox(height: 6),
           ...plan.guidance.map((g) {
@@ -888,19 +885,23 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
                     isUrl ? Icons.link : Icons.info_outline,
                     size: 14,
                     color: isUrl
-                        ? Colors.blueAccent
+                        ? context.vInfo
                         : theme.colorScheme.secondary,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       isUrl ? g : context.nasInstallGuidanceText(g),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isUrl
-                            ? Colors.blueAccent
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
+                      style: isUrl
+                          ? monoTextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                              color: context.vInfo,
+                            )
+                          : TextStyle(
+                              fontSize: 11,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                     ),
                   ),
                 ],
@@ -930,14 +931,14 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isSuccess
-                ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                ? context.vSuccess.withValues(alpha: 0.15)
                 : (isFailed
                       ? theme.colorScheme.errorContainer.withValues(alpha: 0.3)
                       : theme.colorScheme.surfaceContainerHighest),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(VRadius.input),
             border: Border.all(
               color: isSuccess
-                  ? const Color(0xFF10B981)
+                  ? context.vSuccess
                   : (isFailed
                         ? theme.colorScheme.error
                         : theme.colorScheme.outlineVariant),
@@ -955,9 +956,9 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
                       child: CircularProgressIndicator(strokeWidth: 2.5),
                     )
                   else if (isSuccess)
-                    const Icon(
+                    Icon(
                       Icons.check_circle,
-                      color: Color(0xFF10B981),
+                      color: context.vSuccess,
                       size: 20,
                     )
                   else if (isFailed)
@@ -972,9 +973,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
                   Expanded(
                     child: Text(
                       stageText,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: theme.textTheme.titleSmall,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -982,8 +981,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
                     context.nasInstallElapsedTime(
                       _formatDuration(task.elapsed),
                     ),
-                    style: const TextStyle(
-                      fontFamily: 'JetBrains Mono',
+                    style: monoTextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1009,7 +1007,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: theme.colorScheme.errorContainer,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(VRadius.input),
             ),
             child: Row(
               children: [
@@ -1057,7 +1055,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(VRadius.input),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1091,7 +1089,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
           children: [
             Text(
               context.nasInstallLogTail,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              style: theme.textTheme.titleSmall,
             ),
           ],
         ),
@@ -1102,7 +1100,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: const Color(0xFF0F141C),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(VRadius.input),
           ),
           child: SingleChildScrollView(
             reverse: true,
@@ -1110,12 +1108,11 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
               task.logTail.isEmpty
                   ? '(${context.nasInstallNoLogsYet})'
                   : task.logTail,
-              style: const TextStyle(
-                fontFamily: 'JetBrains Mono',
+              style: monoTextStyle(
                 fontSize: 11,
-                height: 1.4,
-                color: Color(0xFFE2E8F0),
-              ),
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFFE2E8F0),
+              ).copyWith(height: 1.4),
             ),
           ),
         ),
@@ -1133,16 +1130,18 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
             constraints: const BoxConstraints(minWidth: 80, maxWidth: 120),
             child: Text(
               label,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              style: context.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: monoTextStyle(
                 fontSize: 11,
-                fontFamily: 'JetBrains Mono',
+                fontWeight: FontWeight.w400,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 2,

@@ -3,6 +3,8 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/terminal_url_provider.dart';
 import '../../infrastructure/terminal/terminal_session_bridge.dart';
@@ -172,13 +174,12 @@ class _InteractiveLoginDialogState
           children: [
             Text(
               '${context.l10n.agentLoginTerminalTitle} - ${widget.agentName}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: context.textTheme.titleMedium,
             ),
             const SizedBox(height: 2),
             Text(
               context.l10n.agentLoginTerminalSubtitle,
-              style: TextStyle(
-                fontSize: 11,
+              style: context.textTheme.labelSmall?.copyWith(
                 color: context.colorScheme.outline,
               ),
               maxLines: 1,
@@ -231,37 +232,43 @@ class _InteractiveLoginDialogState
         children: [
           // Disconnected yellow warning banner
           if (isDisconnected)
-            Container(
-              color: Colors.amber.withValues(alpha: 0.15),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.warning_amber_rounded,
-                    color: Colors.amber,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      context.l10n.agentLoginTerminalDisconnected,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.amber,
+            Entrance(
+              index: 0,
+              child: Container(
+                color: context.vWarning.withValues(alpha: 0.12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: context.vWarning,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        context.l10n.agentLoginTerminalDisconnected,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: context.vWarning,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton.tonal(
-                    onPressed: _reconnect,
-                    style: FilledButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                    const SizedBox(width: 8),
+                    FilledButton.tonal(
+                      onPressed: _reconnect,
+                      style: FilledButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                      ),
+                      child: Text(context.l10n.agentLoginTerminalRetry),
                     ),
-                    child: Text(context.l10n.agentLoginTerminalRetry),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
@@ -303,7 +310,11 @@ class _InteractiveLoginDialogState
                                 bestUrl.url,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12),
+                                style: monoTextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                  color: context.colorScheme.onSurface,
+                                ),
                               ),
                             ),
                           ),
@@ -351,8 +362,7 @@ class _InteractiveLoginDialogState
                         Expanded(
                           child: Text(
                             context.l10n.agentLoginTerminalNoTtyHint,
-                            style: TextStyle(
-                              fontSize: 11,
+                            style: context.textTheme.labelSmall?.copyWith(
                               color: context.colorScheme.outline,
                             ),
                           ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../data/models/server_profile.dart';
 
@@ -21,113 +23,96 @@ Future<bool> showAgentCommandConfirmDialog({
       return AlertDialog(
         title: Row(
           children: [
-            const Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.amber,
-              size: 24,
-            ),
+            Icon(Icons.warning_amber_rounded, color: ctx.vWarning, size: 24),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            Expanded(child: Text(title, style: ctx.textTheme.titleMedium)),
           ],
         ),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Server info
-              Row(
-                children: [
-                  Text(
-                    '${ctx.l10n.targetServerLabel}: ',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      '${server.name} (${server.host}:${server.port})',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: ctx.colorScheme.primary,
-                        fontFamily: 'JetBrains Mono',
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Risk warning
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.amber.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        content: Entrance(
+          index: 0,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Server info
+                Row(
                   children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Colors.amber,
-                      size: 18,
+                    Text(
+                      '${ctx.l10n.targetServerLabel}: ',
+                      style: ctx.textTheme.titleSmall,
                     ),
-                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        ctx.l10n.agentCommandRiskWarning,
-                        style: const TextStyle(fontSize: 12),
+                        '${server.name} (${server.host}:${server.port})',
+                        style: monoTextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          color: ctx.colorScheme.primary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 14),
+                const SizedBox(height: 12),
 
-              // Command preview
-              Text(
-                ctx.l10n.commandPreviewLabel,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: SelectableText(
-                  command,
-                  style: const TextStyle(
-                    fontFamily: 'JetBrains Mono',
-                    fontSize: 12,
-                    color: Color(0xFF10B981),
+                // Risk warning
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: ctx.vWarning.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(VRadius.input),
+                    border: Border.all(
+                      color: ctx.vWarning.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline, color: ctx.vWarning, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          ctx.l10n.agentCommandRiskWarning,
+                          style: ctx.textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 14),
+
+                // Command preview
+                Text(
+                  ctx.l10n.commandPreviewLabel,
+                  style: ctx.textTheme.titleSmall,
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).brightness == Brightness.dark
+                        ? const Color(0xFF07080B)
+                        : const Color(0xFF1A1E26),
+                    borderRadius: BorderRadius.circular(VRadius.input),
+                  ),
+                  child: SelectableText(
+                    command,
+                    style: monoTextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: ctx.vSuccess,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -137,7 +122,7 @@ Future<bool> showAgentCommandConfirmDialog({
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFD97706),
+              backgroundColor: ctx.vWarning,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(ctx, true),

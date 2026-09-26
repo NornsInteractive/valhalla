@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/layout_breakpoints.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/infrastructure_providers.dart';
 import '../../core/providers/server_provider.dart';
@@ -74,7 +76,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
             content: Text(
               context.l10n.dockerActionSuccess(container.name, action),
             ),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: context.vSuccess,
           ),
         );
       } else {
@@ -84,7 +86,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
         scaffold.showSnackBar(
           SnackBar(
             content: Text(context.l10n.dockerActionFailed(err)),
-            backgroundColor: const Color(0xFFEF4444),
+            backgroundColor: context.vDanger,
           ),
         );
       }
@@ -97,7 +99,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
       scaffold.showSnackBar(
         SnackBar(
           content: Text(context.l10n.dockerActionFailed(e.toString())),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: context.vDanger,
         ),
       );
     }
@@ -115,7 +117,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
               Expanded(
                 child: Text(
                   '${context.l10n.dockerLogsTitle} - ${container.name}',
-                  style: const TextStyle(fontSize: 15),
+                  style: context.textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -170,9 +172,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
                         Expanded(
                           child: Text(
                             '${context.l10n.dockerInspectTitle}: ${container.name}',
-                            style: context.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: context.textTheme.titleMedium,
                           ),
                         ),
                         IconButton(
@@ -191,17 +191,18 @@ class _DockerViewState extends ConsumerState<DockerView> {
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF0F141C),
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(
+                                  VRadius.input,
+                                ),
                               ),
                               child: SingleChildScrollView(
                                 child: SelectableText(
                                   const JsonEncoder.withIndent(
                                     '  ',
                                   ).convert(snapshot.data ?? {}),
-                                  style: const TextStyle(
-                                    fontFamily: 'JetBrains Mono',
+                                  style: monoTextStyle(
                                     fontSize: 11,
-                                    color: Color(0xFF10B981),
+                                    color: context.vSuccess,
                                   ),
                                 ),
                               ),
@@ -231,7 +232,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.l10n.dockerTerminalNotRunning),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: context.vDanger,
         ),
       );
       return;
@@ -286,10 +287,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
               Expanded(
                 child: Text(
                   '${context.l10n.dockerTerminalTitle}: ${container.name}',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: context.textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -342,7 +340,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
                   Expanded(
                     child: ClipRRect(
                       borderRadius: const BorderRadius.vertical(
-                        bottom: Radius.circular(8),
+                        bottom: Radius.circular(VRadius.input),
                       ),
                       child: SharedTerminalCanvas(
                         terminal: bridge!.terminal,
@@ -369,7 +367,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
       scaffold.showSnackBar(
         SnackBar(
           content: Text(context.l10n.dockerActionFailed(e.toString())),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: context.vDanger,
         ),
       );
     } finally {
@@ -395,90 +393,96 @@ class _DockerViewState extends ConsumerState<DockerView> {
     return Scaffold(
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchCtrl,
-                    decoration: InputDecoration(
-                      hintText: context.l10n.dockerSearchHint,
-                      prefixIcon: const Icon(Icons.search, size: 20),
-                      suffixIcon: _searchCtrl.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, size: 18),
-                              onPressed: () {
-                                _searchCtrl.clear();
-                                ref
-                                    .read(dockerProvider.notifier)
-                                    .setSearchQuery('');
-                              },
-                            )
-                          : null,
-                      isDense: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+          Entrance(
+            index: 0,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchCtrl,
+                      decoration: InputDecoration(
+                        hintText: context.l10n.dockerSearchHint,
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        suffixIcon: _searchCtrl.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18),
+                                onPressed: () {
+                                  _searchCtrl.clear();
+                                  ref
+                                      .read(dockerProvider.notifier)
+                                      .setSearchQuery('');
+                                },
+                              )
+                            : null,
+                        isDense: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(VRadius.input),
+                        ),
                       ),
+                      onChanged: (val) {
+                        ref.read(dockerProvider.notifier).setSearchQuery(val);
+                        setState(() {});
+                      },
                     ),
-                    onChanged: (val) {
-                      ref.read(dockerProvider.notifier).setSearchQuery(val);
-                      setState(() {});
-                    },
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: context.l10n.sftpRefresh,
-                  onPressed: dockerState.isLoading
-                      ? null
-                      : () => ref.read(dockerProvider.notifier).refresh(),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    tooltip: context.l10n.sftpRefresh,
+                    onPressed: dockerState.isLoading
+                        ? null
+                        : () => ref.read(dockerProvider.notifier).refresh(),
+                  ),
+                ],
+              ),
             ),
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                FilterChip(
-                  label: Text(context.l10n.dockerFilterAll),
-                  selected: dockerState.filterState == null,
-                  onSelected: (_) =>
-                      ref.read(dockerProvider.notifier).setFilterState(null),
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: Text(context.l10n.dockerFilterRunning),
-                  selected:
-                      dockerState.filterState == DockerContainerState.running,
-                  onSelected: (val) => ref
-                      .read(dockerProvider.notifier)
-                      .setFilterState(
-                        val ? DockerContainerState.running : null,
-                      ),
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: Text(context.l10n.dockerFilterExited),
-                  selected:
-                      dockerState.filterState == DockerContainerState.exited,
-                  onSelected: (val) => ref
-                      .read(dockerProvider.notifier)
-                      .setFilterState(val ? DockerContainerState.exited : null),
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: Text(context.l10n.dockerFilterPaused),
-                  selected:
-                      dockerState.filterState == DockerContainerState.paused,
-                  onSelected: (val) => ref
-                      .read(dockerProvider.notifier)
-                      .setFilterState(val ? DockerContainerState.paused : null),
-                ),
-              ],
+          Entrance(
+            index: 1,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  FilterChip(
+                    label: Text(context.l10n.dockerFilterAll),
+                    selected: dockerState.filterState == null,
+                    onSelected: (_) =>
+                        ref.read(dockerProvider.notifier).setFilterState(null),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: Text(context.l10n.dockerFilterRunning),
+                    selected:
+                        dockerState.filterState == DockerContainerState.running,
+                    onSelected: (val) => ref
+                        .read(dockerProvider.notifier)
+                        .setFilterState(
+                          val ? DockerContainerState.running : null,
+                        ),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: Text(context.l10n.dockerFilterExited),
+                    selected:
+                        dockerState.filterState == DockerContainerState.exited,
+                    onSelected: (val) => ref
+                        .read(dockerProvider.notifier)
+                        .setFilterState(val ? DockerContainerState.exited : null),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: Text(context.l10n.dockerFilterPaused),
+                    selected:
+                        dockerState.filterState == DockerContainerState.paused,
+                    onSelected: (val) => ref
+                        .read(dockerProvider.notifier)
+                        .setFilterState(val ? DockerContainerState.paused : null),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -615,9 +619,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
                         Flexible(
                           child: Text(
                             container.name,
-                            style: context.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: context.textTheme.titleSmall,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -686,17 +688,16 @@ class _DockerViewState extends ConsumerState<DockerView> {
                                     : context.colorScheme.outlineVariant
                                           .withValues(alpha: 0.5),
                               ),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(VRadius.input),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   containerShell.toUpperCase(),
-                                  style: TextStyle(
-                                    fontFamily: 'JetBrains Mono',
+                                  style: monoTextStyle(
                                     fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w700,
                                     color:
                                         container.state ==
                                             DockerContainerState.running
@@ -722,9 +723,9 @@ class _DockerViewState extends ConsumerState<DockerView> {
                     const SizedBox(height: 2),
                     Text(
                       shortId,
-                      style: TextStyle(
-                        fontFamily: 'JetBrains Mono',
+                      style: monoTextStyle(
                         fontSize: 11,
+                        fontWeight: FontWeight.w400,
                         color: context.colorScheme.outline,
                       ),
                     ),
@@ -749,9 +750,9 @@ class _DockerViewState extends ConsumerState<DockerView> {
               Expanded(
                 child: Text(
                   container.image,
-                  style: TextStyle(
-                    fontFamily: 'JetBrains Mono',
+                  style: monoTextStyle(
                     fontSize: 12,
+                    fontWeight: FontWeight.w400,
                     color: context.colorScheme.onSurfaceVariant,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -772,9 +773,9 @@ class _DockerViewState extends ConsumerState<DockerView> {
                 Expanded(
                   child: Text(
                     container.ports,
-                    style: TextStyle(
-                      fontFamily: 'JetBrains Mono',
+                    style: monoTextStyle(
                       fontSize: 11,
+                      fontWeight: FontWeight.w400,
                       color: context.colorScheme.outline,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -851,20 +852,20 @@ class _DockerViewState extends ConsumerState<DockerView> {
                 if (container.state != DockerContainerState.running)
                   IconButton(
                     icon: pendingAction == 'start'
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF10B981),
+                                context.vSuccess,
                               ),
                             ),
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.play_arrow_rounded,
                             size: 20,
-                            color: Color(0xFF10B981),
+                            color: context.vSuccess,
                           ),
                     tooltip: context.l10n.dockerActionStart,
                     onPressed: isContainerBusy
@@ -874,20 +875,20 @@ class _DockerViewState extends ConsumerState<DockerView> {
                 else ...[
                   IconButton(
                     icon: pendingAction == 'stop'
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFFF59E0B),
+                                context.vWarning,
                               ),
                             ),
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.stop_rounded,
                             size: 20,
-                            color: Color(0xFFF59E0B),
+                            color: context.vWarning,
                           ),
                     tooltip: context.l10n.dockerActionStop,
                     onPressed: isContainerBusy
@@ -896,20 +897,20 @@ class _DockerViewState extends ConsumerState<DockerView> {
                   ),
                   IconButton(
                     icon: pendingAction == 'restart'
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF0EA5E9),
+                                context.vInfo,
                               ),
                             ),
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.replay_rounded,
                             size: 18,
-                            color: Color(0xFF0EA5E9),
+                            color: context.vInfo,
                           ),
                     tooltip: context.l10n.dockerActionRestart,
                     onPressed: isContainerBusy
@@ -919,20 +920,20 @@ class _DockerViewState extends ConsumerState<DockerView> {
                 ],
                 IconButton(
                   icon: pendingAction == 'rm'
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Color(0xFFEF4444),
+                              context.vDanger,
                             ),
                           ),
                         )
-                      : const Icon(
+                      : Icon(
                           Icons.delete_outline_rounded,
                           size: 18,
-                          color: Color(0xFFEF4444),
+                          color: context.vDanger,
                         ),
                   tooltip: context.l10n.dockerActionRm,
                   onPressed: isContainerBusy
@@ -1060,7 +1061,13 @@ class _DockerLogsDialogContentState extends State<DockerLogsDialogContent> {
   @override
   Widget build(BuildContext context) {
     if (_loading && _logs.isEmpty && _error == null) {
-      return const LoadingStateView();
+      // 日志对话框的加载态保留转圈 (测试契约: CircularProgressIndicator)。
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(strokeWidth: 2.5),
+        ),
+      );
     }
     if (_error != null && _logs.isEmpty) {
       return ErrorStateView(message: _error.toString());
@@ -1070,7 +1077,7 @@ class _DockerLogsDialogContentState extends State<DockerLogsDialogContent> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFF0F141C),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(VRadius.input),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1091,10 +1098,9 @@ class _DockerLogsDialogContentState extends State<DockerLogsDialogContent> {
               reverse: true,
               child: SelectableText(
                 _logs.isEmpty ? context.l10n.dockerNoLogs : _logs,
-                style: const TextStyle(
-                  fontFamily: 'JetBrains Mono',
+                style: monoTextStyle(
                   fontSize: 11,
-                  color: Color(0xFFE2E8F0),
+                  color: const Color(0xFFE2E8F0),
                 ),
               ),
             ),

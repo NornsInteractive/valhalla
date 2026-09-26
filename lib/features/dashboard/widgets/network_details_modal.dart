@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/layout_breakpoints.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../infrastructure/system/system_metrics_sampler.dart';
 import '../../../widgets/state_views.dart';
@@ -193,10 +194,10 @@ class NetworkDetailsModal extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.arrow_downward_rounded,
                                 size: 14,
-                                color: Color(0xFF10B981),
+                                color: context.vSuccess,
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -242,10 +243,10 @@ class NetworkDetailsModal extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.arrow_upward_rounded,
                                 size: 14,
-                                color: Color(0xFF3B82F6),
+                                color: context.vInfo,
                               ),
                               const SizedBox(width: 4),
                               Text(

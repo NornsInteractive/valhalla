@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/design/motion.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/agent_registry_provider.dart';
 import '../../core/providers/ai_chat_provider.dart';
@@ -10,6 +13,7 @@ import '../../core/providers/server_provider.dart';
 import '../../core/providers/storage_providers.dart';
 import '../../data/models/chat_session.dart';
 import '../../infrastructure/acp/agent_environment_service.dart';
+import '../../widgets/valhalla_card.dart';
 import '../agents/agent_command_confirm_dialog.dart';
 import '../agents/agent_management_view.dart';
 import '../agents/auth_method_picker_dialog.dart';
@@ -127,9 +131,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                       children: [
                         Text(
                           context.l10n.switchAgent,
-                          style: context.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: context.textTheme.titleLarge,
                         ),
                         IconButton(
                           icon: const Icon(Icons.close),
@@ -153,15 +155,12 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                               const SizedBox(height: 10),
                               Text(
                                 context.l10n.noReadyAgentsTitle,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: context.textTheme.titleSmall,
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 context.l10n.noReadyAgentsDesc,
-                                style: TextStyle(
-                                  fontSize: 12,
+                                style: context.textTheme.bodySmall?.copyWith(
                                   color: context.colorScheme.outline,
                                 ),
                                 textAlign: TextAlign.center,
@@ -195,7 +194,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                 )
                               : null,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(VRadius.card),
                             side: BorderSide(
                               color: isSelected
                                   ? context.colorScheme.primary
@@ -214,31 +213,29 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                               children: [
                                 Text(
                                   profile.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: context.textTheme.titleSmall,
                                 ),
                                 if (isDefault) ...[
                                   const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
+                                      horizontal: 8,
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
                                       color:
                                           context.colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(
+                                        VRadius.pill,
+                                      ),
                                     ),
                                     child: Text(
                                       context.l10n.defaultBadge,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color: context
-                                            .colorScheme
-                                            .onPrimaryContainer,
-                                      ),
+                                      style: context.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: context
+                                                .colorScheme.onPrimaryContainer,
+                                          ),
                                     ),
                                   ),
                                 ],
@@ -357,7 +354,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           ),
           FilledButton(
             key: const Key('confirmDeleteSessionButton'),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: ctx.colorScheme.error,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(ctx.l10n.deleteSessionConfirmAction),
           ),
@@ -399,8 +398,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                fontSize: 12,
+              style: context.textTheme.bodySmall?.copyWith(
                 color: context.colorScheme.onErrorContainer,
               ),
             ),
@@ -410,10 +408,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               onPressed: _showManageAgentsModal,
               child: Text(
                 context.l10n.manageAgents,
-                style: TextStyle(
-                  fontSize: 12,
+                style: context.textTheme.labelMedium?.copyWith(
                   color: context.colorScheme.onErrorContainer,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -489,7 +485,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           Flexible(
             child: InkWell(
               onTap: _showAgentSwitcherModal,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(VRadius.input),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 child: Row(
@@ -509,9 +505,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                       child: Text(
                         state.activeAgentProfile?.name ??
                             context.l10n.noAgentAvailable,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                        style: context.textTheme.titleSmall?.copyWith(
                           color: state.activeAgentProfile != null
                               ? null
                               : context.colorScheme.outline,
@@ -547,16 +541,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                       .setShareAgentSessions(!state.shareAgentSessions),
           ),
           if (state.isGenerating) ...[
-            const SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+            PulseDot(color: context.colorScheme.primary, size: 7),
             const SizedBox(width: 8),
             Text(
               context.l10n.acpStreaming,
-              style: TextStyle(
-                fontSize: 12,
+              style: context.textTheme.bodySmall?.copyWith(
                 color: context.colorScheme.primary,
               ),
             ),
@@ -589,176 +578,183 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         state.activeAgentProfile != null &&
         state.activeAgentProfile!.id == defaultAgentId;
 
-    return Container(
+    // Material 而非 Container: ListTile/SwitchListTile 的 ink 必须落在
+    // 直接的 Material 上, 否则 debug 断言判定 ink 被不透明装饰遮挡。
+    return Material(
       color: context.colorScheme.surfaceContainerLowest,
       child: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(40),
+            Entrance(
+              index: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(40),
+                  ),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: Text(context.l10n.newSession),
+                  onPressed: () {
+                    notifier.createNewSession();
+                    if (!isDesktop) {
+                      Navigator.pop(context);
+                    }
+                  },
                 ),
-                icon: const Icon(Icons.add, size: 18),
-                label: Text(context.l10n.newSession),
-                onPressed: () {
-                  notifier.createNewSession();
-                  if (!isDesktop) {
-                    Navigator.pop(context);
-                  }
-                },
               ),
             ),
             const Divider(height: 1),
             if (state.activeAgentProfile != null) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 6,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isDefaultAgent ? Icons.star : Icons.star_border,
-                      size: 16,
-                      color: isDefaultAgent
-                          ? Colors.amber
-                          : context.colorScheme.outline,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${context.l10n.defaultAgentTitle}: ${state.activeAgentProfile!.name}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isDefaultAgent
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: context.colorScheme.onSurface,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+              Entrance(
+                index: 1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isDefaultAgent ? Icons.star : Icons.star_border,
+                        size: 16,
+                        color: isDefaultAgent
+                            ? context.colorScheme.primary
+                            : context.colorScheme.outline,
                       ),
-                    ),
-                    if (isDefaultAgent)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: context.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                      const SizedBox(width: 8),
+                      Expanded(
                         child: Text(
-                          context.l10n.defaultBadge,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: context.colorScheme.onPrimaryContainer,
+                          '${context.l10n.defaultAgentTitle}: ${state.activeAgentProfile!.name}',
+                          style: context.textTheme.bodySmall?.copyWith(
+                            color: context.colorScheme.onSurface,
+                            fontWeight: isDefaultAgent
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isDefaultAgent)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(VRadius.pill),
+                          ),
+                          child: Text(
+                            context.l10n.defaultBadge,
+                            style: context.textTheme.labelSmall?.copyWith(
+                              color: context.colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        )
+                      else
+                        TextButton(
+                          key: const Key('ai_set_default_agent_button'),
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                          onPressed: () => notifier.setDefaultAgent(
+                            state.activeAgentProfile!.id,
+                          ),
+                          child: Text(
+                            context.l10n.setDefaultAgent,
+                            style: const TextStyle(fontSize: 11),
                           ),
                         ),
-                      )
-                    else
-                      TextButton(
-                        key: const Key('ai_set_default_agent_button'),
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                        ),
-                        onPressed: () => notifier.setDefaultAgent(
-                          state.activeAgentProfile!.id,
-                        ),
-                        child: Text(
-                          context.l10n.setDefaultAgent,
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      context.l10n.sessionLaunchMode,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.colorScheme.outline,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: DropdownButton<ChatLaunchMode>(
-                        key: const Key('ai_chat_launch_mode_selector'),
-                        value: preference.mode,
-                        isDense: true,
-                        isExpanded: true,
+              Entrance(
+                index: 2,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        context.l10n.sessionLaunchMode,
                         style: TextStyle(
-                          fontSize: 12,
-                          color: context.colorScheme.onSurface,
+                          fontSize: 11,
+                          color: context.colorScheme.outline,
                         ),
-                        underline: const SizedBox.shrink(),
-                        items: [
-                          DropdownMenuItem(
-                            value: ChatLaunchMode.rememberLast,
-                            child: Text(context.l10n.chatLaunchRememberLast),
-                          ),
-                          DropdownMenuItem(
-                            value: ChatLaunchMode.fixed,
-                            child: Text(context.l10n.chatLaunchFixedSession),
-                          ),
-                          DropdownMenuItem(
-                            value: ChatLaunchMode.blankDraft,
-                            child: Text(context.l10n.chatLaunchBlankDraft),
-                          ),
-                        ],
-                        onChanged: (mode) {
-                          if (mode != null) {
-                            notifier.setLaunchPreference(
-                              ChatLaunchPreference(
-                                mode: mode,
-                                sessionId: mode == ChatLaunchMode.fixed
-                                    ? (state.activeSessionId ??
-                                          state.sessions.firstOrNull?.id)
-                                    : null,
-                              ),
-                            );
-                          }
-                        },
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButton<ChatLaunchMode>(
+                          key: const Key('ai_chat_launch_mode_selector'),
+                          value: preference.mode,
+                          isDense: true,
+                          isExpanded: true,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.colorScheme.onSurface,
+                          ),
+                          underline: const SizedBox.shrink(),
+                          items: [
+                            DropdownMenuItem(
+                              value: ChatLaunchMode.rememberLast,
+                              child: Text(context.l10n.chatLaunchRememberLast),
+                            ),
+                            DropdownMenuItem(
+                              value: ChatLaunchMode.fixed,
+                              child: Text(context.l10n.chatLaunchFixedSession),
+                            ),
+                            DropdownMenuItem(
+                              value: ChatLaunchMode.blankDraft,
+                              child: Text(context.l10n.chatLaunchBlankDraft),
+                            ),
+                          ],
+                          onChanged: (mode) {
+                            if (mode != null) {
+                              notifier.setLaunchPreference(
+                                ChatLaunchPreference(
+                                  mode: mode,
+                                  sessionId: mode == ChatLaunchMode.fixed
+                                      ? (state.activeSessionId ??
+                                            state.sessions.firstOrNull?.id)
+                                      : null,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const Divider(height: 1),
             ],
-            SwitchListTile.adaptive(
-              key: const Key('shareAgentSessionsSwitch'),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              dense: true,
-              title: Text(
-                context.l10n.shareAgentSessionsTitle,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+            Entrance(
+              index: 3,
+              child: SwitchListTile.adaptive(
+                key: const Key('shareAgentSessionsSwitch'),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                dense: true,
+                title: Text(
+                  context.l10n.shareAgentSessionsTitle,
+                  style: context.textTheme.titleSmall,
                 ),
-              ),
-              subtitle: Text(
-                context.l10n.shareAgentSessionsSubtitle,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: context.colorScheme.outline,
+                subtitle: Text(
+                  context.l10n.shareAgentSessionsSubtitle,
+                  style: context.textTheme.bodySmall?.copyWith(
+                    color: context.colorScheme.outline,
+                  ),
                 ),
+                value: state.shareAgentSessions,
+                onChanged: state.isGenerating
+                    ? null
+                    : (val) => notifier.setShareAgentSessions(val),
               ),
-              value: state.shareAgentSessions,
-              onChanged: state.isGenerating
-                  ? null
-                  : (val) => notifier.setShareAgentSessions(val),
             ),
             const Divider(height: 1),
             Expanded(
@@ -782,11 +778,10 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     ),
                     title: Text(
                       session.title,
-                      style: TextStyle(
-                        fontSize: 13,
+                      style: context.textTheme.bodyMedium?.copyWith(
                         fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -863,23 +858,26 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.smart_toy_outlined,
-                size: 54,
-                color: context.colorScheme.primary.withValues(alpha: 0.5),
+              Entrance(
+                index: 0,
+                child: Icon(
+                  Icons.smart_toy_outlined,
+                  size: 54,
+                  color: context.colorScheme.primary.withValues(alpha: 0.5),
+                ),
               ),
               const SizedBox(height: 12),
-              Text(
-                context.l10n.aiOpsAgentTitle,
-                style: context.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+              Entrance(
+                index: 1,
+                child: Text(
+                  context.l10n.aiOpsAgentTitle,
+                  style: context.textTheme.titleMedium,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 context.l10n.aiOpsEmptySubtitle,
-                style: TextStyle(
-                  fontSize: 12,
+                style: context.textTheme.bodySmall?.copyWith(
                   color: context.colorScheme.outline,
                 ),
               ),
@@ -891,46 +889,47 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     child: Text(
                       context.l10n.agentNeedsInstallOrReadyPrompt,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
+                      style: context.textTheme.bodyMedium?.copyWith(
                         color: context.colorScheme.outline,
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
                 ],
-                if (singleCandidate != null) ...[
-                  if (singleCandidate.isInstalling)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                Entrance(
+                  index: 2,
+                  child: singleCandidate != null
+                      ? (singleCandidate.isInstalling
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    context.l10n.agentStatusInstalling,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ],
+                              )
+                            : FilledButton.icon(
+                                icon: const Icon(Icons.download, size: 16),
+                                label: Text(context.l10n.agentActionAutoInstall),
+                                onPressed: !isConnected
+                                    ? null
+                                    : () => _oneClickInstall(singleCandidate),
+                              ))
+                      : FilledButton.tonalIcon(
+                          icon: const Icon(Icons.settings_outlined, size: 16),
+                          label: Text(context.l10n.manageAgents),
+                          onPressed: _showManageAgentsModal,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.l10n.agentStatusInstalling,
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ],
-                    )
-                  else
-                    FilledButton.icon(
-                      icon: const Icon(Icons.download, size: 16),
-                      label: Text(context.l10n.agentActionAutoInstall),
-                      onPressed: !isConnected
-                          ? null
-                          : () => _oneClickInstall(singleCandidate),
-                    ),
-                ] else ...[
-                  FilledButton.tonalIcon(
-                    icon: const Icon(Icons.settings_outlined, size: 16),
-                    label: Text(context.l10n.manageAgents),
-                    onPressed: _showManageAgentsModal,
-                  ),
-                ],
+                ),
               ],
             ],
           ),
@@ -983,111 +982,83 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           children: [
             // Thinking Accordion
             if (msg.thinking != null && msg.thinking!.isNotEmpty) ...[
-              Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                color: context.colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.5,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: ExpansionTile(
-                  leading: const Icon(Icons.psychology, size: 18),
-                  title: Text(
-                    context.l10n.thinking,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  initiallyExpanded: false,
-                  childrenPadding: const EdgeInsets.all(12),
-                  children: [
-                    Text(
-                      msg.thinking!,
-                      style: const TextStyle(
-                        fontFamily: 'JetBrains Mono',
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _ThinkingBlock(text: msg.thinking!),
             ],
 
             // Plan Execution Steps
             if (msg.planSteps.isNotEmpty) ...[
-              Card(
+              ValhallaCard(
                 margin: const EdgeInsets.only(bottom: 8),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.checklist,
-                            size: 16,
-                            color: context.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            context.l10n.executionPlan,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      ...msg.planSteps.map((step) {
-                        IconData icon;
-                        Color iconColor;
-                        switch (step.status) {
-                          case PlanStepStatus.completed:
-                            icon = Icons.check_circle;
-                            iconColor = Colors.green;
-                            break;
-                          case PlanStepStatus.inProgress:
-                            icon = Icons.hourglass_top;
-                            iconColor = Colors.orange;
-                            break;
-                          case PlanStepStatus.failed:
-                            icon = Icons.cancel;
-                            iconColor = Colors.red;
-                            break;
-                          case PlanStepStatus.pending:
-                            icon = Icons.radio_button_unchecked;
-                            iconColor = Colors.grey;
-                            break;
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Row(
-                            children: [
-                              Icon(icon, size: 14, color: iconColor),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  step.title,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    decoration:
-                                        step.status == PlanStepStatus.completed
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
+                padding: const EdgeInsets.all(VSpace.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.checklist,
+                          size: 16,
+                          color: context.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          context.l10n.executionPlan,
+                          style: context.textTheme.labelMedium,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ...msg.planSteps.map((step) {
+                      Widget leading;
+                      switch (step.status) {
+                        case PlanStepStatus.completed:
+                          leading = Icon(
+                            Icons.check_circle,
+                            size: 14,
+                            color: context.vSuccess,
+                          );
+                          break;
+                        case PlanStepStatus.inProgress:
+                          // 运行中步骤: 语义呼吸点。
+                          leading = PulseDot(color: context.vWarning, size: 6);
+                          break;
+                        case PlanStepStatus.failed:
+                          leading = Icon(
+                            Icons.cancel,
+                            size: 14,
+                            color: context.vDanger,
+                          );
+                          break;
+                        case PlanStepStatus.pending:
+                          leading = Icon(
+                            Icons.radio_button_unchecked,
+                            size: 14,
+                            color: context.colorScheme.outline,
+                          );
+                          break;
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          children: [
+                            leading,
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                step.title,
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  decoration:
+                                      step.status == PlanStepStatus.completed
+                                      ? TextDecoration.lineThrough
+                                      : null,
                                 ),
                               ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
                 ),
               ),
             ],
@@ -1095,67 +1066,61 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             // Tool Execution Cards
             if (msg.toolExecutions.isNotEmpty) ...[
               ...msg.toolExecutions.map((tool) {
-                return Card(
+                return ValhallaCard(
                   margin: const EdgeInsets.only(bottom: 8),
                   color: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    side: BorderSide(color: context.colorScheme.outlineVariant),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.terminal,
-                              size: 14,
-                              color: Color(0xFF10B981),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              tool.command,
-                              style: const TextStyle(
-                                fontFamily: 'JetBrains Mono',
-                                fontSize: 12,
-                                color: Color(0xFF10B981),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Spacer(),
-                            if (tool.executionTimeMs != null)
-                              Text(
-                                '${tool.executionTimeMs} ms',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                          ],
-                        ),
-                        if (tool.output != null && tool.output!.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E1E1E),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.terminal, size: 14, color: context.vSuccess),
+                          const SizedBox(width: 6),
+                          Expanded(
                             child: Text(
-                              tool.output!,
-                              style: const TextStyle(
-                                fontFamily: 'JetBrains Mono',
-                                fontSize: 11,
-                                color: Colors.white70,
+                              tool.command,
+                              style: monoTextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: context.vSuccess,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          if (tool.executionTimeMs != null) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              '${tool.executionTimeMs} ms',
+                              style: monoTextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w400,
+                                color: context.colorScheme.outline,
+                              ),
+                            ),
+                          ],
                         ],
+                      ),
+                      if (tool.output != null && tool.output!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1E1E),
+                            borderRadius: BorderRadius.circular(VRadius.input),
+                          ),
+                          child: Text(
+                            tool.output!,
+                            style: monoTextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                 );
               }),
@@ -1163,21 +1128,14 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
             // Markdown Message Content
             if (msg.content.isNotEmpty)
-              Card(
+              ValhallaCard(
                 color: context.colorScheme.surface,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: MarkdownBody(
-                    data: msg.content,
-                    selectable: true,
-                    styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
-                        .copyWith(
-                          code: const TextStyle(
-                            fontFamily: 'JetBrains Mono',
-                            fontSize: 12,
-                          ),
-                        ),
-                  ),
+                padding: const EdgeInsets.all(VSpace.md),
+                child: MarkdownBody(
+                  data: msg.content,
+                  selectable: true,
+                  styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
+                      .copyWith(code: monoTextStyle(fontSize: 12)),
                 ),
               ),
           ],
@@ -1188,49 +1146,44 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
   Widget _buildPermissionCard(PermissionRequest req) {
     final notifier = ref.read(aiChatProvider.notifier);
+    final danger = context.vDanger;
 
     return Container(
-      margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.all(VSpace.md),
+      padding: const EdgeInsets.all(VSpace.md),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red, width: 1.5),
+        color: danger.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(VRadius.card),
+        border: Border.all(color: danger.withValues(alpha: 0.45)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.warning, color: Colors.red, size: 20),
+              PulseDot(color: danger, size: 7),
               const SizedBox(width: 8),
+              Icon(Icons.warning, color: danger, size: 20),
+              const SizedBox(width: 4),
               Text(
                 context.l10n.permissionRequired,
-                style: const TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: context.textTheme.titleSmall?.copyWith(color: danger),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          Text(req.description, style: const TextStyle(fontSize: 13)),
+          Text(req.description, style: context.textTheme.bodyMedium),
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.black,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(VRadius.input),
             ),
             child: Text(
               req.command,
-              style: const TextStyle(
-                fontFamily: 'JetBrains Mono',
-                fontSize: 12,
-                color: Color(0xFFFBBF24),
-              ),
+              style: monoTextStyle(fontSize: 12, color: context.vWarning),
             ),
           ),
           const SizedBox(height: 10),
@@ -1243,7 +1196,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ),
               const SizedBox(width: 8),
               FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                style: FilledButton.styleFrom(
+                  backgroundColor: context.colorScheme.error,
+                ),
                 onPressed: () => notifier.respondPermission(true),
                 child: Text(context.l10n.permissionAllowOnce),
               ),
@@ -1325,29 +1280,28 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             challenge.methods.any((m) => m.id == _selectedAuthMethodId))
         ? _selectedAuthMethodId
         : (challenge.methods.isNotEmpty ? challenge.methods.first.id : null);
+    final warning = context.vWarning;
 
     return Container(
-      margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.all(VSpace.md),
+      padding: const EdgeInsets.all(VSpace.md),
       decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.amber.shade700, width: 1.5),
+        color: warning.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(VRadius.card),
+        border: Border.all(color: warning.withValues(alpha: 0.45)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.lock_outline, color: Colors.amber.shade700, size: 20),
+              Icon(Icons.lock_outline, color: warning, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   context.l10n.agentAuthRequiredTitle,
-                  style: TextStyle(
-                    color: Colors.amber.shade900,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                  style: context.textTheme.titleSmall?.copyWith(
+                    color: warning,
                   ),
                 ),
               ),
@@ -1355,14 +1309,14 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: context.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(VRadius.pill),
                 ),
                 child: Text(
                   agentName,
-                  style: TextStyle(
+                  style: monoTextStyle(
                     fontSize: 11,
+                    fontWeight: FontWeight.w400,
                     color: context.colorScheme.outline,
-                    fontFamily: 'JetBrains Mono',
                   ),
                 ),
               ),
@@ -1371,7 +1325,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           const SizedBox(height: 6),
           Text(
             context.l10n.agentAuthRequiredDesc,
-            style: const TextStyle(fontSize: 13),
+            style: context.textTheme.bodyMedium,
           ),
           const SizedBox(height: 8),
           if (challenge.methods.isEmpty) ...[
@@ -1382,7 +1336,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 color: context.colorScheme.surfaceContainerHighest.withValues(
                   alpha: 0.5,
                 ),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(VRadius.input),
               ),
               child: Row(
                 children: [
@@ -1395,8 +1349,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   Expanded(
                     child: Text(
                       context.l10n.agentAuthNoMethodsNotice,
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: context.textTheme.bodySmall?.copyWith(
                         color: context.colorScheme.outline,
                       ),
                     ),
@@ -1407,7 +1360,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           ] else if (challenge.methods.length == 1) ...[
             Text(
               context.l10n.agentAuthMethodLabel,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              style: context.textTheme.labelMedium,
             ),
             const SizedBox(height: 4),
             Container(
@@ -1417,7 +1370,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 color: context.colorScheme.surfaceContainerHighest.withValues(
                   alpha: 0.5,
                 ),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(VRadius.input),
                 border: Border.all(color: context.colorScheme.outlineVariant),
               ),
               child: Column(
@@ -1425,8 +1378,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 children: [
                   Text(
                     challenge.methods.first.name,
-                    style: const TextStyle(
-                      fontSize: 13,
+                    style: context.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1435,8 +1387,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     const SizedBox(height: 2),
                     Text(
                       challenge.methods.first.description!,
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: context.textTheme.bodySmall?.copyWith(
                         color: context.colorScheme.outline,
                       ),
                     ),
@@ -1449,10 +1400,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               children: [
                 Text(
                   context.l10n.agentAuthMethodLabel,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: context.textTheme.labelMedium,
                 ),
                 const Spacer(),
                 TextButton.icon(
@@ -1490,7 +1438,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   color: context.colorScheme.surfaceContainerHighest.withValues(
                     alpha: 0.3,
                   ),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(VRadius.input),
                   border: Border.all(color: context.colorScheme.outlineVariant),
                 ),
                 child: Column(
@@ -1499,7 +1447,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     return InkWell(
                       onTap: () =>
                           setState(() => _selectedAuthMethodId = method.id),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(VRadius.input),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -1520,21 +1468,22 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                 children: [
                                   Text(
                                     method.name,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                    ),
+                                    style: context.textTheme.bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: isSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
+                                        ),
                                   ),
                                   if (method.description != null &&
                                       method.description!.isNotEmpty)
                                     Text(
                                       method.description!,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: context.colorScheme.outline,
-                                      ),
+                                      style: context.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color:
+                                                context.colorScheme.outline,
+                                          ),
                                     ),
                                 ],
                               ),
@@ -1563,7 +1512,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     : '',
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.amber.shade800,
+                    backgroundColor: context.vWarning,
                   ),
                   onPressed: !isConnected
                       ? null
@@ -1609,7 +1558,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   color: context.colorScheme.surfaceContainerHighest.withValues(
                     alpha: 0.5,
                   ),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(VRadius.input),
                   border: Border.all(color: context.colorScheme.outlineVariant),
                 ),
                 child: Row(
@@ -1620,7 +1569,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                           : Icons.info_outline,
                       size: 18,
                       color: hasUnreadyAgents
-                          ? Colors.amber
+                          ? context.vWarning
                           : context.colorScheme.primary,
                     ),
                     const SizedBox(width: 8),
@@ -1629,7 +1578,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                         hasUnreadyAgents
                             ? context.l10n.agentNeedsInstallOrReadyPrompt
                             : context.l10n.noAgentAvailablePrompt,
-                        style: const TextStyle(fontSize: 12),
+                        style: context.textTheme.bodySmall,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1710,7 +1659,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                         vertical: 10,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(VRadius.input),
                       ),
                     ),
                     onSubmitted: (hasActiveAgent && !state.isGenerating)
@@ -1720,22 +1669,26 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 ),
                 const SizedBox(width: 8),
                 if (state.isGenerating)
-                  IconButton.filled(
-                    key: const Key('stopGenerationButton'),
-                    icon: const Icon(Icons.stop, size: 18),
-                    style: IconButton.styleFrom(
-                      backgroundColor: context.colorScheme.error,
-                      foregroundColor: context.colorScheme.onError,
+                  PressableScale(
+                    child: IconButton.filled(
+                      key: const Key('stopGenerationButton'),
+                      icon: const Icon(Icons.stop, size: 18),
+                      style: IconButton.styleFrom(
+                        backgroundColor: context.colorScheme.error,
+                        foregroundColor: context.colorScheme.onError,
+                      ),
+                      tooltip: context.l10n.stopGeneration,
+                      onPressed: () =>
+                          ref.read(aiChatProvider.notifier).stopGeneration(),
                     ),
-                    tooltip: context.l10n.stopGeneration,
-                    onPressed: () =>
-                        ref.read(aiChatProvider.notifier).stopGeneration(),
                   )
                 else
-                  IconButton.filled(
-                    key: const Key('sendMessageButton'),
-                    icon: const Icon(Icons.send, size: 18),
-                    onPressed: (!hasActiveAgent) ? null : _handleSend,
+                  PressableScale(
+                    child: IconButton.filled(
+                      key: const Key('sendMessageButton'),
+                      icon: const Icon(Icons.send, size: 18),
+                      onPressed: (!hasActiveAgent) ? null : _handleSend,
+                    ),
                   ),
               ],
             ),
@@ -1864,24 +1817,22 @@ class _AcpSessionNoticeBarState extends State<_AcpSessionNoticeBar> {
       return Container(
         key: const Key('acpSessionRestoredNotice'),
         width: double.infinity,
-        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+        color: context.vSuccess.withValues(alpha: 0.12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         child: Row(
           children: [
-            const Icon(Icons.restore, size: 18, color: Color(0xFF10B981)),
+            Icon(Icons.restore, size: 18, color: context.vSuccess),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 l10n.acpSessionRestored,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF10B981),
-                  fontWeight: FontWeight.w500,
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: context.vSuccess,
                 ),
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.close, size: 18, color: Color(0xFF10B981)),
+              icon: Icon(Icons.close, size: 18, color: context.vSuccess),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
@@ -1897,5 +1848,96 @@ class _AcpSessionNoticeBarState extends State<_AcpSessionNoticeBar> {
 
     // 3. acpSessionRestored == null, or false without restart detected: display nothing
     return const SizedBox.shrink();
+  }
+}
+
+/// 折叠的思考过程块: 手风琴头部 + [AnimatedRotation] 箭头 +
+/// [AnimatedCrossFade] 展开/收起 (VTiming.base / VCurves.emphasized)。
+class _ThinkingBlock extends StatefulWidget {
+  final String text;
+
+  const _ThinkingBlock({required this.text});
+
+  @override
+  State<_ThinkingBlock> createState() => _ThinkingBlockState();
+}
+
+class _ThinkingBlockState extends State<_ThinkingBlock> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(VRadius.card),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: BorderRadius.circular(VRadius.card),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: VSpace.md,
+                vertical: VSpace.sm,
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.psychology, size: 18, color: scheme.primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      context.l10n.thinking,
+                      style: context.textTheme.labelMedium,
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: VTiming.base,
+                    curve: VCurves.emphasized,
+                    child: Icon(
+                      Icons.expand_more,
+                      size: 18,
+                      color: scheme.outline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: VTiming.base,
+            firstCurve: VCurves.emphasized,
+            secondCurve: VCurves.emphasized,
+            sizeCurve: VCurves.emphasized,
+            crossFadeState: _expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                VSpace.md,
+                0,
+                VSpace.md,
+                VSpace.md,
+              ),
+              child: SelectableText(
+                widget.text,
+                style: monoTextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

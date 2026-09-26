@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../data/models/nas_media.dart';
 import '../../../data/models/nas_source.dart';
@@ -115,9 +116,7 @@ class _NasLibrarySettingsDialogState extends State<NasLibrarySettingsDialog> {
                   Expanded(
                     child: Text(
                       context.l10n.nasLibrarySettings,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: theme.textTheme.titleMedium,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -141,7 +140,6 @@ class _NasLibrarySettingsDialogState extends State<NasLibrarySettingsDialog> {
                     Text(
                       context.l10n.nasOpeningPolicy,
                       style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
                         color: theme.colorScheme.outline,
                       ),
                     ),
@@ -202,11 +200,12 @@ class _NasLibrarySettingsDialogState extends State<NasLibrarySettingsDialog> {
                     Card(
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(VRadius.card),
                         side: BorderSide(
                           color: theme.colorScheme.outlineVariant,
                         ),
                       ),
+                      clipBehavior: Clip.antiAlias,
                       child: RadioGroup<NasOpenPolicy>(
                         groupValue: _policy,
                         onChanged: (val) {
@@ -263,7 +262,6 @@ class _NasLibrarySettingsDialogState extends State<NasLibrarySettingsDialog> {
                     Text(
                       context.l10n.nasConfigDialogTitle,
                       style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
                         color: theme.colorScheme.outline,
                       ),
                     ),

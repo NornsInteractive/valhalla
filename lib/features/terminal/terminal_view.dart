@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/terminal_provider.dart';
 import '../../infrastructure/terminal/terminal_session_bridge.dart';
@@ -68,21 +69,21 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
     if (bridge.mode == TerminalSessionMode.tmux && _showSessionRestored) {
       return Container(
         key: const Key('terminalTmuxSessionRestored'),
-        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+        color: context.vSuccess.withValues(alpha: 0.12),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.check_circle_outline,
-              color: Color(0xFF10B981),
+              color: context.vSuccess,
               size: 16,
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 l10n.terminalTmuxSessionRestored,
-                style: const TextStyle(
-                  color: Color(0xFF10B981),
+                style: TextStyle(
+                  color: context.vSuccess,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -100,28 +101,28 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
         !bridge.awaitingTmuxDecision) {
       return Container(
         key: const Key('terminalTmuxMissingNotice'),
-        color: Colors.amber.withValues(alpha: 0.15),
+        color: context.vWarning.withValues(alpha: 0.12),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.warning_amber_rounded,
-              color: Colors.amber,
+              color: context.vWarning,
               size: 16,
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 l10n.terminalTmuxMissingNotice,
-                style: const TextStyle(
-                  color: Colors.amber,
+                style: TextStyle(
+                  color: context.vWarning,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.close, size: 16, color: Colors.amber),
+              icon: Icon(Icons.close, size: 16, color: context.vWarning),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
@@ -161,7 +162,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
       elevation: 8,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(VRadius.card),
         side: BorderSide(
           color: context.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),

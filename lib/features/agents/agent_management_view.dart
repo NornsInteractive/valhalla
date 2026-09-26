@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/layout_breakpoints.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/agent_registry_provider.dart';
 import '../../core/providers/server_provider.dart';
@@ -67,7 +69,7 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
               Expanded(
                 child: Text(
                   context.l10n.agentDiagnosticLogTitle(agentName),
-                  style: const TextStyle(fontSize: 16),
+                  style: context.textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -83,7 +85,7 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color(0xFF0F141C),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(VRadius.input),
                 border: Border.all(
                   color: context.colorScheme.outlineVariant.withValues(
                     alpha: 0.3,
@@ -96,12 +98,11 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                   child: SelectableText(
                     diagnosticLog,
                     key: const Key('agent_diagnostic_log_content'),
-                    style: const TextStyle(
-                      fontFamily: 'JetBrains Mono',
+                    style: monoTextStyle(
                       fontSize: 12,
-                      color: Color(0xFFE2E8F0),
-                      height: 1.5,
-                    ),
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFFE2E8F0),
+                    ).copyWith(height: 1.5),
                   ),
                 ),
               ),
@@ -151,7 +152,10 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
             child: Text(ctx.l10n.cancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: ctx.vDanger,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(ctx.l10n.deleteAgentConfirm),
           ),
@@ -254,15 +258,15 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
           children: [
             Text(
               context.l10n.agentManagementTitle,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: context.textTheme.titleMedium,
             ),
             if (activeServer != null)
               Text(
                 '${activeServer.name} (${activeServer.host}:${activeServer.port})',
-                style: TextStyle(
+                style: monoTextStyle(
                   fontSize: 12,
+                  fontWeight: FontWeight.w400,
                   color: context.colorScheme.outline,
-                  fontFamily: 'JetBrains Mono',
                 ),
               ),
           ],
@@ -289,94 +293,108 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.dns_outlined,
-                      size: 48,
-                      color: context.colorScheme.outline,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      context.l10n.noServerSelectedForAgents,
-                      style: TextStyle(
-                        fontSize: 14,
+                child: Entrance(
+                  index: 0,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.dns_outlined,
+                        size: 48,
                         color: context.colorScheme.outline,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      Text(
+                        context.l10n.noServerSelectedForAgents,
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          color: context.colorScheme.outline,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )
           : Column(
               children: [
                 if (!isConnected)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    color: Colors.amber.withValues(alpha: 0.15),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.link_off,
-                          size: 18,
-                          color: Colors.amber,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            context.l10n.sshDisconnectedAgentWarning,
-                            style: const TextStyle(fontSize: 12),
+                  Entrance(
+                    index: 0,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      color: context.vWarning.withValues(alpha: 0.12),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.link_off,
+                            size: 18,
+                            color: context.vWarning,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              context.l10n.sshDisconnectedAgentWarning,
+                              style: context.textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 if (registry.isLoading)
                   const LinearProgressIndicator(minHeight: 2),
                 Expanded(
-                  child: registry.agents.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(32),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.smart_toy_outlined,
-                                  size: 56,
-                                  color: context.colorScheme.outline,
-                                ),
-                                const SizedBox(height: 14),
-                                Text(
-                                  context.l10n.noAgentsConfiguredTitle,
-                                  style: context.textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  context.l10n.noAgentsConfiguredDesc,
-                                  style: TextStyle(
-                                    fontSize: 13,
+                  child: registry.isLoading && registry.agents.isEmpty
+                      ? ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: 6,
+                          itemBuilder: (context, index) =>
+                              const SkeletonListTile(),
+                        )
+                      : registry.agents.isEmpty
+                      ? Entrance(
+                          index: 0,
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.smart_toy_outlined,
+                                    size: 56,
                                     color: context.colorScheme.outline,
                                   ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 20),
-                                FilledButton.icon(
-                                  icon: const Icon(Icons.add, size: 18),
-                                  label: Text(context.l10n.addAgentButton),
-                                  onPressed: () => _openAddAgentDialog(
-                                    context,
-                                    activeServer.id,
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    context.l10n.noAgentsConfiguredTitle,
+                                    style: context.textTheme.titleMedium,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    context.l10n.noAgentsConfiguredDesc,
+                                    style: context.textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: context.colorScheme.outline,
+                                        ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  FilledButton.icon(
+                                    icon: const Icon(Icons.add, size: 18),
+                                    label: Text(context.l10n.addAgentButton),
+                                    onPressed: () => _openAddAgentDialog(
+                                      context,
+                                      activeServer.id,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         )
@@ -446,31 +464,31 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
     final (statusText, statusColor) = switch (status.kind) {
       AgentEnvironmentStatusKind.ready => (
         context.l10n.agentStatusReady,
-        const Color(0xFF10B981),
+        context.vSuccess,
       ),
       AgentEnvironmentStatusKind.checking => (
         context.l10n.agentStatusChecking,
-        Colors.orange,
+        context.vWarning,
       ),
       AgentEnvironmentStatusKind.cliMissing => (
         context.l10n.agentStatusCliMissing,
-        Colors.amber,
+        context.vWarning,
       ),
       AgentEnvironmentStatusKind.acpMissing =>
         !hasAcp
-            ? (context.l10n.agentStatusReady, const Color(0xFF10B981))
-            : (context.l10n.agentStatusAcpMissing, Colors.amber),
+            ? (context.l10n.agentStatusReady, context.vSuccess)
+            : (context.l10n.agentStatusAcpMissing, context.vWarning),
       AgentEnvironmentStatusKind.notLoggedIn => (
         context.l10n.agentStatusNotLoggedIn,
-        Colors.blue,
+        context.vInfo,
       ),
       AgentEnvironmentStatusKind.error => (
         context.l10n.agentStatusError,
-        Colors.red,
+        context.vDanger,
       ),
       AgentEnvironmentStatusKind.unknown => (
         context.l10n.agentStatusUnknown,
-        Colors.grey,
+        context.colorScheme.outline,
       ),
     };
 
@@ -483,48 +501,48 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
     final (cliStatusText, cliStatusColor) = switch (status.kind) {
       AgentEnvironmentStatusKind.cliMissing => (
         context.l10n.agentCliStatusMissing,
-        Colors.amber,
+        context.vWarning,
       ),
       AgentEnvironmentStatusKind.checking => (
         context.l10n.agentCliStatusChecking,
-        Colors.orange,
+        context.vWarning,
       ),
       AgentEnvironmentStatusKind.unknown => (
         context.l10n.agentCliStatusUnknown,
-        Colors.grey,
+        context.colorScheme.outline,
       ),
       AgentEnvironmentStatusKind.error => (
         context.l10n.agentCliStatusError,
-        Colors.red,
+        context.vDanger,
       ),
-      _ => (context.l10n.agentCliStatusInstalled, const Color(0xFF10B981)),
+      _ => (context.l10n.agentCliStatusInstalled, context.vSuccess),
     };
 
     // ACP Status
     final (acpStatusText, acpStatusColor) = !hasAcp
-        ? (context.l10n.agentAcpStatusNa, Colors.grey)
+        ? (context.l10n.agentAcpStatusNa, context.colorScheme.outline)
         : switch (status.kind) {
             AgentEnvironmentStatusKind.cliMissing => (
               context.l10n.agentAcpStatusPendingCli,
-              Colors.grey,
+              context.colorScheme.outline,
             ),
             AgentEnvironmentStatusKind.acpMissing => (
               context.l10n.agentAcpStatusMissing,
-              Colors.amber,
+              context.vWarning,
             ),
             AgentEnvironmentStatusKind.checking => (
               context.l10n.agentAcpStatusChecking,
-              Colors.orange,
+              context.vWarning,
             ),
             AgentEnvironmentStatusKind.unknown => (
               context.l10n.agentAcpStatusUnknown,
-              Colors.grey,
+              context.colorScheme.outline,
             ),
             AgentEnvironmentStatusKind.error => (
               context.l10n.agentAcpStatusError,
-              Colors.red,
+              context.vDanger,
             ),
-            _ => (context.l10n.agentAcpStatusReady, const Color(0xFF10B981)),
+            _ => (context.l10n.agentAcpStatusReady, context.vSuccess),
           };
 
     // Auth Status (status.authentication)
@@ -532,15 +550,15 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
     final (authStatusText, authStatusColor) = switch (status.authentication) {
       AgentAuthenticationStatus.authenticated => (
         context.l10n.agentAuthStatusAuthenticated,
-        const Color(0xFF10B981),
+        context.vSuccess,
       ),
       AgentAuthenticationStatus.unauthenticated => (
         context.l10n.agentAuthStatusUnauthenticated,
-        Colors.blue,
+        context.vInfo,
       ),
       AgentAuthenticationStatus.unknown => (
         context.l10n.agentAuthStatusUnknown,
-        Colors.grey,
+        context.colorScheme.outline,
       ),
     };
 
@@ -578,7 +596,7 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
               Icon(
                 Icons.smart_toy,
                 color: agentState.isReady
-                    ? const Color(0xFF10B981)
+                    ? context.vSuccess
                     : context.colorScheme.primary,
                 size: 22,
               ),
@@ -589,10 +607,7 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                     Flexible(
                       child: Text(
                         profile.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
+                        style: context.textTheme.titleSmall,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -605,13 +620,13 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                         ),
                         decoration: BoxDecoration(
                           color: context.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(VRadius.input),
                         ),
                         child: Text(
                           profile.id,
-                          style: TextStyle(
-                            fontFamily: 'JetBrains Mono',
+                          style: monoTextStyle(
                             fontSize: 11,
+                            fontWeight: FontWeight.w400,
                             color: context.colorScheme.outline,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -630,7 +645,7 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                   ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(VRadius.input),
                     border: Border.all(color: statusColor, width: 1),
                   ),
                   child: Row(
@@ -638,14 +653,17 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                     children: [
                       if (status.kind ==
                           AgentEnvironmentStatusKind.checking) ...[
-                        const SizedBox(
+                        SizedBox(
                           width: 10,
                           height: 10,
                           child: CircularProgressIndicator(
                             strokeWidth: 1.5,
-                            color: Colors.orange,
+                            color: statusColor,
                           ),
                         ),
+                        const SizedBox(width: 4),
+                      ] else if (agentState.isReady) ...[
+                        PulseDot(color: statusColor, size: 6),
                         const SizedBox(width: 4),
                       ],
                       Flexible(
@@ -653,7 +671,7 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                           statusText,
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
                             color: statusColor,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -670,8 +688,7 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
             const SizedBox(height: 6),
             Text(
               profile.description,
-              style: TextStyle(
-                fontSize: 12,
+              style: context.textTheme.bodySmall?.copyWith(
                 color: context.colorScheme.outline,
               ),
             ),
@@ -724,16 +741,16 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                 _buildCommandChip(
                   icon: Icons.cable,
                   label: 'ACP: N/A',
-                  iconColor: Colors.white38,
-                  textColor: Colors.white38,
+                  iconColor: context.colorScheme.outline,
+                  textColor: context.colorScheme.outline,
                 ),
               if (profile.executionTarget == 'docker')
                 _buildCommandChip(
                   icon: Icons.layers_outlined,
                   label:
                       'Docker: ${profile.containerReference != null && profile.containerReference!.isNotEmpty ? profile.containerReference : profile.containerBinding}',
-                  iconColor: Colors.cyanAccent.shade400,
-                  textColor: Colors.cyanAccent.shade100,
+                  iconColor: context.vInfo,
+                  textColor: context.vInfo,
                 ),
             ],
           ),
@@ -743,9 +760,9 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
             const SizedBox(height: 6),
             Text(
               'Probe: ${status.version}',
-              style: TextStyle(
+              style: monoTextStyle(
                 fontSize: 11,
-                fontFamily: 'JetBrains Mono',
+                fontWeight: FontWeight.w400,
                 color: context.colorScheme.outline,
               ),
             ),
@@ -782,16 +799,18 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
               width: double.infinity,
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                color: context.vDanger.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(VRadius.input),
+                border: Border.all(
+                  color: context.vDanger.withValues(alpha: 0.3),
+                ),
               ),
               child: Text(
                 errorDisplay,
-                style: const TextStyle(
+                style: monoTextStyle(
                   fontSize: 11,
-                  fontFamily: 'JetBrains Mono',
-                  color: Colors.red,
+                  fontWeight: FontWeight.w400,
+                  color: context.vDanger,
                 ),
               ),
             ),
@@ -804,10 +823,10 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
+                color: context.vWarning.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(VRadius.input),
                 border: Border.all(
-                  color: Colors.amber.withValues(alpha: 0.4),
+                  color: context.vWarning.withValues(alpha: 0.4),
                   width: 1,
                 ),
               ),
@@ -817,12 +836,12 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                       children: [
                         Row(
                           children: [
-                            const SizedBox(
+                            SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.amber,
+                                color: context.vWarning,
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -846,10 +865,10 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                   : (hasInstallCommand
                         ? Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.warning_amber_rounded,
                                 size: 20,
-                                color: Colors.amber,
+                                color: context.vWarning,
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -872,8 +891,6 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                                     context.l10n.agentActionAutoInstall,
                                   ),
                                   style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.amber.shade700,
-                                    foregroundColor: Colors.white,
                                     visualDensity: VisualDensity.compact,
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 12,
@@ -894,10 +911,10 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                           )
                         : Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.warning_amber_rounded,
                                 size: 20,
-                                color: Colors.amber,
+                                color: context.vWarning,
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -938,16 +955,16 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
+                color: context.vInfo.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(VRadius.input),
                 border: Border.all(
-                  color: Colors.blue.withValues(alpha: 0.4),
+                  color: context.vInfo.withValues(alpha: 0.4),
                   width: 1,
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.login_rounded, size: 20, color: Colors.blue),
+                  Icon(Icons.login_rounded, size: 20, color: context.vInfo),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1024,8 +1041,9 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
               Expanded(
                 child: Text(
                   context.l10n.agentLastChecked(_formatTime(status.checkedAt)),
-                  style: TextStyle(
+                  style: monoTextStyle(
                     fontSize: 11,
+                    fontWeight: FontWeight.w400,
                     color: context.colorScheme.outline,
                   ),
                 ),
@@ -1074,10 +1092,10 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                             .refreshAgent(profile.id),
                 ),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.delete_outline,
                     size: 18,
-                    color: Colors.red,
+                    color: context.vDanger,
                   ),
                   tooltip: context.l10n.delete,
                   onPressed: agentState.isInstalling
@@ -1094,10 +1112,10 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
     return Card(
       margin: isGrid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(VRadius.card),
         side: BorderSide(
           color: agentState.isReady
-              ? const Color(0xFF10B981).withValues(alpha: 0.4)
+              ? context.vSuccess.withValues(alpha: 0.4)
               : context.colorScheme.outlineVariant,
         ),
       ),
@@ -1116,7 +1134,7 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(VRadius.input),
         border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
       ),
       child: Row(
@@ -1150,23 +1168,23 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(4),
+        color: context.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(VRadius.input),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: iconColor ?? const Color(0xFF10B981)),
+          Icon(icon, size: 12, color: iconColor ?? context.colorScheme.primary),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
               label,
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
-              style: TextStyle(
-                fontFamily: 'JetBrains Mono',
+              style: monoTextStyle(
                 fontSize: 11,
-                color: textColor ?? Colors.white70,
+                fontWeight: FontWeight.w400,
+                color: textColor ?? context.colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -1228,7 +1246,7 @@ class _AgentInstallLogPanelState extends State<_AgentInstallLogPanel> {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(VRadius.input),
         border: Border.all(
           color: context.colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),
@@ -1247,9 +1265,7 @@ class _AgentInstallLogPanelState extends State<_AgentInstallLogPanel> {
               const SizedBox(width: 6),
               Text(
                 l10n.agentInstallLogTitle,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
+                style: context.textTheme.labelSmall?.copyWith(
                   color: context.colorScheme.outline,
                 ),
               ),
@@ -1262,17 +1278,17 @@ class _AgentInstallLogPanelState extends State<_AgentInstallLogPanel> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(4),
+                color: context.vWarning.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(VRadius.input),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, size: 12, color: Colors.amber),
+                  Icon(Icons.info_outline, size: 12, color: context.vWarning),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       l10n.agentInstallLogTruncated,
-                      style: const TextStyle(fontSize: 10, color: Colors.amber),
+                      style: TextStyle(fontSize: 10, color: context.vWarning),
                     ),
                   ),
                 ],
@@ -1284,12 +1300,11 @@ class _AgentInstallLogPanelState extends State<_AgentInstallLogPanel> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
                 l10n.agentInstallLogEmpty,
-                style: TextStyle(
+                style: monoTextStyle(
                   fontSize: 11,
-                  fontFamily: 'JetBrains Mono',
+                  fontWeight: FontWeight.w400,
                   color: context.colorScheme.outline,
-                  fontStyle: FontStyle.italic,
-                ),
+                ).copyWith(fontStyle: FontStyle.italic),
               ),
             )
           else
@@ -1305,12 +1320,11 @@ class _AgentInstallLogPanelState extends State<_AgentInstallLogPanel> {
                   itemBuilder: (context, index) {
                     return Text(
                       widget.log.lines[index],
-                      style: const TextStyle(
-                        fontFamily: 'JetBrains Mono',
+                      style: monoTextStyle(
                         fontSize: 11,
-                        color: Color(0xFFD4D4D4),
-                        height: 1.35,
-                      ),
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xFFD4D4D4),
+                      ).copyWith(height: 1.35),
                     );
                   },
                 ),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/design/tokens.dart';
 import '../core/extensions/context_extensions.dart';
 import '../core/providers/ai_chat_provider.dart';
 import '../core/providers/server_provider.dart';
@@ -48,9 +49,7 @@ class ContextInspector extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Text(
                   context.l10n.inspectorTitle,
-                  style: context.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: context.textTheme.titleSmall,
                 ),
                 const Spacer(),
                 IconButton(
@@ -116,32 +115,37 @@ class ContextInspector extends ConsumerWidget {
       children: [
         _buildSectionTitle(context, context.l10n.serverSpecs),
         const SizedBox(height: 8),
-        _buildInfoTile('Server Name', server.name),
-        _buildInfoTile('Host IP', server.host),
-        _buildInfoTile('Port', server.port.toString()),
-        _buildInfoTile('User', server.username),
-        _buildInfoTile('Auth', server.authType.name.toUpperCase()),
+        _buildInfoTile(context, 'Server Name', server.name),
+        _buildInfoTile(context, 'Host IP', server.host),
+        _buildInfoTile(context, 'Port', server.port.toString()),
+        _buildInfoTile(context, 'User', server.username),
+        _buildInfoTile(context, 'Auth', server.authType.name.toUpperCase()),
         const SizedBox(height: 16),
         _buildSectionTitle(context, 'Real-time Telemetry'),
         const SizedBox(height: 8),
         if (metrics != null) ...[
           _buildInfoTile(
+            context,
             'CPU Ratio',
             '${(metrics.cpuUsedRatio * 100).toStringAsFixed(1)}%',
           ),
           _buildInfoTile(
+            context,
             'Memory Ratio',
             '${(metrics.memoryUsedRatio * 100).toStringAsFixed(1)}%',
           ),
           _buildInfoTile(
+            context,
             'Load Avg',
             '${metrics.load1.toStringAsFixed(2)}, ${metrics.load5.toStringAsFixed(2)}, ${metrics.load15.toStringAsFixed(2)}',
           ),
           _buildInfoTile(
+            context,
             'Uptime',
             MetricsFormatters.formatUptime(metrics.uptimeSeconds),
           ),
           _buildInfoTile(
+            context,
             'Root Disk',
             '${metrics.rootDiskUsedPercent.toStringAsFixed(1)}%',
           ),
@@ -169,24 +173,28 @@ class ContextInspector extends ConsumerWidget {
         _buildSectionTitle(context, 'Agent Configuration'),
         const SizedBox(height: 8),
         _buildInfoTile(
+          context,
           'Active Agent',
           chatState.activeAgentProfile?.name ?? 'None',
         ),
-        _buildInfoTile('Protocol', 'ACP 1.0 (SSH JSON-RPC)'),
-        _buildInfoTile('Transport', 'SSH Session stdio'),
+        _buildInfoTile(context, 'Protocol', 'ACP 1.0 (SSH JSON-RPC)'),
+        _buildInfoTile(context, 'Transport', 'SSH Session stdio'),
         _buildInfoTile(
+          context,
           'Target Server',
           '${server.username}@${server.host}:${server.port}',
         ),
         const SizedBox(height: 16),
         _buildSectionTitle(context, 'Session Stats'),
         const SizedBox(height: 8),
-        _buildInfoTile('Session ID', chatState.activeSessionId ?? 'None'),
+        _buildInfoTile(context, 'Session ID', chatState.activeSessionId ?? 'None'),
         _buildInfoTile(
+          context,
           'Messages',
           chatState.activeSession?.messages.length.toString() ?? '0',
         ),
         _buildInfoTile(
+          context,
           'Status',
           chatState.isGenerating ? 'Streaming...' : 'Idle',
         ),
@@ -218,29 +226,30 @@ class ContextInspector extends ConsumerWidget {
       children: [
         _buildSectionTitle(context, 'Container: ${selected.name}'),
         const SizedBox(height: 8),
-        _buildInfoTile('ID', selected.id),
-        _buildInfoTile('Image', selected.image),
-        _buildInfoTile('State', selected.state.name.toUpperCase()),
-        _buildInfoTile('Status', selected.status),
+        _buildInfoTile(context, 'ID', selected.id),
+        _buildInfoTile(context, 'Image', selected.image),
+        _buildInfoTile(context, 'State', selected.state.name.toUpperCase()),
+        _buildInfoTile(context, 'Status', selected.status),
         _buildInfoTile(
+          context,
           'Ports',
           selected.ports.isEmpty ? 'None' : selected.ports,
         ),
         if (selected.createdAt != null)
-          _buildInfoTile('Created', selected.createdAt.toString()),
+          _buildInfoTile(context, 'Created', selected.createdAt.toString()),
         if (inspect != null && inspect.isNotEmpty) ...[
           const SizedBox(height: 16),
           _buildSectionTitle(context, 'Inspect Metadata'),
           const SizedBox(height: 8),
           ValhallaCard(
             padding: const EdgeInsets.all(8),
-            color: const Color(0xFF0F141C),
+            color: context.colorScheme.surfaceContainerLow,
             child: SelectableText(
               const JsonEncoder.withIndent('  ').convert(inspect),
-              style: const TextStyle(
-                fontFamily: 'JetBrains Mono',
+              style: monoTextStyle(
                 fontSize: 10,
-                color: Color(0xFF10B981),
+                fontWeight: FontWeight.w400,
+                color: context.colorScheme.onSurface,
               ),
             ),
           ),
@@ -259,10 +268,10 @@ class ContextInspector extends ConsumerWidget {
       children: [
         _buildSectionTitle(context, context.l10n.serverSpecs),
         const SizedBox(height: 8),
-        _buildInfoTile('Name', server.name),
-        _buildInfoTile('Endpoint', '${server.host}:${server.port}'),
-        _buildInfoTile('Username', server.username),
-        _buildInfoTile('Auth Method', server.authType.name.toUpperCase()),
+        _buildInfoTile(context, 'Name', server.name),
+        _buildInfoTile(context, 'Endpoint', '${server.host}:${server.port}'),
+        _buildInfoTile(context, 'Username', server.username),
+        _buildInfoTile(context, 'Auth Method', server.authType.name.toUpperCase()),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -287,16 +296,14 @@ class ContextInspector extends ConsumerWidget {
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
+      style: context.textTheme.titleSmall?.copyWith(
         color: context.colorScheme.primary,
         letterSpacing: 0.5,
       ),
     );
   }
 
-  Widget _buildInfoTile(String label, String value) {
+  Widget _buildInfoTile(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
@@ -304,16 +311,16 @@ class ContextInspector extends ConsumerWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: Colors.grey,
+              color: context.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 2),
           SelectableText(
             value,
-            style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 12),
+            style: monoTextStyle(fontSize: 12, fontWeight: FontWeight.w500),
           ),
         ],
       ),

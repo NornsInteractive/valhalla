@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/layout_breakpoints.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/ai_chat_provider.dart';
 import '../../core/providers/cli_chat_provider.dart';
@@ -187,37 +189,39 @@ class DashboardView extends ConsumerWidget {
                 ],
               ],
               const SizedBox(height: 16),
-              Text(
-                context.l10n.dashboardTitle,
-                style: context.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+              Entrance(
+                index: 1,
+                child: Text(
+                  context.l10n.dashboardTitle,
+                  style: context.textTheme.titleMedium,
                 ),
               ),
               const SizedBox(height: 10),
-              metricsAsync.when(
-                data: (snap) => _buildMetricsGrid(context, snap),
-                loading: () => const ValhallaCard(
-                  padding: EdgeInsets.all(32),
-                  child: LoadingStateView(),
-                ),
-                error: (err, _) => ValhallaCard(
-                  padding: const EdgeInsets.all(16),
-                  child: ErrorStateView(
-                    message: err.toString(),
-                    onRetry: () => ref.invalidate(systemMetricsStreamProvider),
+              Entrance(
+                index: 2,
+                child: metricsAsync.when(
+                  data: (snap) => _buildMetricsGrid(context, snap),
+                  loading: () => const SkeletonMetricGrid(columns: 2, rows: 2),
+                  error: (err, _) => ValhallaCard(
+                    padding: const EdgeInsets.all(16),
+                    child: ErrorStateView(
+                      message: err.toString(),
+                      onRetry: () => ref.invalidate(systemMetricsStreamProvider),
+                    ),
                   ),
                 ),
               ),
               if (quickSections.isNotEmpty) ...[
                 const SizedBox(height: 20),
-                Text(
-                  context.l10n.quickActions,
-                  style: context.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Entrance(
+                  index: 3,
+                  child: Text(
+                    context.l10n.quickActions,
+                    style: context.textTheme.titleMedium,
                   ),
                 ),
                 const SizedBox(height: 10),
-                _buildQuickShortcuts(context, quickSections),
+                Entrance(index: 4, child: _buildQuickShortcuts(context, quickSections)),
               ],
             ],
           ),
@@ -255,9 +259,11 @@ class DashboardView extends ConsumerWidget {
         powerState.phase == ServerPowerPhase.accepted ||
         powerState.phase == ServerPowerPhase.unknown;
 
-    return ValhallaCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
+    return Entrance(
+      index: 0,
+      child: ValhallaCard(
+        padding: const EdgeInsets.all(16),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           LayoutBuilder(
@@ -265,12 +271,15 @@ class DashboardView extends ConsumerWidget {
               final serverInfo = Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(11),
                     decoration: BoxDecoration(
                       color: context.colorScheme.primaryContainer.withValues(
-                        alpha: 0.3,
+                        alpha: 0.35,
                       ),
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(VRadius.input),
+                      border: Border.all(
+                        color: context.colorScheme.primary.withValues(alpha: 0.25),
+                      ),
                     ),
                     child: Icon(
                       Icons.dns_rounded,
@@ -288,29 +297,30 @@ class DashboardView extends ConsumerWidget {
                             Flexible(
                               child: Text(
                                 server.name,
-                                style: context.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: context.textTheme.titleMedium,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
+                                horizontal: 7,
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
                                 color:
-                                    context.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(4),
+                                    context.colorScheme.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: context.colorScheme.outlineVariant,
+                                ),
                               ),
                               child: Text(
                                 server.authType.name.toUpperCase(),
-                                style: const TextStyle(
-                                  fontFamily: 'JetBrains Mono',
+                                style: monoTextStyle(
                                   fontSize: 10,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -322,9 +332,9 @@ class DashboardView extends ConsumerWidget {
                             Expanded(
                               child: Text(
                                 '${server.username}@${server.host}:${server.port}',
-                                style: TextStyle(
-                                  fontFamily: 'JetBrains Mono',
+                                style: monoTextStyle(
                                   fontSize: 12,
+                                  fontWeight: FontWeight.w400,
                                   color: context.colorScheme.onSurfaceVariant,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -463,26 +473,27 @@ class DashboardView extends ConsumerWidget {
             const SizedBox(height: 8),
             Container(
               key: const Key('dashboard_server_uptime'),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: context.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(4),
+                color: context.colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: context.colorScheme.outlineVariant),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.timer_outlined,
-                    size: 12,
+                    size: 13,
                     color: context.colorScheme.primary,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 5),
                   Text(
                     '${context.l10n.metricsUptime}: ${snapshot != null && snapshot.uptimeSeconds > 0 ? MetricsFormatters.formatUptime(snapshot.uptimeSeconds) : '--'}',
-                    style: const TextStyle(
-                      fontFamily: 'JetBrains Mono',
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                    style: monoTextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      color: context.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -497,6 +508,7 @@ class DashboardView extends ConsumerWidget {
             _ServerHardwareSpecsSection(serverId: server.id),
           ],
         ],
+        ),
       ),
     );
   }
@@ -527,22 +539,24 @@ class DashboardView extends ConsumerWidget {
             _buildMetricCard(
               context,
               key: const Key('dashboard_metric_cpu'),
+              entranceIndex: 0,
               title: context.l10n.metricsCpu,
-              value: MetricsFormatters.formatPercentage(cpuRatio),
+              valueRatio: cpuRatio,
               progress: cpuRatio,
               icon: Icons.speed_rounded,
-              progressColor: _getRatioColor(cpuRatio),
+              progressColor: _getRatioColor(context, cpuRatio),
               subtext: 'Load: ${snap.load1.toStringAsFixed(2)}',
               onTap: () => showMetricTrendModal(context, MetricTrendType.cpu),
             ),
             _buildMetricCard(
               context,
               key: const Key('dashboard_metric_memory'),
+              entranceIndex: 1,
               title: context.l10n.metricsMemory,
-              value: MetricsFormatters.formatPercentage(memRatio),
+              valueRatio: memRatio,
               progress: memRatio,
               icon: Icons.memory_rounded,
-              progressColor: _getRatioColor(memRatio),
+              progressColor: _getRatioColor(context, memRatio),
               subtext: 'Load5: ${snap.load5.toStringAsFixed(2)}',
               onTap: () =>
                   showMetricTrendModal(context, MetricTrendType.memory),
@@ -550,21 +564,25 @@ class DashboardView extends ConsumerWidget {
             _buildMetricCard(
               context,
               key: const Key('dashboard_metric_disk'),
+              entranceIndex: 2,
               title: context.l10n.metricsRootDisk,
-              value: '${diskPct.toStringAsFixed(0)}%',
+              valueRatio: diskPct / 100.0,
               progress: diskPct / 100.0,
               icon: Icons.storage_rounded,
-              progressColor: _getRatioColor(diskPct / 100.0),
+              progressColor: _getRatioColor(context, diskPct / 100.0),
               subtext: 'Path: /',
               onTap: () => showMetricTrendModal(context, MetricTrendType.disk),
             ),
             // Fourth card: Network Rate
-            _buildNetworkCard(
-              context,
-              primaryRate: primaryRate,
-              primaryInterface: primaryIface,
-              hasInterfaces: hasInterfaces,
-              onTap: () => showNetworkDetailsModal(context),
+            Entrance(
+              index: 3,
+              child: _buildNetworkCard(
+                context,
+                primaryRate: primaryRate,
+                primaryInterface: primaryIface,
+                hasInterfaces: hasInterfaces,
+                onTap: () => showNetworkDetailsModal(context),
+              ),
             ),
           ],
         );
@@ -575,72 +593,76 @@ class DashboardView extends ConsumerWidget {
   Widget _buildMetricCard(
     BuildContext context, {
     Key? key,
+    required int entranceIndex,
     required String title,
-    required String value,
+    required double valueRatio,
     required double progress,
     required IconData icon,
     required Color progressColor,
     required String subtext,
     VoidCallback? onTap,
   }) {
-    return ValhallaCard(
-      key: key,
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(12),
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 18, color: context.colorScheme.primary),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: context.colorScheme.onSurfaceVariant,
+    final ratio = valueRatio.clamp(0.0, 1.0);
+    return Entrance(
+      index: entranceIndex,
+      child: ValhallaCard(
+        key: key,
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.all(12),
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: progressColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  overflow: TextOverflow.ellipsis,
+                  child: Icon(icon, size: 15, color: progressColor),
                 ),
-              ),
-            ],
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: 'JetBrains Mono',
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: context.textTheme.labelMedium,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: LinearProgressIndicator(
+            CountUp(
+              value: ratio * 100,
+              formatter: (v) => MetricsFormatters.formatPercentage(
+                v / 100,
+              ),
+              style: monoTextStyle(fontSize: 21, fontWeight: FontWeight.w700),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedProgressBar(
                   value: progress.clamp(0.0, 1.0),
-                  backgroundColor: context.colorScheme.surfaceContainerHighest,
-                  valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                  minHeight: 5,
+                  color: progressColor,
+                  height: 5,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtext,
-                style: TextStyle(
-                  fontFamily: 'JetBrains Mono',
-                  fontSize: 10,
-                  color: context.colorScheme.outline,
+                const SizedBox(height: 5),
+                Text(
+                  subtext,
+                  style: monoTextStyle(
+                    fontSize: 10,
+                    color: context.colorScheme.outline,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -674,32 +696,24 @@ class DashboardView extends ConsumerWidget {
     } else {
       rateWidget = Row(
         children: [
-          const Icon(
+          Icon(
             Icons.arrow_downward_rounded,
             size: 14,
-            color: Color(0xFF10B981),
+            color: context.vSuccess,
           ),
           Text(
             formatNetworkRate(primaryRate.rxBytesPerSecond),
-            style: const TextStyle(
-              fontFamily: 'JetBrains Mono',
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
+            style: monoTextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
           const SizedBox(width: 8),
-          const Icon(
+          Icon(
             Icons.arrow_upward_rounded,
             size: 14,
-            color: Color(0xFF3B82F6),
+            color: context.vInfo,
           ),
           Text(
             formatNetworkRate(primaryRate.txBytesPerSecond),
-            style: const TextStyle(
-              fontFamily: 'JetBrains Mono',
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
+            style: monoTextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ],
       );
@@ -763,10 +777,10 @@ class DashboardView extends ConsumerWidget {
     );
   }
 
-  Color _getRatioColor(double ratio) {
-    if (ratio > 0.85) return const Color(0xFFEF4444); // Red
-    if (ratio > 0.70) return const Color(0xFFF59E0B); // Amber
-    return const Color(0xFF10B981); // Green
+  Color _getRatioColor(BuildContext context, double ratio) {
+    if (ratio > 0.85) return context.vDanger;
+    if (ratio > 0.70) return context.vWarning;
+    return context.vSuccess;
   }
 
   Widget _buildQuickShortcuts(BuildContext context, List<AppSection> sections) {
@@ -801,7 +815,7 @@ class DashboardView extends ConsumerWidget {
     required bool isWarning,
     required bool showReconnect,
   }) {
-    final color = isWarning ? const Color(0xFFF59E0B) : const Color(0xFF10B981);
+    final color = isWarning ? context.vWarning : context.vSuccess;
     final icon = isWarning
         ? Icons.help_outline_rounded
         : Icons.check_circle_outline_rounded;
@@ -811,15 +825,18 @@ class DashboardView extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        borderRadius: BorderRadius.circular(VRadius.input),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
           Icon(icon, color: color, size: 20),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(message, style: TextStyle(fontSize: 12, color: color)),
+            child: Text(
+              message,
+              style: context.textTheme.bodySmall?.copyWith(color: color),
+            ),
           ),
           if (showReconnect) ...[
             const SizedBox(width: 8),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../data/models/chat_run_settings.dart';
 
@@ -72,14 +73,14 @@ class ChatRunSettingsStrip extends StatelessWidget {
     return InkWell(
       key: key,
       onTap: isBusy ? null : onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(VRadius.pill),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerHighest.withValues(
             alpha: 0.6,
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(VRadius.pill),
           border: Border.all(
             color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
           ),
@@ -94,8 +95,6 @@ class ChatRunSettingsStrip extends StatelessWidget {
               child: Text(
                 label,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
                   color: isBusy ? theme.colorScheme.outline : null,
                 ),
                 maxLines: 1,

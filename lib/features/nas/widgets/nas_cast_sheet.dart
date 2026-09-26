@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/layout_breakpoints.dart';
+import '../../../core/design/motion_widgets.dart';
+import '../../../core/design/tokens.dart';
 import '../../../core/providers/nas_cast_provider.dart';
 import '../../../data/models/nas_media.dart';
 import 'nas_localizations.dart';
@@ -69,9 +71,7 @@ class _NasCastSheetState extends ConsumerState<NasCastSheet> {
                       const SizedBox(width: 8),
                       Text(
                         context.nasCast,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: theme.textTheme.titleMedium,
                       ),
                     ],
                   ),
@@ -108,7 +108,7 @@ class _NasCastSheetState extends ConsumerState<NasCastSheet> {
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.errorContainer,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(VRadius.input),
                   ),
                   child: Row(
                     children: [
@@ -142,7 +142,7 @@ class _NasCastSheetState extends ConsumerState<NasCastSheet> {
                   key: const Key('nas_cast_active_card'),
                   color: theme.colorScheme.surfaceContainerHighest,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(VRadius.input),
                     side: BorderSide(
                       color: theme.colorScheme.primary.withValues(alpha: 0.5),
                     ),
@@ -166,10 +166,7 @@ class _NasCastSheetState extends ConsumerState<NasCastSheet> {
                                 children: [
                                   Text(
                                     castState.activeDevice!.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
+                                    style: theme.textTheme.titleSmall,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
@@ -202,7 +199,9 @@ class _NasCastSheetState extends ConsumerState<NasCastSheet> {
                             ),
                             decoration: BoxDecoration(
                               color: theme.colorScheme.secondaryContainer,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(
+                                VRadius.input,
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -323,26 +322,26 @@ class _NasCastSheetState extends ConsumerState<NasCastSheet> {
               // Devices List Section
               Text(
                 context.nasCastDevices,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: theme.textTheme.titleSmall,
               ),
               const SizedBox(height: 8),
 
               if (castState.discovering && castState.devices.isEmpty) ...[
+                Shimmer(
+                  child: Column(
+                    children: const [
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                    ],
+                  ),
+                ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  padding: const EdgeInsets.only(top: 12, bottom: 24),
                   child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 12),
-                        Text(
-                          context.nasCastDiscovering,
-                          style: TextStyle(color: theme.colorScheme.outline),
-                        ),
-                      ],
+                    child: Text(
+                      context.nasCastDiscovering,
+                      style: TextStyle(color: theme.colorScheme.outline),
                     ),
                   ),
                 ),
@@ -389,14 +388,15 @@ class _NasCastSheetState extends ConsumerState<NasCastSheet> {
                       dev.name,
                       style: TextStyle(
                         fontWeight: isCurrentActive
-                            ? FontWeight.bold
+                            ? FontWeight.w600
                             : FontWeight.normal,
                       ),
                     ),
                     subtitle: Text(
                       dev.location.host,
-                      style: TextStyle(
+                      style: monoTextStyle(
                         fontSize: 11,
+                        fontWeight: FontWeight.w400,
                         color: theme.colorScheme.outline,
                       ),
                     ),
@@ -408,13 +408,15 @@ class _NasCastSheetState extends ConsumerState<NasCastSheet> {
                             ),
                             decoration: BoxDecoration(
                               color: theme.colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(
+                                VRadius.pill,
+                              ),
                             ),
                             child: Text(
                               'Active',
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 color: theme.colorScheme.onPrimaryContainer,
                               ),
                             ),

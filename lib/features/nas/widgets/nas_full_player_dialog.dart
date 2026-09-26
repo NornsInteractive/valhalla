@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/nas_provider.dart';
 import '../../../core/services/nas_media_player_service.dart';
@@ -171,7 +172,7 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
                 ),
                 child: Text(
                   context.nasAudioTrack,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
               for (final track in tracks.audio)
@@ -194,7 +195,7 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
                 ),
                 child: Text(
                   context.nasSubtitleTrack,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
               ListTile(
@@ -331,14 +332,10 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
       key: const Key('nas_full_player'),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(VRadius.sheet),
+        ),
+        boxShadow: vElevation(theme.brightness, strength: 1.6),
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       child: SafeArea(
@@ -352,7 +349,7 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
               height: 4,
               decoration: BoxDecoration(
                 color: theme.colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(VRadius.pill),
               ),
             ),
             const SizedBox(height: 12),
@@ -366,7 +363,7 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
                   icon: Icon(
                     isFav ? Icons.favorite : Icons.favorite_border,
                     size: 20,
-                    color: isFav ? Colors.redAccent : theme.colorScheme.outline,
+                    color: isFav ? context.vDanger : theme.colorScheme.outline,
                   ),
                   tooltip: context.l10n.nasTabFavorites,
                   onPressed: _favoriteInProgress
@@ -457,9 +454,7 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
                                 ),
                                 Text(
                                   currentItem.name,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: theme.textTheme.titleSmall,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -502,9 +497,7 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
                           ),
                           Text(
                             currentItem.name,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: theme.textTheme.titleSmall,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -527,7 +520,7 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.black,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(VRadius.input),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: videoController != null
@@ -573,9 +566,7 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
             // Track / Video Title and Subtitle Info
             Text(
               currentItem.title ?? currentItem.name,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -622,14 +613,18 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
                 children: [
                   Text(
                     _formatDuration(position),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontFamily: 'JetBrains Mono',
+                    style: monoTextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   Text(
                     _formatDuration(duration),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontFamily: 'JetBrains Mono',
+                    style: monoTextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -743,7 +738,10 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
                   TextButton.icon(
                     key: const Key('nas_full_player_speed_button'),
                     icon: const Icon(Icons.speed, size: 16),
-                    label: Text('${snapshot.rate}x'),
+                    label: Text(
+                      '${snapshot.rate}x',
+                      style: monoTextStyle(fontSize: 12),
+                    ),
                     onPressed: () =>
                         _showSpeedDialog(context, playerService, snapshot.rate),
                   ),

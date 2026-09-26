@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/layout_breakpoints.dart';
+import '../../core/design/motion.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/diagnostics_provider.dart';
 import '../../core/providers/server_provider.dart';
@@ -261,7 +264,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               '${activeServer.name} (${activeServer.host})',
             ),
           ),
-          backgroundColor: const Color(0xFF10B981),
+          backgroundColor: context.vSuccess,
         ),
       );
     } else {
@@ -270,7 +273,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text(context.l10n.sshConnectionFailed(err)),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: context.vDanger,
         ),
       );
     }
@@ -435,34 +438,54 @@ class _MainShellState extends ConsumerState<MainShell> {
                                 final isSelected =
                                     (currentAccent.toARGB32() & 0xFFFFFF) ==
                                     (accent.color.toARGB32() & 0xFFFFFF);
-                                return InkWell(
-                                  onTap: () => notifier.setThemeAccentColor(
-                                    targetSlot,
-                                    accent.color,
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color: accent.color,
-                                      shape: BoxShape.circle,
-                                      border: isSelected
-                                          ? Border.all(
-                                              color: dialogCtx
-                                                  .colorScheme
-                                                  .onSurface,
-                                              width: 2.5,
-                                            )
-                                          : null,
+                                return PressableScale(
+                                  pressedScale: 0.88,
+                                  child: InkWell(
+                                    onTap: () => notifier.setThemeAccentColor(
+                                      targetSlot,
+                                      accent.color,
                                     ),
-                                    child: isSelected
-                                        ? const Icon(
-                                            Icons.check,
-                                            color: Colors.white,
-                                            size: 18,
-                                          )
-                                        : null,
+                                    borderRadius: BorderRadius.circular(
+                                      VRadius.pill,
+                                    ),
+                                    child: AnimatedContainer(
+                                      duration: VTiming.base,
+                                      curve: VCurves.emphasized,
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: accent.color,
+                                        shape: BoxShape.circle,
+                                        border: isSelected
+                                            ? Border.all(
+                                                color: dialogCtx
+                                                    .colorScheme
+                                                    .onSurface,
+                                                width: 2.5,
+                                              )
+                                            : null,
+                                        boxShadow: isSelected
+                                            ? [
+                                                BoxShadow(
+                                                  color: accent.color
+                                                      .withValues(alpha: 0.4),
+                                                  blurRadius: 10,
+                                                  spreadRadius: 1,
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                      child: AnimatedScale(
+                                        scale: isSelected ? 1.0 : 0.0,
+                                        duration: VTiming.base,
+                                        curve: VCurves.springish,
+                                        child: const Icon(
+                                          Icons.check,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 );
                               }).toList(),
@@ -763,21 +786,25 @@ class _MainShellState extends ConsumerState<MainShell> {
             const Divider(),
             ...AppSection.values.map((section) {
               final idx = appSectionToViewIndex(section);
-              return ListTile(
-                key: section == AppSection.cliChat
-                    ? const Key('drawer_cli_chat_tile')
-                    : (section == AppSection.nas
-                          ? const Key('drawer_nas_tile')
-                          : null),
-                leading: Icon(
-                  appSectionIcon(section, selected: _currentIndex == idx),
+              return Entrance(
+                index: appSectionToViewIndex(section),
+                offset: const Offset(-14, 0),
+                child: ListTile(
+                  key: section == AppSection.cliChat
+                      ? const Key('drawer_cli_chat_tile')
+                      : (section == AppSection.nas
+                            ? const Key('drawer_nas_tile')
+                            : null),
+                  leading: Icon(
+                    appSectionIcon(section, selected: _currentIndex == idx),
+                  ),
+                  title: Text(localizedAppSectionName(context, section)),
+                  selected: _currentIndex == idx,
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() => _currentIndex = idx);
+                  },
                 ),
-                title: Text(localizedAppSectionName(context, section)),
-                selected: _currentIndex == idx,
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() => _currentIndex = idx);
-                },
               );
             }),
             const Divider(),
@@ -877,7 +904,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: IndexedStack(
+                        child: AnimatedIndexedStack(
                           index: _currentIndex,
                           children: _views,
                         ),
@@ -914,7 +941,10 @@ class _MainShellState extends ConsumerState<MainShell> {
                 const Divider(height: 1),
                 const ConnectionStatusBanner(),
                 Expanded(
-                  child: IndexedStack(index: _currentIndex, children: _views),
+                  child: AnimatedIndexedStack(
+                    index: _currentIndex,
+                    children: _views,
+                  ),
                 ),
                 _buildGlobalMiniPlayer(),
               ],
@@ -938,10 +968,25 @@ class _MainShellState extends ConsumerState<MainShell> {
       onDestinationSelected: (index) => setState(() => _currentIndex = index),
       leading: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        child: CircleAvatar(
-          radius: 18,
-          backgroundColor: context.colorScheme.primary,
-          child: const Icon(Icons.shield, color: Colors.black, size: 20),
+        child: Entrance(
+          index: 0,
+          offset: const Offset(-12, 0),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: context.colorScheme.primary,
+              borderRadius: BorderRadius.circular(VRadius.input),
+              boxShadow: [
+                BoxShadow(
+                  color: context.colorScheme.primary.withValues(alpha: 0.28),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.shield, color: Colors.white, size: 21),
+          ),
         ),
       ),
       trailing: Expanded(
@@ -1030,19 +1075,19 @@ class _MainShellState extends ConsumerState<MainShell> {
     String statusText;
     switch (connState.status) {
       case ConnectionStateEnum.connected:
-        statusColor = const Color(0xFF10B981);
+        statusColor = context.vSuccess;
         statusText = context.l10n.serverConnected;
         break;
       case ConnectionStateEnum.connecting:
-        statusColor = Colors.orange;
+        statusColor = context.vWarning;
         statusText = context.l10n.serverConnecting;
         break;
       case ConnectionStateEnum.disconnected:
-        statusColor = Colors.grey;
+        statusColor = context.colorScheme.outline;
         statusText = context.l10n.serverDisconnected;
         break;
       case ConnectionStateEnum.error:
-        statusColor = Colors.red;
+        statusColor = context.vDanger;
         statusText = context.l10n.stateError;
         break;
     }
@@ -1061,13 +1106,28 @@ class _MainShellState extends ConsumerState<MainShell> {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            localizedAppSectionName(
-              context,
-              viewIndexToAppSection(_currentIndex),
+          AnimatedSwitcher(
+            duration: VTiming.base,
+            switchInCurve: VCurves.decelerate,
+            switchOutCurve: VCurves.accelerate,
+            transitionBuilder: (child, anim) => FadeTransition(
+              opacity: anim,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.5),
+                  end: Offset.zero,
+                ).animate(anim),
+                child: child,
+              ),
             ),
-            key: const Key('main_shell_page_title'),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            child: Text(
+              localizedAppSectionName(
+                context,
+                viewIndexToAppSection(_currentIndex),
+              ),
+              key: const Key('main_shell_page_title'),
+              style: context.textTheme.titleMedium,
+            ),
           ),
           const Spacer(),
           if (showInspectorToggle) ...[
@@ -1095,28 +1155,18 @@ class _MainShellState extends ConsumerState<MainShell> {
                 onTap: () => _showServerSelector(context),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 10,
+                    vertical: 6,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+                      PulseDot(color: statusColor, size: 8),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
                           activeServer?.name ?? context.l10n.noServerSelected,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
+                          style: context.textTheme.titleSmall,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -1127,19 +1177,22 @@ class _MainShellState extends ConsumerState<MainShell> {
                         Flexible(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                              horizontal: 8,
+                              vertical: 3,
                             ),
                             decoration: BoxDecoration(
                               color:
-                                  context.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(4),
+                                  context.colorScheme.surfaceContainerHigh,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: context.colorScheme.outlineVariant,
+                              ),
                             ),
                             child: Text(
                               '${activeServer.host}:${activeServer.port} ($statusText)',
-                              style: const TextStyle(
+                              style: monoTextStyle(
                                 fontSize: 11,
-                                fontFamily: 'JetBrains Mono',
+                                color: context.colorScheme.onSurfaceVariant,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1184,27 +1237,24 @@ class _MainShellState extends ConsumerState<MainShell> {
                 onTap: () => _showNasSourceSelector(context),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 10,
+                    vertical: 6,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.storage_outlined,
-                        size: 16,
+                        size: 17,
                         color: activeNasSource != null
-                            ? const Color(0xFF10B981)
+                            ? context.vSuccess
                             : context.colorScheme.outline,
                       ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
                           activeNasSource?.name ?? context.l10n.nasNoSources,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
+                          style: context.textTheme.titleSmall,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -1215,19 +1265,22 @@ class _MainShellState extends ConsumerState<MainShell> {
                         Flexible(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                              horizontal: 8,
+                              vertical: 3,
                             ),
                             decoration: BoxDecoration(
                               color:
-                                  context.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(4),
+                                  context.colorScheme.surfaceContainerHigh,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: context.colorScheme.outlineVariant,
+                              ),
                             ),
                             child: Text(
                               activeNasSource.type.name.toUpperCase(),
-                              style: const TextStyle(
+                              style: monoTextStyle(
                                 fontSize: 11,
-                                fontFamily: 'JetBrains Mono',
+                                color: context.colorScheme.onSurfaceVariant,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1255,16 +1308,16 @@ class _MainShellState extends ConsumerState<MainShell> {
     Color statusColor;
     switch (connState.status) {
       case ConnectionStateEnum.connected:
-        statusColor = const Color(0xFF10B981);
+        statusColor = context.vSuccess;
         break;
       case ConnectionStateEnum.connecting:
-        statusColor = Colors.orange;
+        statusColor = context.vWarning;
         break;
       case ConnectionStateEnum.disconnected:
-        statusColor = Colors.grey;
+        statusColor = context.colorScheme.outline;
         break;
       case ConnectionStateEnum.error:
-        statusColor = Colors.red;
+        statusColor = context.vDanger;
         break;
     }
 
@@ -1282,13 +1335,28 @@ class _MainShellState extends ConsumerState<MainShell> {
           ),
         ),
         titleSpacing: 0,
-        title: Text(
-          localizedAppSectionName(
-            context,
-            viewIndexToAppSection(_currentIndex),
+        title: AnimatedSwitcher(
+          duration: VTiming.base,
+          switchInCurve: VCurves.decelerate,
+          switchOutCurve: VCurves.accelerate,
+          transitionBuilder: (child, anim) => FadeTransition(
+            opacity: anim,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.5),
+                end: Offset.zero,
+              ).animate(anim),
+              child: child,
+            ),
           ),
-          key: const Key('main_shell_page_title'),
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          child: Text(
+            localizedAppSectionName(
+              context,
+              viewIndexToAppSection(_currentIndex),
+            ),
+            key: const Key('main_shell_page_title'),
+            style: context.textTheme.titleMedium,
+          ),
         ),
         actions: [
           IconButton(
@@ -1305,23 +1373,13 @@ class _MainShellState extends ConsumerState<MainShell> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: statusColor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
+                    PulseDot(color: statusColor, size: 8),
+                    const SizedBox(width: 7),
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 130),
                       child: Text(
                         activeServer?.name ?? context.l10n.noServerSelected,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: context.textTheme.titleSmall,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -1364,9 +1422,9 @@ class _MainShellState extends ConsumerState<MainShell> {
                   children: [
                     Icon(
                       Icons.storage_outlined,
-                      size: 16,
+                      size: 17,
                       color: activeNasSource != null
-                          ? const Color(0xFF10B981)
+                          ? context.vSuccess
                           : context.colorScheme.outline,
                     ),
                     const SizedBox(width: 6),
@@ -1374,10 +1432,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                       constraints: const BoxConstraints(maxWidth: 120),
                       child: Text(
                         activeNasSource?.name ?? context.l10n.nasNoSources,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: context.textTheme.titleSmall,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -1394,7 +1449,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         children: [
           const ConnectionStatusBanner(),
           Expanded(
-            child: IndexedStack(index: _currentIndex, children: _views),
+            child: AnimatedIndexedStack(index: _currentIndex, children: _views),
           ),
           _buildGlobalMiniPlayer(),
         ],
@@ -1512,9 +1567,10 @@ class MainBottomNavigationBar extends StatelessWidget {
 
     final currentSection = viewIndexToAppSection(currentIndex);
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final barBg =
         theme.navigationBarTheme.backgroundColor ?? theme.colorScheme.surface;
-    final height = theme.navigationBarTheme.height ?? 65.0;
+    final height = theme.navigationBarTheme.height ?? 72.0;
 
     return Container(
       key: const Key('main_bottom_nav_bar'),
@@ -1523,7 +1579,7 @@ class MainBottomNavigationBar extends StatelessWidget {
         color: barBg,
         border: Border(
           top: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
@@ -1534,6 +1590,11 @@ class MainBottomNavigationBar extends StatelessWidget {
           builder: (ctx, constraints) {
             final count = sections.length;
             final canFitAll = (constraints.maxWidth / count) >= 64.0;
+            final slotWidth = canFitAll
+                ? constraints.maxWidth / count
+                : 68.0;
+            final selectedIndex = sections.indexOf(currentSection);
+            final trackWidth = slotWidth * count;
 
             final children = sections.map((sec) {
               final isSelected = currentSection == sec;
@@ -1541,7 +1602,7 @@ class MainBottomNavigationBar extends StatelessWidget {
 
               return SizedBox(
                 key: Key('bottom_nav_item_${sec.name}'),
-                width: canFitAll ? (constraints.maxWidth / count) : 68.0,
+                width: slotWidth,
                 height: height,
                 child: Material(
                   color: Colors.transparent,
@@ -1551,39 +1612,45 @@ class MainBottomNavigationBar extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? context.colorScheme.primaryContainer
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Icon(
-                            appSectionIcon(sec, selected: isSelected),
-                            size: 20,
-                            color: isSelected
-                                ? context.colorScheme.onPrimaryContainer
-                                : context.colorScheme.onSurfaceVariant,
+                        // 图标微跳: 选中时轻微上浮 + 缩放, spring 收尾。
+                        AnimatedScale(
+                          scale: isSelected ? 1.12 : 1.0,
+                          duration: VTiming.base,
+                          curve: VCurves.springish,
+                          child: AnimatedSlide(
+                            offset: isSelected
+                                ? const Offset(0, -0.08)
+                                : Offset.zero,
+                            duration: VTiming.base,
+                            curve: VCurves.springish,
+                            child: Icon(
+                              appSectionIcon(sec, selected: isSelected),
+                              size: 21,
+                              color: isSelected
+                                  ? scheme.primary
+                                  : scheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          localizedAppSectionName(context, sec),
+                        const SizedBox(height: 3),
+                        AnimatedDefaultTextStyle(
+                          duration: VTiming.base,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                             color: isSelected
-                                ? context.colorScheme.primary
-                                : context.colorScheme.onSurfaceVariant,
+                                ? scheme.onSurface
+                                : scheme.onSurfaceVariant,
+                            fontFamily: 'Inter',
+                            height: 1.2,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          child: Text(
+                            localizedAppSectionName(context, sec),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
@@ -1592,16 +1659,47 @@ class MainBottomNavigationBar extends StatelessWidget {
               );
             }).toList();
 
+            Widget bar;
             if (canFitAll) {
-              return Row(
+              bar = Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: children,
               );
+            } else {
+              bar = SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: children),
+              );
             }
 
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(children: children),
+            // 滑动指示条: 选中项下方的强调色胶囊, 随切页平移 (spring)。
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned.fill(child: bar),
+                if (canFitAll && selectedIndex >= 0)
+                  Positioned(
+                    top: 2,
+                    left: 0,
+                    width: trackWidth,
+                    child: AnimatedAlign(
+                      alignment: Alignment(
+                        -1 + (2 * selectedIndex + 1) / count,
+                        0,
+                      ),
+                      duration: VTiming.base,
+                      curve: VCurves.springish,
+                      child: Container(
+                        width: 18,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: scheme.primary,
+                          borderRadius: BorderRadius.circular(VRadius.pill),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             );
           },
         ),

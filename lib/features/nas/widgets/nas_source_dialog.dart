@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/nas_sources_provider.dart';
 import '../../../core/providers/server_provider.dart';
@@ -273,9 +274,7 @@ class _NasSourceDialogState extends ConsumerState<NasSourceDialog> {
                         _isEditing
                             ? context.nasEditSource
                             : context.nasAddSource,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: theme.textTheme.titleMedium,
                       ),
                     ),
                     IconButton(
@@ -353,7 +352,7 @@ class _NasSourceDialogState extends ConsumerState<NasSourceDialog> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(VRadius.input),
                       ),
                       child: Text(
                         context.nasSelectSshServer,
@@ -589,8 +588,9 @@ class _NasSourceDialogState extends ConsumerState<NasSourceDialog> {
                         Expanded(
                           child: Text(
                             'User ID: $_authenticatedUserId',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontFamily: 'JetBrains Mono',
+                            style: monoTextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
                               color: theme.colorScheme.primary,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -619,7 +619,7 @@ class _NasSourceDialogState extends ConsumerState<NasSourceDialog> {
                       color: _statusIsError
                           ? theme.colorScheme.errorContainer
                           : theme.colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(VRadius.input),
                     ),
                     child: Text(
                       _statusMessage!,
@@ -695,7 +695,7 @@ class _NasSourceDialogState extends ConsumerState<NasSourceDialog> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(VRadius.input),
         border: Border.all(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
@@ -711,10 +711,7 @@ class _NasSourceDialogState extends ConsumerState<NasSourceDialog> {
                   children: [
                     Text(
                       context.nasUseSshTunnel,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
+                      style: theme.textTheme.titleSmall,
                     ),
                     const SizedBox(height: 2),
                     Text(

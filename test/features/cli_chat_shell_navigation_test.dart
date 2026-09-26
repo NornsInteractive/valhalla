@@ -11,6 +11,7 @@ import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/chat/cli_chat_view.dart';
 import 'package:valhalla/features/shell/main_shell.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import 'package:valhalla/core/design/motion_widgets.dart';
 
 class _FakeSftpNotifier extends SftpNotifier {
   @override
@@ -109,7 +110,7 @@ void main() {
 
       // Drawer closed, index is 8, CliChatView rendered
       expect(find.byType(Drawer), findsNothing);
-      final stack = tester.widget<IndexedStack>(find.byType(IndexedStack));
+      final stack = tester.widget<AnimatedIndexedStack>(find.byType(AnimatedIndexedStack));
       expect(stack.index, 8);
       expect(find.byType(CliChatView), findsOneWidget);
     });
@@ -128,7 +129,7 @@ void main() {
       await tester.tap(cliRailDestination);
       await tester.pumpAndSettle();
 
-      final stack = tester.widget<IndexedStack>(find.byType(IndexedStack));
+      final stack = tester.widget<AnimatedIndexedStack>(find.byType(AnimatedIndexedStack));
       expect(stack.index, 8);
       expect(find.byType(CliChatView), findsOneWidget);
     });

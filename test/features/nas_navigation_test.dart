@@ -11,6 +11,7 @@ import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/nas/nas_media_view.dart';
 import 'package:valhalla/features/shell/main_shell.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import 'package:valhalla/core/design/motion_widgets.dart';
 
 class _FakeSftpNotifier extends SftpNotifier {
   @override
@@ -87,8 +88,8 @@ void main() {
         await tester.tap(nasDrawerTile);
         await tester.pumpAndSettle();
 
-        final stack = tester.widget<IndexedStack>(
-          find.byType(IndexedStack).first,
+        final stack = tester.widget<AnimatedIndexedStack>(
+          find.byType(AnimatedIndexedStack).first,
         );
         expect(stack.index, 9);
         expect(find.byType(NasMediaView), findsOneWidget);

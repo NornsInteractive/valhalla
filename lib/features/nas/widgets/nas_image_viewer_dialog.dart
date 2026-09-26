@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/nas_provider.dart';
 import '../../../data/models/nas_media.dart';
@@ -291,18 +292,17 @@ class _NasImageViewerDialogState extends ConsumerState<NasImageViewerDialog> {
                       children: [
                         Text(
                           item.name,
-                          style: const TextStyle(
+                          style: context.textTheme.titleSmall?.copyWith(
                             color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           '${_currentIndex + 1} / ${_items.length} · ${item.path}',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
+                          style: monoTextStyle(
                             fontSize: 11,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white.withValues(alpha: 0.6),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -315,7 +315,11 @@ class _NasImageViewerDialogState extends ConsumerState<NasImageViewerDialog> {
                       _isSlideshow
                           ? Icons.pause_circle_filled
                           : Icons.play_circle_outline,
-                      color: _isSlideshow ? Colors.amberAccent : Colors.white,
+                      // Fullscreen viewer is always dark: use the dark
+                      // semantic variants for contrast on black.
+                      color: _isSlideshow
+                          ? VColors.warning(Brightness.dark)
+                          : Colors.white,
                     ),
                     tooltip: context.nasSlideshow,
                     onPressed: _toggleSlideshow,
@@ -324,7 +328,9 @@ class _NasImageViewerDialogState extends ConsumerState<NasImageViewerDialog> {
                     key: const Key('nas_image_viewer_favorite_button'),
                     icon: Icon(
                       isFav ? Icons.favorite : Icons.favorite_border,
-                      color: isFav ? Colors.redAccent : Colors.white,
+                      color: isFav
+                          ? VColors.danger(Brightness.dark)
+                          : Colors.white,
                     ),
                     tooltip: context.l10n.nasTabFavorites,
                     onPressed: _favoriteInProgress ? null : _toggleFavorite,
@@ -443,19 +449,19 @@ class _NasImageViewerDialogState extends ConsumerState<NasImageViewerDialog> {
                 children: [
                   Text(
                     SftpFileItem.formatBytes(item.sizeBytes),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                    style: monoTextStyle(
                       fontSize: 12,
-                      fontFamily: 'JetBrains Mono',
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
                   ),
                   if (item.width != null && item.height != null)
                     Text(
                       '${item.width} × ${item.height}',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                      style: monoTextStyle(
                         fontSize: 12,
-                        fontFamily: 'JetBrains Mono',
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
                   Text(
@@ -464,10 +470,10 @@ class _NasImageViewerDialogState extends ConsumerState<NasImageViewerDialog> {
                             item.modifiedEpoch * 1000,
                           ).toLocal().toString().substring(0, 16)
                         : '-',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                    style: monoTextStyle(
                       fontSize: 12,
-                      fontFamily: 'JetBrains Mono',
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -511,7 +517,10 @@ class _NasImageViewerDialogState extends ConsumerState<NasImageViewerDialog> {
               const SizedBox(height: 8),
               Text(
                 error,
-                style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                style: TextStyle(
+                  color: VColors.danger(Brightness.dark),
+                  fontSize: 12,
+                ),
               ),
             ],
           ],

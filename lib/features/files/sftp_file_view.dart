@@ -4,9 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/layout_breakpoints.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/sftp_provider.dart';
 import '../../infrastructure/sftp/sftp_client_service.dart';
+import '../../widgets/state_views.dart';
+import '../../widgets/valhalla_card.dart';
 
 class SftpFileView extends ConsumerStatefulWidget {
   const SftpFileView({super.key, this.openTransfersRequest});
@@ -312,7 +316,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
             child: Text(context.l10n.cancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: ctx.vDanger),
             onPressed: () {
               ref.read(sftpProvider.notifier).deleteItem(item);
               Navigator.pop(ctx);
@@ -401,18 +405,13 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                 title: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text(item.name, style: theme.textTheme.titleMedium),
                     Text(
                       item.path,
-                      style: const TextStyle(
+                      style: monoTextStyle(
                         fontSize: 11,
-                        fontFamily: 'JetBrains Mono',
+                        fontWeight: FontWeight.w400,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -421,12 +420,12 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                   FilledButton.icon(
                     key: const Key('sftp_editor_save_button'),
                     icon: isSaving
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: theme.colorScheme.onPrimary,
                             ),
                           )
                         : const Icon(Icons.save, size: 16),
@@ -476,10 +475,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                         controller: editorController,
                         maxLines: null,
                         expands: true,
-                        style: const TextStyle(
-                          fontFamily: 'JetBrains Mono',
+                        style: monoTextStyle(
                           fontSize: 13,
-                          height: 1.4,
+                          fontWeight: FontWeight.w400,
                         ),
                         decoration: const InputDecoration(
                           border: InputBorder.none,
@@ -648,9 +646,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
               Expanded(
                 child: Text(
                   '$title ${transfer.remotePath.split('/').last}',
-                  style: TextStyle(
+                  style: monoTextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     color: context.colorScheme.primary,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -659,15 +657,23 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
               if (progress != null)
                 Text(
                   '${(progress * 100).toStringAsFixed(0)}%',
-                  style: TextStyle(
+                  style: monoTextStyle(
                     fontSize: 11,
+                    fontWeight: FontWeight.w600,
                     color: context.colorScheme.primary,
                   ),
                 ),
             ],
           ),
           const SizedBox(height: 4),
-          LinearProgressIndicator(value: progress, minHeight: 3),
+          if (progress != null)
+            AnimatedProgressBar(
+              value: progress,
+              height: 3,
+              color: context.colorScheme.primary,
+            )
+          else
+            const LinearProgressIndicator(minHeight: 3),
         ],
       ),
     );
@@ -711,7 +717,13 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
           _buildNotificationUnavailableNotice(),
         Expanded(
           child: sftpState.isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Shimmer(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: VSpace.sm),
+                    itemCount: 8,
+                    itemBuilder: (_, _) => const SkeletonListTile(),
+                  ),
+                )
               : _buildFileList(sftpState),
         ),
       ],
@@ -722,62 +734,75 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     final notifier = ref.read(sftpProvider.notifier);
     final segments = state.pathSegments;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      color: context.colorScheme.surface,
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_upward, size: 18),
-            tooltip: 'Up to parent directory',
-            onPressed: state.isAtRoot ? null : () => notifier.navigateUp(),
-          ),
-          ActionChip(
-            label: const Text(
-              '/',
-              style: TextStyle(fontWeight: FontWeight.bold),
+    return Entrance(
+      index: 0,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        color: context.colorScheme.surface,
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_upward, size: 18),
+              tooltip: 'Up to parent directory',
+              onPressed: state.isAtRoot ? null : () => notifier.navigateUp(),
             ),
-            onPressed: () => notifier.navigateTo('/'),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(segments.length, (index) {
-                  final seg = segments[index];
-                  final pathUpTo = '/${segments.take(index + 1).join('/')}';
-                  final isLast = index == segments.length - 1;
+            ActionChip(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(VRadius.pill),
+              ),
+              label: Text(
+                '/',
+                style: monoTextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+              onPressed: () => notifier.navigateTo('/'),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: List.generate(segments.length, (index) {
+                    final seg = segments[index];
+                    final pathUpTo = '/${segments.take(index + 1).join('/')}';
+                    final isLast = index == segments.length - 1;
 
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.chevron_right,
-                        size: 16,
-                        color: Colors.grey,
-                      ),
-                      ActionChip(
-                        avatar: isLast
-                            ? const Icon(Icons.folder_open, size: 14)
-                            : null,
-                        label: Text(
-                          seg,
-                          style: TextStyle(
-                            fontWeight: isLast
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.chevron_right,
+                          size: 16,
+                          color: context.colorScheme.outline,
                         ),
-                        onPressed: () => notifier.navigateTo(pathUpTo),
-                      ),
-                    ],
-                  );
-                }),
+                        ActionChip(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(VRadius.pill),
+                          ),
+                          avatar: isLast
+                              ? const Icon(Icons.folder_open, size: 14)
+                              : null,
+                          label: Text(
+                            seg,
+                            style: monoTextStyle(
+                              fontSize: 12,
+                              fontWeight: isLast
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: isLast
+                                  ? context.colorScheme.onSurface
+                                  : context.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          onPressed: () => notifier.navigateTo(pathUpTo),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -785,149 +810,152 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   Widget _buildActionBar(SftpState state) {
     final notifier = ref.read(sftpProvider.notifier);
 
-    return Container(
-      color: context.colorScheme.surfaceContainerLowest,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Row 1: Dedicated Search Field
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
-            child: SizedBox(
-              height: 36,
-              child: TextField(
-                key: const Key('sftp_search_field'),
-                controller: _searchController,
-                onChanged: (val) => notifier.setSearchQuery(val),
-                decoration: InputDecoration(
-                  hintText: context.l10n.sftpSearchHint,
-                  hintStyle: const TextStyle(fontSize: 12),
-                  prefixIcon: const Icon(Icons.search, size: 16),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 16),
-                          tooltip: 'Clear',
-                          onPressed: () {
-                            _searchController.clear();
-                            notifier.setSearchQuery('');
-                          },
-                        )
-                      : null,
-                  contentPadding: EdgeInsets.zero,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
+    return Entrance(
+      index: 1,
+      child: Container(
+        color: context.colorScheme.surfaceContainerLowest,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Row 1: Dedicated Search Field
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
+              child: SizedBox(
+                height: 36,
+                child: TextField(
+                  key: const Key('sftp_search_field'),
+                  controller: _searchController,
+                  onChanged: (val) => notifier.setSearchQuery(val),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.sftpSearchHint,
+                    hintStyle: context.textTheme.bodySmall,
+                    prefixIcon: const Icon(Icons.search, size: 16),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 16),
+                            tooltip: 'Clear',
+                            onPressed: () {
+                              _searchController.clear();
+                              notifier.setSearchQuery('');
+                            },
+                          )
+                        : null,
+                    contentPadding: EdgeInsets.zero,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(VRadius.input),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: context.colorScheme.surfaceContainerHighest,
                   ),
-                  filled: true,
-                  fillColor: context.colorScheme.surfaceContainerHighest,
+                  style: context.textTheme.bodyMedium,
                 ),
-                style: const TextStyle(fontSize: 13),
               ),
             ),
-          ),
-          // Row 2: Action buttons (Responsive horizontal scroll, never wrap or overflow)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.upload_file, size: 20),
-                  tooltip: context.l10n.sftpUpload,
-                  onPressed: state.activeTransfer != null
-                      ? null
-                      : _handleUpload,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.create_new_folder_outlined, size: 20),
-                  tooltip: context.l10n.sftpNewFolder,
-                  onPressed: _showNewFolderDialog,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.note_add_outlined, size: 20),
-                  tooltip: context.l10n.sftpNewFile,
-                  onPressed: _showNewFileDialog,
-                ),
-                PopupMenuButton<Object>(
-                  icon: const Icon(Icons.sort, size: 20),
-                  tooltip: context.l10n.sftpSort,
-                  onSelected: (value) {
-                    if (value is SftpSortKey) {
-                      final isSameKey = state.sortKey == value;
-                      notifier.setSort(
-                        key: value,
-                        ascending: isSameKey
-                            ? !state.sortAscending
-                            : state.sortAscending,
-                      );
-                    } else if (value == 'asc') {
-                      notifier.setSort(key: state.sortKey, ascending: true);
-                    } else if (value == 'desc') {
-                      notifier.setSort(key: state.sortKey, ascending: false);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    CheckedPopupMenuItem<SftpSortKey>(
-                      value: SftpSortKey.name,
-                      checked: state.sortKey == SftpSortKey.name,
-                      child: Text(context.l10n.sftpSortName),
-                    ),
-                    CheckedPopupMenuItem<SftpSortKey>(
-                      value: SftpSortKey.size,
-                      checked: state.sortKey == SftpSortKey.size,
-                      child: Text(context.l10n.sftpSortSize),
-                    ),
-                    CheckedPopupMenuItem<SftpSortKey>(
-                      value: SftpSortKey.date,
-                      checked: state.sortKey == SftpSortKey.date,
-                      child: Text(context.l10n.sftpSortDate),
-                    ),
-                    const PopupMenuDivider(),
-                    CheckedPopupMenuItem<String>(
-                      value: 'asc',
-                      checked: state.sortAscending,
-                      child: Text(context.l10n.sftpSortAscending),
-                    ),
-                    CheckedPopupMenuItem<String>(
-                      value: 'desc',
-                      checked: !state.sortAscending,
-                      child: Text(context.l10n.sftpSortDescending),
-                    ),
-                  ],
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh, size: 20),
-                  tooltip: context.l10n.sftpRefresh,
-                  onPressed: () => notifier.refresh(),
-                ),
-                IconButton(
-                  key: const Key('sftpTransferListButton'),
-                  style: _highlightTransferButton
-                      ? IconButton.styleFrom(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primaryContainer,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
-                        )
-                      : null,
-                  icon: KeyedSubtree(
-                    key: _transferIconKey,
-                    child: Badge(
-                      isLabelVisible: state.pendingTransferCount > 0,
-                      label: Text('${state.pendingTransferCount}'),
-                      child: const Icon(Icons.swap_vert, size: 20),
-                    ),
+            // Row 2: Action buttons (Responsive horizontal scroll, never wrap or overflow)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.upload_file, size: 20),
+                    tooltip: context.l10n.sftpUpload,
+                    onPressed: state.activeTransfer != null
+                        ? null
+                        : _handleUpload,
                   ),
-                  tooltip: context.l10n.transferList,
-                  onPressed: () => _showTransferListModal(context),
-                ),
-              ],
+                  IconButton(
+                    icon: const Icon(Icons.create_new_folder_outlined, size: 20),
+                    tooltip: context.l10n.sftpNewFolder,
+                    onPressed: _showNewFolderDialog,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.note_add_outlined, size: 20),
+                    tooltip: context.l10n.sftpNewFile,
+                    onPressed: _showNewFileDialog,
+                  ),
+                  PopupMenuButton<Object>(
+                    icon: const Icon(Icons.sort, size: 20),
+                    tooltip: context.l10n.sftpSort,
+                    onSelected: (value) {
+                      if (value is SftpSortKey) {
+                        final isSameKey = state.sortKey == value;
+                        notifier.setSort(
+                          key: value,
+                          ascending: isSameKey
+                              ? !state.sortAscending
+                              : state.sortAscending,
+                        );
+                      } else if (value == 'asc') {
+                        notifier.setSort(key: state.sortKey, ascending: true);
+                      } else if (value == 'desc') {
+                        notifier.setSort(key: state.sortKey, ascending: false);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      CheckedPopupMenuItem<SftpSortKey>(
+                        value: SftpSortKey.name,
+                        checked: state.sortKey == SftpSortKey.name,
+                        child: Text(context.l10n.sftpSortName),
+                      ),
+                      CheckedPopupMenuItem<SftpSortKey>(
+                        value: SftpSortKey.size,
+                        checked: state.sortKey == SftpSortKey.size,
+                        child: Text(context.l10n.sftpSortSize),
+                      ),
+                      CheckedPopupMenuItem<SftpSortKey>(
+                        value: SftpSortKey.date,
+                        checked: state.sortKey == SftpSortKey.date,
+                        child: Text(context.l10n.sftpSortDate),
+                      ),
+                      const PopupMenuDivider(),
+                      CheckedPopupMenuItem<String>(
+                        value: 'asc',
+                        checked: state.sortAscending,
+                        child: Text(context.l10n.sftpSortAscending),
+                      ),
+                      CheckedPopupMenuItem<String>(
+                        value: 'desc',
+                        checked: !state.sortAscending,
+                        child: Text(context.l10n.sftpSortDescending),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 20),
+                    tooltip: context.l10n.sftpRefresh,
+                    onPressed: () => notifier.refresh(),
+                  ),
+                  IconButton(
+                    key: const Key('sftpTransferListButton'),
+                    style: _highlightTransferButton
+                        ? IconButton.styleFrom(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
+                          )
+                        : null,
+                    icon: KeyedSubtree(
+                      key: _transferIconKey,
+                      child: Badge(
+                        isLabelVisible: state.pendingTransferCount > 0,
+                        label: Text('${state.pendingTransferCount}'),
+                        child: const Icon(Icons.swap_vert, size: 20),
+                      ),
+                    ),
+                    tooltip: context.l10n.transferList,
+                    onPressed: () => _showTransferListModal(context),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -937,18 +965,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     final notifier = ref.read(sftpProvider.notifier);
 
     if (files.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.folder_open, size: 48, color: Colors.grey),
-            const SizedBox(height: 8),
-            Text(
-              context.l10n.sftpEmpty,
-              style: const TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
+      return EmptyStateView(
+        icon: Icons.folder_open,
+        title: context.l10n.sftpEmpty,
       );
     }
 
@@ -976,17 +995,8 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
           itemCount: files.length,
           itemBuilder: (context, index) {
             final item = files[index];
-            return Card(
+            return ValhallaCard(
               margin: EdgeInsets.zero,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: BorderSide(
-                  color: context.colorScheme.outlineVariant.withValues(
-                    alpha: 0.5,
-                  ),
-                ),
-              ),
               child: _buildFileListItem(context, item, state, notifier),
             );
           },
@@ -1012,10 +1022,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
       ),
       title: Text(
         item.name,
-        style: TextStyle(
-          fontWeight: item.isDirectory ? FontWeight.bold : FontWeight.normal,
-          fontSize: 14,
-        ),
+        style: item.isDirectory
+            ? context.textTheme.titleSmall
+            : context.textTheme.bodyMedium,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -1026,20 +1035,27 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                 Flexible(
                   child: Text(
                     item.permissions,
-                    style: const TextStyle(
-                      fontFamily: 'JetBrains Mono',
+                    style: monoTextStyle(
                       fontSize: 11,
+                      fontWeight: FontWeight.w400,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(item.formattedSize, style: const TextStyle(fontSize: 11)),
+                Text(
+                  item.formattedSize,
+                  style: monoTextStyle(fontSize: 11, fontWeight: FontWeight.w400),
+                ),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     item.modified,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    style: monoTextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: context.colorScheme.outline,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1106,11 +1122,15 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                   value: 'delete',
                   child: Row(
                     children: [
-                      const Icon(Icons.delete, color: Colors.red, size: 18),
+                      Icon(
+                        Icons.delete,
+                        color: context.vDanger,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         context.l10n.delete,
-                        style: const TextStyle(color: Colors.red),
+                        style: TextStyle(color: context.vDanger),
                       ),
                     ],
                   ),
@@ -1163,32 +1183,33 @@ class SftpTransferListSheet extends ConsumerWidget {
         height: MediaQuery.sizeOf(context).height * 0.7,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Text(
-                    context.l10n.transferList,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+            Entrance(
+              index: 0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Text(
+                      context.l10n.transferList,
+                      style: context.textTheme.titleMedium,
                     ),
-                  ),
-                  const Spacer(),
-                  TextButton.icon(
-                    key: const Key('transferClearFinishedButton'),
-                    icon: const Icon(Icons.clear_all, size: 18),
-                    label: Text(context.l10n.transferClearFinished),
-                    onPressed: sftpState.hasFinishedTransfers
-                        ? () => notifier.clearFinishedTransfers()
-                        : null,
-                  ),
-                  const SizedBox(width: 4),
-                  IconButton(
-                    key: const Key('transferSheetCloseButton'),
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
+                    const Spacer(),
+                    TextButton.icon(
+                      key: const Key('transferClearFinishedButton'),
+                      icon: const Icon(Icons.clear_all, size: 18),
+                      label: Text(context.l10n.transferClearFinished),
+                      onPressed: sftpState.hasFinishedTransfers
+                          ? () => notifier.clearFinishedTransfers()
+                          : null,
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      key: const Key('transferSheetCloseButton'),
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
               ),
             ),
             const Divider(height: 1),
@@ -1226,22 +1247,9 @@ class SftpTransferListSheet extends ConsumerWidget {
               child: sftpState.transfers.isEmpty
                   ? Center(
                       key: const Key('transferEmptyView'),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.swap_vert,
-                            size: 48,
-                            color: context.colorScheme.outline,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            context.l10n.transferEmpty,
-                            style: TextStyle(
-                              color: context.colorScheme.outline,
-                            ),
-                          ),
-                        ],
+                      child: EmptyStateView(
+                        icon: Icons.swap_vert,
+                        title: context.l10n.transferEmpty,
                       ),
                     )
                   : ListView.separated(
@@ -1358,7 +1366,7 @@ class SftpTransferListItem extends ConsumerWidget {
                       : null,
                   child: Text(
                     transfer.fileName,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: context.textTheme.titleSmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1405,10 +1413,13 @@ class SftpTransferListItem extends ConsumerWidget {
           const SizedBox(height: 4),
           Row(
             children: [
+              if (transfer.status == SftpTransferStatus.running) ...[
+                PulseDot(color: context.vInfo, size: 6),
+                const SizedBox(width: 6),
+              ],
               Text(
                 '[$kindText] $statusText',
-                style: TextStyle(
-                  fontSize: 12,
+                style: context.textTheme.bodySmall?.copyWith(
                   color: hasError
                       ? context.colorScheme.error
                       : context.colorScheme.onSurfaceVariant,
@@ -1417,8 +1428,9 @@ class SftpTransferListItem extends ConsumerWidget {
               const Spacer(),
               Text(
                 sizeText,
-                style: TextStyle(
-                  fontSize: 12,
+                style: monoTextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
                   color: context.colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -1429,19 +1441,25 @@ class SftpTransferListItem extends ConsumerWidget {
             Text(
               errorText,
               key: Key('transfer_error_${transfer.id}'),
-              style: TextStyle(fontSize: 12, color: context.colorScheme.error),
+              style: context.textTheme.bodySmall?.copyWith(
+                color: context.colorScheme.error,
+              ),
             ),
           ],
           const SizedBox(height: 6),
-          LinearProgressIndicator(
-            value: progressValue,
-            minHeight: 3,
-            color: hasError
-                ? context.colorScheme.error
-                : (transfer.status == SftpTransferStatus.canceled
-                      ? context.colorScheme.outline
-                      : null),
-          ),
+          if (progressValue != null)
+            AnimatedProgressBar(
+              value: progressValue,
+              height: 3,
+              color: hasError
+                  ? context.colorScheme.error
+                  : (transfer.status == SftpTransferStatus.canceled
+                        ? context.colorScheme.outline
+                        : null),
+            )
+          else
+            // 未知的传输总量: 保持不确定态动画。
+            const LinearProgressIndicator(minHeight: 3),
         ],
       ),
     );

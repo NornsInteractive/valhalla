@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/server_provider.dart';
 import '../../infrastructure/system/process_service.dart';
@@ -45,7 +47,7 @@ class _SystemViewState extends ConsumerState<SystemView>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.l10n.processKillForbidden),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: context.vDanger,
         ),
       );
       return;
@@ -72,14 +74,14 @@ class _SystemViewState extends ConsumerState<SystemView>
         scaffold.showSnackBar(
           SnackBar(
             content: Text(context.l10n.processTerminateSuccess(proc.pid)),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: context.vSuccess,
           ),
         );
       } else {
         scaffold.showSnackBar(
           SnackBar(
             content: Text(res.stderr.trim().isEmpty ? 'Failed' : res.stderr),
-            backgroundColor: const Color(0xFFEF4444),
+            backgroundColor: context.vDanger,
           ),
         );
       }
@@ -88,7 +90,7 @@ class _SystemViewState extends ConsumerState<SystemView>
       scaffold.showSnackBar(
         SnackBar(
           content: Text(e.toString()),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: context.vDanger,
         ),
       );
     }
@@ -119,7 +121,7 @@ class _SystemViewState extends ConsumerState<SystemView>
         scaffold.showSnackBar(
           SnackBar(
             content: Text(context.l10n.serviceActionSuccess(action, svc.name)),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: context.vSuccess,
           ),
         );
       } else {
@@ -128,7 +130,7 @@ class _SystemViewState extends ConsumerState<SystemView>
             content: Text(
               res.stderr.trim().isEmpty ? 'Action failed' : res.stderr,
             ),
-            backgroundColor: const Color(0xFFEF4444),
+            backgroundColor: context.vDanger,
           ),
         );
       }
@@ -137,7 +139,7 @@ class _SystemViewState extends ConsumerState<SystemView>
       scaffold.showSnackBar(
         SnackBar(
           content: Text(e.toString()),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: context.vDanger,
         ),
       );
     }
@@ -215,31 +217,36 @@ class _SystemViewState extends ConsumerState<SystemView>
   Widget _buildProcessesTab(BuildContext context, SystemState sysState) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: TextField(
-            controller: _procSearchCtrl,
-            decoration: InputDecoration(
-              hintText: context.l10n.processSearchHint,
-              prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: _procSearchCtrl.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
-                      onPressed: () {
-                        _procSearchCtrl.clear();
-                        ref.read(systemProvider.notifier).setProcessSearch('');
-                      },
-                    )
-                  : null,
-              isDense: true,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+        Entrance(
+          index: 0,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: TextField(
+              controller: _procSearchCtrl,
+              decoration: InputDecoration(
+                hintText: context.l10n.processSearchHint,
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: _procSearchCtrl.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _procSearchCtrl.clear();
+                          ref
+                              .read(systemProvider.notifier)
+                              .setProcessSearch('');
+                        },
+                      )
+                    : null,
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(VRadius.input),
+                ),
               ),
+              onChanged: (val) {
+                ref.read(systemProvider.notifier).setProcessSearch(val);
+                setState(() {});
+              },
             ),
-            onChanged: (val) {
-              ref.read(systemProvider.notifier).setProcessSearch(val);
-              setState(() {});
-            },
           ),
         ),
         Expanded(child: _buildProcessContent(context, sysState)),
@@ -289,14 +296,13 @@ class _SystemViewState extends ConsumerState<SystemView>
                   ),
                   decoration: BoxDecoration(
                     color: context.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     proc.pid.toString(),
-                    style: const TextStyle(
-                      fontFamily: 'JetBrains Mono',
-                      fontWeight: FontWeight.bold,
+                    style: monoTextStyle(
                       fontSize: 12,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -307,8 +313,7 @@ class _SystemViewState extends ConsumerState<SystemView>
                     children: [
                       Text(
                         proc.command,
-                        style: const TextStyle(
-                          fontFamily: 'JetBrains Mono',
+                        style: monoTextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -318,43 +323,51 @@ class _SystemViewState extends ConsumerState<SystemView>
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Text(
-                            'CPU: ${proc.cpuPercent.toStringAsFixed(1)}%',
-                            style: TextStyle(
+                          CountUp(
+                            value: proc.cpuPercent,
+                            formatter: (v) => 'CPU: ${v.toStringAsFixed(1)}%',
+                            style: monoTextStyle(
                               fontSize: 11,
-                              fontFamily: 'JetBrains Mono',
                               color: isHighCpu
-                                  ? const Color(0xFFEF4444)
+                                  ? context.vDanger
                                   : context.colorScheme.outline,
                               fontWeight: isHighCpu
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Text(
-                            'MEM: ${proc.memoryPercent.toStringAsFixed(1)}%',
-                            style: TextStyle(
+                          CountUp(
+                            value: proc.memoryPercent,
+                            formatter: (v) => 'MEM: ${v.toStringAsFixed(1)}%',
+                            style: monoTextStyle(
                               fontSize: 11,
-                              fontFamily: 'JetBrains Mono',
                               color: isHighMem
-                                  ? const Color(0xFFF59E0B)
+                                  ? context.vWarning
                                   : context.colorScheme.outline,
                               fontWeight: isHighMem
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Text(
                             'STAT: ${proc.state}',
-                            style: TextStyle(
+                            style: monoTextStyle(
                               fontSize: 11,
-                              fontFamily: 'JetBrains Mono',
+                              fontWeight: FontWeight.w400,
                               color: context.colorScheme.outline,
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 6),
+                      AnimatedProgressBar(
+                        value: (proc.cpuPercent / 100).clamp(0.0, 1.0),
+                        color: isHighCpu
+                            ? context.vDanger
+                            : context.colorScheme.primary,
+                        height: 4,
                       ),
                     ],
                   ),
@@ -373,10 +386,10 @@ class _SystemViewState extends ConsumerState<SystemView>
                       value: 'term',
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.cancel_outlined,
                             size: 18,
-                            color: Color(0xFFF59E0B),
+                            color: context.vWarning,
                           ),
                           const SizedBox(width: 8),
                           Text(context.l10n.processTerminate),
@@ -387,15 +400,15 @@ class _SystemViewState extends ConsumerState<SystemView>
                       value: 'kill',
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.dangerous_outlined,
                             size: 18,
-                            color: Color(0xFFEF4444),
+                            color: context.vDanger,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             context.l10n.processForceKill,
-                            style: const TextStyle(color: Color(0xFFEF4444)),
+                            style: TextStyle(color: context.vDanger),
                           ),
                         ],
                       ),
@@ -413,61 +426,69 @@ class _SystemViewState extends ConsumerState<SystemView>
   Widget _buildServicesTab(BuildContext context, SystemState sysState) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: TextField(
-            controller: _svcSearchCtrl,
-            decoration: InputDecoration(
-              hintText: context.l10n.serviceSearchHint,
-              prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: _svcSearchCtrl.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
-                      onPressed: () {
-                        _svcSearchCtrl.clear();
-                        ref.read(systemProvider.notifier).setServiceSearch('');
-                      },
-                    )
-                  : null,
-              isDense: true,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+        Entrance(
+          index: 0,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: TextField(
+              controller: _svcSearchCtrl,
+              decoration: InputDecoration(
+                hintText: context.l10n.serviceSearchHint,
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: _svcSearchCtrl.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _svcSearchCtrl.clear();
+                          ref
+                              .read(systemProvider.notifier)
+                              .setServiceSearch('');
+                        },
+                      )
+                    : null,
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(VRadius.input),
+                ),
               ),
+              onChanged: (val) {
+                ref.read(systemProvider.notifier).setServiceSearch(val);
+                setState(() {});
+              },
             ),
-            onChanged: (val) {
-              ref.read(systemProvider.notifier).setServiceSearch(val);
-              setState(() {});
-            },
           ),
         ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              FilterChip(
-                label: Text(context.l10n.dockerFilterAll),
-                selected: sysState.serviceFilterState == null,
-                onSelected: (_) =>
-                    ref.read(systemProvider.notifier).setServiceFilter(null),
-              ),
-              const SizedBox(width: 8),
-              FilterChip(
-                label: Text(context.l10n.dockerFilterRunning),
-                selected: sysState.serviceFilterState == 'running',
-                onSelected: (val) => ref
-                    .read(systemProvider.notifier)
-                    .setServiceFilter(val ? 'running' : null),
-              ),
-              const SizedBox(width: 8),
-              FilterChip(
-                label: const Text('Failed'),
-                selected: sysState.serviceFilterState == 'failed',
-                onSelected: (val) => ref
-                    .read(systemProvider.notifier)
-                    .setServiceFilter(val ? 'failed' : null),
-              ),
-            ],
+        Entrance(
+          index: 1,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                FilterChip(
+                  label: Text(context.l10n.dockerFilterAll),
+                  selected: sysState.serviceFilterState == null,
+                  onSelected: (_) =>
+                      ref.read(systemProvider.notifier).setServiceFilter(null),
+                ),
+                const SizedBox(width: 8),
+                FilterChip(
+                  label: Text(context.l10n.dockerFilterRunning),
+                  selected: sysState.serviceFilterState == 'running',
+                  onSelected: (val) => ref
+                      .read(systemProvider.notifier)
+                      .setServiceFilter(val ? 'running' : null),
+                ),
+                const SizedBox(width: 8),
+                FilterChip(
+                  label: const Text('Failed'),
+                  selected: sysState.serviceFilterState == 'failed',
+                  onSelected: (val) => ref
+                      .read(systemProvider.notifier)
+                      .setServiceFilter(val ? 'failed' : null),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -523,10 +544,9 @@ class _SystemViewState extends ConsumerState<SystemView>
                     Expanded(
                       child: Text(
                         svc.name,
-                        style: const TextStyle(
-                          fontFamily: 'JetBrains Mono',
-                          fontWeight: FontWeight.bold,
+                        style: monoTextStyle(
                           fontSize: 13,
+                          fontWeight: FontWeight.w700,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -554,29 +574,29 @@ class _SystemViewState extends ConsumerState<SystemView>
                   children: [
                     if (!svc.isRunning)
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.play_arrow_rounded,
                           size: 20,
-                          color: Color(0xFF10B981),
+                          color: context.vSuccess,
                         ),
                         tooltip: context.l10n.serviceActionStart,
                         onPressed: () => _handleServiceAction(svc, 'start'),
                       )
                     else ...[
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.stop_rounded,
                           size: 20,
-                          color: Color(0xFFF59E0B),
+                          color: context.vWarning,
                         ),
                         tooltip: context.l10n.serviceActionStop,
                         onPressed: () => _handleServiceAction(svc, 'stop'),
                       ),
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.replay_rounded,
                           size: 18,
-                          color: Color(0xFF0EA5E9),
+                          color: context.vInfo,
                         ),
                         tooltip: context.l10n.serviceActionRestart,
                         onPressed: () => _handleServiceAction(svc, 'restart'),

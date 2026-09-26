@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/constants/layout_breakpoints.dart';
+import '../../core/design/motion_widgets.dart';
+import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/server_provider.dart';
 import '../../data/models/server_profile.dart';
@@ -154,13 +156,15 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
           _saveError = errorText;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorText), backgroundColor: Colors.red),
+          SnackBar(content: Text(errorText), backgroundColor: context.vDanger),
         );
       }
     }
   }
 
   Widget _buildFormFields(BuildContext context) {
+    final testColor = _testSuccess == true ? context.vSuccess : context.vDanger;
+
     return Form(
       key: _formKey,
       child: Column(
@@ -172,174 +176,198 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red),
+                color: context.vDanger.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(VRadius.input),
+                border: Border.all(
+                  color: context.vDanger.withValues(alpha: 0.45),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.warning_amber_rounded,
                     size: 18,
-                    color: Colors.red,
+                    color: context.vDanger,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _saveError!,
-                      style: const TextStyle(fontSize: 12, color: Colors.red),
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.vDanger,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ],
-          TextFormField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: context.l10n.serverName,
-              hintText: 'e.g. prod-cluster-us-east',
-              prefixIcon: const Icon(Icons.dns),
-            ),
-            validator: (val) => val == null || val.trim().isEmpty
-                ? context.l10n.serverFieldRequired
-                : null,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 3,
-                child: TextFormField(
-                  controller: _hostController,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.serverHost,
-                    hintText: '192.168.1.100',
-                    prefixIcon: const Icon(Icons.link),
-                  ),
-                  validator: (val) => val == null || val.trim().isEmpty
-                      ? context.l10n.serverFieldRequired
-                      : null,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: TextFormField(
-                  controller: _portController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.serverPort,
-                  ),
-                  validator: (val) {
-                    if (val == null || val.trim().isEmpty) {
-                      return context.l10n.serverFieldRequired;
-                    }
-                    final p = int.tryParse(val.trim());
-                    if (p == null || p < 1 || p > 65535) {
-                      return context.l10n.serverPortInvalid;
-                    }
-                    return null;
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _usernameController,
-            decoration: InputDecoration(
-              labelText: context.l10n.serverUsername,
-              prefixIcon: const Icon(Icons.person),
-            ),
-            validator: (val) => val == null || val.trim().isEmpty
-                ? context.l10n.serverFieldRequired
-                : null,
-          ),
-          const SizedBox(height: 16),
-          SegmentedButton<AuthType>(
-            segments: [
-              ButtonSegment(
-                value: AuthType.password,
-                label: Text(context.l10n.serverPassword),
-                icon: const Icon(Icons.password),
-              ),
-              ButtonSegment(
-                value: AuthType.privateKey,
-                label: Text(context.l10n.serverPrivateKey),
-                icon: const Icon(Icons.vpn_key),
-              ),
-            ],
-            selected: {_authType},
-            onSelectionChanged: (set) => setState(() => _authType = set.first),
-          ),
-          const SizedBox(height: 12),
-          if (_authType == AuthType.password)
-            TextFormField(
-              controller: _passwordController,
-              obscureText: true,
+          Entrance(
+            index: 0,
+            child: TextFormField(
+              controller: _nameController,
               decoration: InputDecoration(
-                labelText: context.l10n.serverPassword,
-                prefixIcon: const Icon(Icons.lock),
+                labelText: context.l10n.serverName,
+                hintText: 'e.g. prod-cluster-us-east',
+                prefixIcon: const Icon(Icons.dns),
               ),
-            )
-          else ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              validator: (val) => val == null || val.trim().isEmpty
+                  ? context.l10n.serverFieldRequired
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Entrance(
+            index: 1,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  context.l10n.serverPrivateKey,
-                  style: context.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  flex: 3,
+                  child: TextFormField(
+                    controller: _hostController,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.serverHost,
+                      hintText: '192.168.1.100',
+                      prefixIcon: const Icon(Icons.link),
+                    ),
+                    validator: (val) => val == null || val.trim().isEmpty
+                        ? context.l10n.serverFieldRequired
+                        : null,
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () => setState(
-                    () => _isPrivateKeyExpanded = !_isPrivateKeyExpanded,
-                  ),
-                  icon: Icon(
-                    _isPrivateKeyExpanded
-                        ? Icons.unfold_less
-                        : Icons.unfold_more,
-                    size: 16,
-                  ),
-                  label: Text(
-                    _isPrivateKeyExpanded
-                        ? context.l10n.serverHidePrivateKey
-                        : context.l10n.serverViewPrivateKey,
-                    style: const TextStyle(fontSize: 12),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: _portController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.serverPort,
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return context.l10n.serverFieldRequired;
+                      }
+                      final p = int.tryParse(val.trim());
+                      if (p == null || p < 1 || p > 65535) {
+                        return context.l10n.serverPortInvalid;
+                      }
+                      return null;
+                    },
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            TextFormField(
-              controller: _privateKeyController,
-              maxLines: _isPrivateKeyExpanded ? 10 : 4,
-              minLines: 3,
-              style: const TextStyle(
-                fontFamily: 'JetBrains Mono',
-                fontSize: 12,
+          ),
+          const SizedBox(height: 12),
+          Entrance(
+            index: 2,
+            child: TextFormField(
+              controller: _usernameController,
+              decoration: InputDecoration(
+                labelText: context.l10n.serverUsername,
+                prefixIcon: const Icon(Icons.person),
               ),
-              decoration: const InputDecoration(
-                hintText: '-----BEGIN OPENSSH PRIVATE KEY-----\n...',
-                prefixIcon: Icon(Icons.key),
-                alignLabelWithHint: true,
+              validator: (val) => val == null || val.trim().isEmpty
+                  ? context.l10n.serverFieldRequired
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Entrance(
+            index: 3,
+            child: SegmentedButton<AuthType>(
+              segments: [
+                ButtonSegment(
+                  value: AuthType.password,
+                  label: Text(context.l10n.serverPassword),
+                  icon: const Icon(Icons.password),
+                ),
+                ButtonSegment(
+                  value: AuthType.privateKey,
+                  label: Text(context.l10n.serverPrivateKey),
+                  icon: const Icon(Icons.vpn_key),
+                ),
+              ],
+              selected: {_authType},
+              onSelectionChanged: (set) =>
+                  setState(() => _authType = set.first),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (_authType == AuthType.password)
+            Entrance(
+              index: 4,
+              child: TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: context.l10n.serverPassword,
+                  prefixIcon: const Icon(Icons.lock),
+                ),
+              ),
+            )
+          else ...[
+            Entrance(
+              index: 4,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    context.l10n.serverPrivateKey,
+                    style: context.textTheme.titleSmall,
+                  ),
+                  TextButton.icon(
+                    onPressed: () => setState(
+                      () => _isPrivateKeyExpanded = !_isPrivateKeyExpanded,
+                    ),
+                    icon: Icon(
+                      _isPrivateKeyExpanded
+                          ? Icons.unfold_less
+                          : Icons.unfold_more,
+                      size: 16,
+                    ),
+                    label: Text(
+                      _isPrivateKeyExpanded
+                          ? context.l10n.serverHidePrivateKey
+                          : context.l10n.serverViewPrivateKey,
+                      style: context.textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Entrance(
+              index: 4,
+              child: TextFormField(
+                controller: _privateKeyController,
+                maxLines: _isPrivateKeyExpanded ? 10 : 4,
+                minLines: 3,
+                style: monoTextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+                decoration: const InputDecoration(
+                  hintText: '-----BEGIN OPENSSH PRIVATE KEY-----\n...',
+                  prefixIcon: Icon(Icons.key),
+                  alignLabelWithHint: true,
+                ),
               ),
             ),
           ],
           const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: _isTesting ? null : _testConnection,
-            icon: _isTesting
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.network_check, size: 16),
-            label: Text(context.l10n.serverTestReachability),
+          Entrance(
+            index: 5,
+            child: OutlinedButton.icon(
+              onPressed: _isTesting ? null : _testConnection,
+              icon: _isTesting
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.network_check, size: 16),
+              label: Text(context.l10n.serverTestReachability),
+            ),
           ),
           if (_testResult != null) ...[
             const SizedBox(height: 8),
@@ -347,14 +375,10 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: _testSuccess == true
-                    ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                    : Colors.red.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: testColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(VRadius.input),
                 border: Border.all(
-                  color: _testSuccess == true
-                      ? const Color(0xFF10B981)
-                      : Colors.red,
+                  color: testColor.withValues(alpha: 0.45),
                   width: 1,
                 ),
               ),
@@ -365,20 +389,15 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
                         ? Icons.check_circle_outline
                         : Icons.error_outline,
                     size: 18,
-                    color: _testSuccess == true
-                        ? const Color(0xFF10B981)
-                        : Colors.red,
+                    color: testColor,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _testResult!,
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: context.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w500,
-                        color: _testSuccess == true
-                            ? const Color(0xFF10B981)
-                            : Colors.red,
+                        color: testColor,
                       ),
                     ),
                   ),
@@ -404,7 +423,9 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
         children: [
           if (isEditing)
             TextButton.icon(
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              style: TextButton.styleFrom(
+                foregroundColor: context.vDanger,
+              ),
               onPressed: _delete,
               icon: const Icon(Icons.delete_outline, size: 18),
               label: Text(context.l10n.delete),
@@ -442,7 +463,7 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
             actions: [
               if (isEditing)
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  icon: Icon(Icons.delete_outline, color: context.vDanger),
                   tooltip: context.l10n.delete,
                   onPressed: _delete,
                 ),
@@ -467,6 +488,9 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(VRadius.dialog),
+      ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560, maxHeight: 720),
         child: Column(
@@ -480,9 +504,7 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
                     isEditing
                         ? context.l10n.editServer
                         : context.l10n.addServer,
-                    style: context.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: context.textTheme.titleLarge,
                   ),
                   const Spacer(),
                   IconButton(
