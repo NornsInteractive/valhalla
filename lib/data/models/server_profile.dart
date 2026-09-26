@@ -21,6 +21,17 @@ class ServerProfile {
   final List<String> tags;
   final DateTime? lastConnectedAt;
 
+  /// 是否为该服务器提供 Mosh (UDP/SSP) 会话入口。
+  ///
+  /// 缺省 false：Mosh 是 opt-in 能力，旧数据没有该字段时保持纯 SSH。
+  final bool moshEnabled;
+
+  /// 远端 mosh-server 可执行文件；null 表示使用默认值 `mosh-server`。
+  final String? moshServerPath;
+
+  /// mosh-server 的 UDP 端口范围；null 表示使用默认值 `60000:61000`。
+  final String? moshPortRange;
+
   const ServerProfile({
     required this.id,
     required this.name,
@@ -31,6 +42,9 @@ class ServerProfile {
     this.privateKeyPath,
     this.tags = const [],
     this.lastConnectedAt,
+    this.moshEnabled = false,
+    this.moshServerPath,
+    this.moshPortRange,
   });
 
   /// Fields that identify the remote SSH endpoint and authentication mode.
@@ -52,6 +66,9 @@ class ServerProfile {
     String? privateKeyPath,
     List<String>? tags,
     DateTime? lastConnectedAt,
+    bool? moshEnabled,
+    String? moshServerPath,
+    String? moshPortRange,
   }) {
     return ServerProfile(
       id: id ?? this.id,
@@ -63,6 +80,9 @@ class ServerProfile {
       privateKeyPath: privateKeyPath ?? this.privateKeyPath,
       tags: tags ?? this.tags,
       lastConnectedAt: lastConnectedAt ?? this.lastConnectedAt,
+      moshEnabled: moshEnabled ?? this.moshEnabled,
+      moshServerPath: moshServerPath ?? this.moshServerPath,
+      moshPortRange: moshPortRange ?? this.moshPortRange,
     );
   }
 
@@ -77,6 +97,9 @@ class ServerProfile {
       'privateKeyPath': privateKeyPath,
       'tags': tags,
       'lastConnectedAt': lastConnectedAt?.toIso8601String(),
+      'moshEnabled': moshEnabled,
+      'moshServerPath': moshServerPath,
+      'moshPortRange': moshPortRange,
     };
   }
 
@@ -97,6 +120,9 @@ class ServerProfile {
       lastConnectedAt: json['lastConnectedAt'] != null
           ? DateTime.tryParse(json['lastConnectedAt'] as String)
           : null,
+      moshEnabled: (json['moshEnabled'] as bool?) ?? false,
+      moshServerPath: json['moshServerPath'] as String?,
+      moshPortRange: json['moshPortRange'] as String?,
     );
   }
 

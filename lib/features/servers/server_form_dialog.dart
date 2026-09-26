@@ -27,6 +27,8 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
   late final TextEditingController _usernameController;
   late final TextEditingController _passwordController;
   late final TextEditingController _privateKeyController;
+  late final TextEditingController _moshPathController;
+  late final TextEditingController _moshPortRangeController;
 
   AuthType _authType = AuthType.password;
   bool _isTesting = false;
@@ -34,6 +36,7 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
   bool? _testSuccess;
   String? _saveError;
   bool _isPrivateKeyExpanded = false;
+  bool _moshEnabled = false;
 
   @override
   void initState() {
@@ -46,6 +49,11 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
     _passwordController = TextEditingController();
     _privateKeyController = TextEditingController();
     _authType = s?.authType ?? AuthType.password;
+    _moshEnabled = s?.moshEnabled ?? false;
+    _moshPathController = TextEditingController(text: s?.moshServerPath ?? '');
+    _moshPortRangeController = TextEditingController(
+      text: s?.moshPortRange ?? '',
+    );
   }
 
   @override
@@ -56,6 +64,8 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
     _usernameController.dispose();
     _passwordController.dispose();
     _privateKeyController.dispose();
+    _moshPathController.dispose();
+    _moshPortRangeController.dispose();
     super.dispose();
   }
 
@@ -125,6 +135,14 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
       authType: _authType,
       tags: widget.serverToEdit?.tags ?? ['Linux', 'SSH'],
       lastConnectedAt: DateTime.now(),
+      moshEnabled: _moshEnabled,
+      // 留空 = 使用内置默认 (mosh-server / 60000:61000)，落盘为 null。
+      moshServerPath: _moshPathController.text.trim().isEmpty
+          ? null
+          : _moshPathController.text.trim(),
+      moshPortRange: _moshPortRangeController.text.trim().isEmpty
+          ? null
+          : _moshPortRangeController.text.trim(),
     );
 
     final isNewServer = widget.serverToEdit == null;
@@ -355,8 +373,10 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
             ),
           ],
           const SizedBox(height: 16),
+          _buildMoshSection(context),
+          const SizedBox(height: 16),
           Entrance(
-            index: 5,
+            index: 9,
             child: OutlinedButton.icon(
               onPressed: _isTesting ? null : _testConnection,
               icon: _isTesting
@@ -410,6 +430,97 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
     );
   }
 
+  /// Mosh (UDP 漫游终端) 配置区：开关 + 可折叠高级项。
+  ///
+  /// 高级项 (server 路径 / UDP 端口范围) 仅在开关打开时出现；留空表示
+  /// 使用内置默认值。
+  Widget _buildMoshSection(BuildContext context) {
+    final l10n = context.l10n;
+    return Entrance(
+      index: 6,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.colorScheme.surfaceContainerLow.withValues(
+            alpha: 0.45,
+          ),
+          borderRadius: BorderRadius.circular(VRadius.card),
+          border: Border.all(
+            color: context.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.bolt_rounded,
+                  size: 18,
+                  color: context.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.moshSectionTitle,
+                    style: context.textTheme.titleSmall,
+                  ),
+                ),
+                Switch(
+                  key: const Key('server_mosh_switch'),
+                  value: _moshEnabled,
+                  onChanged: (value) => setState(() => _moshEnabled = value),
+                ),
+              ],
+            ),
+            Text(
+              l10n.moshEnable,
+              style: context.textTheme.bodySmall?.copyWith(
+                color: context.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (_moshEnabled) ...[
+              const SizedBox(height: 12),
+              Entrance(
+                index: 7,
+                child: TextFormField(
+                  key: const Key('server_mosh_path_field'),
+                  controller: _moshPathController,
+                  style: monoTextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: l10n.moshServerPathLabel,
+                    hintText: 'mosh-server',
+                    prefixIcon: const Icon(Icons.terminal, size: 20),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Entrance(
+                index: 8,
+                child: TextFormField(
+                  key: const Key('server_mosh_port_range_field'),
+                  controller: _moshPortRangeController,
+                  style: monoTextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: l10n.moshPortRangeLabel,
+                    hintText: '60000:61000',
+                    prefixIcon: const Icon(Icons.settings_ethernet, size: 20),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomBar(BuildContext context, {required bool isEditing}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -423,9 +534,7 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
         children: [
           if (isEditing)
             TextButton.icon(
-              style: TextButton.styleFrom(
-                foregroundColor: context.vDanger,
-              ),
+              style: TextButton.styleFrom(foregroundColor: context.vDanger),
               onPressed: _delete,
               icon: const Icon(Icons.delete_outline, size: 18),
               label: Text(context.l10n.delete),

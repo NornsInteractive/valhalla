@@ -2012,6 +2012,60 @@ abstract class AppLocalizations {
   /// **'Terminal session restored'**
   String get terminalTmuxSessionRestored;
 
+  /// No description provided for @moshSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mosh'**
+  String get moshSectionTitle;
+
+  /// No description provided for @moshEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Mosh — a roaming terminal that survives connection drops and IP changes'**
+  String get moshEnable;
+
+  /// No description provided for @moshServerPathLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'mosh-server path'**
+  String get moshServerPathLabel;
+
+  /// No description provided for @moshPortRangeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'UDP port range'**
+  String get moshPortRangeLabel;
+
+  /// No description provided for @moshNewSession.
+  ///
+  /// In en, this message translates to:
+  /// **'New Mosh Session'**
+  String get moshNewSession;
+
+  /// No description provided for @moshNotInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'mosh-server was not found on the remote server. Install it with: sudo apt install mosh (Debian/Ubuntu) or sudo dnf install mosh (Fedora/RHEL).'**
+  String get moshNotInstalled;
+
+  /// No description provided for @moshBootstrapFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start Mosh session: {detail}'**
+  String moshBootstrapFailed(String detail);
+
+  /// No description provided for @moshUdpTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Mosh connection timed out — check that UDP traffic is not blocked by a firewall.'**
+  String get moshUdpTimeout;
+
+  /// No description provided for @moshSessionTag.
+  ///
+  /// In en, this message translates to:
+  /// **'mosh'**
+  String get moshSessionTag;
+
   /// No description provided for @acpSessionRestored.
   ///
   /// In en, this message translates to:

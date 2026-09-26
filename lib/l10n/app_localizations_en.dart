@@ -1006,6 +1006,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get terminalTmuxSessionRestored => 'Terminal session restored';
 
   @override
+  String get moshSectionTitle => 'Mosh';
+
+  @override
+  String get moshEnable =>
+      'Enable Mosh — a roaming terminal that survives connection drops and IP changes';
+
+  @override
+  String get moshServerPathLabel => 'mosh-server path';
+
+  @override
+  String get moshPortRangeLabel => 'UDP port range';
+
+  @override
+  String get moshNewSession => 'New Mosh Session';
+
+  @override
+  String get moshNotInstalled =>
+      'mosh-server was not found on the remote server. Install it with: sudo apt install mosh (Debian/Ubuntu) or sudo dnf install mosh (Fedora/RHEL).';
+
+  @override
+  String moshBootstrapFailed(String detail) {
+    return 'Failed to start Mosh session: $detail';
+  }
+
+  @override
+  String get moshUdpTimeout =>
+      'Mosh connection timed out — check that UDP traffic is not blocked by a firewall.';
+
+  @override
+  String get moshSessionTag => 'mosh';
+
+  @override
   String get acpSessionRestored => 'Agent session restored';
 
   @override

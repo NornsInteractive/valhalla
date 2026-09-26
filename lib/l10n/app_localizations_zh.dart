@@ -973,6 +973,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get terminalTmuxSessionRestored => '终端会话已恢复';
 
   @override
+  String get moshSectionTitle => 'Mosh';
+
+  @override
+  String get moshEnable => '启用 Mosh — 支持断线漫游、切换网络不掉线的终端会话';
+
+  @override
+  String get moshServerPathLabel => 'mosh-server 路径';
+
+  @override
+  String get moshPortRangeLabel => 'UDP 端口范围';
+
+  @override
+  String get moshNewSession => '新建 Mosh 会话';
+
+  @override
+  String get moshNotInstalled =>
+      '远端未找到 mosh-server。请先安装：sudo apt install mosh（Debian/Ubuntu）或 sudo dnf install mosh（Fedora/RHEL）。';
+
+  @override
+  String moshBootstrapFailed(String detail) {
+    return 'Mosh 会话启动失败：$detail';
+  }
+
+  @override
+  String get moshUdpTimeout => 'Mosh 连接超时 — 请检查 UDP 流量是否被防火墙拦截。';
+
+  @override
+  String get moshSessionTag => 'mosh';
+
+  @override
   String get acpSessionRestored => 'Agent 会话已恢复';
 
   @override

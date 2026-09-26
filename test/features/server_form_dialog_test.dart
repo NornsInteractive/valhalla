@@ -215,4 +215,150 @@ void main() {
       },
     );
   });
+
+  group('ServerFormDialog Mosh section', () {
+    testWidgets('mosh switch toggles advanced fields visibility', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_buildTestApp(localStorage: testStorage));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      const pathField = Key('server_mosh_path_field');
+      const portRangeField = Key('server_mosh_port_range_field');
+
+      // Disabled by default: advanced fields hidden.
+      expect(
+        tester
+            .widget<Switch>(find.byKey(const Key('server_mosh_switch')))
+            .value,
+        isFalse,
+      );
+      expect(find.byKey(pathField), findsNothing);
+      expect(find.byKey(portRangeField), findsNothing);
+
+      // Enabling Mosh reveals the advanced fields.
+      await tester.ensureVisible(find.byKey(const Key('server_mosh_switch')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('server_mosh_switch')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(pathField), findsOneWidget);
+      expect(find.byKey(portRangeField), findsOneWidget);
+
+      // Disabling collapses them again.
+      await tester.tap(find.byKey(const Key('server_mosh_switch')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(pathField), findsNothing);
+      expect(find.byKey(portRangeField), findsNothing);
+    });
+
+    testWidgets('saving persists moshEnabled, server path and port range', (
+      tester,
+    ) async {
+      final listNotifier = _FakeServerListNotifier([
+        const ServerProfile(
+          id: 'srv-1',
+          name: 'roaming-box',
+          host: '203.0.113.7',
+          username: 'root',
+        ),
+      ]);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          serverToEdit: listNotifier._initial.single,
+          listNotifier: listNotifier,
+          localStorage: testStorage,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+      // Enable Mosh and fill in the advanced fields.
+      await tester.ensureVisible(find.byKey(const Key('server_mosh_switch')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('server_mosh_switch')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const Key('server_mosh_port_range_field')),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('server_mosh_path_field')),
+        '/usr/bin/mosh-server',
+      );
+      await tester.enterText(
+        find.byKey(const Key('server_mosh_port_range_field')),
+        '61000:62000',
+      );
+      await tester.pump();
+
+      await tester.tap(find.text(l10n.serverSave));
+      await tester.pumpAndSettle();
+
+      final saved = listNotifier.state.single;
+      expect(saved.id, 'srv-1');
+      expect(saved.moshEnabled, isTrue);
+      expect(saved.moshServerPath, '/usr/bin/mosh-server');
+      expect(saved.moshPortRange, '61000:62000');
+    });
+
+    testWidgets('editing an existing mosh-enabled server prefills the fields', (
+      tester,
+    ) async {
+      const moshServer = ServerProfile(
+        id: 'srv-mosh',
+        name: 'roaming-box',
+        host: '203.0.113.7',
+        username: 'root',
+        moshEnabled: true,
+        moshServerPath: '/usr/local/bin/mosh-server',
+        moshPortRange: '61000:62000',
+      );
+
+      await tester.pumpWidget(
+        _buildTestApp(serverToEdit: moshServer, localStorage: testStorage),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<Switch>(find.byKey(const Key('server_mosh_switch')))
+            .value,
+        isTrue,
+      );
+      expect(find.byKey(const Key('server_mosh_path_field')), findsOneWidget);
+      expect(
+        find.byKey(const Key('server_mosh_port_range_field')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const Key('server_mosh_path_field')),
+            )
+            .controller!
+            .text,
+        '/usr/local/bin/mosh-server',
+      );
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const Key('server_mosh_port_range_field')),
+            )
+            .controller!
+            .text,
+        '61000:62000',
+      );
+    });
+  });
 }

@@ -5,6 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 
 import '../security/agent_command_validator.dart';
+import '../../infrastructure/mosh/mosh_bridge_adapter.dart';
+import '../../infrastructure/mosh/mosh_providers.dart';
+import '../../infrastructure/mosh/mosh_session_service.dart';
+import '../../infrastructure/mosh/mosh_terminal_bridge.dart';
 import '../../infrastructure/terminal/terminal_session_bridge.dart';
 import 'server_provider.dart';
 import 'storage_providers.dart';
@@ -64,12 +68,16 @@ class SshTerminalState {
   final bool isAltActive;
   final TmuxInstallOffer? tmuxInstallOffer;
 
+  /// 当前激活的服务器是否开启了 Mosh (true 时新建会话入口出现 Mosh 选项)。
+  final bool moshAvailable;
+
   SshTerminalState({
     required this.tabs,
     this.activeTabIndex = 0,
     this.isCtrlActive = false,
     this.isAltActive = false,
     this.tmuxInstallOffer,
+    this.moshAvailable = false,
   });
 
   TerminalTab? get activeTab =>
@@ -84,6 +92,7 @@ class SshTerminalState {
     bool? isAltActive,
     TmuxInstallOffer? tmuxInstallOffer,
     bool clearTmuxInstallOffer = false,
+    bool? moshAvailable,
   }) {
     return SshTerminalState(
       tabs: tabs ?? this.tabs,
@@ -93,6 +102,7 @@ class SshTerminalState {
       tmuxInstallOffer: clearTmuxInstallOffer
           ? null
           : (tmuxInstallOffer ?? this.tmuxInstallOffer),
+      moshAvailable: moshAvailable ?? this.moshAvailable,
     );
   }
 }
@@ -128,7 +138,11 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       }),
     );
 
-    return SshTerminalState(tabs: [initialTab], activeTabIndex: 0);
+    return SshTerminalState(
+      tabs: [initialTab],
+      activeTabIndex: 0,
+      moshAvailable: activeServer?.moshEnabled ?? false,
+    );
   }
 
   void _syncTmuxOffer() {
@@ -267,6 +281,53 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       // 重建会清掉它们的回滚缓冲，还可能掐断远端的前台进程。
       preferTmux: ref.read(terminalSettingsProvider).useTmux,
     );
+    unawaited(
+      tab.bridge.start().then((_) {
+        if (ref.mounted) _syncTmuxOffer();
+      }),
+    );
+
+    state = state.copyWith(
+      tabs: [...state.tabs, tab],
+      activeTabIndex: state.tabs.length,
+    );
+  }
+
+  /// 新建一个 Mosh 会话标签页。
+  ///
+  /// [sessionTag] 来自 l10n (`moshSessionTag`)，用作标签标题后缀以区分
+  /// SSH 标签页。bootstrap 参数取当前激活服务器的 Mosh 配置；缺省字段
+  /// 落到 MoshBootstrapRequest 的内置默认 (`mosh-server` / `60000:61000`)。
+  void addMoshTab([String? sessionTag]) {
+    final activeServer = ref.read(activeServerProvider);
+    final index = state.tabs.length + 1;
+    final tag = sessionTag ?? 'mosh';
+    final serverName = activeServer?.name ?? 'localhost';
+    final terminal = Terminal(maxLines: 1500);
+    final moshBridge = MoshTerminalBridge(
+      terminal: terminal,
+      sessionService: ref.read(moshSessionServiceProvider),
+      request: MoshBootstrapRequest(
+        serverId: activeServer?.id ?? '',
+        host: activeServer?.host ?? '',
+        serverPath: activeServer?.moshServerPath ?? 'mosh-server',
+        portRange: activeServer?.moshPortRange ?? '60000:61000',
+      ),
+      serverName: serverName,
+    );
+    final bridge = MoshBridgeAdapter(
+      moshBridge: moshBridge,
+      terminal: terminal,
+      serverName: serverName,
+      serverId: activeServer?.id ?? '',
+    );
+    final tab = TerminalTab(
+      id: 'tab-${DateTime.now().millisecondsSinceEpoch}-mosh-$index',
+      title: 'bash #$index ($tag)',
+      terminal: terminal,
+      bridge: bridge,
+    );
+
     unawaited(
       tab.bridge.start().then((_) {
         if (ref.mounted) _syncTmuxOffer();

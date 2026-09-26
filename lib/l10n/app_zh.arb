@@ -319,6 +319,22 @@
   "sshKeepAliveNotificationTitle": "Valhalla 正在保持会话连接",
   "terminalTmuxMissingNotice": "未检测到 tmux — 断线后会话无法保留",
   "terminalTmuxSessionRestored": "终端会话已恢复",
+  "moshSectionTitle": "Mosh",
+  "moshEnable": "启用 Mosh — 支持断线漫游、切换网络不掉线的终端会话",
+  "moshServerPathLabel": "mosh-server 路径",
+  "moshPortRangeLabel": "UDP 端口范围",
+  "moshNewSession": "新建 Mosh 会话",
+  "moshNotInstalled": "远端未找到 mosh-server。请先安装：sudo apt install mosh（Debian/Ubuntu）或 sudo dnf install mosh（Fedora/RHEL）。",
+  "moshBootstrapFailed": "Mosh 会话启动失败：{detail}",
+  "@moshBootstrapFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "moshUdpTimeout": "Mosh 连接超时 — 请检查 UDP 流量是否被防火墙拦截。",
+  "moshSessionTag": "mosh",
   "acpSessionRestored": "Agent 会话已恢复",
   "acpSessionRestartNotice": "Agent 会话已重启 — 之前的上下文不可用",
   "terminalTmuxInstallDialogTitle": "在远端服务器安装 tmux？",

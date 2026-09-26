@@ -319,6 +319,22 @@
   "sshKeepAliveNotificationTitle": "Valhalla is keeping your sessions alive",
   "terminalTmuxMissingNotice": "tmux not found — sessions won't survive a drop",
   "terminalTmuxSessionRestored": "Terminal session restored",
+  "moshSectionTitle": "Mosh",
+  "moshEnable": "Enable Mosh — a roaming terminal that survives connection drops and IP changes",
+  "moshServerPathLabel": "mosh-server path",
+  "moshPortRangeLabel": "UDP port range",
+  "moshNewSession": "New Mosh Session",
+  "moshNotInstalled": "mosh-server was not found on the remote server. Install it with: sudo apt install mosh (Debian/Ubuntu) or sudo dnf install mosh (Fedora/RHEL).",
+  "moshBootstrapFailed": "Failed to start Mosh session: {detail}",
+  "@moshBootstrapFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "moshUdpTimeout": "Mosh connection timed out — check that UDP traffic is not blocked by a firewall.",
+  "moshSessionTag": "mosh",
   "acpSessionRestored": "Agent session restored",
   "acpSessionRestartNotice": "Agent session restarted — previous context unavailable",
   "terminalTmuxInstallDialogTitle": "Install tmux on Remote Server?",

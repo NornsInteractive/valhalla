@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/terminal_provider.dart';
+import '../../infrastructure/mosh/mosh_bridge_adapter.dart';
+import '../../infrastructure/mosh/mosh_session_service.dart';
 import '../../infrastructure/terminal/terminal_session_bridge.dart';
 import '../../l10n/app_localizations.dart';
 import 'widgets/shared_terminal_canvas.dart';
@@ -73,11 +75,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Row(
           children: [
-            Icon(
-              Icons.check_circle_outline,
-              color: context.vSuccess,
-              size: 16,
-            ),
+            Icon(Icons.check_circle_outline, color: context.vSuccess, size: 16),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -327,6 +325,55 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
     );
   }
 
+  /// Mosh 会话的 bootstrap 失败提示条：按错误分类给出针对性文案
+  /// (notInstalled → 安装引导 / timeout → UDP 排查 / 其他 → 失败详情)。
+  /// 仅当激活标签页是处于 error 状态的 Mosh 会话时显示。
+  Widget _buildMoshNotice(BuildContext context, TerminalSessionBridge? bridge) {
+    if (bridge is! MoshBridgeAdapter) return const SizedBox.shrink();
+    if (bridge.state != TerminalConnectionState.error) {
+      return const SizedBox.shrink();
+    }
+
+    final l10n = context.l10n;
+    final mosh = bridge.moshBridge;
+    final error = mosh.bootstrapError;
+    final String message;
+    switch (error) {
+      case MoshBootstrapError.notInstalled:
+        message = l10n.moshNotInstalled;
+      case MoshBootstrapError.timeout:
+        message = l10n.moshUdpTimeout;
+      case MoshBootstrapError.startFailed:
+      case MoshBootstrapError.sshFailed:
+      case null:
+        message = l10n.moshBootstrapFailed(
+          mosh.bootstrapErrorDetail ?? error?.name ?? 'unknown',
+        );
+    }
+
+    return Container(
+      key: const Key('terminalMoshErrorNotice'),
+      color: context.vDanger.withValues(alpha: 0.12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: context.vDanger, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: context.vDanger,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final terminalState = ref.watch(terminalProvider);
@@ -336,8 +383,10 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
     return Column(
       children: [
         _buildTabBar(terminalState),
-        if (terminalState.tmuxInstallOffer == null)
+        if (terminalState.tmuxInstallOffer == null) ...[
           _buildTmuxNotice(context, activeTab?.bridge),
+          _buildMoshNotice(context, activeTab?.bridge),
+        ],
         Expanded(
           child: activeTab != null
               ? SharedTerminalCanvas(
@@ -433,6 +482,13 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
             tooltip: context.l10n.terminalNewTab,
             onPressed: () => notifier.addNewTab(),
           ),
+          if (state.moshAvailable)
+            IconButton(
+              key: const Key('terminal_new_mosh_tab'),
+              icon: const Icon(Icons.bolt_rounded, size: 18),
+              tooltip: context.l10n.moshNewSession,
+              onPressed: () => notifier.addMoshTab(context.l10n.moshSessionTag),
+            ),
           IconButton(
             icon: const Icon(Icons.cleaning_services, size: 18),
             tooltip: context.l10n.terminalClear,
