@@ -149,7 +149,21 @@ class AnimatedIndexedStack extends StatefulWidget {
 class _AnimatedIndexedStackState extends State<AnimatedIndexedStack>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late int _incoming;
+
+  // 常驻转场链: 每一页永远经历 Offstage > TickerMode > Fade > Slide > Scale
+  // > ExcludeSemantics 同一串 widget 类型, 切页只改属性值。
+  // 绝不在"裸子页"与"包装后的子页"之间切换 widget 类型 —— 否则 Flutter
+  // 会把页面 Element 拆掉重建, 页面状态丢失并重放入场动画 (闪烁)。
+  static final Animation<double> _opaque = AlwaysStoppedAnimation<double>(1);
+  static final Animation<Offset> _noSlide =
+      AlwaysStoppedAnimation<Offset>(Offset.zero);
+
+  late Animation<double> _inFade = _opaque;
+  late Animation<Offset> _inSlide = _noSlide;
+  late Animation<double> _outFade = _opaque;
+  late Animation<Offset> _outSlide = _noSlide;
+
+  int _incoming = 0;
   int? _outgoing;
   double _direction = 1;
   bool _reduce = false;
@@ -177,19 +191,41 @@ class _AnimatedIndexedStackState extends State<AnimatedIndexedStack>
   @override
   void didUpdateWidget(covariant AnimatedIndexedStack oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.index != widget.index && !_reduce) {
-      setState(() {
-        _outgoing = oldWidget.index;
-        _incoming = widget.index;
-        _direction = widget.index > oldWidget.index ? 1.0 : -1.0;
-      });
-      _controller.forward(from: 0);
-    } else if (oldWidget.index != widget.index) {
-      setState(() {
-        _outgoing = null;
-        _incoming = widget.index;
-      });
+    if (oldWidget.index == widget.index) return;
+
+    // 上一帧正在显示的页 (无论是否处于上一次转场中) 现在退场。
+    final leaving = _incoming;
+    _incoming = widget.index;
+    _direction = widget.index > leaving ? 1.0 : -1.0;
+
+    if (_reduce) {
+      setState(() => _outgoing = null);
+      return;
     }
+
+    // 若上一次转场还在半途, 从当前透明度开始淡出, 避免闪白。
+    final double outFrom =
+        _outgoing != null && _controller.isAnimating ? _inFade.value : 1.0;
+    final dir = _direction;
+
+    setState(() {
+      _outgoing = leaving;
+      _inFade = Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(parent: _controller, curve: VCurves.decelerate),
+      );
+      _inSlide = Tween<Offset>(
+        begin: Offset(20 * dir, 0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: _controller, curve: VCurves.decelerate));
+      _outFade = Tween<double>(begin: outFrom, end: 0).animate(
+        CurvedAnimation(parent: _controller, curve: VCurves.accelerate),
+      );
+      _outSlide = Tween<Offset>(
+        begin: Offset.zero,
+        end: Offset(-16 * dir, 0),
+      ).animate(CurvedAnimation(parent: _controller, curve: VCurves.accelerate));
+    });
+    _controller.forward(from: 0);
   }
 
   @override
@@ -198,60 +234,50 @@ class _AnimatedIndexedStackState extends State<AnimatedIndexedStack>
     super.dispose();
   }
 
-  Widget _page(int i, {required bool leaving, required Animation<double> t}) {
-    final dir = _direction;
-    final slide = leaving
-        ? Tween<Offset>(begin: Offset.zero, end: Offset(-16 * dir, 0))
-        : Tween<Offset>(begin: Offset(20 * dir, 0), end: Offset.zero);
-    final fade = leaving
-        ? Tween<double>(begin: 1, end: 0)
-        : Tween<double>(begin: 0, end: 1);
-    final scale = leaving
-        ? Tween<double>(begin: 1, end: 0.992)
-        : Tween<double>(begin: 0.992, end: 1);
-
-    return FadeTransition(
-      opacity: fade.animate(t),
-      child: SlideTransition(
-        position: slide.animate(t),
-        child: ScaleTransition(
-          scale: scale.animate(t),
-          child: ExcludeSemantics(excluding: leaving, child: widget.children[i]),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final animating = _controller.isAnimating || _outgoing != null;
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            for (var i = 0; i < widget.children.length; i++)
-              if (animating && (i == _incoming || i == _outgoing))
-                _page(
-                  i,
-                  leaving: i == _outgoing,
-                  t: CurvedAnimation(
-                    parent: _controller,
-                    curve: i == _outgoing ? VCurves.accelerate : VCurves.decelerate,
+    final animating = _outgoing != null;
+    final active = _incoming;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (var i = 0; i < widget.children.length; i++)
+          Offstage(
+            offstage: animating
+                ? (i != active && i != _outgoing)
+                : (i != widget.index),
+            child: TickerMode(
+              enabled: animating
+                  ? (i == active || i == _outgoing)
+                  : i == widget.index,
+              child: FadeTransition(
+                opacity: animating
+                    ? (i == active
+                          ? _inFade
+                          : (i == _outgoing ? _outFade : _opaque))
+                    : _opaque,
+                child: SlideTransition(
+                  position: animating
+                      ? (i == active
+                            ? _inSlide
+                            : (i == _outgoing ? _outSlide : _noSlide))
+                      : _noSlide,
+                  child: ScaleTransition(
+                    scale: animating
+                        ? (i == active
+                              ? AlwaysStoppedAnimation<double>(1)
+                              : _opaque)
+                        : _opaque,
+                    child: ExcludeSemantics(
+                      excluding: animating ? i == _outgoing : i != widget.index,
+                      child: widget.children[i],
+                    ),
                   ),
-                )
-              else if (!animating && i == widget.index)
-                widget.children[i]
-              else
-                // 其余页保持挂载但不构建光栅。
-                Offstage(
-                  offstage: true,
-                  child: TickerMode(enabled: false, child: widget.children[i]),
                 ),
-          ],
-        );
-      },
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
