@@ -1,5 +1,13 @@
 # Valhalla - 实施状态与工程基线
 
+## 2026-09-29 仓库同步、OpenCode 验证与模拟器安装
+
+- 已快进同步 GitHub `main` 至 `916082f`。本轮验证由 OpenCode CLI 显式选用 `opencode/mimo-v2.6-flash-free` 执行，未把其他模型的结果计入本轮门禁。
+- 本机 Flutter SDK 对 `intl` 固定为 `0.20.2`；上游的 `0.20.3` 导致 `flutter pub get` 无法解析，故将依赖与锁文件调整到本机 SDK 可用版本。
+- `flutter test --no-pub`：1154 项通过、17 项隔离 VM/设备前置条件用例跳过；`flutter analyze --no-pub` 无问题；`flutter build apk --debug --no-pub` 成功。APK 为 `build/app/outputs/flutter-apk/app-debug.apk`，232201539 字节，SHA-256 `8b9655e65b95f4fb851787954460573d03ee8a92654c9ddc5ad1e0c07678b3ac`。
+- OpenCode 对模拟器 `127.0.0.1:14251` 执行 `adb install -r` 返回 `Success`，触发应用启动后 `pidof com.antigravity.valhalla.valhalla` 返回 `23762`。覆盖安装保留原应用数据；这仅证明安装和启动，不代表 SSH/NAS/Agent 的端到端验收。
+- 格式检查发现上游 31 个 Dart 文件不符合当前格式器输出；本轮没有批量格式化展示层文件。物理 Android 设备性能和真实服务器功能仍未验证。
+
 ## 2026-09-23 本轮稳定性修复与已列范围验收完成
 
 本节记录本轮稳定性修复与已列范围的完成结果，保留未实现功能和外部未验边界，不代表全功能发布就绪。下文 NAS 媒体库及更早记录保留为历史证据，不能代替本轮验收。

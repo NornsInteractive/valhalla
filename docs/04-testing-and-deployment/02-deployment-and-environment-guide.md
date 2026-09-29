@@ -1,5 +1,9 @@
 # Valhalla - 客户端打包发布与服务端运行环境指南
 
+## 执行职责（2026-09-29）
+
+本指南的测试、静态分析、构建打包与产物检查均由 OpenCode 执行，调用时显式使用 `opencode run --model opencode/mimo-v2.6-flash-free` 并核对会话模型；需要 Android 设备验证时由同一模型使用明确的 ADB 序列号操作。执行者应记录被验证的提交、实际命令、退出状态、APK 路径和校验值。已有安装使用 `adb install -r` 保留数据；如果签名不兼容，报告原因并停止，不卸载现有应用。
+
 ## 2026-09-19 性能与原生 CLI 验收
 
 键盘动画使用 `flutter build apk --profile` 或 `flutter run --profile` 在物理 Android 设备测量，debug 包仅用于功能排错。当前环境只连接 Linux 桌面，没有 Android 设备，不能给出真机帧率通过结论。生成包与门禁结果见 [本轮记录](../handoffs/2026-09-19-cli-reboot-performance.md)。原生接口取决于服务器 CLI 版本；缺全局历史 / 原生删除能力保留真实终端或禁用相应动作，不自动升级。Claude 历史 SDK 要求 Node.js/npm，安装须确认；agy 交互登录在真实终端完成。真实重启 / 删除只在用户指定测试服务器确认后验收。

@@ -15,7 +15,8 @@ Codex、Claude、Gemini、Antigravity 等工具的入口文件只负责引导 Ag
 1. 先阅读通用规则，再判断任务属于业务、UI 还是混合任务。
 2. 混合任务先由业务 Agent 完成状态、数据和服务契约，再填写 UI 交接单。
 3. Antigravity 只修改交接单列出的 UI 文件；完成后报告文件清单和验证结果。
-4. 发起任务的 Agent 检查 diff、运行验收清单，并更新对应的 handoff 或实现状态文档。
+4. 后续测试用例编写与执行、静态分析、打包和构建产物核验交给 OpenCode，指定模型 `opencode/mimo-v2.6-flash-free`；需要设备验收时也由该 OpenCode 模型执行 ADB 操作并记录结果。
+5. 发起任务的 Agent 检查 diff 与 OpenCode 的验收记录，并更新对应的 handoff 或实现状态文档。
 
 ## Agent 入口适配
 
