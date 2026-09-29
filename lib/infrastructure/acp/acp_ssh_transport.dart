@@ -25,7 +25,13 @@ class AcpSshTransport implements LineTransport {
           (line) {
             if (_closed) return;
             if (line.trim().isNotEmpty) {
-              _incoming.add(TransportFrame.decode(line));
+              try {
+                _incoming.add(TransportFrame.decode(line));
+              } catch (error, stack) {
+                // A malformed stdout frame is a transport failure, not an
+                // uncaught callback exception which leaves prompt awaiting forever.
+                _incoming.addError(error, stack);
+              }
             }
           },
           onError: _incoming.addError,

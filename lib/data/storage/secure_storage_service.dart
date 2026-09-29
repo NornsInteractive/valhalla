@@ -75,12 +75,15 @@ class SecureStorageService {
   Future<void> deleteCredentials(String serverId) async {
     final pwdKey = 'valhalla_server_${serverId}_password';
     final pKey = 'valhalla_server_${serverId}_private_key';
+    final sudoKey = 'valhalla_server_${serverId}_sudo_password';
     try {
       await _storage.delete(key: pwdKey);
       await _storage.delete(key: pKey);
+      await _storage.delete(key: sudoKey);
     } catch (_) {}
     _memoryFallback.remove(pwdKey);
     _memoryFallback.remove(pKey);
+    _memoryFallback.remove(sudoKey);
   }
 
   Future<void> saveSudoPassword(String serverId, String password) async {

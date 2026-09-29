@@ -651,8 +651,12 @@ class LocalStorageService {
   String? getLastConnectedServerId() =>
       _prefs.getString(_keyLastConnectedServerId);
 
-  Future<void> setLastConnectedServerId(String id) async {
-    await _prefs.setString(_keyLastConnectedServerId, id);
+  Future<void> setLastConnectedServerId(String? id) async {
+    if (id == null) {
+      await _prefs.remove(_keyLastConnectedServerId);
+    } else {
+      await _prefs.setString(_keyLastConnectedServerId, id);
+    }
   }
 
   // --- ACP Sessions ---

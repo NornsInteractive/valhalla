@@ -132,6 +132,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   /// 放在 shell 上而不是文件页里：点通知可能发生在 app 冷启动、当前不在
   /// 文件 tab 的时候，得先把 tab 切过去，文件页才有机会看到这个请求。
   final _openTransfersRequest = ValueNotifier<int>(0);
+  final Set<String> _deletingServerIds = {};
   static const _downloadsChannel = MethodChannel('valhalla/downloads');
 
   @override
@@ -174,105 +175,140 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Future<void> _handleConnect({ServerProfile? targetServer}) async {
-    if (targetServer != null) {
-      await ref
-          .read(activeServerProvider.notifier)
-          .selectServer(targetServer.id);
-    }
-    final activeServer = targetServer ?? ref.read(activeServerProvider);
-    if (activeServer == null) return;
+    try {
+      final initialTarget = targetServer ?? ref.read(activeServerProvider);
+      if (initialTarget == null) return;
+      final targetId = initialTarget.id;
 
-    final repo = ref.read(serverRepositoryProvider);
-    final storedPwd = await repo.getPassword(activeServer.id);
-    final storedKey = await repo.getPrivateKey(activeServer.id);
+      bool isStillTarget() {
+        if (!mounted) return false;
+        final existsInList = ref
+            .read(serverListProvider)
+            .any((s) => s.id == targetId);
+        if (!existsInList) return false;
+        final currentActive = ref.read(activeServerProvider);
+        return currentActive?.id == targetId;
+      }
 
-    String? pwd = storedPwd;
-    String? key = storedKey;
+      final exists = ref.read(serverListProvider).any((s) => s.id == targetId);
+      if (!exists) return;
 
-    if (activeServer.authType == AuthType.password &&
-        (pwd == null || pwd.isEmpty)) {
-      if (!mounted) return;
-      final ctrl = TextEditingController();
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(context.l10n.enterPasswordTitle(activeServer.name)),
-          content: TextField(
-            controller: ctrl,
-            obscureText: true,
-            decoration: InputDecoration(
-              labelText: context.l10n.serverPassword,
-              prefixIcon: const Icon(Icons.lock),
+      if (targetServer != null) {
+        await ref
+            .read(activeServerProvider.notifier)
+            .selectServer(targetServer.id);
+      }
+      if (!mounted || !isStillTarget()) return;
+
+      final activeServer = ref.read(activeServerProvider);
+      if (activeServer == null || activeServer.id != targetId) return;
+
+      final repo = ref.read(serverRepositoryProvider);
+      final storedPwd = await repo.getPassword(targetId);
+      final storedKey = await repo.getPrivateKey(targetId);
+
+      if (!mounted || !isStillTarget()) return;
+
+      String? pwd = storedPwd;
+      String? key = storedKey;
+
+      if (activeServer.authType == AuthType.password &&
+          (pwd == null || pwd.isEmpty)) {
+        if (!mounted || !isStillTarget()) return;
+        final ctrl = TextEditingController();
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(ctx.l10n.enterPasswordTitle(activeServer.name)),
+            content: TextField(
+              controller: ctrl,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: ctx.l10n.serverPassword,
+                prefixIcon: const Icon(Icons.lock),
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(ctx.l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(ctx.l10n.confirm),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(context.l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(context.l10n.confirm),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true) return;
-      pwd = ctrl.text;
-      await repo.addOrUpdateServer(activeServer, password: pwd);
-    }
-
-    if (!mounted) return;
-
-    final ok = await ref
-        .read(serverConnectionProvider.notifier)
-        .connect(
-          password: pwd,
-          privateKey: key,
-          onConfirmHostKey: (host, type, fp) async {
-            return await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(context.l10n.trustHostFingerprintTitle),
-                    content: Text(
-                      context.l10n.trustHostFingerprintMessage(fp, host, type),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: Text(context.l10n.reject),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: Text(context.l10n.trustAndConnect),
-                      ),
-                    ],
-                  ),
-                ) ??
-                false;
-          },
         );
+        if (confirmed != true) return;
+        if (!mounted || !isStillTarget()) return;
 
-    if (!mounted) return;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
+        pwd = ctrl.text;
+        await repo.addOrUpdateServer(activeServer, password: pwd);
+      }
 
-    if (ok) {
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            context.l10n.sshConnectedSuccess(
-              '${activeServer.name} (${activeServer.host})',
+      if (!mounted || !isStillTarget()) return;
+
+      final ok = await ref
+          .read(serverConnectionProvider.notifier)
+          .connect(
+            password: pwd,
+            privateKey: key,
+            onConfirmHostKey: (host, type, fp) async {
+              if (!mounted || !isStillTarget()) return false;
+              return await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(ctx.l10n.trustHostFingerprintTitle),
+                      content: Text(
+                        ctx.l10n.trustHostFingerprintMessage(fp, host, type),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(ctx.l10n.reject),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(ctx.l10n.trustAndConnect),
+                        ),
+                      ],
+                    ),
+                  ) ??
+                  false;
+            },
+          );
+
+      if (!mounted || !isStillTarget()) return;
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+      if (ok) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.sshConnectedSuccess(
+                '${activeServer.name} (${activeServer.host})',
+              ),
             ),
+            backgroundColor: context.vSuccess,
           ),
-          backgroundColor: context.vSuccess,
-        ),
-      );
-    } else {
-      final err =
-          ref.read(serverConnectionProvider).errorMessage ?? 'Connection Error';
-      scaffoldMessenger.showSnackBar(
+        );
+      } else {
+        final err =
+            ref.read(serverConnectionProvider).errorMessage ??
+            'Connection Error';
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.sshConnectionFailed(err)),
+            backgroundColor: context.vDanger,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.l10n.sshConnectionFailed(err)),
+          content: Text(context.l10n.serverConnectionFailed(e.toString())),
           backgroundColor: context.vDanger,
         ),
       );
@@ -506,8 +542,10 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _showNasSourceSelector(BuildContext context) {
+    final parentContext = context;
+    final parentRef = ref;
     showModalBottomSheet(
-      context: context,
+      context: parentContext,
       isScrollControlled: true,
       constraints: const BoxConstraints(
         maxWidth: LayoutBreakpoints.modalSheetMaxWidth,
@@ -515,8 +553,8 @@ class _MainShellState extends ConsumerState<MainShell> {
       builder: (ctx) {
         return SafeArea(
           child: Consumer(
-            builder: (context, ref, _) {
-              final sourcesState = ref.watch(nasSourcesProvider);
+            builder: (sheetCtx, sheetRef, _) {
+              final sourcesState = sheetRef.watch(nasSourcesProvider);
               final sources = sourcesState.sources;
               final selectedId = sourcesState.selectedId;
 
@@ -533,17 +571,19 @@ class _MainShellState extends ConsumerState<MainShell> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          context.l10n.nasTitle,
-                          style: context.textTheme.titleMedium?.copyWith(
+                          sheetCtx.l10n.nasTitle,
+                          style: sheetCtx.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.add_circle_outline),
-                          tooltip: context.l10n.nasAddSource,
+                          tooltip: sheetCtx.l10n.nasAddSource,
                           onPressed: () {
                             Navigator.pop(ctx);
-                            NasSourceDialog.show(context);
+                            if (parentContext.mounted) {
+                              NasSourceDialog.show(parentContext);
+                            }
                           },
                         ),
                       ],
@@ -557,18 +597,20 @@ class _MainShellState extends ConsumerState<MainShell> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                context.l10n.nasNoSources,
+                                sheetCtx.l10n.nasNoSources,
                                 style: TextStyle(
-                                  color: context.colorScheme.outline,
+                                  color: sheetCtx.colorScheme.outline,
                                 ),
                               ),
                               const SizedBox(height: 12),
                               FilledButton.icon(
                                 icon: const Icon(Icons.add, size: 16),
-                                label: Text(context.l10n.nasAddSource),
+                                label: Text(sheetCtx.l10n.nasAddSource),
                                 onPressed: () {
                                   Navigator.pop(ctx);
-                                  NasSourceDialog.show(context);
+                                  if (parentContext.mounted) {
+                                    NasSourceDialog.show(parentContext);
+                                  }
                                 },
                               ),
                             ],
@@ -582,7 +624,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                           leading: Icon(
                             Icons.storage_outlined,
                             color: isSelected
-                                ? context.colorScheme.primary
+                                ? sheetCtx.colorScheme.primary
                                 : null,
                           ),
                           title: Text(
@@ -601,23 +643,28 @@ class _MainShellState extends ConsumerState<MainShell> {
                                   padding: const EdgeInsets.only(right: 4),
                                   child: Icon(
                                     Icons.check_circle,
-                                    color: context.colorScheme.primary,
+                                    color: sheetCtx.colorScheme.primary,
                                     size: 20,
                                   ),
                                 ),
                               IconButton(
                                 icon: const Icon(Icons.edit_outlined, size: 18),
-                                tooltip: context.l10n.nasEditSource,
+                                tooltip: sheetCtx.l10n.nasEditSource,
                                 onPressed: () {
                                   Navigator.pop(ctx);
-                                  NasSourceDialog.show(context, source: s);
+                                  if (parentContext.mounted) {
+                                    NasSourceDialog.show(
+                                      parentContext,
+                                      source: s,
+                                    );
+                                  }
                                 },
                               ),
                             ],
                           ),
                           onTap: () async {
                             Navigator.pop(ctx);
-                            await ref
+                            await parentRef
                                 .read(nasSourcesProvider.notifier)
                                 .select(s.id);
                           },
@@ -634,8 +681,13 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _showServerSelector(BuildContext context) {
+    final parentContext = context;
+    final parentRef = ref;
+    final serverListNotifier = parentRef.read(serverListProvider.notifier);
+    final scaffoldMessenger = ScaffoldMessenger.of(parentContext);
+
     showModalBottomSheet(
-      context: context,
+      context: parentContext,
       isScrollControlled: true,
       constraints: const BoxConstraints(
         maxWidth: LayoutBreakpoints.modalSheetMaxWidth,
@@ -643,9 +695,9 @@ class _MainShellState extends ConsumerState<MainShell> {
       builder: (ctx) {
         return SafeArea(
           child: Consumer(
-            builder: (context, ref, _) {
-              final servers = ref.watch(serverListProvider);
-              final activeServer = ref.watch(activeServerProvider);
+            builder: (sheetCtx, sheetRef, _) {
+              final servers = sheetRef.watch(serverListProvider);
+              final activeServer = sheetRef.watch(activeServerProvider);
 
               return Padding(
                 padding: const EdgeInsets.symmetric(
@@ -660,17 +712,19 @@ class _MainShellState extends ConsumerState<MainShell> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          context.l10n.selectServerTitle,
-                          style: context.textTheme.titleMedium?.copyWith(
+                          sheetCtx.l10n.selectServerTitle,
+                          style: sheetCtx.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.add_circle_outline),
-                          tooltip: context.l10n.addServer,
+                          tooltip: sheetCtx.l10n.addServer,
                           onPressed: () {
                             Navigator.pop(ctx);
-                            _openAddServerDialog(context);
+                            if (parentContext.mounted) {
+                              _openAddServerDialog(parentContext);
+                            }
                           },
                         ),
                       ],
@@ -681,9 +735,9 @@ class _MainShellState extends ConsumerState<MainShell> {
                         padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Center(
                           child: Text(
-                            context.l10n.noServersFound,
+                            sheetCtx.l10n.noServersFound,
                             style: TextStyle(
-                              color: context.colorScheme.outline,
+                              color: sheetCtx.colorScheme.outline,
                             ),
                           ),
                         ),
@@ -695,7 +749,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                           leading: Icon(
                             Icons.dns,
                             color: isSelected
-                                ? context.colorScheme.primary
+                                ? sheetCtx.colorScheme.primary
                                 : null,
                           ),
                           title: Text(
@@ -711,50 +765,105 @@ class _MainShellState extends ConsumerState<MainShell> {
                                   padding: const EdgeInsets.only(right: 4),
                                   child: Icon(
                                     Icons.check_circle,
-                                    color: context.colorScheme.primary,
+                                    color: sheetCtx.colorScheme.primary,
                                     size: 20,
                                   ),
                                 ),
                               IconButton(
                                 icon: const Icon(Icons.edit_outlined, size: 18),
-                                tooltip: context.l10n.editServer,
+                                tooltip: sheetCtx.l10n.editServer,
                                 onPressed: () {
                                   Navigator.pop(ctx);
-                                  showDialog(
-                                    context: context,
-                                    builder: (_) =>
-                                        ServerFormDialog(serverToEdit: s),
-                                  );
+                                  if (parentContext.mounted) {
+                                    showDialog(
+                                      context: parentContext,
+                                      builder: (_) =>
+                                          ServerFormDialog(serverToEdit: s),
+                                    );
+                                  }
                                 },
                               ),
                               IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  size: 18,
-                                  color: Color(0xFFEF4444),
-                                ),
-                                tooltip: context.l10n.delete,
-                                onPressed: () async {
-                                  final confirmed =
-                                      await showDeleteServerConfirmDialog(
-                                        context,
-                                        s,
-                                      );
-                                  if (!confirmed) return;
-                                  await ref
-                                      .read(serverListProvider.notifier)
-                                      .deleteServer(s.id);
-                                },
+                                icon: _deletingServerIds.contains(s.id)
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Color(0xFFEF4444),
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.delete_outline,
+                                        size: 18,
+                                        color: Color(0xFFEF4444),
+                                      ),
+                                tooltip: sheetCtx.l10n.delete,
+                                onPressed: _deletingServerIds.contains(s.id)
+                                    ? null
+                                    : () async {
+                                        final confirmed =
+                                            await showDeleteServerConfirmDialog(
+                                              parentContext,
+                                              s,
+                                            );
+                                        if (!confirmed ||
+                                            !mounted ||
+                                            !parentContext.mounted) {
+                                          return;
+                                        }
+                                        setState(() {
+                                          _deletingServerIds.add(s.id);
+                                        });
+                                        try {
+                                          await serverListNotifier.deleteServer(
+                                            s.id,
+                                          );
+                                        } catch (e) {
+                                          if (parentContext.mounted) {
+                                            scaffoldMessenger.showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  parentContext.l10n
+                                                      .serverDeleteFailed(
+                                                        e.toString(),
+                                                      ),
+                                                ),
+                                                backgroundColor:
+                                                    parentContext.vDanger,
+                                              ),
+                                            );
+                                          }
+                                        } finally {
+                                          if (mounted) {
+                                            setState(() {
+                                              _deletingServerIds.remove(s.id);
+                                            });
+                                          }
+                                        }
+                                      },
                               ),
                             ],
                           ),
                           onTap: () async {
                             Navigator.pop(ctx);
-                            await ref
-                                .read(activeServerProvider.notifier)
-                                .selectServer(s.id);
-                            if (!mounted) return;
-                            await _handleConnect(targetServer: s);
+                            try {
+                              await _handleConnect(targetServer: s);
+                            } catch (e) {
+                              if (!mounted || !parentContext.mounted) {
+                                return;
+                              }
+                              scaffoldMessenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    parentContext.l10n.serverConnectionFailed(
+                                      e.toString(),
+                                    ),
+                                  ),
+                                  backgroundColor: parentContext.vDanger,
+                                ),
+                              );
+                            }
                           },
                         );
                       }),
@@ -1181,8 +1290,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  context.colorScheme.surfaceContainerHigh,
+                              color: context.colorScheme.surfaceContainerHigh,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
                                 color: context.colorScheme.outlineVariant,
@@ -1269,8 +1377,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  context.colorScheme.surfaceContainerHigh,
+                              color: context.colorScheme.surfaceContainerHigh,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
                                 color: context.colorScheme.outlineVariant,
@@ -1590,9 +1697,7 @@ class MainBottomNavigationBar extends StatelessWidget {
           builder: (ctx, constraints) {
             final count = sections.length;
             final canFitAll = (constraints.maxWidth / count) >= 64.0;
-            final slotWidth = canFitAll
-                ? constraints.maxWidth / count
-                : 68.0;
+            final slotWidth = canFitAll ? constraints.maxWidth / count : 68.0;
             final selectedIndex = sections.indexOf(currentSection);
             final trackWidth = slotWidth * count;
 

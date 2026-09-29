@@ -411,7 +411,7 @@ void main() {
       expect(auth.single.methods.single.id, 'chat-gpt');
     });
 
-    test('authenticate uses the chosen methodId before session/new', () async {
+    test('authenticate uses the chosen methodId before next prompt', () async {
       pair.authMethods = [
         {'id': 'chat-gpt', 'name': 'ChatGPT'},
         {'id': 'api-key', 'name': 'API Key'},
@@ -429,12 +429,13 @@ void main() {
       expect(pair.authenticateCallCount, 1);
       expect(pair.lastAuthenticateMethodId, 'api-key');
 
-      // `authenticate` must precede the rebuilt session/new on the wire.
+      // Authentication must precede the next prompt without replacing the session.
       final wire = pair.sentToAgent.join('\n');
       final authIndex = wire.lastIndexOf('"method":"authenticate"');
-      final newSessionIndex = wire.lastIndexOf('"method":"session/new"');
+      final secondPromptIndex = wire.lastIndexOf('"method":"session/prompt"');
       expect(authIndex, greaterThanOrEqualTo(0));
-      expect(newSessionIndex, greaterThan(authIndex));
+      expect(secondPromptIndex, greaterThan(authIndex));
+      expect(RegExp(r'"method":"session/new"').allMatches(wire), hasLength(1));
     });
 
     test('a failed authenticate re-surfaces the auth requirement', () async {

@@ -3064,4 +3064,33 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get nasInstallBlockerPreflightFailed =>
       'Pre-deployment environment check failed. Please resolve the blockers before continuing.';
+
+  @override
+  String serverDeleteFailed(String error) {
+    return 'Failed to delete server: $error';
+  }
+
+  @override
+  String get chatRunSettingsAgentMode => 'Agent Mode';
+
+  @override
+  String get chatRunSettingsApprovalPolicy => 'Local Approval Policy';
+
+  @override
+  String get chatRunSettingsExtraSettings => 'Additional Settings';
+
+  @override
+  String get chatPermissionAutoAllowSafeDesc =>
+      'Automatically allows known-safe operations; asks whenever operation safety cannot be determined.';
+
+  @override
+  String chatRunSettingsSaveFailed(String error) {
+    return 'Failed to apply run settings: $error';
+  }
+
+  @override
+  String get chatMessageCopied => 'Message copied to clipboard';
+
+  @override
+  String get copy => 'Copy';
 }

@@ -56,6 +56,8 @@ class ACPPermissionRequestEvent extends ACPEvent {
 
 class ACPCompleteEvent extends ACPEvent {}
 
+class ACPSettingsChangedEvent extends ACPEvent {}
+
 /// Agent 要求认证（`RpcError(-32000)`）。
 ///
 /// [methods] 为空表示 agent 声明需要认证但未提供任何可选方式，此时只能由
@@ -119,7 +121,7 @@ class ACPClientAdapter {
   static const authRequiredCode = 'ACP_AUTH_REQUIRED';
 
   final StreamController<ACPEvent> _eventController =
-      StreamController<ACPEvent>.broadcast();
+      StreamController<ACPEvent>.broadcast(sync: true);
   Stream<ACPEvent> get eventStream => _eventController.stream;
 
   ClientConnection? _connection;
@@ -127,6 +129,11 @@ class ACPClientAdapter {
   bool _disposed = false;
   final Completer<void> _disposedSignal = Completer<void>();
   bool _completed = false;
+  bool _acceptContent = false;
+  Future<void>? _preparing;
+  bool _initialized = false;
+  List<SessionConfigOption> _configOptions = const [];
+  SessionModeState? _modes;
 
   /// 由 agent 在 `initialize` 响应中声明的认证方式。
   List<AcpAuthMethod> _authMethods = const [];
@@ -142,7 +149,14 @@ class ACPClientAdapter {
 
   /// Establishes the remote session without sending a prompt.
   /// Used immediately before the first prompt to apply advertised settings.
-  Future<void> prepareSession() => _ensureSession();
+  Future<void> prepareSession() async {
+    try {
+      await _ensureSession();
+    } catch (error) {
+      if (_isAuthRequired(error)) _emitAuthRequired();
+      rethrow;
+    }
+  }
 
   /// 本次 `_ensureSession` 是否复用了已有会话（而非新建）。
   ///
@@ -151,26 +165,51 @@ class ACPClientAdapter {
   bool _restoredExistingSession = false;
 
   /// 建立 ACP 连接并完成 initialize + session/new（或 session/load/resume）。
-  Future<void> _ensureSession() async {
-    if (_session != null) return;
+  Future<void> _ensureSession() {
+    if (_disposed) return Future.error(StateError(disconnectedCode));
+    return _preparing ??= _prepareSession().whenComplete(
+      () => _preparing = null,
+    );
+  }
+
+  Future<void> _prepareSession() async {
+    if (_session != null && (_pendingAuthMethodId == null || _authenticated)) {
+      return;
+    }
 
     final role = ClientRole()
-      ..onSessionUpdate((_, notification) => _handleUpdate(notification.update))
+      ..onSessionUpdate((_, notification) {
+        if (_session == null || notification.sessionId == _session!.sessionId) {
+          _handleUpdate(notification.update);
+        }
+      })
       ..onRequestPermission(_handlePermission);
 
-    final connection = role.connect(transport);
+    final connection = _connection ?? role.connect(transport);
     _connection = connection;
 
-    final init = await connection.client.initialize(
-      const InitializeRequest(
-        protocolVersion: ProtocolVersion.v1,
-        clientInfo: Implementation(name: 'Valhalla', version: '1.0.0'),
-      ),
-      timeout: requestTimeout,
-    );
+    if (!_initialized) {
+      final init = await connection.client.initialize(
+        const InitializeRequest(
+          protocolVersion: ProtocolVersion.v1,
+          clientInfo: Implementation(name: 'Valhalla', version: '1.0.0'),
+          clientCapabilities: ClientCapabilities(
+            session: ClientSessionCapabilities(
+              configOptions: SessionConfigOptionsCapabilities(
+                boolean: BooleanConfigOptionCapabilities(),
+              ),
+            ),
+          ),
+        ),
+        timeout: requestTimeout,
+      );
 
-    // agent 在此声明它支持的认证方式；原先被丢弃，导致认证要求无从满足。
-    _authMethods = init.authMethods.map(_toAuthMethod).toList(growable: false);
+      // agent 在此声明它支持的认证方式；原先被丢弃，导致认证要求无从满足。
+      _authMethods = init.authMethods
+          .map(_toAuthMethod)
+          .toList(growable: false);
+      _initialized = true;
+    }
 
     // 用户已选过认证方式时，在建会话前先完成 authenticate。
     final pending = _pendingAuthMethodId;
@@ -182,9 +221,19 @@ class ACPClientAdapter {
       _authenticated = true;
     }
 
-    _session = await _establishSession(connection);
+    if (_session != null) return;
+
+    final session = await _establishSession(connection);
+    if (_disposed) {
+      session.dispose();
+      throw StateError(disconnectedCode);
+    }
+    _session = session;
+    _configOptions = session.configOptions;
+    _modes = session.modes;
     final id = _session!.sessionId;
     onSessionEstablished?.call(id);
+    _eventController.add(ACPSettingsChangedEvent());
   }
 
   /// 按 load → resume → create 的顺序建立会话。
@@ -247,6 +296,7 @@ class ACPClientAdapter {
     try {
       await _ensureSession();
       final session = _session!;
+      _acceptContent = true;
       final result = await session.sendPrompt([
         TextContentBlock(text: prompt),
       ], timeout: requestTimeout);
@@ -260,6 +310,8 @@ class ACPClientAdapter {
         _emitError('$transportFailureCode: $e');
       }
       _complete();
+    } finally {
+      _acceptContent = false;
     }
   }
 
@@ -274,31 +326,38 @@ class ACPClientAdapter {
     return _connection!.client.listSessions(request, timeout: requestTimeout);
   }
 
-  List<SessionConfigOption> get configOptions => List.unmodifiable(
-    _session?.configOptions ?? const <SessionConfigOption>[],
-  );
+  List<SessionConfigOption> get configOptions =>
+      List.unmodifiable(_configOptions);
+  SessionModeState? get modes => _modes;
 
   Future<List<SessionConfigOption>> setConfigOption(
     SetSessionConfigOptionRequest request,
   ) async {
     await _ensureSession();
-    return _session!.setConfigOption(request, timeout: requestTimeout);
+    final options = await _session!.setConfigOption(
+      request,
+      timeout: requestTimeout,
+    );
+    _configOptions = options;
+    if (!_disposed) _eventController.add(ACPSettingsChangedEvent());
+    return options;
   }
 
   Future<void> setMode(String modeId) async {
     await _ensureSession();
     await _session!.setMode(modeId, timeout: requestTimeout);
+    _modes = _session!.modes;
+    if (!_disposed) _eventController.add(ACPSettingsChangedEvent());
   }
 
-  /// 记录用户选定的认证方式，并丢弃当前会话。
+  /// 记录认证方式；下一次准备时完成认证并保留已经建立的会话。
   ///
   /// 下一次 [sendPrompt] 会在 `initialize` 之后、建会话之前执行
   /// `authenticate`，避免复用半认证的连接。
   Future<void> authenticate(String methodId) async {
+    if (_pendingAuthMethodId == methodId && _authenticated) return;
     _pendingAuthMethodId = methodId;
     _authenticated = false;
-    _session?.dispose();
-    _session = null;
   }
 
   /// 判定异常是否为 agent 的认证要求（`RpcError(-32000)`）。
@@ -331,6 +390,9 @@ class ACPClientAdapter {
     RequestPermissionRequest params,
     RequestCancellation cancellation,
   ) async {
+    if (_disposed) {
+      return const _PermissionWireResponse(outcome: PermissionCancelled());
+    }
     final completer = Completer<bool>();
     _eventController.add(
       ACPPermissionRequestEvent(
@@ -339,7 +401,9 @@ class ACPClientAdapter {
           toolName: params.toolCall.title ?? 'tool',
           command: _toolCommand(params.toolCall),
           description: params.toolCall.title ?? '',
-          isDangerous: _isDangerous(params.options),
+          isDangerous:
+              params.toolCall.kind != ToolKind.read &&
+              params.toolCall.kind != ToolKind.search,
         ),
         responseCompleter: completer,
       ),
@@ -363,7 +427,20 @@ class ACPClientAdapter {
   }
 
   void _handleUpdate(SessionUpdate update) {
+    if (_disposed) return;
+    if (update is ConfigOptionSessionUpdate) {
+      _configOptions = update.configOptions;
+      _eventController.add(ACPSettingsChangedEvent());
+    } else if (update is CurrentModeSessionUpdate) {
+      _modes = SessionModeState(
+        currentModeId: update.currentModeId,
+        availableModes: _modes?.availableModes ?? const [],
+      );
+      _eventController.add(ACPSettingsChangedEvent());
+    }
     onSessionUpdate?.call(update);
+    // session/load replays history; local history already owns those messages.
+    if (!_acceptContent) return;
     switch (update) {
       case AgentMessageChunk(:final chunk):
         final text = _textOf(chunk);
@@ -431,6 +508,7 @@ class ACPClientAdapter {
 
   void _emitAuthRequired() {
     if (_disposed || _eventController.isClosed) return;
+    _authenticated = false;
     _eventController.add(ACPAuthRequiredEvent(_authMethods));
   }
 
@@ -509,16 +587,6 @@ final class _PermissionWireResponse extends RequestPermissionResponse {
   const _PermissionWireResponse({required super.outcome});
   @override
   Map<String, Object?> toJson() => outcome.toJson();
-}
-
-bool _isDangerous(List<PermissionOption> options) {
-  for (final option in options) {
-    if (option.kind == PermissionOptionKind.allowOnce ||
-        option.kind == PermissionOptionKind.allowAlways) {
-      return true;
-    }
-  }
-  return false;
 }
 
 PermissionOption? _selectOption(List<PermissionOption> options, bool approved) {

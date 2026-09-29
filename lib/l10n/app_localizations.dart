@@ -5687,6 +5687,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pre-deployment environment check failed. Please resolve the blockers before continuing.'**
   String get nasInstallBlockerPreflightFailed;
+
+  /// No description provided for @serverDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete server: {error}'**
+  String serverDeleteFailed(String error);
+
+  /// No description provided for @chatRunSettingsAgentMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent Mode'**
+  String get chatRunSettingsAgentMode;
+
+  /// No description provided for @chatRunSettingsApprovalPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Approval Policy'**
+  String get chatRunSettingsApprovalPolicy;
+
+  /// No description provided for @chatRunSettingsExtraSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional Settings'**
+  String get chatRunSettingsExtraSettings;
+
+  /// No description provided for @chatPermissionAutoAllowSafeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically allows known-safe operations; asks whenever operation safety cannot be determined.'**
+  String get chatPermissionAutoAllowSafeDesc;
+
+  /// No description provided for @chatRunSettingsSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to apply run settings: {error}'**
+  String chatRunSettingsSaveFailed(String error);
+
+  /// No description provided for @chatMessageCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Message copied to clipboard'**
+  String get chatMessageCopied;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
 }
 
 class _AppLocalizationsDelegate

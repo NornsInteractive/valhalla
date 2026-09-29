@@ -36,6 +36,7 @@ class ServerConnectionState {
 }
 
 class ServerListNotifier extends Notifier<List<ServerProfile>> {
+  final Set<String> _deleting = {};
   @override
   List<ServerProfile> build() {
     final repo = ref.watch(serverRepositoryProvider);
@@ -59,14 +60,21 @@ class ServerListNotifier extends Notifier<List<ServerProfile>> {
   }
 
   Future<void> deleteServer(String id) async {
-    final repo = ref.read(serverRepositoryProvider);
-    final isCurrent = ref.read(activeServerProvider)?.id == id;
-    if (isCurrent) {
-      ref.read(serverConnectionProvider.notifier).disconnect();
+    if (!_deleting.add(id)) return;
+    try {
+      final repo = ref.read(serverRepositoryProvider);
+      if (!repo.getAllServers().any((server) => server.id == id)) return;
+      final isCurrent = ref.read(activeServerProvider)?.id == id;
+      await repo.deleteServer(id);
+      if (!ref.mounted) return;
+      if (isCurrent) {
+        ref.read(serverConnectionProvider.notifier).disconnect();
+      }
+      state = repo.getAllServers();
+      ref.invalidate(agentRegistryProvider);
+    } finally {
+      _deleting.remove(id);
     }
-    await repo.deleteServer(id);
-    state = repo.getAllServers();
-    ref.invalidate(agentRegistryProvider);
   }
 }
 
@@ -76,6 +84,7 @@ final serverListProvider =
     });
 
 class ActiveServerNotifier extends Notifier<ServerProfile?> {
+  Future<void> _selectionTail = Future<void>.value();
   // ServerProfile equality is ID-only; edits must still update observers.
   @override
   bool updateShouldNotify(ServerProfile? previous, ServerProfile? next) =>
@@ -96,14 +105,26 @@ class ActiveServerNotifier extends Notifier<ServerProfile?> {
     );
   }
 
-  Future<void> selectServer(String id) async {
-    final current = state;
-    if (current?.id != id) {
+  Future<void> selectServer(String id) {
+    final selection = _selectionTail.then((_) async {
+      if (!ref.mounted) return;
+      final repo = ref.read(serverRepositoryProvider);
+      final target = repo
+          .getAllServers()
+          .where((server) => server.id == id)
+          .firstOrNull;
+      if (target == null) throw StateError('SERVER_NOT_FOUND');
+      if (state?.id == id && repo.getActiveServerId() == id) return;
+      await repo.setActiveServerId(id);
+      if (!ref.mounted) return;
       ref.read(serverConnectionProvider.notifier).disconnect();
-    }
-    final repo = ref.read(serverRepositoryProvider);
-    await repo.setActiveServerId(id);
-    ref.invalidateSelf();
+      state = repo
+          .getAllServers()
+          .where((server) => server.id == id)
+          .firstOrNull;
+    });
+    _selectionTail = selection.catchError((Object _) {});
+    return selection;
   }
 }
 
@@ -161,6 +182,7 @@ class ServerConnectionNotifier extends Notifier<ServerConnectionState> {
     ReconnectState next,
     ReconnectController controller,
   ) {
+    if (controller.serverId != state.activeServerId) return;
     switch (next.status) {
       case ReconnectStatus.connected:
         state = state.copyWith(

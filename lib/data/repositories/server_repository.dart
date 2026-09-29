@@ -33,18 +33,31 @@ class ServerRepository {
   }
 
   Future<void> deleteServer(String serverId) async {
-    final list = _localStorage
-        .getServers()
-        .where((s) => s.id != serverId)
-        .toList();
-    await _localStorage.saveServers(list);
-    await _secureStorage.deleteCredentials(serverId);
-
-    if (_localStorage.getActiveServerId() == serverId) {
-      await _localStorage.setActiveServerId(
-        list.isNotEmpty ? list.first.id : null,
-      );
+    final original = _localStorage.getServers();
+    final activeId = _localStorage.getActiveServerId();
+    final lastId = _localStorage.getLastConnectedServerId();
+    final defaultId = _localStorage.getAutoConnectServerId();
+    final list = original.where((s) => s.id != serverId).toList();
+    try {
+      await _localStorage.saveServers(list);
+      if (lastId == serverId) {
+        await _localStorage.setLastConnectedServerId(null);
+      }
+      if (defaultId == serverId) {
+        await _localStorage.setAutoConnectServerId(null);
+      }
+      if (activeId == serverId) {
+        await _localStorage.setActiveServerId(list.firstOrNull?.id);
+      }
+    } catch (_) {
+      // Keep the configuration retryable if a dependent preference write fails.
+      await _localStorage.saveServers(original);
+      await _localStorage.setActiveServerId(activeId);
+      await _localStorage.setLastConnectedServerId(lastId);
+      await _localStorage.setAutoConnectServerId(defaultId);
+      rethrow;
     }
+    await _secureStorage.deleteCredentials(serverId);
   }
 
   String? getActiveServerId() => _localStorage.getActiveServerId();

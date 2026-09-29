@@ -27,6 +27,9 @@ class _FakeAiChatNotifier extends AiChatNotifier {
   AiChatState build() => _initialState;
 
   @override
+  Future<bool> prepareRunSettings() async => true;
+
+  @override
   Future<void> updateRunSettings(ChatRunSettings settings) async {
     updatedSettings = settings;
     state = state.copyWith(runSettings: settings);

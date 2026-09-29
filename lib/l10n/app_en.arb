@@ -1000,5 +1000,27 @@
   "nasInstallBlockerBusy": "An installation task is already in progress. Please check the current task progress.",
   "nasInstallBlockerStateSaveFailed": "Failed to persist deployment state. Please check local storage space and file permissions.",
   "nasInstallBlockerCommandResultUnknown": "Remote command outcome is unknown. Please run a read-only inspection instead of retrying deployment directly.",
-  "nasInstallBlockerPreflightFailed": "Pre-deployment environment check failed. Please resolve the blockers before continuing."
+  "nasInstallBlockerPreflightFailed": "Pre-deployment environment check failed. Please resolve the blockers before continuing.",
+  "serverDeleteFailed": "Failed to delete server: {error}",
+  "@serverDeleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatRunSettingsAgentMode": "Agent Mode",
+  "chatRunSettingsApprovalPolicy": "Local Approval Policy",
+  "chatRunSettingsExtraSettings": "Additional Settings",
+  "chatPermissionAutoAllowSafeDesc": "Automatically allows known-safe operations; asks whenever operation safety cannot be determined.",
+  "chatRunSettingsSaveFailed": "Failed to apply run settings: {error}",
+  "@chatRunSettingsSaveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatMessageCopied": "Message copied to clipboard",
+  "copy": "Copy"
 }

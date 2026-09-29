@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design/motion.dart';
@@ -33,9 +34,28 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   final TextEditingController _promptController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String? _selectedAuthMethodId;
+  bool _userNearBottom = true;
+  bool _isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final max = _scrollController.position.maxScrollExtent;
+    final current = _scrollController.offset;
+    final nearBottom = (max - current) <= 80;
+    if (_userNearBottom != nearBottom) {
+      _userNearBottom = nearBottom;
+    }
+  }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _promptController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -49,6 +69,15 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         curve: Curves.easeOut,
       );
     }
+  }
+
+  void _followBottomIfNeeded() {
+    if (!_scrollController.hasClients || !_userNearBottom) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients && _userNearBottom) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    });
   }
 
   AgentRuntimeState? _getSingleInstallableCandidate(
@@ -234,7 +263,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                       style: context.textTheme.labelSmall
                                           ?.copyWith(
                                             color: context
-                                                .colorScheme.onPrimaryContainer,
+                                                .colorScheme
+                                                .onPrimaryContainer,
                                           ),
                                     ),
                                   ),
@@ -321,20 +351,45 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       return;
     }
     final text = _promptController.text.trim();
-    if (text.isEmpty || chatState.isGenerating) return;
+    if (text.isEmpty ||
+        _isSending ||
+        chatState.isGenerating ||
+        chatState.isLoadingSettings ||
+        chatState.isApplyingSettings) {
+      return;
+    }
 
-    await ref.read(aiChatProvider.notifier).sendMessage(text);
+    setState(() {
+      _isSending = true;
+    });
+    _promptController.clear();
+    _userNearBottom = true;
+    Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+
+    try {
+      await ref.read(aiChatProvider.notifier).sendMessage(text);
+    } catch (_) {
+      // Error handled by provider/state
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+      }
+    }
 
     if (!mounted) return;
     final afterState = ref.read(aiChatProvider);
     if (!afterState.isGenerating &&
         (afterState.lastErrorCode != null ||
             afterState.authChallenge != null)) {
-      return;
+      if (_promptController.text.isEmpty) {
+        _promptController.text = text;
+        _promptController.selection = TextSelection.collapsed(
+          offset: text.length,
+        );
+      }
     }
-
-    _promptController.clear();
-    Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
   }
 
   Future<void> _confirmAndDeleteSession(
@@ -369,19 +424,22 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     }
   }
 
-  Widget _buildErrorBanner(String errorCode) {
-    String message;
+  String _resolveErrorMessage(String errorCode) {
     if (errorCode == AiChatNotifier.notReadyCode) {
-      message = context.l10n.agentNotReadyError;
+      return context.l10n.agentNotReadyError;
     } else if (errorCode == AiChatNotifier.disconnectedCode) {
-      message = context.l10n.sshDisconnectedError;
+      return context.l10n.sshDisconnectedError;
     } else if (errorCode == AiChatNotifier.authRequiredCode) {
-      message = context.l10n.agentAuthRequiredError;
+      return context.l10n.agentAuthRequiredError;
     } else if (errorCode == 'CHAT_SESSION_IDENTITY_MISMATCH') {
-      message = context.l10n.chatSessionIdentityMismatch;
+      return context.l10n.chatSessionIdentityMismatch;
     } else {
-      message = errorCode;
+      return errorCode;
     }
+  }
+
+  Widget _buildErrorBanner(String errorCode) {
+    final message = _resolveErrorMessage(errorCode);
 
     return Container(
       width: double.infinity,
@@ -420,6 +478,22 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AiChatState>(aiChatProvider, (previous, next) {
+      final prevMessages = previous?.activeSession?.messages;
+      final nextMessages = next.activeSession?.messages;
+      final hasNewTokenOrMessage =
+          next.isGenerating ||
+          (prevMessages?.length != nextMessages?.length) ||
+          (prevMessages?.lastOrNull?.content !=
+              nextMessages?.lastOrNull?.content) ||
+          (prevMessages?.lastOrNull?.thinking !=
+              nextMessages?.lastOrNull?.thinking);
+
+      if (hasNewTokenOrMessage) {
+        _followBottomIfNeeded();
+      }
+    });
+
     final isDesktop = context.isDesktop;
     final chatState = ref.watch(aiChatProvider);
 
@@ -919,7 +993,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                               )
                             : FilledButton.icon(
                                 icon: const Icon(Icons.download, size: 16),
-                                label: Text(context.l10n.agentActionAutoInstall),
+                                label: Text(
+                                  context.l10n.agentActionAutoInstall,
+                                ),
                                 onPressed: !isConnected
                                     ? null
                                     : () => _oneClickInstall(singleCandidate),
@@ -944,9 +1020,15 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       itemBuilder: (context, index) {
         final msg = messages[index];
         if (msg.role == MessageRole.user) {
-          return _buildUserBubble(msg);
+          return KeyedSubtree(
+            key: ValueKey('user_msg_${msg.id}'),
+            child: _buildUserBubble(msg),
+          );
         }
-        return _buildAssistantBubble(msg);
+        return KeyedSubtree(
+          key: ValueKey('assistant_msg_${msg.id}'),
+          child: _buildAssistantBubble(msg),
+        );
       },
     );
   }
@@ -1075,7 +1157,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.terminal, size: 14, color: context.vSuccess),
+                          Icon(
+                            Icons.terminal,
+                            size: 14,
+                            color: context.vSuccess,
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
@@ -1131,11 +1217,40 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ValhallaCard(
                 color: context.colorScheme.surface,
                 padding: const EdgeInsets.all(VSpace.md),
-                child: MarkdownBody(
-                  data: msg.content,
-                  selectable: true,
-                  styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
-                      .copyWith(code: monoTextStyle(fontSize: 12)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    MarkdownBody(
+                      data: msg.content,
+                      selectable: true,
+                      styleSheet: MarkdownStyleSheet.fromTheme(
+                        Theme.of(context),
+                      ).copyWith(code: monoTextStyle(fontSize: 12)),
+                    ),
+                    const SizedBox(height: 6),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        icon: const Icon(Icons.copy_rounded, size: 14),
+                        tooltip: context.l10n.copy,
+                        constraints: const BoxConstraints(
+                          minWidth: 24,
+                          minHeight: 24,
+                        ),
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: msg.content));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(context.l10n.chatMessageCopied),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -1300,9 +1415,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               Expanded(
                 child: Text(
                   context.l10n.agentAuthRequiredTitle,
-                  style: context.textTheme.titleSmall?.copyWith(
-                    color: warning,
-                  ),
+                  style: context.textTheme.titleSmall?.copyWith(color: warning),
                 ),
               ),
               Container(
@@ -1481,8 +1594,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                       method.description!,
                                       style: context.textTheme.bodySmall
                                           ?.copyWith(
-                                            color:
-                                                context.colorScheme.outline,
+                                            color: context.colorScheme.outline,
                                           ),
                                     ),
                                 ],
@@ -1625,17 +1737,56 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               settings: state.runSettings,
               capabilities: state.capabilities,
               isStructuredSend: true,
-              isBusy: state.isGenerating,
+              isBusy:
+                  state.isGenerating ||
+                  state.isLoadingSettings ||
+                  state.isApplyingSettings,
+              isLoadingSettings: state.isLoadingSettings,
               tuneButtonKey: const Key('chat_run_settings_button'),
-              onOpenSettings: () => ChatRunSettingsDialog.show(
-                context,
-                initialSettings: state.runSettings,
-                capabilities: state.capabilities,
-                isStructuredSend: true,
-                onSave: (settings) => ref
+              onOpenSettings: () async {
+                if (state.isGenerating ||
+                    state.isLoadingSettings ||
+                    state.isApplyingSettings) {
+                  return;
+                }
+                final currentServerId = ref.read(activeServerProvider)?.id;
+                final currentAgentId = state.activeAgentProfile?.id;
+
+                final ok = await ref
                     .read(aiChatProvider.notifier)
-                    .updateRunSettings(settings),
-              ),
+                    .prepareRunSettings();
+                if (!mounted) return;
+                if (!ok) {
+                  final freshState = ref.read(aiChatProvider);
+                  final code =
+                      freshState.lastErrorCode ?? AiChatNotifier.notReadyCode;
+                  final message = _resolveErrorMessage(code);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(message),
+                      backgroundColor: context.vDanger,
+                    ),
+                  );
+                  return;
+                }
+
+                final freshState = ref.read(aiChatProvider);
+                final freshServerId = ref.read(activeServerProvider)?.id;
+                if (freshServerId != currentServerId ||
+                    freshState.activeAgentProfile?.id != currentAgentId) {
+                  return;
+                }
+
+                await ChatRunSettingsDialog.show(
+                  context,
+                  initialSettings: freshState.runSettings,
+                  capabilities: freshState.capabilities,
+                  isStructuredSend: true,
+                  onSave: (settings) => ref
+                      .read(aiChatProvider.notifier)
+                      .updateRunSettings(settings),
+                );
+              },
             ),
             const SizedBox(height: 8),
             Row(
@@ -1644,7 +1795,12 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   child: TextField(
                     key: const Key('chatPromptInput'),
                     controller: _promptController,
-                    enabled: hasActiveAgent && !state.isGenerating,
+                    enabled:
+                        hasActiveAgent &&
+                        !_isSending &&
+                        !state.isGenerating &&
+                        !state.isLoadingSettings &&
+                        !state.isApplyingSettings,
                     minLines: 1,
                     maxLines: 4,
                     decoration: InputDecoration(
@@ -1662,7 +1818,12 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                         borderRadius: BorderRadius.circular(VRadius.input),
                       ),
                     ),
-                    onSubmitted: (hasActiveAgent && !state.isGenerating)
+                    onSubmitted:
+                        (hasActiveAgent &&
+                            !_isSending &&
+                            !state.isGenerating &&
+                            !state.isLoadingSettings &&
+                            !state.isApplyingSettings)
                         ? (_) => _handleSend()
                         : null,
                   ),
@@ -1687,7 +1848,13 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     child: IconButton.filled(
                       key: const Key('sendMessageButton'),
                       icon: const Icon(Icons.send, size: 18),
-                      onPressed: (!hasActiveAgent) ? null : _handleSend,
+                      onPressed:
+                          (!hasActiveAgent ||
+                              _isSending ||
+                              state.isLoadingSettings ||
+                              state.isApplyingSettings)
+                          ? null
+                          : _handleSend,
                     ),
                   ),
               ],

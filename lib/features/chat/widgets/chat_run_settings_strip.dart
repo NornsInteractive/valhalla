@@ -8,6 +8,7 @@ class ChatRunSettingsStrip extends StatelessWidget {
   final AgentRuntimeCapabilities capabilities;
   final bool isStructuredSend;
   final bool isBusy;
+  final bool isLoadingSettings;
   final VoidCallback onOpenSettings;
   final Key? tuneButtonKey;
 
@@ -17,6 +18,7 @@ class ChatRunSettingsStrip extends StatelessWidget {
     required this.capabilities,
     this.isStructuredSend = true,
     required this.isBusy,
+    this.isLoadingSettings = false,
     required this.onOpenSettings,
     this.tuneButtonKey,
   });
@@ -25,30 +27,36 @@ class ChatRunSettingsStrip extends StatelessWidget {
     if (!isStructuredSend) {
       return context.l10n.chatRunSettingsInteractiveCli;
     }
-    if (settings.modelId == null) {
+    final targetId = settings.modelId ?? capabilities.currentModelId;
+    if (targetId == null) {
       return context.l10n.chatRunSettingsDefault;
     }
     final model = capabilities.models
-        .where((m) => m.id == settings.modelId)
+        .where((m) => m.id == targetId)
         .firstOrNull;
-    return model?.label ??
-        settings.modelId ??
-        context.l10n.chatRunSettingsDefault;
+    return model?.label ?? targetId;
   }
 
   String _getReasoningLabel(BuildContext context) {
     if (!isStructuredSend) {
       return context.l10n.chatRunSettingsInteractiveCli;
     }
-    if (settings.reasoningId == null) {
+    final targetId = settings.reasoningId ?? capabilities.currentReasoningId;
+    if (targetId == null) {
       return context.l10n.chatRunSettingsDefault;
     }
     final level = capabilities.reasoningLevels
-        .where((r) => r.id == settings.reasoningId)
+        .where((r) => r.id == targetId)
         .firstOrNull;
-    return level?.label ??
-        settings.reasoningId ??
-        context.l10n.chatRunSettingsDefault;
+    return level?.label ?? targetId;
+  }
+
+  String? _getModeLabel(BuildContext context) {
+    if (!isStructuredSend) return null;
+    final targetId = settings.modeId ?? capabilities.currentModeId;
+    if (targetId == null) return null;
+    final mode = capabilities.modes.where((m) => m.id == targetId).firstOrNull;
+    return mode?.label ?? targetId;
   }
 
   String _getPermissionLabel(BuildContext context) {
@@ -136,6 +144,18 @@ class ChatRunSettingsStrip extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               onPressed: isBusy ? null : onOpenSettings,
             ),
+            if (isLoadingSettings) ...[
+              const SizedBox(width: 4),
+              SizedBox(
+                key: const Key('chat_run_settings_loading_indicator'),
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ],
             const SizedBox(width: 6),
             _buildChip(
               context: context,
@@ -154,6 +174,17 @@ class ChatRunSettingsStrip extends StatelessWidget {
                   '${context.l10n.chatRunSettingsReasoning}: ${_getReasoningLabel(context)}',
               onTap: onOpenSettings,
             ),
+            if (_getModeLabel(context) != null) ...[
+              const SizedBox(width: 6),
+              _buildChip(
+                context: context,
+                key: const Key('chat_strip_mode_chip'),
+                icon: Icons.alt_route_rounded,
+                label:
+                    '${context.l10n.chatRunSettingsAgentMode}: ${_getModeLabel(context)}',
+                onTap: onOpenSettings,
+              ),
+            ],
             const SizedBox(width: 6),
             _buildChip(
               context: context,

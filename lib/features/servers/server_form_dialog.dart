@@ -35,6 +35,8 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
   String? _testResult;
   bool? _testSuccess;
   String? _saveError;
+  bool _isDeleting = false;
+  String? _deleteError;
   bool _isPrivateKeyExpanded = false;
   bool _moshEnabled = false;
 
@@ -106,23 +108,48 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
   }
 
   Future<void> _delete() async {
+    if (_isDeleting || widget.serverToEdit == null) return;
     final navigator = Navigator.of(context);
     final confirmed = await showDeleteServerConfirmDialog(
       context,
       widget.serverToEdit!,
     );
     if (!confirmed || !mounted) return;
-    await ref
-        .read(serverListProvider.notifier)
-        .deleteServer(widget.serverToEdit!.id);
-    if (mounted) navigator.pop();
+
+    setState(() {
+      _isDeleting = true;
+      _saveError = null;
+      _deleteError = null;
+    });
+
+    try {
+      await ref
+          .read(serverListProvider.notifier)
+          .deleteServer(widget.serverToEdit!.id);
+      if (mounted) navigator.pop();
+    } catch (e) {
+      if (mounted) {
+        final errorMsg = e.toString();
+        setState(() {
+          _isDeleting = false;
+          _deleteError = errorMsg;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.serverDeleteFailed(errorMsg)),
+            backgroundColor: context.vDanger,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_isDeleting || !_formKey.currentState!.validate()) return;
 
     setState(() {
       _saveError = null;
+      _deleteError = null;
     });
 
     final id = widget.serverToEdit?.id ?? const Uuid().v4();
@@ -188,7 +215,7 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_saveError != null) ...[
+          if (_saveError != null || _deleteError != null) ...[
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -210,7 +237,9 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _saveError!,
+                      _deleteError != null
+                          ? context.l10n.serverDeleteFailed(_deleteError!)
+                          : _saveError!,
                       style: context.textTheme.bodySmall?.copyWith(
                         color: context.vDanger,
                       ),
@@ -535,17 +564,29 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
           if (isEditing)
             TextButton.icon(
               style: TextButton.styleFrom(foregroundColor: context.vDanger),
-              onPressed: _delete,
-              icon: const Icon(Icons.delete_outline, size: 18),
+              onPressed: _isDeleting ? null : _delete,
+              icon: _isDeleting
+                  ? SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: context.vDanger,
+                      ),
+                    )
+                  : const Icon(Icons.delete_outline, size: 18),
               label: Text(context.l10n.delete),
             ),
           const Spacer(),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: _isDeleting ? null : () => Navigator.pop(context),
             child: Text(context.l10n.cancel),
           ),
           const SizedBox(width: 8),
-          FilledButton(onPressed: _save, child: Text(context.l10n.serverSave)),
+          FilledButton(
+            onPressed: _isDeleting ? null : _save,
+            child: Text(context.l10n.serverSave),
+          ),
         ],
       ),
     );
@@ -567,14 +608,23 @@ class _ServerFormDialogState extends ConsumerState<ServerFormDialog> {
             ),
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: () => Navigator.pop(context),
+              onPressed: _isDeleting ? null : () => Navigator.pop(context),
             ),
             actions: [
               if (isEditing)
                 IconButton(
-                  icon: Icon(Icons.delete_outline, color: context.vDanger),
+                  icon: _isDeleting
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: context.vDanger,
+                          ),
+                        )
+                      : Icon(Icons.delete_outline, color: context.vDanger),
                   tooltip: context.l10n.delete,
-                  onPressed: _delete,
+                  onPressed: _isDeleting ? null : _delete,
                 ),
             ],
           ),

@@ -1000,5 +1000,27 @@
   "nasInstallBlockerBusy": "已有安装任务正在运行，请查看当前任务进度。",
   "nasInstallBlockerStateSaveFailed": "保存部署状态失败，请检查本机存储空间与文件读写权限。",
   "nasInstallBlockerCommandResultUnknown": "远端执行结果未知，请进行只读核验，切勿直接重试安装。",
-  "nasInstallBlockerPreflightFailed": "部署前环境预检失败，请先排除阻断项后再继续。"
+  "nasInstallBlockerPreflightFailed": "部署前环境预检失败，请先排除阻断项后再继续。",
+  "serverDeleteFailed": "删除服务器失败：{error}",
+  "@serverDeleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatRunSettingsAgentMode": "Agent 模式",
+  "chatRunSettingsApprovalPolicy": "本地审批策略",
+  "chatRunSettingsExtraSettings": "附加设置",
+  "chatPermissionAutoAllowSafeDesc": "自动放行已知安全操作；无法确定操作安全性时仍会提示确认。",
+  "chatRunSettingsSaveFailed": "应用运行配置失败：{error}",
+  "@chatRunSettingsSaveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatMessageCopied": "消息已复制到剪贴板",
+  "copy": "复制"
 }

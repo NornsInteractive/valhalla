@@ -78,6 +78,8 @@ class ReconnectController {
   ReconnectState get state => _state;
 
   Timer? _timer;
+  int _epoch = 0;
+  bool _disposed = false;
   ServerProfile? _server;
 
   /// 当前维持连接的服务器 id；未维持任何连接时为 null。
@@ -105,6 +107,8 @@ class ReconnectController {
 
   /// 开始维持某个服务器的连接。
   void start(ServerProfile server) {
+    if (_disposed) return;
+    _epoch++;
     _server = server;
     _userIntent = true;
     _hasEverStarted = true;
@@ -147,6 +151,7 @@ class ReconnectController {
 
   /// 用户主动断开：停止一切重连企图。
   void userDisconnect() {
+    _epoch++;
     _userIntent = false;
     _cancelTimer();
     _emit(const ReconnectState(status: ReconnectStatus.idle));
@@ -157,6 +162,7 @@ class ReconnectController {
   /// 用 paused 而不是 userDisconnect：用户回到前台时应当继续维持连接，
   /// 所以意图要留着，只停掉定时器。
   void setAppDetached(bool detached) {
+    if (detached) _epoch++;
     _appDetached = detached;
     if (detached) {
       _cancelTimer();
@@ -201,17 +207,24 @@ class ReconnectController {
   Future<void> _runAttempt() async {
     final server = _server;
     if (server == null || !_shouldRetry) return;
+    final epoch = _epoch;
+    bool isCurrent() =>
+        !_disposed &&
+        epoch == _epoch &&
+        _userIntent &&
+        !_appDetached &&
+        identical(server, _server);
 
     try {
       await connectAttempt(server);
-      if (!_userIntent || _appDetached) return;
+      if (!isCurrent()) return;
       markConnected();
       // 连上之后才重挂依赖资源的消费者（终端、指标采样）。
       // 放在状态变更之后：即使重挂失败，用户也已经能看到「已连接」，
       // 而不是卡在 reconnecting 上。
       await onReconnected?.call(server);
     } catch (error) {
-      if (!_userIntent || _appDetached) return;
+      if (!isCurrent()) return;
 
       if (!isRetryableConnectFailure(error)) {
         // 主机密钥变更之类：必须停下来让用户看到，而不是疯狂重试。
@@ -249,6 +262,9 @@ class ReconnectController {
 
   /// 释放定时器。
   void dispose() {
+    _disposed = true;
+    _epoch++;
+    _userIntent = false;
     _cancelTimer();
     onStateChanged = null;
     _listeners.clear();

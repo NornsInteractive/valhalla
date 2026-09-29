@@ -2938,4 +2938,32 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get nasInstallBlockerPreflightFailed => '部署前环境预检失败，请先排除阻断项后再继续。';
+
+  @override
+  String serverDeleteFailed(String error) {
+    return '删除服务器失败：$error';
+  }
+
+  @override
+  String get chatRunSettingsAgentMode => 'Agent 模式';
+
+  @override
+  String get chatRunSettingsApprovalPolicy => '本地审批策略';
+
+  @override
+  String get chatRunSettingsExtraSettings => '附加设置';
+
+  @override
+  String get chatPermissionAutoAllowSafeDesc => '自动放行已知安全操作；无法确定操作安全性时仍会提示确认。';
+
+  @override
+  String chatRunSettingsSaveFailed(String error) {
+    return '应用运行配置失败：$error';
+  }
+
+  @override
+  String get chatMessageCopied => '消息已复制到剪贴板';
+
+  @override
+  String get copy => '复制';
 }
