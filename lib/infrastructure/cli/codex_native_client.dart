@@ -5,6 +5,9 @@ import 'package:dartssh2/dartssh2.dart';
 import '../../data/models/native_cli_session.dart';
 import '../../data/models/chat_run_settings.dart';
 import '../../data/models/agent_composer_item.dart';
+import '../../data/models/agent_profile.dart';
+import '../../core/utils/shell_quote.dart';
+import 'agent_execution_target.dart';
 
 /// Codex omits the JSON-RPC version header. Correlation remains owned by acpd.
 class CodexSshTransport implements LineTransport {
@@ -97,6 +100,60 @@ class CodexSshTransport implements LineTransport {
 class CodexNativeClient {
   final Connection connection;
   CodexNativeClient(this.connection);
+
+  /// Query the official API without starting, reading or resuming any thread.
+  /// The process uses the selected agent's host/container and execution user.
+  /// A CLI-provided catalog can be cached; this does not verify entitlement.
+  static Future<AgentRuntimeCapabilities> queryCapabilities(
+    SSHClient ssh,
+    AgentProfile profile,
+  ) => _query(ssh, profile, (client) => client.capabilities());
+
+  static Future<AgentComposerCatalog> queryComposerCatalog(
+    SSHClient ssh,
+    AgentProfile profile, {
+    String? cwd,
+  }) => _query(ssh, profile, (client) => client.composerCatalog(cwd: cwd));
+
+  static Future<T> _query<T>(
+    SSHClient ssh,
+    AgentProfile profile,
+    Future<T> Function(CodexNativeClient) read,
+  ) async {
+    final script = 'exec ${cliShellQuote(profile.cliCommand)} app-server';
+    var openingExpired = false;
+    final opening = ssh
+        .execute(
+          agentTargetCommand(
+            profile,
+            profile.executionTarget == 'docker'
+                ? script
+                : 'bash -l -c ${cliShellQuote(script)}',
+          ),
+        )
+        .then((session) {
+          // A timed-out SSH channel can still arrive later; do not orphan it.
+          if (openingExpired) {
+            session.close();
+          }
+          return session;
+        });
+    final SSHSession process;
+    try {
+      process = await opening.timeout(const Duration(seconds: 15));
+    } on TimeoutException {
+      openingExpired = true;
+      rethrow;
+    }
+    final client = CodexNativeClient(Connection(CodexSshTransport(process)));
+    try {
+      await client.initialize();
+      return await read(client).timeout(const Duration(seconds: 30));
+    } finally {
+      await client.close();
+    }
+  }
+
   Future<Map<String, dynamic>> request(
     String method, [
     Map<String, dynamic>? params,
@@ -118,35 +175,61 @@ class CodexNativeClient {
   }
 
   Future<AgentRuntimeCapabilities> capabilities() async {
-    final response = await request('model/list', {'limit': 100});
     final models = <ChatSettingOption>[];
     final efforts = <String, ChatSettingOption>{};
-    for (final raw in response['data'] as List? ?? const []) {
-      if (raw is! Map) continue;
-      final id = (raw['id'] ?? raw['model'] ?? raw['slug'])?.toString();
-      if (id == null || id.isEmpty) continue;
-      models.add(
-        ChatSettingOption(
-          id,
-          (raw['displayName'] ?? raw['name'] ?? id).toString(),
-          description: raw['description']?.toString(),
-        ),
-      );
-      final supported =
-          raw['supportedReasoningEfforts'] ??
-          raw['supported_reasoning_efforts'];
-      if (supported is List) {
-        for (final effort in supported) {
-          final value = effort is Map
-              ? (effort['reasoningEffort'] ?? effort['effort'] ?? effort['id'])
-                    ?.toString()
-              : effort.toString();
-          if (value != null && value.isNotEmpty) {
-            efforts[value] = ChatSettingOption(value, value);
+    String? cursor;
+    final seenCursors = <String>{};
+    final seenModels = <String>{};
+    do {
+      final response = await request('model/list', {
+        'limit': 100,
+        'includeHidden': false,
+        'cursor': ?cursor,
+      });
+      if (response['data'] is! List) {
+        throw const FormatException('MODEL_LIST_INVALID_RESPONSE');
+      }
+      for (final raw in response['data'] as List) {
+        if (raw is! Map) continue;
+        final id = (raw['id'] ?? raw['model'] ?? raw['slug'])?.toString();
+        if (id == null ||
+            id.isEmpty ||
+            raw['hidden'] == true ||
+            !seenModels.add(id)) {
+          continue;
+        }
+        models.add(
+          ChatSettingOption(
+            id,
+            (raw['displayName'] ?? raw['name'] ?? id).toString(),
+            description: raw['description']?.toString(),
+          ),
+        );
+        final supported =
+            raw['supportedReasoningEfforts'] ??
+            raw['supported_reasoning_efforts'];
+        if (supported is List) {
+          for (final effort in supported) {
+            final value = effort is Map
+                ? (effort['reasoningEffort'] ??
+                          effort['effort'] ??
+                          effort['id'])
+                      ?.toString()
+                : effort.toString();
+            if (value != null && value.isNotEmpty) {
+              efforts[value] = ChatSettingOption(value, value);
+            }
           }
         }
       }
-    }
+      cursor = response['nextCursor'] as String?;
+      if (cursor != null && !seenCursors.add(cursor)) {
+        throw StateError('MODEL_LIST_CURSOR_REPEATED');
+      }
+      if (cursor != null && seenCursors.length >= 100) {
+        throw StateError('MODEL_LIST_PAGE_LIMIT');
+      }
+    } while (cursor != null);
     return AgentRuntimeCapabilities(
       models: models,
       reasoningLevels: efforts.values.toList(),
@@ -160,22 +243,36 @@ class CodexNativeClient {
   Future<AgentComposerCatalog> composerCatalog({String? cwd}) async {
     final response = await request('skills/list', {
       if (cwd != null && cwd.isNotEmpty) 'cwds': [cwd],
+      'forceReload': true,
     });
     final skills = <AgentComposerItem>[];
+    final seen = <String>{};
+    if (response['data'] is! List) {
+      throw const FormatException('AGENT_SKILLS_INVALID_RESPONSE');
+    }
     for (final value in response['data'] as List? ?? const []) {
       if (value is! Map) continue;
-      final raw = Map<String, dynamic>.from(value);
-      final id = (raw['name'] ?? raw['id'] ?? raw['skill'] ?? '').toString();
-      if (id.isEmpty) continue;
-      skills.add(
-        AgentComposerItem(
-          kind: AgentComposerItemKind.skill,
-          id: id,
-          label: id,
-          insertion: r'$' + id,
-          description: raw['description']?.toString(),
-        ),
-      );
+      final entries = value['skills'] is List
+          ? value['skills'] as List
+          : [value];
+      for (final entry in entries) {
+        if (entry is! Map || entry['enabled'] == false) continue;
+        final raw = Map<String, dynamic>.from(entry);
+        final id = (raw['name'] ?? raw['id'] ?? raw['skill'] ?? '').toString();
+        if (id.isEmpty || !seen.add(id)) continue;
+        final interface = raw['interface'];
+        skills.add(
+          AgentComposerItem(
+            kind: AgentComposerItemKind.skill,
+            id: id,
+            label: interface is Map && interface['displayName'] is String
+                ? interface['displayName'] as String
+                : id,
+            insertion: r'$' + id,
+            description: raw['description']?.toString(),
+          ),
+        );
+      }
     }
     return AgentComposerCatalog(skills: skills);
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
 import 'package:valhalla/features/files/sftp_file_view.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
@@ -68,13 +69,25 @@ class _RecordingSftpNotifier extends SftpNotifier {
   }
 }
 
+/// Transfer controls are gated on the connection state, and the real
+/// connection notifier needs a live `LocalStorageService` for the SSH client
+/// manager. Every case here drives real transfer actions, so it is connected.
+class _TestServerConnectionNotifier extends ServerConnectionNotifier {
+  @override
+  ServerConnectionState build() =>
+      const ServerConnectionState(status: ConnectionStateEnum.connected);
+}
+
 Widget _buildTestApp({
   required _RecordingSftpNotifier notifier,
   Locale locale = const Locale('en'),
   Widget? child,
 }) {
   return ProviderScope(
-    overrides: [sftpProvider.overrideWith(() => notifier)],
+    overrides: [
+      sftpProvider.overrideWith(() => notifier),
+      serverConnectionProvider.overrideWith(_TestServerConnectionNotifier.new),
+    ],
     child: MaterialApp(
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

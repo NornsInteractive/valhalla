@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
 import 'package:valhalla/features/files/sftp_file_view.dart';
 import 'package:valhalla/infrastructure/sftp/sftp_client_service.dart';
@@ -93,6 +94,15 @@ SftpFileItem _makeItem(String name, {bool isDirectory = false}) {
   );
 }
 
+/// The header renders against the connection state, and the real connection
+/// notifier needs a live `LocalStorageService` for the SSH client manager.
+/// These cases drive real navigation and search, so the connection is up.
+class _TestServerConnectionNotifier extends ServerConnectionNotifier {
+  @override
+  ServerConnectionState build() =>
+      const ServerConnectionState(status: ConnectionStateEnum.connected);
+}
+
 Widget _buildApp({
   required SftpState state,
   required _TrackingSftpNotifier notifier,
@@ -101,6 +111,7 @@ Widget _buildApp({
     overrides: [
       sftpOperationsProvider.overrideWithValue(_FakeOperations()),
       sftpProvider.overrideWith(() => notifier),
+      serverConnectionProvider.overrideWith(_TestServerConnectionNotifier.new),
     ],
     child: MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,

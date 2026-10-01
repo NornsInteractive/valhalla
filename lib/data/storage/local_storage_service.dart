@@ -12,6 +12,20 @@ import '../models/nas_source.dart';
 
 /// 本地持久化服务 (SharedPreferences 快速存取)
 class LocalStorageService {
+  Map<String, dynamic>? getChatDraft(String key) {
+    final raw = _prefs.getString('valhalla_chat_draft_v1::$key');
+    if (raw == null) return null;
+    return jsonDecode(raw) as Map<String, dynamic>;
+  }
+
+  Future<void> saveChatDraft(String key, Map<String, dynamic> value) async {
+    await _prefs.setString('valhalla_chat_draft_v1::$key', jsonEncode(value));
+  }
+
+  Future<void> clearChatDraft(String key) async {
+    await _prefs.remove('valhalla_chat_draft_v1::$key');
+  }
+
   bool getShareAgentSessions(String serverId) =>
       _prefs.getBool('valhalla_share_agent_sessions::$serverId') ?? false;
   Future<void> setShareAgentSessions(String serverId, bool value) async {
@@ -342,6 +356,9 @@ class LocalStorageService {
   }
 
   // --- Chat Sessions ---
+  /// Original migration source, retained unchanged after SQLite takes ownership.
+  String get rawChatSessions => _prefs.getString(_keySessions) ?? '[]';
+
   List<ChatSession> getChatSessions() {
     final raw = _prefs.getString(_keySessions);
     if (raw == null || raw.isEmpty) return [];
@@ -610,11 +627,19 @@ class LocalStorageService {
   }
 
   /// 缺键返回 null，以便上层区分「尚未配置」与用户明确选择空列表。
-  List<String>? getBottomNavigationSections() =>
-      _prefs.getStringList(_keyBottomNavigation);
+  List<String>? getBottomNavigationSections() {
+    // Read-through migration: preserve the old value as a rollback source.
+    final raw = _prefs.getStringList(_keyBottomNavigation);
+    if (_prefs.getBool('valhalla_navigation_acp_v2') != true &&
+        raw?.join(',') == 'dashboard,cliChat,docker,files') {
+      return ['dashboard', 'aiChat', 'docker', 'files'];
+    }
+    return raw;
+  }
 
   Future<void> setBottomNavigationSections(List<String> sections) async {
     await _prefs.setStringList(_keyBottomNavigation, sections);
+    await _prefs.setBool('valhalla_navigation_acp_v2', true);
   }
 
   String? getStartupSection() => _prefs.getString(_keyStartupSection);

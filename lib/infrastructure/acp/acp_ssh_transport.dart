@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:acpd/acpd.dart';
 import 'package:dartssh2/dartssh2.dart';
+
+import '../../core/logging/sanitizer.dart';
 
 /// ACP transport backed by one SSH exec channel carrying newline-delimited JSON.
 /// The protocol framing and request correlation remain owned by [acpd].
@@ -12,11 +13,32 @@ class AcpSshTransport implements LineTransport {
   final StreamController<TransportFrame> _incoming =
       StreamController<TransportFrame>();
   StreamSubscription<String>? _subscription;
-  StreamSubscription<Uint8List>? _stderrSubscription;
+  StreamSubscription<String>? _stderrSubscription;
+  String _diagnosticTail = '';
+  String get diagnosticTail => _diagnosticTail;
+  int? get exitCode => session.exitCode;
   bool _closed = false;
+  bool _paused = false;
 
   AcpSshTransport(this.session) {
-    _stderrSubscription = session.stderr.listen((_) {});
+    _stderrSubscription =
+        LogSanitizer.stream(
+          session.stderr.cast<List<int>>().transform(
+            const Utf8Decoder(allowMalformed: true),
+          ),
+        ).listen(
+          (text) {
+            _diagnosticTail += text;
+            if (_diagnosticTail.length > 8192) {
+              _diagnosticTail = _diagnosticTail.substring(
+                _diagnosticTail.length - 8192,
+              );
+            }
+          },
+          onError: (Object error) {
+            _diagnosticTail = LogSanitizer.sanitize(error.toString());
+          },
+        );
     _subscription = session.stdout
         .cast<List<int>>()
         .transform(utf8.decoder)
@@ -44,6 +66,20 @@ class AcpSshTransport implements LineTransport {
   @override
   Stream<TransportFrame> get incoming => _incoming.stream;
 
+  void pauseIncoming() {
+    if (!_paused) {
+      _paused = true;
+      _subscription?.pause();
+    }
+  }
+
+  void resumeIncoming() {
+    if (_paused) {
+      _paused = false;
+      _subscription?.resume();
+    }
+  }
+
   @override
   void send(TransportFrame frame) {
     if (_closed) return;
@@ -54,9 +90,17 @@ class AcpSshTransport implements LineTransport {
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
+    // End the SSH streams before awaiting cancellation of the async sanitizer.
+    session.close();
     await _subscription?.cancel();
     await _stderrSubscription?.cancel();
-    await _incoming.close();
-    session.close();
+    // A channel can fail cwd/runtime preparation before ACP subscribes. A
+    // single-subscription controller's close future then waits for a listener
+    // that will never arrive; do not block disposing that unopened connection.
+    if (_incoming.hasListener) {
+      await _incoming.close();
+    } else {
+      unawaited(_incoming.close());
+    }
   }
 }

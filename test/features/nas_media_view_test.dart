@@ -887,6 +887,11 @@ void main() {
 
       await tester.pumpWidget(createNasApp(notifier: notifier));
       await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('nas_tab_videos')),
+        warnIfMissed: false,
+      );
+      await tester.pumpAndSettle();
 
       final nextBtn = find.byKey(const Key('nas_next_page_button'));
       final prevBtn = find.byKey(const Key('nas_previous_page_button'));

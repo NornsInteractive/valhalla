@@ -10,9 +10,13 @@ class _RecordingService implements KeepAliveService {
   int stopCalls = 0;
   bool startResult = true;
 
+  /// 原生侧是否真的在跑；模拟被系统回收后置 false。
+  bool running = false;
+
   @override
   Future<bool> start(int sessionCount) async {
     startCalls.add(sessionCount);
+    running = startResult;
     return startResult;
   }
 
@@ -24,10 +28,11 @@ class _RecordingService implements KeepAliveService {
   @override
   Future<void> stop() async {
     stopCalls++;
+    running = false;
   }
 
   @override
-  Future<bool> isRunning() async => startCalls.length > stopCalls;
+  Future<bool> isRunning() async => running;
 
   @override
   Future<void> notifyTransferCompleted(int completedCount) async {}
@@ -198,14 +203,26 @@ void main() {
       expect(coordinator.hasActiveSessions, isTrue);
     });
 
-    test('第二个连接只更新数量，不重复 stop', () async {
+    test('第二个连接只更新数量，不重复 start 也不 stop', () async {
       await coordinator.addSession('s1');
+      await coordinator.addSession('s2');
+
+      // 前台服务已经在跑时只应更新会话数：重复 start 会被原生侧忽略，
+      // 而 stop 一次就会让常驻通知消失。
+      expect(service.startCalls, [1]);
+      expect(service.updateCalls, [1, 2]);
+      expect(service.stopCalls, 0);
+      expect(coordinator.activeCount, 2);
+    });
+
+    test('前台服务已被系统回收时重新 start', () async {
+      await coordinator.addSession('s1');
+      // 原生侧报告服务不在了：必须重新 start，而不是只 update 被忽略。
+      service.running = false;
       await coordinator.addSession('s2');
 
       expect(service.startCalls, [1, 2]);
       expect(service.updateCalls, [1, 2]);
-      expect(service.stopCalls, 0);
-      expect(coordinator.activeCount, 2);
     });
 
     test('重复添加同一 server 不增加计数', () async {
@@ -213,7 +230,8 @@ void main() {
       await coordinator.addSession('s1');
 
       expect(coordinator.activeCount, 1);
-      expect(service.startCalls, [1, 1]);
+      expect(service.startCalls, [1]);
+      expect(service.updateCalls, [1, 1]);
     });
 
     test('最后一个连接移除后停止前台服务（避免僵尸通知）', () async {

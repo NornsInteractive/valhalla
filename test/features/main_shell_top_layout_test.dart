@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,11 +9,9 @@ import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/servers/server_form_dialog.dart';
-import 'package:valhalla/features/settings/widgets/theme_accent_color_dialog.dart';
 import 'package:valhalla/features/shell/main_shell.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 import 'package:valhalla/core/design/motion_widgets.dart';
-import 'package:valhalla/core/design/tokens.dart';
 
 class _FakeSftpNotifier extends SftpNotifier {
   @override
@@ -238,7 +235,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(Drawer), findsNothing);
-      final stack = tester.widget<AnimatedIndexedStack>(find.byType(AnimatedIndexedStack));
+      final stack = tester.widget<AnimatedIndexedStack>(
+        find.byType(AnimatedIndexedStack),
+      );
       expect(stack.index, 3);
     });
 
@@ -255,7 +254,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(Drawer), findsNothing);
-      final stack = tester.widget<AnimatedIndexedStack>(find.byType(AnimatedIndexedStack));
+      final stack = tester.widget<AnimatedIndexedStack>(
+        find.byType(AnimatedIndexedStack),
+      );
       expect(stack.index, 5);
     });
 
@@ -272,7 +273,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(Drawer), findsNothing);
-      final stack = tester.widget<AnimatedIndexedStack>(find.byType(AnimatedIndexedStack));
+      final stack = tester.widget<AnimatedIndexedStack>(
+        find.byType(AnimatedIndexedStack),
+      );
       expect(stack.index, 6);
     });
 
@@ -417,270 +420,38 @@ void main() {
     });
   });
 
-  group('Group 6: 顶栏主题快捷切换', () {
-    testWidgets('紧凑模式 AppBar 包含主题切换按钮，点击展开弹窗并可切换主题和主题色', (tester) async {
-      const testServer = ServerProfile(
-        id: 'test-server-compact',
-        name: 'AlphaServer',
-        host: '192.168.1.100',
-        username: 'root',
-        port: 22,
-      );
-      final settingsNotifier = _TestSettingsNotifier();
-      final container = await _pumpShell(
-        tester,
-        size: const Size(580, 1000),
-        servers: const [testServer],
-        activeServer: testServer,
-        settingsNotifier: settingsNotifier,
-      );
+  group('Group 6: 顶栏不再提供主题快捷切换', () {
+    Future<void> expectNoTopThemeShortcut(
+      WidgetTester tester, {
+      required Size size,
+    }) async {
+      await _pumpShell(tester, size: size);
 
-      final appBarFinder = find.byType(AppBar);
-      expect(appBarFinder, findsOneWidget);
-
-      final paletteBtn = find.descendant(
-        of: appBarFinder,
-        matching: find.byIcon(Icons.palette_outlined),
-      );
-      expect(paletteBtn, findsOneWidget);
-
-      final serverBtn = find.descendant(
-        of: appBarFinder,
-        matching: find.ancestor(
-          of: find.text(testServer.name),
-          matching: find.byType(InkWell),
+      // AppBar 内（紧凑布局）不得出现主题快捷按钮
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byIcon(Icons.palette_outlined),
         ),
+        findsNothing,
       );
-      expect(serverBtn, findsOneWidget);
+      // 全局顶栏（含中屏/宽屏 _buildTopBar）同样不得出现主题快捷按钮
+      expect(find.byIcon(Icons.palette_outlined), findsNothing);
+    }
 
-      // 位置断言：paletteBtn 在左、serverSwitcher 在右，且紧邻
-      expect(
-        tester.getCenter(paletteBtn).dx,
-        lessThan(tester.getCenter(serverBtn).dx),
-      );
-      expect(
-        tester.getRect(paletteBtn).right,
-        lessThanOrEqualTo(tester.getRect(serverBtn).left),
-      );
-
-      // 额外断言：AppBar actions 的第一个元素就是 paletteBtn
-      final appBar = tester.widget<AppBar>(appBarFinder);
-      expect(appBar.actions, isNotNull);
-      expect(appBar.actions, isNotEmpty);
-      final firstAction = appBar.actions!.first;
-      expect(firstAction, isA<IconButton>());
-      expect(
-        ((firstAction as IconButton).icon as Icon).icon,
-        Icons.palette_outlined,
-      );
-
-      // 配合 tester.widgetList<Widget>(find.byType(IconButton)) 判断 actions 顺序
-      final actionIcons = tester.widgetList<IconButton>(
-        find.descendant(of: appBarFinder, matching: find.byType(IconButton)),
-      );
-      expect(actionIcons.length, greaterThanOrEqualTo(2));
-      expect(
-        (actionIcons.elementAt(1).icon as Icon).icon,
-        Icons.palette_outlined,
-      );
-
-      await tester.tap(paletteBtn);
-      await tester.pumpAndSettle();
-
-      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-
-      // 弹窗展开，检查标题与 4 种外观模式选项
-      expect(find.text(l10n.themeQuickSwitch), findsOneWidget);
-      expect(find.text(l10n.themeSystem), findsOneWidget);
-      expect(find.text(l10n.themeLight), findsOneWidget);
-      expect(find.text(l10n.themeDark), findsOneWidget);
-      expect(find.text(l10n.themeAmoled), findsOneWidget);
-
-      // 主题色组
-      expect(find.text(l10n.settingsAccentColor), findsOneWidget);
-
-      // 切换到浅色模式
-      await tester.tap(find.text(l10n.themeLight));
-      await tester.pumpAndSettle();
-
-      expect(settingsNotifier.setThemeModeCalls, [AppThemeMode.light]);
-      expect(container.read(settingsProvider).themeMode, AppThemeMode.light);
-
-      // 点击主题色（第二个色块）
-      final accentInkWells = find.byWidgetPredicate(
-        (w) => w is InkWell && w.borderRadius == BorderRadius.circular(VRadius.pill),
-      );
-      expect(accentInkWells, findsNWidgets(AppAccentColor.values.length));
-      await tester.tap(accentInkWells.at(1));
-      await tester.pumpAndSettle();
-
-      expect(settingsNotifier.setThemeAccentColorCalls, hasLength(1));
-      expect(
-        settingsNotifier.setThemeAccentColorCalls.first.mode,
-        AppThemeMode.light,
-      );
-      expect(
-        settingsNotifier.setThemeAccentColorCalls.first.color.toARGB32() &
-            0xFFFFFF,
-        AppAccentColor.values[1].color.toARGB32() & 0xFFFFFF,
-      );
-      expect(
-        container.read(settingsProvider).lightAccentColor.toARGB32() & 0xFFFFFF,
-        AppAccentColor.values[1].color.toARGB32() & 0xFFFFFF,
-      );
+    testWidgets('紧凑模式 AppBar 不含主题快捷按钮', (tester) async {
+      await expectNoTopThemeShortcut(tester, size: const Size(580, 1000));
+      expect(find.byType(AppBar), findsOneWidget);
     });
 
-    testWidgets('宽屏模式 TopBar 包含主题切换按钮且点击可展开弹窗', (tester) async {
-      const testServer = ServerProfile(
-        id: 'test-server-wide',
-        name: 'AlphaServer',
-        host: '10.0.0.1',
-        username: 'root',
-        port: 22,
-      );
-      await _pumpShell(
-        tester,
-        size: const Size(1200, 800),
-        servers: const [testServer],
-        activeServer: testServer,
-      );
-
+    testWidgets('中屏模式顶栏不含主题快捷按钮', (tester) async {
+      await expectNoTopThemeShortcut(tester, size: const Size(800, 600));
       expect(find.byType(AppBar), findsNothing);
-
-      final paletteBtn = find.byIcon(Icons.palette_outlined);
-      expect(paletteBtn, findsOneWidget);
-
-      final serverBtn = find.ancestor(
-        of: find.text(testServer.name),
-        matching: find.byType(InkWell),
-      );
-      expect(serverBtn, findsOneWidget);
-
-      final inspectorBtn = find.byIcon(Icons.tune_rounded);
-      expect(inspectorBtn, findsOneWidget);
-
-      // 位置断言：主题快捷切换按钮放在右上角『切换服务器』按钮的左边
-      expect(
-        tester.getCenter(paletteBtn).dx,
-        lessThan(tester.getCenter(serverBtn).dx),
-      );
-      // 并且「紧邻」：tester.getRect(paletteBtn).right <= tester.getRect(serverBtn).left
-      // （两者之间只允许一个 SizedBox(width:4)，所以这个不等式成立）
-      expect(
-        tester.getRect(paletteBtn).right,
-        lessThanOrEqualTo(tester.getRect(serverBtn).left),
-      );
-
-      // inspectorToggle 在主题快捷切换按钮的左侧（保证主题按钮在 inspector 之后）
-      expect(
-        tester.getCenter(inspectorBtn).dx,
-        lessThan(tester.getCenter(paletteBtn).dx),
-      );
-      expect(
-        tester.getRect(inspectorBtn).right,
-        lessThanOrEqualTo(tester.getRect(paletteBtn).left),
-      );
-
-      final paletteIconButton = find.ancestor(
-        of: paletteBtn,
-        matching: find.byType(IconButton),
-      );
-      // IconButton 紧邻服务器切换器，两者之间只允许一个 SizedBox(width:4)
-      final gap =
-          tester.getRect(serverBtn).left -
-          tester.getRect(paletteIconButton).right;
-      expect(gap, inInclusiveRange(0.0, 5.0));
-
-      await tester.tap(paletteBtn);
-      await tester.pumpAndSettle();
-
-      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-      expect(find.text(l10n.themeQuickSwitch), findsOneWidget);
     });
 
-    testWidgets('中屏模式 TopBar 无 inspector 但包含主题切换按钮且紧邻切换服务器', (tester) async {
-      const testServer = ServerProfile(
-        id: 'test-server-medium',
-        name: 'AlphaServer',
-        host: '10.0.0.1',
-        username: 'root',
-        port: 22,
-      );
-      await _pumpShell(
-        tester,
-        size: const Size(800, 600),
-        servers: const [testServer],
-        activeServer: testServer,
-      );
-
+    testWidgets('宽屏模式顶栏不含主题快捷按钮', (tester) async {
+      await expectNoTopThemeShortcut(tester, size: const Size(1200, 800));
       expect(find.byType(AppBar), findsNothing);
-      expect(find.byIcon(Icons.tune_rounded), findsNothing);
-
-      final paletteBtn = find.byIcon(Icons.palette_outlined);
-      expect(paletteBtn, findsOneWidget);
-
-      final serverBtn = find.ancestor(
-        of: find.text(testServer.name),
-        matching: find.byType(InkWell),
-      );
-      expect(serverBtn, findsOneWidget);
-
-      expect(
-        tester.getCenter(paletteBtn).dx,
-        lessThan(tester.getCenter(serverBtn).dx),
-      );
-      expect(
-        tester.getRect(paletteBtn).right,
-        lessThanOrEqualTo(tester.getRect(serverBtn).left),
-      );
-
-      final paletteIconButton = find.ancestor(
-        of: paletteBtn,
-        matching: find.byType(IconButton),
-      );
-      final gap =
-          tester.getRect(serverBtn).left -
-          tester.getRect(paletteIconButton).right;
-      expect(gap, inInclusiveRange(0.0, 5.0));
-    });
-
-    testWidgets('点击顶部主题切换 -> 自定义色按钮 -> 颜色弹窗成功出现且不抛异常', (tester) async {
-      const testServer = ServerProfile(
-        id: 'test-server-compact',
-        name: 'AlphaServer',
-        host: '192.168.1.100',
-        username: 'root',
-        port: 22,
-      );
-      await _pumpShell(
-        tester,
-        size: const Size(580, 1000),
-        servers: const [testServer],
-        activeServer: testServer,
-      );
-
-      final paletteBtn = find.descendant(
-        of: find.byType(AppBar),
-        matching: find.byIcon(Icons.palette_outlined),
-      );
-      expect(paletteBtn, findsOneWidget);
-
-      await tester.tap(paletteBtn);
-      await tester.pumpAndSettle();
-
-      final customColorBtn = find.byKey(
-        const Key('theme_quick_custom_accent_button'),
-      );
-      expect(customColorBtn, findsOneWidget);
-
-      await tester.tap(customColorBtn);
-      await tester.pumpAndSettle();
-
-      expect(find.byType(ThemeAccentColorDialog), findsOneWidget);
-      expect(
-        find.byKey(const Key('accent_color_confirm_button')),
-        findsOneWidget,
-      );
     });
   });
 }

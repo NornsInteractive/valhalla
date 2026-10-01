@@ -1,5 +1,190 @@
 # Valhalla - 实施状态与工程基线
 
+## 2026-10-01 ACP运行时对齐与首轮前命令：回归、打包与覆盖安装完成
+
+已确认当前环境PATH Codex 0.159.3、codex-acp 2.0.0内置Codex 0.158.0，
+实际用户远端的版本/登录差异尚未验收。标准Codex ACP启动改为在所选宿主机或
+容器用户环境解析配置的CLI可执行路径（绕过Bash别名），显式设置CODEX_PATH，
+stderr诊断记录路径与版本；找不到CLI明确失败，不退回内置副本。自定义启动
+脚本保持原语义，不改登录或配置文件，不替换用户指定模型。
+草稿initialize后提供已核实的codex-acp 2.0.0兼容命令预览，实时skills独立查询；
+未知适配器/版本不伪造清单，真实available_commands_update含空列表均优先。
+选择只插入草稿，Send才按现有流程建会话并直接执行命令，无垫底普通对话。
+打开/刷新菜单不建本地或远端会话，不读/恢复历史。技能查询失败保留命令；
+成功重试仅清除目录错误，不清除其他错误。UI由原AgY/指定模型修改，OpenCode
+MiMo免费模型负责回归及最终APK/ADB。专项160项、控件15项、恢复/历史23项通过；
+全量1631通过、17既有环境跳过、0失败，静态分析零问题，多语言生成成功。
+CLI命令纳入运行时身份；两处旧测试夹具按实际CLI更新，未放宽跨目标检查。
+另修复ACP传输在initialize之前关闭、无流监听时等待不结束的问题，并覆盖回归。
+新APK为123288495字节，mtime **2026-10-01 14:57:42 UTC**（22:57:42 +0800），
+SHA-256 `e7efc0ce52f1466a92c31e79c05e8d716c2a8c2c8c1263203d2491be140dd34b`。
+版本1.0.0+1，release构建但仍沿用Android Debug签名，不是商店签名包。
+旧包备份为 `build/apk-backup/app-release-prev-20261001-225532.apk`。
+OpenCode向现有ADB模拟器 `127.0.0.1:14251` 覆盖安装成功，设备更新时间
+22:58:46 +0800；未卸载、未清数据。冷启动成功、PID16448存活、MainActivity
+前台，有限观察及崩溃/事件/进程日志检查未见fatal/ANR。
+真实远端账号对模型的接受情况仍须用户验收；模拟协议和启动检查不代表真实对话成功。
+见[本轮契约](../../agent-workflow/acp-runtime-draft-commands-ui.md)及
+[验证报告](../../agent-workflow/acp-runtime-draft-commands-verification.md)。
+
+## 2026-10-01 CLI模型目录与手动模型：实现、验证与覆盖安装完成
+
+用户最新要求覆盖下方HTTP/OAuth模型目录方案：默认通过所选服务器/容器/用户的
+既有Codex CLI app-server `model/list`查询，无额外授权，不读/恢复聊天。
+复用分页、隐藏过滤、去重、超时和关闭逻辑，手动刷新重新查询。
+目录可能受CLI版本/缓存影响，不声明保证云端实时或订阅可用性。
+新增 `ChatRunSettings.customModel`（旧JSON默认false）；手动名可越过目录成员
+校验，但仅向已声明model配置发送，远端必须确认精确值；普通列表/推理/权限
+校验不放宽。AgY原Valhalla / Gemini3.8Flash High 已完成共享弹窗与授权入口移除，
+OpenCode `opencode/mimo-v2.6-flash-free` 完成验证、生成、格式、打包与ADB：
+专项145通过（共享弹窗控件28通过），全量1598通过、17既有环境跳过、0失败，
+静态分析零问题。新增首发回归覆盖初始会话配置通知不丢失手动模型意图。
+新APK为123190191字节，mtime **2026-10-01 11:41:48 UTC**（19:41:48 +0800），
+SHA-256 `32c3478d689fefe7173586e1f9a4ce1bed16b3b105a56c338383d068d91514a3`。
+版本1.0.0+1，release构建但沿用Android Debug签名，不是商店签名包；旧包已备份。
+OpenCode于19:42:13 +0800向现有ADB模拟器 `127.0.0.1:14251` 覆盖安装成功，
+未卸载或清数据；启动后PID24879、MainActivity在前台，有限观察窗口无fatal/ANR。
+真实远端模型是否接受
+手动名称仍须用户验收，不把模拟协议测试或启动检查等同于真实对话验收。交接见
+[CLI模型/UI契约](../../agent-workflow/cli-model-catalog-ui.md)。
+
+## 2026-10-01 实时目录与草稿能力：自动化验收与 release 安装完成
+
+OpenCode 主/辅助均使用 `opencode/mimo-v2.6-flash-free` 完成最终验证、打包和ADB。
+最终全量 **1564通过、17既有环境跳过、0失败**，相关控件70项通过（含新增22项），
+静态分析零问题，多语言生成成功，12个相关源码/测试格式检查零改动。
+原 AgY Valhalla / Gemini3.8Flash High 已完成
+UI及复核，主Agent未接管展示修改。详细阶段证据见
+[发布验证报告](../../agent-workflow/live-models-draft-release-verification.md)。
+
+新包 `build/app/outputs/flutter-apk/app-release.apk`，123304927字节，mtime
+**2026-10-01 10:51:48 UTC**（18:51:48 +0800），SHA-256
+`1dfe9ab4e59b93e3234300ece10ec2cffcb2390ae584cda0732cbb728d4b0f35`。
+版本1.0.0+1，沿用Android Debug签名；是release构建，不是商店签名包。
+旧APK已保存于 `build/apk-backup/`，没有删除。设备 `127.0.0.1:14251`
+于18:52:10 +0800覆盖安装成功，未卸载、未清数据；启动后PID26523保持存活，
+MainActivity在前台，有限观察窗口未发现fatal/ANR。真实授权、最新账号目录与
+用户Docker对话仍须用户验收，不把模拟与启动检查宣称为真实远端验收。
+
+最终格式补查发现的3个UI文件已由OpenCode机械格式化，不涉及展示或语义修改；
+上方为重新全量验收、构建及安装后的最终APK，18:39的中间包已备份。
+以下为实施过程与先前快照：
+
+独立 HTTP 账号模型查询、远端隔离 OAuth 业务、草稿 skills/list 嵌套解析、
+ACP 模型支持校验和 -32603 分阶段诊断已写入。
+OpenCode `opencode/mimo-v2.6-flash-free` 前次快照验证：专项194通过，全量1495通过、
+17既有环境跳过、0失败；flutter analyze零问题，6个业务文件格式检查零改动。
+以上为前次快照，不代表功能完整交付。
+最新补验已发现并修正草稿未订阅 ACP 后续控制通知的问题；草稿/模型设置/错误诊断
+相关47项通过（Provider32、诊断6、恢复9）。远端 OAuth/JWKS/刷新脚本已通过
+21项真实 Node 执行的隔离模拟，不读取真实凭据、不连接服务、不发送推理。
+另修复手机授权监听吞掉非法端点/缺失状态固定错误码的问题；授权专项40项通过，
+业务快照静态分析零问题，全量1532通过、17既有环境跳过、0失败（UI接入前）。
+真实授权、最新模型目录与 Docker 诊断仍待验证；模拟不证明真实服务兼容。
+详见 [补充验证报告](../../agent-workflow/live-models-draft-remaining-verification.md)。
+已纠正 print 路径 EOF 的可用性误判：原 Valhalla 交互会话实际可响应，并已由
+Gemini3.8Flash High 完成授权入口、草稿命令/技能菜单、模型警告/空态与兼容下拉，
+以及目标切换、等待保存和弹窗销毁保护。主 Agent 只补 Android 官方授权浏览器
+桥接，OpenCode 浏览器模拟10项通过；新增 UI Widget20项、相关68项通过，
+静态分析零问题。原 Valhalla 已复核并接收 CLI 参数误开会话产生的三处窄修正，
+事故及恢复方式记录于 UI 报告；不得再次组合 --conversation/--prompt-interactive。
+最终弹窗销毁/动态命令补验、全量测试、release构建及安装正在执行。
+本轮尚无新 APK/ADB，不得把旧包作为本轮结果。
+现有登录只读目录请求返回403，原因未定，未拿到真实最新目录/未真实授权。
+详见 [本轮交接](../handoffs/2026-10-01-live-models-and-draft-composer.md)。
+
+## 2026-10-01 独立模型发现（业务验收完成，UI与新APK未交付）
+
+已将模型发现从历史 session/resume/load 改为独立接口：Codex 官方 app-server
+`model/list`；分页/隐藏/重复目录处理，短生命周期查询关闭，执行目标/用户隔离。
+设置刷新不重建 ACP 会话，旧 configOptions 不覆盖独立模型目录。失败保留旧列表
+并标记过期；不支持独立查询的 Agent 不再用历史清单冒充结果。
+仅解决不依赖历史会话，Codex 接口自身缓存和账号 entitlement 不宣称已解决。
+OpenCode `opencode/space-bunny-free` 最终专项104通过，全量1447通过、17既有
+环境跳过、0失败；flutter analyze零问题。AgY 原 Valhalla会话
+已按指定模型发起UI交接，但资格检查/订阅连接失败；主 Agent 不代改UI。
+中断了先前执行器在UI门禁生效前启动的构建；未ADB安装。上一轮已发布APK
+已由OpenCode从完整备份恢复并核验哈希/签名，仍是下方的旧包，不含本轮改动。
+详细方案、边界与待验项见[本轮交接](../handoffs/2026-10-01-independent-model-discovery.md)。
+
+## 2026-09-30 前后台无损恢复（自动化验收、release覆盖安装完成）
+
+单一 SSH 心跳、探活/重连合并、后台暂停、原会话恢复和有界历史合并已实现。
+同目标断线不清聊天/草稿，后台不因空闲超时自动取消 prompt；健康连接复用，
+真实断线恢复原 ID，不自动重发、审批或创建替代会话。不支持回放或身份歧义时
+保留本地内容并提示未完整恢复。AgY 原 Valhalla / Gemini 3.8 Flash high 完成
+全部界面修改：内容保留、顶部恢复提示、离线动作限制和同目标仪表盘/文件缓存。
+
+OpenCode 主/辅助均为获准的免费 `opencode/space-bunny-free`，执行全部测试、
+格式/生成/分析、构建及ADB。最终全量 **1421通过、17既有环境跳过、0失败**；
+静态分析零问题，86个修改/新增Dart文件格式检查零改动，连接恢复专项115项通过。
+测试清理死锁及旧fixture依赖问题已修正，没有删除或跳过失败用例来通过检查。
+
+最新APK：`build/app/outputs/flutter-apk/app-release.apk`，123108211字节，
+mtime **2026-09-30 16:12:14 UTC**（2026-10-01 00:12:14 +0800），SHA-256
+`1af486e7dec5c32ea1cc6ba487d2a4f1a1e3b60a3208d97fe381ca571610bdb3`。
+版本仍1.0.0+1，沿用Android Debug签名；是release构建，不是商店签名包。
+设备 `127.0.0.1:14251` 签名匹配后 `adb install -r` 于16:12:26 UTC成功；
+未卸载、未清数据。16:12:39–16:13:12 UTC启动/Home/恢复/锁屏唤醒检查保持
+PID19075，观察窗口未发现应用fatal/ANR。未强制Doze，也未向真实Agent发送消息。
+
+真实服务器后台长时恢复、系统杀进程后远端任务状态仍未验证，由用户验收。
+不把有限模拟器窗口等同永久在线保证。详见
+[前后台恢复交接](../handoffs/2026-09-30-background-session-recovery.md)、
+[最终发布报告](../../agent-workflow/background-recovery-release.md)。
+
+## 2026-09-30 ACP 可用性第二轮（自动化验收、release安装完成）
+
+业务层完成消息ID/角色分片、附件私有文件持久化、账号扩展、草稿只初始化、
+配置实时刷新及失败保留、目标感知远端文件浏览、重新导入副本与默认导航兼容迁移。
+斜杠命令不包裹历史上下文；损坏历史图片保留占位，不阻断其他消息。
+AgY在原Valhalla会话 `ec81a4be-7543-45ee-8658-f68966f57d3b`、
+Gemini 3.8 Flash / high完成全部UI：单行输入、命令技能面板、账号额度页、
+紧凑会话菜单、目录/文件三视图选择、图片预览放大及文件卡片。新组件有中英文案，
+图片按宽高同时限额解码，设置按钮支持窄屏换行。主Agent未接管UI编辑。
+
+MiMo免费模型限流后，按用户授权改用已核验免费的 `opencode/space-bunny-free`；
+主模型与small_model均指定免费模型，调用记录cost=0。OpenCode执行全部测试维护、
+格式化、生成、分析、打包与ADB安装。最终全量 **1305通过、17环境跳过、0失败**，
+新增控件专项36项通过（包含320/360/411dp的2倍字体回归），`flutter analyze`零问题，
+`git diff --check`通过。最后3项仅补测试与修正文档，未改生产源码，APK与安装证据不变。
+
+APK：`build/app/outputs/flutter-apk/app-release.apk`，122747763字节，
+mtime **2026-09-30 11:59:08 UTC**；SHA-256
+`26e21334399485fe948caba51d1ec57a8677a84f8129d2287fbc43fd4110219a`。
+版本1.0.0+1，沿用既有Android Debug签名；是release构建，不是商店签名包。
+新旧证书核对一致后，设备 `127.0.0.1:14251` 的 `adb install -r` 于
+11:59:57 UTC完成（Success/exit0）。未卸载、未清数据，首次安装时间保留。
+12:00:08 UTC冷启动成功，PID23648存活且MainActivity位于前台；观察窗口无应用fatal。
+
+真实ACP会话、远端Agent实际模型/skills/账号支持及真机性能仍由用户验收，
+本轮未向真实Codex/ACP发送测试消息。Agent未声明的字段明确未提供，额度仅手动
+调用已声明 `/status`；不会用CLI数据伪装实时ACP结果。
+详见[交接](../handoffs/2026-09-30-acp-usability.md)、
+[验证与安装报告](../../agent-workflow/acp-usability-release.md)。
+
+## 2026-09-30 ACP 客户端补全（逻辑验收与release安装完成）
+
+审批原始选项/嵌套回包、首次发送目录、工具增量、连接复用与推理分类已修改。
+AgY已修改Docker登录、审批/刷新、消息分页、目录/附件/命令、用量诊断、历史搜索/重命名/导出/导入及工具输出UI。
+异步SQLite历史、检查点和长工具输出独立存储已进入源码；旧JSON保留作迁移源。
+OpenCode最终冻结版全量1192通过、17环境跳过、0失败；`flutter analyze --no-pub`零问题，`git diff --check`通过。专项为provider33、adapter20、framing3、repository18，全部通过；新增features与adapter/resume组合33项通过。
+AgY连接恢复后完成剩余14项静态问题和重命名异常反馈，所有UI收尾均由原Valhalla会话、Gemini 3.8 Flash / high执行；根代理未接管UI编辑。
+历史章节中“扁平权限回包已修复”的说法与官方v1不符，以本轮嵌套结构及新回归为准。
+OpenCode构建`build/app/outputs/flutter-apk/app-release.apk`成功：122288727字节，修改时间2026-09-30 10:01:13 UTC（18:01:13 +0800），SHA-256 `4e4c4adc294e740cc85f0dee67e38d3e0aa599f25e1e596c15accb328fc342e9`。版本仍为1.0.0+1，沿用既有Android Debug签名；这是release构建，不是商店签名包。
+ADB设备`127.0.0.1:14251`执行`install -r`成功，安装更新时间由11:16:12变为18:01:26 +0800，首次安装时间保留；未卸载、未清数据。18:02:22 +0800冷启动，10秒后PID11636存活，启动窗口无AndroidRuntime fatal；存在模拟器CPU/JDWP/图形等环境日志，不等于所有系统日志完全无警告。
+用户确认没有独立ACP测试目标：真实对话与界面体验由用户自行验证，本轮未向真实ACP/Codex会话发送消息。构建/安装详证见[最终验收报告](../../agent-workflow/acp-final-release.md)。
+
+细节：[本轮交接](../handoffs/2026-09-30-acp-client-completion.md)。
+
+## 2026-09-30 Docker Agent 默认名称绑定与回归门禁
+
+- 新建 Agent 的模型与表单默认按名称绑定；编辑时保留原绑定，旧 JSON 缺字段仍按 ID 解释。名称/完整 ID/唯一短十六进制 ID 切换跟随同一容器，空或未知引用不再误选首个容器。
+- 容器引用/执行位置/绑定变化立即失效旧用户查询并取消待触发防抖，成功/错误结果仅回写对应当前目标；手动用户输入保留。表单 17 项、模型 15 项、Docker 服务 9 项专项测试通过；尚无真实服务器 ID 报错复测。
+- 指定 AgY Valhalla 历史会话（`gemini-3.8-flash-high` / high）完成全部表单与 UI 修改，并修复全量回归发现的 600px 顶栏实际溢出。OpenCode `opencode/mimo-v2.6-flash-free` 更新顶部主题入口移除后的旧测试，未恢复按钮或跳过断言。
+- 最终 `flutter test --no-pub --reporter expanded`：**1158 通过、17 环境跳过、0 失败**；`flutter analyze --no-pub` 零问题，`git diff --check` 通过。正式 APK 重建为 **121714899 字节**，更新时间 **2026-09-30 11:16:06 +0800**，SHA-256 `7c6b3fc1d9316ee4976e220adc39edc367cd44d4c0264d4461f32450efa67943`。
+- OpenCode 通过 ADB `127.0.0.1:14251` 执行 `install -r` 成功，冷启动 `Status: ok`，PID **22115**，最近 200 行 AndroidRuntime 错误查询为空。未卸载或清空数据；release 沿用既有项目签名配置，不表示真实 SSH/Docker/ACP 全部端到端验收通过。详细记录见 [容器绑定交接](../handoffs/2026-09-30-agent-container-binding.md)。
+
 ## 2026-09-29 服务器切换/删除与 ACP 会话增强（自动化验收通过）
 
 - 服务器切换串行化并持久化目标 ID 后断开旧连接；连接、自动重连及弹窗回调都核验目标服务器，避免旧请求覆盖新选择。删除前确认，配置持久化失败不再先断开当前连接；删除时清除最近连接、自动连接和 sudo 凭据引用。失败时保留弹窗并显示错误。
@@ -253,6 +438,14 @@ Codex 侧只提供稳定的 Model、Provider、Service 和 Repository 契约，�
 - 新增 [NAS 媒体流播放架构](../02-architecture/04-nas-streaming-architecture.md)：默认保持任意 SSH 服务器可用的 SFTP 回退，可选接入 Jellyfin/Emby/Caddy 的 SSH loopback 隧道；本轮未修改展示层。
 
 ## 质量门禁
+
+### 2026-09-29 ACP Codex 回归处理中
+
+- ACP `session/prompt` 的远端 JSON-RPC 错误现在单独标为 `ACP_REMOTE_ERROR`，附请求阶段与远端 `data`，不再误报成 SSH 传输故障；这只是明确诊断，不把 `-32603` 猜测为某一种具体故障。
+- 已恢复的 ACP 会话不再在每次发送或打开设置时重放本地保存的旧模型配置；新建远端会话仍按 Agent 宣告的可用选项应用默认值。主动打开设置时重新建立 ACP 连接并恢复相同会话 ID 获取新的模型选项，若恢复失败则保留原连接。
+- Codex ACP 官方包会自带一份 Codex CLI；其模型清单由远端包/账号返回，不由 App 内置。[上游已报告过期登录返回 `-32603` 而非认证错误](https://github.com/agentclientprotocol/codex-acp/issues/495)。尚未取得用户远端 `codex` / `codex-acp` 版本、登录状态与 `error.data`，因此不能宣称远端错误根因已排除，也不自动升级远端或改动认证。
+- 固定的 OpenCode `opencode/mimo-v2.6-flash-free` 会话已执行格式化（2 文件无改动）、ACP 专项测试（41 项通过）、`flutter analyze --no-pub`（无问题）、全量 `flutter test --no-pub`（1154 项通过、17 项跳过）；构建 `app-release.apk` 成功（121616811 字节，SHA-256 `ed4daf080c4cb0111fe8431749c8a764c5d1a19f7c54a82d9950e5a0e465d634`）。本轮新的针对性测试未成功由该模型写入，真实远端 Codex ACP 发送和最新模型清单仍待设备验收。
+- OpenCode 同一模型随后指定 ADB 序列号 `127.0.0.1:14251`，以 `adb install -r` 覆盖安装上述 APK（`Success`，未卸载/清空数据）；`am start -W` 冷启动返回 `Status: ok`，应用进程在前台，最近 200 行 `AndroidRuntime:E` 无崩溃。此结果只证明安装和启动，未对真实远端 Codex ACP 发消息。
 
 每个里程碑必须通过：
 

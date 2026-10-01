@@ -7,6 +7,7 @@ import '../../core/constants/layout_breakpoints.dart';
 import '../../core/design/motion_widgets.dart';
 import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
+import '../../core/providers/server_provider.dart';
 import '../../core/providers/sftp_provider.dart';
 import '../../infrastructure/sftp/sftp_client_service.dart';
 import '../../widgets/state_views.dart';
@@ -214,6 +215,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   }
 
   void _showNewFolderDialog() {
+    if (!ref.read(serverConnectionProvider).isConnected) return;
     final controller = TextEditingController();
     showDialog(
       context: context,
@@ -245,6 +247,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   }
 
   void _showNewFileDialog() {
+    if (!ref.read(serverConnectionProvider).isConnected) return;
     final controller = TextEditingController();
     showDialog(
       context: context,
@@ -276,6 +279,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   }
 
   void _showRenameDialog(SftpFileItem item) {
+    if (!ref.read(serverConnectionProvider).isConnected) return;
     final controller = TextEditingController(text: item.name);
     showDialog(
       context: context,
@@ -303,6 +307,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   }
 
   void _showDeleteConfirmDialog(SftpFileItem item) {
+    if (!ref.read(serverConnectionProvider).isConnected) return;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -329,6 +334,13 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   }
 
   void _openFileEditor(SftpFileItem item) async {
+    final isConnected = ref.read(serverConnectionProvider).isConnected;
+    if (!isConnected) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+      return;
+    }
     final notifier = ref.read(sftpProvider.notifier);
     if (!notifier.canPreview(item)) {
       ScaffoldMessenger.of(
@@ -362,7 +374,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
           final theme = Theme.of(ctx);
 
           Future<void> handleSave() async {
-            if (isSaving) return;
+            if (isSaving || !ref.read(serverConnectionProvider).isConnected) {
+              return;
+            }
             setDialogState(() {
               isSaving = true;
               saveError = null;
@@ -432,7 +446,11 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                     label: Text(
                       isSaving ? ctx.l10n.sftpSaving : ctx.l10n.fileEditorSave,
                     ),
-                    onPressed: isSaving ? null : handleSave,
+                    onPressed:
+                        (isSaving ||
+                            !ref.read(serverConnectionProvider).isConnected)
+                        ? null
+                        : handleSave,
                   ),
                   const SizedBox(width: 12),
                 ],
@@ -499,6 +517,12 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   }
 
   Future<void> _handleUpload() async {
+    if (!ref.read(serverConnectionProvider).isConnected) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+      return;
+    }
     if (ref.read(sftpProvider).activeTransfer != null) return;
     final files = await FilePicker.pickFiles();
     if (files.isEmpty) return;
@@ -511,6 +535,12 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     SftpFileItem item, [
     Offset? startOffset,
   ]) async {
+    if (!ref.read(serverConnectionProvider).isConnected) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+      return null;
+    }
     final taskId = await ref.read(sftpProvider.notifier).downloadFile(item);
     if (taskId != null) {
       _animateFlyToTransfer(startOffset);
@@ -532,6 +562,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   }
 
   String _mapErrorMessage(String code) {
+    if (code == 'SSH_DISCONNECTED') {
+      return context.l10n.stateOffline;
+    }
     if (code == SftpNotifier.uploadFailedCode) {
       return context.l10n.sftpUploadFailed;
     }
@@ -583,17 +616,22 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
 
   Widget _buildErrorBanner(String errorCode) {
     final message = _mapErrorMessage(errorCode);
+    final isOffline = errorCode == 'SSH_DISCONNECTED';
     return Container(
       key: const Key('sftpErrorBanner'),
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: context.colorScheme.errorContainer.withValues(alpha: 0.8),
+      color: isOffline
+          ? context.colorScheme.surfaceContainerHighest
+          : context.colorScheme.errorContainer.withValues(alpha: 0.8),
       child: Row(
         children: [
           Icon(
-            Icons.error_outline,
+            isOffline ? Icons.link_off : Icons.error_outline,
             size: 18,
-            color: context.colorScheme.onErrorContainer,
+            color: isOffline
+                ? context.colorScheme.onSurfaceVariant
+                : context.colorScheme.onErrorContainer,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -601,7 +639,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
               message,
               style: TextStyle(
                 fontSize: 12,
-                color: context.colorScheme.onErrorContainer,
+                color: isOffline
+                    ? context.colorScheme.onSurfaceVariant
+                    : context.colorScheme.onErrorContainer,
               ),
             ),
           ),
@@ -609,7 +649,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
             icon: Icon(
               Icons.close,
               size: 16,
-              color: context.colorScheme.onErrorContainer,
+              color: isOffline
+                  ? context.colorScheme.onSurfaceVariant
+                  : context.colorScheme.onErrorContainer,
             ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
@@ -716,7 +758,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
         if (sftpState.downloadNotificationsUnavailable)
           _buildNotificationUnavailableNotice(),
         Expanded(
-          child: sftpState.isLoading
+          child: (sftpState.isLoading && sftpState.files.isEmpty)
               ? Shimmer(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: VSpace.sm),
@@ -733,6 +775,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   Widget _buildBreadcrumbBar(SftpState state) {
     final notifier = ref.read(sftpProvider.notifier);
     final segments = state.pathSegments;
+    final isConnected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
 
     return Entrance(
       index: 0,
@@ -744,7 +789,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
             IconButton(
               icon: const Icon(Icons.arrow_upward, size: 18),
               tooltip: 'Up to parent directory',
-              onPressed: state.isAtRoot ? null : () => notifier.navigateUp(),
+              onPressed: (state.isAtRoot || !isConnected)
+                  ? null
+                  : () => notifier.navigateUp(),
             ),
             ActionChip(
               shape: RoundedRectangleBorder(
@@ -754,7 +801,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                 '/',
                 style: monoTextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
-              onPressed: () => notifier.navigateTo('/'),
+              onPressed: isConnected ? () => notifier.navigateTo('/') : null,
             ),
             const SizedBox(width: 4),
             Expanded(
@@ -793,7 +840,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                                   : context.colorScheme.onSurfaceVariant,
                             ),
                           ),
-                          onPressed: () => notifier.navigateTo(pathUpTo),
+                          onPressed: isConnected
+                              ? () => notifier.navigateTo(pathUpTo)
+                              : null,
                         ),
                       ],
                     );
@@ -809,6 +858,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
 
   Widget _buildActionBar(SftpState state) {
     final notifier = ref.read(sftpProvider.notifier);
+    final isConnected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
 
     return Entrance(
       index: 1,
@@ -862,19 +914,22 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                   IconButton(
                     icon: const Icon(Icons.upload_file, size: 20),
                     tooltip: context.l10n.sftpUpload,
-                    onPressed: state.activeTransfer != null
+                    onPressed: (state.activeTransfer != null || !isConnected)
                         ? null
                         : _handleUpload,
                   ),
                   IconButton(
-                    icon: const Icon(Icons.create_new_folder_outlined, size: 20),
+                    icon: const Icon(
+                      Icons.create_new_folder_outlined,
+                      size: 20,
+                    ),
                     tooltip: context.l10n.sftpNewFolder,
-                    onPressed: _showNewFolderDialog,
+                    onPressed: isConnected ? _showNewFolderDialog : null,
                   ),
                   IconButton(
                     icon: const Icon(Icons.note_add_outlined, size: 20),
                     tooltip: context.l10n.sftpNewFile,
-                    onPressed: _showNewFileDialog,
+                    onPressed: isConnected ? _showNewFileDialog : null,
                   ),
                   PopupMenuButton<Object>(
                     icon: const Icon(Icons.sort, size: 20),
@@ -926,7 +981,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                   IconButton(
                     icon: const Icon(Icons.refresh, size: 20),
                     tooltip: context.l10n.sftpRefresh,
-                    onPressed: () => notifier.refresh(),
+                    onPressed: isConnected ? () => notifier.refresh() : null,
                   ),
                   IconButton(
                     key: const Key('sftpTransferListButton'),
@@ -1045,7 +1100,10 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                 const SizedBox(width: 8),
                 Text(
                   item.formattedSize,
-                  style: monoTextStyle(fontSize: 11, fontWeight: FontWeight.w400),
+                  style: monoTextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Flexible(
@@ -1067,6 +1125,12 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
           : PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, size: 18),
               onSelected: (action) {
+                if (!ref.read(serverConnectionProvider).isConnected) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(context.l10n.stateOffline)),
+                  );
+                  return;
+                }
                 if (action == 'rename') {
                   _showRenameDialog(item);
                 } else if (action == 'delete') {
@@ -1122,11 +1186,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.delete,
-                        color: context.vDanger,
-                        size: 18,
-                      ),
+                      Icon(Icons.delete, color: context.vDanger, size: 18),
                       const SizedBox(width: 8),
                       Text(
                         context.l10n.delete,
@@ -1138,6 +1198,12 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
               ],
             ),
       onTap: () {
+        if (!ref.read(serverConnectionProvider).isConnected) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+          return;
+        }
         if (isDotDot) {
           notifier.navigateUp();
         } else if (item.isDirectory) {
@@ -1186,7 +1252,10 @@ class SftpTransferListSheet extends ConsumerWidget {
             Entrance(
               index: 0,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     Text(
@@ -1275,6 +1344,9 @@ class SftpTransferListItem extends ConsumerWidget {
   const SftpTransferListItem({super.key, required this.transfer});
 
   String _mapTransferError(BuildContext context, String? code) {
+    if (code == 'SSH_DISCONNECTED') {
+      return context.l10n.stateOffline;
+    }
     if (code == SftpNotifier.uploadFailedCode) {
       return context.l10n.transferFailedUpload;
     }
@@ -1287,6 +1359,9 @@ class SftpTransferListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(sftpProvider.notifier);
+    final isConnected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
     final isUpload = transfer.kind == SftpTransferKind.upload;
     final kindText = isUpload
         ? context.l10n.transferUpload
@@ -1392,7 +1467,9 @@ class SftpTransferListItem extends ConsumerWidget {
                   key: Key('transfer_resume_${transfer.id}'),
                   icon: const Icon(Icons.play_arrow, size: 18),
                   tooltip: context.l10n.transferResume,
-                  onPressed: () => notifier.resumeTransfer(transfer.id),
+                  onPressed: isConnected
+                      ? () => notifier.resumeTransfer(transfer.id)
+                      : null,
                 ),
               if (canCancel)
                 IconButton(

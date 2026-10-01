@@ -193,7 +193,7 @@ void main() {
       final sub = adapter.eventStream.listen((event) {
         events.add(event);
         if (event is ACPPermissionRequestEvent) {
-          event.responseCompleter.complete(true);
+          event.responseCompleter.complete('allow');
           if (!permissionDone.isCompleted) permissionDone.complete();
         }
         if (event is ACPCompleteEvent && !completeDone.isCompleted) {
@@ -220,6 +220,19 @@ void main() {
 
       final permission = events.whereType<ACPPermissionRequestEvent>().single;
       expect(permission.request.command, contains('rm -rf /tmp/x'));
+      expect(permission.responseCompleter, isA<Completer<String?>>());
+      expect(permission.request.options.map((option) => option.id), [
+        'allow',
+        'reject',
+      ]);
+      expect(permission.request.options.map((option) => option.kind), [
+        'allow_once',
+        'reject_once',
+      ]);
+      expect(permission.request.options.map((option) => option.name), [
+        'Allow',
+        'Reject',
+      ]);
 
       pair.finishHeldPrompt();
       await turn.timeout(const Duration(seconds: 1));
@@ -229,63 +242,146 @@ void main() {
       final response = pair.sentToAgent
           .map((line) => jsonDecode(line) as Map<String, dynamic>)
           .firstWhere((frame) => frame['id'] == 'perm-1');
-      expect(response['result'], {'outcome': 'selected', 'optionId': 'allow'});
+      // Official ACP v1 nests the outcome object under `result.outcome`.
+      expect(response['result'], {
+        'outcome': {'outcome': 'selected', 'optionId': 'allow'},
+      });
       expect(response.containsKey('error'), isFalse);
       expect(events.whereType<ACPErrorEvent>(), isEmpty);
     });
 
-    for (final approved in [false, true]) {
-      test(
-        'permission response uses ACP outcome for approved=$approved',
-        () async {
-          pair.holdPrompt = true;
-          final permission = Completer<void>();
-          final sub = adapter.eventStream.listen((event) {
-            if (event is ACPPermissionRequestEvent) {
-              event.responseCompleter.complete(approved);
-              permission.complete();
-            }
-          });
-          addTearDown(sub.cancel);
-          final turn = adapter.sendPrompt('permission');
-          await pair.promptReceived;
-          pair.deliverToClient(
-            jsonEncode({
-              'jsonrpc': '2.0',
-              'id': 'approval-wire',
-              'method': 'session/request_permission',
-              'params': {
-                'sessionId': 'session-1',
-                'toolCall': {'toolCallId': 'tool-1'},
-                'options': [
-                  {
-                    'optionId': 'original-allow',
-                    'name': 'Allow',
-                    'kind': 'allow_once',
-                  },
-                  {
-                    'optionId': 'original-reject',
-                    'name': 'Reject',
-                    'kind': 'reject_once',
-                  },
-                ],
-              },
-            }),
-          );
-          await permission.future;
-          await pumpEventQueue();
-          final response = pair.sentToAgent
-              .map((line) => jsonDecode(line) as Map<String, dynamic>)
-              .firstWhere((frame) => frame['id'] == 'approval-wire');
-          expect(response['result'], {
-            'outcome': 'selected',
-            'optionId': approved ? 'original-allow' : 'original-reject',
-          });
-          pair.finishHeldPrompt();
-          await turn;
-        },
-      );
+    for (final optionId in ['original-allow', 'original-reject']) {
+      test('permission response echoes the raw optionId=$optionId', () async {
+        pair.holdPrompt = true;
+        final permission = Completer<void>();
+        final sub = adapter.eventStream.listen((event) {
+          if (event is ACPPermissionRequestEvent) {
+            event.responseCompleter.complete(optionId);
+            permission.complete();
+          }
+        });
+        addTearDown(sub.cancel);
+        final turn = adapter.sendPrompt('permission');
+        await pair.promptReceived;
+        pair.deliverToClient(
+          jsonEncode({
+            'jsonrpc': '2.0',
+            'id': 'approval-wire',
+            'method': 'session/request_permission',
+            'params': {
+              'sessionId': 'session-1',
+              'toolCall': {'toolCallId': 'tool-1'},
+              'options': [
+                {
+                  'optionId': 'original-allow',
+                  'name': 'Allow',
+                  'kind': 'allow_once',
+                },
+                {
+                  'optionId': 'original-always',
+                  'name': 'Always',
+                  'kind': 'allow_always',
+                },
+                {
+                  'optionId': 'original-reject',
+                  'name': 'Reject',
+                  'kind': 'reject_once',
+                },
+              ],
+            },
+          }),
+        );
+        await permission.future;
+        await pumpEventQueue();
+        final response = pair.sentToAgent
+            .map((line) => jsonDecode(line) as Map<String, dynamic>)
+            .firstWhere((frame) => frame['id'] == 'approval-wire');
+        expect(response['result'], {
+          'outcome': {'outcome': 'selected', 'optionId': optionId},
+        });
+        pair.finishHeldPrompt();
+        await turn;
+      });
     }
+
+    test(
+      'an optionId the agent never offered is answered as cancelled',
+      () async {
+        pair.holdPrompt = true;
+        final permission = Completer<void>();
+        final sub = adapter.eventStream.listen((event) {
+          if (event is ACPPermissionRequestEvent) {
+            event.responseCompleter.complete('not-offered');
+            permission.complete();
+          }
+        });
+        addTearDown(sub.cancel);
+        final turn = adapter.sendPrompt('permission');
+        await pair.promptReceived;
+        pair.deliverToClient(
+          jsonEncode({
+            'jsonrpc': '2.0',
+            'id': 'unknown-option',
+            'method': 'session/request_permission',
+            'params': {
+              'sessionId': 'session-1',
+              'toolCall': {'toolCallId': 'tool-1'},
+              'options': [
+                {'optionId': 'allow', 'name': 'Allow', 'kind': 'allow_once'},
+              ],
+            },
+          }),
+        );
+        await permission.future;
+        await pumpEventQueue();
+        final response = pair.sentToAgent
+            .map((line) => jsonDecode(line) as Map<String, dynamic>)
+            .firstWhere((frame) => frame['id'] == 'unknown-option');
+        expect(response['result'], {
+          'outcome': {'outcome': 'cancelled'},
+        });
+        pair.finishHeldPrompt();
+        await turn;
+      },
+    );
+
+    test('completing the approval with null cancels the request', () async {
+      pair.holdPrompt = true;
+      final permission = Completer<void>();
+      final sub = adapter.eventStream.listen((event) {
+        if (event is ACPPermissionRequestEvent) {
+          event.responseCompleter.complete(null);
+          permission.complete();
+        }
+      });
+      addTearDown(sub.cancel);
+      final turn = adapter.sendPrompt('permission');
+      await pair.promptReceived;
+      pair.deliverToClient(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 'user-cancel',
+          'method': 'session/request_permission',
+          'params': {
+            'sessionId': 'session-1',
+            'toolCall': {'toolCallId': 'tool-1'},
+            'options': [
+              {'optionId': 'allow', 'name': 'Allow', 'kind': 'allow_once'},
+            ],
+          },
+        }),
+      );
+      await permission.future;
+      await pumpEventQueue();
+      final response = pair.sentToAgent
+          .map((line) => jsonDecode(line) as Map<String, dynamic>)
+          .firstWhere((frame) => frame['id'] == 'user-cancel');
+      expect(response['result'], {
+        'outcome': {'outcome': 'cancelled'},
+      });
+      pair.finishHeldPrompt();
+      await turn;
+    });
 
     test('cancelled permission uses cancelled ACP outcome', () async {
       pair.holdPrompt = true;
@@ -322,9 +418,49 @@ void main() {
       final response = pair.sentToAgent
           .map((line) => jsonDecode(line) as Map<String, dynamic>)
           .firstWhere((frame) => frame['id'] == 'cancelled-approval');
-      expect(response['result'], {'outcome': 'cancelled'});
+      expect(response['result'], {
+        'outcome': {'outcome': 'cancelled'},
+      });
       pair.finishHeldPrompt();
       await turn;
+    });
+
+    test('a partial tool_call_update keeps the fields it omits', () async {
+      pair.promptUpdates = [
+        {
+          'sessionUpdate': 'tool_call',
+          'toolCallId': 'tool-7',
+          'title': 'free -m',
+          'kind': 'execute',
+          'status': 'in_progress',
+          'rawInput': 'free -m',
+          'content': [
+            {
+              'type': 'content',
+              'content': {'type': 'text', 'text': 'Mem: 7912'},
+            },
+          ],
+        },
+        {
+          'sessionUpdate': 'tool_call_update',
+          'toolCallId': 'tool-7',
+          'status': 'completed',
+        },
+      ];
+
+      final events = await _runTurn(adapter, 'check memory');
+
+      final tools = events
+          .whereType<ACPToolExecutionEvent>()
+          .map((event) => event.toolExecution)
+          .toList();
+      expect(tools, hasLength(2));
+      final merged = tools.last;
+      expect(merged.id, 'tool-7');
+      expect(merged.name, 'free -m', reason: '部分更新不能清掉已有标题');
+      expect(merged.command, 'free -m', reason: '部分更新不能清掉已有命令');
+      expect(merged.output, 'Mem: 7912', reason: '部分更新不能清掉已有输出');
+      expect(merged.status, ToolExecutionStatus.completed);
     });
 
     test('prompt failure surfaces a structured error and completes', () async {

@@ -251,6 +251,16 @@ void main() {
           overrides: [
             sftpOperationsProvider.overrideWithValue(fakeOps),
             sftpProvider.overrideWith(() => _TestSftpNotifier(sftpState)),
+            activeServerProvider.overrideWith(
+              () => _TestActiveServerNotifier(testServer),
+            ),
+            serverConnectionProvider.overrideWith(
+              () => _TestServerConnectionNotifier(
+                const ServerConnectionState(
+                  status: ConnectionStateEnum.connected,
+                ),
+              ),
+            ),
           ],
         ),
       );
@@ -284,6 +294,16 @@ void main() {
           overrides: [
             sftpOperationsProvider.overrideWithValue(fakeOps),
             sftpProvider.overrideWith(() => _TestSftpNotifier(sftpState)),
+            activeServerProvider.overrideWith(
+              () => _TestActiveServerNotifier(testServer),
+            ),
+            serverConnectionProvider.overrideWith(
+              () => _TestServerConnectionNotifier(
+                const ServerConnectionState(
+                  status: ConnectionStateEnum.connected,
+                ),
+              ),
+            ),
           ],
         ),
       );
@@ -319,6 +339,16 @@ void main() {
             overrides: [
               sftpOperationsProvider.overrideWithValue(fakeOps),
               sftpProvider.overrideWith(() => _TestSftpNotifier(sftpState)),
+              activeServerProvider.overrideWith(
+                () => _TestActiveServerNotifier(testServer),
+              ),
+              serverConnectionProvider.overrideWith(
+                () => _TestServerConnectionNotifier(
+                  const ServerConnectionState(
+                    status: ConnectionStateEnum.connected,
+                  ),
+                ),
+              ),
             ],
           ),
         );

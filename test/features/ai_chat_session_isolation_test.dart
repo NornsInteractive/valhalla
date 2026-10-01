@@ -13,6 +13,7 @@ import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/chat/ai_chat_view.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import '../support/temp_chat_db.dart';
 
 void main() {
   final testServer = ServerProfile(
@@ -47,7 +48,7 @@ void main() {
     Locale locale = const Locale('en'),
   }) {
     return ProviderScope(
-      overrides: [...overrides],
+      overrides: [tempChatRepositoryOverride(), ...overrides],
       child: MaterialApp(
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -237,7 +238,11 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Delete button is rendered even when it is the only session
+        // 删除入口在会话尾部的「更多」菜单里，即使只有一个会话也必须存在
+        final moreBtn = find.byKey(const Key('session_more_menu_sess-single'));
+        expect(moreBtn, findsOneWidget);
+        await tester.tap(moreBtn);
+        await tester.pumpAndSettle();
         final deleteBtn = find.byKey(const Key('delete_session_sess-single'));
         expect(deleteBtn, findsOneWidget);
 
@@ -256,6 +261,8 @@ void main() {
         expect(chatNotifier.deleteSessionCalled, isFalse);
 
         // Tap delete again and confirm
+        await tester.tap(moreBtn);
+        await tester.pumpAndSettle();
         await tester.tap(deleteBtn);
         await tester.pumpAndSettle();
 

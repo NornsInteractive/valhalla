@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:acpd/acpd.dart';
 import 'package:valhalla/data/models/agent_profile.dart';
@@ -36,13 +37,61 @@ class FakeAcpPair {
   /// When true, the fake agent answers `session/new` with an error instead.
   bool failSessionNew = false;
 
+  /// JSON-RPC error code used for `session/new`; null keeps [promptErrorCode].
+  int? sessionNewErrorCode;
+
+  /// `configOptions` the fake agent advertises in the `session/new` result.
+  List<Map<String, Object?>> configOptions = const [];
+
+  /// `agentCapabilities` the fake agent advertises in `initialize`.
+  ///
+  /// Covers `promptCapabilities` (attachment support), `sessionCapabilities`
+  /// (`session/list`) and `loadSession` (replay import via captureReplay).
+  Map<String, Object?> agentCapabilities = const {};
+
+  /// `agentInfo` the fake agent advertises in `initialize`.
+  ///
+  /// Null keeps the legacy shape where the agent declares no identity, which
+  /// must never be mistaken for codex-acp 2.0.0.
+  Map<String, Object?>? agentInfo;
+
+  /// `session/list` entries the fake agent answers with.
+  List<Map<String, Object?>> remoteSessions = const [];
+
+  /// `nextCursor` returned with `session/list`; null means last page.
+  String? listNextCursor;
+
+  /// When true, the fake agent answers `session/list` with an error.
+  bool failSessionList = false;
+
+  /// Replay updates streamed *before* `session/load` answers.
+  ///
+  /// Mirrors real agents, which replay history while the request is still in
+  /// flight; the client needs them to capture remote history into local storage.
+  List<Map<String, Object?>> loadReplayUpdates = const [];
+
+  /// Every `cursor` sent with `session/list`, in order (null = first page).
+  final List<String?> listCursors = [];
+
+  /// How many `session/list` requests the fake agent has seen.
+  int get listRequestCount => listCursors.length;
+
+  /// How many `session/new` requests the fake agent has seen.
+  int get newSessionCount => newSessionCwds.length;
+
   /// When true, the fake agent answers `session/load` with an error.
   ///
   /// Used to exercise the load → resume → create fallback chain.
   bool failSessionLoad = false;
 
+  /// JSON-RPC error code used for `session/load`; null keeps -32601.
+  int? sessionLoadErrorCode;
+
   /// When true, the fake agent answers `session/resume` with an error.
   bool failSessionResume = false;
+
+  /// JSON-RPC error code used for `session/resume`; null keeps -32601.
+  int? sessionResumeErrorCode;
 
   /// Every `sessionId` the client asked to load, in order.
   final List<String> loadRequests = [];
@@ -84,6 +133,54 @@ class FakeAcpPair {
   /// Delivers a raw frame straight to the client.
   void deliverToClient(String wire) => client.deliver(wire);
 
+  /// Replaces the advertised config options with a `config_option_update`.
+  ///
+  /// Emulates an agent pushing session config. Discovery must ignore it: the
+  /// model catalog comes from the independent agent API, never from here.
+  void deliverConfigOptions(List<Map<String, Object?>> options) =>
+      deliverToClient(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'session/update',
+          'params': {
+            'sessionId': sessionId,
+            'update': {
+              'sessionUpdate': 'config_option_update',
+              'configOptions': options,
+            },
+          },
+        }),
+      );
+
+  /// Every `session/set_config_option` request the client sent, in order.
+  final List<({String configId, Object? value})> setConfigOptionRequests = [];
+
+  /// When true, `session/set_config_option` answers with a JSON-RPC error.
+  bool failSetConfigOption = false;
+
+  /// JSON-RPC error code used when [failSetConfigOption] is set.
+  int setConfigOptionErrorCode = -32000;
+
+  /// Replaces the advertised options after an accepted config change.
+  ///
+  /// Models an agent whose model change swaps the reasoning choices; the
+  /// client must re-filter its stale reasoning selector against the answer.
+  List<Map<String, Object?>> Function(
+    String configId,
+    Object? value,
+    List<Map<String, Object?>> current,
+  )?
+  configOptionsAfterChange;
+
+  /// When true, the agent answers without echoing the requested value back.
+  ///
+  /// Models an adapter that ignores an unknown value: the client must not treat
+  /// the request as confirmation.
+  bool ignoreSetConfigOption = false;
+
+  /// Values this agent refuses even though the client offered them.
+  final Set<Object?> rejectedConfigValues = {};
+
   /// Answers a held `session/prompt` request with `end_turn`.
   void finishHeldPrompt() {
     _respondOk(_promptId, const {'stopReason': 'end_turn'});
@@ -99,8 +196,9 @@ class FakeAcpPair {
         case 'initialize':
           _respondOk(message.id, {
             'protocolVersion': 1,
-            'agentCapabilities': <String, Object?>{},
+            'agentCapabilities': agentCapabilities,
             'authMethods': authMethods,
+            if (agentInfo != null) 'agentInfo': agentInfo,
           });
         case 'authenticate':
           authenticateCallCount++;
@@ -115,34 +213,94 @@ class FakeAcpPair {
           if (failSessionNew) {
             _respondError(
               message.id,
-              promptErrorCode,
+              sessionNewErrorCode ?? promptErrorCode,
               'authentication required',
             );
           } else {
-            _respondOk(message.id, {'sessionId': sessionId});
+            final result = <String, Object?>{'sessionId': sessionId};
+            if (configOptions.isNotEmpty) {
+              result['configOptions'] = configOptions;
+            }
+            _respondOk(message.id, result);
           }
         case 'session/load':
           final requested = _sessionIdOf(message.params) ?? '';
           loadRequests.add(requested);
           if (failSessionLoad) {
-            _respondError(message.id, -32601, 'session/load not supported');
+            _respondError(
+              message.id,
+              sessionLoadErrorCode ?? -32601,
+              'session/load not supported',
+            );
           } else {
+            for (final update in loadReplayUpdates) {
+              _notifyUpdate(update);
+            }
             _respondOk(message.id, {
               'sessionId': requested.isEmpty ? sessionId : requested,
               'modes': null,
             });
+          }
+        case 'session/list':
+          listCursors.add(_cursorOf(message.params));
+          if (failSessionList) {
+            _respondError(message.id, -32601, 'session/list not supported');
+          } else {
+            final result = <String, Object?>{'sessions': remoteSessions};
+            if (listNextCursor != null) {
+              result['nextCursor'] = listNextCursor;
+            }
+            _respondOk(message.id, result);
           }
         case 'session/resume':
           final requested = _sessionIdOf(message.params) ?? '';
           resumeRequests.add(requested);
           if (failSessionResume) {
-            _respondError(message.id, -32601, 'session/resume not supported');
+            _respondError(
+              message.id,
+              sessionResumeErrorCode ?? -32601,
+              'session/resume not supported',
+            );
           } else {
             _respondOk(message.id, {
               'sessionId': requested.isEmpty ? sessionId : requested,
               'modes': null,
             });
           }
+        case 'session/set_config_option':
+          final params = message.params;
+          final configId = params is Map
+              ? params['configId']?.toString() ?? ''
+              : '';
+          final value = params is Map ? params['value'] : null;
+          setConfigOptionRequests.add((configId: configId, value: value));
+          if (failSetConfigOption) {
+            _respondError(
+              message.id,
+              setConfigOptionErrorCode,
+              'config option rejected',
+            );
+            break;
+          }
+          final accepted =
+              !ignoreSetConfigOption && !rejectedConfigValues.contains(value);
+          if (accepted) {
+            final replacement = configOptionsAfterChange?.call(
+              configId,
+              value,
+              configOptions,
+            );
+            if (replacement != null) configOptions = replacement;
+          }
+          _respondOk(message.id, {
+            'configOptions': [
+              for (final option in configOptions)
+                if (option['id'] == configId && accepted)
+                  {...option, 'currentValue': value}
+                else
+                  option,
+            ],
+          });
         case 'session/prompt':
           _promptId = message.id;
           for (final update in promptUpdates) {
@@ -206,6 +364,15 @@ class FakeAcpPair {
   String? _cwdOf(Object? params) {
     if (params is Map) {
       final value = params['cwd'];
+      if (value is String) return value;
+    }
+    return null;
+  }
+
+  /// Extracts `cursor` from a `session/list` request's params.
+  String? _cursorOf(Object? params) {
+    if (params is Map) {
+      final value = params['cursor'];
       if (value is String) return value;
     }
     return null;

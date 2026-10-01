@@ -86,7 +86,7 @@ void main() {
         resumeSessionId: 'gone-1',
       );
 
-      await _drain(adapter, 'start over');
+      final events = await _drain(adapter, 'start over');
 
       expect(pair.loadRequests, ['gone-1']);
       expect(pair.resumeRequests, ['gone-1']);
@@ -97,6 +97,12 @@ void main() {
         isFalse,
         reason: '新建意味着上下文已丢失，上层据此提示用户',
       );
+      expect(
+        events.whereType<ACPErrorEvent>().map((event) => event.error),
+        ['ACP_TRANSPORT_FAILURE: Bad state: ACP_SESSION_RESTART_REQUIRED'],
+        reason: '恢复失败必须给出明确诊断，而不是静默退回 session/new',
+      );
+      expect(events.whereType<ACPAuthRequiredEvent>(), isEmpty);
     });
 
     test('空字符串 sessionId 不会被当作可恢复会话', () async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +26,7 @@ class _FakeDockerCliService extends DockerCliService {
   List<DockerContainerUser> containerUsers = [];
   bool shouldThrow = false;
   bool shouldThrowUsers = false;
+  Future<List<DockerContainerUser>>? pendingUsers;
   int listContainersCalls = 0;
   int listContainerUsersCalls = 0;
   String? lastContainerReferenceQueried;
@@ -46,6 +49,10 @@ class _FakeDockerCliService extends DockerCliService {
   ) async {
     listContainerUsersCalls++;
     lastContainerReferenceQueried = containerReference;
+    final pending = pendingUsers;
+    if (pending != null) {
+      return pending;
+    }
     if (shouldThrowUsers) {
       throw Exception('Failed to read /etc/passwd');
     }
@@ -424,11 +431,11 @@ void main() {
         await tester.tap(find.textContaining('web-nginx').last);
         await tester.pumpAndSettle();
 
-        // container reference text field is populated with container ID
+        // container reference text field is populated with container name
         final refField = tester.widget<TextFormField>(
           find.byKey(const Key('agent_container_reference_field')),
         );
-        expect(refField.controller?.text, 'c-web-1234567890ab');
+        expect(refField.controller?.text, 'web-nginx');
 
         // Test error handling
         fakeDocker.shouldThrow = true;
@@ -701,15 +708,24 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(fakeDocker.listContainerUsersCalls, 1);
+        expect(fakeDocker.lastContainerReferenceQueried, 'web-prod');
+
+        // Switch binding to 'id'
+        final bindingIdBtn = find.byKey(const Key('agent_binding_id'));
+        await tester.ensureVisible(bindingIdBtn);
+        await tester.tap(bindingIdBtn);
+        await tester.pumpAndSettle();
+
+        expect(fakeDocker.listContainerUsersCalls, 2);
         expect(fakeDocker.lastContainerReferenceQueried, 'c-web-111111111111');
 
-        // Switch binding to 'name'
+        // Switch binding back to 'name'
         final bindingNameBtn = find.byKey(const Key('agent_binding_name'));
         await tester.ensureVisible(bindingNameBtn);
         await tester.tap(bindingNameBtn);
         await tester.pumpAndSettle();
 
-        expect(fakeDocker.listContainerUsersCalls, 2);
+        expect(fakeDocker.listContainerUsersCalls, 3);
         expect(fakeDocker.lastContainerReferenceQueried, 'web-prod');
       },
     );
@@ -934,6 +950,161 @@ void main() {
           fakeNotifier.addedAgents.first.containerUser,
           'custom-fallback-user',
         );
+      },
+    );
+
+    testWidgets(
+      'binding toggle keeps empty and unknown references, converts unique short hex id to its container name',
+      (tester) async {
+        final fakeNotifier = _FakeAgentRegistryNotifier();
+        final fakeDocker = _FakeDockerCliService();
+        fakeDocker.containers = [
+          const DockerContainer(
+            id: '0a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef',
+            name: 'alpha-box',
+            image: 'nginx',
+            status: 'Up',
+            state: DockerContainerState.running,
+            ports: '',
+          ),
+          const DockerContainer(
+            id: 'ff00112233445566778899aabbccddeeff00112233445566778899aabbccdd',
+            name: 'beta-box',
+            image: 'postgres',
+            status: 'Up',
+            state: DockerContainerState.running,
+            ports: '',
+          ),
+        ];
+
+        await tester.pumpWidget(
+          _buildTestApp(
+            child: const SizedBox.shrink(),
+            notifier: fakeNotifier,
+            dockerCliService: fakeDocker,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+
+        final dockerBtn = find.byKey(const Key('agent_target_docker'));
+        await tester.ensureVisible(dockerBtn);
+        await tester.tap(dockerBtn);
+        await tester.pumpAndSettle();
+
+        expect(fakeDocker.listContainersCalls, 1);
+
+        final refField = find.byKey(
+          const Key('agent_container_reference_field'),
+        );
+        final bindingId = find.byKey(const Key('agent_binding_id'));
+        final bindingName = find.byKey(const Key('agent_binding_name'));
+        String refText() =>
+            tester.widget<TextFormField>(refField).controller?.text ?? '';
+
+        // Empty reference stays empty in both directions
+        await tester.ensureVisible(bindingId);
+        await tester.tap(bindingId);
+        await tester.pumpAndSettle();
+        expect(refText(), '');
+
+        await tester.ensureVisible(bindingName);
+        await tester.tap(bindingName);
+        await tester.pumpAndSettle();
+        expect(refText(), '');
+
+        // Unknown reference is left untouched
+        await tester.ensureVisible(refField);
+        await tester.enterText(refField, 'missing-box');
+        await tester.pump(const Duration(milliseconds: 500));
+
+        await tester.ensureVisible(bindingId);
+        await tester.tap(bindingId);
+        await tester.pumpAndSettle();
+        expect(refText(), 'missing-box');
+
+        // Unique short hex id resolves to the second container's name
+        await tester.ensureVisible(refField);
+        await tester.enterText(refField, 'ff0011');
+        await tester.pump(const Duration(milliseconds: 500));
+
+        await tester.ensureVisible(bindingName);
+        await tester.tap(bindingName);
+        await tester.pumpAndSettle();
+
+        expect(refText(), 'beta-box');
+        expect(refText(), isNot('alpha-box'));
+      },
+    );
+
+    testWidgets(
+      'stale container user query resolving after reference is cleared leaves dropdown empty, disabled, and error-free',
+      (tester) async {
+        final fakeNotifier = _FakeAgentRegistryNotifier();
+        final fakeDocker = _FakeDockerCliService();
+        final pendingQuery = Completer<List<DockerContainerUser>>();
+        fakeDocker.pendingUsers = pendingQuery.future;
+
+        await tester.pumpWidget(
+          _buildTestApp(
+            child: const SizedBox.shrink(),
+            notifier: fakeNotifier,
+            dockerCliService: fakeDocker,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+
+        final dockerBtn = find.byKey(const Key('agent_target_docker'));
+        await tester.ensureVisible(dockerBtn);
+        await tester.tap(dockerBtn);
+        await tester.pumpAndSettle();
+
+        final refField = find.byKey(
+          const Key('agent_container_reference_field'),
+        );
+        await tester.ensureVisible(refField);
+        await tester.enterText(refField, 'stale-box');
+
+        // Debounce elapses, user query starts and stays pending
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(fakeDocker.listContainerUsersCalls, 1);
+
+        final userDropdown = find.byKey(
+          const Key('agent_container_user_dropdown'),
+        );
+        expect(userDropdown, findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(
+          tester.widget<DropdownButton<String>>(userDropdown).onChanged,
+          isNull,
+        );
+
+        // Clear the reference while loading (pump, never pumpAndSettle here)
+        await tester.enterText(refField, '');
+        await tester.pump();
+        expect(fakeDocker.listContainerUsersCalls, 1);
+
+        // Old future resolves after invalidation
+        pendingQuery.complete(const [
+          DockerContainerUser(name: 'ghost', uid: 4242, gid: 4242),
+        ]);
+        await tester.pumpAndSettle();
+
+        final dropdown = tester.widget<DropdownButton<String>>(userDropdown);
+        expect(dropdown.items ?? const <DropdownMenuItem<String>>[], isEmpty);
+        expect(dropdown.onChanged, isNull);
+        expect(find.textContaining('ghost'), findsNothing);
+        expect(
+          find.textContaining('Failed to load container users'),
+          findsNothing,
+        );
+        expect(find.byIcon(Icons.error_outline), findsNothing);
+        expect(fakeDocker.listContainerUsersCalls, 1);
       },
     );
   });

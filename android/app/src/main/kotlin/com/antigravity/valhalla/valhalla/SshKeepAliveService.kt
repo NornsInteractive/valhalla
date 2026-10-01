@@ -14,8 +14,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 
 /**
- * Keeps the app process alive so long-lived SSH/ACP connections are not
- * reclaimed while the app is in the background.
+ * Raises process priority for user-initiated remote sessions. Android may still
+ * suspend networking or reclaim the process; Dart must support recovery.
  *
  * Deliberately does **not** own any connection state: the SSH clients live in
  * Dart. This service only raises the process priority. Owning connections in two
@@ -129,11 +129,14 @@ class SshKeepAliveService : Service() {
                 type,
             )
             isRunning = true
-        } catch (_: Exception) {
+        } catch (error: Exception) {
             // e.g. ForegroundServiceStartNotAllowedException when the system
             // refuses a background start. Not fatal: the app keeps working in
             // the foreground, it just loses background protection.
             isRunning = false
+            android.util.Log.w("ValhallaKeepAlive", "Foreground service unavailable: ${error.javaClass.simpleName}")
+            stopSelf()
+            return START_NOT_STICKY
         }
 
         // STICKY: the system restarts the service if the process is killed.

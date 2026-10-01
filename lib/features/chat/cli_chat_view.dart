@@ -22,6 +22,7 @@ import '../../core/providers/commands_provider.dart';
 import '../../data/models/chat_launch_preference.dart';
 import 'widgets/chat_run_settings_dialog.dart';
 import 'widgets/chat_run_settings_strip.dart';
+import 'widgets/session_recovery_banner.dart';
 
 class CliChatView extends ConsumerStatefulWidget {
   const CliChatView({super.key});
@@ -37,6 +38,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
   String? _lastReportedError;
   String? _lastReportedErrorDetail;
   String? _scrolledSessionId;
+  bool _userNearBottom = true;
 
   @override
   void initState() {
@@ -67,6 +69,12 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
 
   void _onMessagesScroll() {
     if (!_messagesScrollController.hasClients) return;
+    final max = _messagesScrollController.position.maxScrollExtent;
+    final current = _messagesScrollController.offset;
+    final nearBottom = (max - current) <= 80;
+    if (_userNearBottom != nearBottom) {
+      _userNearBottom = nearBottom;
+    }
     if (_messagesScrollController.position.pixels <= 20) {
       final state = ref.read(cliChatProvider);
       if (state.hasOlderMessages &&
@@ -86,6 +94,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
     } else if (nextSessionId != _scrolledSessionId &&
         next.messages.isNotEmpty) {
       _scrolledSessionId = nextSessionId;
+      _userNearBottom = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_messagesScrollController.hasClients) return;
         _messagesScrollController.jumpTo(
@@ -101,7 +110,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
         nextSessionId != null &&
         previous.messages.isNotEmpty &&
         next.messages.length > previous.messages.length &&
-        next.messages.last.id == previous.messages.last.id &&
+        next.messages.any((m) => m.id == previous.messages.first.id) &&
         next.messages.first.id != previous.messages.first.id;
 
     if (isPrepend && _messagesScrollController.hasClients) {
@@ -114,6 +123,28 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
         if (delta > 0) {
           _messagesScrollController.jumpTo(oldPixels + delta);
         }
+      });
+      return;
+    }
+
+    final hasNewMessage =
+        previous != null &&
+        previousSessionId == nextSessionId &&
+        next.messages.length > previous.messages.length &&
+        !isPrepend;
+
+    if (hasNewMessage &&
+        _userNearBottom &&
+        _messagesScrollController.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted ||
+            !_messagesScrollController.hasClients ||
+            !_userNearBottom) {
+          return;
+        }
+        _messagesScrollController.jumpTo(
+          _messagesScrollController.position.maxScrollExtent,
+        );
       });
     }
   }
@@ -232,6 +263,13 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
   Future<void> _handleSend() async {
     final text = _promptController.text.trim();
     if (text.isEmpty) return;
+
+    final currentState = ref.read(cliChatProvider);
+    final isConnected = ref.read(serverConnectionProvider).isConnected;
+    final isRecovering =
+        currentState.recoveryStatus == SessionRecoveryStatus.reconnecting ||
+        currentState.recoveryStatus == SessionRecoveryStatus.syncing;
+    if (!isConnected || isRecovering) return;
 
     final notifier = ref.read(cliChatProvider.notifier);
     _promptController.clear();
@@ -406,7 +444,19 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
               ),
             ),
             const VerticalDivider(width: 1),
-            Expanded(child: _buildMainContent(context, cliState)),
+            Expanded(
+              child: Column(
+                children: [
+                  SessionRecoveryBanner(
+                    key: const Key('cliChatSessionRecoveryBannerDesktop'),
+                    status: cliState.recoveryStatus,
+                    onRetry: () =>
+                        ref.read(cliChatProvider.notifier).recoverConnection(),
+                  ),
+                  Expanded(child: _buildMainContent(context, cliState)),
+                ],
+              ),
+            ),
           ],
         ),
       );
@@ -465,6 +515,12 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
             ),
           ),
           const Divider(height: 1),
+          SessionRecoveryBanner(
+            key: const Key('cliChatSessionRecoveryBannerMobile'),
+            status: cliState.recoveryStatus,
+            onRetry: () =>
+                ref.read(cliChatProvider.notifier).recoverConnection(),
+          ),
           Expanded(child: _buildMainContent(context, cliState)),
         ],
       ),
@@ -1131,7 +1187,9 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
               decoration: BoxDecoration(
                 color: context.vWarning.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(VRadius.input),
-                border: Border.all(color: context.vWarning.withValues(alpha: 0.45)),
+                border: Border.all(
+                  color: context.vWarning.withValues(alpha: 0.45),
+                ),
               ),
               child: Row(
                 children: [
@@ -1159,7 +1217,11 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
             settings: state.runSettings,
             capabilities: state.capabilities,
             isStructuredSend: state.structuredSend,
-            isBusy: state.isSending,
+            isBusy:
+                state.isSending ||
+                !ref.watch(serverConnectionProvider).isConnected ||
+                state.recoveryStatus == SessionRecoveryStatus.reconnecting ||
+                state.recoveryStatus == SessionRecoveryStatus.syncing,
             tuneButtonKey: const Key('cli_run_settings_button'),
             onOpenSettings: () => _openRunSettings(context, state),
           ),
@@ -1185,6 +1247,11 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
   Widget _buildApprovalsSection(BuildContext context, CliChatState state) {
     final notifier = ref.read(cliChatProvider.notifier);
     final warning = context.vWarning;
+    final connState = ref.watch(serverConnectionProvider);
+    final canApprove =
+        connState.isConnected &&
+        state.recoveryStatus != SessionRecoveryStatus.reconnecting &&
+        state.recoveryStatus != SessionRecoveryStatus.syncing;
 
     return Container(
       color: warning.withValues(alpha: 0.08),
@@ -1251,15 +1318,17 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                     children: [
                       OutlinedButton(
                         key: Key('cli_approval_decline_${approval.id}'),
-                        onPressed: () =>
-                            notifier.respondApproval(approval.id, false),
+                        onPressed: canApprove
+                            ? () => notifier.respondApproval(approval.id, false)
+                            : null,
                         child: Text(context.l10n.cliApprovalDecline),
                       ),
                       const SizedBox(width: 8),
                       FilledButton(
                         key: Key('cli_approval_allow_${approval.id}'),
-                        onPressed: () =>
-                            notifier.respondApproval(approval.id, true),
+                        onPressed: canApprove
+                            ? () => notifier.respondApproval(approval.id, true)
+                            : null,
                         child: Text(context.l10n.cliApprovalAllow),
                       ),
                     ],
@@ -1407,6 +1476,12 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
 
   Widget _buildStructuredInputArea(BuildContext context, CliChatState state) {
     final notifier = ref.read(cliChatProvider.notifier);
+    final connState = ref.watch(serverConnectionProvider);
+    final canSend =
+        connState.isConnected &&
+        state.recoveryStatus != SessionRecoveryStatus.reconnecting &&
+        state.recoveryStatus != SessionRecoveryStatus.syncing &&
+        !state.isSending;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1415,7 +1490,11 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
           settings: state.runSettings,
           capabilities: state.capabilities,
           isStructuredSend: state.structuredSend,
-          isBusy: state.isSending,
+          isBusy:
+              state.isSending ||
+              !connState.isConnected ||
+              state.recoveryStatus == SessionRecoveryStatus.reconnecting ||
+              state.recoveryStatus == SessionRecoveryStatus.syncing,
           tuneButtonKey: const Key('cli_run_settings_button'),
           onOpenSettings: () => _openRunSettings(context, state),
         ),
@@ -1449,7 +1528,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                         borderRadius: BorderRadius.circular(VRadius.input),
                       ),
                     ),
-                    onSubmitted: (_) => _handleSend(),
+                    onSubmitted: canSend ? (_) => _handleSend() : null,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1472,7 +1551,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                   PressableScale(
                     child: IconButton.filled(
                       key: const Key('cli_send_button'),
-                      onPressed: _handleSend,
+                      onPressed: canSend ? _handleSend : null,
                       icon: const Icon(Icons.send_rounded),
                     ),
                   ),
@@ -1504,12 +1583,17 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
 
   Widget _buildComposerActionsMenu(BuildContext context, CliChatState state) {
     final hasSkills = state.composerCatalog.skills.isNotEmpty;
+    final connState = ref.watch(serverConnectionProvider);
+    final canAct =
+        connState.isConnected &&
+        state.recoveryStatus != SessionRecoveryStatus.reconnecting &&
+        state.recoveryStatus != SessionRecoveryStatus.syncing;
 
     return PopupMenuButton<String>(
       key: const Key('cli_composer_actions_menu_button'),
       icon: const Icon(Icons.add_circle_outline, size: 22),
       tooltip: context.l10n.cliComposerInsertAction,
-      enabled: !state.isSending,
+      enabled: !state.isSending && canAct,
       onOpened: () {
         ref.read(cliChatProvider.notifier).refreshComposerCatalog();
       },
@@ -1636,10 +1720,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        skill.label,
-                        style: ctx.textTheme.titleSmall,
-                      ),
+                      Text(skill.label, style: ctx.textTheme.titleSmall),
                       if (skill.description != null &&
                           skill.description!.trim().isNotEmpty)
                         Text(
@@ -1689,10 +1770,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        cmd.title,
-                        style: ctx.textTheme.titleSmall,
-                      ),
+                      Text(cmd.title, style: ctx.textTheme.titleSmall),
                       Text(
                         cmd.command,
                         style: monoTextStyle(
@@ -1842,6 +1920,11 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
   }
 
   void _openRunSettings(BuildContext context, CliChatState state) {
+    final connState = ref.read(serverConnectionProvider);
+    final isRecovering =
+        state.recoveryStatus == SessionRecoveryStatus.reconnecting ||
+        state.recoveryStatus == SessionRecoveryStatus.syncing;
+    if (!connState.isConnected || isRecovering) return;
     ChatRunSettingsDialog.show(
       context,
       initialSettings: state.runSettings,
@@ -1856,6 +1939,18 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
     BuildContext context,
     String initialPath,
   ) async {
+    final isConnected = ref.read(serverConnectionProvider).isConnected;
+    final isRecovering =
+        ref.read(cliChatProvider).recoveryStatus ==
+            SessionRecoveryStatus.reconnecting ||
+        ref.read(cliChatProvider).recoveryStatus ==
+            SessionRecoveryStatus.syncing;
+    if (!isConnected || isRecovering) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+      return;
+    }
     final initialServerId = ref.read(activeServerProvider)?.id;
     final sftpOps = ref.read(sftpOperationsProvider);
     final notifier = ref.read(cliChatProvider.notifier);

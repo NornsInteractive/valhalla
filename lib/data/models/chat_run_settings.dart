@@ -9,6 +9,9 @@ enum OperationPermissionPolicy {
 
 class ChatRunSettings {
   final String? modelId;
+
+  /// Explicit user input, not a model discovered in a catalog.
+  final bool customModel;
   final String? reasoningId;
   final OperationPermissionPolicy permissionPolicy;
   final String? modeId;
@@ -16,6 +19,7 @@ class ChatRunSettings {
 
   const ChatRunSettings({
     this.modelId,
+    this.customModel = false,
     this.reasoningId,
     this.permissionPolicy = OperationPermissionPolicy.askEveryTime,
     this.modeId,
@@ -25,6 +29,7 @@ class ChatRunSettings {
   ChatRunSettings copyWith({
     String? modelId,
     bool clearModel = false,
+    bool? customModel,
     String? reasoningId,
     bool clearReasoning = false,
     OperationPermissionPolicy? permissionPolicy,
@@ -33,6 +38,7 @@ class ChatRunSettings {
     Map<String, Object>? configValues,
   }) => ChatRunSettings(
     modelId: clearModel ? null : modelId ?? this.modelId,
+    customModel: clearModel ? false : customModel ?? this.customModel,
     reasoningId: clearReasoning ? null : reasoningId ?? this.reasoningId,
     permissionPolicy: permissionPolicy ?? this.permissionPolicy,
     modeId: clearMode ? null : modeId ?? this.modeId,
@@ -41,6 +47,7 @@ class ChatRunSettings {
 
   Map<String, dynamic> toJson() => {
     'modelId': modelId,
+    'customModel': customModel,
     'reasoningId': reasoningId,
     'permissionPolicy': permissionPolicy.name,
     'modeId': modeId,
@@ -50,6 +57,7 @@ class ChatRunSettings {
   factory ChatRunSettings.fromJson(Map<String, dynamic> json) =>
       ChatRunSettings(
         modelId: json['modelId'] as String?,
+        customModel: json['customModel'] == true,
         reasoningId: json['reasoningId'] as String?,
         modeId: json['modeId'] as String?,
         configValues: {
@@ -73,6 +81,8 @@ class ChatSettingOption {
 }
 
 class AgentRuntimeCapabilities {
+  /// Opaque account/runtime key for isolating cached cloud catalogs, not a token.
+  final String? catalogAccountKey;
   final List<ChatSettingOption> models;
   final List<ChatSettingOption> reasoningLevels;
   final bool supportsStructuredSettings;
@@ -83,6 +93,7 @@ class AgentRuntimeCapabilities {
   final List<ChatRuntimeSetting> extraSettings;
 
   const AgentRuntimeCapabilities({
+    this.catalogAccountKey,
     this.models = const [],
     this.reasoningLevels = const [],
     this.supportsStructuredSettings = false,

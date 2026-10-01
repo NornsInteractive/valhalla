@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/infrastructure_providers.dart';
 import '../../core/providers/server_provider.dart';
+import '../../core/providers/app_visibility_provider.dart';
 import '../../infrastructure/system/system_metrics_sampler.dart';
 import '../../infrastructure/system/process_service.dart';
 import '../../infrastructure/system/disk_usage_service.dart';
@@ -9,7 +10,9 @@ import '../../infrastructure/system/system_hardware_service.dart';
 final systemHardwareProvider = FutureProvider.autoDispose<SystemHardwareInfo>((
   ref,
 ) async {
-  final serverId = ref.watch(activeServerProvider.select((s) => s?.id));
+  final serverId = ref
+      .watch(activeServerProvider.select((s) => s?.connectionKey))
+      ?.$1;
   final connected = ref.watch(
     serverConnectionProvider.select((s) => s.isConnected),
   );
@@ -24,7 +27,7 @@ final resourceProcessesProvider = StreamProvider.autoDispose<List<ProcessInfo>>(
     if (server == null || !connected) return;
     final service = ref.watch(processServiceProvider);
     while (ref.mounted) {
-      yield await service.list(server.id);
+      if (ref.read(appVisibilityProvider)) yield await service.list(server.id);
       await Future<void>.delayed(const Duration(seconds: 3));
     }
   },
@@ -49,7 +52,10 @@ final systemMetricsStreamProvider =
       }
 
       final sampler = ref.watch(systemMetricsSamplerProvider);
-      return sampler.watch(activeServer.id);
+      return sampler.watch(
+        activeServer.id,
+        isActive: () => ref.mounted && ref.read(appVisibilityProvider),
+      );
     });
 
 const systemMetricsHistoryLimit = 60;
@@ -60,7 +66,7 @@ class SystemMetricsHistoryNotifier
   @override
   List<SystemMetricsSnapshot> build() {
     // 服务器变化时重建并清空，避免把不同主机的数据画在同一条曲线上。
-    ref.watch(activeServerProvider.select((server) => server?.id));
+    ref.watch(activeServerProvider.select((server) => server?.connectionKey));
     ref.listen(systemMetricsStreamProvider, (_, next) {
       next.whenData(_append);
     });

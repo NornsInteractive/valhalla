@@ -49,7 +49,7 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
   AgentPresetType _selectedPreset = AgentPresetType.claudeCode;
 
   String _executionTarget = 'host';
-  String _containerBinding = 'id';
+  String _containerBinding = 'name';
 
   bool _isLoadingContainers = false;
   String? _containersError;
@@ -86,7 +86,7 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
     _loginController = TextEditingController(text: init?.loginCommand ?? '');
 
     _executionTarget = init?.executionTarget ?? 'host';
-    _containerBinding = init?.containerBinding ?? 'id';
+    _containerBinding = init?.containerBinding ?? 'name';
     _containerReferenceController = TextEditingController(
       text: init?.containerReference ?? '',
     );
@@ -160,14 +160,61 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
     }
   }
 
+  void _invalidateContainerUsers() {
+    _containerUsersRequestId++;
+    _containerUsers = null;
+    _isLoadingContainerUsers = false;
+    _containerUsersError = null;
+    _selectedContainerUser = null;
+  }
+
+  DockerContainer? _findMatchingContainer(String rawRef) {
+    final ref = rawRef.trim();
+    if (_containers == null || _containers!.isEmpty || ref.isEmpty) {
+      return null;
+    }
+
+    final exactNameMatches = _containers!.where((c) => c.name == ref).toList();
+    final exactIdMatches = _containers!
+        .where((c) => c.id == ref || c.id.toLowerCase() == ref.toLowerCase())
+        .toList();
+
+    if (exactNameMatches.length == 1 && exactIdMatches.isEmpty) {
+      return exactNameMatches.first;
+    }
+    if (exactIdMatches.length == 1 && exactNameMatches.isEmpty) {
+      return exactIdMatches.first;
+    }
+    if (exactNameMatches.length == 1 && exactIdMatches.length == 1) {
+      if (exactNameMatches.first.id == exactIdMatches.first.id) {
+        return exactNameMatches.first;
+      }
+      return null;
+    }
+    if (exactNameMatches.length > 1 || exactIdMatches.length > 1) {
+      return null;
+    }
+
+    final isHex = RegExp(r'^[0-9a-fA-F]+$').hasMatch(ref);
+    if (isHex) {
+      final prefixMatches = _containers!
+          .where((c) => c.id.toLowerCase().startsWith(ref.toLowerCase()))
+          .toList();
+      if (prefixMatches.length == 1) {
+        return prefixMatches.first;
+      }
+    }
+
+    return null;
+  }
+
   Future<void> _fetchContainerUsers() async {
-    final refText = _containerReferenceController.text.trim();
-    if (refText.isEmpty || _executionTarget != 'docker') {
+    final capturedTarget = _executionTarget;
+    final capturedRef = _containerReferenceController.text.trim();
+    if (capturedRef.isEmpty || capturedTarget != 'docker') {
       if (mounted) {
         setState(() {
-          _containerUsers = null;
-          _isLoadingContainerUsers = false;
-          _containerUsersError = null;
+          _invalidateContainerUsers();
         });
       }
       return;
@@ -180,8 +227,11 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
     });
     try {
       final cli = ref.read(dockerCliServiceProvider);
-      final list = await cli.listContainerUsers(widget.serverId, refText);
-      if (mounted && requestId == _containerUsersRequestId) {
+      final list = await cli.listContainerUsers(widget.serverId, capturedRef);
+      if (mounted &&
+          requestId == _containerUsersRequestId &&
+          _executionTarget == capturedTarget &&
+          _containerReferenceController.text.trim() == capturedRef) {
         setState(() {
           _containerUsers = list;
           _isLoadingContainerUsers = false;
@@ -193,7 +243,10 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
         });
       }
     } catch (e) {
-      if (mounted && requestId == _containerUsersRequestId) {
+      if (mounted &&
+          requestId == _containerUsersRequestId &&
+          _executionTarget == capturedTarget &&
+          _containerReferenceController.text.trim() == capturedRef) {
         setState(() {
           _containerUsersError = e.toString();
           _isLoadingContainerUsers = false;
@@ -532,19 +585,19 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
             onSelectionChanged: (selected) {
               if (selected.isNotEmpty) {
                 final newTarget = selected.first;
+                _containerRefDebounce?.cancel();
                 setState(() {
                   _executionTarget = newTarget;
-                  if (newTarget == 'docker') {
-                    if (_containers == null && !_isLoadingContainers) {
-                      _fetchContainers();
-                    }
-                    if (_containerReferenceController.text.trim().isNotEmpty &&
-                        _containerUsers == null &&
-                        !_isLoadingContainerUsers) {
-                      _fetchContainerUsers();
-                    }
-                  }
+                  _invalidateContainerUsers();
                 });
+                if (newTarget == 'docker') {
+                  if (_containers == null && !_isLoadingContainers) {
+                    _fetchContainers();
+                  }
+                  if (_containerReferenceController.text.trim().isNotEmpty) {
+                    _fetchContainerUsers();
+                  }
+                }
               }
             },
           ),
@@ -575,23 +628,21 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
               selected: {_containerBinding},
               onSelectionChanged: (selected) {
                 if (selected.isNotEmpty) {
-                  setState(() {
-                    _containerBinding = selected.first;
-                    if (_containers != null && _containers!.isNotEmpty) {
-                      final current = _containerReferenceController.text.trim();
-                      final match = _containers!.firstWhere(
-                        (c) => c.id == current || c.name == current,
-                        orElse: () => _containers!.first,
-                      );
-                      _containerReferenceController.text =
-                          _containerBinding == 'id' ? match.id : match.name;
-                    }
-                    _containerUsers = null;
-                    _selectedContainerUser = null;
-                    _containerUsersError = null;
-                  });
+                  final newBinding = selected.first;
                   _containerRefDebounce?.cancel();
-                  if (_containerReferenceController.text.trim().isNotEmpty) {
+                  setState(() {
+                    _containerBinding = newBinding;
+                    final current = _containerReferenceController.text.trim();
+                    final match = _findMatchingContainer(current);
+                    if (match != null) {
+                      _containerReferenceController.text = newBinding == 'id'
+                          ? match.id
+                          : match.name;
+                    }
+                    _invalidateContainerUsers();
+                  });
+                  if (_containerReferenceController.text.trim().isNotEmpty &&
+                      _executionTarget == 'docker') {
                     _fetchContainerUsers();
                   }
                 }
@@ -639,10 +690,7 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                         context.l10n.agentContainersLoadFailed(
                           _containersError!,
                         ),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: context.vDanger,
-                        ),
+                        style: TextStyle(fontSize: 11, color: context.vDanger),
                       ),
                     ),
                     IconButton(
@@ -724,13 +772,11 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                         }).toList(),
                         onChanged: (selected) {
                           if (selected != null) {
+                            _containerRefDebounce?.cancel();
                             setState(() {
                               _containerReferenceController.text = selected;
-                              _containerUsers = null;
-                              _selectedContainerUser = null;
-                              _containerUsersError = null;
+                              _invalidateContainerUsers();
                             });
-                            _containerRefDebounce?.cancel();
                             _fetchContainerUsers();
                           }
                         },
@@ -763,14 +809,9 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                 _containerRefDebounce?.cancel();
                 final trimmed = val.trim();
                 setState(() {
-                  _containerUsers = null;
-                  _selectedContainerUser = null;
-                  _containerUsersError = null;
-                  if (trimmed.isEmpty) {
-                    _isLoadingContainerUsers = false;
-                  }
+                  _invalidateContainerUsers();
                 });
-                if (trimmed.isNotEmpty) {
+                if (trimmed.isNotEmpty && _executionTarget == 'docker') {
                   _containerRefDebounce = Timer(
                     const Duration(milliseconds: 350),
                     () {
@@ -912,7 +953,10 @@ class _AgentFormDialogState extends ConsumerState<AgentFormDialog> {
                       vertical: 12,
                     ),
                   ),
-                  style: monoTextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+                  style: monoTextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                  ),
                 );
 
                 if (isNarrow) {

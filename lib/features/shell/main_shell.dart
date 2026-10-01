@@ -32,7 +32,6 @@ import '../nas/widgets/nas_mini_player.dart';
 import '../nas/widgets/nas_source_dialog.dart';
 import '../servers/server_form_dialog.dart';
 import '../settings/settings_view.dart';
-import '../settings/widgets/theme_accent_color_dialog.dart';
 import '../system/system_view.dart';
 import '../terminal/terminal_view.dart';
 import 'widgets/connection_status_banner.dart';
@@ -323,222 +322,6 @@ class _MainShellState extends ConsumerState<MainShell> {
     if (newServer != null) {
       await ref.read(activeServerProvider.notifier).selectServer(newServer.id);
     }
-  }
-
-  void _showThemeQuickSwitch(BuildContext parentContext) {
-    showModalBottomSheet(
-      context: parentContext,
-      isScrollControlled: true,
-      constraints: const BoxConstraints(
-        maxWidth: LayoutBreakpoints.modalSheetMaxWidth,
-      ),
-      builder: (sheetCtx) {
-        return SafeArea(
-          child: Consumer(
-            builder: (dialogCtx, ref, _) {
-              final settings = ref.watch(settingsProvider);
-              final notifier = ref.read(settingsProvider.notifier);
-
-              return SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 16,
-                    horizontal: 16,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            dialogCtx.l10n.themeQuickSwitch,
-                            style: dialogCtx.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => Navigator.pop(sheetCtx),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      RadioListTile<AppThemeMode>(
-                        title: Text(dialogCtx.l10n.themeSystem),
-                        value: AppThemeMode.system,
-                        groupValue: settings.themeMode,
-                        onChanged: (val) {
-                          if (val != null) notifier.setThemeMode(val);
-                        },
-                      ),
-                      RadioListTile<AppThemeMode>(
-                        title: Text(dialogCtx.l10n.themeLight),
-                        value: AppThemeMode.light,
-                        groupValue: settings.themeMode,
-                        onChanged: (val) {
-                          if (val != null) notifier.setThemeMode(val);
-                        },
-                      ),
-                      RadioListTile<AppThemeMode>(
-                        title: Text(dialogCtx.l10n.themeDark),
-                        value: AppThemeMode.dark,
-                        groupValue: settings.themeMode,
-                        onChanged: (val) {
-                          if (val != null) notifier.setThemeMode(val);
-                        },
-                      ),
-                      RadioListTile<AppThemeMode>(
-                        title: Text(dialogCtx.l10n.themeAmoled),
-                        value: AppThemeMode.amoled,
-                        groupValue: settings.themeMode,
-                        onChanged: (val) {
-                          if (val != null) notifier.setThemeMode(val);
-                        },
-                      ),
-                      const Divider(),
-                      const SizedBox(height: 4),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: [
-                            Text(
-                              dialogCtx.l10n.settingsAccentColor,
-                              style: dialogCtx.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextButton.icon(
-                              key: const Key(
-                                'theme_quick_custom_accent_button',
-                              ),
-                              icon: const Icon(
-                                Icons.palette_outlined,
-                                size: 16,
-                              ),
-                              label: Text(
-                                dialogCtx.l10n.accentColorDialogTitle,
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                              onPressed: () {
-                                final systemSlot =
-                                    Theme.of(parentContext).brightness ==
-                                        Brightness.dark
-                                    ? AppThemeMode.dark
-                                    : AppThemeMode.light;
-                                final initialMode =
-                                    settings.themeMode == AppThemeMode.system
-                                    ? systemSlot
-                                    : settings.themeMode;
-                                Navigator.pop(sheetCtx);
-                                if (parentContext.mounted) {
-                                  showDialog<void>(
-                                    context: parentContext,
-                                    builder: (_) => ThemeAccentColorDialog(
-                                      settings: settings,
-                                      notifier: notifier,
-                                      initialMode: initialMode,
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Builder(
-                        builder: (pickerCtx) {
-                          final targetSlot =
-                              settings.themeMode == AppThemeMode.system
-                              ? (Theme.of(pickerCtx).brightness ==
-                                        Brightness.dark
-                                    ? AppThemeMode.dark
-                                    : AppThemeMode.light)
-                              : settings.themeMode;
-                          final currentAccent = settings.colorForTheme(
-                            targetSlot,
-                          );
-
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Wrap(
-                              spacing: 12,
-                              runSpacing: 12,
-                              children: AppAccentColor.values.map((accent) {
-                                final isSelected =
-                                    (currentAccent.toARGB32() & 0xFFFFFF) ==
-                                    (accent.color.toARGB32() & 0xFFFFFF);
-                                return PressableScale(
-                                  pressedScale: 0.88,
-                                  child: InkWell(
-                                    onTap: () => notifier.setThemeAccentColor(
-                                      targetSlot,
-                                      accent.color,
-                                    ),
-                                    borderRadius: BorderRadius.circular(
-                                      VRadius.pill,
-                                    ),
-                                    child: AnimatedContainer(
-                                      duration: VTiming.base,
-                                      curve: VCurves.emphasized,
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        color: accent.color,
-                                        shape: BoxShape.circle,
-                                        border: isSelected
-                                            ? Border.all(
-                                                color: dialogCtx
-                                                    .colorScheme
-                                                    .onSurface,
-                                                width: 2.5,
-                                              )
-                                            : null,
-                                        boxShadow: isSelected
-                                            ? [
-                                                BoxShadow(
-                                                  color: accent.color
-                                                      .withValues(alpha: 0.4),
-                                                  blurRadius: 10,
-                                                  spreadRadius: 1,
-                                                ),
-                                              ]
-                                            : null,
-                                      ),
-                                      child: AnimatedScale(
-                                        scale: isSelected ? 1.0 : 0.0,
-                                        duration: VTiming.base,
-                                        curve: VCurves.springish,
-                                        child: const Icon(
-                                          Icons.check,
-                                          color: Colors.white,
-                                          size: 18,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
   }
 
   void _showNasSourceSelector(BuildContext context) {
@@ -1175,6 +958,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final activeServer = ref.watch(activeServerProvider);
     final connState = ref.watch(serverConnectionProvider);
     final screenWidth = MediaQuery.sizeOf(context).width;
+    final isTight = screenWidth < 720;
 
     final isNasSection = viewIndexToAppSection(_currentIndex) == AppSection.nas;
     final nasSourcesState = isNasSection ? ref.watch(nasSourcesProvider) : null;
@@ -1215,27 +999,34 @@ class _MainShellState extends ConsumerState<MainShell> {
             ),
           ),
           const SizedBox(width: 8),
-          AnimatedSwitcher(
-            duration: VTiming.base,
-            switchInCurve: VCurves.decelerate,
-            switchOutCurve: VCurves.accelerate,
-            transitionBuilder: (child, anim) => FadeTransition(
-              opacity: anim,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 0.5),
-                  end: Offset.zero,
-                ).animate(anim),
-                child: child,
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 160),
+              child: AnimatedSwitcher(
+                duration: VTiming.base,
+                switchInCurve: VCurves.decelerate,
+                switchOutCurve: VCurves.accelerate,
+                transitionBuilder: (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.5),
+                      end: Offset.zero,
+                    ).animate(anim),
+                    child: child,
+                  ),
+                ),
+                child: Text(
+                  localizedAppSectionName(
+                    context,
+                    viewIndexToAppSection(_currentIndex),
+                  ),
+                  key: const Key('main_shell_page_title'),
+                  style: context.textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
-            ),
-            child: Text(
-              localizedAppSectionName(
-                context,
-                viewIndexToAppSection(_currentIndex),
-              ),
-              key: const Key('main_shell_page_title'),
-              style: context.textTheme.titleMedium,
             ),
           ),
           const Spacer(),
@@ -1251,20 +1042,15 @@ class _MainShellState extends ConsumerState<MainShell> {
             ),
             const SizedBox(width: 4),
           ],
-          IconButton(
-            icon: const Icon(Icons.palette_outlined, size: 20),
-            tooltip: context.l10n.themeQuickSwitch,
-            onPressed: () => _showThemeQuickSwitch(context),
-          ),
-          const SizedBox(width: 4),
           if (!isNasSection) ...[
             Flexible(
+              flex: 2,
               child: InkWell(
                 borderRadius: BorderRadius.circular(6),
                 onTap: () => _showServerSelector(context),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTight ? 6 : 10,
                     vertical: 6,
                   ),
                   child: Row(
@@ -1320,32 +1106,45 @@ class _MainShellState extends ConsumerState<MainShell> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             else if (!connState.isConnected)
-              FilledButton.icon(
-                icon: const Icon(Icons.link, size: 14),
-                label: Text(
-                  context.l10n.connectNow,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                onPressed: () => _handleConnect(),
-              )
+              isTight
+                  ? IconButton(
+                      icon: const Icon(Icons.link, size: 18),
+                      tooltip: context.l10n.connectNow,
+                      onPressed: () => _handleConnect(),
+                    )
+                  : FilledButton.icon(
+                      icon: const Icon(Icons.link, size: 14),
+                      label: Text(
+                        context.l10n.connectNow,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      onPressed: () => _handleConnect(),
+                    )
             else
-              OutlinedButton.icon(
-                icon: const Icon(Icons.sync, size: 14),
-                label: Text(
-                  context.l10n.reconnect,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                onPressed: () => _handleConnect(),
-              ),
+              isTight
+                  ? IconButton(
+                      icon: const Icon(Icons.sync, size: 18),
+                      tooltip: context.l10n.reconnect,
+                      onPressed: () => _handleConnect(),
+                    )
+                  : OutlinedButton.icon(
+                      icon: const Icon(Icons.sync, size: 14),
+                      label: Text(
+                        context.l10n.reconnect,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      onPressed: () => _handleConnect(),
+                    ),
           ] else ...[
             Flexible(
+              flex: 2,
               child: InkWell(
                 key: const Key('main_shell_nas_source_selector'),
                 borderRadius: BorderRadius.circular(6),
                 onTap: () => _showNasSourceSelector(context),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTight ? 6 : 10,
                     vertical: 6,
                   ),
                   child: Row(
@@ -1466,11 +1265,6 @@ class _MainShellState extends ConsumerState<MainShell> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.palette_outlined, size: 20),
-            tooltip: context.l10n.themeQuickSwitch,
-            onPressed: () => _showThemeQuickSwitch(context),
-          ),
           if (!isNasSection) ...[
             InkWell(
               borderRadius: BorderRadius.circular(6),

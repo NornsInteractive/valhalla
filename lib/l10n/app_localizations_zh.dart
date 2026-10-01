@@ -1851,6 +1851,127 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cliLoadingOlderMessages => '正在加载更早历史消息...';
 
   @override
+  String get chatLoadOlderMessages => '加载更早消息';
+
+  @override
+  String get chatCommandsTooltip => '命令菜单';
+
+  @override
+  String get chatAttachTooltip => '添加附件';
+
+  @override
+  String get chatAttachImage => '添加本地图片';
+
+  @override
+  String get chatAttachLocalText => '添加本地文本文件';
+
+  @override
+  String get chatAttachRemoteText => '引入远端文本文件';
+
+  @override
+  String get chatAttachRemotePathTitle => '引入远端文本文件';
+
+  @override
+  String get chatAttachRemotePathHint => '/path/to/file.txt';
+
+  @override
+  String get chatAttachTooLarge => '文件超出大小上限';
+
+  @override
+  String get chatUsageAndDiagnostics => '用量与诊断';
+
+  @override
+  String get chatWorkingDirTooltip => '草稿工作目录';
+
+  @override
+  String get chatAttachFailed => '添加附件失败';
+
+  @override
+  String get chatInvalidRemotePath => '无效的远端文件路径（必须以 / 开头）';
+
+  @override
+  String get chatRemoteReadFailed => '读取远端文件失败';
+
+  @override
+  String get chatInvalidDirPath => '无效的目录路径（必须以 / 开头）';
+
+  @override
+  String get chatNoSubdirectories => '无子目录';
+
+  @override
+  String get chatUsageTitle => 'Token 与费用用量';
+
+  @override
+  String get chatUsageUsed => '已消耗 Token';
+
+  @override
+  String get chatUsageSize => '上下文容量';
+
+  @override
+  String get chatUsageCost => '费用';
+
+  @override
+  String get chatDiagnosticsTitle => '诊断脱敏日志';
+
+  @override
+  String get chatNoDiagnostics => '暂无诊断日志';
+
+  @override
+  String get deleteSessionLocalOnlyNotice =>
+      '此操作仅从 Valhalla 本地移除会话记录，不会删除服务器上的 Agent 原生历史。';
+
+  @override
+  String get chatSearchSessionsHint => '搜索会话...';
+
+  @override
+  String get chatLoadMoreSessions => '加载更多会话';
+
+  @override
+  String get chatLoadingMoreSessions => '正在加载更多会话...';
+
+  @override
+  String get chatExportSession => '导出 Markdown';
+
+  @override
+  String get chatExportSuccess => '会话导出成功';
+
+  @override
+  String get chatExportFailed => '导出会话失败';
+
+  @override
+  String get chatRemoteSessions => '远端历史';
+
+  @override
+  String get chatRemoteSessionsTitle => '远端 Agent 会话';
+
+  @override
+  String get chatRemoteSessionsDesc => '查看并导入服务器上 Agent 的原生历史会话';
+
+  @override
+  String get chatRemoteSessionsEmpty => '未找到远端会话';
+
+  @override
+  String get chatRemoteImporting => '正在导入远端会话完整历史...';
+
+  @override
+  String get chatRemoteImportFailed => '导入远端会话失败';
+
+  @override
+  String get chatStatusInterrupted => '已中断';
+
+  @override
+  String get chatStatusFailed => '生成失败';
+
+  @override
+  String get chatShowFullOutput => '查看完整输出';
+
+  @override
+  String get chatShowLessOutput => '收起长输出';
+
+  @override
+  String get chatToolLocations => '关联路径';
+
+  @override
   String cmdParamPlaceholder(String param) {
     return '请输入参数 $param 的值';
   }
@@ -2966,4 +3087,214 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get copy => '复制';
+
+  @override
+  String get rename => '重命名';
+
+  @override
+  String get refresh => '刷新';
+
+  @override
+  String get sessionTitle => '会话标题';
+
+  @override
+  String get chatSettingsStale => '已过期';
+
+  @override
+  String get chatSettingsAvailableAfterFirstMessage => '首次发送后可用';
+
+  @override
+  String get chatReimportAsCopy => '重新导入为副本';
+
+  @override
+  String get chatSearchCommandsHint => '搜索命令或技能...';
+
+  @override
+  String get chatCommandsTab => '命令';
+
+  @override
+  String get chatSkillsTab => '技能';
+
+  @override
+  String get chatAccountAndQuotaTitle => '账号与额度';
+
+  @override
+  String get chatAccountSectionTitle => '账号信息';
+
+  @override
+  String get chatAccountNotProvided => '未上报账号详情';
+
+  @override
+  String get chatAccountKind => '类型';
+
+  @override
+  String get chatAccountLabel => '标识';
+
+  @override
+  String get chatAccountPlan => '订阅计划';
+
+  @override
+  String get chatAccountEmail => '邮箱';
+
+  @override
+  String get chatAccountUpdatedAt => '更新时间';
+
+  @override
+  String get chatQuotaSectionTitle => '额度与状态';
+
+  @override
+  String get chatStatusSourceNote => 'Agent /status 原文';
+
+  @override
+  String get chatStatusNotQueried => '尚未查询 /status 状态';
+
+  @override
+  String get chatQueryStatusAction => '查询状态 (/status)';
+
+  @override
+  String get chatQueryStatusUnavailable => '当前会话无法查询状态';
+
+  @override
+  String get chatAttachmentMissing => '附件文件缺失或无法读取';
+
+  @override
+  String get chatViewModeList => '列表';
+
+  @override
+  String get chatViewModeCards => '卡片';
+
+  @override
+  String get chatViewModeGrid => '图库';
+
+  @override
+  String get chatRemoteBrowserTitle => '远端工作区';
+
+  @override
+  String get chatSelectDirectory => '选择目录';
+
+  @override
+  String chatAttachSelectedFiles(int count) {
+    return '添加所选 ($count)';
+  }
+
+  @override
+  String get chatNoFilesFound => '未找到文件';
+
+  @override
+  String get chatRootDirectory => '根目录';
+
+  @override
+  String get chatSelectThisDirectory => '使用此目录';
+
+  @override
+  String get chatAgentVersion => 'Agent 版本';
+
+  @override
+  String get chatParentDirectory => '上一级目录';
+
+  @override
+  String get chatSearchFilesHint => '搜索文件...';
+
+  @override
+  String get chatCommandsEmpty => '当前 Agent 未提供斜杠命令';
+
+  @override
+  String get chatSkillsEmpty => '当前 Agent 未提供技能';
+
+  @override
+  String get chatFileUnsupported => '不支持此类型文件作为附件';
+
+  @override
+  String get chatStatusNotProvided => '当前 Agent 未提供状态查询';
+
+  @override
+  String get sessionRecoveryReconnecting => '重连中...';
+
+  @override
+  String get sessionRecoverySyncing => '同步输出...';
+
+  @override
+  String get sessionRecoveryIncomplete => '部分输出无法恢复';
+
+  @override
+  String get sessionRecoveryFailed => '恢复失败';
+
+  @override
+  String get sessionRecoveryRetry => '重试';
+
+  @override
+  String get dashboardUpdatesPaused => '数据暂停更新';
+
+  @override
+  String get chatSettingsIndependentModelUnavailable =>
+      '当前 CLI 模型目录不可用。模型可能受缓存或 CLI 版本限制，您也可以选择手动输入模型名称。';
+
+  @override
+  String get chatSettingsModelCatalogNote =>
+      '模型列表通过现有 CLI 登录向 app-server 查询，可能存在缓存或受版本限制；您可以手动刷新或切换至手动输入。';
+
+  @override
+  String get chatModelCatalogError403 =>
+      'CLI模型查询被拒绝(403)。请检查CLI登录和服务连通性，或手动输入模型名。';
+
+  @override
+  String chatModelCatalogErrorGeneric(String error) {
+    return '模型目录异常：$error';
+  }
+
+  @override
+  String get chatModelAuthorizeButton => '授权独立模型目录';
+
+  @override
+  String get chatModelAuthorizeConfirmTitle => '确认独立模型授权';
+
+  @override
+  String get chatModelAuthorizeConfirmMessage =>
+      '将在目标主机/容器上发起模型目录的浏览器授权流程。您既有的 Codex 登录和终端会话将保持完全不变。是否继续？';
+
+  @override
+  String get chatModelAuthorizing => '正在通过浏览器授权...';
+
+  @override
+  String get chatModelAuthorizeCancel => '取消授权';
+
+  @override
+  String get chatCommandsFirstTurnNote =>
+      '斜杠命令将在会话初始化后由 Agent 运行时发布，无需先完成普通对话；草稿不会自动创建会话。';
+
+  @override
+  String get chatCommandsClientActionRunSettings => '运行设置';
+
+  @override
+  String get chatCommandsClientActionWorkingDirectory => '工作目录';
+
+  @override
+  String get chatCommandsClientActionsSection => '本地快捷操作';
+
+  @override
+  String get chatRunSettingsModelSourceCatalog => '模型列表';
+
+  @override
+  String get chatRunSettingsModelSourceCustom => '手动输入';
+
+  @override
+  String get chatRunSettingsCustomModelHint => '输入模型ID';
+
+  @override
+  String get chatRunSettingsCustomModelNotice =>
+      '手动输入的模型名称未经验证，将直接传给 Agent 运行时，若不受支持可能会被拒绝。';
+
+  @override
+  String get chatRunSettingsCustomModelEmptyError => '模型名称不能为空';
+
+  @override
+  String get chatRunSettingsCustomModelInvalidError =>
+      '模型名称不能包含空格或控制字符，且长度不能超过 256 字符';
+
+  @override
+  String get chatCommandsDraftPreviewNotice =>
+      '当前适配器版本验证的兼容命令预览。选择仅将命令插入输入框，发送时将按需初始化会话并直接执行。';
+
+  @override
+  String get chatCommandsDiscoveryFailed => '获取命令与技能失败';
 }

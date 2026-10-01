@@ -39,6 +39,8 @@ const Map<String, String> kLegacyAgentTypeToId = {
 
 enum MessageRole { user, assistant, system }
 
+enum ChatTurnStatus { streaming, completed, interrupted, failed }
+
 enum ToolExecutionStatus { pending, running, completed, failed }
 
 enum PlanStepStatus { pending, inProgress, completed, failed }
@@ -79,6 +81,9 @@ class PlanStep {
 }
 
 class ToolExecution {
+  final bool hasMoreOutput;
+  final int? outputLength;
+  final List<String> locations;
   final String id;
   final String name;
   final String command;
@@ -87,6 +92,9 @@ class ToolExecution {
   final int? executionTimeMs;
 
   const ToolExecution({
+    this.hasMoreOutput = false,
+    this.outputLength,
+    this.locations = const [],
     required this.id,
     required this.name,
     required this.command,
@@ -96,6 +104,9 @@ class ToolExecution {
   });
 
   ToolExecution copyWith({
+    bool? hasMoreOutput,
+    int? outputLength,
+    List<String>? locations,
     String? id,
     String? name,
     String? command,
@@ -104,6 +115,9 @@ class ToolExecution {
     int? executionTimeMs,
   }) {
     return ToolExecution(
+      hasMoreOutput: hasMoreOutput ?? this.hasMoreOutput,
+      outputLength: outputLength ?? this.outputLength,
+      locations: locations ?? this.locations,
       id: id ?? this.id,
       name: name ?? this.name,
       command: command ?? this.command,
@@ -114,6 +128,9 @@ class ToolExecution {
   }
 
   Map<String, dynamic> toJson() => {
+    'hasMoreOutput': hasMoreOutput,
+    'outputLength': outputLength,
+    'locations': locations,
     'id': id,
     'name': name,
     'command': command,
@@ -123,6 +140,9 @@ class ToolExecution {
   };
 
   factory ToolExecution.fromJson(Map<String, dynamic> json) => ToolExecution(
+    hasMoreOutput: json['hasMoreOutput'] as bool? ?? false,
+    outputLength: (json['outputLength'] as num?)?.toInt(),
+    locations: (json['locations'] as List? ?? const []).cast<String>(),
     id: json['id'] as String,
     name: json['name'] as String,
     command: json['command'] as String,
@@ -135,12 +155,31 @@ class ToolExecution {
   );
 }
 
+class ChatPermissionOption {
+  final String id;
+  final String name;
+  final String kind;
+  const ChatPermissionOption({
+    required this.id,
+    required this.name,
+    required this.kind,
+  });
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'kind': kind};
+  factory ChatPermissionOption.fromJson(Map<String, dynamic> json) =>
+      ChatPermissionOption(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        kind: json['kind'] as String,
+      );
+}
+
 class PermissionRequest {
   final String id;
   final String toolName;
   final String command;
   final String description;
   final bool isDangerous;
+  final List<ChatPermissionOption> options;
 
   const PermissionRequest({
     required this.id,
@@ -148,6 +187,7 @@ class PermissionRequest {
     required this.command,
     required this.description,
     this.isDangerous = false,
+    this.options = const [],
   });
 
   Map<String, dynamic> toJson() => {
@@ -156,6 +196,7 @@ class PermissionRequest {
     'command': command,
     'description': description,
     'isDangerous': isDangerous,
+    'options': options.map((option) => option.toJson()).toList(),
   };
 
   factory PermissionRequest.fromJson(Map<String, dynamic> json) =>
@@ -165,10 +206,55 @@ class PermissionRequest {
         command: json['command'] as String,
         description: json['description'] as String,
         isDangerous: (json['isDangerous'] as bool?) ?? false,
+        options: (json['options'] as List? ?? const [])
+            .map(
+              (option) => ChatPermissionOption.fromJson(
+                Map<String, dynamic>.from(option as Map),
+              ),
+            )
+            .toList(),
       );
 }
 
+class ChatAttachment {
+  final String id, name, mimeType;
+  final int sizeBytes;
+  final String? localPath, uri;
+  bool get isImage => mimeType.startsWith('image/');
+  const ChatAttachment({
+    required this.id,
+    required this.name,
+    required this.mimeType,
+    required this.sizeBytes,
+    this.localPath,
+    this.uri,
+  });
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'mimeType': mimeType,
+    'sizeBytes': sizeBytes,
+    'localPath': localPath,
+    'uri': uri,
+  };
+  factory ChatAttachment.fromJson(Map<String, dynamic> json) => ChatAttachment(
+    id: json['id'] is String ? json['id'] as String : '',
+    name: json['name'] is String ? json['name'] as String : 'resource',
+    mimeType: json['mimeType'] is String
+        ? json['mimeType'] as String
+        : 'application/octet-stream',
+    sizeBytes: json['sizeBytes'] is num
+        ? (json['sizeBytes'] as num).toInt().clamp(0, 1 << 53)
+        : 0,
+    localPath: json['localPath'] is String ? json['localPath'] as String : null,
+    uri: json['uri'] is String ? json['uri'] as String : null,
+  );
+}
+
 class ChatMessage {
+  final String? remoteMessageId;
+  final List<ChatAttachment> attachments;
+  final ChatTurnStatus status;
   final String? agentId;
   final String id;
   final MessageRole role;
@@ -180,6 +266,9 @@ class ChatMessage {
   final DateTime createdAt;
 
   const ChatMessage({
+    this.remoteMessageId,
+    this.attachments = const [],
+    this.status = ChatTurnStatus.completed,
     this.agentId,
     required this.id,
     required this.role,
@@ -192,6 +281,9 @@ class ChatMessage {
   });
 
   ChatMessage copyWith({
+    String? remoteMessageId,
+    List<ChatAttachment>? attachments,
+    ChatTurnStatus? status,
     String? agentId,
     String? id,
     MessageRole? role,
@@ -203,6 +295,9 @@ class ChatMessage {
     DateTime? createdAt,
   }) {
     return ChatMessage(
+      remoteMessageId: remoteMessageId ?? this.remoteMessageId,
+      attachments: attachments ?? this.attachments,
+      status: status ?? this.status,
       agentId: agentId ?? this.agentId,
       id: id ?? this.id,
       role: role ?? this.role,
@@ -216,6 +311,9 @@ class ChatMessage {
   }
 
   Map<String, dynamic> toJson() => {
+    'remoteMessageId': remoteMessageId,
+    'attachments': attachments.map((a) => a.toJson()).toList(),
+    'status': status.name,
     'agentId': agentId,
     'id': id,
     'role': role.name,
@@ -228,11 +326,22 @@ class ChatMessage {
   };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
+    remoteMessageId: json['remoteMessageId'] as String?,
+    attachments: (json['attachments'] as List? ?? const [])
+        .map(
+          (a) => ChatAttachment.fromJson(Map<String, dynamic>.from(a as Map)),
+        )
+        .toList(),
+    status:
+        ChatTurnStatus.values
+            .where((s) => s.name == json['status'])
+            .firstOrNull ??
+        ChatTurnStatus.completed,
     agentId: json['agentId'] as String?,
     id: json['id'] as String,
     role: MessageRole.values.firstWhere(
       (e) => e.name == json['role'],
-      orElse: () => MessageRole.user,
+      orElse: () => MessageRole.system,
     ),
     content: json['content'] as String,
     thinking: json['thinking'] as String?,
@@ -271,6 +380,9 @@ class AgentChatContext {
 }
 
 class ChatSession {
+  final bool historyImportIncomplete;
+  final int messageOffset;
+  final int totalMessageCount;
   final Map<String, ChatRunSettings> agentRunSettings;
   final Map<String, AgentChatContext> agentContexts;
   final List<String> participantAgentIds;
@@ -281,7 +393,7 @@ class ChatSession {
       AgentChatContext(
         remoteSessionId: agentId == id ? remoteSessionId : null,
         syncedMessageCount: agentId == id && remoteSessionId != null
-            ? messages.length
+            ? messageOffset + messages.length
             : 0,
       );
   final String id;
@@ -301,6 +413,9 @@ class ChatSession {
   final List<ChatMessage> messages;
 
   const ChatSession({
+    this.historyImportIncomplete = false,
+    this.messageOffset = 0,
+    this.totalMessageCount = 0,
     this.agentRunSettings = const {},
     this.agentContexts = const {},
     this.participantAgentIds = const [],
@@ -317,6 +432,9 @@ class ChatSession {
   });
 
   ChatSession copyWith({
+    bool? historyImportIncomplete,
+    int? messageOffset,
+    int? totalMessageCount,
     Map<String, ChatRunSettings>? agentRunSettings,
     Map<String, AgentChatContext>? agentContexts,
     List<String>? participantAgentIds,
@@ -332,6 +450,10 @@ class ChatSession {
     List<ChatMessage>? messages,
   }) {
     return ChatSession(
+      historyImportIncomplete:
+          historyImportIncomplete ?? this.historyImportIncomplete,
+      messageOffset: messageOffset ?? this.messageOffset,
+      totalMessageCount: totalMessageCount ?? this.totalMessageCount,
       agentRunSettings: agentRunSettings ?? this.agentRunSettings,
       agentContexts: agentContexts ?? this.agentContexts,
       participantAgentIds: participantAgentIds ?? this.participantAgentIds,
@@ -349,6 +471,9 @@ class ChatSession {
   }
 
   Map<String, dynamic> toJson() => {
+    'historyImportIncomplete': historyImportIncomplete,
+    'messageOffset': messageOffset,
+    'totalMessageCount': totalMessageCount,
     'agentRunSettings': agentRunSettings.map(
       (key, value) => MapEntry(key, value.toJson()),
     ),
@@ -374,6 +499,13 @@ class ChatSession {
         ? null
         : kLegacyAgentTypeToId[rawAgentType.toLowerCase()];
     return ChatSession(
+      historyImportIncomplete:
+          json['historyImportIncomplete'] as bool? ?? false,
+      messageOffset: (json['messageOffset'] as num?)?.toInt() ?? 0,
+      totalMessageCount:
+          (json['totalMessageCount'] as num?)?.toInt() ??
+          (json['messages'] as List?)?.length ??
+          0,
       agentRunSettings:
           (json['agentRunSettings'] as Map<String, dynamic>? ?? {}).map(
             (key, value) => MapEntry(

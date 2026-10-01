@@ -248,5 +248,17 @@ void main() {
         isNot(equals(buildProfile(acpInstallCommand: 'b'))),
       );
     });
+
+    test('defaults containerBinding to name', () {
+      expect(buildProfile().containerBinding, equals('name'));
+    });
+
+    test('missing containerBinding in JSON falls back to id', () {
+      final json = buildProfile().toJson()..remove('containerBinding');
+
+      final restored = AgentProfile.fromJson(json);
+
+      expect(restored.containerBinding, equals('id'));
+    });
   });
 }

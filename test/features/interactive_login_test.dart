@@ -19,6 +19,7 @@ import 'package:valhalla/features/terminal/widgets/terminal_accessory_bar.dart';
 import 'package:valhalla/infrastructure/acp/acp_client_adapter.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import '../support/temp_chat_db.dart';
 
 class _MockAiChatNotifier extends AiChatNotifier {
   final AiChatState _initial;
@@ -82,7 +83,7 @@ void main() {
     List<dynamic> overrides = const [],
   }) {
     return ProviderScope(
-      overrides: [...overrides],
+      overrides: [tempChatRepositoryOverride(), ...overrides],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

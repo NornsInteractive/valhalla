@@ -46,6 +46,16 @@ class _TestActiveServerNotifier extends ActiveServerNotifier {
   ServerProfile? build() => null;
 }
 
+/// The shell and the SFTP surface read the connection state; the real
+/// connection notifier builds the SSH client manager, which needs a live
+/// `LocalStorageService`. These cases exercise the real transfer panel, so the
+/// connection is up.
+class _TestServerConnectionNotifier extends ServerConnectionNotifier {
+  @override
+  ServerConnectionState build() =>
+      const ServerConnectionState(status: ConnectionStateEnum.connected);
+}
+
 class _TestServerListNotifier extends ServerListNotifier {
   @override
   List<ServerProfile> build() => const [];
@@ -75,6 +85,7 @@ Future<ProviderContainer> _pumpShell(
       localStorageServiceProvider.overrideWithValue(local),
       serverListProvider.overrideWith(() => _TestServerListNotifier()),
       activeServerProvider.overrideWith(() => _TestActiveServerNotifier()),
+      serverConnectionProvider.overrideWith(_TestServerConnectionNotifier.new),
       sftpProvider.overrideWith(_FakeSftpNotifier.new),
       keepAliveServiceProvider.overrideWithValue(
         _FakeKeepAliveService(openTransfers: openTransfers),
@@ -99,7 +110,10 @@ Future<ProviderContainer> _pumpShell(
 
 Widget _buildSftpApp({ValueListenable<int>? openTransfersRequest}) {
   return ProviderScope(
-    overrides: [sftpProvider.overrideWith(_FakeSftpNotifier.new)],
+    overrides: [
+      sftpProvider.overrideWith(_FakeSftpNotifier.new),
+      serverConnectionProvider.overrideWith(_TestServerConnectionNotifier.new),
+    ],
     child: MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

@@ -12,6 +12,7 @@ import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/chat/ai_chat_view.dart';
 import 'package:valhalla/features/chat/cli_chat_view.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import '../support/temp_chat_db.dart';
 
 const _server = ServerProfile(
   id: 'srv-default-test',
@@ -110,6 +111,7 @@ void main() {
                 _FakeConnectionNotifier.new,
               ),
               localStorageServiceProvider.overrideWithValue(storage),
+              tempChatRepositoryOverride(),
               cliChatProvider.overrideWith(() => fakeCliNotifier),
             ],
             child: const MaterialApp(
@@ -178,6 +180,7 @@ void main() {
                 _FakeConnectionNotifier.new,
               ),
               localStorageServiceProvider.overrideWithValue(storage),
+              tempChatRepositoryOverride(),
               aiChatProvider.overrideWith(() => fakeAiNotifier),
             ],
             child: const MaterialApp(

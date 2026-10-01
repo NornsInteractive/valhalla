@@ -21,7 +21,7 @@ enum AppSection {
 
 const defaultBottomNavigationSections = <AppSection>[
   AppSection.dashboard,
-  AppSection.cliChat,
+  AppSection.aiChat,
   AppSection.docker,
   AppSection.files,
 ];

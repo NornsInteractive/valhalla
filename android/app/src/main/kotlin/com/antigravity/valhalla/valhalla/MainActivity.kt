@@ -3,6 +3,7 @@ package com.antigravity.valhalla.valhalla
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -33,6 +34,27 @@ class MainActivity : AudioServiceActivity() {
         DownloadChannel.register(this, flutterEngine)
         NasNetworkChannel.register(this, flutterEngine)
         DiagnosticsChannel.register(this, flutterEngine)
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "valhalla/model_authorization")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "openBrowser") {
+                    result.notImplemented()
+                } else {
+                    try {
+                        val url = Uri.parse(call.argument<String>("url") ?: "")
+                        if (url.scheme != "https" || url.host != "auth.openai.com" ||
+                            !url.userInfo.isNullOrEmpty() || (url.port != -1 && url.port != 443)) {
+                            result.error("AGENT_MODEL_ENDPOINT_INVALID", null, null)
+                        } else {
+                            startActivity(Intent(Intent.ACTION_VIEW, url).addCategory(Intent.CATEGORY_BROWSABLE))
+                            result.success(true)
+                        }
+                    } catch (_: Exception) {
+                        // Never include authorization URLs or codes in errors.
+                        result.error("AGENT_MODEL_BROWSER_FAILED", null, null)
+                    }
+                }
+            }
 
         consumeLaunchExtras(intent)
 

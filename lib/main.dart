@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'app/theme.dart';
+import 'core/providers/ai_chat_provider.dart';
 import 'core/providers/auto_connect_provider.dart';
 import 'core/providers/connection_lifecycle_provider.dart';
 import 'core/providers/reconnect_provider.dart';
@@ -281,14 +282,19 @@ class _LifecycleHostState extends ConsumerState<_LifecycleHost>
         unawaited(lifecycle.onResumed());
         break;
       case AppLifecycleState.inactive:
-        // 过渡态（来电、通知栏下拉），不做任何处理：此时连接必然还活着，
-        // 停掉再恢复只会平白制造一次重连。
+        // 过渡态（来电、通知栏下拉等）：属于短暂的生命周期状态，自身绝不能触发断连。
         break;
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
+        if (ref.exists(aiChatProvider)) {
+          unawaited(ref.read(aiChatProvider.notifier).checkpoint());
+        }
         unawaited(lifecycle.onPaused());
         break;
       case AppLifecycleState.detached:
+        if (ref.exists(aiChatProvider)) {
+          unawaited(ref.read(aiChatProvider.notifier).checkpoint());
+        }
         unawaited(lifecycle.onDetached());
         break;
     }

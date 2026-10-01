@@ -10,6 +10,7 @@ class ChatRunSettingsStrip extends StatelessWidget {
   final bool isBusy;
   final bool isLoadingSettings;
   final VoidCallback onOpenSettings;
+  final VoidCallback? onRefreshSettings;
   final Key? tuneButtonKey;
 
   const ChatRunSettingsStrip({
@@ -20,6 +21,7 @@ class ChatRunSettingsStrip extends StatelessWidget {
     required this.isBusy,
     this.isLoadingSettings = false,
     required this.onOpenSettings,
+    this.onRefreshSettings,
     this.tuneButtonKey,
   });
 
@@ -144,6 +146,17 @@ class ChatRunSettingsStrip extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               onPressed: isBusy ? null : onOpenSettings,
             ),
+            if (onRefreshSettings != null) ...[
+              const SizedBox(width: 2),
+              IconButton(
+                key: const Key('chat_run_settings_strip_refresh_button'),
+                icon: const Icon(Icons.refresh, size: 16),
+                tooltip: context.l10n.cliRefreshSessions,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                onPressed: isBusy ? null : onRefreshSettings,
+              ),
+            ],
             if (isLoadingSettings) ...[
               const SizedBox(width: 4),
               SizedBox(

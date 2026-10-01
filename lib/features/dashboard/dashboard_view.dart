@@ -55,7 +55,12 @@ class DashboardView extends ConsumerWidget {
       );
     }
 
-    if (!connState.isConnected) {
+    final history = ref.watch(systemMetricsHistoryProvider);
+    final lastSnapshot = snapshot ?? (history.isNotEmpty ? history.last : null);
+    final isReconnecting = connState.isConnecting;
+    final hasExistingData = lastSnapshot != null || history.isNotEmpty;
+
+    if (!connState.isConnected && !isReconnecting && !hasExistingData) {
       return Scaffold(
         body: Center(
           child: SingleChildScrollView(
@@ -191,9 +196,52 @@ class DashboardView extends ConsumerWidget {
               const SizedBox(height: 16),
               Entrance(
                 index: 1,
-                child: Text(
-                  context.l10n.dashboardTitle,
-                  style: context.textTheme.titleMedium,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      context.l10n.dashboardTitle,
+                      style: context.textTheme.titleMedium,
+                    ),
+                    if (!connState.isConnected && hasExistingData) ...[
+                      Container(
+                        key: const Key('dashboardStaleDataIndicator'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(VRadius.pill),
+                          border: Border.all(
+                            color: context.colorScheme.outlineVariant
+                                .withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.pause_circle_outline,
+                              size: 13,
+                              color: context.colorScheme.outline,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              context.l10n.dashboardUpdatesPaused,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: context.colorScheme.outline,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(height: 10),
@@ -201,14 +249,19 @@ class DashboardView extends ConsumerWidget {
                 index: 2,
                 child: metricsAsync.when(
                   data: (snap) => _buildMetricsGrid(context, snap),
-                  loading: () => const SkeletonMetricGrid(columns: 2, rows: 2),
-                  error: (err, _) => ValhallaCard(
-                    padding: const EdgeInsets.all(16),
-                    child: ErrorStateView(
-                      message: err.toString(),
-                      onRetry: () => ref.invalidate(systemMetricsStreamProvider),
-                    ),
-                  ),
+                  loading: () => lastSnapshot != null
+                      ? _buildMetricsGrid(context, lastSnapshot)
+                      : const SkeletonMetricGrid(columns: 2, rows: 2),
+                  error: (err, _) => lastSnapshot != null
+                      ? _buildMetricsGrid(context, lastSnapshot)
+                      : ValhallaCard(
+                          padding: const EdgeInsets.all(16),
+                          child: ErrorStateView(
+                            message: err.toString(),
+                            onRetry: () =>
+                                ref.invalidate(systemMetricsStreamProvider),
+                          ),
+                        ),
                 ),
               ),
               if (quickSections.isNotEmpty) ...[
@@ -221,7 +274,10 @@ class DashboardView extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                Entrance(index: 4, child: _buildQuickShortcuts(context, quickSections)),
+                Entrance(
+                  index: 4,
+                  child: _buildQuickShortcuts(context, quickSections),
+                ),
               ],
             ],
           ),
@@ -264,250 +320,259 @@ class DashboardView extends ConsumerWidget {
       child: ValhallaCard(
         padding: const EdgeInsets.all(16),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final serverInfo = Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(11),
-                    decoration: BoxDecoration(
-                      color: context.colorScheme.primaryContainer.withValues(
-                        alpha: 0.35,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final serverInfo = Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(11),
+                      decoration: BoxDecoration(
+                        color: context.colorScheme.primaryContainer.withValues(
+                          alpha: 0.35,
+                        ),
+                        borderRadius: BorderRadius.circular(VRadius.input),
+                        border: Border.all(
+                          color: context.colorScheme.primary.withValues(
+                            alpha: 0.25,
+                          ),
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(VRadius.input),
-                      border: Border.all(
-                        color: context.colorScheme.primary.withValues(alpha: 0.25),
+                      child: Icon(
+                        Icons.dns_rounded,
+                        color: context.colorScheme.primary,
+                        size: 24,
                       ),
                     ),
-                    child: Icon(
-                      Icons.dns_rounded,
-                      color: context.colorScheme.primary,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                server.name,
-                                style: context.textTheme.titleMedium,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    context.colorScheme.surfaceContainerHigh,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: context.colorScheme.outlineVariant,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  server.name,
+                                  style: context.textTheme.titleMedium,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              child: Text(
-                                server.authType.name.toUpperCase(),
-                                style: monoTextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: context.colorScheme.onSurfaceVariant,
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      context.colorScheme.surfaceContainerHigh,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: context.colorScheme.outlineVariant,
+                                  ),
+                                ),
+                                child: Text(
+                                  server.authType.name.toUpperCase(),
+                                  style: monoTextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: context.colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${server.username}@${server.host}:${server.port}',
-                                style: monoTextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  color: context.colorScheme.onSurfaceVariant,
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${server.username}@${server.host}:${server.port}',
+                                  style: monoTextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w400,
+                                    color: context.colorScheme.onSurfaceVariant,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            StatusBadge(label: badgeLabel, type: badgeType),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 8),
+                              StatusBadge(label: badgeLabel, type: badgeType),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              );
+                  ],
+                );
 
-              final actionButtons = Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (connState.isConnected) ...[
-                    OutlinedButton.icon(
-                      key: const Key('dashboard_reboot_button'),
-                      style: OutlinedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                final actionButtons = Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (connState.isConnected) ...[
+                      OutlinedButton.icon(
+                        key: const Key('dashboard_reboot_button'),
+                        style: OutlinedButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      icon:
-                          powerState.phase == ServerPowerPhase.submitting &&
-                              powerState.action == ServerPowerAction.reboot
-                          ? const SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.restart_alt_rounded, size: 13),
-                      label: Text(
-                        context.l10n.serverReboot,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      onPressed: isPowerBusy
-                          ? null
-                          : () => _handleReboot(context, ref, server),
-                    ),
-                    OutlinedButton.icon(
-                      key: const Key('dashboard_shutdown_button'),
-                      style: OutlinedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                        icon:
+                            powerState.phase == ServerPowerPhase.submitting &&
+                                powerState.action == ServerPowerAction.reboot
+                            ? const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.restart_alt_rounded, size: 13),
+                        label: Text(
+                          context.l10n.serverReboot,
+                          style: const TextStyle(fontSize: 11),
                         ),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        onPressed: isPowerBusy
+                            ? null
+                            : () => _handleReboot(context, ref, server),
                       ),
-                      icon:
-                          powerState.phase == ServerPowerPhase.submitting &&
-                              powerState.action == ServerPowerAction.shutdown
-                          ? const SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.power_settings_new, size: 13),
-                      label: Text(
-                        context.l10n.serverShutdown,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      onPressed: isPowerBusy
-                          ? null
-                          : () => _handleShutdown(context, ref, server),
-                    ),
-                    OutlinedButton.icon(
-                      key: const Key('dashboard_disconnect_button'),
-                      style: OutlinedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                      OutlinedButton.icon(
+                        key: const Key('dashboard_shutdown_button'),
+                        style: OutlinedButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      icon: const Icon(Icons.link_off_rounded, size: 13),
-                      label: Text(
-                        context.l10n.disconnect,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      onPressed: () {
-                        ref
-                            .read(serverConnectionProvider.notifier)
-                            .disconnect();
-                      },
-                    ),
-                  ] else if (connState.isConnecting)
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                        icon:
+                            powerState.phase == ServerPowerPhase.submitting &&
+                                powerState.action == ServerPowerAction.shutdown
+                            ? const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.power_settings_new, size: 13),
+                        label: Text(
+                          context.l10n.serverShutdown,
+                          style: const TextStyle(fontSize: 11),
                         ),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        onPressed: isPowerBusy
+                            ? null
+                            : () => _handleShutdown(context, ref, server),
                       ),
-                      icon: const Icon(Icons.link, size: 13),
-                      label: Text(
-                        context.l10n.connectNow,
-                        style: const TextStyle(fontSize: 11),
+                      OutlinedButton.icon(
+                        key: const Key('dashboard_disconnect_button'),
+                        style: OutlinedButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: const Icon(Icons.link_off_rounded, size: 13),
+                        label: Text(
+                          context.l10n.disconnect,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                        onPressed: () {
+                          ref
+                              .read(serverConnectionProvider.notifier)
+                              .disconnect();
+                        },
                       ),
-                      onPressed: () => _doReconnect(ref),
-                    ),
-                ],
-              );
+                    ] else if (connState.isConnecting)
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: const Icon(Icons.link, size: 13),
+                        label: Text(
+                          context.l10n.connectNow,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                        onPressed: () => _doReconnect(ref),
+                      ),
+                  ],
+                );
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  serverInfo,
-                  const SizedBox(height: 10),
-                  actionButtons,
-                ],
-              );
-            },
-          ),
-
-          // Uptime chip placed directly under action buttons without divider
-          if (connState.isConnected) ...[
-            const SizedBox(height: 8),
-            Container(
-              key: const Key('dashboard_server_uptime'),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: context.colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: context.colorScheme.outlineVariant),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.timer_outlined,
-                    size: 13,
-                    color: context.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    '${context.l10n.metricsUptime}: ${snapshot != null && snapshot.uptimeSeconds > 0 ? MetricsFormatters.formatUptime(snapshot.uptimeSeconds) : '--'}',
-                    style: monoTextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                      color: context.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    serverInfo,
+                    const SizedBox(height: 10),
+                    actionButtons,
+                  ],
+                );
+              },
             ),
-          ],
 
-          if (connState.isConnected) ...[
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            _ServerHardwareSpecsSection(serverId: server.id),
+            // Uptime chip placed directly under action buttons without divider
+            if (connState.isConnected) ...[
+              const SizedBox(height: 8),
+              Container(
+                key: const Key('dashboard_server_uptime'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: context.colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: context.colorScheme.outlineVariant),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.timer_outlined,
+                      size: 13,
+                      color: context.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${context.l10n.metricsUptime}: ${snapshot != null && snapshot.uptimeSeconds > 0 ? MetricsFormatters.formatUptime(snapshot.uptimeSeconds) : '--'}',
+                      style: monoTextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: context.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            if (connState.isConnected || connState.isConnecting) ...[
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              _ServerHardwareSpecsSection(serverId: server.id),
+            ],
           ],
-        ],
         ),
       ),
     );
@@ -637,9 +702,7 @@ class DashboardView extends ConsumerWidget {
             ),
             CountUp(
               value: ratio * 100,
-              formatter: (v) => MetricsFormatters.formatPercentage(
-                v / 100,
-              ),
+              formatter: (v) => MetricsFormatters.formatPercentage(v / 100),
               style: monoTextStyle(fontSize: 21, fontWeight: FontWeight.w700),
             ),
             Column(
@@ -696,21 +759,13 @@ class DashboardView extends ConsumerWidget {
     } else {
       rateWidget = Row(
         children: [
-          Icon(
-            Icons.arrow_downward_rounded,
-            size: 14,
-            color: context.vSuccess,
-          ),
+          Icon(Icons.arrow_downward_rounded, size: 14, color: context.vSuccess),
           Text(
             formatNetworkRate(primaryRate.rxBytesPerSecond),
             style: monoTextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
           const SizedBox(width: 8),
-          Icon(
-            Icons.arrow_upward_rounded,
-            size: 14,
-            color: context.vInfo,
-          ),
+          Icon(Icons.arrow_upward_rounded, size: 14, color: context.vInfo),
           Text(
             formatNetworkRate(primaryRate.txBytesPerSecond),
             style: monoTextStyle(fontSize: 14, fontWeight: FontWeight.w700),
@@ -1264,23 +1319,58 @@ class _PowerPasswordDialogState extends State<_PowerPasswordDialog> {
   }
 }
 
-class _ServerHardwareSpecsSection extends ConsumerWidget {
+class _ServerHardwareSpecsSection extends ConsumerStatefulWidget {
   final String serverId;
 
   const _ServerHardwareSpecsSection({required this.serverId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final activeServerId = ref.watch(activeServerProvider.select((s) => s?.id));
-    final isConnected = ref.watch(
-      serverConnectionProvider.select((s) => s.isConnected),
-    );
+  ConsumerState<_ServerHardwareSpecsSection> createState() =>
+      _ServerHardwareSpecsSectionState();
+}
 
-    if (activeServerId != serverId || !isConnected) {
+class _ServerHardwareSpecsSectionState
+    extends ConsumerState<_ServerHardwareSpecsSection> {
+  // connectionKey-scoped widget cache identity to preserve same-target specs
+  // across reconnects while preventing cross-server data leak across dependency changes.
+  Object? _cachedConnectionKey;
+  SystemHardwareInfo? _cachedHardware;
+
+  @override
+  Widget build(BuildContext context) {
+    final activeServer = ref.watch(activeServerProvider);
+    final targetConnectionKey = activeServer?.connectionKey;
+    final connState = ref.watch(serverConnectionProvider);
+    final isConnected = connState.isConnected;
+    final isReconnecting = connState.isConnecting;
+
+    if (activeServer?.id != widget.serverId || targetConnectionKey == null) {
       return const SizedBox.shrink();
     }
 
     final hardwareAsync = ref.watch(systemHardwareProvider);
+
+    // Accept fresh AsyncData only
+    if (hardwareAsync is AsyncData<SystemHardwareInfo>) {
+      _cachedConnectionKey = targetConnectionKey;
+      _cachedHardware = hardwareAsync.value;
+    }
+
+    // Cached same-target value during loading/error/reconnecting
+    final hasSameTargetCache =
+        _cachedConnectionKey == targetConnectionKey && _cachedHardware != null;
+
+    if (!isConnected && !isReconnecting && !hasSameTargetCache) {
+      return const SizedBox.shrink();
+    }
+
+    if (hasSameTargetCache &&
+        (hardwareAsync.isLoading ||
+            hardwareAsync.hasError ||
+            !isConnected ||
+            isReconnecting)) {
+      return _buildSpecs(context, _cachedHardware!);
+    }
 
     return hardwareAsync.when(
       data: (info) => _buildSpecs(context, info),

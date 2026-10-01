@@ -35,7 +35,7 @@ class AgentProfile {
     required this.description,
     required this.cliCommand,
     this.executionTarget = 'host',
-    this.containerBinding = 'id',
+    this.containerBinding = 'name',
     this.containerReference,
     this.containerUser,
     this.acpCommand,
@@ -108,6 +108,7 @@ class AgentProfile {
     description: json['description'] as String,
     cliCommand: json['cliCommand'] as String,
     executionTarget: json['executionTarget'] as String? ?? 'host',
+    // Preserve legacy ID bindings; only newly created profiles default to name.
     containerBinding: json['containerBinding'] as String? ?? 'id',
     containerReference: json['containerReference'] as String?,
     containerUser: json['containerUser'] as String?,

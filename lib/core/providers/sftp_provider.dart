@@ -11,6 +11,7 @@ import '../services/download_platform_service.dart';
 
 import 'server_provider.dart';
 import 'storage_providers.dart';
+import '../../data/models/server_profile.dart';
 
 final downloadPlatformServiceProvider = Provider<DownloadPlatformService>(
   (ref) => DownloadPlatformService(),
@@ -33,9 +34,11 @@ final transferNotificationCallbackProvider =
 /// 「权限不足」「磁盘写满」这些情况）。
 final sftpOperationsProvider = Provider<SftpOperations>((ref) {
   final activeServer = ref.watch(activeServerProvider);
-  final connState = ref.watch(serverConnectionProvider);
+  final connected = ref.watch(
+    serverConnectionProvider.select((s) => s.isConnected),
+  );
   final sshManager = ref.watch(sshClientManagerProvider);
-  final sshClient = (activeServer != null && connState.isConnected)
+  final sshClient = (activeServer != null && connected)
       ? sshManager.getClient(activeServer.id)
       : null;
   final service = SftpClientService(sshClient);
@@ -367,6 +370,7 @@ class SftpNotifier extends Notifier<SftpState> {
   int _sourceEpoch = 0;
   int _loadEpoch = 0;
   int _editorEpoch = 0;
+  ServerProfile? _boundServer;
 
   bool _currentSource(int epoch) => ref.mounted && epoch == _sourceEpoch;
 
@@ -385,9 +389,17 @@ class SftpNotifier extends Notifier<SftpState> {
   SftpState build() {
     final sourceEpoch = ++_sourceEpoch;
     final activeServer = ref.watch(activeServerProvider);
-    final connState = ref.watch(serverConnectionProvider);
+    final previous =
+        activeServer != null &&
+            (_boundServer?.hasSameConnectionSettings(activeServer) ?? false)
+        ? stateOrNull
+        : null;
+    _boundServer = activeServer;
+    final connected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
     final sshManager = ref.watch(sshClientManagerProvider);
-    final sshClient = (activeServer != null && connState.isConnected)
+    final sshClient = (activeServer != null && connected)
         ? sshManager.getClient(activeServer.id)
         : null;
 
@@ -412,8 +424,13 @@ class SftpNotifier extends Notifier<SftpState> {
 
     if (sshClient != null) {
       Future.microtask(() {
-        if (_currentSource(sourceEpoch)) unawaited(loadDirectory('/'));
+        if (_currentSource(sourceEpoch)) {
+          unawaited(loadDirectory(previous?.currentPath ?? '/'));
+        }
       });
+      if (previous != null) {
+        return previous.copyWith(isLoading: false, clearError: true);
+      }
       return SftpState(
         isLoading: true,
         currentPath: '/',
@@ -421,6 +438,24 @@ class SftpNotifier extends Notifier<SftpState> {
         sortAscending: sortAscending,
       );
     } else {
+      if (previous != null) {
+        return previous.copyWith(
+          isLoading: false,
+          errorMessage: 'SSH_DISCONNECTED',
+          transfers: previous.transfers
+              .map(
+                (t) =>
+                    t.status == SftpTransferStatus.running ||
+                        t.status == SftpTransferStatus.paused
+                    ? t.copyWith(
+                        status: SftpTransferStatus.failed,
+                        errorMessage: 'SSH_DISCONNECTED',
+                      )
+                    : t,
+              )
+              .toList(),
+        );
+      }
       return SftpState(
         isLoading: false,
         currentPath: '/',

@@ -1,5 +1,38 @@
 import '../../core/utils/shell_quote.dart';
 import '../../data/models/agent_profile.dart';
+import '../../data/models/native_cli_session.dart';
+
+/// Standard Codex ACP must use the same executable as independent CLI queries.
+/// Explicit custom launch scripts keep their own runtime/environment semantics.
+String agentAcpLaunchCommand(AgentProfile profile) {
+  final command = profile.acpCommand?.trim();
+  if (command == null || command.isEmpty) {
+    throw StateError('AGENT_ACP_COMMAND_MISSING');
+  }
+  var script = command;
+  if (nativeCliKind(profile.cliCommand) == NativeCliKind.codex &&
+      RegExp(r'^(?:/[^\s]+/)?codex-acp(?:\s+--stdio)?$').hasMatch(command)) {
+    final cli = cliShellQuote(profile.cliCommand);
+    // Bash aliases are interactive conveniences, not spawnable executables.
+    // Resolve inside the target shell, never against the phone or Docker host.
+    script =
+        'if [ -n "\${BASH_VERSION:-}" ]; then '
+        'valhalla_codex_path=\$(type -P -- $cli); else '
+        'valhalla_codex_path=\$(command -v -- $cli); fi; '
+        'if [ -z "\$valhalla_codex_path" ] || [ ! -x "\$valhalla_codex_path" ]; then '
+        'printf "%s\\n" "ACP_CODEX_EXECUTABLE_UNAVAILABLE" >&2; exit 127; fi; '
+        'export CODEX_PATH="\$valhalla_codex_path"; '
+        'printf "Valhalla ACP Codex executable: %s\\n" "\$CODEX_PATH" >&2; '
+        '"\$CODEX_PATH" --version >&2 || exit 127; '
+        'exec $command';
+  }
+  return agentTargetCommand(
+    profile,
+    profile.executionTarget == 'docker'
+        ? script
+        : 'bash -l -c ${cliShellQuote(script)}',
+  );
+}
 
 /// Builds the remote command for an agent's configured execution location.
 /// Docker's container argument is always quoted and ACP/JSON transports never

@@ -186,6 +186,22 @@ void main() {
     ]);
   });
 
+  test('lists users for a full hexadecimal container id', () async {
+    const id =
+        'a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0';
+    final executor = _Executor()
+      ..passwdOutput =
+          'root:x:0:0:root:/root:/bin/bash\n'
+          'dev:x:1000:1000:Developer:/home/dev:/bin/sh\n';
+    final users = await DockerCliService(executor).listContainerUsers('s1', id);
+
+    expect(executor.commands.single, "docker exec -i '$id' cat /etc/passwd");
+    expect(users.map((user) => (user.name, user.uid, user.gid)), [
+      ('root', 0, 0),
+      ('dev', 1000, 1000),
+    ]);
+  });
+
   test('running container prefers bash and falls back to sh', () async {
     final container = DockerContainer.fromJson({
       'id': 'abc123',

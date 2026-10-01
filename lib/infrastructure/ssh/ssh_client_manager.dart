@@ -91,6 +91,25 @@ class SSHClientManager implements SshCommandExecutor {
   final Map<String, ServerProfile> _clientTargets = {};
   final Map<String, _PendingConnection> _pendingConnections = {};
   final Map<String, Timer> _keepAliveTimers = {};
+  final Map<String, Future<bool>> _verifications = {};
+  final Map<SSHClient, Future<void>> _pings = {};
+  final Map<String, DateTime> _lastVerified = {};
+  bool _inBackground = false;
+  int _visibilityEpoch = 0;
+
+  void setAppInBackground(bool value) {
+    if (_inBackground == value) return;
+    _inBackground = value;
+    _visibilityEpoch++;
+    // An old deadline must not tear down a transport after the device wakes.
+    _verifications.clear();
+  }
+
+  bool recentlyVerified(String serverId) =>
+      isConnected(serverId) &&
+      _lastVerified[serverId] != null &&
+      DateTime.now().difference(_lastVerified[serverId]!) <
+          const Duration(seconds: 30);
 
   /// 传输层掉线广播。值为对应的 serverId。
   ///
@@ -219,7 +238,8 @@ class SSHClientManager implements SshCommandExecutor {
         username: server.username,
         onPasswordRequest: () => password ?? '',
         identities: identities,
-        keepAliveInterval: transportKeepAliveInterval,
+        // The manager owns one coalesced, lifecycle-aware heartbeat.
+        keepAliveInterval: null,
         onVerifyHostKey: (keyType, fingerprint) async {
           return _hostKeyVerifier.verifyHostKey(
             host: server.host,
@@ -252,6 +272,7 @@ class SSHClientManager implements SshCommandExecutor {
       if (attempt.result.isCompleted) return;
       _activeClients[server.id] = client;
       _clientTargets[server.id] = server;
+      _lastVerified[server.id] = DateTime.now();
       _startKeepAlive(server.id, client);
       _watchTransportDeath(server.id, client);
       attempt.result.complete(client);
@@ -301,17 +322,47 @@ class SSHClientManager implements SshCommandExecutor {
   /// 调用方只需负责重连。
   ///
   /// 必须带超时：半开连接上 `ping()` 会一直挂着，既不返回也不抛错。
-  Future<bool> verifyAlive(String serverId) async {
+  Future<bool> verifyAlive(String serverId) {
+    final pending = _verifications[serverId];
+    if (pending != null) return pending;
+    late final Future<bool> future;
+    future = _verifyAlive(serverId).whenComplete(() {
+      if (identical(_verifications[serverId], future)) {
+        _verifications.remove(serverId);
+      }
+    });
+    _verifications[serverId] = future;
+    return future;
+  }
+
+  Future<bool> _verifyAlive(String serverId) async {
     final client = _activeClients[serverId];
     if (client == null || client.isClosed) {
       disconnect(serverId, notifyDeath: client != null);
       return false;
     }
+    final epoch = _visibilityEpoch;
+    final ping = _pings[client] ??= client.ping().whenComplete(() {
+      _pings.remove(client);
+    });
     try {
-      await client.ping().timeout(verifyAliveTimeout);
+      try {
+        await ping.timeout(verifyAliveTimeout);
+      } on TimeoutException {
+        if (_inBackground || epoch != _visibilityEpoch) {
+          return isConnected(serverId);
+        }
+        // A single delayed reply is not a dead connection. Wait on the SAME
+        // request, avoiding overlapping SSH global requests and duplicate pings.
+        await ping.timeout(verifyAliveTimeout);
+      }
+      if (identical(_activeClients[serverId], client)) {
+        _lastVerified[serverId] = DateTime.now();
+      }
       return isConnected(serverId);
     } catch (_) {
-      if (identical(_activeClients[serverId], client)) {
+      if (identical(_activeClients[serverId], client) &&
+          (!_inBackground && epoch == _visibilityEpoch || client.isClosed)) {
         disconnect(serverId, notifyDeath: true);
       }
       return isConnected(serverId);
@@ -320,25 +371,16 @@ class SSHClientManager implements SshCommandExecutor {
 
   void _startKeepAlive(String serverId, SSHClient client) {
     _keepAliveTimers[serverId]?.cancel();
-    _keepAliveTimers[serverId] = Timer.periodic(
-      const Duration(seconds: AppConstants.keepAliveIntervalSeconds),
-      (_) async {
-        if (!identical(_activeClients[serverId], client)) return;
-        if (client.isClosed) {
-          disconnect(serverId, notifyDeath: true);
-          return;
-        }
-        try {
-          // 与 verifyAlive 同理：没有超时的话半开连接会让这个定时器
-          // 永远卡在 await 上，连 `isClosed` 都不再检查。
-          await client.ping().timeout(verifyAliveTimeout);
-        } catch (_) {
-          if (identical(_activeClients[serverId], client)) {
-            disconnect(serverId, notifyDeath: true);
-          }
-        }
-      },
-    );
+    _keepAliveTimers[serverId] = Timer.periodic(transportKeepAliveInterval, (
+      _,
+    ) async {
+      if (!identical(_activeClients[serverId], client)) return;
+      if (client.isClosed) {
+        disconnect(serverId, notifyDeath: true);
+        return;
+      }
+      if (!_inBackground) await verifyAlive(serverId);
+    });
   }
 
   /// 以 Login Shell 方式执行命令，确保加载用户完整的 PATH 与环境变量
@@ -549,8 +591,10 @@ class SSHClientManager implements SshCommandExecutor {
     String serverId,
     SSHClient client, {
     bool watchTransport = true,
+    bool startKeepAlive = false,
   }) {
     _activeClients[serverId] = client;
+    if (startKeepAlive) _startKeepAlive(serverId, client);
     if (watchTransport) {
       _watchTransportDeath(serverId, client);
     }
@@ -594,6 +638,9 @@ class SSHClientManager implements SshCommandExecutor {
     _keepAliveTimers[serverId]?.cancel();
     _keepAliveTimers.remove(serverId);
     final client = _activeClients.remove(serverId);
+    _lastVerified.remove(serverId);
+    _verifications.remove(serverId);
+    if (client != null) _pings.remove(client);
     _clientTargets.remove(serverId);
     if (notifyDeath && client != null) {
       _transportDiedController?.add(serverId);

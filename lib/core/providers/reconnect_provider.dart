@@ -79,6 +79,7 @@ class ReconnectController {
 
   Timer? _timer;
   int _epoch = 0;
+  int? _attemptEpoch;
   bool _disposed = false;
   ServerProfile? _server;
 
@@ -91,6 +92,8 @@ class ReconnectController {
   /// 当成掉线又连回去 —— 这是最容易被忽略、也最招人烦的 bug。
   bool _userIntent = false;
   bool get userIntent => _userIntent;
+  bool maintains(ServerProfile server) =>
+      !_disposed && _userIntent && identical(server, _server);
 
   /// 是否曾经开始过维持连接。
   ///
@@ -162,6 +165,7 @@ class ReconnectController {
   /// 用 paused 而不是 userDisconnect：用户回到前台时应当继续维持连接，
   /// 所以意图要留着，只停掉定时器。
   void setAppDetached(bool detached) {
+    if (_appDetached == detached) return;
     if (detached) _epoch++;
     _appDetached = detached;
     if (detached) {
@@ -176,13 +180,17 @@ class ReconnectController {
   }
 
   bool get _shouldRetry =>
-      _userIntent && !_appDetached && _server != null && _state.retryable;
+      !_disposed &&
+      _userIntent &&
+      !_appDetached &&
+      _server != null &&
+      _state.retryable;
 
   void _scheduleRetry({bool immediate = false}) {
     // 已经排好期就不要再排一次：回前台时 `setAppDetached(false)` 与
     // `handleVerifyFailed()` 会先后触发，重复排期会让 attempt 一次跳两级，
     // 退避直接从 1s 变成 2s，用户会看到「刚回来就要等更久」。
-    if (_timer != null) return;
+    if (_timer != null || _attemptEpoch == _epoch) return;
 
     if (!_shouldRetry) return;
 
@@ -208,6 +216,9 @@ class ReconnectController {
     final server = _server;
     if (server == null || !_shouldRetry) return;
     final epoch = _epoch;
+    if (_attemptEpoch == epoch) return;
+    _attemptEpoch = epoch;
+    var retry = false;
     bool isCurrent() =>
         !_disposed &&
         epoch == _epoch &&
@@ -242,7 +253,10 @@ class ReconnectController {
 
       // 无限重试：用户要求「App 没退出就一直保持连接」，
       // 因此这里没有最大次数，只有逐渐收敛到 30s 的间隔。
-      _scheduleRetry();
+      retry = true;
+    } finally {
+      if (_attemptEpoch == epoch) _attemptEpoch = null;
+      if (retry && isCurrent()) _scheduleRetry();
     }
   }
 
@@ -282,6 +296,8 @@ class KeepAliveCoordinator {
   KeepAliveCoordinator(this.service);
 
   final Set<String> _activeSessions = {};
+  Future<void> _syncTail = Future<void>.value();
+  bool startFailed = false;
 
   int get activeCount => _activeSessions.length;
   bool get hasActiveSessions => _activeSessions.isNotEmpty;
@@ -301,18 +317,29 @@ class KeepAliveCoordinator {
   /// 清空所有连接并停止服务。
   Future<void> clear() async {
     _activeSessions.clear();
-    await service.stop();
+    await _sync();
   }
 
-  Future<void> _sync() async {
+  Future<void> _sync() {
+    final next = _syncTail.then((_) => _syncOnce());
+    _syncTail = next.catchError((Object _) {
+      startFailed = true;
+    });
+    return next;
+  }
+
+  Future<void> _syncOnce() async {
     if (_activeSessions.isEmpty) {
       await service.stop();
       return;
     }
-    // 每次同步都尝试 start：服务可能已被系统回收，
-    // 而 updateSessionCount 在未运行时会被原生侧忽略。
-    await service.start(_activeSessions.length);
-    await service.updateSessionCount(_activeSessions.length);
+    // 先查服务是否仍运行，仅被系统回收时重新启动；
+    // updateSessionCount 在未运行时会被原生侧忽略。
+    final running =
+        await service.isRunning() ||
+        await service.start(_activeSessions.length);
+    startFailed = !running;
+    if (running) await service.updateSessionCount(_activeSessions.length);
   }
 }
 
@@ -334,13 +361,15 @@ final reconnectControllerProvider = Provider<ReconnectController?>((ref) {
 
   final sshManager = ref.watch(sshClientManagerProvider);
 
-  final controller = ReconnectController(
+  late final ReconnectController controller;
+  controller = ReconnectController(
     connectAttempt: (server) async {
       final repo = ref.read(serverRepositoryProvider);
       // 每次重试都重新读取凭据：密码可能已被用户改过，
       // 缓存住就一定会在改密后永远重连失败。
       final password = await repo.getPassword(server.id);
       final privateKey = await repo.getPrivateKey(server.id);
+      if (!controller.maintains(server)) return;
       await sshManager.reconnectClient(
         server,
         password: password,

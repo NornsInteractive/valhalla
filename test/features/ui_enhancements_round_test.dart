@@ -23,6 +23,7 @@ import 'package:valhalla/features/nas/widgets/nas_library_settings_dialog.dart';
 import 'package:valhalla/features/shell/main_shell.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import '../support/temp_chat_db.dart';
 
 class _FakeAiChatNotifier extends AiChatNotifier {
   final AiChatState _initialState;
@@ -118,7 +119,7 @@ class _TestAgentRegistryNotifier extends AgentRegistryNotifier {
 
 Widget _wrapWithApp(Widget child, List<dynamic> overrides) {
   return ProviderScope(
-    overrides: overrides.cast(),
+    overrides: [tempChatRepositoryOverride(), ...overrides.cast()],
     child: MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

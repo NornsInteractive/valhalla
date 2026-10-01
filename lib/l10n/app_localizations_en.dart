@@ -1931,6 +1931,129 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cliLoadingOlderMessages => 'Loading older messages...';
 
   @override
+  String get chatLoadOlderMessages => 'Load earlier messages';
+
+  @override
+  String get chatCommandsTooltip => 'Commands';
+
+  @override
+  String get chatAttachTooltip => 'Attach file';
+
+  @override
+  String get chatAttachImage => 'Attach local image';
+
+  @override
+  String get chatAttachLocalText => 'Attach local text file';
+
+  @override
+  String get chatAttachRemoteText => 'Attach remote text file';
+
+  @override
+  String get chatAttachRemotePathTitle => 'Attach Remote Text File';
+
+  @override
+  String get chatAttachRemotePathHint => '/path/to/file.txt';
+
+  @override
+  String get chatAttachTooLarge => 'File exceeds size limit';
+
+  @override
+  String get chatUsageAndDiagnostics => 'Usage & Diagnostics';
+
+  @override
+  String get chatWorkingDirTooltip => 'Draft Working Directory';
+
+  @override
+  String get chatAttachFailed => 'Failed to attach file';
+
+  @override
+  String get chatInvalidRemotePath =>
+      'Invalid remote file path (must start with /)';
+
+  @override
+  String get chatRemoteReadFailed => 'Failed to read remote file';
+
+  @override
+  String get chatInvalidDirPath => 'Invalid directory path (must start with /)';
+
+  @override
+  String get chatNoSubdirectories => 'No subdirectories';
+
+  @override
+  String get chatUsageTitle => 'Token & Cost Usage';
+
+  @override
+  String get chatUsageUsed => 'Tokens Used';
+
+  @override
+  String get chatUsageSize => 'Context Size';
+
+  @override
+  String get chatUsageCost => 'Cost';
+
+  @override
+  String get chatDiagnosticsTitle => 'Diagnostics Log';
+
+  @override
+  String get chatNoDiagnostics => 'No diagnostic logs available';
+
+  @override
+  String get deleteSessionLocalOnlyNotice =>
+      'This only removes the local record in Valhalla and will not delete native agent session history on the server.';
+
+  @override
+  String get chatSearchSessionsHint => 'Search sessions...';
+
+  @override
+  String get chatLoadMoreSessions => 'Load more sessions';
+
+  @override
+  String get chatLoadingMoreSessions => 'Loading more sessions...';
+
+  @override
+  String get chatExportSession => 'Export Session (Markdown)';
+
+  @override
+  String get chatExportSuccess => 'Session exported successfully';
+
+  @override
+  String get chatExportFailed => 'Failed to export session';
+
+  @override
+  String get chatRemoteSessions => 'Remote Sessions';
+
+  @override
+  String get chatRemoteSessionsTitle => 'Remote Agent Sessions';
+
+  @override
+  String get chatRemoteSessionsDesc =>
+      'View and import native session history from the remote agent';
+
+  @override
+  String get chatRemoteSessionsEmpty => 'No remote sessions found';
+
+  @override
+  String get chatRemoteImporting => 'Importing remote session history...';
+
+  @override
+  String get chatRemoteImportFailed => 'Failed to import remote session';
+
+  @override
+  String get chatStatusInterrupted => 'Interrupted';
+
+  @override
+  String get chatStatusFailed => 'Failed';
+
+  @override
+  String get chatShowFullOutput => 'Show full output';
+
+  @override
+  String get chatShowLessOutput => 'Show less';
+
+  @override
+  String get chatToolLocations => 'Affected paths';
+
+  @override
   String cmdParamPlaceholder(String param) {
     return 'Enter value for $param';
   }
@@ -3093,4 +3216,218 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get copy => 'Copy';
+
+  @override
+  String get rename => 'Rename';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get sessionTitle => 'Session Title';
+
+  @override
+  String get chatSettingsStale => 'Stale';
+
+  @override
+  String get chatSettingsAvailableAfterFirstMessage =>
+      'Settings available after first message';
+
+  @override
+  String get chatReimportAsCopy => 'Re-import as Copy';
+
+  @override
+  String get chatSearchCommandsHint => 'Search commands or skills...';
+
+  @override
+  String get chatCommandsTab => 'Commands';
+
+  @override
+  String get chatSkillsTab => 'Skills';
+
+  @override
+  String get chatAccountAndQuotaTitle => 'Account & Quota';
+
+  @override
+  String get chatAccountSectionTitle => 'Account';
+
+  @override
+  String get chatAccountNotProvided => 'No account details reported';
+
+  @override
+  String get chatAccountKind => 'Type';
+
+  @override
+  String get chatAccountLabel => 'Label';
+
+  @override
+  String get chatAccountPlan => 'Plan';
+
+  @override
+  String get chatAccountEmail => 'Email';
+
+  @override
+  String get chatAccountUpdatedAt => 'Updated';
+
+  @override
+  String get chatQuotaSectionTitle => 'Quota & Status';
+
+  @override
+  String get chatStatusSourceNote => 'Raw Agent /status Output';
+
+  @override
+  String get chatStatusNotQueried => 'Status not queried yet';
+
+  @override
+  String get chatQueryStatusAction => 'Query Status (/status)';
+
+  @override
+  String get chatQueryStatusUnavailable =>
+      'Status query unavailable in current session';
+
+  @override
+  String get chatAttachmentMissing => 'Attachment file missing or unavailable';
+
+  @override
+  String get chatViewModeList => 'List';
+
+  @override
+  String get chatViewModeCards => 'Cards';
+
+  @override
+  String get chatViewModeGrid => 'Images';
+
+  @override
+  String get chatRemoteBrowserTitle => 'Remote Workspace';
+
+  @override
+  String get chatSelectDirectory => 'Select Directory';
+
+  @override
+  String chatAttachSelectedFiles(int count) {
+    return 'Attach Selected ($count)';
+  }
+
+  @override
+  String get chatNoFilesFound => 'No files found';
+
+  @override
+  String get chatRootDirectory => 'Root';
+
+  @override
+  String get chatSelectThisDirectory => 'Use this directory';
+
+  @override
+  String get chatAgentVersion => 'Agent Version';
+
+  @override
+  String get chatParentDirectory => 'Parent Directory';
+
+  @override
+  String get chatSearchFilesHint => 'Search files...';
+
+  @override
+  String get chatCommandsEmpty => 'No slash commands provided by the agent';
+
+  @override
+  String get chatSkillsEmpty => 'No skills provided by the agent';
+
+  @override
+  String get chatFileUnsupported => 'File type not supported for attachment';
+
+  @override
+  String get chatStatusNotProvided => 'Status query not provided by agent';
+
+  @override
+  String get sessionRecoveryReconnecting => 'Reconnecting...';
+
+  @override
+  String get sessionRecoverySyncing => 'Syncing output...';
+
+  @override
+  String get sessionRecoveryIncomplete => 'Some output could not be recovered';
+
+  @override
+  String get sessionRecoveryFailed => 'Recovery failed';
+
+  @override
+  String get sessionRecoveryRetry => 'Retry';
+
+  @override
+  String get dashboardUpdatesPaused => 'Updates paused';
+
+  @override
+  String get chatSettingsIndependentModelUnavailable =>
+      'CLI model catalog is currently unavailable. Models may be cached or limited by the CLI version; you can also enter a model name manually.';
+
+  @override
+  String get chatSettingsModelCatalogNote =>
+      'Models are queried from the CLI app-server using your existing CLI login. The catalog may be cached or version-limited; you can refresh manually or switch to manual input.';
+
+  @override
+  String get chatModelCatalogError403 =>
+      'CLI model query access denied (403). Check CLI login and service connectivity, or enter a model name manually.';
+
+  @override
+  String chatModelCatalogErrorGeneric(String error) {
+    return 'Model catalog error: $error';
+  }
+
+  @override
+  String get chatModelAuthorizeButton => 'Authorize Model Catalog';
+
+  @override
+  String get chatModelAuthorizeConfirmTitle => 'Authorize Model Catalog';
+
+  @override
+  String get chatModelAuthorizeConfirmMessage =>
+      'This will start browser authorization for the model catalog on target host/container. Your existing Codex login and terminal sessions will remain completely untouched. Continue?';
+
+  @override
+  String get chatModelAuthorizing => 'Authorizing via browser...';
+
+  @override
+  String get chatModelAuthorizeCancel => 'Cancel Authorization';
+
+  @override
+  String get chatCommandsFirstTurnNote =>
+      'Slash commands will be advertised by the agent runtime once the session is initialized, without requiring a prior ordinary conversation; drafts do not automatically create sessions.';
+
+  @override
+  String get chatCommandsClientActionRunSettings => 'Run Settings';
+
+  @override
+  String get chatCommandsClientActionWorkingDirectory => 'Working Directory';
+
+  @override
+  String get chatCommandsClientActionsSection => 'Local Actions';
+
+  @override
+  String get chatRunSettingsModelSourceCatalog => 'Model List';
+
+  @override
+  String get chatRunSettingsModelSourceCustom => 'Manual Input';
+
+  @override
+  String get chatRunSettingsCustomModelHint => 'Enter model ID';
+
+  @override
+  String get chatRunSettingsCustomModelNotice =>
+      'Manual model names are unverified and will be sent directly to the agent runtime, which may reject unsupported models.';
+
+  @override
+  String get chatRunSettingsCustomModelEmptyError =>
+      'Model name cannot be empty';
+
+  @override
+  String get chatRunSettingsCustomModelInvalidError =>
+      'Model name must be at most 256 characters with no spaces or control characters';
+
+  @override
+  String get chatCommandsDraftPreviewNotice =>
+      'Commands verified for the current adapter version. Selecting inserts text into the draft; Send will initialize the session on demand and run the command directly.';
+
+  @override
+  String get chatCommandsDiscoveryFailed =>
+      'Failed to discover commands or skills';
 }

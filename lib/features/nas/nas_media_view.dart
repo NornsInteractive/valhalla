@@ -756,25 +756,38 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             key: const Key('nas_source_selector_button'),
             tooltip: context.nasSources,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
               decoration: BoxDecoration(
-                color: theme.colorScheme.secondaryContainer,
+                color: theme.colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(VRadius.input),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.5,
+                  ),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    switch (currentSource?.type) {
-                      NasSourceType.sftp => Icons.terminal,
-                      NasSourceType.webdav => Icons.cloud_outlined,
-                      NasSourceType.smb => Icons.folder_shared_outlined,
-                      NasSourceType.jellyfin => Icons.tv,
-                      NasSourceType.emby => Icons.live_tv,
-                      _ => Icons.storage,
-                    },
-                    size: 16,
-                    color: theme.colorScheme.onSecondaryContainer,
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Icon(
+                      switch (currentSource?.type) {
+                        NasSourceType.sftp => Icons.terminal,
+                        NasSourceType.webdav => Icons.cloud_outlined,
+                        NasSourceType.smb => Icons.folder_shared_outlined,
+                        NasSourceType.jellyfin => Icons.tv,
+                        NasSourceType.emby => Icons.live_tv,
+                        _ => Icons.storage,
+                      },
+                      size: 13,
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
                   const SizedBox(width: 6),
                   ConstrainedBox(
@@ -783,12 +796,17 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                       currentSource?.name ?? context.nasSources,
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSecondaryContainer,
+                        color: theme.colorScheme.onSurface,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const Icon(Icons.arrow_drop_down, size: 16),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    size: 16,
+                    color: theme.colorScheme.outline,
+                  ),
                 ],
               ),
             ),
@@ -873,16 +891,38 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             onPressed: () => NasSourceDialog.show(context),
           );
 
-    final statusWidget = Text(
-      state.isScanning
-          ? '${context.l10n.nasScanning} (${state.scannedCount})'
-          : lastScanText,
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: state.isScanning
-            ? theme.colorScheme.primary
-            : theme.colorScheme.outline,
-      ),
-      overflow: TextOverflow.ellipsis,
+    final statusWidget = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: state.isScanning
+                ? theme.colorScheme.primary
+                : (currentSource != null
+                      ? theme.colorScheme.primary.withValues(alpha: 0.8)
+                      : theme.colorScheme.outline),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            state.isScanning
+                ? '${context.l10n.nasScanning} (${state.scannedCount})'
+                : lastScanText,
+            style: monoTextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+              color: state.isScanning
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outline,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
 
     final downloadsBtn = IconButton(
@@ -996,8 +1036,8 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
 
     if (isNarrow) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        color: theme.colorScheme.surface,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        color: theme.colorScheme.surfaceContainerLow,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1010,7 +1050,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 scanBtn,
               ],
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [downloadsBtn, configBtn, settingsBtn],
@@ -1022,16 +1062,16 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: theme.colorScheme.surface,
+      color: theme.colorScheme.surfaceContainerLow,
       child: Row(
         children: [
           sourceWidget,
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(child: statusWidget),
           downloadsBtn,
           configBtn,
           settingsBtn,
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
           scanBtn,
         ],
       ),
@@ -1161,8 +1201,15 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
       (NasMediaTab.downloads, context.nasTabDownloads, Icons.download_outlined),
     ];
 
+    int? getTabCount(NasMediaTab tab) => switch (tab) {
+      NasMediaTab.photos => state.totals.images,
+      NasMediaTab.videos => state.totals.videos,
+      NasMediaTab.music => state.totals.audio,
+      _ => null,
+    };
+
     return Container(
-      color: theme.colorScheme.surface,
+      color: theme.colorScheme.surfaceContainerLow,
       width: double.infinity,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -1170,19 +1217,83 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         child: Row(
           children: tabs.map((tabInfo) {
             final isSelected = _currentTab == tabInfo.$1;
+            final count = getTabCount(tabInfo.$1);
+
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
                 key: Key('nas_tab_${tabInfo.$1.name}'),
                 selected: isSelected,
+                showCheckmark: false,
+                visualDensity: VisualDensity.compact,
                 avatar: Icon(
                   tabInfo.$3,
-                  size: 16,
+                  size: 15,
                   color: isSelected
-                      ? theme.colorScheme.onPrimary
-                      : theme.colorScheme.primary,
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
                 ),
-                label: Text(tabInfo.$2),
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      tabInfo.$2,
+                      style: TextStyle(
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        fontSize: 12,
+                        color: isSelected
+                            ? theme.colorScheme.onSurface
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (count != null && count > 0) ...[
+                      const SizedBox(width: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4.5,
+                          vertical: 0.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? theme.colorScheme.primary.withValues(
+                                  alpha: 0.18,
+                                )
+                              : theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          count > 999
+                              ? '${(count / 1000).toStringAsFixed(1)}k'
+                              : '$count',
+                          style: monoTextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.outline,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                selectedColor: theme.colorScheme.primary.withValues(
+                  alpha: 0.12,
+                ),
+                side: BorderSide(
+                  color: isSelected
+                      ? theme.colorScheme.primary.withValues(alpha: 0.55)
+                      : theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.45,
+                        ),
+                  width: isSelected ? 1.2 : 0.8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 onSelected: (selected) {
                   if (selected) _selectTab(tabInfo.$1);
                 },
@@ -1440,27 +1551,230 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
 
   Widget _buildHomeSurface(BuildContext context, NasState state) {
     final theme = Theme.of(context);
-    // Totals from SQLite repository, NEVER items.length!
     final totals = state.totals;
+    final isDesktop =
+        context.isDesktop || MediaQuery.sizeOf(context).width >= 720;
+
+    final videoItems = state.items
+        .where((i) => i.kind == NasMediaKind.video)
+        .toList();
+    final photoItems = state.items
+        .where((i) => i.kind == NasMediaKind.image)
+        .toList();
+    final musicItems = state.items
+        .where((i) => i.kind == NasMediaKind.audio)
+        .toList();
+
+    final hasShelves =
+        videoItems.isNotEmpty ||
+        photoItems.isNotEmpty ||
+        musicItems.isNotEmpty ||
+        totals.videos > 0 ||
+        totals.images > 0 ||
+        totals.audio > 0;
 
     return SingleChildScrollView(
       key: const Key('nas_unified_scroll'),
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Quick Stats Banner
+          // Shelf 1: Videos (Stitch 影视横滑 / 网格)
+          if (videoItems.isNotEmpty || totals.videos > 0) ...[
+            Entrance(
+              index: 0,
+              child: _buildHomeSectionHeader(
+                context,
+                title: context.l10n.nasFilterVideos,
+                color: theme.colorScheme.primary,
+                count: totals.videos > 0 ? totals.videos : videoItems.length,
+                onTapAll: () => _selectTab(NasMediaTab.videos),
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (videoItems.isNotEmpty)
+              isDesktop
+                  ? Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: videoItems
+                          .take(8)
+                          .map(
+                            (item) =>
+                                _buildHomeVideoCard(context, item, isDesktop),
+                          )
+                          .toList(),
+                    )
+                  : SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      clipBehavior: Clip.none,
+                      child: Row(
+                        children: videoItems.take(8).map((item) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: _buildHomeVideoCard(
+                              context,
+                              item,
+                              isDesktop,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    )
+            else
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(VRadius.card),
+                  side: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.4,
+                    ),
+                  ),
+                ),
+                child: ListTile(
+                  leading: Icon(
+                    Icons.movie_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: Text(context.l10n.nasFilterVideos),
+                  subtitle: Text(context.l10n.nasItemCount(totals.videos)),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () => _selectTab(NasMediaTab.videos),
+                ),
+              ),
+            const SizedBox(height: 20),
+          ],
+
+          // Shelf 2: Photos (Stitch 近期相册 / 网格)
+          if (photoItems.isNotEmpty || totals.images > 0) ...[
+            Entrance(
+              index: 1,
+              child: _buildHomeSectionHeader(
+                context,
+                title: context.l10n.nasFilterImages,
+                color: theme.colorScheme.secondary,
+                count: totals.images > 0 ? totals.images : photoItems.length,
+                onTapAll: () => _selectTab(NasMediaTab.photos),
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (photoItems.isNotEmpty)
+              isDesktop
+                  ? Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: photoItems
+                          .take(10)
+                          .map(
+                            (item) =>
+                                _buildHomePhotoTile(context, item, isDesktop),
+                          )
+                          .toList(),
+                    )
+                  : SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      clipBehavior: Clip.none,
+                      child: Row(
+                        children: photoItems.take(10).map((item) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _buildHomePhotoTile(
+                              context,
+                              item,
+                              isDesktop,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    )
+            else
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(VRadius.card),
+                  side: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.4,
+                    ),
+                  ),
+                ),
+                child: ListTile(
+                  leading: Icon(
+                    Icons.image_outlined,
+                    color: theme.colorScheme.secondary,
+                  ),
+                  title: Text(context.l10n.nasFilterImages),
+                  subtitle: Text(context.l10n.nasItemCount(totals.images)),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () => _selectTab(NasMediaTab.photos),
+                ),
+              ),
+            const SizedBox(height: 20),
+          ],
+
+          // Shelf 3: Music (Stitch 音频列表)
+          if (musicItems.isNotEmpty || totals.audio > 0) ...[
+            Entrance(
+              index: 2,
+              child: _buildHomeSectionHeader(
+                context,
+                title: context.l10n.nasTabMusic,
+                color: theme.colorScheme.tertiary,
+                count: totals.audio > 0 ? totals.audio : musicItems.length,
+                onTapAll: () => _selectTab(NasMediaTab.music),
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (musicItems.isNotEmpty)
+              ...musicItems
+                  .take(4)
+                  .map((item) => _buildMediaListItem(context, item))
+            else
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(VRadius.card),
+                  side: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.4,
+                    ),
+                  ),
+                ),
+                child: ListTile(
+                  leading: Icon(
+                    Icons.music_note_outlined,
+                    color: theme.colorScheme.tertiary,
+                  ),
+                  title: Text(context.l10n.nasTabMusic),
+                  subtitle: Text(context.l10n.nasItemCount(totals.audio)),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () => _selectTab(NasMediaTab.music),
+                ),
+              ),
+            const SizedBox(height: 20),
+          ],
+
+          // Fallback if no media items found
+          if (!hasShelves) ...[
+            ...state.items.map((item) => _buildMediaListItem(context, item)),
+            const SizedBox(height: 16),
+          ],
+
+          // Shelf 4: Media Cloud Index Distribution Bar (Stitch 存储状态分布条)
           Entrance(
-            index: 0,
+            index: 3,
             child: Container(
               key: const Key('nas_quick_stats'),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
+                color: theme.colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(VRadius.card),
                 border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.4,
+                  ),
                 ),
               ),
               child: Column(
@@ -1469,46 +1783,80 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                   Row(
                     children: [
                       Icon(
-                        Icons.insights_rounded,
-                        size: 18,
+                        Icons.pie_chart_outline_rounded,
+                        size: 16,
                         color: theme.colorScheme.primary,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         context.l10n.nasQuickStats,
-                        style: theme.textTheme.titleSmall,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${context.l10n.nasStatTotal} ${totals.total}',
+                        style: monoTextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.outline,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Row(
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: Container(
+                      height: 6,
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      child: Row(
+                        children: [
+                          if (totals.total > 0 && totals.videos > 0)
+                            Flexible(
+                              flex: totals.videos,
+                              child: Container(
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          if (totals.total > 0 && totals.images > 0)
+                            Flexible(
+                              flex: totals.images,
+                              child: Container(
+                                color: theme.colorScheme.secondary,
+                              ),
+                            ),
+                          if (totals.total > 0 && totals.audio > 0)
+                            Flexible(
+                              flex: totals.audio,
+                              child: Container(
+                                color: theme.colorScheme.tertiary,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
                     children: [
-                      _buildStatPill(
-                        context,
-                        label: context.l10n.nasStatTotal,
-                        value: totals.total.toString(),
-                        icon: Icons.all_inclusive,
+                      _buildQuickStatDot(
+                        theme.colorScheme.primary,
+                        context.l10n.nasFilterVideos,
+                        totals.videos,
                       ),
-                      const SizedBox(width: 8),
-                      _buildStatPill(
-                        context,
-                        label: context.l10n.nasStatPhotos,
-                        value: totals.images.toString(),
-                        icon: Icons.image,
+                      _buildQuickStatDot(
+                        theme.colorScheme.secondary,
+                        context.l10n.nasFilterImages,
+                        totals.images,
                       ),
-                      const SizedBox(width: 8),
-                      _buildStatPill(
-                        context,
-                        label: context.l10n.nasStatVideos,
-                        value: totals.videos.toString(),
-                        icon: Icons.movie,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildStatPill(
-                        context,
-                        label: context.l10n.nasStatMusic,
-                        value: totals.audio.toString(),
-                        icon: Icons.audiotrack,
+                      _buildQuickStatDot(
+                        theme.colorScheme.tertiary,
+                        context.l10n.nasTabMusic,
+                        totals.audio,
                       ),
                     ],
                   ),
@@ -1516,14 +1864,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
-
-          // Items listing
-          ...state.items.map((item) => _buildMediaListItem(context, item)),
-
-          // Pagination Footer
-          _buildPaginationFooter(context, state),
-
+          const SizedBox(height: 16),
           if (state.isLoading)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1539,6 +1880,328 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHomeVideoCard(
+    BuildContext context,
+    NasMediaItem item,
+    bool isDesktop,
+  ) {
+    final theme = Theme.of(context);
+    final ext = item.name.contains('.')
+        ? item.name.split('.').last.toUpperCase()
+        : 'VIDEO';
+
+    return Container(
+      key: Key('nas_item_${item.name}'),
+      width: isDesktop ? 220 : 160,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(VRadius.card),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: () => _handleItemTap(item),
+            borderRadius: BorderRadius.circular(VRadius.card),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AspectRatio(
+                  aspectRatio: 16 / 10,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Container(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        child: FutureBuilder<String?>(
+                          future: ref
+                              .read(nasProvider.notifier)
+                              .thumbnailPath(item),
+                          builder: (context, snapshot) {
+                            final path = snapshot.data;
+                            if (path != null && path.isNotEmpty) {
+                              return Image.file(
+                                File(path),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Center(
+                                      child: Icon(
+                                        Icons.movie_outlined,
+                                        size: 32,
+                                        color: theme.colorScheme.outline,
+                                      ),
+                                    ),
+                              );
+                            }
+                            return Center(
+                              child: Icon(
+                                Icons.movie_outlined,
+                                size: 32,
+                                color: theme.colorScheme.outline,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        left: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(3),
+                            border: Border.all(
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.4,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            ext,
+                            style: monoTextStyle(
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title ?? item.name,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        SftpFileItem.formatBytes(item.sizeBytes),
+                        style: monoTextStyle(
+                          fontSize: 10,
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                icon: Icon(
+                  item.isFavorite ? Icons.favorite : Icons.favorite_border,
+                  size: 16,
+                  color: item.isFavorite ? context.vDanger : Colors.white,
+                ),
+                tooltip: context.l10n.nasTabFavorites,
+                onPressed: () => _toggleFavorite(item),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomePhotoTile(
+    BuildContext context,
+    NasMediaItem item,
+    bool isDesktop,
+  ) {
+    final theme = Theme.of(context);
+    final ext = item.name.contains('.')
+        ? item.name.split('.').last.toUpperCase()
+        : 'IMG';
+
+    return Semantics(
+      label: item.title ?? item.name,
+      button: true,
+      child: InkWell(
+        key: Key('nas_item_${item.name}'),
+        onTap: () => _openInApp(item),
+        borderRadius: BorderRadius.circular(VRadius.input),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(VRadius.input),
+          child: Container(
+            width: isDesktop ? 120 : 96,
+            height: isDesktop ? 120 : 96,
+            color: theme.colorScheme.surfaceContainerHighest,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                FutureBuilder<String?>(
+                  future: ref.read(nasProvider.notifier).thumbnailPath(item),
+                  builder: (context, snapshot) {
+                    final path = snapshot.data;
+                    if (path != null && path.isNotEmpty) {
+                      return Image.file(
+                        File(path),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.image_outlined,
+                          size: 28,
+                          color: theme.colorScheme.outline,
+                        ),
+                      );
+                    }
+                    return Icon(
+                      Icons.image_outlined,
+                      size: 28,
+                      color: theme.colorScheme.outline,
+                    );
+                  },
+                ),
+                Positioned(
+                  top: 3,
+                  right: 3,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 3,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Text(
+                      ext,
+                      style: monoTextStyle(
+                        fontSize: 7.5,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.secondary,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 2.5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.65),
+                    ),
+                    child: Text(
+                      item.title ?? item.name,
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeSectionHeader(
+    BuildContext context, {
+    required String title,
+    required Color color,
+    required int count,
+    required VoidCallback onTapAll,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 3.5,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const Spacer(),
+        TextButton(
+          style: TextButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+          ),
+          onPressed: onTapAll,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                context.l10n.nasItemCount(count),
+                style: monoTextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+              const SizedBox(width: 2),
+              Icon(Icons.chevron_right, size: 16, color: color),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickStatDot(Color color, String label, int count) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '$label $count',
+          style: monoTextStyle(fontSize: 10.5, fontWeight: FontWeight.w500),
+        ),
+      ],
     );
   }
 
@@ -1594,39 +2257,6 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 : null,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatPill(
-    BuildContext context, {
-    required String label,
-    required String value,
-    required IconData icon,
-  }) {
-    final theme = Theme.of(context);
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(VRadius.input),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 16, color: theme.colorScheme.primary),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: monoTextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-            ),
-            Text(
-              label,
-              style: TextStyle(fontSize: 10, color: theme.colorScheme.outline),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
       ),
     );
   }

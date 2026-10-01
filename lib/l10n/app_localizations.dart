@@ -3740,6 +3740,246 @@ abstract class AppLocalizations {
   /// **'Loading older messages...'**
   String get cliLoadingOlderMessages;
 
+  /// No description provided for @chatLoadOlderMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Load earlier messages'**
+  String get chatLoadOlderMessages;
+
+  /// No description provided for @chatCommandsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Commands'**
+  String get chatCommandsTooltip;
+
+  /// No description provided for @chatAttachTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach file'**
+  String get chatAttachTooltip;
+
+  /// No description provided for @chatAttachImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach local image'**
+  String get chatAttachImage;
+
+  /// No description provided for @chatAttachLocalText.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach local text file'**
+  String get chatAttachLocalText;
+
+  /// No description provided for @chatAttachRemoteText.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach remote text file'**
+  String get chatAttachRemoteText;
+
+  /// No description provided for @chatAttachRemotePathTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach Remote Text File'**
+  String get chatAttachRemotePathTitle;
+
+  /// No description provided for @chatAttachRemotePathHint.
+  ///
+  /// In en, this message translates to:
+  /// **'/path/to/file.txt'**
+  String get chatAttachRemotePathHint;
+
+  /// No description provided for @chatAttachTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'File exceeds size limit'**
+  String get chatAttachTooLarge;
+
+  /// No description provided for @chatUsageAndDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage & Diagnostics'**
+  String get chatUsageAndDiagnostics;
+
+  /// No description provided for @chatWorkingDirTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft Working Directory'**
+  String get chatWorkingDirTooltip;
+
+  /// No description provided for @chatAttachFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to attach file'**
+  String get chatAttachFailed;
+
+  /// No description provided for @chatInvalidRemotePath.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid remote file path (must start with /)'**
+  String get chatInvalidRemotePath;
+
+  /// No description provided for @chatRemoteReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to read remote file'**
+  String get chatRemoteReadFailed;
+
+  /// No description provided for @chatInvalidDirPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid directory path (must start with /)'**
+  String get chatInvalidDirPath;
+
+  /// No description provided for @chatNoSubdirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'No subdirectories'**
+  String get chatNoSubdirectories;
+
+  /// No description provided for @chatUsageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Token & Cost Usage'**
+  String get chatUsageTitle;
+
+  /// No description provided for @chatUsageUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens Used'**
+  String get chatUsageUsed;
+
+  /// No description provided for @chatUsageSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Context Size'**
+  String get chatUsageSize;
+
+  /// No description provided for @chatUsageCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost'**
+  String get chatUsageCost;
+
+  /// No description provided for @chatDiagnosticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics Log'**
+  String get chatDiagnosticsTitle;
+
+  /// No description provided for @chatNoDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'No diagnostic logs available'**
+  String get chatNoDiagnostics;
+
+  /// No description provided for @deleteSessionLocalOnlyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This only removes the local record in Valhalla and will not delete native agent session history on the server.'**
+  String get deleteSessionLocalOnlyNotice;
+
+  /// No description provided for @chatSearchSessionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search sessions...'**
+  String get chatSearchSessionsHint;
+
+  /// No description provided for @chatLoadMoreSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more sessions'**
+  String get chatLoadMoreSessions;
+
+  /// No description provided for @chatLoadingMoreSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading more sessions...'**
+  String get chatLoadingMoreSessions;
+
+  /// No description provided for @chatExportSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Session (Markdown)'**
+  String get chatExportSession;
+
+  /// No description provided for @chatExportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Session exported successfully'**
+  String get chatExportSuccess;
+
+  /// No description provided for @chatExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to export session'**
+  String get chatExportFailed;
+
+  /// No description provided for @chatRemoteSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Sessions'**
+  String get chatRemoteSessions;
+
+  /// No description provided for @chatRemoteSessionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Agent Sessions'**
+  String get chatRemoteSessionsTitle;
+
+  /// No description provided for @chatRemoteSessionsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'View and import native session history from the remote agent'**
+  String get chatRemoteSessionsDesc;
+
+  /// No description provided for @chatRemoteSessionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No remote sessions found'**
+  String get chatRemoteSessionsEmpty;
+
+  /// No description provided for @chatRemoteImporting.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing remote session history...'**
+  String get chatRemoteImporting;
+
+  /// No description provided for @chatRemoteImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to import remote session'**
+  String get chatRemoteImportFailed;
+
+  /// No description provided for @chatStatusInterrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'Interrupted'**
+  String get chatStatusInterrupted;
+
+  /// No description provided for @chatStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get chatStatusFailed;
+
+  /// No description provided for @chatShowFullOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Show full output'**
+  String get chatShowFullOutput;
+
+  /// No description provided for @chatShowLessOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get chatShowLessOutput;
+
+  /// No description provided for @chatToolLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Affected paths'**
+  String get chatToolLocations;
+
   /// No description provided for @cmdParamPlaceholder.
   ///
   /// In en, this message translates to:
@@ -5735,6 +5975,402 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy'**
   String get copy;
+
+  /// No description provided for @rename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get rename;
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// No description provided for @sessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Session Title'**
+  String get sessionTitle;
+
+  /// No description provided for @chatSettingsStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Stale'**
+  String get chatSettingsStale;
+
+  /// No description provided for @chatSettingsAvailableAfterFirstMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings available after first message'**
+  String get chatSettingsAvailableAfterFirstMessage;
+
+  /// No description provided for @chatReimportAsCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-import as Copy'**
+  String get chatReimportAsCopy;
+
+  /// No description provided for @chatSearchCommandsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search commands or skills...'**
+  String get chatSearchCommandsHint;
+
+  /// No description provided for @chatCommandsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Commands'**
+  String get chatCommandsTab;
+
+  /// No description provided for @chatSkillsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get chatSkillsTab;
+
+  /// No description provided for @chatAccountAndQuotaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account & Quota'**
+  String get chatAccountAndQuotaTitle;
+
+  /// No description provided for @chatAccountSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get chatAccountSectionTitle;
+
+  /// No description provided for @chatAccountNotProvided.
+  ///
+  /// In en, this message translates to:
+  /// **'No account details reported'**
+  String get chatAccountNotProvided;
+
+  /// No description provided for @chatAccountKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get chatAccountKind;
+
+  /// No description provided for @chatAccountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Label'**
+  String get chatAccountLabel;
+
+  /// No description provided for @chatAccountPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get chatAccountPlan;
+
+  /// No description provided for @chatAccountEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get chatAccountEmail;
+
+  /// No description provided for @chatAccountUpdatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get chatAccountUpdatedAt;
+
+  /// No description provided for @chatQuotaSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quota & Status'**
+  String get chatQuotaSectionTitle;
+
+  /// No description provided for @chatStatusSourceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw Agent /status Output'**
+  String get chatStatusSourceNote;
+
+  /// No description provided for @chatStatusNotQueried.
+  ///
+  /// In en, this message translates to:
+  /// **'Status not queried yet'**
+  String get chatStatusNotQueried;
+
+  /// No description provided for @chatQueryStatusAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Query Status (/status)'**
+  String get chatQueryStatusAction;
+
+  /// No description provided for @chatQueryStatusUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Status query unavailable in current session'**
+  String get chatQueryStatusUnavailable;
+
+  /// No description provided for @chatAttachmentMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment file missing or unavailable'**
+  String get chatAttachmentMissing;
+
+  /// No description provided for @chatViewModeList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get chatViewModeList;
+
+  /// No description provided for @chatViewModeCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards'**
+  String get chatViewModeCards;
+
+  /// No description provided for @chatViewModeGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Images'**
+  String get chatViewModeGrid;
+
+  /// No description provided for @chatRemoteBrowserTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Workspace'**
+  String get chatRemoteBrowserTitle;
+
+  /// No description provided for @chatSelectDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Directory'**
+  String get chatSelectDirectory;
+
+  /// No description provided for @chatAttachSelectedFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach Selected ({count})'**
+  String chatAttachSelectedFiles(int count);
+
+  /// No description provided for @chatNoFilesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No files found'**
+  String get chatNoFilesFound;
+
+  /// No description provided for @chatRootDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Root'**
+  String get chatRootDirectory;
+
+  /// No description provided for @chatSelectThisDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this directory'**
+  String get chatSelectThisDirectory;
+
+  /// No description provided for @chatAgentVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent Version'**
+  String get chatAgentVersion;
+
+  /// No description provided for @chatParentDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Parent Directory'**
+  String get chatParentDirectory;
+
+  /// No description provided for @chatSearchFilesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search files...'**
+  String get chatSearchFilesHint;
+
+  /// No description provided for @chatCommandsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No slash commands provided by the agent'**
+  String get chatCommandsEmpty;
+
+  /// No description provided for @chatSkillsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No skills provided by the agent'**
+  String get chatSkillsEmpty;
+
+  /// No description provided for @chatFileUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'File type not supported for attachment'**
+  String get chatFileUnsupported;
+
+  /// No description provided for @chatStatusNotProvided.
+  ///
+  /// In en, this message translates to:
+  /// **'Status query not provided by agent'**
+  String get chatStatusNotProvided;
+
+  /// No description provided for @sessionRecoveryReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting...'**
+  String get sessionRecoveryReconnecting;
+
+  /// No description provided for @sessionRecoverySyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing output...'**
+  String get sessionRecoverySyncing;
+
+  /// No description provided for @sessionRecoveryIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Some output could not be recovered'**
+  String get sessionRecoveryIncomplete;
+
+  /// No description provided for @sessionRecoveryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery failed'**
+  String get sessionRecoveryFailed;
+
+  /// No description provided for @sessionRecoveryRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get sessionRecoveryRetry;
+
+  /// No description provided for @dashboardUpdatesPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates paused'**
+  String get dashboardUpdatesPaused;
+
+  /// No description provided for @chatSettingsIndependentModelUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'CLI model catalog is currently unavailable. Models may be cached or limited by the CLI version; you can also enter a model name manually.'**
+  String get chatSettingsIndependentModelUnavailable;
+
+  /// No description provided for @chatSettingsModelCatalogNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Models are queried from the CLI app-server using your existing CLI login. The catalog may be cached or version-limited; you can refresh manually or switch to manual input.'**
+  String get chatSettingsModelCatalogNote;
+
+  /// No description provided for @chatModelCatalogError403.
+  ///
+  /// In en, this message translates to:
+  /// **'CLI model query access denied (403). Check CLI login and service connectivity, or enter a model name manually.'**
+  String get chatModelCatalogError403;
+
+  /// No description provided for @chatModelCatalogErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Model catalog error: {error}'**
+  String chatModelCatalogErrorGeneric(String error);
+
+  /// No description provided for @chatModelAuthorizeButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorize Model Catalog'**
+  String get chatModelAuthorizeButton;
+
+  /// No description provided for @chatModelAuthorizeConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorize Model Catalog'**
+  String get chatModelAuthorizeConfirmTitle;
+
+  /// No description provided for @chatModelAuthorizeConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will start browser authorization for the model catalog on target host/container. Your existing Codex login and terminal sessions will remain completely untouched. Continue?'**
+  String get chatModelAuthorizeConfirmMessage;
+
+  /// No description provided for @chatModelAuthorizing.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorizing via browser...'**
+  String get chatModelAuthorizing;
+
+  /// No description provided for @chatModelAuthorizeCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Authorization'**
+  String get chatModelAuthorizeCancel;
+
+  /// No description provided for @chatCommandsFirstTurnNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Slash commands will be advertised by the agent runtime once the session is initialized, without requiring a prior ordinary conversation; drafts do not automatically create sessions.'**
+  String get chatCommandsFirstTurnNote;
+
+  /// No description provided for @chatCommandsClientActionRunSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Run Settings'**
+  String get chatCommandsClientActionRunSettings;
+
+  /// No description provided for @chatCommandsClientActionWorkingDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Working Directory'**
+  String get chatCommandsClientActionWorkingDirectory;
+
+  /// No description provided for @chatCommandsClientActionsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Actions'**
+  String get chatCommandsClientActionsSection;
+
+  /// No description provided for @chatRunSettingsModelSourceCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Model List'**
+  String get chatRunSettingsModelSourceCatalog;
+
+  /// No description provided for @chatRunSettingsModelSourceCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Input'**
+  String get chatRunSettingsModelSourceCustom;
+
+  /// No description provided for @chatRunSettingsCustomModelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter model ID'**
+  String get chatRunSettingsCustomModelHint;
+
+  /// No description provided for @chatRunSettingsCustomModelNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual model names are unverified and will be sent directly to the agent runtime, which may reject unsupported models.'**
+  String get chatRunSettingsCustomModelNotice;
+
+  /// No description provided for @chatRunSettingsCustomModelEmptyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Model name cannot be empty'**
+  String get chatRunSettingsCustomModelEmptyError;
+
+  /// No description provided for @chatRunSettingsCustomModelInvalidError.
+  ///
+  /// In en, this message translates to:
+  /// **'Model name must be at most 256 characters with no spaces or control characters'**
+  String get chatRunSettingsCustomModelInvalidError;
+
+  /// No description provided for @chatCommandsDraftPreviewNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Commands verified for the current adapter version. Selecting inserts text into the draft; Send will initialize the session on demand and run the command directly.'**
+  String get chatCommandsDraftPreviewNotice;
+
+  /// No description provided for @chatCommandsDiscoveryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to discover commands or skills'**
+  String get chatCommandsDiscoveryFailed;
 }
 
 class _AppLocalizationsDelegate

@@ -103,7 +103,8 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
   @override
   AgentRegistryState build() {
     _environmentEpoch++;
-    final server = ref.watch(activeServerProvider);
+    ref.watch(activeServerProvider.select((s) => s?.connectionKey));
+    final server = ref.read(activeServerProvider);
     final repo = ref.watch(agentRepositoryProvider);
 
     // 连接状态变化的两个职责，都放在这一个监听里：

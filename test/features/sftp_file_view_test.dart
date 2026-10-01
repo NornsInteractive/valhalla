@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
 import 'package:valhalla/features/files/sftp_file_view.dart';
 import 'package:valhalla/infrastructure/sftp/sftp_client_service.dart';
@@ -199,6 +200,17 @@ class _TestSftpNotifier extends SftpNotifier {
   }
 }
 
+/// The SFTP surface reads the connection state, and the real connection
+/// notifier builds the SSH client manager, which needs a live
+/// `LocalStorageService`. These tests fake the file operations only, so the
+/// connection is supplied here as well - connected, because every case in this
+/// file drives real file actions.
+class _TestServerConnectionNotifier extends ServerConnectionNotifier {
+  @override
+  ServerConnectionState build() =>
+      const ServerConnectionState(status: ConnectionStateEnum.connected);
+}
+
 Widget _buildTestApp({
   required SftpState state,
   _FakeOperations? ops,
@@ -210,6 +222,7 @@ Widget _buildTestApp({
     overrides: [
       sftpOperationsProvider.overrideWithValue(operations),
       sftpProvider.overrideWith(() => notif),
+      serverConnectionProvider.overrideWith(_TestServerConnectionNotifier.new),
     ],
     child: const MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,

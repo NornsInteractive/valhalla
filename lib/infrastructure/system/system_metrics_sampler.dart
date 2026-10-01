@@ -192,11 +192,20 @@ class SystemMetricsSampler {
     this.interval = const Duration(seconds: 3),
   });
 
-  Stream<SystemMetricsSnapshot> watch(String serverId) async* {
+  Stream<SystemMetricsSnapshot> watch(
+    String serverId, {
+    bool Function()? isActive,
+  }) async* {
     SystemMetricsSnapshot? previous;
     final clock = Stopwatch()..start();
     int? previousMicros;
     while (_sshManager.isConnected(serverId)) {
+      if (isActive != null && !isActive()) {
+        previous = null;
+        previousMicros = null;
+        await Future<void>.delayed(interval);
+        continue;
+      }
       final result = await _sshManager.executeWithLoginShell(
         serverId,
         r'''printf 'cpu '; awk '/^cpu / {print $2,$3,$4,$5,$6,$7,$8,$9,$10}' /proc/stat; awk '/^MemTotal:/ {print "MemTotal:", $2} /^MemAvailable:/ {print "MemAvailable:", $2}' /proc/meminfo; printf 'LoadAvg: '; cut -d' ' -f1-3 /proc/loadavg; printf 'Uptime: '; cut -d' ' -f1 /proc/uptime; printf 'Disk: '; df -P / | awk 'NR==2 {print $5}'; awk '$2=="00000000" {print "NetworkDefault:",$1; exit}' /proc/net/route; awk 'NR>2 {gsub(":","",$1); print "Network:",$1,$2,$10}' /proc/net/dev''',

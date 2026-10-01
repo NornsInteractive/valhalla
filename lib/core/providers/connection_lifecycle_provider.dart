@@ -8,6 +8,7 @@ import '../../infrastructure/ssh/ssh_client_manager.dart';
 import 'reconnect_provider.dart';
 import 'server_provider.dart';
 import 'storage_providers.dart';
+import 'app_visibility_provider.dart';
 
 /// 进程存活期间维持 SSH / ACP 连接的编排器。
 ///
@@ -17,17 +18,16 @@ import 'storage_providers.dart';
 /// 用假的协作者完整测试，而不必真的连一台服务器。
 ///
 /// 三条规则，对应三个生命周期回调：
-/// - `resumed`：立刻复验连接。不能等心跳定时器 —— 用户切回来的瞬间
-///   看到的就是「界面显示已连接，但实际早就断了」。复验失败就触发重连。
-/// - `paused`：确保前台服务在跑。进程被系统冻结后 Dart 侧的心跳会停，
-///   只有前台服务能让进程活下来。
-/// - `detached`：停止重连并停掉前台服务。此时进程即将结束，再重连毫无意义。
+/// - `resumed`：复用近期健康连接，其余异步复验，合并重复回调。
+/// - `paused`：保留连接与用户意图，暂停非必要轮询。
+/// - `detached`：不等于用户断开；系统仍可能回收进程，FGS 不保证永久在线。
 class ConnectionLifecycleCoordinator {
   ConnectionLifecycleCoordinator({
     required this.sshManager,
     required this.reconnectController,
     required this.keepAlive,
     required this.activeServer,
+    this.onVisibilityChanged,
   });
 
   final SSHClientManager sshManager;
@@ -39,18 +39,44 @@ class ConnectionLifecycleCoordinator {
 
   /// 读取当前活跃服务器。
   final ServerProfile? Function() activeServer;
+  final void Function(bool foreground)? onVisibilityChanged;
 
   /// 应用是否已经退到后台。
   ///
   /// 用于区分「用户切回来了」和「这些回调在测试里被孤立触发」。
   bool _inBackground = false;
   bool get inBackground => _inBackground;
+  DateTime? _pausedAt;
+  Future<bool>? _resuming;
+  int _epoch = 0;
+  bool _disposed = false;
 
-  /// 进入前台：立即复验，而不是等待下一次心跳。
+  void dispose() {
+    _disposed = true;
+    _epoch++;
+    _resuming = null;
+  }
+
+  /// 进入前台：近期健康连接直接复用，其余异步复验。
   ///
   /// 返回复验结果，测试与调用方据此判断是否需要展示重连状态。
-  Future<bool> onResumed() async {
+  Future<bool> onResumed() {
+    if (_resuming != null) return _resuming!;
+    late final Future<bool> future;
+    future = _resume().whenComplete(() {
+      if (identical(_resuming, future)) _resuming = null;
+    });
+    _resuming = future;
+    return future;
+  }
+
+  Future<bool> _resume() async {
+    if (_disposed) return false;
+    final wasBackground = _inBackground;
     _inBackground = false;
+    sshManager.setAppInBackground(false);
+    onVisibilityChanged?.call(true);
+    final epoch = ++_epoch;
 
     // 回到前台时把 detached 标志清掉：即使此前收到过 detached，
     // 只要进程还活着且用户回来了，就应该继续维持连接。
@@ -58,31 +84,49 @@ class ConnectionLifecycleCoordinator {
 
     final server = activeServer();
     if (server == null) return true;
+    bool current() =>
+        !_disposed && epoch == _epoch && identical(server, activeServer());
 
     // 只有原本以为连着的时候才需要复验。已经不在 map 里时，
     // 若用户仍想保持连接，必须立刻重连，不能干等下一次心跳。
     if (!sshManager.isConnected(server.id)) {
-      _syncKeepAlive();
+      await _syncKeepAlive();
+      if (!current()) return false;
       if (reconnectController?.userIntent == true) {
         reconnectController?.handleVerifyFailed();
       }
       return false;
     }
 
+    final briefPause =
+        _pausedAt == null ||
+        DateTime.now().difference(_pausedAt!) < const Duration(seconds: 10);
+    if ((!wasBackground || briefPause) &&
+        sshManager.recentlyVerified(server.id)) {
+      await _syncKeepAlive();
+      return true;
+    }
     final alive = await sshManager.verifyAlive(server.id);
-    if (!alive) {
+    if (!current()) return false;
+    if (!alive && reconnectController?.userIntent == true) {
       // 复验失败：verifyAlive 已经清掉了死掉的 client，
       // 这里只负责把状态翻成 reconnecting，让用户看到真实情况。
       reconnectController?.handleVerifyFailed();
     }
-    _syncKeepAlive();
+    await _syncKeepAlive();
     return alive;
   }
 
-  /// 退到后台：保证前台服务在跑，这样进程不会被系统回收。
+  /// 退到后台：同步前台服务登记；不承诺系统永不回收进程。
   Future<void> onPaused() async {
+    if (_disposed || _inBackground) return;
     _inBackground = true;
-    _syncKeepAlive();
+    _pausedAt = DateTime.now();
+    _epoch++;
+    _resuming = null;
+    sshManager.setAppInBackground(true);
+    onVisibilityChanged?.call(false);
+    await _syncKeepAlive();
   }
 
   /// Flutter 视图与 Activity 分离。
@@ -91,19 +135,22 @@ class ConnectionLifecycleCoordinator {
   /// 但 `stopWithTask=false` 的前台服务还托着进程。此时停 FGS 或暂停
   /// 重连，等于把保活白做了。用户意图保持不变，服务继续跑。
   Future<void> onDetached() async {
-    _inBackground = true;
+    await onPaused();
   }
 
   /// 把「当前活跃服务器是否已连接」同步给前台服务。
   ///
   /// 前台服务本身不持有连接状态（SSH 客户端活在 Dart 侧），
   /// 它只需要知道「有几个会话要保」，通知文案才不会是错的。
-  void _syncKeepAlive() {
+  Future<void> _syncKeepAlive() async {
     final server = activeServer();
-    if (server != null && sshManager.isConnected(server.id)) {
-      unawaited(keepAlive.addSession(server.id));
+    if (server != null &&
+        (sshManager.isConnected(server.id) ||
+            (reconnectController?.userIntent == true &&
+                reconnectController?.serverId == server.id))) {
+      await keepAlive.addSession(server.id);
     } else if (server != null) {
-      unawaited(keepAlive.removeSession(server.id));
+      await keepAlive.removeSession(server.id);
     }
   }
 
@@ -115,10 +162,14 @@ class ConnectionLifecycleCoordinator {
 final connectionLifecycleProvider = Provider<ConnectionLifecycleCoordinator>((
   ref,
 ) {
-  return ConnectionLifecycleCoordinator(
+  final coordinator = ConnectionLifecycleCoordinator(
     sshManager: ref.watch(sshClientManagerProvider),
     reconnectController: ref.watch(reconnectControllerProvider),
     keepAlive: ref.watch(keepAliveCoordinatorProvider),
     activeServer: () => ref.read(activeServerProvider),
+    onVisibilityChanged: (foreground) =>
+        ref.read(appVisibilityProvider.notifier).setForeground(foreground),
   );
+  ref.onDispose(coordinator.dispose);
+  return coordinator;
 });

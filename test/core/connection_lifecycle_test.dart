@@ -48,6 +48,16 @@ class _FakeSshManager implements SSHClientManager {
   // 真实实现会在这里清掉死连接，测试记录调用以便断言「有没有被通知」。
   bool throwOnDisconnect = false;
 
+  // 后台恢复：协调器现在会把可见性同步给管理器，并复用近期已验证的连接。
+  bool recent = false;
+  final List<bool> backgroundCalls = [];
+
+  @override
+  void setAppInBackground(bool value) => backgroundCalls.add(value);
+
+  @override
+  bool recentlyVerified(String serverId) => recent;
+
   @override
   bool isConnected(String serverId) => connected;
 
@@ -207,6 +217,7 @@ void main() {
       final lifecycle = build(server: server);
 
       await lifecycle.onPaused();
+      await pumpEventQueue();
 
       expect(service.startCalls, [1]);
       expect(service.updateCalls, [1]);
@@ -218,6 +229,7 @@ void main() {
       final lifecycle = build(server: server);
 
       await lifecycle.onPaused();
+      await pumpEventQueue();
 
       expect(service.startCalls, isEmpty, reason: '没有活跃会话不该挂常驻通知');
       expect(service.stopCalls, 1);
@@ -238,7 +250,7 @@ void main() {
       expect(controller.state.isReconnecting, isTrue, reason: '划掉任务不等于用户断开');
     });
 
-    test('detached 保留用户意图，回前台能恢复重连', () async {
+    test('detached 保留用户意图，但连接还活着时不发起重连', () async {
       var attempts = 0;
       final server = _server('a');
       final own = ReconnectController(
@@ -252,10 +264,44 @@ void main() {
       await lifecycle.onDetached();
       expect(own.userIntent, isTrue, reason: '用户没说不想连，只是想退出进程');
 
-      await lifecycle.onResumed();
-      // resumed 里 setAppDetached(false) 会对未连接状态立刻重试。
-      await Future<void>.delayed(Duration.zero);
-      expect(attempts, greaterThan(0));
+      final alive = await lifecycle.onResumed();
+
+      expect(alive, isTrue, reason: '连接还活着，复验通过');
+      expect(ssh.verifyCalls, 1, reason: '回前台必须复验一次');
+      expect(attempts, 0, reason: '连接健康时不得无故重连：重连只会打断正在跑的远端会话');
+      expect(own.state.isConnected, isFalse, reason: '没有发起过连接，不算已连接');
+    });
+
+    test('detached 期间传输层真的死了，回前台立刻排重连', () async {
+      var attempts = 0;
+      final server = _server('a');
+      final own = ReconnectController(
+        connectAttempt: (_) async {
+          attempts++;
+        },
+      );
+      own.start(server);
+      final lifecycle = build(server: server, withController: own);
+
+      await lifecycle.onDetached();
+      // 传输层死亡是唯一值得重连的理由，且此时用户意图必须还在。
+      ssh.connected = false;
+      controller.handleTransportDied();
+      expect(own.state.isReconnecting, isFalse, reason: '这个控制器还没 start 过');
+
+      own.start(server);
+      own.handleTransportDied();
+      expect(own.state.isReconnecting, isTrue);
+
+      final alive = await lifecycle.onResumed();
+      expect(alive, isFalse, reason: '没有连接也没有远端可以复验');
+      expect(ssh.verifyCalls, 0);
+      expect(
+        own.state.isReconnecting,
+        isTrue,
+        reason: '用户仍想保持连接，必须继续重连而不是停在原地',
+      );
+      expect(attempts, 0, reason: '重连由退避定时器驱动，尚未到点');
     });
 
     test('inactive 不产生任何副作用（过渡态）', () async {
@@ -276,9 +322,19 @@ void main() {
 
       await lifecycle.onPaused();
       await lifecycle.onPaused();
+      await pumpEventQueue();
 
       expect(keepAlive.activeCount, 1, reason: '同一个服务器只该算一个会话');
-      expect(service.updateCalls, [1, 1]);
+      // paused 现在是幂等的：重复的后台回调不再重复同步前台服务，
+      // 但真要重复同步时也不能把同一个服务器算成两个会话。
+      expect(service.updateCalls, [1]);
+      expect(service.startCalls, [1]);
+
+      await lifecycle.onResumed();
+      await lifecycle.onResumed();
+      await pumpEventQueue();
+      expect(keepAlive.activeCount, 1);
+      expect(service.updateCalls, [1, 1, 1]);
     });
 
     test('断开的服务器会被移出保活集合', () async {
@@ -288,8 +344,12 @@ void main() {
       await lifecycle.onPaused();
       expect(keepAlive.activeCount, 1);
 
+      // paused 现在是幂等的：重复回调不再重复同步，
+      // 所以用一次回前台来重新评估保活状态。
       ssh.connected = false;
-      await lifecycle.onPaused();
+      await lifecycle.onResumed();
+      await pumpEventQueue();
+
       expect(keepAlive.activeCount, 0);
     });
   });

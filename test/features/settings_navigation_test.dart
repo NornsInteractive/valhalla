@@ -206,14 +206,21 @@ void main() {
       );
       expect(reorderListFinder, findsOneWidget);
 
-      // Verify default items appear in the reorderable list
+      // Verify default items appear in the reorderable list.
+      // 默认底栏已由 cliChat 迁移为 aiChat（见 local_storage_service.dart 的
+      // 读时迁移与 defaultBottomNavigationSections）。
       expect(
         find.byKey(ValueKey('settings_reorder_${AppSection.dashboard.name}')),
         findsOneWidget,
       );
       expect(
-        find.byKey(ValueKey('settings_reorder_${AppSection.cliChat.name}')),
+        find.byKey(ValueKey('settings_reorder_${AppSection.aiChat.name}')),
         findsOneWidget,
+      );
+      expect(
+        find.byKey(ValueKey('settings_reorder_${AppSection.cliChat.name}')),
+        findsNothing,
+        reason: '默认底栏不得再包含 CLI 会话页',
       );
       expect(
         find.byKey(ValueKey('settings_reorder_${AppSection.docker.name}')),

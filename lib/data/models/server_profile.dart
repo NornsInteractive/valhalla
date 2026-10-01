@@ -48,13 +48,11 @@ class ServerProfile {
   });
 
   /// Fields that identify the remote SSH endpoint and authentication mode.
+  (String, String, int, String, AuthType, String?) get connectionKey =>
+      (id, host, port, username, authType, privateKeyPath);
+
   bool hasSameConnectionSettings(ServerProfile other) =>
-      id == other.id &&
-      host == other.host &&
-      port == other.port &&
-      username == other.username &&
-      authType == other.authType &&
-      privateKeyPath == other.privateKeyPath;
+      connectionKey == other.connectionKey;
 
   ServerProfile copyWith({
     String? id,

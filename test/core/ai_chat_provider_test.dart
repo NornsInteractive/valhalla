@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +9,7 @@ import 'package:valhalla/core/providers/agent_registry_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/data/models/agent_profile.dart';
+import 'package:valhalla/data/models/chat_run_settings.dart';
 import 'package:valhalla/data/models/chat_session.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
@@ -15,6 +18,15 @@ import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_host_key_verifier.dart';
 
 import '../support/fake_acp_transport.dart';
+import '../support/temp_chat_db.dart';
+
+/// A stubbed independent catalog lookup for one agent profile.
+typedef _CatalogQuery =
+    Future<AgentRuntimeCapabilities?> Function(AgentProfile profile);
+
+/// Stands in for an agent with no independently queryable catalog.
+Future<AgentRuntimeCapabilities?> _emptyCatalog(_, _) async =>
+    const AgentRuntimeCapabilities();
 
 AgentProfile _profile(String id) => AgentProfile(
   id: id,
@@ -81,6 +93,7 @@ Future<ProviderContainer> _container({
   return ProviderContainer(
     overrides: [
       localStorageServiceProvider.overrideWithValue(LocalStorageService(prefs)),
+      tempChatRepositoryOverride(),
       agentRegistryProvider.overrideWith(() => _FakeRegistry(profiles)),
       serverConnectionProvider.overrideWith(
         () => _StaticConnection(connected: connected),
@@ -102,6 +115,35 @@ Future<void> _sendAndSettle(ProviderContainer container, String text) async {
   await pumpEventQueue();
 }
 
+/// 等历史加载真正结束；不能用固定 pumpEventQueue 假定磁盘已完成。
+Future<void> _awaitHistoryLoad(ProviderContainer container) async {
+  // 先触发一次读（invalidate 后的重建、以及 build 排的刷新 microtask 都挂在这），
+  // 否则 isLoadingSessions 还是 false 就直接返回，断言仍然踩在加载中。
+  container.read(aiChatProvider);
+  await pumpEventQueue();
+  final deadline = DateTime.now().add(const Duration(seconds: 5));
+  while (container.read(aiChatProvider).isLoadingSessions ||
+      container.read(aiChatProvider).isLoadingMessages) {
+    if (DateTime.now().isAfter(deadline)) {
+      fail('history loading never settled');
+    }
+    await pumpEventQueue();
+  }
+}
+
+/// 通过 `repo.exportAll` 读取已持久化的全部会话。
+///
+/// 旧 preferences 只保留为迁移源，历史断言一律走 repo。
+Future<List<ChatSession>> _storedSessions(ProviderContainer container) async {
+  final encoded = await container.read(chatRepositoryProvider).exportAll();
+  return (jsonDecode(encoded) as List)
+      .map(
+        (entry) =>
+            ChatSession.fromJson(Map<String, dynamic>.from(entry as Map)),
+      )
+      .toList();
+}
+
 void main() {
   test(
     'sharing is server scoped and carries text without sharing remote IDs',
@@ -113,6 +155,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(
             () => _AllReadyRegistry([
               _profile('builtin-codex'),
@@ -137,20 +180,26 @@ void main() {
       final localId = container.read(aiChatProvider).activeSessionId;
       notifier.switchAgent('builtin-claude-code');
       expect(container.read(aiChatProvider).sessions, isEmpty);
-      expect(storage.getChatSessions(), hasLength(1));
+      await _awaitHistoryLoad(container);
+      expect(await _storedSessions(container), hasLength(1));
       await notifier.setShareAgentSessions(true);
       expect(storage.getShareAgentSessions('srv-1'), isTrue);
       expect(storage.getShareAgentSessions('srv-2'), isFalse);
+      await _awaitHistoryLoad(container);
       await _sendAndSettle(container, 'second');
       expect(container.read(aiChatProvider).activeSessionId, localId);
       expect(pairs[1].sentToAgent.join(), contains('user: first'));
-      final session = storage.getChatSessions().single;
-      expect(session.contextFor('builtin-codex').remoteSessionId, 'remote-0');
+      final session = await container
+          .read(chatRepositoryProvider)
+          .loadSession(localId!);
+      expect(session, isNotNull);
+      expect(session!.contextFor('builtin-codex').remoteSessionId, 'remote-0');
       expect(
         session.contextFor('builtin-claude-code').remoteSessionId,
         'remote-1',
       );
       notifier.switchAgent('builtin-codex');
+      await _awaitHistoryLoad(container);
       await _sendAndSettle(container, 'third');
       expect(pairs[2].loadRequests, ['remote-0']);
       expect(pairs[2].sentToAgent.join(), contains('user: second'));
@@ -179,6 +228,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(
             () => _FakeRegistry([_profile('builtin-codex')]),
           ),
@@ -194,17 +244,18 @@ void main() {
       );
       addTearDown(container.dispose);
       container.read(aiChatProvider);
+      await _awaitHistoryLoad(container);
       expect(container.read(aiChatProvider).activeSession!.messages, isEmpty);
-      expect(storage.getChatSessions().single.serverId, 'srv-1');
+      final stored = await _storedSessions(container);
+      expect(stored.single.serverId, 'srv-1');
       expect(
         prefs.getString('valhalla_chat_sessions_v1_before_owner_v2'),
         originalSessions,
       );
       expect(storage.legacyOwnershipServerId, 'srv-1');
-      expect(
-        container.read(chatRepositoryProvider).getSessionsForServer('srv-2'),
-        isEmpty,
-      );
+      final repo = container.read(chatRepositoryProvider);
+      final page = await repo.listSessions('srv-2');
+      expect(page.sessions, isEmpty);
     },
   );
 
@@ -218,6 +269,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(
             () => _FakeRegistry([_profile('builtin-codex')]),
           ),
@@ -238,6 +290,7 @@ void main() {
       await _sendAndSettle(container, 'first');
       final firstId = container.read(aiChatProvider).activeSessionId!;
       await notifier.createNewSession();
+      await _awaitHistoryLoad(container);
       await _sendAndSettle(container, 'second');
       final sessions = container.read(aiChatProvider).sessions;
       expect(pairs, hasLength(2));
@@ -246,16 +299,20 @@ void main() {
         sessions.firstWhere((entry) => entry.id == firstId).remoteSessionId,
         'remote-0',
       );
-      expect(pairs.last.newSessionCwds, ['/root']);
+      // 新建会话默认目录改为 '.'：真实 SSH 传输会用 pwd 探测绝对路径，
+      // 测试用的 fake 传输不是 AcpSshTransport，因此保持 '.'。
+      expect(pairs.last.newSessionCwds, ['.']);
       expect(
-        storage.getChatSessions().map((entry) => entry.remoteSessionId).toSet(),
+        (await _storedSessions(
+          container,
+        )).map((entry) => entry.remoteSessionId).toSet(),
         {'remote-0', 'remote-1'},
       );
     },
   );
 
   test(
-    'transport creation failure stops generation and persists the request',
+    'first send transport failure keeps the draft and no empty history',
     () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -263,6 +320,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(
             () => _FakeRegistry([_profile('builtin-codex')]),
           ),
@@ -277,11 +335,17 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
+      final notifier = container.read(aiChatProvider.notifier);
+      notifier.updateDraftText('hello');
       await _sendAndSettle(container, 'hello');
       final state = container.read(aiChatProvider);
       expect(state.isGenerating, isFalse);
       expect(state.lastErrorCode, contains('transport unavailable'));
-      expect(storage.getChatSessions().single.messages.first.content, 'hello');
+      // 失败发生在建会话之前：草稿保留，用户可直接重试。
+      expect(state.draftText, 'hello');
+      expect(state.sessions, isEmpty);
+      // 不留下空的历史会话。
+      expect(await _storedSessions(container), isEmpty);
     },
   );
 
@@ -311,6 +375,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           activeServerProvider.overrideWith(_StubActiveServer.new),
           agentRegistryProvider.overrideWith(
             () => _AllReadyRegistry([
@@ -408,6 +473,7 @@ void main() {
         localStorageServiceProvider.overrideWithValue(
           LocalStorageService(prefs),
         ),
+        tempChatRepositoryOverride(),
         agentRegistryProvider.overrideWith(() => registry),
         serverConnectionProvider.overrideWith(
           () => _StaticConnection(connected: false),
@@ -445,7 +511,11 @@ void main() {
           localStorageServiceProvider.overrideWithValue(
             LocalStorageService(prefs),
           ),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(() => registry),
+          // The selection is only kept while the agent still belongs to the
+          // active server, so this case needs the same server the profiles use.
+          activeServerProvider.overrideWith(_StubActiveServer.new),
           serverConnectionProvider.overrideWith(
             () => _StaticConnection(connected: false),
           ),
@@ -501,6 +571,7 @@ void main() {
       return ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(
             () => _FakeRegistry([_profile('builtin-codex')]),
           ),
@@ -635,6 +706,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(
             () => _FakeRegistry([_profile('builtin-codex')]),
           ),
@@ -677,6 +749,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(() => registry),
           serverConnectionProvider.overrideWith(
             () => _StaticConnection(connected: true),
@@ -695,6 +768,7 @@ void main() {
       container.read(aiChatProvider);
       registry.markReady('builtin-codex');
       await pumpEventQueue();
+      await _awaitHistoryLoad(container);
 
       final notifier = container.read(aiChatProvider.notifier);
       await _sendAndSettle(container, 'first');
@@ -710,7 +784,7 @@ void main() {
       await pumpEventQueue();
 
       notifier.switchAgent('builtin-claude-code');
-      await pumpEventQueue();
+      await _awaitHistoryLoad(container);
       expect(
         container.read(aiChatProvider).activeAgentProfile?.id,
         'builtin-claude-code',
@@ -734,6 +808,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(
             () => _FakeRegistry([_profile('builtin-codex')]),
           ),
@@ -775,6 +850,7 @@ void main() {
           );
       container.invalidate(aiChatProvider);
 
+      await _awaitHistoryLoad(container);
       await _sendAndSettle(container, 'hi');
 
       final state = container.read(aiChatProvider);
@@ -795,6 +871,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(
             () => _FakeRegistry([_profile('builtin-codex')]),
           ),
@@ -838,6 +915,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(
             () => _FakeRegistry([_profile('builtin-codex')]),
           ),
@@ -877,6 +955,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
           agentRegistryProvider.overrideWith(
             () => _FakeRegistry([_profile('builtin-codex')]),
           ),
@@ -910,6 +989,428 @@ void main() {
         isFalse,
         reason: '确认告警不应篡改「会话是否来自历史」这个事实',
       );
+    });
+  });
+
+  group('ACP 第一阶段：审批选项、运行设置与工具增量', () {
+    late FakeAcpPair pair;
+    final createdPairs = <FakeAcpPair>[];
+
+    const permissionOptions = [
+      {'optionId': 'allow-once', 'name': 'Allow once', 'kind': 'allow_once'},
+      {
+        'optionId': 'allow-always',
+        'name': 'Allow always',
+        'kind': 'allow_always',
+      },
+      {'optionId': 'reject-once', 'name': 'Reject once', 'kind': 'reject_once'},
+    ];
+
+    Future<ProviderContainer> acpContainer({
+      ChatRunSettings runSettings = const ChatRunSettings(),
+      List<Map<String, Object?>> configOptions = const [],
+      bool holdPrompt = false,
+      void Function(FakeAcpPair pair)? configurePair,
+      // 模型目录只来自独立查询接口，与 session config 无关；显式注入以免
+      // 这层测试隐式依赖 Agent 的 CLI 类型判定。
+      _CatalogQuery? modelQuery,
+    }) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final storage = LocalStorageService(prefs);
+      await storage.saveChatRunDefault('srv-1', 'builtin-codex', runSettings);
+      createdPairs.clear();
+      final container = ProviderContainer(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(storage),
+          tempChatRepositoryOverride(),
+          agentRegistryProvider.overrideWith(
+            () => _FakeRegistry([_profile('builtin-codex')]),
+          ),
+          serverConnectionProvider.overrideWith(
+            () => _StaticConnection(connected: true),
+          ),
+          activeServerProvider.overrideWith(_StubActiveServer.new),
+          sshClientManagerProvider.overrideWithValue(_FakeSshManager(storage)),
+          agentModelQueryProvider.overrideWithValue(
+            modelQuery == null
+                ? _emptyCatalog
+                : (profile, _) => modelQuery(profile),
+          ),
+          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+            final next = FakeAcpPair(sessionId: 'stable-session');
+            next.configOptions = configOptions;
+            // 审批用例需要在 prompt 未结束时插入 session/request_permission。
+            next.holdPrompt = holdPrompt;
+            configurePair?.call(next);
+            createdPairs.add(next);
+            pair = next;
+            return next.client;
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    /// Agent 侧发起 `session/request_permission`。
+    void deliverPermission(FakeAcpPair target, {String id = 'perm-1'}) {
+      target.deliverToClient(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'id': id,
+          'method': 'session/request_permission',
+          'params': {
+            'sessionId': 'stable-session',
+            'toolCall': {
+              'toolCallId': 'tool-1',
+              'title': 'bash',
+              'kind': 'execute',
+              'status': 'pending',
+            },
+            'options': permissionOptions,
+          },
+        }),
+      );
+    }
+
+    Map<String, Object?> permissionResult(FakeAcpPair target, String id) {
+      final frame = target.sentToAgent
+          .map((line) => jsonDecode(line) as Map<String, dynamic>)
+          .firstWhere((frame) => frame['id'] == id);
+      return Map<String, Object?>.from(frame['result']! as Map);
+    }
+
+    /// 本轮被 held 的生成，结束时必须 await，否则会漏报异常。
+    Future<void> heldTurn = Future<void>.value();
+
+    /// 开启一次被 held 的生成，让权限请求可以中途送达。
+    Future<void> startHeldTurn(ProviderContainer container) async {
+      heldTurn = container
+          .read(aiChatProvider.notifier)
+          .sendMessage('run the risky command');
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (createdPairs.isEmpty) {
+        if (DateTime.now().isAfter(deadline)) {
+          fail('ACP transport was never created');
+        }
+        await pumpEventQueue();
+      }
+      await pair.promptReceived.timeout(const Duration(seconds: 5));
+    }
+
+    test('审批透出远端 options 并回传原始 optionId', () async {
+      final container = await acpContainer(holdPrompt: true);
+      final notifier = container.read(aiChatProvider.notifier);
+      await startHeldTurn(container);
+      deliverPermission(pair);
+      await pumpEventQueue();
+
+      final pending = container.read(aiChatProvider).pendingPermission;
+      expect(pending, isNotNull);
+      expect(pending!.options.map((option) => option.id), [
+        'allow-once',
+        'allow-always',
+        'reject-once',
+      ]);
+      expect(pending.options.map((option) => option.kind), [
+        'allow_once',
+        'allow_always',
+        'reject_once',
+      ]);
+      expect(pending.options.map((option) => option.name), [
+        'Allow once',
+        'Allow always',
+        'Reject once',
+      ]);
+
+      notifier.respondPermission('allow-always');
+      await pumpEventQueue();
+
+      expect(permissionResult(pair, 'perm-1'), {
+        'outcome': {'outcome': 'selected', 'optionId': 'allow-always'},
+      });
+      expect(container.read(aiChatProvider).pendingPermission, isNull);
+
+      pair.finishHeldPrompt();
+      await heldTurn;
+    });
+
+    test('旧 bool 入口只匹配 once，绝不升级为 always', () async {
+      final container = await acpContainer(holdPrompt: true);
+      final notifier = container.read(aiChatProvider.notifier);
+      await startHeldTurn(container);
+
+      deliverPermission(pair);
+      await pumpEventQueue();
+      notifier.respondPermission(true);
+      await pumpEventQueue();
+      expect(permissionResult(pair, 'perm-1'), {
+        'outcome': {'outcome': 'selected', 'optionId': 'allow-once'},
+      });
+
+      deliverPermission(pair, id: 'perm-2');
+      await pumpEventQueue();
+      notifier.respondPermission(false);
+      await pumpEventQueue();
+      expect(permissionResult(pair, 'perm-2'), {
+        'outcome': {'outcome': 'selected', 'optionId': 'reject-once'},
+      });
+
+      pair.finishHeldPrompt();
+      await heldTurn;
+    });
+
+    test('审批传 null 表示取消并清掉待审批状态', () async {
+      final container = await acpContainer(holdPrompt: true);
+      final notifier = container.read(aiChatProvider.notifier);
+      await startHeldTurn(container);
+
+      deliverPermission(pair);
+      await pumpEventQueue();
+      expect(container.read(aiChatProvider).pendingPermission, isNotNull);
+
+      notifier.respondPermission(null);
+      await pumpEventQueue();
+
+      expect(permissionResult(pair, 'perm-1'), {
+        'outcome': {'outcome': 'cancelled'},
+      });
+      expect(container.read(aiChatProvider).pendingPermission, isNull);
+
+      pair.finishHeldPrompt();
+      await heldTurn;
+    });
+
+    test('不在远端 options 里的选择被忽略，不回写协议', () async {
+      final container = await acpContainer(holdPrompt: true);
+      final notifier = container.read(aiChatProvider.notifier);
+      await startHeldTurn(container);
+
+      deliverPermission(pair);
+      await pumpEventQueue();
+      notifier.respondPermission('invented-id');
+      await pumpEventQueue();
+
+      expect(
+        container.read(aiChatProvider).pendingPermission,
+        isNotNull,
+        reason: '无效选择不能清掉待审批请求',
+      );
+      expect(
+        pair.sentToAgent.where((line) => line.contains('"id":"perm-1"')),
+        isEmpty,
+        reason: '无效选择不能产生权限响应帧',
+      );
+
+      notifier.respondPermission('reject-once');
+      await pumpEventQueue();
+      expect(permissionResult(pair, 'perm-1'), {
+        'outcome': {'outcome': 'selected', 'optionId': 'reject-once'},
+      });
+
+      pair.finishHeldPrompt();
+      await heldTurn;
+    });
+
+    test('自动放行策略也只选 allow_once，不自动选 allow_always', () async {
+      final container = await acpContainer(
+        holdPrompt: true,
+        runSettings: const ChatRunSettings(
+          permissionPolicy: OperationPermissionPolicy.autoAllowAll,
+        ),
+      );
+      await startHeldTurn(container);
+      deliverPermission(pair);
+      await pumpEventQueue();
+
+      expect(container.read(aiChatProvider).pendingPermission, isNull);
+      expect(permissionResult(pair, 'perm-1'), {
+        'outcome': {'outcome': 'selected', 'optionId': 'allow-once'},
+      });
+
+      pair.finishHeldPrompt();
+      await heldTurn;
+    });
+
+    test('prepareRunSettings 无论是否刷新都复用已建立的连接', () async {
+      final container = await acpContainer();
+      final notifier = container.read(aiChatProvider.notifier);
+      await _sendAndSettle(container, 'first');
+      expect(createdPairs, hasLength(1));
+
+      expect(await notifier.prepareRunSettings(), isTrue);
+      expect(createdPairs, hasLength(1), reason: '普通打开运行设置必须复用当前连接');
+      expect(
+        createdPairs.single.newSessionCwds,
+        hasLength(1),
+        reason: '复用连接时不得重建远端会话',
+      );
+
+      // 刷新只重新查询独立目录，绝不重建正在工作的 ACP 传输或远端会话。
+      final promptsBefore = createdPairs.single.sentToAgent
+          .where((line) => line.contains('session/prompt'))
+          .length;
+      expect(await notifier.prepareRunSettings(refresh: true), isTrue);
+      expect(createdPairs, hasLength(1), reason: '刷新不得重建已建立的 ACP 连接');
+      expect(
+        createdPairs.single.newSessionCwds,
+        hasLength(1),
+        reason: '刷新不得为刷新补建远端会话',
+      );
+      expect(
+        createdPairs.single.loadRequests,
+        isEmpty,
+        reason: '刷新不得 load 远端会话',
+      );
+      expect(
+        createdPairs.single.sentToAgent.where(
+          (line) => line.contains('session/prompt'),
+        ),
+        hasLength(promptsBefore),
+        reason: '刷新不得触发对话',
+      );
+    });
+
+    test('model_config 不作为 thought_level 推理兜底', () async {
+      final container = await acpContainer(
+        // 目录由独立接口提供，且与 session config 的模型列表刻意不同。
+        modelQuery: (_) async => const AgentRuntimeCapabilities(
+          models: [ChatSettingOption('gpt-5-codex', 'GPT-5 Codex')],
+        ),
+        configOptions: [
+          {
+            'type': 'select',
+            'id': 'model',
+            'name': 'Model',
+            'currentValue': 'gpt-5',
+            'category': 'model',
+            'options': [
+              {'value': 'gpt-5', 'name': 'GPT-5'},
+              {'value': 'gpt-4.1', 'name': 'GPT-4.1'},
+            ],
+          },
+          {
+            'type': 'select',
+            'id': 'model-config',
+            'name': 'Model config',
+            'currentValue': 'balanced',
+            'category': 'model_config',
+            'options': [
+              {'value': 'balanced', 'name': 'Balanced'},
+              {'value': 'precise', 'name': 'Precise'},
+            ],
+          },
+        ],
+      );
+
+      await _sendAndSettle(container, 'hello');
+      // 目录只在准备运行设置或首次发送校验时查询，这里显式触发一次。
+      expect(
+        await container.read(aiChatProvider.notifier).prepareRunSettings(),
+        isTrue,
+      );
+      await _sendAndSettle(container, 'again');
+
+      final caps = container.read(aiChatProvider).capabilities;
+      expect(
+        caps.models.map((option) => option.id),
+        ['gpt-5-codex'],
+        reason: '模型列表只来自独立查询接口，不采信 session config',
+      );
+      expect(caps.reasoningLevels, isEmpty, reason: 'model_config 不得冒充推理等级');
+      expect(caps.currentReasoningId, isNull);
+      expect(
+        caps.extraSettings.map((setting) => setting.id),
+        contains('model-config'),
+        reason: 'model_config 只能作为普通附加设置暴露',
+      );
+    });
+
+    test('存在 thought_level 时推理等级只取 thought_level', () async {
+      final container = await acpContainer(
+        configOptions: [
+          {
+            'type': 'select',
+            'id': 'model',
+            'name': 'Model',
+            'currentValue': 'gpt-5',
+            'category': 'model',
+            'options': [
+              {'value': 'gpt-5', 'name': 'GPT-5'},
+            ],
+          },
+          {
+            'type': 'select',
+            'id': 'thought-level',
+            'name': 'Reasoning',
+            'currentValue': 'high',
+            'category': 'thought_level',
+            'options': [
+              {'value': 'low', 'name': 'Low'},
+              {'value': 'high', 'name': 'High'},
+            ],
+          },
+          {
+            'type': 'select',
+            'id': 'model-config',
+            'name': 'Model config',
+            'currentValue': 'balanced',
+            'category': 'model_config',
+            'options': [
+              {'value': 'balanced', 'name': 'Balanced'},
+            ],
+          },
+        ],
+      );
+
+      await _sendAndSettle(container, 'hello');
+
+      final caps = container.read(aiChatProvider).capabilities;
+      expect(caps.currentReasoningId, 'high');
+      expect(caps.reasoningLevels.map((option) => option.id), ['low', 'high']);
+      expect(caps.extraSettings.map((setting) => setting.id), ['model-config']);
+    });
+
+    test('工具部分更新在会话里保留被省略的字段', () async {
+      final container = await acpContainer(
+        configurePair: (target) {
+          target.promptUpdates = [
+            {
+              'sessionUpdate': 'tool_call',
+              'toolCallId': 'tool-7',
+              'title': 'free -m',
+              'kind': 'execute',
+              'status': 'in_progress',
+              'rawInput': 'free -m',
+              'content': [
+                {
+                  'type': 'content',
+                  'content': {'type': 'text', 'text': 'Mem: 7912'},
+                },
+              ],
+            },
+            {
+              'sessionUpdate': 'tool_call_update',
+              'toolCallId': 'tool-7',
+              'status': 'completed',
+            },
+          ];
+        },
+      );
+
+      await _sendAndSettle(container, 'check memory');
+
+      final session = container.read(aiChatProvider).activeSession!;
+      final tools = [
+        for (final message in session.messages) ...message.toolExecutions,
+      ];
+      expect(tools, hasLength(1));
+      expect(tools.single.id, 'tool-7');
+      expect(tools.single.name, 'free -m', reason: '部分更新不能清掉标题');
+      expect(tools.single.command, 'free -m', reason: '部分更新不能清掉命令');
+      expect(tools.single.output, 'Mem: 7912', reason: '部分更新不能清掉输出');
+      expect(tools.single.status, ToolExecutionStatus.completed);
     });
   });
 }

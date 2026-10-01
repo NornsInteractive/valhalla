@@ -280,7 +280,7 @@ void main() {
 
   group('Adaptive Bottom Sheets (Task C3)', () {
     testWidgets(
-      'Theme quick switch sheet: full width on narrow screen (360px)',
+      'MainShell narrow (360px): no top theme shortcut icon and no quick switch sheet',
       (tester) async {
         tester.view.physicalSize = const Size(360, 640);
         tester.view.devicePixelRatio = 1.0;
@@ -304,29 +304,21 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final themeBtn = find.byIcon(Icons.palette_outlined);
-        expect(themeBtn, findsOneWidget);
-        await tester.tap(themeBtn);
-        await tester.pumpAndSettle();
-
-        final sheetMaterialFinder = find
-            .descendant(
-              of: find.byType(BottomSheet),
-              matching: find.byType(Material),
-            )
-            .first;
-        expect(sheetMaterialFinder, findsOneWidget);
-        final sheetRect = tester.getRect(sheetMaterialFinder);
         expect(
-          sheetRect.width,
-          lessThanOrEqualTo(360.0),
-          reason: 'Theme switch sheet must fit within narrow 360px screen',
+          find.byIcon(Icons.palette_outlined),
+          findsNothing,
+          reason: 'Top theme quick switch button was removed from top bar',
+        );
+        expect(
+          find.byType(BottomSheet),
+          findsNothing,
+          reason: 'Theme quick switch sheet must not be reachable',
         );
       },
     );
 
     testWidgets(
-      'Theme quick switch sheet: centered and constrained to modalSheetMaxWidth (560) on desktop',
+      'MainShell wide (1200px): no top theme shortcut icon and no quick switch sheet',
       (tester) async {
         tester.view.physicalSize = const Size(1200, 800);
         tester.view.devicePixelRatio = 1.0;
@@ -350,38 +342,15 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final themeBtn = find.byIcon(Icons.palette_outlined);
-        expect(themeBtn, findsOneWidget);
-        await tester.tap(themeBtn);
-        await tester.pumpAndSettle();
-
-        final sheetMaterialFinder = find
-            .descendant(
-              of: find.byType(BottomSheet),
-              matching: find.byType(Material),
-            )
-            .first;
-        expect(sheetMaterialFinder, findsOneWidget);
-        final sheetRect = tester.getRect(sheetMaterialFinder);
         expect(
-          sheetRect.width,
-          equals(LayoutBreakpoints.modalSheetMaxWidth),
-          reason:
-              'Theme switch sheet width must be capped at 560px on wide screen',
+          find.byIcon(Icons.palette_outlined),
+          findsNothing,
+          reason: 'Top theme quick switch button was removed from top bar',
         );
         expect(
-          sheetRect.left,
-          equals((1200 - LayoutBreakpoints.modalSheetMaxWidth) / 2),
-          reason:
-              'Theme switch sheet must be horizontally centered on wide screen',
-        );
-        expect(
-          find.byWidgetPredicate(
-            (w) =>
-                w is ConstrainedBox &&
-                w.constraints.maxWidth == LayoutBreakpoints.modalSheetMaxWidth,
-          ),
-          findsWidgets,
+          find.byType(BottomSheet),
+          findsNothing,
+          reason: 'Theme quick switch sheet must not be reachable',
         );
       },
     );

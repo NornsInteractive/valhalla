@@ -3,6 +3,7 @@ import 'package:acpd/acpd.dart' hide Terminal;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 import '../../data/models/agent_profile.dart';
+import '../../data/models/session_recovery_status.dart';
 import '../../data/models/native_cli_session.dart';
 import '../../data/models/chat_run_settings.dart';
 import '../../data/models/chat_launch_preference.dart';
@@ -21,9 +22,12 @@ import 'infrastructure_providers.dart';
 import 'server_provider.dart';
 import 'settings_provider.dart';
 import 'storage_providers.dart';
+import 'app_visibility_provider.dart';
 export '../../data/models/native_cli_session.dart';
+export '../../data/models/session_recovery_status.dart';
 
 class CliChatState {
+  final SessionRecoveryStatus recoveryStatus;
   final ChatRunSettings runSettings;
   final AgentRuntimeCapabilities capabilities;
   final String? serverId;
@@ -46,6 +50,7 @@ class CliChatState {
   final String? draftCwd;
   final AgentComposerCatalog composerCatalog;
   const CliChatState({
+    this.recoveryStatus = SessionRecoveryStatus.idle,
     this.runSettings = const ChatRunSettings(),
     this.capabilities = const AgentRuntimeCapabilities(),
     this.serverId,
@@ -73,6 +78,7 @@ class CliChatState {
       kind == NativeCliKind.codex || kind == NativeCliKind.openCode;
   bool get hasHistory => kind != NativeCliKind.terminal && activeAgent != null;
   CliChatState copyWith({
+    SessionRecoveryStatus? recoveryStatus,
     ChatRunSettings? runSettings,
     AgentRuntimeCapabilities? capabilities,
     List<AgentProfile>? agents,
@@ -98,6 +104,7 @@ class CliChatState {
     bool clearDraftCwd = false,
     AgentComposerCatalog? composerCatalog,
   }) => CliChatState(
+    recoveryStatus: recoveryStatus ?? this.recoveryStatus,
     runSettings: runSettings ?? this.runSettings,
     capabilities: capabilities ?? this.capabilities,
     serverId: serverId,
@@ -143,6 +150,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
   final Map<String, CliChatState> _agentStates = {};
   String? _turnId;
   Future<void>? _connecting;
+  Future<void>? _recovering;
   bool _selectingAgent = false;
   Timer? _readTimer;
   Timer? _codexDeltaTimer;
@@ -155,25 +163,40 @@ class CliChatNotifier extends Notifier<CliChatState> {
   @override
   CliChatState build() {
     final server = ref.watch(
-      activeServerProvider.select(
-        (s) => (s?.id, s?.host, s?.port, s?.username),
-      ),
+      activeServerProvider.select((s) => (s?.id, s?.connectionKey)),
     );
-    final connected = ref.watch(
-      serverConnectionProvider.select((s) => s.isConnected),
-    );
+    ref.listen(serverConnectionProvider, (previous, next) {
+      if (previous?.isConnected == true && !next.isConnected) {
+        _flushCodexDeltas();
+        _epoch++;
+        _recovering = null;
+        unawaited(_close());
+        state = state.copyWith(
+          recoveryStatus: SessionRecoveryStatus.reconnecting,
+          isSending: false,
+          isLoading: false,
+          isLoadingOlderMessages: false,
+          approvals: const [],
+        );
+      } else if (next.isConnected && previous?.isConnected == false) {
+        unawaited(recoverConnection());
+      }
+    });
+    ref.listen(appVisibilityProvider, (_, foreground) {
+      if (foreground && state.recoveryStatus != SessionRecoveryStatus.idle) {
+        unawaited(recoverConnection());
+      }
+    });
     final agents = ref
         .read(agentRegistryProvider)
         .agents
         .map((a) => a.profile)
         .toList();
     ref.listen(agentRegistryProvider, (_, next) {
-      final profiles = connected
-          ? next.agents
-                .map((a) => a.profile)
-                .where((a) => a.serverId == server.$1)
-                .toList()
-          : <AgentProfile>[];
+      final profiles = next.agents
+          .map((a) => a.profile)
+          .where((a) => a.serverId == server.$1)
+          .toList();
       final selected = profiles
           .where((a) => a.id == state.activeAgent?.id)
           .firstOrNull;
@@ -184,7 +207,8 @@ class CliChatNotifier extends Notifier<CliChatState> {
               selected.containerBinding !=
                   state.activeAgent!.containerBinding ||
               selected.containerReference !=
-                  state.activeAgent!.containerReference)) {
+                  state.activeAgent!.containerReference ||
+              selected.containerUser != state.activeAgent!.containerUser)) {
         _epoch++;
         unawaited(_close());
         _agentStates.clear();
@@ -205,9 +229,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
     _clearHistoryWindow();
     final result = CliChatState(
       serverId: server.$1,
-      agents: connected
-          ? agents.where((a) => a.serverId == server.$1).toList()
-          : const [],
+      agents: agents.where((a) => a.serverId == server.$1).toList(),
     );
     Future.microtask(_selectPreferredAgent);
     return result;
@@ -216,6 +238,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
   Future<void> _selectPreferredAgent() async {
     if (!ref.mounted ||
         _selectingAgent ||
+        !ref.read(serverConnectionProvider).isConnected ||
         state.activeAgent != null ||
         state.agents.isEmpty) {
       return;
@@ -243,7 +266,49 @@ class CliChatNotifier extends Notifier<CliChatState> {
   }
 
   bool _current(int epoch) => ref.mounted && _epoch == epoch;
-  void _fail(int epoch, Object error) {
+
+  Future<void> recoverConnection() {
+    if (_recovering != null) return _recovering!;
+    late final Future<void> future;
+    future = _recoverConnection().whenComplete(() {
+      if (identical(_recovering, future)) _recovering = null;
+    });
+    _recovering = future;
+    return future;
+  }
+
+  Future<void> _recoverConnection() async {
+    if (!ref.read(appVisibilityProvider) ||
+        !ref.read(serverConnectionProvider).isConnected ||
+        state.isSending) {
+      return;
+    }
+    if (state.activeAgent == null) {
+      await _selectPreferredAgent();
+      return;
+    }
+    if (state.recoveryStatus == SessionRecoveryStatus.idle) return;
+    final epoch = _epoch;
+    final sessionId = state.activeSession?.id;
+    bool current() => _current(epoch) && state.activeSession?.id == sessionId;
+    state = state.copyWith(recoveryStatus: SessionRecoveryStatus.syncing);
+    try {
+      await _connect();
+      if (!current()) return;
+      if (state.activeSession != null) {
+        await _readActive(epoch, recovering: true);
+      }
+      if (current() && state.recoveryStatus == SessionRecoveryStatus.syncing) {
+        state = state.copyWith(recoveryStatus: SessionRecoveryStatus.idle);
+      }
+    } catch (error) {
+      if (current()) {
+        _fail(epoch, error, recoveryStatus: SessionRecoveryStatus.failed);
+      }
+    }
+  }
+
+  void _fail(int epoch, Object error, {SessionRecoveryStatus? recoveryStatus}) {
     if (_current(epoch)) {
       final raw = error is ConnectionFailure
           ? error.error.toString()
@@ -275,6 +340,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
             .replaceAll(RegExp(r'[\r\n]+'), ' '),
       );
       state = state.copyWith(
+        recoveryStatus: recoveryStatus,
         isLoading: false,
         isSending: false,
         errorCode: code,
@@ -508,7 +574,11 @@ class CliChatNotifier extends Notifier<CliChatState> {
           supportsStructuredSettings: true,
         );
       }
-      if (_current(epoch)) state = state.copyWith(capabilities: capabilities);
+      if (!_current(epoch)) {
+        await client.close();
+        return;
+      }
+      state = state.copyWith(capabilities: capabilities);
       _events = client.events().listen(
         (event) => _openCodeEvent(epoch, event),
         onError: (Object error) => _fail(epoch, error),
@@ -779,6 +849,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
     _clearHistoryWindow();
     state = state.copyWith(
       clearSession: true,
+      recoveryStatus: SessionRecoveryStatus.idle,
       clearDraftCwd: true,
       messages: [],
       approvals: [],
@@ -857,6 +928,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
     _clearHistoryWindow();
     state = state.copyWith(
       activeSession: session,
+      recoveryStatus: SessionRecoveryStatus.idle,
       messages: [],
       isLoading: true,
       hasOlderMessages: false,
@@ -872,7 +944,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
     await _readActive(_epoch);
   }
 
-  Future<void> _readActive(int epoch) async {
+  Future<void> _readActive(int epoch, {bool recovering = false}) async {
     final session = state.activeSession;
     if (session == null) return;
     final generation = _historyGeneration;
@@ -880,26 +952,103 @@ class CliChatNotifier extends Notifier<CliChatState> {
     try {
       await _connect();
       if (!_current(epoch) || generation != _historyGeneration) return;
-      final page = await _readHistoryPage(session);
+      var page = await _readHistoryPage(session);
+      final previous = recovering ? state.messages : _historyMessages;
+      if (recovering && previous.isNotEmpty) {
+        final known = previous.map((m) => m.id).toSet();
+        var reads = 1;
+        // Bound automatic catch-up; old content remains visible even if a very
+        // large offline gap needs a later explicit retry.
+        while (!page.messages.any((m) => known.contains(m.id)) &&
+            page.olderCursor != null &&
+            reads++ < 20) {
+          final older = await _readHistoryPage(
+            session,
+            cursor: page.olderCursor,
+          );
+          if (!_current(epoch) || generation != _historyGeneration) return;
+          final ids = page.messages.map((m) => m.id).toSet();
+          page = NativeCliMessagePage([
+            ...older.messages.where((m) => !ids.contains(m.id)),
+            ...page.messages,
+          ], olderCursor: older.olderCursor);
+        }
+      }
       if (_current(epoch) &&
           generation == _historyGeneration &&
           sequence == _historyReadSequence &&
           state.activeSession?.id == session.id) {
-        final previous = _historyMessages;
         final pageIds = page.messages.map((m) => m.id).toSet();
         final overlap = previous.indexWhere((m) => pageIds.contains(m.id));
-        _historyMessages = overlap < 0
-            ? page.messages
-            : [...previous.take(overlap), ...page.messages];
+        if (recovering) {
+          final updates = {for (final m in page.messages) m.id: m};
+          for (final previousMessage in previous) {
+            final update = updates[previousMessage.id];
+            if (update != null &&
+                (update.role != previousMessage.role ||
+                    update.text.length < previousMessage.text.length)) {
+              updates.remove(previousMessage.id);
+              state = state.copyWith(
+                recoveryStatus: SessionRecoveryStatus.incomplete,
+              );
+            }
+          }
+          final existingIds = previous.map((m) => m.id).toSet();
+          final tail = overlap < 0
+              ? page.messages
+              : page.messages.skipWhile((m) => m.id != previous[overlap].id);
+          final pending = previous
+              .where((m) => m.id.startsWith('local-'))
+              .toList();
+          final aliases = <String, String>{};
+          for (final local in pending) {
+            final matches = tail
+                .where(
+                  (m) =>
+                      m.role == local.role &&
+                      m.text == local.text &&
+                      !existingIds.contains(m.id),
+                )
+                .toList();
+            if (matches.length == 1 &&
+                pending
+                        .where(
+                          (m) => m.role == local.role && m.text == local.text,
+                        )
+                        .length ==
+                    1) {
+              aliases[matches.single.id] = local.id;
+            }
+          }
+          _historyMessages = [
+            for (final m in previous) updates[m.id] ?? m,
+            ...tail.where(
+              (m) => !existingIds.contains(m.id) && !aliases.containsKey(m.id),
+            ),
+          ];
+          if (previous.isNotEmpty && overlap < 0) {
+            state = state.copyWith(
+              recoveryStatus: SessionRecoveryStatus.incomplete,
+            );
+          }
+        } else {
+          _historyMessages = overlap < 0
+              ? page.messages
+              : [...previous.take(overlap), ...page.messages];
+        }
         _historySessionId = session.id;
-        if (overlap < 0) _olderHistoryCursor = page.olderCursor;
+        if (overlap < 0 && !recovering) _olderHistoryCursor = page.olderCursor;
         _publishHistoryWindow();
       }
     } catch (error) {
       if (generation == _historyGeneration &&
           sequence == _historyReadSequence &&
           state.activeSession?.id == session.id) {
-        _fail(epoch, error);
+        _fail(
+          epoch,
+          error,
+          recoveryStatus: recovering ? SessionRecoveryStatus.failed : null,
+        );
       }
     }
   }
@@ -985,6 +1134,9 @@ class CliChatNotifier extends Notifier<CliChatState> {
 
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty ||
+        !ref.read(serverConnectionProvider).isConnected ||
+        state.recoveryStatus == SessionRecoveryStatus.reconnecting ||
+        state.recoveryStatus == SessionRecoveryStatus.syncing ||
         state.isSending ||
         state.activeAgent == null ||
         !state.structuredSend) {

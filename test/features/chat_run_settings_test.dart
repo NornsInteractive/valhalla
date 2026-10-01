@@ -16,6 +16,7 @@ import 'package:valhalla/features/chat/ai_chat_view.dart';
 import 'package:valhalla/features/chat/cli_chat_view.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import '../support/temp_chat_db.dart';
 
 class _FakeAiChatNotifier extends AiChatNotifier {
   final AiChatState _initialState;
@@ -27,7 +28,7 @@ class _FakeAiChatNotifier extends AiChatNotifier {
   AiChatState build() => _initialState;
 
   @override
-  Future<bool> prepareRunSettings() async => true;
+  Future<bool> prepareRunSettings({bool refresh = false}) async => true;
 
   @override
   Future<void> updateRunSettings(ChatRunSettings settings) async {
@@ -129,7 +130,7 @@ void main() {
     Locale locale = const Locale('zh'),
   }) {
     return ProviderScope(
-      overrides: overrides.cast(),
+      overrides: [tempChatRepositoryOverride(), ...overrides.cast()],
       child: MaterialApp(
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,

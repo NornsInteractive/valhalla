@@ -14,6 +14,7 @@ import 'package:valhalla/features/chat/ai_chat_view.dart';
 import 'package:valhalla/infrastructure/acp/acp_client_adapter.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import '../support/temp_chat_db.dart';
 
 void main() {
   final testServer = ServerProfile(
@@ -30,7 +31,7 @@ void main() {
     List<dynamic> overrides = const [],
   }) {
     return ProviderScope(
-      overrides: [...overrides],
+      overrides: [tempChatRepositoryOverride(), ...overrides],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

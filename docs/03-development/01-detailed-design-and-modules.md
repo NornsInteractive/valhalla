@@ -1,5 +1,58 @@
 # Valhalla - 模块详细设计与分层架构说明书
 
+## 2026-10-01 模型发现（覆盖下方旧的会话配置发现约定）
+
+`agentModelQueryProvider` 是可注入的独立API查询入口，Codex复用
+`CodexNativeClient.queryCapabilities`，与对话所用ACP session解耦。
+模型刷新只进行ACP initialize + 独立模型查询，不恢复/加载/创建会话；
+保留已有工作连接。模式、当前选项、用户主动应用设置仍使用ACP配置接口。
+未知独立接口不猜测，不从历史配置回退。云端实时账号目录尚未接入，接口目录
+与账号权限验证不得混淆。见[交接与来源](../handoffs/2026-10-01-independent-model-discovery.md)。
+
+## 2026-09-30 前后台连接与会话恢复
+
+复用现有 SSH manager、生命周期协调器和重连控制器：单一心跳、探活与握手合并，
+后台超时不主动销毁连接；前台探活有一次宽限，用户断开/换目标使旧异步结果失效。
+聊天 provider 仅随连接目标变化重建，不随连接布尔值或 Agent 检测状态重建。
+`SessionRecoveryStatus` 独立于已有会话内容；断线停止本地接收而非发送取消指令。
+ACP 复用 load/resume 和导入解析器，在 DB isolate 中50条一批事务合并，保留本地 ID；
+单次可见窗口补齐有界，歧义或不支持回放标 incomplete，绝不 fallback 到 session/new。
+CLI 复用官方历史分页；草稿/消息在进程内保留。ACP 生命周期检查点另持久化消息、
+文字草稿和附件描述，图片存私有文件。无新增依赖、远端 Daemon 或强制 WakeLock。
+详细限制、分工及门禁见[本轮交接](../handoffs/2026-09-30-background-session-recovery.md)。
+
+## 2026-09-30 ACP 可用性第二轮（优先于下方旧契约）
+
+沿用 acpd v1 的消息 ID 与通知分发，事件保留角色/ID/资源块；账号通过已声明
+authStatus 扩展接收。草稿只 initialize，首次发送才 new；已有会话优先 resume
+获取最新配置，必要时 load，失败保留工作连接并标记旧配置。
+ChatMessage 扩展可选 remoteMessageId/attachments，旧 JSON 不变；图片不入消息 JSON，
+通过 AcpAttachmentStore 在后台保存内容寻址私有文件。导入仍50条批写和背压，
+重新导入新本地副本，原记录和远端不改。
+AcpWorkspaceFiles 按 Agent 执行目标复用 SFTP/已有 docker exec 封装，读取有界、
+可取消，预览串行且8MiB缓存，单个预览源最多2MiB；大图浏览显示占位，选中附件
+仍遵守20MiB图片/1MiB文本总量。目录超过10000项明确报错，不静默截断。
+默认导航采用读时兼容映射旧默认值，显式保存记录迁移标识，自定义和空列表不变。
+图片渲染使用 Flutter 原生 ResizeImagePolicy.fit 同时限定宽高（不拉伸、不访问远端URL），
+草稿按已限额bytes预览，历史按私有文件加载；损坏/缺失图片显示占位。
+目录浏览用请求代次丢弃迟到结果，目录失败禁确认；选择多个文件时逐项核验当前目标。
+自动化及APK/安装结果以[实施状态](04-implementation-status.md)和
+[本轮交接](../handoffs/2026-09-30-acp-usability.md)为准，不能代替真实ACP验收。
+
+## 2026-09-30 ACP 增量架构
+
+- 协议仍使用acpd v1类型化ClientRole/ClientContext，避免Session高层封装重复缓存整轮流事件；不自研RPC。
+- 权限结果保持原始optionId或取消，wire为 `result.outcome = {outcome, optionId?}`；旧扁平断言无效。
+- 工具按ID合并可选更新，配置按远端确认值联动，普通设置打开不重建进程。
+- ChatRepository使用独立SQLite，所有SQL固定且参数绑定，在后台isolate执行；摘要与消息分开，messageOffset为绝对序号。
+- 旧JSON保留、幂等事务导入并核验归属/数量；失败可回读旧记录且不把损坏JSON视为空历史。新数据通过exportAll导出。
+- 每2秒保存生成中检查点，终态立即保存；重启后streaming转interrupted，不自动重发。
+- 远端session/list只初始化连接；导入session/load分批50条落盘，待写批次达到2时暂停SSH输入，下降后恢复。
+- 附件仅显式发送，按promptCapabilities启用；本地文件限长读取，Docker文本文件在目标容器用户环境读取。
+- stderr通过共享LogSanitizer按流脱敏并保留8KiB尾部；生成采用无进展超时，审批等待不计时。
+
+详见[接口与验收交接](../handoffs/2026-09-30-acp-client-completion.md)。本节是本轮实现契约，不替代测试结果。
+
 | 文档版本 | 发布日期 | 适用阶段 | 核心架构 |
 | :--- | :--- | :--- | :--- |
 | v1.0.0 | 2026-09-13 | 开发实施阶段 | Clean Architecture + Riverpod Provider Pattern |
