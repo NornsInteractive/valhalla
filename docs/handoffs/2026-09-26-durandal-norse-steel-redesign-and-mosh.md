@@ -144,12 +144,17 @@ terminal_view ── terminal_provider (addMoshTab)
 
 ### 未验证事项 (接手者注意)
 
-- **真实服务器 UDP 数据面未验证**: SSP 握手、AES-OCB、漫游切换
-  只能在装了 mosh 的真实服务器上验证 (模拟器无 SSH 对端)。
-  建议步骤: 服务器 `apt install mosh` + 开放 UDP 60000-61000 →
-  App 服务器配置开 Mosh → 终端新建 Mosh 会话 → 断网重连验证漫游。
-- dart_mosh 0.0.4 的 rehoming/resize 在弱网下的表现未实测;
-  如遇问题,隔离层内替换或修补,不要让类型泄漏。
+- ~~真实服务器 UDP 数据面~~ **已于 2026-09-26 在真实 mosh-server 1.4.0
+  (WSL Ubuntu) 上验证通过**: bootstrap → locale 自动回退 (C.utf8) →
+  UDP SSP 握手 → AES-OCB → 终端回显, 全链路 OK。真机 e2e 测试:
+  `test/infrastructure/mosh/mosh_e2e_manual_test.dart`
+  (`VALHALLA_MOSH_E2E=1` 开启, 默认跳过)。
+- **locale 协商已修复** (commit 42c01e2): bootstrap 不再写死
+  en_US.UTF-8; 服务器拒绝时经 `locale -a` 探测并按优先级回退
+  (C.UTF-8 优先)。此前这是 "mosh 失效" 的实锤根因 (mosh-server 在
+  无该 locale 的服务器上拒绝启动, Debian 精简镜像/Docker/WSL 命中)。
+- 剩余待真机验收: 弱网下 dart_mosh 0.0.4 的 rehoming/resize 表现;
+  断网重连漫游 (设计上由 mosh 自身保证)。
 - iOS/macOS 构建未验证 (本轮只出了 Android APK + 全量测试)。
 
 ---
