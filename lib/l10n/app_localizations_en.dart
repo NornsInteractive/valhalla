@@ -1710,6 +1710,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hardwareUnknown => 'Unknown';
 
   @override
+  String get systemInfoTitle => 'System Info';
+
+  @override
+  String get systemInfoTapHint => 'Tap to view ASCII art';
+
+  @override
+  String get systemInfoHost => 'Host';
+
+  @override
   String get serverShutdown => 'Shutdown';
 
   @override

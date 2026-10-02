@@ -3326,6 +3326,24 @@ abstract class AppLocalizations {
   /// **'Unknown'**
   String get hardwareUnknown;
 
+  /// No description provided for @systemInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'System Info'**
+  String get systemInfoTitle;
+
+  /// No description provided for @systemInfoTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view ASCII art'**
+  String get systemInfoTapHint;
+
+  /// No description provided for @systemInfoHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get systemInfoHost;
+
   /// No description provided for @serverShutdown.
   ///
   /// In en, this message translates to:

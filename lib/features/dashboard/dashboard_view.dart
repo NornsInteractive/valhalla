@@ -23,6 +23,7 @@ import '../shell/main_shell.dart'
 import 'dashboard_provider.dart';
 import 'widgets/metric_trend_dialog.dart';
 import 'widgets/network_details_modal.dart';
+import 'widgets/neofetch_sheet.dart';
 
 class DashboardView extends ConsumerWidget {
   final void Function(int targetTab)? onNavigate;
@@ -1513,6 +1514,28 @@ class _ServerHardwareSpecsSectionState
                 icon: Icons.desktop_windows_outlined,
                 label: context.l10n.hardwareDistribution,
                 value: osText,
+                tapKey: const Key('dashboard_hardware_os_tappable'),
+                tooltip: context.l10n.systemInfoTapHint,
+                trailing: Icon(
+                  Icons.chevron_right,
+                  size: 14,
+                  color: context.colorScheme.onSurfaceVariant,
+                ),
+                onTap: () {
+                  final server = ref.read(activeServerProvider);
+                  showNeofetchSheet(
+                    context,
+                    hardware: info,
+                    serverName: server?.name ?? '',
+                    userHost: server == null
+                        ? ''
+                        : '${server.username}@${server.host}',
+                    metrics: ref
+                        .read(systemMetricsStreamProvider)
+                        .asData
+                        ?.value,
+                  );
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -1537,14 +1560,17 @@ class _ServerHardwareSpecsSectionState
     required IconData icon,
     required String label,
     required String value,
+    Key? tapKey,
+    VoidCallback? onTap,
+    String? tooltip,
+    Widget? trailing,
   }) {
-    return Column(
+    final content = Column(
       key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 12, color: context.colorScheme.outline),
             const SizedBox(width: 4),
@@ -1555,20 +1581,27 @@ class _ServerHardwareSpecsSectionState
                 color: context.colorScheme.onSurfaceVariant,
               ),
             ),
+            if (trailing != null) ...[const Spacer(), trailing],
           ],
         ),
         const SizedBox(height: 2),
         Text(
           value,
-          style: const TextStyle(
-            fontFamily: 'JetBrains Mono',
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
+          style: monoTextStyle(fontSize: 12, fontWeight: FontWeight.w500),
           overflow: TextOverflow.ellipsis,
           maxLines: 2,
         ),
       ],
+    );
+    if (onTap == null) return content;
+    return Tooltip(
+      message: tooltip ?? '',
+      child: InkWell(
+        key: tapKey,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(VRadius.input),
+        child: content,
+      ),
     );
   }
 }

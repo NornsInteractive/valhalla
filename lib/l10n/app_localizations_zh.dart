@@ -1640,6 +1640,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get hardwareUnknown => '未知';
 
   @override
+  String get systemInfoTitle => '系统信息';
+
+  @override
+  String get systemInfoTapHint => '点击查看字符画';
+
+  @override
+  String get systemInfoHost => '主机';
+
+  @override
   String get serverShutdown => '关机';
 
   @override
