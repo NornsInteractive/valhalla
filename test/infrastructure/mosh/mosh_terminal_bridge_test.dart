@@ -15,6 +15,7 @@ const _request = MoshBootstrapRequest(serverId: 'srv-1', host: '203.0.113.10');
 final _success = MoshBootstrapSuccess(
   endpoint: MoshEndpoint(host: '203.0.113.10', port: 60001, key: _key),
   rawOutput: 'MOSH CONNECT 60001 $_key',
+  locale: 'en_US.UTF-8',
 );
 
 class _FakeHandle implements MoshSessionHandle {

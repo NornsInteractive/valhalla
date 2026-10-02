@@ -34,8 +34,10 @@ class _FakeExecutor implements SshCommandExecutor {
 
 /// 假的 SSH 客户端，只实现 bootstrap 用到的 execute。
 ///
-/// `command -v` 探测命令按脚本自动完成；`mosh-server new` 命令的输出
-/// 由 [bootstrapOutput]/[bootstrapExitCode] 决定。
+/// `command -v` 与 `locale -a` 探测按脚本自动完成；`mosh-server new`
+/// 命令的输出由 [bootstrapOutput]/[bootstrapExitCode] 决定，多次启动
+/// 尝试（locale 协商重试）时改用 [bootstrapOutputs]/[bootstrapExitCodes]
+/// 队列依序消耗。
 class _FakeSshClient implements SSHClient {
   _FakeSshClient();
 
@@ -45,6 +47,16 @@ class _FakeSshClient implements SSHClient {
 
   /// 探测命令挂死（模拟慢执行器 → timeout）。
   bool probeHangs = false;
+
+  /// locale -a 探测的 stdout / 退出码。
+  String localeProbeOutput = 'C\nC.utf8\nPOSIX\n';
+  int localeProbeExitCode = 0;
+
+  /// locale -a 探测挂死。
+  bool localeProbeHangs = false;
+
+  /// locale -a 探测的 execute 直接抛错（→ sshFailed，不 crash）。
+  bool failLocaleProbe = false;
 
   /// execute 直接抛错（→ sshFailed）。
   bool failExecute = false;
@@ -61,6 +73,10 @@ class _FakeSshClient implements SSHClient {
 
   String bootstrapOutput = '';
   int bootstrapExitCode = 0;
+
+  /// 多次启动尝试时依序消耗的输出 / 退出码（非空时优先于上面的单值）。
+  List<String> bootstrapOutputs = <String>[];
+  List<int> bootstrapExitCodes = <int>[];
 
   /// false：只吐输出不结束进程，验证 CONNECT 行到手后提前拆通道。
   bool bootstrapClose = true;
@@ -87,6 +103,12 @@ class _FakeSshClient implements SSHClient {
       session.emit(probeOutput, exitCode: probeExitCode);
       return session;
     }
+    if (command.contains('locale -a')) {
+      if (failLocaleProbe) throw StateError('locale probe failed');
+      if (localeProbeHangs) return session;
+      session.emit(localeProbeOutput, exitCode: localeProbeExitCode);
+      return session;
+    }
     if (command.contains('mosh-server new')) {
       if (bootstrapHangs) return session;
       if (failBootstrapStream) {
@@ -97,11 +119,13 @@ class _FakeSshClient implements SSHClient {
         session.dieTransport();
         return session;
       }
-      session.emit(
-        bootstrapOutput,
-        exitCode: bootstrapExitCode,
-        close: bootstrapClose,
-      );
+      final output = bootstrapOutputs.isNotEmpty
+          ? bootstrapOutputs.removeAt(0)
+          : bootstrapOutput;
+      final exitCode = bootstrapExitCodes.isNotEmpty
+          ? bootstrapExitCodes.removeAt(0)
+          : bootstrapExitCode;
+      session.emit(output, exitCode: exitCode, close: bootstrapClose);
     }
     return session;
   }
@@ -456,6 +480,181 @@ void main() {
 
       expect(result, isA<MoshBootstrapSuccess>());
       expect(client.lastSession!.destroyed, isTrue);
+    });
+  });
+
+  group('locale negotiation', () {
+    // mosh 1.4.0 在 locale 未安装时的真实输出。
+    const localeFailure =
+        "The locale requested by LC_ALL=en_US.UTF-8 isn't available here.\n"
+        "Running `locale-gen en_US.UTF-8' may be necessary.\n"
+        'mosh-server needs a UTF-8 native locale to run.\n';
+
+    test(
+      'falls back to C.UTF-8 and retries exactly once when the requested locale is unavailable',
+      () async {
+        final client = _FakeSshClient()
+          ..bootstrapOutputs = [localeFailure, 'MOSH CONNECT 60001 $_key\n']
+          ..bootstrapExitCodes = [1, 0]
+          ..localeProbeOutput = 'C\nC.UTF-8\nPOSIX\n';
+        final service = MoshSessionService(_FakeExecutor(client: client));
+
+        final result = await service.bootstrap(_request);
+
+        final success = result as MoshBootstrapSuccess;
+        expect(success.locale, 'C.UTF-8');
+        expect(success.endpoint.port, 60001);
+        // probe + 首次启动 + locale -a + 重试启动，恰好重试一次。
+        expect(client.executed, hasLength(4));
+        expect(
+          client.executed.where((c) => c.contains('mosh-server new')),
+          hasLength(2),
+        );
+        final localeProbe = client.executed[2];
+        expect(localeProbe, startsWith('bash -l -c '));
+        expect(localeProbe, contains('locale -a'));
+        final retry = client.executed[3];
+        expect(retry, contains('-l C.UTF-8'));
+        expect(retry, contains('LC_ALL=C.UTF-8'));
+      },
+    );
+
+    test('passes the exact locale -a string through (C.utf8 is not rewritten)',
+        () async {
+      final client = _FakeSshClient()
+        ..bootstrapOutputs = [localeFailure, 'MOSH CONNECT 60001 $_key\n']
+        ..bootstrapExitCodes = [1, 0]
+        ..localeProbeOutput = 'C\nC.utf8\nen_US.utf8\nPOSIX\n';
+      final service = MoshSessionService(_FakeExecutor(client: client));
+
+      final result = await service.bootstrap(_request);
+
+      final success = result as MoshBootstrapSuccess;
+      expect(success.locale, 'C.utf8');
+      expect(client.executed[3], contains('-l C.utf8'));
+    });
+
+    test('prefers en_US.UTF-8 over other locales when C.UTF-8 is missing',
+        () async {
+      final client = _FakeSshClient()
+        ..bootstrapOutputs = [localeFailure, 'MOSH CONNECT 60001 $_key\n']
+        ..bootstrapExitCodes = [1, 0]
+        ..localeProbeOutput = 'POSIX\nen_US.utf8\nde_DE.UTF-8\n';
+      final service = MoshSessionService(_FakeExecutor(client: client));
+
+      final result = await service.bootstrap(_request);
+
+      final success = result as MoshBootstrapSuccess;
+      expect(success.locale, 'en_US.utf8');
+      expect(client.executed[3], contains('-l en_US.utf8'));
+    });
+
+    test('retries with the requested locale when locale -a lists it', () async {
+      final client = _FakeSshClient()
+        ..bootstrapOutputs = [localeFailure, 'MOSH CONNECT 60001 $_key\n']
+        ..bootstrapExitCodes = [1, 0]
+        ..localeProbeOutput = 'C\nen_US.UTF-8\nPOSIX\n';
+      final service = MoshSessionService(_FakeExecutor(client: client));
+
+      final result = await service.bootstrap(_request);
+
+      final success = result as MoshBootstrapSuccess;
+      expect(success.locale, 'en_US.UTF-8');
+      expect(client.executed[3], contains('-l en_US.UTF-8'));
+    });
+
+    test('falls back to the alphabetically first UTF-8 locale', () async {
+      final client = _FakeSshClient()
+        ..bootstrapOutputs = [localeFailure, 'MOSH CONNECT 60001 $_key\n']
+        ..bootstrapExitCodes = [1, 0]
+        ..localeProbeOutput = 'fr_FR.UTF-8\nde_DE.UTF-8\n';
+      final service = MoshSessionService(_FakeExecutor(client: client));
+
+      final result = await service.bootstrap(_request);
+
+      final success = result as MoshBootstrapSuccess;
+      expect(success.locale, 'de_DE.UTF-8');
+    });
+
+    test('no UTF-8 locale on the server fails with locale-gen guidance',
+        () async {
+      final client = _FakeSshClient()
+        ..bootstrapOutput = localeFailure
+        ..bootstrapExitCode = 1
+        ..localeProbeOutput = 'C\nPOSIX\nen_US.iso88591\n';
+      final service = MoshSessionService(_FakeExecutor(client: client));
+
+      final result = await service.bootstrap(_request);
+
+      final failure = _failure(result);
+      expect(failure.error, MoshBootstrapError.startFailed);
+      expect(failure.detail, contains('locale-gen'));
+      // 没有可用替代 locale，不发起重试。
+      expect(
+        client.executed.where((c) => c.contains('mosh-server new')),
+        hasLength(1),
+      );
+    });
+
+    test('non-locale failures do not trigger negotiation', () async {
+      final client = _FakeSshClient()
+        ..bootstrapOutput = 'bash: mosh-server: command not found\n'
+        ..bootstrapExitCode = 127;
+      final service = MoshSessionService(_FakeExecutor(client: client));
+
+      final result = await service.bootstrap(_request);
+
+      expect(_failure(result).error, MoshBootstrapError.notInstalled);
+      expect(client.executed, hasLength(2));
+      expect(client.executed.any((c) => c.contains('locale -a')), isFalse);
+    });
+
+    test(
+      'first-attempt success runs mosh-server exactly once with the requested locale',
+      () async {
+        final client = _FakeSshClient()
+          ..bootstrapOutput = 'MOSH CONNECT 60001 $_key\n';
+        final service = MoshSessionService(_FakeExecutor(client: client));
+
+        final result = await service.bootstrap(_request);
+
+        final success = result as MoshBootstrapSuccess;
+        expect(success.locale, 'en_US.UTF-8');
+        expect(client.executed, hasLength(2));
+        expect(client.executed[1], contains('LC_ALL=en_US.UTF-8'));
+        expect(
+          client.executed.where((c) => c.contains('mosh-server new')),
+          hasLength(1),
+        );
+      },
+    );
+
+    test('locale -a probe failing surfaces as sshFailed without crashing',
+        () async {
+      final client = _FakeSshClient()
+        ..bootstrapOutput = localeFailure
+        ..bootstrapExitCode = 1
+        ..failLocaleProbe = true;
+      final service = MoshSessionService(_FakeExecutor(client: client));
+
+      final result = await service.bootstrap(_request);
+
+      expect(_failure(result).error, MoshBootstrapError.sshFailed);
+    });
+
+    test('failed retry reports startFailed mentioning the fallback locale',
+        () async {
+      final client = _FakeSshClient()
+        ..bootstrapOutput = localeFailure
+        ..bootstrapExitCode = 1
+        ..localeProbeOutput = 'C\nC.UTF-8\nPOSIX\n';
+      final service = MoshSessionService(_FakeExecutor(client: client));
+
+      final result = await service.bootstrap(_request);
+
+      final failure = _failure(result);
+      expect(failure.error, MoshBootstrapError.startFailed);
+      expect(failure.detail, contains('C.UTF-8'));
     });
   });
 

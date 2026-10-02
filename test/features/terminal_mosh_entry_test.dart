@@ -164,6 +164,7 @@ void main() {
             key: _key,
           ),
           rawOutput: 'MOSH CONNECT 60001 $_key',
+          locale: 'en_US.UTF-8',
         );
       final notifier = _notifierFor(moshAvailable: true);
 
@@ -314,6 +315,7 @@ void main() {
       ..bootstrapResult = MoshBootstrapSuccess(
         endpoint: MoshEndpoint(host: _moshServer.host, port: 60001, key: _key),
         rawOutput: 'MOSH CONNECT 60001 $_key',
+        locale: 'en_US.UTF-8',
       );
     final notifier = _notifierFor(moshAvailable: true);
 

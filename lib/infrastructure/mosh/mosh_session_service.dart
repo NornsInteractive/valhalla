@@ -50,12 +50,20 @@ sealed class MoshBootstrapResult {
 
 /// bootstrap 成功。
 class MoshBootstrapSuccess extends MoshBootstrapResult {
-  const MoshBootstrapSuccess({required this.endpoint, required this.rawOutput});
+  const MoshBootstrapSuccess({
+    required this.endpoint,
+    required this.rawOutput,
+    required this.locale,
+  });
 
   final MoshEndpoint endpoint;
 
   /// mosh-server 的完整输出，诊断用。
   final String rawOutput;
+
+  /// 实际生效的 locale：首次尝试即成功时为请求的 locale，走协商重试时
+  /// 为服务器上选中的替代 locale。
+  final String locale;
 }
 
 /// bootstrap 失败，[MoshBootstrapFailure.error] 给出分类。
@@ -93,6 +101,14 @@ class MoshBootstrapRequest {
   final String portRange;
 
   /// 传给 mosh-server 的 locale（必须是 UTF-8 变体）。
+  ///
+  /// 服务器未安装该 locale 时（mosh-server 报 "isn't available here" /
+  /// "needs a UTF-8 native locale"）会自动协商：探测 `locale -a`，按
+  /// 请求 locale → C.UTF-8 → en_US.UTF-8 → 字母序第一个 UTF-8 locale
+  /// 的优先级重试一次，使用 `locale -a` 打印的原样字符串。成功结果的
+  /// [MoshBootstrapSuccess.locale] 给出实际生效的值；服务器上一个
+  /// UTF-8 locale 都没有时按 startFailed 失败，detail 附 locale-gen
+  /// 安装提示。
   final String locale;
 
   /// 终端类型。
@@ -198,7 +214,9 @@ class MoshSessionService {
   /// 通过 SSH 引导 mosh-server，成功返回 [MoshBootstrapSuccess]。
   ///
   /// 失败不抛异常，一律以 [MoshBootstrapFailure] 表达，分类见
-  /// [MoshBootstrapError]。
+  /// [MoshBootstrapError]。请求的 locale 在服务器上不可用时自动协商：
+  /// 探测 `locale -a` 换一个 UTF-8 locale 重试一次（见
+  /// [MoshBootstrapRequest.locale]）。
   Future<MoshBootstrapResult> bootstrap(MoshBootstrapRequest request) async {
     final client = _executor.getClient(request.serverId);
     if (client == null || client.isClosed) {
@@ -210,15 +228,7 @@ class MoshSessionService {
 
     final String serverCommand;
     try {
-      final ports = _parsePortRange(request.portRange);
-      serverCommand = MoshSshBootstrap(
-        serverBinary: request.serverPath,
-        locale: request.locale,
-        term: request.term,
-        colors: request.colors,
-        serverPort: ports.$1,
-        serverPortEnd: ports.$2,
-      ).command();
+      serverCommand = _serverCommand(request, request.locale);
     } on MoshException catch (e) {
       return MoshBootstrapFailure(
         error: MoshBootstrapError.startFailed,
@@ -253,51 +263,28 @@ class MoshSessionService {
         );
       }
 
-      // 2. 启动 mosh-server 并等 MOSH CONNECT 行。包一层 bash -l 保证
-      //    登录 PATH，与 SshCommandExecutor.executeWithLoginShell 的约定
-      //    一致；注意这里不能用缓冲版 execute —— mosh-server 打印完
-      //    CONNECT 行后会一直在前台运行，缓冲版会等到会话结束才返回。
-      final run = await _runRemote(
-        client,
-        'bash -l -c ${cliShellQuote(serverCommand)}',
-        timeout: _bootstrapTimeout,
-        stopAtConnectLine: true,
-      );
-      final combined = run.output;
-      String? parseError;
-      try {
-        final config = MoshServerConfig.parse(combined, host: request.host);
-        return MoshBootstrapSuccess(
-          endpoint: MoshEndpoint(
-            host: config.host,
-            port: config.port,
-            key: config.key.printable,
-          ),
-          rawOutput: combined,
-        );
-      } on MoshException catch (e) {
-        parseError = e.message;
+      // 2. 首次尝试：用请求的 locale 启动 mosh-server 并等 MOSH CONNECT
+      //    行。包一层 bash -l 保证登录 PATH，与
+      //    SshCommandExecutor.executeWithLoginShell 的约定一致；注意这里
+      //    不能用缓冲版 execute —— mosh-server 打印完 CONNECT 行后会一直
+      //    在前台运行，缓冲版会等到会话结束才返回。
+      final first = await _runMoshServer(client, request.host, serverCommand);
+      if (first.config != null) {
+        return _success(first.config!, request.locale, first.run.output);
       }
-      if (run.exitCode == 127 || _notFoundPattern.hasMatch(combined)) {
-        return MoshBootstrapFailure(
-          error: MoshBootstrapError.notInstalled,
-          detail: _summarize(run),
-        );
+      // 不可重试的硬失败（notInstalled / sshFailed）原样返回。
+      final hard = _hardFailure(first);
+      if (hard != null) {
+        return hard;
       }
-      if (run.exitCode == null && !run.stoppedEarly) {
-        // dartssh2 的通道 done 从不携带错误；无退出码即传输层挂了。
-        return MoshBootstrapFailure(
-          error: MoshBootstrapError.sshFailed,
-          detail:
-              'SSH channel closed before mosh-server reported a status; '
-              '${_summarize(run)}',
-        );
+
+      // 3. locale 协商：mosh-server 报请求的 locale 不可用时（Debian
+      //    minimal / Docker / WSL 等常没装 en_US.UTF-8），探测服务器可用
+      //    的 UTF-8 locale 换一个重试一次，与真实 mosh 客户端的回退一致。
+      if (_localeUnavailablePattern.hasMatch(first.run.output)) {
+        return await _retryWithNegotiatedLocale(client, request, first);
       }
-      return MoshBootstrapFailure(
-        error: MoshBootstrapError.startFailed,
-        // 走到这里必然是 CONNECT 行解析失败，parseError 一定已被赋值。
-        detail: '$parseError; ${_summarize(run)}',
-      );
+      return _startFailed(first);
     } on _RemoteTimeout {
       return const MoshBootstrapFailure(error: MoshBootstrapError.timeout);
     } catch (error) {
@@ -340,6 +327,194 @@ class MoshSessionService {
         error,
       );
     }
+  }
+
+  /// mosh-server 报 locale 不可用的输出特征（mosh 1.4.0 实测输出）。
+  static final RegExp _localeUnavailablePattern = RegExp(
+    "isn't available here|needs a UTF-8 native locale|Running `locale-gen",
+  );
+
+  /// `locale -a` 输出里合法的 locale 名（无空白，过滤登录横幅等噪声）。
+  static final RegExp _localeNamePattern = RegExp(r'^[A-Za-z0-9_.@+-]+$');
+
+  static final RegExp _utf8MarkerPattern = RegExp(
+    r'utf-?8',
+    caseSensitive: false,
+  );
+
+  /// 组装 `mosh-server new` 命令（TERM/LC_ALL 前缀 + 参数）。
+  static String _serverCommand(MoshBootstrapRequest request, String locale) {
+    final ports = _parsePortRange(request.portRange);
+    return MoshSshBootstrap(
+      serverBinary: request.serverPath,
+      locale: locale,
+      term: request.term,
+      colors: request.colors,
+      serverPort: ports.$1,
+      serverPortEnd: ports.$2,
+    ).command();
+  }
+
+  static MoshBootstrapSuccess _success(
+    MoshServerConfig config,
+    String locale,
+    String rawOutput,
+  ) {
+    return MoshBootstrapSuccess(
+      endpoint: MoshEndpoint(
+        host: config.host,
+        port: config.port,
+        key: config.key.printable,
+      ),
+      rawOutput: rawOutput,
+      locale: locale,
+    );
+  }
+
+  /// 不可重试的硬失败（notInstalled / sshFailed）；startFailed 返回 null。
+  static MoshBootstrapFailure? _hardFailure(_ServerAttempt attempt) {
+    final run = attempt.run;
+    if (run.exitCode == 127 || _notFoundPattern.hasMatch(run.output)) {
+      return MoshBootstrapFailure(
+        error: MoshBootstrapError.notInstalled,
+        detail: _summarize(run),
+      );
+    }
+    if (run.exitCode == null && !run.stoppedEarly) {
+      // dartssh2 的通道 done 从不携带错误；无退出码即传输层挂了。
+      return MoshBootstrapFailure(
+        error: MoshBootstrapError.sshFailed,
+        detail:
+            'SSH channel closed before mosh-server reported a status; '
+            '${_summarize(run)}',
+      );
+    }
+    return null;
+  }
+
+  static MoshBootstrapFailure _startFailed(
+    _ServerAttempt attempt, [
+    String? prefix,
+  ]) {
+    return MoshBootstrapFailure(
+      error: MoshBootstrapError.startFailed,
+      // 走到这里必然是 CONNECT 行解析失败，parseError 一定已被赋值。
+      detail:
+          '${prefix == null ? '' : '$prefix; '}'
+          '${attempt.parseError}; ${_summarize(attempt.run)}',
+    );
+  }
+
+  /// 跑 `mosh-server new` 并解析 CONNECT 行；两次启动尝试共用。
+  Future<_ServerAttempt> _runMoshServer(
+    SSHClient client,
+    String host,
+    String serverCommand,
+  ) async {
+    final run = await _runRemote(
+      client,
+      'bash -l -c ${cliShellQuote(serverCommand)}',
+      timeout: _bootstrapTimeout,
+      stopAtConnectLine: true,
+    );
+    try {
+      final config = MoshServerConfig.parse(run.output, host: host);
+      return _ServerAttempt(run: run, config: config);
+    } on MoshException catch (e) {
+      return _ServerAttempt(run: run, parseError: e.message);
+    }
+  }
+
+  /// locale 协商：探测服务器可用的 UTF-8 locale，换一个再启动一次。
+  Future<MoshBootstrapResult> _retryWithNegotiatedLocale(
+    SSHClient client,
+    MoshBootstrapRequest request,
+    _ServerAttempt first,
+  ) async {
+    final probe = await _runRemote(
+      client,
+      'bash -l -c ${cliShellQuote('locale -a')}',
+      timeout: _probeTimeout,
+      stopAtConnectLine: false,
+    );
+    if (probe.exitCode == null) {
+      return MoshBootstrapFailure(
+        error: MoshBootstrapError.sshFailed,
+        detail: 'SSH channel closed before the locale probe returned a status',
+      );
+    }
+    final chosen = _pickUtf8Locale(
+      _parseUtf8Locales(probe.output),
+      request.locale,
+    );
+    if (chosen == null) {
+      return MoshBootstrapFailure(
+        error: MoshBootstrapError.startFailed,
+        detail:
+            'no UTF-8 locale available on the server; mosh needs one. '
+            'Install a UTF-8 locale (e.g. run `locale-gen en_US.UTF-8` or '
+            'enable one in /etc/locale.gen) and retry. ${_summarize(first.run)}',
+      );
+    }
+
+    final String retryCommand;
+    try {
+      retryCommand = _serverCommand(request, chosen);
+    } on MoshException catch (e) {
+      return MoshBootstrapFailure(
+        error: MoshBootstrapError.startFailed,
+        detail: e.message,
+      );
+    } on ArgumentError catch (e) {
+      return MoshBootstrapFailure(
+        error: MoshBootstrapError.startFailed,
+        detail: '$e',
+      );
+    }
+
+    final second = await _runMoshServer(client, request.host, retryCommand);
+    if (second.config != null) {
+      return _success(second.config!, chosen, second.run.output);
+    }
+    return _hardFailure(second) ??
+        _startFailed(second, 'locale fallback to $chosen also failed');
+  }
+
+  /// 从 `locale -a` 输出解析 UTF-8 locale（每行一个，glibc 输出已按字母序）。
+  static List<String> _parseUtf8Locales(String output) {
+    final locales = <String>[];
+    for (final rawLine in output.split('\n')) {
+      final line = rawLine.trim();
+      if (line.isEmpty || !_localeNamePattern.hasMatch(line)) continue;
+      if (_utf8MarkerPattern.hasMatch(line)) locales.add(line);
+    }
+    return locales;
+  }
+
+  /// 比较用归一化：小写并去掉连字符（C.UTF-8 / C.utf8 → c.utf8）。
+  static String _normalizeLocale(String locale) =>
+      locale.toLowerCase().replaceAll('-', '');
+
+  /// 按优先级挑替代 locale：请求的 → C.UTF-8 → en_US.UTF-8 → 字母序第一个。
+  /// 返回 `locale -a` 打印的原样字符串（mosh-server 接受，不做归一化改写）。
+  static String? _pickUtf8Locale(List<String> available, String requested) {
+    if (available.contains(requested)) return requested;
+    String? find(bool Function(String normalized) predicate) {
+      for (final locale in available) {
+        if (predicate(_normalizeLocale(locale))) return locale;
+      }
+      return null;
+    }
+
+    return find((n) => n == 'c.utf8') ??
+        find((n) => n == 'en_us.utf8') ??
+        _alphabeticalFirst(available);
+  }
+
+  static String? _alphabeticalFirst(List<String> locales) {
+    if (locales.isEmpty) return null;
+    final sorted = [...locales]..sort();
+    return sorted.first;
   }
 
   static (int, int) _parsePortRange(String range) {
@@ -534,6 +709,19 @@ class _RemoteRun {
 
 class _RemoteTimeout implements Exception {
   const _RemoteTimeout();
+}
+
+/// 一次 mosh-server 启动尝试的结果：CONNECT 行是否解析成功。
+class _ServerAttempt {
+  const _ServerAttempt({required this.run, this.config, this.parseError});
+
+  final _RemoteRun run;
+
+  /// 解析成功时的服务器配置；与 [parseError] 互斥。
+  final MoshServerConfig? config;
+
+  /// 解析失败原因。
+  final String? parseError;
 }
 
 /// dart_mosh 会话的句柄实现：所有调用原样转发。
