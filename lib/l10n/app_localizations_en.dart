@@ -287,6 +287,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Keeps your terminal output after a disconnect. Requires tmux on the remote server. Changes apply to newly opened terminal tabs.';
 
   @override
+  String get settingsTerminalFontSize => 'Terminal Font Size';
+
+  @override
+  String get settingsTerminalFontSizeSubtitle =>
+      'Adjusts SSH and CLI terminal font size';
+
+  @override
   String get version => 'Version';
 
   @override

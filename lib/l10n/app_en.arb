@@ -91,6 +91,8 @@
   "settingsTerminalUseTmux": "Persistent Sessions (tmux)",
   "settingsTerminalUseTmuxSubtitle": "Run terminal sessions inside tmux on the remote server",
   "settingsTerminalUseTmuxDescription": "Keeps your terminal output after a disconnect. Requires tmux on the remote server. Changes apply to newly opened terminal tabs.",
+  "settingsTerminalFontSize": "Terminal Font Size",
+  "settingsTerminalFontSizeSubtitle": "Adjusts SSH and CLI terminal font size",
   "version": "Version",
   "addServer": "Add Server",
   "editServer": "Edit Server",

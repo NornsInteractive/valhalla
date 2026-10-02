@@ -91,6 +91,8 @@
   "settingsTerminalUseTmux": "会话保活 (tmux)",
   "settingsTerminalUseTmuxSubtitle": "在远端服务器上用 tmux 承载终端会话",
   "settingsTerminalUseTmuxDescription": "断线后仍保留终端输出，需要远端已安装 tmux。更改仅对新打开的终端标签页生效。",
+  "settingsTerminalFontSize": "终端字体大小",
+  "settingsTerminalFontSizeSubtitle": "调整 SSH 与 CLI 终端的字号",
   "version": "版本",
   "addServer": "添加服务器",
   "editServer": "编辑服务器",

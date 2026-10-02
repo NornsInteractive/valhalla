@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:valhalla/core/providers/storage_providers.dart';
+import 'package:valhalla/core/providers/terminal_settings_provider.dart';
+import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/terminal/widgets/shared_terminal_canvas.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 import 'package:xterm/xterm.dart';
@@ -19,19 +24,25 @@ void main() {
       Widget? footer,
       TerminalController? controller,
     }) {
-      return MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: SizedBox(
-            width: 800,
-            height: 600,
-            child: SharedTerminalCanvas(
-              terminal: terminal,
-              onKey: onKey ?? (_, {isCtrl = false, isAlt = false}) {},
-              onPaste: onPaste ?? () async {},
-              footer: footer,
-              controller: controller,
+      // 画布 watch terminalSettingsProvider；用固定字号 notifier 免注入存储。
+      return ProviderScope(
+        overrides: [
+          terminalSettingsProvider.overrideWith(() => _FixedFontSizeNotifier(13)),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: SizedBox(
+              width: 800,
+              height: 600,
+              child: SharedTerminalCanvas(
+                terminal: terminal,
+                onKey: onKey ?? (_, {isCtrl = false, isAlt = false}) {},
+                onPaste: onPaste ?? () async {},
+                footer: footer,
+                controller: controller,
+              ),
             ),
           ),
         ),
@@ -196,4 +207,145 @@ void main() {
       );
     });
   });
+
+  group('SharedTerminalCanvas terminal font size', () {
+    late Terminal terminal;
+
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      terminal = Terminal(maxLines: 100);
+    });
+
+    Future<LocalStorageService> freshStorage() async =>
+        LocalStorageService(await SharedPreferences.getInstance());
+
+    double pumpedViewFontSize(WidgetTester tester) =>
+        tester.widget<TerminalView>(find.byType(TerminalView)).textStyle
+            .fontSize;
+
+    testWidgets('defaults to fontSize 13 from terminalSettingsProvider', (
+      tester,
+    ) async {
+      // 走真实 provider + 缺键存储，验证默认字号路径。
+      final container = ProviderContainer(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(
+            await freshStorage(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: _canvasApp(terminal),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(pumpedViewFontSize(tester), 13);
+    });
+
+    testWidgets(
+      'uses overridden provider fontSize (20) for the TerminalView style',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              terminalSettingsProvider.overrideWith(
+                () => _FixedFontSizeNotifier(20),
+              ),
+            ],
+            child: _canvasApp(terminal),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(pumpedViewFontSize(tester), 20);
+      },
+    );
+
+    testWidgets('explicit textStyle parameter wins over provider fontSize', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            terminalSettingsProvider.overrideWith(
+              () => _FixedFontSizeNotifier(20),
+            ),
+          ],
+          child: _canvasApp(
+            terminal,
+            textStyle: const TerminalStyle(fontSize: 7),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(pumpedViewFontSize(tester), 7);
+    });
+
+    testWidgets('changing the provider value live-updates the canvas', (
+      tester,
+    ) async {
+      final container = ProviderContainer(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(
+            await freshStorage(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: _canvasApp(terminal),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(pumpedViewFontSize(tester), 13);
+
+      await container
+          .read(terminalSettingsProvider.notifier)
+          .setFontSize(20);
+      await tester.pumpAndSettle();
+
+      expect(pumpedViewFontSize(tester), 20);
+    });
+  });
+}
+
+/// 画布最小宿主：与手势用例相同的布局，供字号用例按需包 ProviderScope。
+Widget _canvasApp(Terminal terminal, {TerminalStyle? textStyle}) {
+  return MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: Scaffold(
+      body: SizedBox(
+        width: 800,
+        height: 600,
+        child: SharedTerminalCanvas(
+          terminal: terminal,
+          onKey: (_, {isCtrl = false, isAlt = false}) {},
+          onPaste: () async {},
+          textStyle: textStyle,
+        ),
+      ),
+    ),
+  );
+}
+
+/// 直接以固定字号构建 notifier，免注入存储。
+class _FixedFontSizeNotifier extends TerminalSettingsNotifier {
+  final int size;
+
+  _FixedFontSizeNotifier(this.size);
+
+  @override
+  TerminalSettings build() =>
+      TerminalSettings(useTmux: false, fontSize: size);
 }

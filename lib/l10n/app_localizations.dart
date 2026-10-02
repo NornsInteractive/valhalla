@@ -644,6 +644,18 @@ abstract class AppLocalizations {
   /// **'Keeps your terminal output after a disconnect. Requires tmux on the remote server. Changes apply to newly opened terminal tabs.'**
   String get settingsTerminalUseTmuxDescription;
 
+  /// No description provided for @settingsTerminalFontSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal Font Size'**
+  String get settingsTerminalFontSize;
+
+  /// No description provided for @settingsTerminalFontSizeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjusts SSH and CLI terminal font size'**
+  String get settingsTerminalFontSizeSubtitle;
+
   /// No description provided for @version.
   ///
   /// In en, this message translates to:

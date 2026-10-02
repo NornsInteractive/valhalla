@@ -62,6 +62,9 @@ class LocalStorageService {
   /// 终端是否用 tmux 承载会话。默认 false：普通 SSH PTY。
   static const _keyTerminalUseTmux = 'valhalla_terminal_use_tmux_v1';
 
+  /// 终端字体大小（9..24）。
+  static const _keyTerminalFontSize = 'valhalla_terminal_font_size_v1';
+
   /// 启动时自动连接的模式：`fixed` 或 `lastConnected`。
   static const _keyAutoConnectMode = 'valhalla_auto_connect_mode_v1';
 
@@ -462,6 +465,20 @@ class LocalStorageService {
 
   Future<void> setUseTmuxForTerminal(bool enabled) async {
     await _prefs.setBool(_keyTerminalUseTmux, enabled);
+  }
+
+  /// 终端字体大小。
+  ///
+  /// 缺键或存了不合法的值（越界 / 类型不对）时返回 [fallback]（默认 13，
+  /// 与 xterm 的默认字号一致），绝不把脏数据交给渲染层。
+  int getTerminalFontSize({int fallback = 13}) {
+    final value = _prefs.getInt(_keyTerminalFontSize);
+    if (value == null || value < 9 || value > 24) return fallback;
+    return value;
+  }
+
+  Future<void> setTerminalFontSize(int value) async {
+    await _prefs.setInt(_keyTerminalFontSize, value.clamp(9, 24));
   }
 
   // --- Auto Connect ---

@@ -816,6 +816,30 @@ class SettingsView extends ConsumerWidget {
           ),
           const Divider(height: 1),
           ListTile(
+            key: const Key('settingsTerminalFontSizeRow'),
+            dense: true,
+            leading: const Icon(Icons.format_size),
+            title: Text(
+              context.l10n.settingsTerminalFontSize,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              context.l10n.settingsTerminalFontSizeSubtitle,
+              style: const TextStyle(fontSize: 11),
+            ),
+            trailing: Text(
+              '${terminalSettings.fontSize}',
+              key: const Key('settingsTerminalFontSizeValue'),
+              style: monoTextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: context.colorScheme.primary,
+              ),
+            ),
+            onTap: () => _showTerminalFontSizeDialog(context),
+          ),
+          const Divider(height: 1),
+          ListTile(
             dense: true,
             leading: const Icon(Icons.fingerprint),
             title: Text(
@@ -846,6 +870,87 @@ class SettingsView extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// 终端字体大小调节弹窗。
+  ///
+  /// 滑块 onChanged 直接写入 `terminalSettingsProvider`：弹窗内的预览与
+  /// 页面背后已打开的终端都实时跟随（画布 watch 该 provider）；onChangeEnd
+  /// 再落一次盘确保最终值被持久化（setFontSize 本身即写存储）。
+  void _showTerminalFontSizeDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          title: Text(context.l10n.settingsTerminalFontSize),
+          content: Consumer(
+            builder: (ctx, dialogRef, _) {
+              final fontSize = dialogRef
+                  .watch(terminalSettingsProvider)
+                  .fontSize;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 终端风格预览面板：黑底等宽，随字号实时缩放。
+                  Container(
+                    width: double.maxFinite,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: VSpace.md,
+                      vertical: VSpace.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(VRadius.input),
+                      border: Border.all(
+                        color: Theme.of(ctx).colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Text(
+                      'Aa  \$ ls -la ~/valhalla',
+                      style: monoTextStyle(
+                        fontSize: fontSize.toDouble(),
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  Slider(
+                    key: const Key('settingsTerminalFontSizeSlider'),
+                    value: fontSize.toDouble(),
+                    min: 9,
+                    max: 24,
+                    divisions: 15,
+                    label: '$fontSize',
+                    onChanged: (value) => dialogRef
+                        .read(terminalSettingsProvider.notifier)
+                        .setFontSize(value.round()),
+                    onChangeEnd: (value) => dialogRef
+                        .read(terminalSettingsProvider.notifier)
+                        .setFontSize(value.round()),
+                  ),
+                  Center(
+                    child: Text(
+                      '$fontSize',
+                      style: monoTextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(ctx).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              child: Text(context.l10n.cancel),
+            ),
+          ],
+        );
+      },
     );
   }
 

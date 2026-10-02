@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 import '../../../core/extensions/context_extensions.dart';
+import '../../../core/providers/terminal_settings_provider.dart';
 import 'terminal_accessory_bar.dart';
 
 /// 共享终端渲染画布与快捷按键栏。
@@ -10,8 +12,9 @@ import 'terminal_accessory_bar.dart';
 /// 1. 包含标准的 xterm [TerminalView] 渲染与 [TerminalAccessoryBar] 按键栏；
 /// 2. 保留 xterm 原生手势与长按选择行为；
 /// 3. 长按或拖动选区后在画布提供复制操作；
-/// 4. 支持可选的覆盖层（如 tmux 安装引导卡片或登录链接浮层）。
-class SharedTerminalCanvas extends StatefulWidget {
+/// 4. 支持可选的覆盖层（如 tmux 安装引导卡片或登录链接浮层）；
+/// 5. 未显式传 [textStyle] 时，字号跟随 `terminalSettingsProvider` 实时生效。
+class SharedTerminalCanvas extends ConsumerStatefulWidget {
   final Terminal terminal;
   final void Function(String key, {bool isCtrl, bool isAlt}) onKey;
   final Future<void> Function() onPaste;
@@ -46,10 +49,11 @@ class SharedTerminalCanvas extends StatefulWidget {
   });
 
   @override
-  State<SharedTerminalCanvas> createState() => _SharedTerminalCanvasState();
+  ConsumerState<SharedTerminalCanvas> createState() =>
+      _SharedTerminalCanvasState();
 }
 
-class _SharedTerminalCanvasState extends State<SharedTerminalCanvas> {
+class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas> {
   bool _localCtrl = false;
   bool _localAlt = false;
   late TerminalController _controller;
@@ -131,6 +135,9 @@ class _SharedTerminalCanvasState extends State<SharedTerminalCanvas> {
 
   @override
   Widget build(BuildContext context) {
+    // 叶子节点 watch 字号：设置里拖动滑块时画布直接重渲染，不惊动
+    // Terminal 状态与桥接层；PTY 尺寸由 TerminalView 的 onResize 自动跟进。
+    final fontSize = ref.watch(terminalSettingsProvider).fontSize;
     return Column(
       children: [
         Expanded(
@@ -143,8 +150,8 @@ class _SharedTerminalCanvasState extends State<SharedTerminalCanvas> {
                   controller: _controller,
                   textStyle:
                       widget.textStyle ??
-                      const TerminalStyle(
-                        fontSize: 13,
+                      TerminalStyle(
+                        fontSize: fontSize.toDouble(),
                         fontFamily: 'JetBrains Mono',
                       ),
                   padding: widget.padding ?? const EdgeInsets.all(8),

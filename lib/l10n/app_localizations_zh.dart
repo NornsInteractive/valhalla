@@ -283,6 +283,12 @@ class AppLocalizationsZh extends AppLocalizations {
       '断线后仍保留终端输出，需要远端已安装 tmux。更改仅对新打开的终端标签页生效。';
 
   @override
+  String get settingsTerminalFontSize => '终端字体大小';
+
+  @override
+  String get settingsTerminalFontSizeSubtitle => '调整 SSH 与 CLI 终端的字号';
+
+  @override
   String get version => '版本';
 
   @override
