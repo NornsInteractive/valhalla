@@ -35,6 +35,9 @@ class _FakeSshClient implements SSHClient {
   _FakeSshSession? lastSession;
   Completer<SSHSession>? gateShell;
 
+  /// 让 `execute`（tmux attach 路径）挂起，用来验证 PTY 分配预算。
+  Completer<SSHSession>? gateExecute;
+
   /// 记录最后一次 shell 请求的 PTY 尺寸。
   int? lastPtyWidth;
   int? lastPtyHeight;
@@ -86,7 +89,7 @@ class _FakeSshClient implements SSHClient {
     lastPtyHeight = pty?.height;
     final session = _FakeSshSession();
     lastSession = session;
-    return session;
+    return gateExecute == null ? session : await gateExecute!.future;
   }
 
   @override
@@ -679,6 +682,109 @@ void main() {
 
       expect(client2.lastPtyWidth, 132);
       expect(client2.lastPtyHeight, 43);
+    });
+  });
+
+  group('TerminalSessionBridge PTY 分配超时', () {
+    test('shell() 永远不返回时在预算内报 error 并写诊断行', () async {
+      expect(
+        TerminalSessionBridge.defaultPtyAllocateTimeout,
+        const Duration(seconds: 15),
+        reason: '生产默认必须是 15 秒预算',
+      );
+      final client = _FakeSshClient()..gateShell = Completer<SSHSession>();
+      final terminal = _terminal();
+      final bridge = TerminalSessionBridge(
+        terminal: terminal,
+        sshClient: client,
+        serverName: 'prod',
+        ptyAllocateTimeout: const Duration(milliseconds: 200),
+      );
+      addTearDown(bridge.dispose);
+
+      final watch = Stopwatch()..start();
+      await bridge.start();
+      watch.stop();
+
+      expect(bridge.state, TerminalConnectionState.error);
+      expect(
+        watch.elapsed,
+        lessThan(const Duration(milliseconds: 1200)),
+        reason: '必须在 ptyAllocateTimeout(+1s slack) 内浮出错误，而不是永远挂着',
+      );
+      expect(
+        watch.elapsed,
+        greaterThanOrEqualTo(const Duration(milliseconds: 190)),
+        reason: '预算必须真的生效，不能提前放弃',
+      );
+      expect(
+        terminal.buffer.getText(),
+        contains('Failed to allocate remote PTY'),
+      );
+      expect(terminal.buffer.getText(), contains('TimeoutException'));
+    });
+
+    test('超时后才迟到的 PTY 会被销毁，状态不翻转为 connected', () async {
+      final client = _FakeSshClient()..gateShell = Completer<SSHSession>();
+      final bridge = TerminalSessionBridge(
+        terminal: _terminal(),
+        sshClient: client,
+        serverName: 'prod',
+        ptyAllocateTimeout: const Duration(milliseconds: 200),
+      );
+      addTearDown(bridge.dispose);
+
+      await bridge.start();
+      expect(bridge.state, TerminalConnectionState.error);
+
+      client.gateShell!.complete(client.lastSession!);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(
+        client.lastSession!.destroyed,
+        isTrue,
+        reason: '迟到的 channel 必须销毁，不能在服务器上泄漏 PTY',
+      );
+      expect(bridge.state, TerminalConnectionState.error);
+    });
+
+    test('rebind 路径同样受 PTY 分配预算约束', () async {
+      final bridge = TerminalSessionBridge(
+        terminal: _terminal(),
+        sshClient: _FakeSshClient(),
+        serverName: 'prod',
+        ptyAllocateTimeout: const Duration(milliseconds: 200),
+      );
+      addTearDown(bridge.dispose);
+      await bridge.start();
+      expect(bridge.state, TerminalConnectionState.connected);
+
+      // 模拟重连后拿到一个半开连接：shell() 永远不返回。
+      final zombie = _FakeSshClient()..gateShell = Completer<SSHSession>();
+      await bridge.rebind(zombie);
+
+      expect(bridge.sshClient, same(zombie));
+      expect(bridge.state, TerminalConnectionState.error);
+    });
+
+    test('execute() 路径（tmux attach）同样受 PTY 分配预算约束', () async {
+      final client = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+        ..gateExecute = Completer<SSHSession>();
+      final bridge = TerminalSessionBridge(
+        terminal: _terminal(),
+        sshClient: client,
+        serverName: 'prod',
+        serverId: 'srv-1',
+        terminalId: 'tab-1',
+        preferTmux: true,
+        ptyAllocateTimeout: const Duration(milliseconds: 200),
+      );
+      addTearDown(bridge.dispose);
+
+      await bridge.start();
+
+      expect(bridge.state, TerminalConnectionState.error);
+      expect(client.executedCommands, isNotEmpty, reason: '走到了 tmux attach');
     });
   });
 }

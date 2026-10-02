@@ -94,7 +94,7 @@ class _FakeSshManager implements SSHClientManager {
   bool recentlyVerified(String serverId) => recent;
 
   @override
-  Future<bool> verifyAlive(String serverId) {
+  Future<bool> verifyAlive(String serverId, {bool notifyDeath = true}) {
     verifyCalls++;
     probed.add(serverId);
     if (!holdProbes) {

@@ -62,7 +62,7 @@ class _FakeSshManager implements SSHClientManager {
   bool isConnected(String serverId) => connected;
 
   @override
-  Future<bool> verifyAlive(String serverId) async {
+  Future<bool> verifyAlive(String serverId, {bool notifyDeath = true}) async {
     verifyCalls++;
     if (!alive) {
       // 与真实实现保持一致：探活失败即清理连接。

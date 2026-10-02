@@ -80,6 +80,15 @@ class TerminalSessionBridge {
   StreamSubscription? _stderrSub;
   bool _isSessionOpen = false;
 
+  /// PTY 分配（`shell()` / `execute()`）的预算。
+  ///
+  /// 半开连接上这些调用会永远挂起（TCP 已死但远端无响应，既不返回也不
+  /// 抛错），必须加超时，否则重连后终端会停在 connecting 且没有任何报错。
+  static const Duration defaultPtyAllocateTimeout = Duration(seconds: 15);
+
+  /// 实际生效的 PTY 分配预算；测试可注入更短的值。
+  final Duration ptyAllocateTimeout;
+
   /// 最近一次的 PTY 尺寸，重连时用它重建会话。
   int _lastWidth = 80;
   int _lastHeight = 24;
@@ -110,6 +119,7 @@ class TerminalSessionBridge {
     this.preferTmux = false,
     this.launchCommand,
     this.remoteExecCommand,
+    this.ptyAllocateTimeout = defaultPtyAllocateTimeout,
   }) {
     if (launchCommand != null) AgentCommandValidator.validate(launchCommand!);
     if (remoteExecCommand != null) {
@@ -296,9 +306,27 @@ class TerminalSessionBridge {
             ).replaceFirst('tmux ', '${cliShellQuote(tmuxPath)} ')
           : null;
       final command = remoteExecCommand ?? tmuxCommand;
-      final session = command == null
-          ? await client!.shell(pty: pty)
-          : await client!.execute(command, pty: pty);
+      final allocation = command == null
+          ? client!.shell(pty: pty)
+          : client!.execute(command, pty: pty);
+      SSHSession session;
+      try {
+        // 半开连接上 shell()/execute() 会永远挂着；不加超时的话重连后
+        // 终端会停在 connecting 且没有任何报错（幽灵终端的另一半）。
+        session = await allocation.timeout(ptyAllocateTimeout);
+      } on TimeoutException {
+        // 超时后底层 future 仍可能迟到完成，迟到的 channel 必须销毁，
+        // 不能在服务器上泄漏一个 PTY。
+        unawaited(
+          allocation.then(
+            (lateSession) => _releaseSession(lateSession),
+            onError: (Object _) {},
+          ),
+        );
+        // 经由外层既有 catch 统一呈现：error 状态 + 终端诊断行，
+        // 且 `current()` 守卫仍然生效（epoch 已变/disposed 时不再写状态）。
+        rethrow;
+      }
       if (!current()) {
         _releaseSession(session);
         return;

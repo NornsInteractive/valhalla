@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 
 import '../security/agent_command_validator.dart';
+import '../services/app_diagnostics.dart';
 import '../../infrastructure/mosh/mosh_bridge_adapter.dart';
 import '../../infrastructure/mosh/mosh_providers.dart';
 import '../../infrastructure/mosh/mosh_session_service.dart';
@@ -408,13 +410,35 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     final sshClient = sshManager.getClient(activeServer.id);
     if (sshClient == null) return;
 
-    for (final tab in state.tabs) {
-      await tab.bridge.rebind(sshClient);
-    }
+    await rebindTabsAfterReconnect(state.tabs, sshClient);
 
     // 重连会重新走一遍 tmux 决策，awaitingTmuxDecision 可能从 false 变 true
     // （或反之）。不同步的话弹窗会滞留或该出现时不出现。
     _syncTmuxOffer();
+  }
+}
+
+/// 把 [tabs] 逐个重新挂到 [sshClient] 上。
+///
+/// 单个标签页 rebind 抛异常绝不能拖垮其余标签页（否则第一个坏标签页会让
+/// 后面所有标签页都握着死连接）：记录诊断、往该标签页终端写一行诊断信息，
+/// 然后继续处理剩下的。遍历用快照，重连期间用户新建/关闭标签页也不会
+/// 触发 ConcurrentModificationError。
+Future<void> rebindTabsAfterReconnect(
+  Iterable<TerminalTab> tabs,
+  SSHClient sshClient,
+) async {
+  for (final tab in List.of(tabs)) {
+    try {
+      await tab.bridge.rebind(sshClient);
+    } catch (error, stack) {
+      unawaited(
+        AppDiagnostics.instance.record('terminal.rebind', error, stack),
+      );
+      tab.terminal.write(
+        '\r\n\x1b[31m[Reconnect failed for this tab: $error]\x1b[0m\r\n',
+      );
+    }
   }
 }
 

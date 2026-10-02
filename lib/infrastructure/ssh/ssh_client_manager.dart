@@ -172,13 +172,77 @@ class SSHClientManager implements SshCommandExecutor {
         !existing.isClosed &&
         (_clientTargets[server.id]?.hasSameConnectionSettings(server) ??
             false)) {
-      return Future.value(existing);
+      if (recentlyVerified(server.id)) {
+        // 心跳刚确认过活着的连接直接复用，重连路径保持零探测开销。
+        return Future.value(existing);
+      }
+      // 幽灵终端防线：探活通过才复用，失败就换全新握手。
+      // 必须先探活再决定，因此这一支走异步私钥方法（见下）。
+      return _verifyThenGetOrCreate(
+        server,
+        password: password,
+        privateKey: privateKey,
+        onConfirmHostKey: onConfirmHostKey,
+      );
     }
+    return _getOrCreateFresh(
+      server,
+      password: password,
+      privateKey: privateKey,
+      onConfirmHostKey: onConfirmHostKey,
+    );
+  }
+
+  /// 复用现有客户端前的探活闸门。
+  ///
+  /// 幽灵终端防线：真实网络掉线（拔线/切网）没有 FIN，`isClosed` 会一直是
+  /// false，旧连接成了僵尸。不探活就把僵尸交回去，重连后会表现为
+  /// 「界面已连接但终端敲什么都没反应」。
+  ///
+  /// notifyDeath: false —— 探活失败后马上就走全新握手，不必广播
+  /// [transportDied]，避免重连编排器把这次「换新」误当成又一次掉线而
+  /// 双重处理。
+  Future<SSHClient> _verifyThenGetOrCreate(
+    ServerProfile server, {
+    String? password,
+    String? privateKey,
+    Future<bool> Function(String, String, String)? onConfirmHostKey,
+  }) async {
+    final alive = await verifyAlive(server.id, notifyDeath: false);
+    // 探活期间连接可能已被别的路径替换；只要现在挂着的是可用的、
+    // 配置一致的客户端就复用它。
+    final current = _activeClients[server.id];
+    if (alive &&
+        current != null &&
+        !current.isClosed &&
+        (_clientTargets[server.id]?.hasSameConnectionSettings(server) ??
+            false)) {
+      return current;
+    }
+    // 探活失败（僵尸已被 verifyAlive 清理）→ 走全新握手。
+    return _getOrCreateFresh(
+      server,
+      password: password,
+      privateKey: privateKey,
+      onConfirmHostKey: onConfirmHostKey,
+    );
+  }
+
+  /// 单飞语义的新建/合并连接路径。保持同步返回 future：
+  /// 并发调用会拿到**同一个** `pending.result.future`。
+  Future<SSHClient> _getOrCreateFresh(
+    ServerProfile server, {
+    String? password,
+    String? privateKey,
+    Future<bool> Function(String, String, String)? onConfirmHostKey,
+  }) {
     final pending = _pendingConnections[server.id];
     if (pending != null && pending.server.hasSameConnectionSettings(server)) {
       return pending.result.future;
     }
-    if (existing != null || pending != null) disconnect(server.id);
+    if (_activeClients[server.id] != null || pending != null) {
+      disconnect(server.id);
+    }
 
     final attempt = _PendingConnection(server);
     _pendingConnections[server.id] = attempt;
@@ -321,12 +385,16 @@ class SSHClientManager implements SshCommandExecutor {
   /// 返回 `false` 时已把该服务器清理掉（keepalive 定时器 + 客户端），
   /// 调用方只需负责重连。
   ///
+  /// [notifyDeath] 为 false 时不广播 [transportDied]：用于调用方探活失败后
+  /// 会立即自建新连接的路径（例如 [getOrCreateClient] 的僵尸检查），
+  /// 免得这次「换新」被重连编排器当成一次独立的掉线而双重处理。
+  ///
   /// 必须带超时：半开连接上 `ping()` 会一直挂着，既不返回也不抛错。
-  Future<bool> verifyAlive(String serverId) {
+  Future<bool> verifyAlive(String serverId, {bool notifyDeath = true}) {
     final pending = _verifications[serverId];
     if (pending != null) return pending;
     late final Future<bool> future;
-    future = _verifyAlive(serverId).whenComplete(() {
+    future = _verifyAlive(serverId, notifyDeath: notifyDeath).whenComplete(() {
       if (identical(_verifications[serverId], future)) {
         _verifications.remove(serverId);
       }
@@ -335,10 +403,13 @@ class SSHClientManager implements SshCommandExecutor {
     return future;
   }
 
-  Future<bool> _verifyAlive(String serverId) async {
+  Future<bool> _verifyAlive(
+    String serverId, {
+    bool notifyDeath = true,
+  }) async {
     final client = _activeClients[serverId];
     if (client == null || client.isClosed) {
-      disconnect(serverId, notifyDeath: client != null);
+      disconnect(serverId, notifyDeath: notifyDeath && client != null);
       return false;
     }
     final epoch = _visibilityEpoch;
@@ -363,7 +434,7 @@ class SSHClientManager implements SshCommandExecutor {
     } catch (_) {
       if (identical(_activeClients[serverId], client) &&
           (!_inBackground && epoch == _visibilityEpoch || client.isClosed)) {
-        disconnect(serverId, notifyDeath: true);
+        disconnect(serverId, notifyDeath: notifyDeath);
       }
       return isConnected(serverId);
     }
@@ -586,14 +657,19 @@ class SSHClientManager implements SshCommandExecutor {
   ///
   /// 仅供测试使用：真实路径走 [getOrCreateClient]。抽出来是为了能在
   /// 不经过网络握手的前提下验证代际守卫（旧连接的 `done` 不得误报新连接掉线）。
+  ///
+  /// [target] 同时登记连接目标（等价于 `_clientTargets`），让测试能走到
+  /// [getOrCreateClient] 的「已有客户端复用」分支。
   @visibleForTesting
   void debugRegisterClient(
     String serverId,
     SSHClient client, {
     bool watchTransport = true,
     bool startKeepAlive = false,
+    ServerProfile? target,
   }) {
     _activeClients[serverId] = client;
+    if (target != null) _clientTargets[serverId] = target;
     if (startKeepAlive) _startKeepAlive(serverId, client);
     if (watchTransport) {
       _watchTransportDeath(serverId, client);
