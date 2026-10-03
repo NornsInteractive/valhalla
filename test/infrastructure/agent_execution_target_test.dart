@@ -104,6 +104,50 @@ void main() {
   });
 
   group('ACP 启动命令：结构', () {
+    test('official AGY preserves custom arguments and adds no CLI login', () {
+      final profile = _acpProfile(
+        cliCommand: 'agy',
+        acpCommand: '/opt/agy/agy_acp_server.par --uid=1000 --debug',
+      );
+      expect(usesAntigravityAcp(profile), isTrue);
+      expect(
+        agentAcpLaunchCommand(profile),
+        "bash -l -c '/opt/agy/agy_acp_server.par --uid=1000 --debug'",
+      );
+      expect(
+        usesAntigravityAcp(
+          _acpProfile(cliCommand: 'agy', acpCommand: 'my-agy-wrapper'),
+        ),
+        isFalse,
+      );
+    });
+
+    test(
+      'official AGY routes through the configured Docker user without PTY',
+      () {
+        final command = agentAcpLaunchCommand(
+          _acpProfile(
+            cliCommand: 'agy',
+            acpCommand: 'agy_acp_server.par --uid=',
+            target: 'docker',
+            binding: 'name',
+            reference: 'workspace',
+            user: '1000:1000',
+          ),
+        );
+        expect(
+          command,
+          startsWith(
+            "docker exec -i --user '1000:1000' 'workspace' /bin/sh -lc ",
+          ),
+        );
+        expect(command, contains('valhalla_agy_acp_path'));
+        expect(command, contains('--uid='));
+        expect(command, isNot(contains('CODEX_PATH')));
+        expect(command, isNot(contains('docker exec -it')));
+      },
+    );
+
     test('host 目标把 codex-acp 解析与启动塞进同一个登录 shell', () {
       final command = agentAcpLaunchCommand(_acpProfile());
 
@@ -211,9 +255,11 @@ void main() {
   group('ACP 启动命令：真实隔离 shell 验证', () {
     late Directory fixture;
     late String bin;
+    late String stubBin;
     late String homeAlias;
     late String homeMissing;
     late String homeDocker;
+    late String imageHome;
 
     Future<ProcessResult> run(
       String command, {
@@ -232,15 +278,19 @@ void main() {
     setUp(() async {
       fixture = await Directory.systemTemp.createTemp('valhalla-acp-launch-');
       bin = '${fixture.path}/bin';
+      stubBin = '${fixture.path}/stub-bin';
       homeAlias = '${fixture.path}/home-alias';
       homeMissing = '${fixture.path}/home-missing';
       homeDocker = '${fixture.path}/home-docker';
+      imageHome = '${fixture.path}/image-home';
       for (final dir in [
         bin,
         '$bin/abs',
+        stubBin,
         homeAlias,
         homeMissing,
         homeDocker,
+        imageHome,
         '${fixture.path}/empty-bin',
       ]) {
         await Directory(dir).create(recursive: true);
@@ -259,7 +309,8 @@ void main() {
       await script(
         '$bin/codex-acp',
         '#!/bin/sh\n'
-            'echo "ACP_MOCK_STDOUT CODEX_PATH=\${CODEX_PATH:-unset}"\n'
+            'echo "ACP_MOCK_STDOUT CODEX_PATH=\${CODEX_PATH:-unset} '
+            'HOME=\${HOME:-unset}"\n'
             'echo "ACP_MOCK_ARGS \$*" >&2\n',
       );
       await script(
@@ -273,7 +324,40 @@ void main() {
         '#!/bin/bash\n'
             'printf \'%s\\n\' "\$@" > "\$DOCKER_ARGS_FILE"\n'
             'while [ \$# -gt 0 ] && [ "\$1" != "/bin/sh" ]; do shift; done\n'
-            'exec "\$@"\n',
+            '# \$1=/bin/sh \$2=flag \$3=payload. Run the ORIGINAL shell and flag so\n'
+            '# the login path is untouched, and constrain PATH to the fixture so\n'
+            '# a real Codex or a real user rc can never be reached.\n'
+            'shell="\$1"; flag="\$2"; payload="\$3"\n'
+            'exec "\$shell" "\$flag" "PATH=\\\$FIXTURE_CONTAINER_PATH:/usr/bin:/bin; '
+            'export PATH; \$payload"\n',
+      );
+      // The fake docker runs the payload on the host, so the selected-user
+      // HOME lookup must be answered by container doubles instead of the
+      // host's id/awk and /etc/passwd. Both doubles stay inside the fixture
+      // and never read a real passwd file or a real user's rc.
+      await script(
+        '$stubBin/id',
+        '#!/bin/sh\n'
+            '# Test double: report the uid the container would run as.\n'
+            'printf \'%s\\n\' "\${FIXTURE_CONTAINER_UID:-1000}"\n',
+      );
+      await script(
+        '$stubBin/awk',
+        '#!/bin/sh\n'
+            '# Test double for `awk -F: -v uid=<n> \'...\' /etc/passwd`.\n'
+            '# Only that lookup form is supported; the host passwd is never read.\n'
+            'uid=\n'
+            'for arg in "\$@"; do\n'
+            '  case "\$arg" in\n'
+            '    uid=*) uid="\${arg#uid=}" ;;\n'
+            '  esac\n'
+            'done\n'
+            'if [ "\$uid" = "\${FIXTURE_CONTAINER_UID:-1000}" ] && '
+            '[ -n "\${FIXTURE_CONTAINER_HOME:-}" ]; then\n'
+            '  printf \'%s\\n\' "\${FIXTURE_CONTAINER_HOME}"\n'
+            '  exit 0\n'
+            'fi\n'
+            'exit 1\n',
       );
       // Aliases are interactive conveniences: the proof file records that an
       // alias really existed in the shell that resolved the executable.
@@ -369,8 +453,17 @@ void main() {
 
       final result = await run(
         command,
-        home: homeDocker,
-        environment: {'DOCKER_ARGS_FILE': argsFile},
+        // The image starts with its OWN home; only the fake container passwd
+        // can map uid 1000 onto homeDocker. If the production HOME mapping
+        // regressed, the mock would resolve the CLI from imageHome and fail.
+        home: imageHome,
+        environment: {
+          'DOCKER_ARGS_FILE': argsFile,
+          // Stub PATH is prepended inside the payload, after login startup.
+          'FIXTURE_CONTAINER_PATH': '$stubBin:$bin',
+          'FIXTURE_CONTAINER_UID': '1000',
+          'FIXTURE_CONTAINER_HOME': homeDocker,
+        },
       );
 
       expect(
@@ -390,7 +483,20 @@ void main() {
       ]);
       expect(args.last, contains('type -P'));
       expect(args.last, contains('exec codex-acp --stdio'));
-      expect(result.stdout, contains('ACP_MOCK_STDOUT CODEX_PATH=$bin/codex'));
+      expect(
+        result.stdout,
+        contains('ACP_MOCK_STDOUT CODEX_PATH=$bin/codex'),
+        reason:
+            'stdout=${result.stdout}\nstderr=${result.stderr}\n'
+            'args=${args.join(' ')}',
+      );
+      expect(
+        result.stdout,
+        contains('HOME=$homeDocker'),
+        reason:
+            'the selected user must run with the passwd-mapped home, '
+            'not the image home ${result.stdout}',
+      );
       expect(
         result.stderr,
         contains('Valhalla ACP Codex executable: $bin/codex'),

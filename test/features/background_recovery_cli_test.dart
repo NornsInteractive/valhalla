@@ -380,8 +380,10 @@ void main() {
       );
       expect(
         find.byKey(const Key('cliChatSessionRecoveryBannerDesktop')),
-        findsOneWidget,
+        findsNothing,
+        reason: '恢复横幅已收拢到 shell 顶栏，会话内不再重复',
       );
+      expect(find.byType(OfflineStateView), findsNothing);
 
       final input = find.byKey(const Key('cli_chat_input_field'));
       final editable = tester.widget<EditableText>(
@@ -414,6 +416,11 @@ void main() {
         reason: 'syncing blocks sending too',
       );
       expect(notifier.sendCalls, 0);
+      expect(
+        find.byKey(const Key('cliChatSessionRecoveryBannerDesktop')),
+        findsNothing,
+        reason: 'syncing 同样不在会话内重复出横幅',
+      );
     });
 
     testWidgets('the draft typed before a disconnect is still there after it', (
@@ -432,7 +439,13 @@ void main() {
 
       connection.set(ConnectionStateEnum.disconnected);
       await tester.pump();
-      expect(find.byType(OfflineStateView), findsOneWidget);
+      expect(
+        find.byType(OfflineStateView),
+        findsNothing,
+        reason: '断线不再整页接管：缓存的转写与草稿必须留在原地',
+      );
+      expect(find.byKey(const ValueKey('cli-msg-2')), findsOneWidget);
+      expect(find.byKey(const Key('cli_chat_input_field')), findsOneWidget);
 
       connection.set(ConnectionStateEnum.connected);
       notifier.emit(state(SessionRecoveryStatus.reconnecting));

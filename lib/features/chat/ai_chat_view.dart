@@ -22,16 +22,17 @@ import '../agents/agent_management_view.dart';
 import '../agents/auth_method_picker_dialog.dart';
 import '../agents/interactive_login_provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/chat_launch_preference.dart';
 import '../../infrastructure/acp/acp_client_adapter.dart'
     show AcpRemoteSession, AcpSlashCommand;
+import '../../infrastructure/acp/acp_oauth_request.dart';
 import '../../infrastructure/cli/agent_execution_target.dart';
 import 'widgets/chat_run_settings_dialog.dart';
 import 'widgets/chat_run_settings_strip.dart';
 import 'widgets/chat_commands_skills_dialog.dart';
 import 'widgets/image_zoom_dialog.dart';
 import 'widgets/remote_workspace_browser_dialog.dart';
-import 'widgets/session_recovery_banner.dart';
 
 class AiChatView extends ConsumerStatefulWidget {
   const AiChatView({super.key});
@@ -50,6 +51,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   bool _userNearBottom = true;
   bool _isSending = false;
   bool _isLoadingComposerCommands = false;
+  AcpOAuthRequest? _lastAutoLaunchedAuthRequest;
+  String? _authLaunchError;
 
   @override
   void initState() {
@@ -368,7 +371,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   void _showManageAgentsModal() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const AgentManagementView()),
+      MaterialPageRoute(
+        builder: (_) => AgentManagementView(onNavigateToChat: () {}),
+      ),
     );
   }
 
@@ -713,13 +718,68 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         return;
       }
 
+      final newAuthRequest = next.authRequest;
+      if (previous?.authRequest != next.authRequest) {
+        if (_authLaunchError != null) {
+          _authLaunchError = null;
+        }
+      }
+      if (newAuthRequest != null &&
+          next.isAuthenticating &&
+          newAuthRequest != _lastAutoLaunchedAuthRequest) {
+        _lastAutoLaunchedAuthRequest = newAuthRequest;
+        final expectedServerId = next.activeAgentProfile?.serverId;
+        final expectedAgentId = next.activeAgentProfile?.id;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final current = ref.read(aiChatProvider);
+          final currentServer = ref.read(activeServerProvider);
+          if (!current.isAuthenticating ||
+              current.authError != null ||
+              current.authRequest != newAuthRequest ||
+              current.activeAgentProfile?.id != expectedAgentId ||
+              currentServer?.id != expectedServerId) {
+            return;
+          }
+          final claimed = ref
+              .read(aiChatProvider.notifier)
+              .claimAuthBrowserLaunch(newAuthRequest);
+          if (!claimed) return;
+          _launchAuthUrl(newAuthRequest.authorizationUrl);
+        });
+      }
+      if (next.authRequest == null && _lastAutoLaunchedAuthRequest != null) {
+        _lastAutoLaunchedAuthRequest = null;
+      }
+
+      if (previous != null &&
+          previous.isAuthenticating &&
+          !next.isAuthenticating &&
+          previous.authChallenge != null &&
+          next.authChallenge == null &&
+          next.authenticationConfirmed &&
+          next.authError == null &&
+          next.activeAgentProfile != null &&
+          usesAntigravityAcp(next.activeAgentProfile!) &&
+          next.activeAgentProfile?.serverId ==
+              ref.read(activeServerProvider)?.id) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.agentAuthRetryHint)),
+        );
+      }
+
       final hasNewTokenOrMessage =
           next.isGenerating ||
           (prevMessages.length != nextMessages.length) ||
           (prevMessages.lastOrNull?.content !=
               nextMessages.lastOrNull?.content) ||
           (prevMessages.lastOrNull?.thinking !=
-              nextMessages.lastOrNull?.thinking);
+              nextMessages.lastOrNull?.thinking) ||
+          (prevMessages.lastOrNull?.status !=
+              nextMessages.lastOrNull?.status) ||
+          (previous?.authChallenge != next.authChallenge) ||
+          (previous?.authRequest != next.authRequest) ||
+          (previous?.isAuthenticating != next.isAuthenticating);
 
       if (hasNewTokenOrMessage) {
         _followBottomIfNeeded();
@@ -748,27 +808,24 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 _buildHeaderBar(chatState, isDesktop),
                 const Divider(height: 1),
                 if (chatState.lastErrorCode != null &&
+                    chatState.lastErrorCode !=
+                        AiChatNotifier.disconnectedCode &&
+                    chatState.lastErrorCode !=
+                        AiChatNotifier.authRequiredCode &&
+                    chatState.authChallenge == null &&
+                    chatState.authError == null &&
                     !_isErrorInlinedInLastAssistantMessage(chatState))
                   _buildErrorBanner(chatState.lastErrorCode!),
-                _AcpSessionNoticeBar(
-                  acpSessionRestored: chatState.acpSessionRestored,
-                  acpSessionRestartDetected:
-                      chatState.acpSessionRestartDetected,
-                  onAcknowledgeRestart: () => ref
-                      .read(aiChatProvider.notifier)
-                      .acknowledgeAcpSessionRestart(),
-                ),
-                SessionRecoveryBanner(
-                  key: const Key('aiChatSessionRecoveryBanner'),
-                  status: chatState.recoveryStatus,
-                  onRetry: () =>
-                      ref.read(aiChatProvider.notifier).recoverConnection(),
-                ),
                 Expanded(child: _buildMessageList(chatState)),
                 if (chatState.pendingPermission != null)
                   _buildPermissionCard(chatState.pendingPermission!),
-                if (chatState.authChallenge != null)
-                  _buildAuthChallengeCard(chatState.authChallenge!),
+                if (chatState.authChallenge != null &&
+                    !_hasAuthChallengeRenderedInMessages(chatState))
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: _buildAuthChallengeCard(chatState.authChallenge!),
+                    ),
+                  ),
                 const Divider(height: 1),
                 _buildInputArea(chatState),
               ],
@@ -795,44 +852,50 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 onPressed: () => Scaffold.of(ctx).openDrawer(),
               ),
             ),
-          Flexible(
-            child: InkWell(
-              onTap: _showAgentSwitcherModal,
-              borderRadius: BorderRadius.circular(VRadius.input),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      state.activeAgentProfile != null
-                          ? Icons.psychology
-                          : Icons.smart_toy_outlined,
-                      size: 18,
-                      color: state.activeAgentProfile != null
-                          ? context.colorScheme.primary
-                          : context.colorScheme.outline,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        state.activeAgentProfile?.name ??
-                            context.l10n.noAgentAvailable,
-                        style: context.textTheme.titleSmall?.copyWith(
-                          color: state.activeAgentProfile != null
-                              ? null
-                              : context.colorScheme.outline,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+          Expanded(
+            child: Tooltip(
+              message:
+                  state.activeAgentProfile?.name ??
+                  context.l10n.noAgentAvailable,
+              child: InkWell(
+                onTap: _showAgentSwitcherModal,
+                borderRadius: BorderRadius.circular(VRadius.input),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        state.activeAgentProfile != null
+                            ? Icons.psychology
+                            : Icons.smart_toy_outlined,
+                        size: 18,
+                        color: state.activeAgentProfile != null
+                            ? context.colorScheme.primary
+                            : context.colorScheme.outline,
                       ),
-                    ),
-                    const Icon(Icons.arrow_drop_down, size: 18),
-                  ],
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          state.activeAgentProfile?.name ??
+                              context.l10n.noAgentAvailable,
+                          style: context.textTheme.titleSmall?.copyWith(
+                            color: state.activeAgentProfile != null
+                                ? null
+                                : context.colorScheme.outline,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(Icons.arrow_drop_down, size: 18),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-          const Spacer(),
           IconButton(
             key: const Key('shareSessionsHeaderButton'),
             icon: Icon(
@@ -1492,7 +1555,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         }
         return KeyedSubtree(
           key: ValueKey('assistant_msg_${msg.id}'),
-          child: _buildAssistantBubble(msg),
+          child: _buildAssistantBubble(msg, state),
         );
       },
     );
@@ -1755,6 +1818,45 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   ),
                 ],
               ),
+            ] else if (msg.status == ChatTurnStatus.awaitingAuthentication) ...[
+              const SizedBox(height: 4),
+              Builder(
+                builder: (context) {
+                  final chatState = ref.watch(aiChatProvider);
+                  final isConfirmed =
+                      chatState.authenticationConfirmed &&
+                      chatState.authChallenge == null;
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isConfirmed
+                            ? Icons.check_circle_outline
+                            : Icons.lock_outline,
+                        size: 12,
+                        color: isConfirmed
+                            ? context.colorScheme.primary
+                            : context.vWarning,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          isConfirmed
+                              ? context.l10n.agentAuthRetryHint
+                              : _chatStatusAwaitingAuthLabel(context),
+                          style: TextStyle(
+                            color: isConfirmed
+                                ? context.colorScheme.primary
+                                : context.vWarning,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ],
           ],
         ),
@@ -1762,7 +1864,10 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     );
   }
 
-  Widget _buildAssistantBubble(ChatMessage msg) {
+  Widget _buildAssistantBubble(ChatMessage msg, [AiChatState? chatState]) {
+    final AiChatState currentState = chatState ?? ref.watch(aiChatProvider);
+    final toolsById = {for (final tool in msg.toolExecutions) tool.id: tool};
+
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
@@ -1853,56 +1958,41 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ),
             ],
 
-            // Tool Execution Cards
-            if (msg.toolExecutions.isNotEmpty) ...[
-              ...msg.toolExecutions.map((tool) {
-                return _ToolExecutionCard(
-                  key: ValueKey('tool_${tool.id}'),
-                  tool: tool,
-                  messageId: msg.id,
-                );
-              }),
+            // Content Blocks (Interleaved Text & Tool Execution Cards)
+            for (final block in msg.orderedContentBlocks) ...[
+              if (block.type == ChatContentBlockType.tool) ...[
+                if (toolsById[block.toolId] != null)
+                  _ToolExecutionCard(
+                    key: ValueKey('tool_${block.toolId}'),
+                    tool: toolsById[block.toolId]!,
+                    messageId: msg.id,
+                  ),
+              ] else if (block.type == ChatContentBlockType.text) ...[
+                _buildTextBlock(context, msg, block),
+              ],
             ],
 
-            // Markdown Message Content
             if (msg.content.isNotEmpty)
-              ValhallaCard(
-                color: context.colorScheme.surface,
-                padding: const EdgeInsets.all(VSpace.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    MarkdownBody(
-                      data: msg.content,
-                      selectable: true,
-                      styleSheet: MarkdownStyleSheet.fromTheme(
-                        Theme.of(context),
-                      ).copyWith(code: monoTextStyle(fontSize: 12)),
-                    ),
-                    const SizedBox(height: 6),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: IconButton(
-                        icon: const Icon(Icons.copy_rounded, size: 14),
-                        tooltip: context.l10n.copy,
-                        constraints: const BoxConstraints(
-                          minWidth: 24,
-                          minHeight: 24,
-                        ),
-                        padding: EdgeInsets.zero,
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: msg.content));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(context.l10n.chatMessageCopied),
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: const Icon(Icons.copy_rounded, size: 14),
+                  tooltip: context.l10n.copy,
+                  constraints: const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: msg.content));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(context.l10n.chatMessageCopied),
+                        duration: const Duration(seconds: 1),
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
 
@@ -1969,11 +2059,111 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   ],
                 ),
               ),
+            ] else if (msg.status == ChatTurnStatus.awaitingAuthentication) ...[
+              const SizedBox(height: 6),
+              Container(
+                key: const Key('chat_status_awaiting_auth_badge'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      (currentState.authenticationConfirmed &&
+                          currentState.authChallenge == null)
+                      ? context.colorScheme.primaryContainer.withValues(
+                          alpha: 0.3,
+                        )
+                      : context.vWarning.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(VRadius.card),
+                  border: Border.all(
+                    color:
+                        (currentState.authenticationConfirmed &&
+                            currentState.authChallenge == null)
+                        ? context.colorScheme.primary.withValues(alpha: 0.4)
+                        : context.vWarning.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      (currentState.authenticationConfirmed &&
+                              currentState.authChallenge == null)
+                          ? Icons.check_circle_outline
+                          : Icons.lock_outline,
+                      size: 16,
+                      color:
+                          (currentState.authenticationConfirmed &&
+                              currentState.authChallenge == null)
+                          ? context.colorScheme.primary
+                          : context.vWarning,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        (currentState.authenticationConfirmed &&
+                                currentState.authChallenge == null)
+                            ? context.l10n.agentAuthRetryHint
+                            : _chatStatusAwaitingAuthLabel(context),
+                        style: context.textTheme.labelMedium?.copyWith(
+                          color:
+                              (currentState.authenticationConfirmed &&
+                                  currentState.authChallenge == null)
+                              ? context.colorScheme.primary
+                              : context.vWarning,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (currentState.authChallenge != null &&
+                  _isAuthChallengeTargetMessage(msg, currentState)) ...[
+                const SizedBox(height: 10),
+                _buildAuthChallengeCard(
+                  currentState.authChallenge!,
+                  margin: EdgeInsets.zero,
+                ),
+              ] else if (currentState.authChallenge == null &&
+                  !currentState.authenticationConfirmed &&
+                  _isLatestAwaitingAuthMessage(msg, currentState)) ...[
+                const SizedBox(height: 10),
+                _buildAwaitingAuthDiscoveryAction(currentState),
+              ],
             ],
             if (msg.attachments.isNotEmpty)
               _buildMessageAttachments(msg.attachments),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextBlock(
+    BuildContext context,
+    ChatMessage msg,
+    ChatContentBlock block,
+  ) {
+    final text =
+        (block.start >= 0 &&
+            block.end <= msg.content.length &&
+            block.start < block.end)
+        ? msg.content.substring(block.start, block.end)
+        : '';
+    if (text.isEmpty) return const SizedBox.shrink();
+
+    return ValhallaCard(
+      key: ValueKey('msg_${msg.id}_block_${block.start}'),
+      color: context.colorScheme.surface,
+      padding: const EdgeInsets.all(VSpace.md),
+      child: MarkdownBody(
+        data: text,
+        selectable: true,
+        styleSheet: MarkdownStyleSheet.fromTheme(
+          Theme.of(context),
+        ).copyWith(code: monoTextStyle(fontSize: 12)),
       ),
     );
   }
@@ -2111,6 +2301,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     await ref.read(aiChatProvider.notifier).respondAuth(methodId);
 
     if (profile != null &&
+        !usesAntigravityAcp(profile) &&
         profile.loginCommand != null &&
         profile.loginCommand!.isNotEmpty &&
         activeServer != null &&
@@ -2176,10 +2367,12 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       }
     }
 
-    if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.agentAuthRetryHint)));
+    if (profile == null || !usesAntigravityAcp(profile)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.agentAuthRetryHint)),
+        );
+      }
     }
   }
 
@@ -2192,6 +2385,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     if (!connState.isConnected ||
         isRecovering ||
         state.isGenerating ||
+        state.isAuthenticating ||
         state.isLoadingSettings ||
         state.isApplyingSettings) {
       return;
@@ -2416,6 +2610,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           );
           final isBusy =
               state.isGenerating ||
+              state.isAuthenticating ||
               state.isLoadingSettings ||
               state.isApplyingSettings ||
               state.isLoadingMessages ||
@@ -2845,7 +3040,310 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     }
   }
 
-  Widget _buildAuthChallengeCard(AuthChallenge challenge) {
+  String _chatStatusAwaitingAuthLabel(BuildContext context) {
+    try {
+      final dynamic l10n = context.l10n;
+      final dynamic val = l10n.chatStatusAwaitingAuth;
+      if (val is String && val.isNotEmpty) return val;
+    } catch (_) {}
+    final isZh = Localizations.localeOf(context).languageCode == 'zh';
+    return isZh ? '等待 ACP 认证' : 'Awaiting ACP Authentication';
+  }
+
+  bool _isAuthChallengeTargetMessage(ChatMessage msg, AiChatState state) {
+    if (state.authChallenge == null) return false;
+    final messages = state.activeSession?.messages ?? [];
+    for (int i = messages.length - 1; i >= 0; i--) {
+      final m = messages[i];
+      if (m.role == MessageRole.assistant &&
+          m.status == ChatTurnStatus.awaitingAuthentication) {
+        return m.id == msg.id;
+      }
+    }
+    return false;
+  }
+
+  bool _hasAuthChallengeRenderedInMessages(AiChatState state) {
+    if (state.authChallenge == null) return false;
+    final messages = state.activeSession?.messages ?? [];
+    return messages.any(
+      (m) =>
+          m.role == MessageRole.assistant &&
+          m.status == ChatTurnStatus.awaitingAuthentication,
+    );
+  }
+
+  String _resolveAuthErrorMessage(BuildContext context, String errorCode) {
+    if (errorCode == 'ACP_AUTH_METHOD_UNAVAILABLE') {
+      return context.l10n.chatAuthMethodUnavailable;
+    }
+    if (errorCode == 'ACP_AUTH_CONNECTION_EXPIRED') {
+      return context.l10n.chatAuthConnectionExpired;
+    }
+    if (errorCode == 'ACP_AUTH_CALLBACK_DELIVERY_FAILED') {
+      return context.l10n.chatAuthCallbackDeliveryFailed;
+    }
+    if (errorCode == 'ACP_AUTH_CALLBACK_LISTENER_FAILED') {
+      return context.l10n.chatAuthCallbackListenerFailed;
+    }
+    if (errorCode == AiChatNotifier.disconnectedCode) {
+      return context.l10n.sshDisconnectedAgentWarning;
+    }
+    return _resolveErrorMessage(errorCode);
+  }
+
+  Future<void> _launchAuthUrl(Uri url) async {
+    final cur = ref.read(aiChatProvider);
+    if (!cur.isAuthenticating || cur.authError != null) {
+      return;
+    }
+    if (mounted) {
+      setState(() => _authLaunchError = null);
+    }
+    try {
+      final launched = await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && mounted) {
+        setState(() {
+          _authLaunchError = context.l10n.chatAuthBrowserLaunchFailed;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _authLaunchError = context.l10n.chatAuthBrowserLaunchFailed;
+        });
+      }
+    }
+  }
+
+  Future<void> _showManualCallbackDialog(BuildContext context) async {
+    final chatState = ref.read(aiChatProvider);
+    final capturedRequest = chatState.authRequest;
+    final capturedServerId = ref.read(activeServerProvider)?.id;
+    final capturedAgentId = chatState.activeAgentProfile?.id;
+
+    if (capturedRequest == null || !chatState.isAuthenticating) return;
+
+    final controller = TextEditingController();
+    try {
+      String? callbackError;
+      bool isSubmitting = false;
+
+      final route = DialogRoute<void>(
+        context: context,
+        useSafeArea: true,
+        themes: InheritedTheme.capture(
+          from: context,
+          to: Navigator.of(context, rootNavigator: true).context,
+        ),
+        builder: (dialogCtx) {
+          return StatefulBuilder(
+            builder: (dialogCtx, setDialogState) {
+              Future<void> handleSubmit() async {
+                final text = controller.text.trim();
+                if (text.isEmpty) return;
+                controller.clear();
+                final current = ref.read(aiChatProvider);
+                final currentServer = ref.read(activeServerProvider);
+                if (!current.isAuthenticating ||
+                    current.authRequest != capturedRequest ||
+                    current.activeAgentProfile?.id != capturedAgentId ||
+                    currentServer?.id != capturedServerId) {
+                  if (dialogCtx.mounted) {
+                    Navigator.of(dialogCtx).pop();
+                  }
+                  return;
+                }
+                setDialogState(() {
+                  isSubmitting = true;
+                  callbackError = null;
+                });
+                try {
+                  await ref
+                      .read(aiChatProvider.notifier)
+                      .submitAuthCallback(text);
+                  if (dialogCtx.mounted) {
+                    Navigator.of(dialogCtx).pop();
+                  }
+                } catch (_) {
+                  if (dialogCtx.mounted) {
+                    setDialogState(() {
+                      isSubmitting = false;
+                      callbackError =
+                          dialogCtx.l10n.chatAuthCallbackInvalidError;
+                    });
+                  }
+                }
+              }
+
+              return PopScope(
+                onPopInvokedWithResult: (didPop, _) {
+                  if (didPop) {
+                    controller.clear();
+                  }
+                },
+                child: AlertDialog(
+                  key: const Key('chat_auth_manual_callback_dialog'),
+                  title: Text(dialogCtx.l10n.chatAuthManualCallbackTitle),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dialogCtx.l10n.chatAuthManualCallbackDesc,
+                          style: dialogCtx.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          key: const Key('chat_auth_callback_input'),
+                          controller: controller,
+                          obscureText: true,
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            labelText:
+                                dialogCtx.l10n.chatAuthCallbackInputLabel,
+                            hintText: dialogCtx.l10n.chatAuthCallbackInputHint,
+                            errorText: callbackError,
+                          ),
+                          onSubmitted: isSubmitting
+                              ? null
+                              : (_) => handleSubmit(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : () {
+                              controller.clear();
+                              Navigator.of(dialogCtx).pop();
+                            },
+                      child: Text(
+                        MaterialLocalizations.of(dialogCtx).cancelButtonLabel,
+                      ),
+                    ),
+                    FilledButton(
+                      key: const Key('chat_auth_callback_submit_button'),
+                      onPressed: isSubmitting ? null : handleSubmit,
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(
+                              MaterialLocalizations.of(dialogCtx).okButtonLabel,
+                            ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+
+      Navigator.of(context, rootNavigator: true).push<void>(route);
+      await route.completed;
+    } finally {
+      controller.clear();
+      controller.dispose();
+    }
+  }
+
+  bool _isLatestAwaitingAuthMessage(ChatMessage msg, AiChatState state) {
+    final messages = state.activeSession?.messages ?? [];
+    for (int i = messages.length - 1; i >= 0; i--) {
+      final m = messages[i];
+      if (m.role == MessageRole.assistant &&
+          m.status == ChatTurnStatus.awaitingAuthentication) {
+        return m.id == msg.id;
+      }
+    }
+    return false;
+  }
+
+  Widget _buildAwaitingAuthDiscoveryAction(AiChatState state) {
+    final connState = ref.watch(serverConnectionProvider);
+    final isConnected = connState.isConnected;
+    final isBusy =
+        !isConnected ||
+        state.isLoadingSettings ||
+        state.isGenerating ||
+        state.isAuthenticating;
+    final warning = context.vWarning;
+
+    return Container(
+      key: const Key('chat_awaiting_auth_discovery_card'),
+      padding: const EdgeInsets.all(VSpace.md),
+      decoration: BoxDecoration(
+        color: warning.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(VRadius.card),
+        border: Border.all(color: warning.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.vpn_key_outlined, size: 18, color: warning),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  context.l10n.chatAuthDiscoveryPrompt,
+                  style: context.textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+          if (state.authError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _resolveAuthErrorMessage(context, state.authError!),
+              style: context.textTheme.bodySmall?.copyWith(
+                color: context.vDanger,
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              key: const Key('chat_retry_auth_discovery_button'),
+              icon: state.isLoadingSettings
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh, size: 16),
+              label: Text(context.l10n.chatRequestAuthButton),
+              style: FilledButton.styleFrom(
+                backgroundColor: warning,
+                visualDensity: VisualDensity.compact,
+              ),
+              onPressed: isBusy
+                  ? null
+                  : () => ref
+                        .read(aiChatProvider.notifier)
+                        .requestAuthentication(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuthChallengeCard(
+    AuthChallenge challenge, {
+    EdgeInsetsGeometry? margin,
+  }) {
     final notifier = ref.read(aiChatProvider.notifier);
     final connState = ref.watch(serverConnectionProvider);
     final isConnected = connState.isConnected;
@@ -2855,21 +3353,30 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     final isRecovering =
         recoveryStatus == SessionRecoveryStatus.reconnecting ||
         recoveryStatus == SessionRecoveryStatus.syncing;
+    final chatState = ref.watch(aiChatProvider);
+    final isAuthenticating = chatState.isAuthenticating;
+    final authRequest = chatState.authRequest;
+
     final registry = ref.watch(agentRegistryProvider);
     final profile =
         registry.findRuntime(challenge.agentId)?.profile ??
-        ref.watch(aiChatProvider).activeAgentProfile;
+        chatState.activeAgentProfile;
     final agentName = profile?.name ?? challenge.agentId;
 
+    final String? defaultMethodId =
+        challenge.methods.any((m) => m.id == 'oauth-personal')
+        ? 'oauth-personal'
+        : (challenge.methods.isNotEmpty ? challenge.methods.first.id : null);
     final String? selectedMethodId =
         (_selectedAuthMethodId != null &&
             challenge.methods.any((m) => m.id == _selectedAuthMethodId))
         ? _selectedAuthMethodId
-        : (challenge.methods.isNotEmpty ? challenge.methods.first.id : null);
+        : defaultMethodId;
     final warning = context.vWarning;
 
     return Container(
-      margin: const EdgeInsets.all(VSpace.md),
+      key: const Key('ai_chat_auth_challenge_card'),
+      margin: margin ?? const EdgeInsets.all(VSpace.md),
       padding: const EdgeInsets.all(VSpace.md),
       decoration: BoxDecoration(
         color: warning.withValues(alpha: 0.1),
@@ -2889,18 +3396,26 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   style: context.textTheme.titleSmall?.copyWith(color: warning),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: context.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(VRadius.pill),
-                ),
-                child: Text(
-                  agentName,
-                  style: monoTextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                    color: context.colorScheme.outline,
+              const SizedBox(width: 6),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: context.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(VRadius.pill),
+                  ),
+                  child: Text(
+                    agentName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: monoTextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: context.colorScheme.outline,
+                    ),
                   ),
                 ),
               ),
@@ -2911,6 +3426,153 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             context.l10n.agentAuthRequiredDesc,
             style: context.textTheme.bodyMedium,
           ),
+          if (profile != null && usesAntigravityAcp(profile)) ...[
+            const SizedBox(height: 6),
+            Text(
+              context.l10n.agentAuthAgYNotice,
+              style: context.textTheme.bodySmall?.copyWith(
+                color: context.colorScheme.outline,
+              ),
+            ),
+          ],
+          if (isAuthenticating) ...[
+            const SizedBox(height: 10),
+            const LinearProgressIndicator(),
+            const SizedBox(height: 6),
+            Text(
+              context.l10n.chatAuthWaitingForBrowser,
+              style: context.textTheme.bodySmall?.copyWith(
+                color: context.colorScheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+          if (authRequest != null) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                OutlinedButton.icon(
+                  key: const Key('chat_auth_reopen_browser_button'),
+                  icon: const Icon(Icons.open_in_browser, size: 16),
+                  label: Text(context.l10n.chatAuthReopenBrowser),
+                  onPressed: () {
+                    final cur = ref.read(aiChatProvider);
+                    if (cur.authRequest != authRequest ||
+                        !cur.isAuthenticating ||
+                        cur.authError != null) {
+                      return;
+                    }
+                    _launchAuthUrl(authRequest.authorizationUrl);
+                  },
+                ),
+                OutlinedButton.icon(
+                  key: const Key('chat_auth_copy_link_button'),
+                  icon: const Icon(Icons.copy, size: 16),
+                  label: Text(context.l10n.chatAuthCopyLink),
+                  onPressed: () async {
+                    final cur = ref.read(aiChatProvider);
+                    if (cur.authRequest != authRequest ||
+                        !cur.isAuthenticating) {
+                      return;
+                    }
+                    final snackContext = context;
+                    await Clipboard.setData(
+                      ClipboardData(
+                        text: authRequest.authorizationUrl.toString(),
+                      ),
+                    );
+                    if (mounted && snackContext.mounted) {
+                      ScaffoldMessenger.of(snackContext).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            snackContext.l10n.agentLoginTerminalUrlCopied,
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                OutlinedButton.icon(
+                  key: const Key('chat_auth_manual_callback_button'),
+                  icon: const Icon(Icons.vpn_key_outlined, size: 16),
+                  label: Text(context.l10n.chatAuthManualCallback),
+                  onPressed: () {
+                    final cur = ref.read(aiChatProvider);
+                    if (cur.authRequest != authRequest ||
+                        !cur.isAuthenticating) {
+                      return;
+                    }
+                    _showManualCallbackDialog(context);
+                  },
+                ),
+              ],
+            ),
+          ],
+          if (_authLaunchError != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: context.colorScheme.errorContainer.withValues(
+                  alpha: 0.7,
+                ),
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: context.colorScheme.onErrorContainer,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _authLaunchError!,
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colorScheme.onErrorContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (chatState.authError != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: context.colorScheme.errorContainer.withValues(
+                  alpha: 0.7,
+                ),
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: context.colorScheme.onErrorContainer,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _resolveAuthErrorMessage(context, chatState.authError!),
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colorScheme.onErrorContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           if (challenge.methods.isEmpty) ...[
             Container(
@@ -2980,32 +3642,39 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ),
             ),
           ] else ...[
-            Row(
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
               children: [
                 Text(
                   context.l10n.agentAuthMethodLabel,
                   style: context.textTheme.labelMedium,
                 ),
-                const Spacer(),
                 TextButton.icon(
                   icon: const Icon(Icons.open_in_new, size: 14),
                   label: Text(
                     context.l10n.agentAuthPickerTitle(agentName),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 11),
                   ),
                   style: TextButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                   ),
-                  onPressed: () async {
-                    final picked = await showAuthMethodPickerDialog(
-                      context: context,
-                      agentName: agentName,
-                      methods: challenge.methods,
-                    );
-                    if (picked != null && mounted) {
-                      setState(() => _selectedAuthMethodId = picked);
-                    }
-                  },
+                  onPressed: isAuthenticating
+                      ? null
+                      : () async {
+                          final picked = await showAuthMethodPickerDialog(
+                            context: context,
+                            agentName: agentName,
+                            methods: challenge.methods,
+                          );
+                          if (picked != null && mounted) {
+                            setState(() => _selectedAuthMethodId = picked);
+                          }
+                        },
                 ),
               ],
             ),
@@ -3013,6 +3682,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             RadioGroup<String>(
               groupValue: selectedMethodId,
               onChanged: (val) {
+                if (isAuthenticating) return;
                 if (val != null) {
                   setState(() => _selectedAuthMethodId = val);
                 }
@@ -3029,8 +3699,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   children: challenge.methods.map((method) {
                     final isSelected = (selectedMethodId == method.id);
                     return InkWell(
-                      onTap: () =>
-                          setState(() => _selectedAuthMethodId = method.id),
+                      onTap: isAuthenticating
+                          ? null
+                          : () => setState(
+                              () => _selectedAuthMethodId = method.id,
+                            ),
                       borderRadius: BorderRadius.circular(VRadius.input),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -3041,6 +3714,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                           children: [
                             Radio<String>(
                               value: method.id,
+                              enabled: !isAuthenticating,
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
                               visualDensity: VisualDensity.compact,
@@ -3081,14 +3755,15 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             ),
           ],
           const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               OutlinedButton(
                 onPressed: () => notifier.respondAuth(null),
                 child: Text(context.l10n.agentAuthCancelButton),
               ),
-              const SizedBox(width: 8),
               Tooltip(
                 message: !isConnected
                     ? context.l10n.sshDisconnectedAgentWarning
@@ -3097,7 +3772,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   style: FilledButton.styleFrom(
                     backgroundColor: context.vWarning,
                   ),
-                  onPressed: (!isConnected || isRecovering)
+                  onPressed: (!isConnected || isRecovering || isAuthenticating)
                       ? null
                       : () => _handleProceedAuth(selectedMethodId, challenge),
                   child: Text(context.l10n.agentAuthProceedButton),
@@ -3129,6 +3804,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         !hasActiveAgent ||
         _isSending ||
         state.isGenerating ||
+        state.isAuthenticating ||
         state.isLoadingSettings ||
         state.isApplyingSettings ||
         state.isLoadingSessions ||
@@ -3232,6 +3908,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   !isConnected ||
                   isRecovering ||
                   state.isGenerating ||
+                  state.isAuthenticating ||
                   state.isLoadingSettings ||
                   state.isApplyingSettings,
               isLoadingSettings: state.isLoadingSettings,
@@ -3242,189 +3919,212 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             const SizedBox(height: 6),
             Row(
               children: [
-                InkWell(
-                  key: const Key('chat_working_dir_button'),
-                  onTap: (isBusy || !isDraft || !isConnected || isRecovering)
-                      ? null
-                      : () =>
-                            _showDraftWorkingDirDialog(context, rawWorkingDir),
-                  borderRadius: BorderRadius.circular(VRadius.pill),
-                  child: Tooltip(
-                    message: isDraft
-                        ? context.l10n.chatWorkingDirTooltip
-                        : '${state.activeSession!.workingDirectory} (${context.l10n.sessionTitle})',
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: context.colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(VRadius.pill),
-                        border: Border.all(
-                          color: context.colorScheme.outlineVariant.withValues(
-                            alpha: 0.5,
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.folder_outlined,
-                            size: 13,
-                            color: isDraft
-                                ? context.colorScheme.primary
-                                : context.colorScheme.outline,
-                          ),
-                          const SizedBox(width: 4),
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 160),
-                            child: Text(
-                              currentWorkingDir,
-                              style: monoTextStyle(
-                                fontSize: 11,
-                                color: isDraft
-                                    ? context.colorScheme.onSurface
-                                    : context.colorScheme.outline,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: InkWell(
+                          key: const Key('chat_working_dir_button'),
+                          onTap:
+                              (isBusy ||
+                                  !isDraft ||
+                                  !isConnected ||
+                                  isRecovering)
+                              ? null
+                              : () => _showDraftWorkingDirDialog(
+                                  context,
+                                  rawWorkingDir,
+                                ),
+                          borderRadius: BorderRadius.circular(VRadius.pill),
+                          child: Tooltip(
+                            message: isDraft
+                                ? context.l10n.chatWorkingDirTooltip
+                                : '${state.activeSession!.workingDirectory} (${context.l10n.sessionTitle})',
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
                               ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                              decoration: BoxDecoration(
+                                color: context
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(
+                                  VRadius.pill,
+                                ),
+                                border: Border.all(
+                                  color: context.colorScheme.outlineVariant
+                                      .withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.folder_outlined,
+                                    size: 13,
+                                    color: isDraft
+                                        ? context.colorScheme.primary
+                                        : context.colorScheme.outline,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 160,
+                                      ),
+                                      child: Text(
+                                        currentWorkingDir,
+                                        style: monoTextStyle(
+                                          fontSize: 11,
+                                          color: isDraft
+                                              ? context.colorScheme.onSurface
+                                              : context.colorScheme.outline,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isDraft) ...[
+                                    const SizedBox(width: 2),
+                                    Icon(
+                                      Icons.arrow_drop_down,
+                                      size: 14,
+                                      color: context.colorScheme.outline,
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                           ),
-                          if (isDraft) ...[
-                            const SizedBox(width: 2),
-                            Icon(
-                              Icons.arrow_drop_down,
-                              size: 14,
-                              color: context.colorScheme.outline,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                IconButton(
-                  key: const Key('chat_commands_menu_button'),
-                  tooltip: context.l10n.chatCommandsTooltip,
-                  icon: _isLoadingComposerCommands
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.code, size: 16),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 28,
-                    minHeight: 28,
-                  ),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: (isBusy || _isLoadingComposerCommands)
-                      ? null
-                      : () => _openCommandsAndSkills(context),
-                ),
-                const SizedBox(width: 4),
-                PopupMenuButton<String>(
-                  key: const Key('chat_attachments_button'),
-                  tooltip: context.l10n.chatAttachTooltip,
-                  icon: const Icon(Icons.attach_file, size: 16),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 28,
-                    minHeight: 28,
-                  ),
-                  enabled: !isBusy,
-                  onSelected: (val) {
-                    switch (val) {
-                      case 'image':
-                        _pickLocalImage();
-                        break;
-                      case 'text':
-                        _pickLocalTextFile();
-                        break;
-                      case 'remote':
-                        _promptRemoteTextFile(context);
-                        break;
-                      case 'probe':
-                        ref
-                            .read(aiChatProvider.notifier)
-                            .prepareRunSettings(refresh: false);
-                        break;
-                    }
-                  },
-                  itemBuilder: (ctx) => [
-                    PopupMenuItem<String>(
-                      value: 'image',
-                      enabled: state.supportsImages,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.image_outlined,
-                            size: 16,
-                            color: state.supportsImages
-                                ? null
-                                : ctx.colorScheme.outline,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.chatAttachImage),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'text',
-                      enabled: state.supportsTextAttachments,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.description_outlined,
-                            size: 16,
-                            color: state.supportsTextAttachments
-                                ? null
-                                : ctx.colorScheme.outline,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.chatAttachLocalText),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'remote',
-                      enabled:
-                          state.supportsTextAttachments &&
-                          isConnected &&
-                          !isRecovering,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.cloud_download_outlined,
-                            size: 16,
-                            color: state.supportsTextAttachments
-                                ? null
-                                : ctx.colorScheme.outline,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.chatAttachRemoteText),
-                        ],
-                      ),
-                    ),
-                    if (!state.supportsImages && !state.supportsTextAttachments)
-                      PopupMenuItem<String>(
-                        value: 'probe',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.refresh, size: 16),
-                            const SizedBox(width: 8),
-                            Text(context.l10n.refresh),
-                          ],
                         ),
                       ),
-                  ],
+                      const SizedBox(width: 6),
+                      IconButton(
+                        key: const Key('chat_commands_menu_button'),
+                        tooltip: context.l10n.chatCommandsTooltip,
+                        icon: _isLoadingComposerCommands
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.code, size: 16),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 28,
+                          minHeight: 28,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: (isBusy || _isLoadingComposerCommands)
+                            ? null
+                            : () => _openCommandsAndSkills(context),
+                      ),
+                      const SizedBox(width: 4),
+                      PopupMenuButton<String>(
+                        key: const Key('chat_attachments_button'),
+                        tooltip: context.l10n.chatAttachTooltip,
+                        icon: const Icon(Icons.attach_file, size: 16),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 28,
+                          minHeight: 28,
+                        ),
+                        enabled: !isBusy,
+                        onSelected: (val) {
+                          switch (val) {
+                            case 'image':
+                              _pickLocalImage();
+                              break;
+                            case 'text':
+                              _pickLocalTextFile();
+                              break;
+                            case 'remote':
+                              _promptRemoteTextFile(context);
+                              break;
+                            case 'probe':
+                              ref
+                                  .read(aiChatProvider.notifier)
+                                  .prepareRunSettings(refresh: false);
+                              break;
+                          }
+                        },
+                        itemBuilder: (ctx) => [
+                          PopupMenuItem<String>(
+                            value: 'image',
+                            enabled: state.supportsImages,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.image_outlined,
+                                  size: 16,
+                                  color: state.supportsImages
+                                      ? null
+                                      : ctx.colorScheme.outline,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(context.l10n.chatAttachImage),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'text',
+                            enabled: state.supportsTextAttachments,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.description_outlined,
+                                  size: 16,
+                                  color: state.supportsTextAttachments
+                                      ? null
+                                      : ctx.colorScheme.outline,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(context.l10n.chatAttachLocalText),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'remote',
+                            enabled:
+                                state.supportsTextAttachments &&
+                                isConnected &&
+                                !isRecovering,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.cloud_download_outlined,
+                                  size: 16,
+                                  color: state.supportsTextAttachments
+                                      ? null
+                                      : ctx.colorScheme.outline,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(context.l10n.chatAttachRemoteText),
+                              ],
+                            ),
+                          ),
+                          if (!state.supportsImages &&
+                              !state.supportsTextAttachments)
+                            PopupMenuItem<String>(
+                              value: 'probe',
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.refresh, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text(context.l10n.refresh),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const Spacer(),
                 if (state.activeAgentProfile != null ||
                     state.usage != null ||
                     state.diagnostics.isNotEmpty ||
@@ -3695,158 +4395,6 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         ),
       ),
     );
-  }
-}
-
-class _AcpSessionNoticeBar extends StatefulWidget {
-  final bool? acpSessionRestored;
-  final bool acpSessionRestartDetected;
-  final VoidCallback onAcknowledgeRestart;
-
-  const _AcpSessionNoticeBar({
-    required this.acpSessionRestored,
-    required this.acpSessionRestartDetected,
-    required this.onAcknowledgeRestart,
-  });
-
-  @override
-  State<_AcpSessionNoticeBar> createState() => _AcpSessionNoticeBarState();
-}
-
-class _AcpSessionNoticeBarState extends State<_AcpSessionNoticeBar> {
-  Timer? _restoredTimer;
-  bool _showRestored = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (!widget.acpSessionRestartDetected &&
-        widget.acpSessionRestored == true) {
-      _showRestored = true;
-      _startTimer();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _AcpSessionNoticeBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.acpSessionRestartDetected) {
-      _restoredTimer?.cancel();
-      if (_showRestored) {
-        setState(() => _showRestored = false);
-      }
-    } else if (widget.acpSessionRestored == true) {
-      if (oldWidget.acpSessionRestored != true ||
-          oldWidget.acpSessionRestartDetected) {
-        _startTimer();
-        _showRestored = true;
-      }
-    } else {
-      _restoredTimer?.cancel();
-      if (_showRestored) {
-        setState(() => _showRestored = false);
-      }
-    }
-  }
-
-  void _startTimer() {
-    _restoredTimer?.cancel();
-    _restoredTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() => _showRestored = false);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _restoredTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    // 1. Context lost restart detected: sticky error/warning banner requiring explicit dismiss
-    if (widget.acpSessionRestartDetected) {
-      return Container(
-        key: const Key('acpSessionRestartNotice'),
-        width: double.infinity,
-        color: context.colorScheme.errorContainer.withValues(alpha: 0.9),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        child: Row(
-          children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              size: 18,
-              color: context.colorScheme.onErrorContainer,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                l10n.acpSessionRestartNotice,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.colorScheme.onErrorContainer,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.close,
-                size: 18,
-                color: context.colorScheme.onErrorContainer,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-              onPressed: widget.onAcknowledgeRestart,
-            ),
-          ],
-        ),
-      );
-    }
-
-    // 2. Session restored: transient 2s success notice
-    if (!widget.acpSessionRestartDetected &&
-        widget.acpSessionRestored == true &&
-        _showRestored) {
-      return Container(
-        key: const Key('acpSessionRestoredNotice'),
-        width: double.infinity,
-        color: context.vSuccess.withValues(alpha: 0.12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        child: Row(
-          children: [
-            Icon(Icons.restore, size: 18, color: context.vSuccess),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                l10n.acpSessionRestored,
-                style: context.textTheme.bodySmall?.copyWith(
-                  color: context.vSuccess,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.close, size: 18, color: context.vSuccess),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-              onPressed: () {
-                _restoredTimer?.cancel();
-                setState(() => _showRestored = false);
-              },
-            ),
-          ],
-        ),
-      );
-    }
-
-    // 3. acpSessionRestored == null, or false without restart detected: display nothing
-    return const SizedBox.shrink();
   }
 }
 

@@ -50,3 +50,6 @@ docs_backup/
 # Local MCP configuration may contain API keys.
 /.mcp.json
 /mcp_config.json
+
+# Private device captures (server details and local diagnostic history).
+/agent-workflow/evidence/2026-10-03-agy-login/

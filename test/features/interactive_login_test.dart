@@ -19,6 +19,7 @@ import 'package:valhalla/features/terminal/widgets/terminal_accessory_bar.dart';
 import 'package:valhalla/infrastructure/acp/acp_client_adapter.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import '../support/fixed_terminal_settings.dart';
 import '../support/temp_chat_db.dart';
 
 class _MockAiChatNotifier extends AiChatNotifier {
@@ -83,7 +84,11 @@ void main() {
     List<dynamic> overrides = const [],
   }) {
     return ProviderScope(
-      overrides: [tempChatRepositoryOverride(), ...overrides],
+      overrides: [
+        tempChatRepositoryOverride(),
+        ...fixedTerminalSettingsOverrides(),
+        ...overrides,
+      ],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -456,6 +461,8 @@ void main() {
         expect(find.text('Log In'), findsOneWidget);
 
         // Tap Log In to open confirmation dialog
+        await tester.ensureVisible(find.text('Log In'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Log In'));
         await tester.pumpAndSettle();
 

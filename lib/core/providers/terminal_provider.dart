@@ -112,7 +112,8 @@ class SshTerminalState {
 class TerminalNotifier extends Notifier<SshTerminalState> {
   @override
   SshTerminalState build() {
-    final activeServer = ref.watch(activeServerProvider);
+    ref.watch(activeServerProvider.select((server) => server?.connectionKey));
+    final activeServer = ref.read(activeServerProvider);
     final sshManager = ref.watch(sshClientManagerProvider);
     final connState = ref.read(serverConnectionProvider);
     final serverName = activeServer?.name ?? 'No Server';
@@ -121,7 +122,7 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
         : null;
 
     ref.listen(serverConnectionProvider, (prev, next) {
-      if (next.isConnected) {
+      if (next.isConnected && prev?.isConnected != true) {
         unawaited(rebindAfterReconnect());
       }
     });

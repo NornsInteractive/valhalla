@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/providers/reconnect_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/core/services/keep_alive_service.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/repositories/server_repository.dart';
+import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
 
 const _server = ServerProfile(
@@ -45,18 +47,41 @@ class _Manager implements SSHClientManager {
   final pending = Completer<SSHClient>();
   final deaths = StreamController<String>.broadcast();
   final disconnected = <String>[];
+
+  /// Servers with a handed-out client, i.e. actually usable.
+  final connected = <String>{};
+
   @override
   Stream<String> get transportDied => deaths.stream;
+
+  /// Models real readiness rather than a noSuchMethod stub: the registry
+  /// trusts the executor over the connection notifier.
+  @override
+  bool isConnected(String serverId) => connected.contains(serverId);
+
+  @override
+  SSHClient? getClient(String serverId) =>
+      connected.contains(serverId) ? _Client() : null;
+
   @override
   Future<SSHClient> getOrCreateClient(
     ServerProfile server, {
     String? password,
     String? privateKey,
     Future<bool> Function(String, String, String)? onConfirmHostKey,
-  }) => pending.future;
+  }) {
+    return pending.future.then((client) {
+      connected.add(server.id);
+      return client;
+    });
+  }
+
   @override
-  void disconnect(String id, {bool notifyDeath = false}) =>
-      disconnected.add(id);
+  void disconnect(String id, {bool notifyDeath = false}) {
+    connected.remove(id);
+    disconnected.add(id);
+  }
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -70,10 +95,13 @@ void main() {
   late ProviderContainer container;
   late _Repository repository;
   late _Manager manager;
+  late LocalStorageService storage;
 
-  setUp(() {
+  setUp(() async {
     repository = _Repository();
     manager = _Manager();
+    SharedPreferences.setMockInitialValues({});
+    storage = LocalStorageService(await SharedPreferences.getInstance());
     container = ProviderContainer(
       overrides: [
         serverRepositoryProvider.overrideWithValue(repository),
@@ -82,6 +110,9 @@ void main() {
         keepAliveServiceProvider.overrideWithValue(
           const DesktopKeepAliveService(),
         ),
+        // A successful connection reads/writes persisted server state, so the
+        // storage service must be initialised for this container.
+        localStorageServiceProvider.overrideWithValue(storage),
       ],
     );
   });

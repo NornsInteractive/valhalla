@@ -9,6 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:valhalla/features/agents/interactive_login_dialog.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 
+import '../support/fixed_terminal_settings.dart';
+
 /// Fake remote PTY.
 ///
 /// `SSHSession` is a concrete class in dartssh2 4.1.0, so this extends it and
@@ -143,6 +145,7 @@ List<String> _commandsFrom(_FakeSshClient client) {
 void main() {
   Widget host(Widget child) {
     return ProviderScope(
+      overrides: fixedTerminalSettingsOverrides(),
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

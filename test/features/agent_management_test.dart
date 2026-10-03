@@ -7,6 +7,7 @@ import 'package:valhalla/core/providers/agent_registry_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/data/models/agent_profile.dart';
+import 'package:valhalla/data/models/builtin_agent_preset.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/core/providers/ai_chat_provider.dart';
@@ -1612,6 +1613,287 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'saved/unverified 的内置 AgY 只显示 Auth: Unknown，绝不弹「Not logged in. Log in now?」',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final local = await LocalStorageService.init();
+
+      final profile = AgentProfile(
+        id: 'builtin-agy',
+        serverId: 'srv-test-1',
+        name: 'Antigravity',
+        description: 'Official ACP agent',
+        cliCommand: 'agy',
+        acpCommand: 'agy_acp_server.par',
+        loginCommand: 'agy',
+        loginCheckCommand: kAntigravityLoginCheckCommand,
+      );
+
+      // 内置 AgY 现在自带只读 readiness 探针：saved → AGY_ACP_CREDENTIALS_NOT_VALIDATED，
+      // authentication 仍是 unknown——既不是已登录，也不是未登录。
+      final runtime = AgentRuntimeState(
+        profile: profile,
+        status: AgentEnvironmentStatus(
+          kind: AgentEnvironmentStatusKind.ready,
+          detail: 'AGY_ACP_CREDENTIALS_NOT_VALIDATED',
+          checkedAt: DateTime.now(),
+          authentication: AgentAuthenticationStatus.unknown,
+        ),
+      );
+
+      await tester.pumpWidget(
+        createTestApp(
+          child: const AgentManagementView(),
+          overrides: [
+            localStorageServiceProvider.overrideWithValue(local),
+            activeServerProvider.overrideWith(
+              () => _MockActiveServerNotifier(testServer),
+            ),
+            serverConnectionProvider.overrideWith(
+              () => _MockServerConnectionNotifier(
+                const ServerConnectionState(
+                  status: ConnectionStateEnum.connected,
+                ),
+              ),
+            ),
+            agentRegistryProvider.overrideWith(
+              () => _MockAgentRegistryNotifier(
+                AgentRegistryState(serverId: 'srv-test-1', agents: [runtime]),
+              ),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Auth: Unknown'), findsOneWidget);
+      expect(find.text('Auth: Logged In'), findsNothing);
+      expect(
+        find.text('Not logged in. Log in now?'),
+        findsNothing,
+        reason: 'saved/unverified 不是未登录，不得触发主动登录提示',
+      );
+      expect(find.text('Log In Now'), findsNothing);
+      expect(find.text('ACP credentials saved (unverified)'), findsOneWidget);
+      expect(
+        find.byKey(const Key('agent_acp_callout_login_builtin-agy')),
+        findsNothing,
+        reason: '只有 missing 才需要主动 ACP Sign-In callout',
+      );
+
+      // 官方 ACP 的认证走会话内挑战，不代表手动 CLI / ACP 登录入口被删掉。
+      expect(
+        find.byKey(const Key('agent_bottom_login_builtin-agy')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('agent_acp_login_builtin-agy')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('missing 的内置 AgY 显示 ACP 缺失与显式 ACP Sign-In 入口，且绝不冒充已登录', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final local = await LocalStorageService.init();
+
+    final profile = AgentProfile(
+      id: 'builtin-agy',
+      serverId: 'srv-test-1',
+      name: 'Antigravity',
+      description: 'Official ACP agent',
+      cliCommand: 'agy',
+      acpCommand: 'agy_acp_server.par',
+      loginCommand: 'agy',
+      loginCheckCommand: kAntigravityLoginCheckCommand,
+    );
+
+    final runtime = AgentRuntimeState(
+      profile: profile,
+      status: AgentEnvironmentStatus(
+        kind: AgentEnvironmentStatusKind.ready,
+        detail: 'AGY_ACP_SIGN_IN_REQUIRED',
+        checkedAt: DateTime.now(),
+        authentication: AgentAuthenticationStatus.unauthenticated,
+      ),
+    );
+
+    await tester.pumpWidget(
+      createTestApp(
+        child: const AgentManagementView(),
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(local),
+          activeServerProvider.overrideWith(
+            () => _MockActiveServerNotifier(testServer),
+          ),
+          serverConnectionProvider.overrideWith(
+            () => _MockServerConnectionNotifier(
+              const ServerConnectionState(
+                status: ConnectionStateEnum.connected,
+              ),
+            ),
+          ),
+          agentRegistryProvider.overrideWith(
+            () => _MockAgentRegistryNotifier(
+              AgentRegistryState(serverId: 'srv-test-1', agents: [runtime]),
+            ),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Auth: Not Logged In'), findsOneWidget);
+    expect(find.text('Auth: Logged In'), findsNothing);
+    expect(
+      find.text('ACP credentials missing (ACP sign-in required)'),
+      findsNWidgets(2),
+      reason: 'detail 行与主动 callout 都必须复述该状态',
+    );
+    expect(
+      find.text('Not logged in. Log in now?'),
+      findsNothing,
+      reason: 'AgY 走 ACP Sign-In callout，不套用 CLI 登录提示',
+    );
+    expect(
+      find.byKey(const Key('agent_acp_callout_login_builtin-agy')),
+      findsOneWidget,
+    );
+    expect(find.text('ACP Sign-In'), findsWidgets);
+    expect(
+      find.byKey(const Key('agent_acp_login_builtin-agy')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('agent_bottom_login_builtin-agy')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('installer 确认弹窗在 320dp + 2x 字号下：多 KB 命令可复制，Cancel/Execute 都够得着', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    // 真实官方安装脚本 + 一段不可断行的长 token，凑成多 KB 级命令。
+    final token = List.filled(600, 'deadbeefcafe1234').join();
+    final command = '$kAntigravityAcpInstallCommand\nprintf %s $token';
+    expect(command.length, greaterThan(4000), reason: '必须是多 KB 级命令');
+
+    final copied = <MethodCall>[];
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      copied.add(call);
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    bool? result;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [tempChatRepositoryOverride()],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2.0)),
+            child: child!,
+          ),
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    result = await showAgentCommandConfirmDialog(
+                      context: context,
+                      actionType: AgentCommandActionType.install,
+                      agentName: 'Antigravity',
+                      command: command,
+                      server: testServer,
+                    );
+                  },
+                  child: const Text('Open Dialog'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 记录（而不是在第一个异常处短路）以便一次跑完，把所有渲染异常一并报上来。
+    final layoutErrs = <String>[];
+    void grabLayoutErrors() {
+      for (var i = 0; i < 64; i++) {
+        final e = tester.takeException();
+        if (e == null) break;
+        layoutErrs.add(e.toString());
+      }
+    }
+
+    await tester.tap(find.text('Open Dialog'));
+    await tester.pumpAndSettle();
+    grabLayoutErrors();
+
+    // 命令必须完整在场，绝不允许被截断。
+    final preview = tester.widget<SelectableText>(find.byType(SelectableText));
+    expect(preview.data, command);
+
+    final copyBtn = find.byKey(const Key('agent_command_copy_button'));
+    expect(copyBtn, findsOneWidget);
+    await tester.ensureVisible(copyBtn);
+    await tester.tap(copyBtn);
+    await tester.pumpAndSettle();
+    grabLayoutErrors();
+
+    final setData = copied.where((c) => c.method == 'Clipboard.setData');
+    expect(setData, hasLength(1), reason: '复制按钮必须真的写了剪贴板');
+    expect(
+      (setData.single.arguments as Map)['text'],
+      command,
+      reason: '复制的是完整命令，不是被滚动裁掉的一段',
+    );
+
+    // 320dp + 2x 字号下两个确认动作都要落在屏幕内。
+    final screen = tester.getRect(find.byType(MaterialApp));
+    for (final label in ['Cancel', 'Execute']) {
+      final rect = tester.getRect(find.text(label));
+      expect(
+        screen.contains(rect.center),
+        isTrue,
+        reason: '$label 在窄屏大字号下必须仍可见',
+      );
+    }
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    grabLayoutErrors();
+    expect(result, false);
+
+    await tester.tap(find.text('Open Dialog'));
+    await tester.pumpAndSettle();
+    grabLayoutErrors();
+    await tester.tap(find.text('Execute'));
+    await tester.pumpAndSettle();
+    grabLayoutErrors();
+    expect(result, true);
+
+    expect(layoutErrs, isEmpty, reason: '窄屏大字号下渲染异常：$layoutErrs');
+  });
 }
 
 class _MockAgentRegistryNotifier extends AgentRegistryNotifier {

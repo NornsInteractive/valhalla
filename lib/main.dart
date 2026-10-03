@@ -19,6 +19,7 @@ import 'core/providers/nas_metadata_provider.dart';
 import 'core/services/keep_alive_service.dart';
 import 'core/services/app_diagnostics.dart';
 import 'core/logging/sanitizer.dart';
+import 'features/agents/oauth_callback_page.dart';
 import 'features/settings/widgets/startup_failure_app.dart';
 import 'core/services/window_service.dart';
 import 'features/shell/main_shell.dart';
@@ -202,6 +203,8 @@ Future<void> main() async {
           transferNotificationCallbackProvider.overrideWithValue(
             _notificationBatcher.addTransfer,
           ),
+          // 生产环境注入 ACP OAuth 回调页面渲染器。
+          acpOAuthPageRendererProvider.overrideWithValue(acpOAuthCallbackPage),
         ],
         // 生命周期观察者必须在 ProviderScope 之外无法取得 ref，
         // 因此包在 scope 内部。

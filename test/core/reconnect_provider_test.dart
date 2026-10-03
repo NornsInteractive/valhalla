@@ -101,6 +101,68 @@ void main() {
       expect(controller.state.attempt, 0);
     });
 
+    test('markConnected 幂等：已 connected 时一次也不再广播', () {
+      controller.start(_server());
+      controller.markConnected();
+      expect(states.map((s) => s.status), [
+        ReconnectStatus.connecting,
+        ReconnectStatus.connected,
+      ]);
+      final emissions = states.length;
+
+      // 前台健康检查会反复调用它；重复广播会让终端/指标重新订阅一遍。
+      controller.markConnected();
+      controller.markConnected();
+      controller.markConnected();
+
+      expect(
+        states,
+        hasLength(emissions),
+        reason: '已 connected 时重复 markConnected 必须是零副作用',
+      );
+      expect(controller.state.isConnected, isTrue);
+      expect(controller.state.attempt, 0);
+      expect(controller.state.nextDelay, isNull);
+      expect(controller.userIntent, isTrue);
+    });
+
+    test('重复 markConnected 之后掉线仍只排一次期', () {
+      controller.start(_server());
+      controller.markConnected();
+      for (var i = 0; i < 5; i++) {
+        controller.markConnected();
+      }
+
+      controller.handleTransportDied();
+
+      expect(controller.state.status, ReconnectStatus.reconnecting);
+      expect(controller.state.attempt, 1);
+      expect(controller.state.nextDelay, const Duration(seconds: 1));
+      expect(scheduler.pendingCount, 1, reason: '重复的健康广播不得让退避从 1s 跳到 2s');
+    });
+
+    test('恢复连接后再连击 markConnected，状态机仍只走一次转换', () async {
+      controller.start(_server());
+      controller.markConnected();
+      controller.handleTransportDied();
+      // 重连成功：attempt 归零并回到 connected。
+      expect(scheduler.fireLatest(), const Duration(seconds: 1));
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.state.isConnected, isTrue);
+      expect(controller.state.attempt, 0);
+      final emissions = states.length;
+
+      for (var i = 0; i < 3; i++) {
+        controller.markConnected();
+      }
+      expect(states, hasLength(emissions));
+
+      // 幂等没有把状态机搞坏：掉线仍然只排一次 attempt 1。
+      controller.handleTransportDied();
+      expect(controller.state.attempt, 1);
+      expect(scheduler.pendingCount, 1);
+    });
+
     test('掉线后按退避排期重连', () {
       controller.start(_server());
       controller.markConnected();
@@ -401,6 +463,32 @@ void main() {
       expect(keepAlive.hasActiveSessions, isFalse);
       reconnect.handleTransportDied();
       expect(reconnect.state.isReconnecting, isFalse);
+    });
+
+    test('arm 之后的健康 markConnected 不再广播', () async {
+      final reconnect = ReconnectController(connectAttempt: (_) async {});
+      addTearDown(reconnect.dispose);
+      final emitted = <ReconnectState>[];
+      reconnect.onStateChanged = emitted.add;
+      final keepAlive = KeepAliveCoordinator(_ArmRecordingService());
+
+      armConnectionSession(
+        reconnect: reconnect,
+        keepAlive: keepAlive,
+        server: _server(),
+      );
+      await Future<void>.delayed(Duration.zero);
+      final afterArm = emitted.length;
+      expect(emitted.last.status, ReconnectStatus.connected);
+
+      // 连上之后的健康复验只调 markConnected（见 connection_lifecycle）。
+      reconnect.markConnected();
+      reconnect.markConnected();
+
+      expect(emitted, hasLength(afterArm), reason: '健康复验必须是零副作用，不得重新武装状态订阅');
+      expect(reconnect.state.isConnected, isTrue);
+      expect(reconnect.userIntent, isTrue);
+      expect(keepAlive.hasActiveSessions, isTrue);
     });
   });
 }

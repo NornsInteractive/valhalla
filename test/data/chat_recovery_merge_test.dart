@@ -38,6 +38,8 @@ ChatMessage _message(
   String? agentId = _agent,
   List<ToolExecution> toolExecutions = const [],
   List<ChatAttachment> attachments = const [],
+  List<ChatContentBlock> contentBlocks = const [],
+  ChatTurnStatus status = ChatTurnStatus.completed,
   String? thinking,
   int minutes = 0,
 }) => ChatMessage(
@@ -48,6 +50,8 @@ ChatMessage _message(
   agentId: agentId,
   toolExecutions: toolExecutions,
   attachments: attachments,
+  contentBlocks: contentBlocks,
+  status: status,
   thinking: thinking,
   createdAt: _epoch.add(Duration(minutes: minutes)),
 );
@@ -1145,6 +1149,137 @@ void main() {
           ['hi', 'codex answer extended', 'agy answer extended'],
           reason: 'each agent updates only its own message',
         );
+      },
+    );
+  });
+
+  group('contentBlocks and transport-loss status survive a replay', () {
+    test(
+      'a replay carries its contentBlocks through the merge in order',
+      () async {
+        final repository = await _repository();
+        await repository.saveSession(
+          _session(
+            'a',
+            messages: [_message('m0', content: 'Hel', remoteMessageId: 'r-1')],
+          ),
+        );
+
+        const blocks = [
+          ChatContentBlock.text(0, 3),
+          ChatContentBlock.tool('t1'),
+          ChatContentBlock.text(3, 5),
+        ];
+        await repository.mergeReplayBatch(
+          _session(
+            'a',
+            messageOffset: 0,
+            messages: [
+              _message(
+                'incoming-0',
+                content: 'Hello',
+                remoteMessageId: 'r-1',
+                contentBlocks: blocks,
+                toolExecutions: [_tool('t1')],
+              ),
+            ],
+          ),
+          _agent,
+        );
+
+        final message = (await _stored(repository, 'a')).messages.single;
+        expect(message.content, 'Hello');
+        expect(
+          message.contentBlocks.map((b) => b.toJson()).toList(),
+          [for (final block in blocks) block.toJson()],
+          reason: 'replay 的渲染顺序必须原样落库',
+        );
+        expect(
+          message.orderedContentBlocks.map((b) => b.toJson()).toList(),
+          [for (final block in blocks) block.toJson()],
+          reason: '落库后仍能按序渲染',
+        );
+      },
+    );
+
+    test('a replay without blocks keeps the local contentBlocks', () async {
+      const blocks = [ChatContentBlock.text(0, 3)];
+      final repository = await _repository();
+      await repository.saveSession(
+        _session(
+          'a',
+          messages: [
+            _message(
+              'm0',
+              content: 'Hel',
+              remoteMessageId: 'r-1',
+              contentBlocks: blocks,
+            ),
+          ],
+        ),
+      );
+      await repository.mergeReplayBatch(
+        _session(
+          'a',
+          messageOffset: 0,
+          messages: [
+            _message('incoming-0', content: 'Hel', remoteMessageId: 'r-1'),
+          ],
+        ),
+        _agent,
+      );
+
+      final message = (await _stored(repository, 'a')).messages.single;
+      expect(
+        message.contentBlocks.map((b) => b.toJson()).toList(),
+        [for (final block in blocks) block.toJson()],
+        reason: '同内容的回放不许丢掉本地渲染顺序',
+      );
+    });
+
+    test(
+      'a history snapshot never proves a lost or running turn finished',
+      () async {
+        for (final lost in [ChatTurnStatus.unknown, ChatTurnStatus.streaming]) {
+          final id = 'lost-${lost.name}';
+          final repository = await _repository();
+          await repository.saveSession(
+            _session(
+              id,
+              messages: [
+                _message(
+                  'm-$id',
+                  content: 'Hel',
+                  remoteMessageId: 'r-1',
+                  status: lost,
+                ),
+              ],
+            ),
+          );
+          await repository.mergeReplayBatch(
+            _session(
+              id,
+              messageOffset: 0,
+              messages: [
+                _message(
+                  'in-$id',
+                  content: 'Hello',
+                  remoteMessageId: 'r-1',
+                  status: ChatTurnStatus.completed,
+                ),
+              ],
+            ),
+            _agent,
+          );
+
+          final message = (await _stored(repository, id)).messages.single;
+          expect(
+            message.status,
+            ChatTurnStatus.unknown,
+            reason: '${lost.name} 必须被保留为 unknown：回放只证明收到过内容',
+          );
+          expect(message.content, 'Hello', reason: '内容照常合并');
+        }
       },
     );
   });

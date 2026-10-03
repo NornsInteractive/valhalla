@@ -5,6 +5,7 @@ import 'package:acpd/acpd.dart';
 import 'package:dartssh2/dartssh2.dart';
 
 import '../../core/logging/sanitizer.dart';
+import 'acp_oauth_request.dart';
 
 /// ACP transport backed by one SSH exec channel carrying newline-delimited JSON.
 /// The protocol framing and request correlation remain owned by [acpd].
@@ -19,13 +20,41 @@ class AcpSshTransport implements LineTransport {
   int? get exitCode => session.exitCode;
   bool _closed = false;
   bool _paused = false;
+  final _authorizationRequests = StreamController<AcpOAuthRequest>.broadcast();
+  Stream<AcpOAuthRequest> get authorizationRequests =>
+      _authorizationRequests.stream;
+  String _authLine = '';
+  bool _oversizedAuthLine = false;
+
+  void _captureAuthorization(String text) {
+    for (final part in text.split('\n').indexed) {
+      if (part.$1 > 0) {
+        if (!_oversizedAuthLine) {
+          final request = AcpOAuthRequest.fromLine(_authLine);
+          if (request != null && !_closed) _authorizationRequests.add(request);
+        }
+        _authLine = '';
+        _oversizedAuthLine = false;
+      }
+      if (_authLine.length + part.$2.length > 16384) {
+        _authLine = '';
+        _oversizedAuthLine = true;
+      } else if (!_oversizedAuthLine) {
+        _authLine += part.$2;
+      }
+    }
+  }
 
   AcpSshTransport(this.session) {
     _stderrSubscription =
         LogSanitizer.stream(
-          session.stderr.cast<List<int>>().transform(
-            const Utf8Decoder(allowMalformed: true),
-          ),
+          session.stderr
+              .cast<List<int>>()
+              .transform(const Utf8Decoder(allowMalformed: true))
+              .map((text) {
+                _captureAuthorization(text);
+                return text;
+              }),
         ).listen(
           (text) {
             _diagnosticTail += text;
@@ -90,6 +119,8 @@ class AcpSshTransport implements LineTransport {
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
+    _authLine = '';
+    unawaited(_authorizationRequests.close());
     // End the SSH streams before awaiting cancellation of the async sanitizer.
     session.close();
     await _subscription?.cancel();

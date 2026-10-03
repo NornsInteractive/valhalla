@@ -12,6 +12,8 @@ import 'package:valhalla/features/chat/cli_chat_view.dart';
 import 'package:valhalla/features/terminal/widgets/shared_terminal_canvas.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 
+import '../support/fixed_terminal_settings.dart';
+
 class _FakeCliChatNotifier extends CliChatNotifier {
   final CliChatState _initialState;
   final List<String> sentTerminalKeys = [];
@@ -99,6 +101,7 @@ Future<void> _pumpCliChat(
         ),
         agentRegistryProvider.overrideWith(_TestAgentRegistryNotifier.new),
         cliChatProvider.overrideWith(() => notifier),
+        ...fixedTerminalSettingsOverrides(),
       ],
       child: const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,

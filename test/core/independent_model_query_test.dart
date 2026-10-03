@@ -479,6 +479,87 @@ void main() {
     });
   });
 
+  group('目录时间戳：只有独立查询成功才前进', () {
+    test('查询失败不刷新 settingsFetchedAt，并保留旧目录', () async {
+      var failNext = false;
+      final container = await makeContainer(
+        query: (_) async {
+          if (failNext) throw StateError('model list unavailable');
+          return catalog(['gpt-5-codex']);
+        },
+      );
+      final notifier = container.read(aiChatProvider.notifier);
+
+      await notifier.prepareRunSettings();
+      await settle(container);
+      final firstFetchedAt = container.read(aiChatProvider).settingsFetchedAt;
+      expect(firstFetchedAt, isNotNull);
+
+      failNext = true;
+      expect(await notifier.prepareRunSettings(refresh: true), isTrue);
+      await settle(container);
+
+      final state = container.read(aiChatProvider);
+      expect(
+        state.settingsFetchedAt,
+        firstFetchedAt,
+        reason: '失败不得让时间戳看起来像刚刷新过',
+      );
+      expect(state.settingsStale, isTrue);
+      expect(state.capabilities.models.single.id, 'gpt-5-codex');
+      expect(
+        sentMethods(pairs.single),
+        isNot(contains('session/prompt')),
+        reason: '失败也不得触发会话操作',
+      );
+    });
+
+    test('不支持独立查询（返回 null）不刷新 settingsFetchedAt', () async {
+      final container = await makeContainer(query: (_) async => null);
+      final notifier = container.read(aiChatProvider.notifier);
+
+      expect(await notifier.prepareRunSettings(), isTrue);
+      await settle(container);
+      final state = container.read(aiChatProvider);
+      expect(state.settingsFetchedAt, isNull, reason: '从未成功过就没有时间戳');
+      expect(state.settingsStale, isTrue);
+      expect(state.modelCatalogError, 'AGENT_MODEL_QUERY_UNSUPPORTED');
+      expect(state.capabilities.models, isEmpty);
+    });
+
+    test('只有独立查询成功才前进 settingsFetchedAt', () async {
+      var succeed = true;
+      final container = await makeContainer(
+        query: (_) async {
+          if (!succeed) throw StateError('model list unavailable');
+          return catalog(['gpt-5-codex']);
+        },
+      );
+      final notifier = container.read(aiChatProvider.notifier);
+
+      await notifier.prepareRunSettings();
+      await settle(container);
+      final firstFetchedAt = container.read(aiChatProvider).settingsFetchedAt!;
+
+      // 让两次刷新在时间上可区分。
+      succeed = false;
+      await notifier.prepareRunSettings(refresh: true);
+      await settle(container);
+
+      succeed = true;
+      expect(await notifier.prepareRunSettings(refresh: true), isTrue);
+      await settle(container);
+
+      final state = container.read(aiChatProvider);
+      expect(
+        state.settingsFetchedAt!.isAfter(firstFetchedAt),
+        isTrue,
+        reason: '独立查询成功必须前进时间戳',
+      );
+      expect(state.settingsStale, isFalse);
+    });
+  });
+
   group('目录缓存按账号键隔离', () {
     final keyA = 'a' * 64;
     final keyB = 'b' * 64;

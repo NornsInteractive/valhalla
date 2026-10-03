@@ -30,6 +30,60 @@ Future<List<ACPEvent>> _runTurn(
 }
 
 void main() {
+  test(
+    'official AGY uses ACP authentication, commands and a reused session',
+    () async {
+      final pair = FakeAcpPair();
+      final adapter = ACPClientAdapter(
+        profile: testAgentProfile(
+          id: 'builtin-agy',
+          cliCommand: 'agy',
+          acpCommand: 'agy_acp_server.par',
+          loginCommand: 'agy',
+        ),
+        transport: pair.client,
+        workingDirectory: '/workspace',
+      );
+      addTearDown(adapter.dispose);
+      addTearDown(pair.close);
+      pair.authMethods = [
+        {'id': 'oauth-personal', 'name': 'Google Account'},
+      ];
+      pair.failSessionNew = true;
+      final blocked = await _runTurn(adapter, 'hi');
+      expect(
+        blocked.whereType<ACPAuthRequiredEvent>().single.methods.single.id,
+        'oauth-personal',
+      );
+      await adapter.authenticate('oauth-personal');
+      pair.failSessionNew = false;
+      pair.promptUpdates = [
+        {
+          'sessionUpdate': 'available_commands_update',
+          'availableCommands': [
+            {'name': 'plan', 'description': 'Plan changes'},
+          ],
+        },
+        {
+          'sessionUpdate': 'agent_message_chunk',
+          'content': {'type': 'text', 'text': 'Hello from AGY'},
+        },
+      ];
+      final accepted = await _runTurn(adapter, 'hi');
+      expect(accepted.whereType<ACPErrorEvent>(), isEmpty);
+      expect(pair.lastAuthenticateMethodId, 'oauth-personal');
+      expect(adapter.commands.single.insertion, '/plan ');
+      expect(
+        accepted.whereType<ACPContentChunkEvent>().single.chunk,
+        'Hello from AGY',
+      );
+      final sessionsAfterAuth = pair.newSessionCount;
+      await _runTurn(adapter, '/plan');
+      expect(pair.newSessionCount, sessionsAfterAuth);
+      expect(pair.authenticateCallCount, 1);
+    },
+  );
+
   group('ACPClientAdapter profile startup', () {
     late FakeAcpPair pair;
     late ACPClientAdapter adapter;

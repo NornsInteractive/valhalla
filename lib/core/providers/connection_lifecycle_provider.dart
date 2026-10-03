@@ -9,6 +9,7 @@ import 'reconnect_provider.dart';
 import 'server_provider.dart';
 import 'storage_providers.dart';
 import 'app_visibility_provider.dart';
+import 'agent_registry_provider.dart';
 
 /// 进程存活期间维持 SSH / ACP 连接的编排器。
 ///
@@ -78,20 +79,23 @@ class ConnectionLifecycleCoordinator {
     onVisibilityChanged?.call(true);
     final epoch = ++_epoch;
 
-    // 回到前台时把 detached 标志清掉：即使此前收到过 detached，
-    // 只要进程还活着且用户回来了，就应该继续维持连接。
-    reconnectController?.setAppDetached(false);
-
+    // 先复验现有连接，再解除后台重试暂停，避免启动多余的重连。
     final server = activeServer();
-    if (server == null) return true;
+    if (server == null) {
+      reconnectController?.setAppDetached(false);
+      return true;
+    }
     bool current() =>
-        !_disposed && epoch == _epoch && identical(server, activeServer());
+        !_disposed &&
+        epoch == _epoch &&
+        server.connectionKey == activeServer()?.connectionKey;
 
     // 只有原本以为连着的时候才需要复验。已经不在 map 里时，
     // 若用户仍想保持连接，必须立刻重连，不能干等下一次心跳。
     if (!sshManager.isConnected(server.id)) {
       await _syncKeepAlive();
       if (!current()) return false;
+      reconnectController?.setAppDetached(false);
       if (reconnectController?.userIntent == true) {
         reconnectController?.handleVerifyFailed();
       }
@@ -103,11 +107,22 @@ class ConnectionLifecycleCoordinator {
         DateTime.now().difference(_pausedAt!) < const Duration(seconds: 10);
     if ((!wasBackground || briefPause) &&
         sshManager.recentlyVerified(server.id)) {
+      if (reconnectController?.userIntent == true &&
+          reconnectController?.serverId == server.id) {
+        reconnectController?.markConnected();
+      }
+      reconnectController?.setAppDetached(false);
       await _syncKeepAlive();
       return true;
     }
     final alive = await sshManager.verifyAlive(server.id);
     if (!current()) return false;
+    if (alive &&
+        reconnectController?.userIntent == true &&
+        reconnectController?.serverId == server.id) {
+      reconnectController?.markConnected();
+    }
+    reconnectController?.setAppDetached(false);
     if (!alive && reconnectController?.userIntent == true) {
       // 复验失败：verifyAlive 已经清掉了死掉的 client，
       // 这里只负责把状态翻成 reconnecting，让用户看到真实情况。
@@ -125,6 +140,7 @@ class ConnectionLifecycleCoordinator {
     _epoch++;
     _resuming = null;
     sshManager.setAppInBackground(true);
+    reconnectController?.setAppDetached(true);
     onVisibilityChanged?.call(false);
     await _syncKeepAlive();
   }
@@ -132,8 +148,8 @@ class ConnectionLifecycleCoordinator {
   /// Flutter 视图与 Activity 分离。
   ///
   /// 这不等于进程退出：Android 上划掉任务时 Activity 会 detached，
-  /// 但 `stopWithTask=false` 的前台服务还托着进程。此时停 FGS 或暂停
-  /// 重连，等于把保活白做了。用户意图保持不变，服务继续跑。
+  /// 但 `stopWithTask=false` 的前台服务还托着进程。保留服务和用户意图，
+  /// 后台暂停重试，回到前台后先复验连接再恢复重试。
   Future<void> onDetached() async {
     await onPaused();
   }
@@ -162,6 +178,9 @@ class ConnectionLifecycleCoordinator {
 final connectionLifecycleProvider = Provider<ConnectionLifecycleCoordinator>((
   ref,
 ) {
+  // Mount detection before a connection event, even if management was never
+  // opened. Registry also handles mounting after an existing connection.
+  ref.listen(agentRegistryProvider, (_, _) {});
   final coordinator = ConnectionLifecycleCoordinator(
     sshManager: ref.watch(sshClientManagerProvider),
     reconnectController: ref.watch(reconnectControllerProvider),

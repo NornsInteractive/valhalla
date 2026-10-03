@@ -26,15 +26,37 @@ class AgentRepository {
           preset.id == 'builtin-codex' &&
           profile.acpInstallCommand ==
               'npm install -g @zed-industries/codex-acp';
+      final oldAgyAcp =
+          preset.id == 'builtin-agy' &&
+          profile.cliCommand == preset.cliCommand &&
+          (profile.acpCommand?.trim().isEmpty != false ||
+              profile.acpCommand == 'agy --acp');
+      final missingAgyCheck =
+          preset.id == 'builtin-agy' &&
+          profile.cliCommand == preset.cliCommand &&
+          profile.loginCheckCommand?.trim().isNotEmpty != true;
       if (!oldCodexAdapter &&
+          !oldAgyAcp &&
           !oldVersionCheck &&
+          !missingAgyCheck &&
           !oldLogin &&
           !(profile.cliCommand == 'agy' && profile.loginCommand == null)) {
         return profile;
       }
       final json = profile.toJson();
       if (oldCodexAdapter) json['acpInstallCommand'] = preset.acpInstallCommand;
+      if (oldAgyAcp) {
+        json['acpCommand'] = preset.acpCommand;
+        if (profile.acpInstallCommand?.trim().isEmpty != false) {
+          json['acpInstallCommand'] = preset.acpInstallCommand;
+        }
+        if (profile.description ==
+            'Google Antigravity CLI · CLI only (no ACP mode)') {
+          json['description'] = preset.description;
+        }
+      }
       if (oldVersionCheck) json['loginCheckCommand'] = preset.loginCheckCommand;
+      if (missingAgyCheck) json['loginCheckCommand'] = preset.loginCheckCommand;
       if (oldLogin ||
           (profile.cliCommand == 'agy' && profile.loginCommand == null)) {
         json['loginCommand'] = preset.loginCommand;
@@ -169,19 +191,11 @@ class AgentRepository {
       }
 
       changed = true;
-      return AgentProfile(
-        id: profile.id,
-        serverId: profile.serverId,
-        name: profile.name,
-        description: profile.description,
-        cliCommand: profile.cliCommand,
-        acpCommand: profile.acpCommand,
+      return profile.copyWith(
         installCommand: installCommand,
         acpInstallCommand: acpInstallCommand,
         loginCheckCommand: loginCheckCommand,
         loginCommand: loginCommand,
-        createdAt: profile.createdAt,
-        updatedAt: profile.updatedAt,
       );
     }).toList();
 
@@ -197,7 +211,7 @@ class AgentRepository {
   /// 曾经写入过的错误 ACP 启动命令字面量。
   ///
   /// 早期版本为这些内置 Agent 编造了不存在的参数（ACP 适配器根本不接受参数，
-  /// `agy` 也没有 ACP 模式），导致探测与启动必然失败。
+  /// `agy --acp` 也不是独立 ACP 服务端），导致探测与启动必然失败。
   static const _legacyAcpCommands = {
     'builtin-claude-code': 'claude-code-acp --stdio',
     'builtin-codex': 'codex-acp --stdio',
@@ -230,20 +244,7 @@ class AgentRepository {
       if (bogus == null || profile.acpCommand != bogus) return profile;
 
       changed = true;
-      return AgentProfile(
-        id: profile.id,
-        serverId: profile.serverId,
-        name: profile.name,
-        description: profile.description,
-        cliCommand: profile.cliCommand,
-        acpCommand: preset.acpCommand,
-        installCommand: profile.installCommand,
-        acpInstallCommand: profile.acpInstallCommand,
-        loginCheckCommand: profile.loginCheckCommand,
-        loginCommand: profile.loginCommand,
-        createdAt: profile.createdAt,
-        updatedAt: profile.updatedAt,
-      );
+      return profile.copyWith(acpCommand: preset.acpCommand);
     }).toList();
 
     _acpRepairInProgress = false;

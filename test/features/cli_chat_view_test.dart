@@ -15,6 +15,8 @@ import 'package:valhalla/infrastructure/sftp/sftp_client_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 import 'package:valhalla/widgets/state_views.dart';
 
+import '../support/fixed_terminal_settings.dart';
+
 class _FakeCliChatNotifier extends CliChatNotifier {
   CliChatState _state;
   _FakeCliChatNotifier(this._state);
@@ -286,6 +288,7 @@ Future<void> _pumpTestApp(
         ),
         cliChatProvider.overrideWith(() => cliNotifier),
         if (sftpOps != null) sftpOperationsProvider.overrideWithValue(sftpOps),
+        ...fixedTerminalSettingsOverrides(),
       ],
       child: MaterialApp(
         locale: locale,
@@ -304,13 +307,59 @@ Future<void> _pumpTestApp(
 
 void main() {
   group('CliChatView Tests', () {
-    testWidgets('shows offline view when disconnected', (tester) async {
-      final cliNotifier = _FakeCliChatNotifier(const CliChatState());
+    testWidgets(
+      'offline with an existing server keeps content instead of an offline takeover',
+      (tester) async {
+        const session = NativeCliSession(
+          id: 'cli-sess-1',
+          title: 'Nightly run',
+          cwd: '/srv/nightly',
+        );
+        final cliNotifier = _FakeCliChatNotifier(
+          CliChatState(
+            serverId: 'srv-1',
+            agents: [_agentCodex],
+            activeAgent: _agentCodex,
+            sessions: const [session],
+            activeSession: session,
+            messages: const [
+              NativeCliMessage(
+                id: 'cli-msg-1',
+                role: 'user',
+                text: 'run the tests',
+              ),
+              NativeCliMessage(
+                id: 'cli-msg-2',
+                role: 'assistant',
+                text: 'all green on the runner',
+              ),
+            ],
+          ),
+        );
 
-      await _pumpTestApp(tester, cliNotifier: cliNotifier, isConnected: false);
+        await _pumpTestApp(
+          tester,
+          cliNotifier: cliNotifier,
+          isConnected: false,
+        );
 
-      expect(find.byType(OfflineStateView), findsOneWidget);
-    });
+        expect(
+          find.byType(OfflineStateView),
+          findsNothing,
+          reason: '断线不再整页替换：已有服务器的缓存内容必须留在原地',
+        );
+        expect(find.byKey(const ValueKey('cli-msg-1')), findsOneWidget);
+        expect(find.byKey(const ValueKey('cli-msg-2')), findsOneWidget);
+        expect(find.text('all green on the runner'), findsOneWidget);
+        expect(
+          tester
+              .widget<IconButton>(find.byKey(const Key('cli_send_button')))
+              .onPressed,
+          isNull,
+          reason: '离线只禁用发送，不清空内容',
+        );
+      },
+    );
 
     testWidgets('shows no agents configured when agents list is empty', (
       tester,

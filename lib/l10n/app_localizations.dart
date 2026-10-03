@@ -2165,7 +2165,7 @@ abstract class AppLocalizations {
   /// No description provided for @sftpDownloadFailed.
   ///
   /// In en, this message translates to:
-  /// **'Download failed. Check permissions and local storage.'**
+  /// **'Download failed'**
   String get sftpDownloadFailed;
 
   /// No description provided for @sftpOpenUnsupported.
@@ -3991,6 +3991,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed'**
   String get chatStatusFailed;
+
+  /// No description provided for @chatStatusAwaitingAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting ACP Authentication'**
+  String get chatStatusAwaitingAuth;
 
   /// No description provided for @chatShowFullOutput.
   ///
@@ -6401,6 +6407,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to discover commands or skills'**
   String get chatCommandsDiscoveryFailed;
+
+  /// No description provided for @chatAuthWaitingForBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for authorization in browser...'**
+  String get chatAuthWaitingForBrowser;
+
+  /// No description provided for @chatAuthBrowserLaunchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open external browser. Please reopen or copy the authorization link below.'**
+  String get chatAuthBrowserLaunchFailed;
+
+  /// No description provided for @chatAuthReopenBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen Browser'**
+  String get chatAuthReopenBrowser;
+
+  /// No description provided for @chatAuthCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Link'**
+  String get chatAuthCopyLink;
+
+  /// No description provided for @chatAuthManualCallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Callback'**
+  String get chatAuthManualCallback;
+
+  /// No description provided for @chatAuthManualCallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Authorization Callback URL'**
+  String get chatAuthManualCallbackTitle;
+
+  /// No description provided for @chatAuthManualCallbackDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the complete redirect URL (http://127.0.0.1:PORT/...?code=...&state=...) from the browser to complete authorization. Raw authorization codes are not accepted.'**
+  String get chatAuthManualCallbackDesc;
+
+  /// No description provided for @chatAuthCallbackInputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Callback URL'**
+  String get chatAuthCallbackInputLabel;
+
+  /// No description provided for @chatAuthCallbackInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'http://127.0.0.1:PORT/...?code=...&state=...'**
+  String get chatAuthCallbackInputHint;
+
+  /// No description provided for @chatAuthCallbackInvalidError.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid callback URL format or delivery failed'**
+  String get chatAuthCallbackInvalidError;
+
+  /// No description provided for @agentAuthAgYNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Antigravity ACP requires official account authorization, separate from terminal CLI login.'**
+  String get agentAuthAgYNotice;
+
+  /// No description provided for @chatAuthDiscoveryPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'This turn requires ACP authentication. Reconnect and request authorization to proceed.'**
+  String get chatAuthDiscoveryPrompt;
+
+  /// No description provided for @chatRequestAuthButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Authentication'**
+  String get chatRequestAuthButton;
+
+  /// No description provided for @agentActionAcpLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'ACP Sign-In'**
+  String get agentActionAcpLogin;
+
+  /// No description provided for @agentActionCliLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'CLI Login'**
+  String get agentActionCliLogin;
+
+  /// No description provided for @agentAgyAcpSignInRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'ACP credentials missing (ACP sign-in required)'**
+  String get agentAgyAcpSignInRequired;
+
+  /// No description provided for @agentAgyAcpCredentialsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'ACP credentials saved (unverified)'**
+  String get agentAgyAcpCredentialsSaved;
+
+  /// No description provided for @chatAuthMethodUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected authentication method is not available.'**
+  String get chatAuthMethodUnavailable;
+
+  /// No description provided for @chatAuthConnectionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication connection expired. Please try again.'**
+  String get chatAuthConnectionExpired;
+
+  /// No description provided for @chatAuthCallbackDeliveryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to deliver authorization callback to server.'**
+  String get chatAuthCallbackDeliveryFailed;
+
+  /// No description provided for @agentTargetChangedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Target server has changed. Please reopen agent management on the current server.'**
+  String get agentTargetChangedNotice;
+
+  /// No description provided for @agentAgyAuthCheckUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Antigravity authentication check unavailable'**
+  String get agentAgyAuthCheckUnavailable;
+
+  /// No description provided for @agentAgyAuthCheckInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Antigravity authentication check response invalid'**
+  String get agentAgyAuthCheckInvalid;
+
+  /// No description provided for @sftpDownloadDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Download disconnected'**
+  String get sftpDownloadDisconnected;
+
+  /// No description provided for @sftpDownloadPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied'**
+  String get sftpDownloadPermissionDenied;
+
+  /// No description provided for @sftpDownloadNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote file not found'**
+  String get sftpDownloadNotFound;
+
+  /// No description provided for @sftpDownloadTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Download timed out'**
+  String get sftpDownloadTimeout;
+
+  /// No description provided for @sftpDownloadLocalSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient local storage space'**
+  String get sftpDownloadLocalSpace;
+
+  /// No description provided for @sftpDownloadLocalIo.
+  ///
+  /// In en, this message translates to:
+  /// **'Local storage write failed'**
+  String get sftpDownloadLocalIo;
+
+  /// No description provided for @sftpDownloadIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete download'**
+  String get sftpDownloadIncomplete;
+
+  /// No description provided for @transferStatusWaitingConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for connection'**
+  String get transferStatusWaitingConnection;
+
+  /// No description provided for @chatAuthCallbackListenerFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start local authorization callback listener. Please retry authentication.'**
+  String get chatAuthCallbackListenerFailed;
 }
 
 class _AppLocalizationsDelegate

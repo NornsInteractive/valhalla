@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,18 +7,22 @@ import '../../core/design/motion_widgets.dart';
 import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/agent_registry_provider.dart';
+import '../../core/providers/ai_chat_provider.dart';
 import '../../core/providers/server_provider.dart';
 import '../../core/providers/storage_providers.dart';
 import '../../data/models/agent_profile.dart';
 import '../../data/models/server_profile.dart';
 import '../../infrastructure/acp/agent_environment_service.dart';
 import '../../infrastructure/cli/agent_execution_target.dart';
+import '../chat/ai_chat_view.dart';
 import 'agent_command_confirm_dialog.dart';
 import 'agent_form_dialog.dart';
 import 'interactive_login_provider.dart';
 
 class AgentManagementView extends ConsumerStatefulWidget {
-  const AgentManagementView({super.key});
+  final VoidCallback? onNavigateToChat;
+
+  const AgentManagementView({super.key, this.onNavigateToChat});
 
   @override
   ConsumerState<AgentManagementView> createState() =>
@@ -25,6 +30,80 @@ class AgentManagementView extends ConsumerStatefulWidget {
 }
 
 class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
+  bool _isLoggingIn = false;
+
+  String? _mapStatusDetail(BuildContext context, String? detail) {
+    if (detail == null) return null;
+    if (detail == 'AGY_AUTH_CHECK_UNAVAILABLE') {
+      return context.l10n.agentAgyAuthCheckUnavailable;
+    }
+    if (detail == 'AGY_AUTH_CHECK_INVALID') {
+      return context.l10n.agentAgyAuthCheckInvalid;
+    }
+    if (detail == 'AGY_ACP_SIGN_IN_REQUIRED') {
+      return context.l10n.agentAgyAcpSignInRequired;
+    }
+    if (detail == 'AGY_ACP_CREDENTIALS_NOT_VALIDATED') {
+      return context.l10n.agentAgyAcpCredentialsSaved;
+    }
+    return detail;
+  }
+
+  Future<void> _handleAcpLogin(
+    BuildContext context,
+    AgentProfile profile,
+    ServerProfile server,
+  ) async {
+    if (_isLoggingIn) return;
+    final activeServer = ref.read(activeServerProvider);
+    if (activeServer?.id != server.id) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.agentTargetChangedNotice),
+            backgroundColor: context.vDanger,
+          ),
+        );
+      }
+      return;
+    }
+
+    final chatState = ref.read(aiChatProvider);
+    if (chatState.isAuthenticating ||
+        chatState.isLoadingSettings ||
+        chatState.isGenerating) {
+      return;
+    }
+
+    _isLoggingIn = true;
+    final chatNotifier = ref.read(aiChatProvider.notifier);
+
+    // Let the provider own switch + identity verification + authentication request.
+    // This Future survives route disposal and catches errors safely without touching ref after unmount.
+    unawaited(
+      chatNotifier
+          .requestAuthenticationForAgent(server.id, profile.id)
+          .catchError((_) {})
+          .whenComplete(() {
+            if (mounted) {
+              setState(() => _isLoggingIn = false);
+            }
+          }),
+    );
+
+    // Navigate immediately to chat without waiting for remote initialization
+    if (widget.onNavigateToChat != null) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      widget.onNavigateToChat?.call();
+    } else {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const AiChatView()));
+    }
+  }
+
   String _formatTime(DateTime time) {
     String pad(int n) => n.toString().padLeft(2, '0');
     return '${time.year}-${pad(time.month)}-${pad(time.day)} ${pad(time.hour)}:${pad(time.minute)}:${pad(time.second)}';
@@ -318,34 +397,6 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
             )
           : Column(
               children: [
-                if (!isConnected)
-                  Entrance(
-                    index: 0,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      color: context.vWarning.withValues(alpha: 0.12),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.link_off,
-                            size: 18,
-                            color: context.vWarning,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              context.l10n.sshDisconnectedAgentWarning,
-                              style: context.textTheme.bodySmall,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 if (registry.isLoading)
                   const LinearProgressIndicator(minHeight: 2),
                 Expanded(
@@ -492,10 +543,17 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
       ),
     };
 
+    final mappedDetail = _mapStatusDetail(context, status.detail);
     final errorDisplay =
         agentState.errorMessage == AgentRegistryNotifier.disconnectedCode
         ? context.l10n.sshDisconnectedError
-        : (agentState.errorMessage ?? status.detail);
+        : (agentState.errorMessage ?? mappedDetail);
+    final isSavedUnverified =
+        status.detail == 'AGY_ACP_CREDENTIALS_NOT_VALIDATED';
+    final isDetailWarning = status.detail == 'AGY_ACP_SIGN_IN_REQUIRED';
+    final detailColor = isSavedUnverified
+        ? context.vInfo
+        : (isDetailWarning ? context.vWarning : context.vDanger);
 
     // CLI Status
     final (cliStatusText, cliStatusColor) = switch (status.kind) {
@@ -799,18 +857,16 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
               width: double.infinity,
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: context.vDanger.withValues(alpha: 0.08),
+                color: detailColor.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(VRadius.input),
-                border: Border.all(
-                  color: context.vDanger.withValues(alpha: 0.3),
-                ),
+                border: Border.all(color: detailColor.withValues(alpha: 0.3)),
               ),
               child: Text(
                 errorDisplay,
                 style: monoTextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
-                  color: context.vDanger,
+                  color: detailColor,
                 ),
               ),
             ),
@@ -946,10 +1002,10 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
 
           // Proactive Login Callout
           if (hasLoginCommand &&
+              !usesAntigravityAcp(profile) &&
               (status.kind == AgentEnvironmentStatusKind.notLoggedIn ||
                   status.authentication ==
-                      AgentAuthenticationStatus.unauthenticated ||
-                  isAgy)) ...[
+                      AgentAuthenticationStatus.unauthenticated)) ...[
             const SizedBox(height: 10),
             Container(
               width: double.infinity,
@@ -962,21 +1018,25 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                   width: 1,
                 ),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.login_rounded, size: 20, color: context.vInfo),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      context.l10n.agentLoginPrompt,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isNarrow = constraints.maxWidth < 280;
+                  final content = Row(
+                    children: [
+                      Icon(Icons.login_rounded, size: 20, color: context.vInfo),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          context.l10n.agentLoginPrompt,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Tooltip(
+                    ],
+                  );
+                  final button = Tooltip(
                     message: !isConnected
                         ? context.l10n.sshDisconnectedAgentWarning
                         : '',
@@ -995,8 +1055,99 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                           ? null
                           : () => _confirmAndLogin(context, profile, server),
                     ),
-                  ),
-                ],
+                  );
+
+                  if (isNarrow) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [content, const SizedBox(height: 8), button],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: content),
+                      const SizedBox(width: 8),
+                      button,
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+
+          // Proactive ACP Sign-In Callout (AgY)
+          if (usesAntigravityAcp(profile) &&
+              status.authentication ==
+                  AgentAuthenticationStatus.unauthenticated) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: context.vInfo.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(VRadius.input),
+                border: Border.all(
+                  color: context.vInfo.withValues(alpha: 0.4),
+                  width: 1,
+                ),
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isNarrow = constraints.maxWidth < 280;
+                  final content = Row(
+                    children: [
+                      Icon(
+                        Icons.vpn_key_outlined,
+                        size: 20,
+                        color: context.vInfo,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          context.l10n.agentAgyAcpSignInRequired,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                  final button = Tooltip(
+                    message: !isConnected
+                        ? context.l10n.sshDisconnectedAgentWarning
+                        : '',
+                    child: FilledButton.icon(
+                      key: Key('agent_acp_callout_login_${profile.id}'),
+                      icon: const Icon(Icons.login, size: 16),
+                      label: Text(context.l10n.agentActionAcpLogin),
+                      style: FilledButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      onPressed: !isConnected
+                          ? null
+                          : () => _handleAcpLogin(context, profile, server),
+                    ),
+                  );
+
+                  if (isNarrow) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [content, const SizedBox(height: 8), button],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: content),
+                      const SizedBox(width: 8),
+                      button,
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -1069,10 +1220,21 @@ class _AgentManagementViewState extends ConsumerState<AgentManagementView> {
                   IconButton(
                     key: Key('agent_bottom_login_${profile.id}'),
                     icon: const Icon(Icons.login, size: 18),
-                    tooltip: context.l10n.agentActionExecuteLogin,
+                    tooltip: isAgy
+                        ? context.l10n.agentActionCliLogin
+                        : context.l10n.agentActionExecuteLogin,
                     onPressed: (!isConnected || _isLaunchingLogin)
                         ? null
                         : () => _confirmAndLogin(context, profile, server),
+                  ),
+                if (usesAntigravityAcp(profile))
+                  IconButton(
+                    key: Key('agent_acp_login_${profile.id}'),
+                    icon: const Icon(Icons.vpn_key_outlined, size: 18),
+                    tooltip: context.l10n.agentActionAcpLogin,
+                    onPressed: !isConnected
+                        ? null
+                        : () => _handleAcpLogin(context, profile, server),
                   ),
                 IconButton(
                   key: Key('agent_edit_button_${profile.id}'),

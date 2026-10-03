@@ -18,7 +18,7 @@ class BuiltinAgentPreset {
   final String cliCommand;
 
   /// ACP 启动命令。为 null 表示该 Agent **没有**可用的 ACP 模式，
-  /// 只能作为纯 CLI 使用（例如 `agy`）。
+  /// 只能作为纯 CLI 使用。
   final String? acpCommand;
 
   /// 安装 CLI 的命令；null 表示无官方非交互安装方式。
@@ -66,8 +66,8 @@ class BuiltinAgentPreset {
 ///   （opencode.ai/docs/acp）配置为 `command: "opencode", args: ["acp"]`，
 ///   即 **`opencode acp` 子命令**，不是 `--acp` 参数。
 /// - Antigravity CLI 官方安装脚本为 `https://antigravity.google/cli/install.sh`；
-///   `agy` **没有内置 ACP 模式**（`agy --help` 中既无 `--acp` 参数也无 `acp`
-///   子命令），故其 [BuiltinAgentPreset.acpCommand] 为 null，仅作 CLI 使用。
+///   ACP 使用独立的官方 `agy_acp_server.par`，不是 `agy --acp`。
+///   2026-10-02 核对 ACP Registry 的 `antigravity-acp` 1.2.1 分发元数据。
 /// - 注意：无 scope 的 `codex-acp` / `claude-code-acp` npm 包并非官方发布，勿改用。
 /// - Antigravity 通过交互启动 `agy` 完成 OAuth；没有登录状态子命令。
 const Map<String, BuiltinAgentPreset> kBuiltinAgentPresets = {
@@ -106,10 +106,48 @@ const Map<String, BuiltinAgentPreset> kBuiltinAgentPresets = {
   'builtin-agy': BuiltinAgentPreset(
     id: 'builtin-agy',
     name: 'Antigravity AGY',
-    description: 'Google Antigravity CLI · CLI only (no ACP mode)',
+    description: 'Google Antigravity · Official ACP server & CLI',
     cliCommand: 'agy',
+    acpCommand: 'agy_acp_server.par',
+    acpInstallCommand: kAntigravityAcpInstallCommand,
+    loginCheckCommand: kAntigravityLoginCheckCommand,
     loginCommand: 'agy',
     cliInstallCommand:
         'curl -fsSL https://antigravity.google/cli/install.sh | bash',
   ),
 };
+
+/// Read-only credential readiness, not a token-validity/entitlement check.
+/// Official ACP keeps its own credentials; never read or export token content.
+const kAntigravityLoginCheckCommand =
+    r'''python3 -c 'import json,os,pathlib,sys; '''
+    r'''h=pathlib.Path(os.environ.get("GEMINI_HOME") or str(pathlib.Path.home()/".gemini")).expanduser(); '''
+    r'''p=h/"antigravity-acp"; s=p/"settings.json"; '''
+    r'''v=json.loads(s.read_text()) if s.is_file() else {}; '''
+    r'''a=v.get("auth",{}).get("type"); '''
+    r'''f=p/("acp_business_token.json" if a=="oauth-business" else "acp_token.json"); '''
+    r'''saved=f.is_file() and os.access(f,os.R_OK); '''
+    r'''state="saved" if saved else "unknown" if sys.platform=="darwin" or a in ("gemini-api-key","agent-platform","vertex-ai","gateway") else "missing"; '''
+    r'''print(json.dumps({"scope":"antigravity-acp","state":state,"authType":a,"credentialDirectory":str(p),"home":str(pathlib.Path.home())}))' ''';
+
+const kAntigravityAcpInstallCommand =
+    r"""bash -c 'set -eu; """
+    r'case "$(uname -s)" in Linux) platform=linux ;; Darwin) platform=macos ;; *) echo "ACP_INSTALL_OS_UNSUPPORTED" >&2; exit 1 ;; esac; '
+    r'case "$(uname -m)" in x86_64|amd64) arch=x86_64 ;; aarch64|arm64) arch=arm64 ;; *) echo "ACP_INSTALL_ARCH_UNSUPPORTED" >&2; exit 1 ;; esac; '
+    r'if [ "$platform" = macos ]; then target=darwin; else target=linux; fi; '
+    r'command -v curl >/dev/null || { echo "ACP_INSTALL_REQUIRES_CURL" >&2; exit 1; }; '
+    r'command -v unzip >/dev/null || { echo "ACP_INSTALL_REQUIRES_UNZIP" >&2; exit 1; }; '
+    r'root="$HOME/.local/share/valhalla/antigravity-acp"; destination="$root/1.2.1"; '
+    r'mkdir -p "$root" "$HOME/.local/bin"; temporary=$(mktemp -d "$root/.install.XXXXXX"); '
+    r'trap "rm -rf -- \"\$temporary\"" EXIT; '
+    r'if [ ! -d "$destination" ]; then '
+    r'curl --proto "=https" --tlsv1.2 -fL --retry 2 --connect-timeout 20 '
+    r'"https://dl.google.com/agy-extensions/releases/$platform/agy-acp-server-1.2.1-$target-$arch.zip" -o "$temporary/archive.zip"; '
+    r'unzip -q "$temporary/archive.zip" -d "$temporary/runtime"; '
+    r'test -f "$temporary/runtime/agy_acp_server.par" && test -f "$temporary/runtime/localharness_external" || { echo "ACP_INSTALL_ARCHIVE_INVALID" >&2; exit 1; }; '
+    r'chmod u+x "$temporary/runtime/agy_acp_server.par" "$temporary/runtime/localharness_external"; '
+    r'mv "$temporary/runtime" "$destination"; fi; '
+    r'test -x "$destination/agy_acp_server.par" && test -x "$destination/localharness_external" || { echo "ACP_INSTALL_RUNTIME_INVALID" >&2; exit 1; }; '
+    r'printf "%s\n" "#!/bin/sh" "exec \"\$HOME/.local/share/valhalla/antigravity-acp/1.2.1/agy_acp_server.par\" \"\$@\"" > "$temporary/launcher"; '
+    r'chmod u+x "$temporary/launcher"; mv "$temporary/launcher" "$HOME/.local/bin/agy_acp_server.par"; '
+    r"""echo "Antigravity ACP 1.2.1 installed; authentication is separate from agy CLI."'""";

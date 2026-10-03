@@ -337,8 +337,20 @@ class ChatRepository {
           } else {
             message = incoming.copyWith(
               id: previous.id,
+              // A history snapshot proves received content, not that a lost
+              // running turn finished. Only a live terminal event can prove it.
+              status:
+                  previous.status == ChatTurnStatus.unknown ||
+                      previous.status == ChatTurnStatus.streaming
+                  ? ChatTurnStatus.unknown
+                  : incoming.status,
               createdAt: previous.createdAt,
               thinking: incoming.thinking ?? previous.thinking,
+              contentBlocks:
+                  incoming.contentBlocks.isEmpty &&
+                      previous.content == incoming.content
+                  ? previous.contentBlocks
+                  : incoming.contentBlocks,
               planSteps: incoming.planSteps.isEmpty
                   ? previous.planSteps
                   : incoming.planSteps,

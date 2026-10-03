@@ -37,6 +37,14 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Navigation only: never accept OAuth codes or authentication
+                 success from an external intent. The ACP RPC owns auth state. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="valhalla" android:host="oauth-return"/>
+            </intent-filter>
         </activity>
         <!--
           `specialUse` rather than `dataSync`: API 35+ caps dataSync foreground

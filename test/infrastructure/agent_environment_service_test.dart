@@ -101,6 +101,35 @@ AgentProfile _profile({
 
 void main() {
   test(
+    'official AGY detection uses the managed fallback without CLI login',
+    () async {
+      final executor = _FakeSshExecutor(
+        results: {
+          'command -v agy': _ok('/usr/bin/agy'),
+          'command -v agy_acp_server.par': _ok(
+            '/home/dev/.local/bin/agy_acp_server.par',
+          ),
+        },
+      );
+      final status = await AgentEnvironmentService(executor).inspect(
+        _profile(
+          cliCommand: 'agy',
+          acpCommand: 'agy_acp_server.par',
+          loginCommand: 'agy',
+        ),
+        'server',
+      );
+      expect(status.kind, AgentEnvironmentStatusKind.ready);
+      expect(status.authentication, AgentAuthenticationStatus.unknown);
+      expect(executor.executedCommands, hasLength(2));
+      expect(
+        executor.executedCommands.last,
+        contains(r'$HOME/.local/bin/agy_acp_server.par'),
+      );
+    },
+  );
+
+  test(
     'CLI inspection ignores missing ACP but still checks configured login',
     () async {
       final executor = _FakeSshExecutor(

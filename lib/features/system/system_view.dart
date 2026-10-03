@@ -88,10 +88,7 @@ class _SystemViewState extends ConsumerState<SystemView>
     } catch (e) {
       if (!mounted) return;
       scaffold.showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: context.vDanger,
-        ),
+        SnackBar(content: Text(e.toString()), backgroundColor: context.vDanger),
       );
     }
   }
@@ -137,24 +134,20 @@ class _SystemViewState extends ConsumerState<SystemView>
     } catch (e) {
       if (!mounted) return;
       scaffold.showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: context.vDanger,
-        ),
+        SnackBar(content: Text(e.toString()), backgroundColor: context.vDanger),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final connState = ref.watch(serverConnectionProvider);
-
-    if (!connState.isConnected) {
+    final activeServer = ref.watch(activeServerProvider);
+    if (activeServer == null) {
       return Scaffold(
-        body: OfflineStateView(
-          onConnect: () {
-            ref.read(serverConnectionProvider.notifier).connect();
-          },
+        body: EmptyStateView(
+          icon: Icons.dns_outlined,
+          title: context.l10n.noServerSelected,
+          description: context.l10n.addServer,
         ),
       );
     }
@@ -191,7 +184,12 @@ class _SystemViewState extends ConsumerState<SystemView>
                   icon: const Icon(Icons.refresh),
                   tooltip: context.l10n.sftpRefresh,
                   onPressed:
-                      (sysState.isProcessesLoading ||
+                      (!ref.watch(
+                            serverConnectionProvider.select(
+                              (s) => s.isConnected,
+                            ),
+                          ) ||
+                          sysState.isProcessesLoading ||
                           sysState.isServicesLoading)
                       ? null
                       : () => ref.read(systemProvider.notifier).refreshAll(),
@@ -373,6 +371,9 @@ class _SystemViewState extends ConsumerState<SystemView>
                   ),
                 ),
                 PopupMenuButton<String>(
+                  enabled: ref.watch(
+                    serverConnectionProvider.select((s) => s.isConnected),
+                  ),
                   icon: const Icon(Icons.more_vert, size: 20),
                   onSelected: (action) {
                     if (action == 'term') {
@@ -524,6 +525,9 @@ class _SystemViewState extends ConsumerState<SystemView>
         itemCount: list.length,
         itemBuilder: (ctx, index) {
           final svc = list[index];
+          final isConnected = ref.watch(
+            serverConnectionProvider.select((s) => s.isConnected),
+          );
           StatusType statusType;
           if (svc.isRunning) {
             statusType = StatusType.online;
@@ -580,7 +584,9 @@ class _SystemViewState extends ConsumerState<SystemView>
                           color: context.vSuccess,
                         ),
                         tooltip: context.l10n.serviceActionStart,
-                        onPressed: () => _handleServiceAction(svc, 'start'),
+                        onPressed: isConnected
+                            ? () => _handleServiceAction(svc, 'start')
+                            : null,
                       )
                     else ...[
                       IconButton(
@@ -590,7 +596,9 @@ class _SystemViewState extends ConsumerState<SystemView>
                           color: context.vWarning,
                         ),
                         tooltip: context.l10n.serviceActionStop,
-                        onPressed: () => _handleServiceAction(svc, 'stop'),
+                        onPressed: isConnected
+                            ? () => _handleServiceAction(svc, 'stop')
+                            : null,
                       ),
                       IconButton(
                         icon: Icon(
@@ -599,13 +607,17 @@ class _SystemViewState extends ConsumerState<SystemView>
                           color: context.vInfo,
                         ),
                         tooltip: context.l10n.serviceActionRestart,
-                        onPressed: () => _handleServiceAction(svc, 'restart'),
+                        onPressed: isConnected
+                            ? () => _handleServiceAction(svc, 'restart')
+                            : null,
                       ),
                     ],
                     IconButton(
                       icon: const Icon(Icons.refresh_rounded, size: 18),
                       tooltip: context.l10n.serviceActionReload,
-                      onPressed: () => _handleServiceAction(svc, 'reload'),
+                      onPressed: isConnected
+                          ? () => _handleServiceAction(svc, 'reload')
+                          : null,
                     ),
                   ],
                 ),

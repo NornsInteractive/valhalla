@@ -6,6 +6,10 @@ import 'package:dartssh2/dartssh2.dart';
 // SSHSession exposes this type but dartssh2 does not export it.
 // ignore: implementation_imports
 import 'package:dartssh2/src/ssh_channel.dart';
+// SSH_Message_Userauth_Success is only reachable through the implementation
+// library; the package's own tests import it the same way.
+// ignore: implementation_imports
+import 'package:dartssh2/src/message/msg_userauth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
@@ -400,6 +404,50 @@ void main() {
 
       expect(died, ['s1']);
       expect(manager.isConnected('s1'), isFalse);
+    });
+
+    test('已认证真实 SSHClient：verifyAlive 等待期间 socket 掉线 → false 并广播', () async {
+      final socket = _FakeSshSocket();
+      final client = SSHClient(socket, username: 'dev');
+      // 用协议层注入 SSH_MSG_USERAUTH_SUCCESS，让 client 进入已认证态，
+      // 这是包自身测试的做法（handlePacket 标注了 @visibleForTesting）。
+      client.handlePacket(SSH_Message_Userauth_Success().encode());
+
+      final manager = _managerWithClient(
+        's1',
+        client,
+        verifyAliveTimeout: const Duration(seconds: 2),
+      );
+      addTearDown(manager.dispose);
+
+      final died = <String>[];
+      final sub = manager.transportDied.listen(died.add);
+      addTearDown(sub.cancel);
+
+      var probeSettled = false;
+      final probing = manager.verifyAlive('s1');
+      unawaited(
+        probing.then<void>(
+          (_) => probeSettled = true,
+          onError: (_) => probeSettled = true,
+        ),
+      );
+
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      final pendingAtDrop = !probeSettled;
+      socket.dropConnection();
+
+      final alive = await probing.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => fail('verifyAlive 必须在掉线后返回，不得永久挂起'),
+      );
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(pendingAtDrop, isTrue, reason: '掉线发生时探活必须仍在等待');
+      expect(alive, isFalse, reason: '掉线后必须回到调用方 false');
+      expect(manager.isConnected('s1'), isFalse, reason: '掉线后必须清理连接');
+      expect(died, contains('s1'), reason: '掉线必须通知重连');
     });
 
     test('用户主动 disconnect 不广播 transportDied', () async {

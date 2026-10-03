@@ -4,10 +4,12 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path_util;
 import 'package:uuid/uuid.dart';
+import 'package:dartssh2/dartssh2.dart';
 import '../../infrastructure/sftp/sftp_client_service.dart';
 import '../utils/file_preview.dart';
 import '../errors/app_exceptions.dart';
 import '../services/download_platform_service.dart';
+import '../services/app_diagnostics.dart';
 
 import 'server_provider.dart';
 import 'storage_providers.dart';
@@ -33,7 +35,8 @@ final transferNotificationCallbackProvider =
 /// 传输/预览的失败分支可以在测试里用替身稳定复现（真实服务器很难造出
 /// 「权限不足」「磁盘写满」这些情况）。
 final sftpOperationsProvider = Provider<SftpOperations>((ref) {
-  final activeServer = ref.watch(activeServerProvider);
+  ref.watch(activeServerProvider.select((server) => server?.connectionKey));
+  final activeServer = ref.read(activeServerProvider);
   final connected = ref.watch(
     serverConnectionProvider.select((s) => s.isConnected),
   );
@@ -384,11 +387,14 @@ class SftpNotifier extends Notifier<SftpState> {
   /// 断开连接会重建 notifier，旧的句柄会随旧实例一起被丢弃。
   /// 这没问题：断开时底层的 SFTP 通道已经没了，句柄本就不可用。
   final Map<String, SftpTransferHandle> _handles = {};
+  final Map<String, int> _downloadRetries = {};
+  final Set<String> _connectionPaused = {};
 
   @override
   SftpState build() {
     final sourceEpoch = ++_sourceEpoch;
-    final activeServer = ref.watch(activeServerProvider);
+    ref.watch(activeServerProvider.select((server) => server?.connectionKey));
+    final activeServer = ref.read(activeServerProvider);
     final previous =
         activeServer != null &&
             (_boundServer?.hasSameConnectionSettings(activeServer) ?? false)
@@ -425,11 +431,32 @@ class SftpNotifier extends Notifier<SftpState> {
     if (sshClient != null) {
       Future.microtask(() {
         if (_currentSource(sourceEpoch)) {
-          unawaited(loadDirectory(previous?.currentPath ?? '/'));
+          _pumpQueue();
+          unawaited(
+            loadDirectory(
+              previous?.currentPath ?? '/',
+              quiet: previous != null,
+            ),
+          );
         }
       });
       if (previous != null) {
-        return previous.copyWith(isLoading: false, clearError: true);
+        return previous.copyWith(
+          isLoading: false,
+          clearError: true,
+          transfers: previous.transfers.map((task) {
+            if (!_connectionPaused.remove(task.id) ||
+                task.status != SftpTransferStatus.paused) {
+              return task;
+            }
+            _downloadRetries[task.id] = (_downloadRetries[task.id] ?? 0) + 1;
+            return task.copyWith(
+              status: SftpTransferStatus.queued,
+              transferredBytes: 0,
+              clearError: true,
+            );
+          }).toList(),
+        );
       }
       return SftpState(
         isLoading: true,
@@ -441,36 +468,45 @@ class SftpNotifier extends Notifier<SftpState> {
       if (previous != null) {
         return previous.copyWith(
           isLoading: false,
-          errorMessage: 'SSH_DISCONNECTED',
-          transfers: previous.transfers
-              .map(
-                (t) =>
-                    t.status == SftpTransferStatus.running ||
-                        t.status == SftpTransferStatus.paused
-                    ? t.copyWith(
-                        status: SftpTransferStatus.failed,
-                        errorMessage: 'SSH_DISCONNECTED',
-                      )
-                    : t,
-              )
-              .toList(),
+          clearError: true,
+          transfers: previous.transfers.map((task) {
+            if (task.status != SftpTransferStatus.running &&
+                task.status != SftpTransferStatus.queued) {
+              return task;
+            }
+            if (task.kind == SftpTransferKind.download &&
+                (_downloadRetries[task.id] ?? 0) < 1) {
+              _connectionPaused.add(task.id);
+              return task.copyWith(
+                status: SftpTransferStatus.paused,
+                errorMessage: 'SSH_DISCONNECTED',
+              );
+            }
+            return task.copyWith(
+              status: SftpTransferStatus.failed,
+              errorMessage: 'SSH_DISCONNECTED',
+            );
+          }).toList(),
         );
       }
       return SftpState(
         isLoading: false,
         currentPath: '/',
-        errorMessage: '未连接服务器。请在顶部栏连接服务器后浏览远端文件。',
         sortKey: sortKey,
         sortAscending: sortAscending,
       );
     }
   }
 
-  Future<bool> loadDirectory(String path, {bool clearSearch = false}) async {
+  Future<bool> loadDirectory(
+    String path, {
+    bool clearSearch = false,
+    bool quiet = false,
+  }) async {
     final sourceEpoch = _sourceEpoch;
     final loadEpoch = ++_loadEpoch;
     final normalized = _normalizeRemotePath(path);
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: !quiet, clearError: true);
     try {
       final items = await _service.listFiles(normalized);
       if (!_currentSource(sourceEpoch) || loadEpoch != _loadEpoch) return false;
@@ -485,7 +521,9 @@ class SftpNotifier extends Notifier<SftpState> {
       if (!_currentSource(sourceEpoch) || loadEpoch != _loadEpoch) return false;
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Failed to load directory: $e',
+        errorMessage: ref.read(serverConnectionProvider).isConnected
+            ? 'Failed to load directory: $e'
+            : null,
       );
       return false;
     }
@@ -634,9 +672,10 @@ class SftpNotifier extends Notifier<SftpState> {
       _notifyDownload(task);
       _pumpQueue();
       return task.id;
-    } catch (_) {
+    } catch (error, stack) {
       if (!_currentSource(sourceEpoch)) return null;
-      state = state.copyWith(errorMessage: downloadFailedCode);
+      unawaited(AppDiagnostics.instance.record('sftp.reserve', error, stack));
+      state = state.copyWith(errorMessage: downloadErrorCode(error));
       return null;
     }
   }
@@ -705,6 +744,7 @@ class SftpNotifier extends Notifier<SftpState> {
   ///
   /// 正在跑的任务还没结束就再次调用是安全的：直接返回，不会并发执行。
   void _pumpQueue() {
+    if (!ref.read(serverConnectionProvider).isConnected) return;
     if (!ref.mounted) return;
     if (state.activeTransfer != null) return;
 
@@ -780,7 +820,7 @@ class SftpNotifier extends Notifier<SftpState> {
       }
 
       await handle.done;
-      _handles.remove(id);
+      if (identical(_handles[id], handle)) _handles.remove(id);
       if (disposed) return;
       // 句柄「正常完成」不代表用户没取消过：dartssh2 的
       // `SftpFileWriter.abort()` 就是让 done 正常结束的。
@@ -800,13 +840,14 @@ class SftpNotifier extends Notifier<SftpState> {
       _completeTransfer(id, SftpTransferStatus.completed);
     } on SftpTransferAborted {
       // 用户主动取消：不是错误，不要写 errorMessage。
-      _handles.remove(id);
+      if (identical(_handles[id], handle)) _handles.remove(id);
       if (disposed) return;
       _completeTransfer(id, SftpTransferStatus.canceled);
-    } catch (_) {
-      _handles.remove(id);
+    } catch (error, stack) {
+      if (identical(_handles[id], handle)) _handles.remove(id);
       if (disposed) return;
-      _failTransfer(id, task.kind);
+      unawaited(AppDiagnostics.instance.record('sftp.transfer', error, stack));
+      _failTransfer(id, task.kind, error);
     }
   }
 
@@ -839,12 +880,74 @@ class SftpNotifier extends Notifier<SftpState> {
     _pumpQueue();
   }
 
-  void _failTransfer(String id, SftpTransferKind kind) {
+  static String downloadErrorCode(Object error) {
+    if (error is TimeoutException ||
+        error is SFTPException && error.message.contains('timed out')) {
+      return 'SFTP_DOWNLOAD_TIMEOUT';
+    }
+    if (error is SftpAbortError ||
+        error is SSHConnectionException ||
+        error is SSHStateError ||
+        error is SocketException) {
+      return 'SFTP_DOWNLOAD_DISCONNECTED';
+    }
+    if (error is SftpStatusError) {
+      if (error.code == SftpStatusCode.permissionDenied) {
+        return 'SFTP_DOWNLOAD_PERMISSION_DENIED';
+      }
+      if (error.code == SftpStatusCode.noSuchFile) {
+        return 'SFTP_DOWNLOAD_NOT_FOUND';
+      }
+      if (error.code == SftpStatusCode.connectionLost ||
+          error.code == SftpStatusCode.noConnection) {
+        return 'SFTP_DOWNLOAD_DISCONNECTED';
+      }
+    }
+    if (error is FileSystemException) {
+      if (error.osError?.errorCode == 28) {
+        return 'SFTP_DOWNLOAD_LOCAL_SPACE';
+      }
+      return 'SFTP_DOWNLOAD_LOCAL_IO';
+    }
+    if (error is SFTPException && error.message == 'SFTP_DOWNLOAD_INCOMPLETE') {
+      return 'SFTP_DOWNLOAD_INCOMPLETE';
+    }
+    return downloadFailedCode;
+  }
+
+  void _failTransfer(String id, SftpTransferKind kind, Object error) {
     final task = state.transferById(id);
-    if (task == null) return;
+    if (task == null || task.status.isTerminal) return;
     final code = kind == SftpTransferKind.upload
         ? uploadFailedCode
-        : downloadFailedCode;
+        : downloadErrorCode(error);
+    if (kind == SftpTransferKind.download &&
+        {
+          'SFTP_DOWNLOAD_TIMEOUT',
+          'SFTP_DOWNLOAD_DISCONNECTED',
+        }.contains(code) &&
+        (_downloadRetries[id] ?? 0) < 1 &&
+        task.status == SftpTransferStatus.running) {
+      final connected = ref.read(serverConnectionProvider).isConnected;
+      if (connected) {
+        _downloadRetries[id] = 1;
+      } else {
+        _connectionPaused.add(id);
+      }
+      state = state.withTransfer(
+        task.copyWith(
+          status: connected
+              ? SftpTransferStatus.queued
+              : SftpTransferStatus.paused,
+          transferredBytes: 0,
+          errorMessage: connected ? null : 'SSH_DISCONNECTED',
+          clearError: connected,
+        ),
+      );
+      _notifyDownload(state.transferById(id)!, force: true);
+      _pumpQueue();
+      return;
+    }
     // 两处都要写：任务上的 errorMessage 让传输列表能逐条标出失败原因，
     // state 上的让文件页顶部的错误条立刻可见（改造前就是靠它提示的，
     // 只留在任务里会让既有提示消失）。清不走 clearError，否则下一条
@@ -914,7 +1017,11 @@ class SftpNotifier extends Notifier<SftpState> {
     }
     // 句柄已经没了（例如任务还没轮到跑就被暂停）。放回队列。
     state = state.withTransfer(
-      task.copyWith(status: SftpTransferStatus.queued),
+      task.copyWith(
+        status: SftpTransferStatus.queued,
+        transferredBytes: 0,
+        clearError: true,
+      ),
     );
     _notifyDownload(state.transferById(id)!, force: true);
     _pumpQueue();

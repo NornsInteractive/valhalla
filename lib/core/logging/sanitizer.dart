@@ -99,6 +99,12 @@ class LogSanitizer {
       (match) => '${match.group(1)}******@',
     );
 
+    // OAuth callbacks and authorization challenges are UI-only transient data.
+    result = result.replaceAllMapped(
+      RegExp(r'([?&](?:code|state|code_verifier|code_challenge)=)[^&#\s]+'),
+      (match) => '${match.group(1)}[REDACTED]',
+    );
+
     return result;
   }
 }

@@ -1053,7 +1053,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sftpUploadFailed => '上传失败，请检查权限后重试。';
 
   @override
-  String get sftpDownloadFailed => '下载失败，请检查权限或本地空间。';
+  String get sftpDownloadFailed => '下载失败';
 
   @override
   String get sftpOpenUnsupported => '暂不支持打开该格式';
@@ -1976,6 +1976,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatStatusFailed => '生成失败';
+
+  @override
+  String get chatStatusAwaitingAuth => '等待 ACP 认证';
 
   @override
   String get chatShowFullOutput => '查看完整输出';
@@ -3312,4 +3315,102 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatCommandsDiscoveryFailed => '获取命令与技能失败';
+
+  @override
+  String get chatAuthWaitingForBrowser => '等待在浏览器中完成授权...';
+
+  @override
+  String get chatAuthBrowserLaunchFailed => '无法打开外部浏览器。请重新打开或复制下方的授权链接。';
+
+  @override
+  String get chatAuthReopenBrowser => '重新打开浏览器';
+
+  @override
+  String get chatAuthCopyLink => '复制链接';
+
+  @override
+  String get chatAuthManualCallback => '手动回调';
+
+  @override
+  String get chatAuthManualCallbackTitle => '输入授权回调 URL';
+
+  @override
+  String get chatAuthManualCallbackDesc =>
+      '粘贴浏览器中带有 code 和 state 的完整重定向 URL（http://127.0.0.1:端口/...?code=...&state=...）以完成授权，不支持裸授权码。';
+
+  @override
+  String get chatAuthCallbackInputLabel => '回调 URL';
+
+  @override
+  String get chatAuthCallbackInputHint =>
+      'http://127.0.0.1:端口/...?code=...&state=...';
+
+  @override
+  String get chatAuthCallbackInvalidError => '回调 URL 格式无效或传递失败';
+
+  @override
+  String get agentAuthAgYNotice => 'Antigravity ACP 需要官方账号授权，与终端 CLI 登录相互独立。';
+
+  @override
+  String get chatAuthDiscoveryPrompt => '此轮对话需要 ACP 认证。重新连接并请求授权以继续。';
+
+  @override
+  String get chatRequestAuthButton => '请求认证';
+
+  @override
+  String get agentActionAcpLogin => 'ACP 登录';
+
+  @override
+  String get agentActionCliLogin => 'CLI 登录';
+
+  @override
+  String get agentAgyAcpSignInRequired => 'ACP 凭据缺失（需 ACP 登录）';
+
+  @override
+  String get agentAgyAcpCredentialsSaved => 'ACP 凭据已保存（未验证）';
+
+  @override
+  String get chatAuthMethodUnavailable => '所选认证方式不可用。';
+
+  @override
+  String get chatAuthConnectionExpired => '认证连接已过期，请重试。';
+
+  @override
+  String get chatAuthCallbackDeliveryFailed => '向服务器传递授权回调失败。';
+
+  @override
+  String get agentTargetChangedNotice => '目标服务器已变更，请在当前服务器上重新打开 Agent 管理。';
+
+  @override
+  String get agentAgyAuthCheckUnavailable => 'Antigravity 认证检测不可用';
+
+  @override
+  String get agentAgyAuthCheckInvalid => 'Antigravity 认证检测响应无效';
+
+  @override
+  String get sftpDownloadDisconnected => '下载已断开';
+
+  @override
+  String get sftpDownloadPermissionDenied => '权限不足';
+
+  @override
+  String get sftpDownloadNotFound => '远程文件不存在';
+
+  @override
+  String get sftpDownloadTimeout => '下载超时';
+
+  @override
+  String get sftpDownloadLocalSpace => '本地存储空间不足';
+
+  @override
+  String get sftpDownloadLocalIo => '本地存储写入失败';
+
+  @override
+  String get sftpDownloadIncomplete => '下载不完整';
+
+  @override
+  String get transferStatusWaitingConnection => '等待连接';
+
+  @override
+  String get chatAuthCallbackListenerFailed => '本地授权回调监听启动失败，请重试认证。';
 }

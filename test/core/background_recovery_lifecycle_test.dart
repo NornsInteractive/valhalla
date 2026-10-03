@@ -398,7 +398,7 @@ void main() {
   });
 
   group('后台与退出', () {
-    test('detached 不撤前台服务，也不放弃用户意图', () async {
+    test('detached 不撤前台服务，暂停重试但保留用户意图', () async {
       final server = _server('a');
       active = server;
       controller.start(server);
@@ -410,7 +410,64 @@ void main() {
       expect(service.stopCalls, 0);
       expect(controller.userIntent, isTrue);
       controller.handleTransportDied();
-      expect(controller.state.isReconnecting, isTrue, reason: '划掉任务不等于用户要断开');
+      expect(
+        controller.state.isReconnecting,
+        isFalse,
+        reason: '划掉任务不等于用户要断开，但后台必须暂停重试',
+      );
+      expect(controller.userIntent, isTrue, reason: '暂停不改变用户保持连接的意图');
+      expect(scheduler.pendingCount, 0, reason: '后台期间不得排任何重试');
+
+      // 回前台先复验：连接还活着就直接回到已连接，不空转重连。
+      ssh.probeAlive = true;
+      expect(await lifecycle.onResumed(), isTrue);
+      await pumpEventQueue();
+      expect(controller.state.isConnected, isTrue);
+      expect(controller.userIntent, isTrue);
+      expect(scheduler.pendingCount, 0, reason: '复验通过就不用重连');
+      expect(service.stopCalls, 0, reason: '整个过程都不许撤掉前台服务');
+    });
+
+    test('后台一次尝试都不发，回前台复验失败后恰好补试一次', () async {
+      final server = _server('a');
+      active = server;
+      var attempts = 0;
+      final own = ReconnectController(
+        connectAttempt: (_) async {
+          attempts++;
+        },
+        scheduler: scheduler.call,
+      );
+      own.start(server);
+      own.markConnected();
+      final lifecycle = build(withController: own);
+
+      await lifecycle.onDetached();
+      ssh.probeAlive = false;
+      own.handleTransportDied();
+
+      expect(own.state.isReconnecting, isFalse, reason: '后台必须暂停重试');
+      expect(scheduler.pendingCount, 0, reason: '后台一次排期都不许有');
+      expect(attempts, 0, reason: '后台一次连接都不许建');
+      expect(own.userIntent, isTrue, reason: '暂停不等于用户断开');
+
+      expect(await lifecycle.onResumed(), isFalse, reason: '复验失败必须如实上报');
+      expect(ssh.verifyCalls, 1, reason: '回前台只探活一次');
+      expect(scheduler.pendingCount, 1, reason: '复验失败后恰好排一次补试，不多不少');
+      expect(
+        scheduler.pending.single.delay,
+        Duration.zero,
+        reason: '回前台的补试是立即的，不等退避',
+      );
+      expect(attempts, 0, reason: '补试排期了但还没跑');
+
+      expect(scheduler.fireLatest(), Duration.zero);
+      await pumpEventQueue();
+
+      expect(attempts, 1, reason: '补试恰好跑一次');
+      expect(own.state.isConnected, isTrue, reason: '补试成功后回到已连接');
+      expect(scheduler.pendingCount, 0, reason: '成功后排期表必须清空');
+      expect(own.userIntent, isTrue);
     });
 
     test('重连期间同一服务器的前台服务仍然保留', () async {

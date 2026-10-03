@@ -19,10 +19,12 @@ import '../../data/models/native_cli_session.dart';
 import '../../data/repositories/chat_repository.dart';
 import '../../infrastructure/acp/acp_client_adapter.dart';
 import '../../infrastructure/acp/acp_ssh_transport.dart';
+import '../../infrastructure/acp/acp_oauth_request.dart';
 import '../../infrastructure/acp/acp_attachment_store.dart';
 import '../../infrastructure/acp/acp_workspace_files.dart';
 import '../../infrastructure/sftp/sftp_client_service.dart';
 import '../../infrastructure/cli/agent_execution_target.dart';
+import '../../infrastructure/cli/agy_model_catalog.dart';
 import '../../infrastructure/cli/codex_native_client.dart';
 import '../../infrastructure/cli/codex_account_models.dart';
 import '../../infrastructure/cli/codex_model_authorization.dart';
@@ -52,6 +54,9 @@ final acpTransportFactoryProvider = Provider<AcpTransportFactory>((ref) {
 
 final acpAttachmentStoreProvider = Provider((ref) => AcpAttachmentStore());
 
+final acpOAuthPageRendererProvider =
+    Provider<String Function({required bool success})?>((ref) => null);
+
 /// Independent CLI API discovery; never infer a catalog from session config.
 /// Null means this agent has no independently supported query implementation.
 typedef AgentModelQuery =
@@ -62,6 +67,7 @@ typedef AgentModelQuery =
 
 final agentModelQueryProvider = Provider<AgentModelQuery>((ref) {
   return (profile, ssh) async {
+    if (usesAntigravityAcp(profile)) return AgyModelCatalog.query(ssh, profile);
     if (nativeCliKind(profile.cliCommand) != NativeCliKind.codex) return null;
     // ponytail: CLI catalogs may be cached; refresh queries a new process,
     // not a cloud entitlement check or a separate authorization flow.
@@ -152,6 +158,10 @@ class AiChatState {
 
   /// 非 null 表示 agent 要求认证，等待用户选择认证方式。
   final AuthChallenge? authChallenge;
+  final AcpOAuthRequest? authRequest;
+  final bool isAuthenticating;
+  final bool authenticationConfirmed;
+  final String? authError;
 
   /// 用户选择认证方式后回传 methodId 的通道。
   final Completer<String?>? authCompleter;
@@ -210,6 +220,10 @@ class AiChatState {
     this.pendingPermission,
     this.permissionCompleter,
     this.authChallenge,
+    this.authRequest,
+    this.isAuthenticating = false,
+    this.authenticationConfirmed = false,
+    this.authError,
     this.authCompleter,
     this.selectedAuthMethods = const {},
     this.lastErrorCode,
@@ -275,6 +289,12 @@ class AiChatState {
     PermissionRequest? pendingPermission,
     Completer<String?>? permissionCompleter,
     AuthChallenge? authChallenge,
+    AcpOAuthRequest? authRequest,
+    bool? isAuthenticating,
+    bool? authenticationConfirmed,
+    String? authError,
+    bool clearAuthRequest = false,
+    bool clearAuthError = false,
     Completer<String?>? authCompleter,
     Map<String, String>? selectedAuthMethods,
     String? lastErrorCode,
@@ -341,6 +361,17 @@ class AiChatState {
       authChallenge: clearAuthChallenge
           ? null
           : (authChallenge ?? this.authChallenge),
+      authRequest: clearAuthChallenge || clearAuthRequest
+          ? null
+          : authRequest ?? this.authRequest,
+      isAuthenticating: clearAuthChallenge
+          ? false
+          : isAuthenticating ?? this.isAuthenticating,
+      authenticationConfirmed:
+          authenticationConfirmed ?? this.authenticationConfirmed,
+      authError: clearAuthChallenge || clearAuthError
+          ? null
+          : authError ?? this.authError,
       authCompleter: clearAuthChallenge
           ? null
           : (authCompleter ?? this.authCompleter),
@@ -454,6 +485,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
 
   Future<void> queryAccountStatus() async {
     if (state.activeSession == null ||
+        state.isAuthenticating ||
         state.isGenerating ||
         _isPreparingPrompt ||
         state.isLoadingSettings ||
@@ -628,6 +660,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
   String? _openingAdapterKey;
   int _requestEpoch = 0;
   Future<void>? _recovering;
+  Future<void>? _connectionLoss;
   Future<void>? _checkpointing;
   bool _isPreparingPrompt = false;
   Timer? _streamTimer;
@@ -636,6 +669,30 @@ class AiChatNotifier extends Notifier<AiChatState> {
   String? _draftWorkingDirectory;
   final List<ACPPermissionRequestEvent> _permissionQueue = [];
   bool _retryAfterAuth = false;
+  AcpOAuthLoopback? _authLoopback;
+  bool _authCallbackInFlight = false;
+  int _authRequestEpoch = 0;
+  AcpOAuthRequest? _autoOpenedAuthRequest;
+
+  /// Shared claim: retained shell and modal chat views must not open two tabs.
+  bool claimAuthBrowserLaunch(AcpOAuthRequest request) {
+    if (!state.isAuthenticating ||
+        !identical(state.authRequest, request) ||
+        identical(_autoOpenedAuthRequest, request)) {
+      return false;
+    }
+    _autoOpenedAuthRequest = request;
+    return true;
+  }
+
+  void _closeAuthLoopback() {
+    _authRequestEpoch++;
+    _autoOpenedAuthRequest = null;
+    final loopback = _authLoopback;
+    _authLoopback = null;
+    if (loopback != null) unawaited(loopback.close());
+  }
+
   final Map<String, String?> _lastSelectedSessions = {};
   int _historyEpoch = 0;
   String _historyQuery = '';
@@ -990,6 +1047,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
     }
     _currentAdapter?.dispose();
     _currentAdapter = null;
+    state = state.copyWith(authenticationConfirmed: false);
     final epoch = _requestEpoch;
     final adapter = await _createAdapter(profile, client);
     if (!ref.mounted ||
@@ -1010,8 +1068,45 @@ class AiChatNotifier extends Notifier<AiChatState> {
 
   void _handleControlEvent(ACPEvent event, ACPClientAdapter adapter) {
     if (!ref.mounted || !identical(adapter, _currentAdapter)) return;
+    if (event is ACPAuthorizationRequestEvent) {
+      if (state.activeAgentProfile case final profile?
+          when usesAntigravityAcp(profile)) {
+        unawaited(_showAuthorizationRequest(event.request, adapter));
+      }
+      return;
+    }
+    if (event is ACPSettingsChangedEvent || event is ACPCompleteEvent) {
+      final challenge = state.authChallenge;
+      final authConfirmed =
+          challenge != null &&
+          adapter.authenticationConfirmed &&
+          challenge.agentId == state.activeAgentProfile?.id &&
+          challenge.serverId == _activeServerId;
+      if (authConfirmed) {
+        _modelCatalog = null;
+        _modelAccountKey = null;
+        final profile = state.activeAgentProfile;
+        if (profile != null) {
+          unawaited(
+            ref
+                .read(agentRegistryProvider.notifier)
+                .confirmAuthentication(profile),
+          );
+        }
+        final pending = state.authCompleter;
+        if (pending != null && !pending.isCompleted) pending.complete(null);
+        _closeAuthLoopback();
+        state = state.copyWith(
+          clearAuthChallenge: true,
+          authenticationConfirmed: true,
+          settingsStale: true,
+          clearError: state.lastErrorCode == authRequiredCode,
+        );
+      }
+    }
     if (event is ACPSettingsChangedEvent) {
       state = state.copyWith(
+        authenticationConfirmed: adapter.authenticationConfirmed,
         agentVersion:
             '${adapter.agentInfo?.name ?? ""} ${adapter.agentInfo?.version ?? ""}'
                 .trim(),
@@ -1034,6 +1129,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
     } else if (event is ACPUsageEvent) {
       state = state.copyWith(usage: event.usage);
     } else if (event is ACPAuthRequiredEvent) {
+      _closeAuthLoopback();
       _retryAfterAuth = true;
       final previous = state.authCompleter;
       if (previous != null && !previous.isCompleted) previous.complete(null);
@@ -1046,12 +1142,118 @@ class AiChatNotifier extends Notifier<AiChatState> {
         authCompleter: Completer<String?>(),
         isGenerating: false,
         lastErrorCode: authRequiredCode,
+        isAuthenticating: false,
+        authenticationConfirmed: false,
+        clearAuthRequest: true,
       );
+    } else if (event is ACPErrorEvent && state.isAuthenticating) {
+      _closeAuthLoopback();
+      state = state.copyWith(
+        isAuthenticating: false,
+        clearAuthRequest: true,
+        authError: event.error,
+      );
+    }
+  }
+
+  Future<void> _showAuthorizationRequest(
+    AcpOAuthRequest request,
+    ACPClientAdapter adapter,
+  ) async {
+    _closeAuthLoopback();
+    final authEpoch = _authRequestEpoch;
+    final epoch = _requestEpoch;
+    final profile = state.activeAgentProfile;
+    final serverId = _activeServerId;
+    if (profile == null || serverId == null) return;
+    bool current() =>
+        ref.mounted &&
+        authEpoch == _authRequestEpoch &&
+        epoch == _requestEpoch &&
+        identical(adapter, _currentAdapter) &&
+        _activeServerId == serverId &&
+        state.activeAgentProfile?.id == profile.id;
+    state = state.copyWith(
+      authChallenge:
+          state.authChallenge ??
+          AuthChallenge(
+            serverId: serverId,
+            agentId: profile.id,
+            methods: adapter.authMethods,
+          ),
+      isAuthenticating: true,
+      clearAuthError: true,
+    );
+    AcpOAuthLoopback? loopback;
+    try {
+      loopback = await AcpOAuthLoopback.bind(request, (callback) async {
+        if (!current() || !identical(state.authRequest, request)) {
+          throw StateError('ACP_TARGET_CHANGED');
+        }
+        await submitAuthCallback(callback);
+        // Delivery and official authentication completion are separate events.
+        final deadline = DateTime.now().add(const Duration(seconds: 10));
+        while (!adapter.authenticationConfirmed) {
+          if (adapter.isDisposed ||
+              DateTime.now().isAfter(deadline) ||
+              !ref.mounted ||
+              !identical(adapter, _currentAdapter)) {
+            throw StateError('ACP_AUTH_CALLBACK_DELIVERY_FAILED');
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+      }, renderPage: ref.read(acpOAuthPageRendererProvider));
+    } on SocketException {
+      if (current()) {
+        state = state.copyWith(
+          isAuthenticating: false,
+          clearAuthRequest: true,
+          authError: 'ACP_AUTH_CALLBACK_LISTENER_FAILED',
+        );
+      }
+      return;
+    }
+    if (!current() || !state.isAuthenticating) {
+      await loopback.close();
+      return;
+    }
+    _authLoopback = loopback;
+    state = state.copyWith(authRequest: request);
+  }
+
+  /// Accept only this attempt's loopback URI/state, in its original target.
+  Future<void> submitAuthCallback(String callback) async {
+    final request = state.authRequest;
+    final profile = state.activeAgentProfile;
+    final serverId = _activeServerId;
+    if (request == null ||
+        profile == null ||
+        serverId == null ||
+        !state.isAuthenticating ||
+        _authCallbackInFlight) {
+      throw StateError('ACP_AUTH_NOT_PENDING');
+    }
+    final client = ref.read(sshClientManagerProvider).getClient(serverId);
+    if (client == null || !ref.read(serverConnectionProvider).isConnected) {
+      throw StateError(disconnectedCode);
+    }
+    _authCallbackInFlight = true;
+    try {
+      await deliverAcpOAuthCallback(client, profile, request, callback);
+    } catch (_) {
+      if (ref.mounted && identical(state.authRequest, request)) {
+        state = state.copyWith(authError: 'ACP_AUTH_CALLBACK_DELIVERY_FAILED');
+      }
+      // Never propagate a URL or code from lower-level errors into UI/logs.
+      throw StateError('ACP_AUTH_CALLBACK_DELIVERY_FAILED');
+    } finally {
+      _authCallbackInFlight = false;
     }
   }
 
   Future<bool> prepareRunSettings({bool refresh = false}) async {
     if (state.isGenerating ||
+        state.isAuthenticating ||
         state.isLoadingSettings ||
         state.isApplyingSettings) {
       return false;
@@ -1091,7 +1293,9 @@ class AiChatNotifier extends Notifier<AiChatState> {
       String? catalogError;
       try {
         catalog = await ref.read(agentModelQueryProvider)(profile, client);
-        if (catalog == null) catalogError = 'AGENT_MODEL_QUERY_UNSUPPORTED';
+        if (catalog == null) {
+          catalogError = 'AGENT_MODEL_QUERY_UNSUPPORTED';
+        }
       } catch (error) {
         catalogError = LogSanitizer.sanitize(error.toString());
         if (ref.mounted &&
@@ -1150,6 +1354,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
   @override
   AiChatState build() {
     ref.onDispose(() {
+      _closeAuthLoopback();
       cancelModelAuthorization();
       cancelWorkspaceBrowse();
       _requestEpoch++;
@@ -1165,14 +1370,12 @@ class AiChatNotifier extends Notifier<AiChatState> {
       if (prev?.isConnected == true && !next.isConnected) {
         unawaited(_connectionLost());
       } else if (next.isConnected && prev?.isConnected == false) {
-        unawaited(recoverConnection());
+        _autoRecoverConnection();
       }
     });
     ref.listen(appVisibilityProvider, (_, foreground) {
       _currentAdapter?.setInBackground(!foreground);
-      if (foreground && state.recoveryStatus != SessionRecoveryStatus.idle) {
-        unawaited(recoverConnection());
-      }
+      if (foreground) _autoRecoverConnection();
     });
 
     ref.watch(chatRepositoryProvider);
@@ -1407,7 +1610,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
   }
 
   /// 按稳定 agentId 切换 Agent；目标不存在或未就绪时拒绝切换。
-  void switchAgent(String agentId) {
+  Future<void> switchAgent(String agentId) async {
     if (state.isGenerating) return;
     final target = state.readyAgents.where((a) => a.id == agentId).firstOrNull;
     if (target == null) {
@@ -1428,7 +1631,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
       clearActiveSession: !state.shareAgentSessions,
     );
     _restoreDraft();
-    _refreshVisibleSessions();
+    await _refreshVisibleSessions();
   }
 
   Future<void> _refreshVisibleSessions({bool append = false}) async {
@@ -1524,10 +1727,13 @@ class AiChatNotifier extends Notifier<AiChatState> {
           epoch == _historyEpoch &&
           (state.recoveryStatus != SessionRecoveryStatus.idle ||
               state.activeSession?.messages.any(
-                    (m) => m.status == ChatTurnStatus.interrupted,
+                    (m) =>
+                        m.status == ChatTurnStatus.interrupted ||
+                        m.status == ChatTurnStatus.unknown ||
+                        m.status == ChatTurnStatus.streaming,
                   ) ==
                   true)) {
-        unawaited(recoverConnection());
+        _autoRecoverConnection();
       }
     } catch (error) {
       if (ref.mounted && epoch == _historyEpoch) {
@@ -1630,6 +1836,26 @@ class AiChatNotifier extends Notifier<AiChatState> {
     }
     ACPClientAdapter? adapter;
     StreamSubscription<ACPEvent>? subscription;
+    var retainedAdapter = false;
+    void retainReplayAdapter() {
+      final candidate = adapter;
+      if (candidate == null ||
+          candidate.isDisposed ||
+          !ref.mounted ||
+          epoch != _requestEpoch) {
+        return;
+      }
+      candidate.finishReplayCapture();
+      _currentAdapter?.dispose();
+      _currentAdapter = candidate;
+      _currentAdapterAgentId = profile.id;
+      _currentAdapterSessionId = state.activeSessionId;
+      _currentAdapterServerId = remote.serverId;
+      _currentAdapterLaunchKey = remote.launchKey;
+      candidate.setInBackground(!ref.read(appVisibilityProvider));
+      retainedAdapter = true;
+    }
+
     var pendingWrites = 0;
     var writeTail = Future<void>.value();
     Object? writeError;
@@ -1674,6 +1900,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
         var text = StringBuffer();
         var thinking = StringBuffer();
         var tools = <ToolExecution>[];
+        var blocks = <ChatContentBlock>[];
         var plan = <PlanStep>[];
         String? messageId;
         var resourceBlocks = <ContentBlock>[];
@@ -1764,6 +1991,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
               content: text.toString(),
               thinking: thinking.isEmpty ? null : thinking.toString(),
               toolExecutions: tools,
+              contentBlocks: blocks,
               planSteps: plan,
               createdAt: now,
             ),
@@ -1772,6 +2000,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
           text = StringBuffer();
           thinking = StringBuffer();
           tools = [];
+          blocks = [];
           plan = [];
           resourceBlocks = [];
           messageId = null;
@@ -1798,9 +2027,19 @@ class AiChatNotifier extends Notifier<AiChatState> {
           }
           if (event is ACPUserContentChunkEvent) {
             useRole(MessageRole.user, event.messageId);
+            blocks = ChatContentBlock.appendText(
+              blocks,
+              text.length,
+              text.length + event.chunk.length,
+            );
             text.write(event.chunk);
           } else if (event is ACPContentChunkEvent) {
             useRole(MessageRole.assistant, event.messageId);
+            blocks = ChatContentBlock.appendText(
+              blocks,
+              text.length,
+              text.length + event.chunk.length,
+            );
             text.write(event.chunk);
           } else if (event is ACPThinkingChunkEvent) {
             useRole(MessageRole.assistant, event.messageId);
@@ -1815,6 +2054,10 @@ class AiChatNotifier extends Notifier<AiChatState> {
             );
             if (index < 0) {
               tools.add(event.toolExecution);
+              blocks = ChatContentBlock.appendTool(
+                blocks,
+                event.toolExecution.id,
+              );
             } else {
               tools[index] = event.toolExecution;
             }
@@ -1896,6 +2139,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
             recoveryStatus: SessionRecoveryStatus.incomplete,
           );
         }
+        retainReplayAdapter();
         return;
       }
       state = state.copyWith(
@@ -1915,6 +2159,12 @@ class AiChatNotifier extends Notifier<AiChatState> {
           );
     } catch (error) {
       await writeTail;
+      if (recoverExisting &&
+          error is StateError &&
+          error.message == 'ACP_HISTORY_REPLAY_UNSUPPORTED') {
+        // initialize succeeded but load is absent: resume on this SAME transport.
+        retainReplayAdapter();
+      }
       if (!recoverExisting && ref.mounted && epoch == _requestEpoch) {
         state = state.copyWith(
           lastErrorCode: 'ACP_HISTORY_IMPORT_FAILED: $error',
@@ -1923,7 +2173,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
       rethrow;
     } finally {
       await subscription?.cancel();
-      adapter?.dispose();
+      if (!retainedAdapter) adapter?.dispose();
       if (!recoverExisting && ref.mounted && epoch == _requestEpoch) {
         state = state.copyWith(isLoadingMessages: false);
       }
@@ -2022,6 +2272,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
       throw StateError('ACP_CUSTOM_MODEL_INVALID');
     }
     if (state.isGenerating ||
+        state.isAuthenticating ||
         state.isLoadingSettings ||
         state.isApplyingSettings) {
       return;
@@ -2113,6 +2364,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
   Future<void> stopGeneration() => _stopGeneration();
 
   Future<void> _stopGeneration({bool cancelRemote = true}) async {
+    _closeAuthLoopback();
     _flushStream?.call();
     _streamTimer?.cancel();
     _checkpointTimer?.cancel();
@@ -2142,7 +2394,11 @@ class AiChatNotifier extends Notifier<AiChatState> {
         messages: current.messages
             .map(
               (message) => message.status == ChatTurnStatus.streaming
-                  ? message.copyWith(status: ChatTurnStatus.interrupted)
+                  ? message.copyWith(
+                      status: cancelRemote
+                          ? ChatTurnStatus.interrupted
+                          : ChatTurnStatus.unknown,
+                    )
                   : message,
             )
             .toList(),
@@ -2156,6 +2412,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
       isApplyingSettings: false,
       clearPermission: true,
       clearAuthChallenge: true,
+      authenticationConfirmed: false,
     );
     await subscription?.cancel();
     if (current != null) {
@@ -2208,11 +2465,27 @@ class AiChatNotifier extends Notifier<AiChatState> {
     }
   }
 
-  Future<void> _connectionLost() async {
+  Future<void> _connectionLost() {
+    return _connectionLoss ??= _handleConnectionLost().whenComplete(
+      () => _connectionLoss = null,
+    );
+  }
+
+  Future<void> _handleConnectionLost() async {
     _recovering = null;
     cancelWorkspaceBrowse();
+    final needsReplay =
+        state.isGenerating ||
+        state.activeSession?.messages.any(
+              (m) =>
+                  m.status == ChatTurnStatus.streaming ||
+                  m.status == ChatTurnStatus.unknown,
+            ) ==
+            true;
     state = state.copyWith(
-      recoveryStatus: SessionRecoveryStatus.reconnecting,
+      recoveryStatus: needsReplay
+          ? SessionRecoveryStatus.reconnecting
+          : SessionRecoveryStatus.idle,
       settingsStale: true,
     );
     try {
@@ -2234,7 +2507,31 @@ class AiChatNotifier extends Notifier<AiChatState> {
     return future;
   }
 
+  void _autoRecoverConnection() {
+    if (state.isAuthenticating) return;
+    // An incomplete/failed attempt is explicit-retry territory. Foreground
+    // notifications must not repeatedly reload the same history or restart ACP.
+    if (state.recoveryStatus == SessionRecoveryStatus.incomplete ||
+        state.recoveryStatus == SessionRecoveryStatus.failed) {
+      return;
+    }
+    // A cancelled turn is not pending recovery. Old interrupted history can
+    // still be explicitly retried, but foreground alone must not reload it.
+    if (state.recoveryStatus == SessionRecoveryStatus.idle &&
+        state.activeSession?.messages.any(
+              (message) =>
+                  message.status == ChatTurnStatus.unknown ||
+                  message.status == ChatTurnStatus.streaming,
+            ) !=
+            true) {
+      return;
+    }
+    unawaited(recoverConnection());
+  }
+
   Future<void> _recoverConnection() async {
+    await _connectionLoss;
+    if (!ref.mounted) return;
     if (!ref.read(appVisibilityProvider) ||
         !ref.read(serverConnectionProvider).isConnected ||
         state.isGenerating ||
@@ -2254,7 +2551,12 @@ class AiChatNotifier extends Notifier<AiChatState> {
       return;
     }
     if (state.recoveryStatus == SessionRecoveryStatus.idle &&
-        !session.messages.any((m) => m.status == ChatTurnStatus.interrupted)) {
+        !session.messages.any(
+          (m) =>
+              m.status == ChatTurnStatus.interrupted ||
+              m.status == ChatTurnStatus.unknown ||
+              m.status == ChatTurnStatus.streaming,
+        )) {
       return;
     }
     final epoch = _requestEpoch;
@@ -2308,7 +2610,15 @@ class AiChatNotifier extends Notifier<AiChatState> {
       if (auth != null) await adapter.authenticate(auth);
       await adapter.prepareSession();
       if (!current()) return;
+      _handleControlEvent(ACPSettingsChangedEvent(), adapter);
       final latest = state.activeSession!;
+      incomplete =
+          incomplete ||
+          latest.messages.any(
+            (message) =>
+                message.status == ChatTurnStatus.unknown ||
+                message.status == ChatTurnStatus.streaming,
+          );
       if (!incomplete &&
           latest.agentId == profile.id &&
           latest.participantAgentIds.every((id) => id == profile.id) &&
@@ -2360,6 +2670,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
 
   void setDraftWorkingDirectory(String path) {
     if (state.isGenerating ||
+        state.isAuthenticating ||
         state.isLoadingSettings ||
         state.isApplyingSettings ||
         state.activeSession != null) {
@@ -2421,6 +2732,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
   }
 
   void _resetAdapter() {
+    _closeAuthLoopback();
     cancelModelAuthorization();
     _modelCatalog = null;
     _modelAccountKey = null;
@@ -2451,6 +2763,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
       isLoadingSettings: false,
       isApplyingSettings: false,
       clearAuthChallenge: true,
+      authenticationConfirmed: false,
       clearPermission: true,
       clearDraftWorkingDirectory: true,
       commands: const [],
@@ -2500,6 +2813,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
         state.isLoadingMessages ||
         state.isLoadingSessions ||
         state.isGenerating ||
+        state.isAuthenticating ||
         _isPreparingPrompt ||
         state.isLoadingSettings ||
         state.isApplyingSettings) {
@@ -2614,7 +2928,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
     );
 
     var assistantMsg = retryPending
-        ? session.messages.last
+        ? session.messages.last.copyWith(status: ChatTurnStatus.streaming)
         : ChatMessage(
             status: ChatTurnStatus.streaming,
             agentId: profile.id,
@@ -2662,6 +2976,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
 
       await _acpSub?.cancel();
       final content = StringBuffer(assistantMsg.content);
+      var blocks = assistantMsg.contentBlocks.toList();
       final thinking = StringBuffer(assistantMsg.thinking ?? '');
       final resourceWrites = <Future<void>>[];
       final store = ref.read(acpAttachmentStoreProvider);
@@ -2671,6 +2986,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
         if (!ref.mounted || requestEpoch != _requestEpoch) return;
         assistantMsg = assistantMsg.copyWith(
           content: content.toString(),
+          contentBlocks: blocks,
           thinking: thinking.toString(),
         );
         _updateAssistantMessage(updatedSession, assistantMsg);
@@ -2697,6 +3013,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
             createdAt: DateTime.now(),
           );
           content.clear();
+          blocks = [];
           thinking.clear();
           _updateSessionInState(
             latest.copyWith(messages: [...latest.messages, assistantMsg]),
@@ -2742,6 +3059,11 @@ class AiChatNotifier extends Notifier<AiChatState> {
           scheduleFlush();
         } else if (event is ACPContentChunkEvent) {
           beginAssistantMessage(event.messageId);
+          blocks = ChatContentBlock.appendText(
+            blocks,
+            content.length,
+            content.length + event.chunk.length,
+          );
           content.write(event.chunk);
           scheduleFlush();
         } else if (event is ACPAttachmentEvent &&
@@ -2785,15 +3107,48 @@ class AiChatNotifier extends Notifier<AiChatState> {
           assistantMsg = assistantMsg.copyWith(planSteps: event.planSteps);
           _updateAssistantMessage(updatedSession, assistantMsg);
         } else if (event is ACPToolExecutionEvent) {
+          final owner = state.activeSession?.messages
+              .where(
+                (message) =>
+                    message.id != assistantMsg.id &&
+                    message.agentId == profile.id &&
+                    message.toolExecutions.any(
+                      (tool) => tool.id == event.toolExecution.id,
+                    ),
+              )
+              .lastOrNull;
+          if (owner != null &&
+              !assistantMsg.toolExecutions.any(
+                (tool) => tool.id == event.toolExecution.id,
+              )) {
+            flush();
+            _updateAssistantMessage(
+              updatedSession,
+              owner.copyWith(
+                toolExecutions: owner.toolExecutions
+                    .map(
+                      (tool) => tool.id == event.toolExecution.id
+                          ? event.toolExecution
+                          : tool,
+                    )
+                    .toList(),
+              ),
+            );
+            return;
+          }
           final tools = assistantMsg.toolExecutions.toList();
           final idx = tools.indexWhere((t) => t.id == event.toolExecution.id);
           if (idx >= 0) {
             tools[idx] = event.toolExecution;
           } else {
             tools.add(event.toolExecution);
+            blocks = ChatContentBlock.appendTool(
+              blocks,
+              event.toolExecution.id,
+            );
           }
           assistantMsg = assistantMsg.copyWith(toolExecutions: tools);
-          _updateAssistantMessage(updatedSession, assistantMsg);
+          flush();
         } else if (event is ACPPermissionRequestEvent) {
           final policy = state.runSettings.permissionPolicy;
           final autoAllow =
@@ -2816,7 +3171,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
           }
         } else if (event is ACPAuthRequiredEvent) {
           assistantMsg = assistantMsg.copyWith(
-            status: ChatTurnStatus.interrupted,
+            status: ChatTurnStatus.awaitingAuthentication,
           );
           flush();
         } else if (event is ACPCompleteEvent) {
@@ -2831,7 +3186,13 @@ class AiChatNotifier extends Notifier<AiChatState> {
         } else if (event is ACPErrorEvent) {
           _cancelPermissions();
           assistantMsg = assistantMsg.copyWith(status: ChatTurnStatus.failed);
-          content.write('\n\n**Error:** ${event.error}');
+          final errorText = '\n\n**Error:** ${event.error}';
+          blocks = ChatContentBlock.appendText(
+            blocks,
+            content.length,
+            content.length + errorText.length,
+          );
+          content.write(errorText);
           flush();
           state = state.copyWith(
             isGenerating: false,
@@ -3013,6 +3374,8 @@ class AiChatNotifier extends Notifier<AiChatState> {
     final mode = _category(adapter, 'mode');
     final dedicated = {model?.id, reasoning?.id, mode?.id};
     return AgentRuntimeCapabilities(
+      // Independent CLI catalogs populate the selector. ACP configuration is
+      // used to validate an actual change, never to create a discovery session.
       models: _modelCatalog?.models ?? const [],
       reasoningLevels: reasoning == null
           ? _modelCatalog?.reasoningLevels ?? const []
@@ -3295,19 +3658,171 @@ class AiChatNotifier extends Notifier<AiChatState> {
     _permissionQueue.clear();
   }
 
-  /// 回传用户选定的认证方式。
-  ///
-  /// [methodId] 为 null 表示用户放弃，仅清除引导状态，不触发认证。
-  /// 选择结果记入 [AiChatState.selectedAuthMethods]，下一次发送消息时注入
-  /// 新建的 adapter，在建会话前完成 `authenticate`。
+  /// Discover advertised methods only; never create/load a session or send text.
+  Future<void> requestAuthenticationForAgent(
+    String serverId,
+    String agentId,
+  ) async {
+    if (_activeServerId != serverId ||
+        state.isGenerating ||
+        state.isAuthenticating) {
+      return;
+    }
+    try {
+      await switchAgent(agentId);
+      if (!ref.mounted ||
+          _activeServerId != serverId ||
+          state.activeAgentProfile?.id != agentId) {
+        return;
+      }
+      await requestAuthentication();
+    } catch (error) {
+      if (ref.mounted &&
+          _activeServerId == serverId &&
+          state.activeAgentProfile?.id == agentId) {
+        state = state.copyWith(
+          authError: LogSanitizer.sanitize(error.toString()),
+        );
+      }
+    }
+  }
+
+  Future<void> requestAuthentication() async {
+    final profile = state.activeAgentProfile;
+    final serverId = _activeServerId;
+    if (profile == null ||
+        serverId == null ||
+        !usesAntigravityAcp(profile) ||
+        state.isGenerating ||
+        state.isAuthenticating ||
+        state.isLoadingSettings ||
+        state.isApplyingSettings) {
+      return;
+    }
+    final client = ref.read(sshClientManagerProvider).getClient(serverId);
+    if (client == null || !ref.read(serverConnectionProvider).isConnected) {
+      state = state.copyWith(authError: disconnectedCode);
+      return;
+    }
+    final epoch = _requestEpoch;
+    _closeAuthLoopback();
+    state = state.copyWith(isLoadingSettings: true, clearAuthError: true);
+    try {
+      final adapter = await _adapterFor(profile, client);
+      await _acpSub?.cancel();
+      _acpSub = adapter.eventStream.listen(
+        (event) => _handleControlEvent(event, adapter),
+      );
+      await adapter.initializeOnly();
+      if (!ref.mounted ||
+          epoch != _requestEpoch ||
+          !identical(adapter, _currentAdapter)) {
+        return;
+      }
+      state = state.copyWith(
+        authChallenge: AuthChallenge(
+          serverId: serverId,
+          agentId: profile.id,
+          methods: adapter.authMethods,
+        ),
+        isAuthenticating: false,
+        clearAuthRequest: true,
+      );
+    } catch (error) {
+      if (ref.mounted && epoch == _requestEpoch) {
+        state = state.copyWith(
+          authError: LogSanitizer.sanitize(error.toString()),
+        );
+      }
+    } finally {
+      if (ref.mounted && epoch == _requestEpoch) {
+        state = state.copyWith(isLoadingSettings: false);
+      }
+    }
+  }
+
+  /// Official AgY authenticates immediately on explicit selection; other agents
+  /// retain their established deferred flow. Null cancels without sending text.
   Future<void> respondAuth(String? methodId) async {
+    final profile = state.activeAgentProfile;
+    final challenge = state.authChallenge;
+    if (profile != null && usesAntigravityAcp(profile) && challenge != null) {
+      if (challenge.serverId != _activeServerId ||
+          challenge.agentId != profile.id) {
+        return;
+      }
+      if (methodId == null) {
+        if (state.isAuthenticating) {
+          await _stopGeneration(cancelRemote: false);
+        } else {
+          _closeAuthLoopback();
+          state = state.copyWith(clearAuthChallenge: true);
+        }
+        _retryAfterAuth = false;
+        return;
+      }
+      if (state.isAuthenticating) return;
+      if (!challenge.methods.any((method) => method.id == methodId)) {
+        state = state.copyWith(authError: 'ACP_AUTH_METHOD_UNAVAILABLE');
+        return;
+      }
+      final client = ref
+          .read(sshClientManagerProvider)
+          .getClient(profile.serverId);
+      if (client == null || !ref.read(serverConnectionProvider).isConnected) {
+        state = state.copyWith(authError: disconnectedCode);
+        return;
+      }
+      final epoch = _requestEpoch;
+      final adapter = _currentAdapter;
+      if (adapter == null) {
+        state = state.copyWith(authError: 'ACP_AUTH_CONNECTION_EXPIRED');
+        return;
+      }
+      bool current() =>
+          ref.mounted &&
+          epoch == _requestEpoch &&
+          identical(adapter, _currentAdapter) &&
+          challenge.serverId == _activeServerId &&
+          state.activeAgentProfile?.id == profile.id;
+      state = state.copyWith(
+        isAuthenticating: true,
+        authenticationConfirmed: false,
+        clearAuthError: true,
+        clearAuthRequest: true,
+        selectedAuthMethods: {
+          ...state.selectedAuthMethods,
+          '${profile.serverId}::${profile.id}': methodId,
+        },
+      );
+      try {
+        await adapter.authenticateNow(methodId);
+        if (current()) {
+          _closeAuthLoopback();
+          state = state.copyWith(
+            clearAuthChallenge: true,
+            authenticationConfirmed: true,
+            clearError: state.lastErrorCode == authRequiredCode,
+          );
+        }
+      } catch (error) {
+        if (current()) {
+          _closeAuthLoopback();
+          state = state.copyWith(
+            isAuthenticating: false,
+            clearAuthRequest: true,
+            authError: LogSanitizer.sanitize(error.toString()),
+          );
+        }
+      }
+      return;
+    }
     if (methodId == null) _retryAfterAuth = false;
     final completer = state.authCompleter;
     if (completer != null && !completer.isCompleted) {
       completer.complete(methodId);
     }
 
-    final challenge = state.authChallenge;
     final agentId = challenge?.agentId;
     final selections = Map<String, String>.from(state.selectedAuthMethods);
     if (methodId != null && agentId != null) {

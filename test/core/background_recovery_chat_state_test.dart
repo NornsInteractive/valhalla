@@ -198,6 +198,45 @@ void main() {
     fail('本轮必须真的把 prompt 发到了远端');
   }
 
+  /// 真实的传输丢失：一轮正在 streaming 的 turn 被断线打断。
+  ///
+  /// `sendMessage` 在它第一个 `await` 之前就把 streaming 消息写进了 state，
+  /// 所以这里不必等远端回话就能断线。断线让 `_requestEpoch` 前进，
+  /// `sendMessage` 随后在保存处提前返回，不会为这轮建起第二条传输。
+  Future<void> loseTurn(ProviderContainer container) async {
+    final sending = container
+        .read(aiChatProvider.notifier)
+        .sendMessage('in flight');
+    connection.setConnected(false);
+    await sending;
+    await settle(container);
+    expect(
+      container.read(aiChatProvider).activeSession!.messages.last.status,
+      ChatTurnStatus.unknown,
+      reason: '传输丢失必须记成 unknown，而不是用户取消的 interrupted',
+    );
+    expect(
+      container.read(aiChatProvider).recoveryStatus,
+      SessionRecoveryStatus.reconnecting,
+      reason: '有 unknown turn 就必须进入重连，等待恢复',
+    );
+  }
+
+  /// 用户主动取消一轮 turn：只有 cancel 才允许把 streaming 记成 interrupted。
+  Future<void> cancelTurn(ProviderContainer container) async {
+    final sending = container
+        .read(aiChatProvider.notifier)
+        .sendMessage('cancelled turn');
+    await container.read(aiChatProvider.notifier).stopGeneration();
+    await sending;
+    await settle(container);
+    expect(
+      container.read(aiChatProvider).activeSession!.messages.last.status,
+      ChatTurnStatus.interrupted,
+      reason: '用户取消是 interrupted，不是传输丢失的 unknown',
+    );
+  }
+
   /// 等恢复走到终态：idle / incomplete / failed 都不是 syncing 或 reconnecting。
   /// 只等 loading 是不够的 —— 同步历史是另一条异步链路。
   Future<SessionRecoveryStatus> awaitRecoverySettled(
@@ -304,7 +343,11 @@ void main() {
       await settle(container);
       final after = container.read(aiChatProvider);
 
-      expect(after.recoveryStatus, SessionRecoveryStatus.reconnecting);
+      expect(
+        after.recoveryStatus,
+        SessionRecoveryStatus.idle,
+        reason: '健康已完成的会话断线后没有待恢复的 turn，不该自愈回放',
+      );
       expect(after.activeSessionId, beforeId, reason: '同一台服务器掉线不得清掉当前会话');
       expect(
         after.activeSession!.messages.map((m) => m.content).toList(),
@@ -322,8 +365,8 @@ void main() {
       final notifier = container.read(aiChatProvider.notifier);
       final beforeId = container.read(aiChatProvider).activeSessionId;
 
-      connection.setConnected(false);
-      await settle(container);
+      // 真实的传输丢失：留下一条无法被历史回放证明完成的 turn。
+      await loseTurn(container);
       // 恢复会走新的传输连接：必须让**之后**新建的对失败。
       futurePairsFailSession = true;
 
@@ -345,16 +388,17 @@ void main() {
         (await container.read(chatRepositoryProvider).loadSession(beforeId!))!
             .messages
             .map((m) => m.content),
-        ['old question', 'old answer'],
+        ['old question', 'old answer', 'in flight', ''],
+        reason: '失败不得抹掉本地已经记下的丢失 turn',
       );
+      expect(promptCount(), 0, reason: '恢复失败也不得自动发起 prompt');
     });
 
     test('重连中禁止发送，但不影响本地阅读与草稿', () async {
       final container = await importedContainer();
       final notifier = container.read(aiChatProvider.notifier);
 
-      connection.setConnected(false);
-      await settle(container);
+      await loseTurn(container);
       expect(
         container.read(aiChatProvider).recoveryStatus,
         SessionRecoveryStatus.reconnecting,
@@ -369,19 +413,92 @@ void main() {
       expect(after.activeSession!.messages.map((m) => m.content), [
         'old question',
         'old answer',
+        'in flight',
+        '',
       ]);
       expect(after.draftText, 'still editable');
     });
   });
 
   group('恢复过程本身', () {
+    test('健康已完成的会话断线重连不触发任何远端回放', () async {
+      final container = await importedContainer();
+      final beforeId = container.read(aiChatProvider).activeSessionId;
+      final baselineLoads = loadRequestCount();
+      final baselineResumes = resumeRequestCount();
+      final baselineNews = newSessionCount();
+
+      connection.setConnected(false);
+      await settle(container);
+      expect(
+        container.read(aiChatProvider).recoveryStatus,
+        SessionRecoveryStatus.idle,
+        reason: '没有未完成的 turn 就没有待恢复的东西',
+      );
+      connection.setConnected(true);
+      await settle(container);
+      await settle(container);
+
+      final after = container.read(aiChatProvider);
+      expect(after.recoveryStatus, SessionRecoveryStatus.idle);
+      expect(after.activeSessionId, beforeId);
+      expect(loadRequestCount() - baselineLoads, 0, reason: '健康线程不得回放远端历史');
+      expect(
+        resumeRequestCount() - baselineResumes,
+        0,
+        reason: '健康线程不得 resume',
+      );
+      expect(newSessionCount() - baselineNews, 0, reason: '健康线程不得新建替代会话');
+      expect(promptCount(), 0, reason: '健康线程不得自动发起 prompt');
+      expect(
+        after.activeSession!.messages.map((m) => m.content),
+        ['old question', 'old answer'],
+        reason: '断线重连不得改动已完成的内容',
+      );
+    });
+
+    test('前台回到前台不会重放被用户取消的 turn，显式恢复才同步', () async {
+      final container = await importedContainer();
+      final notifier = container.read(aiChatProvider.notifier);
+      final beforeId = container.read(aiChatProvider).activeSessionId;
+      await cancelTurn(container);
+      final baselineLoads = loadRequestCount();
+
+      // 连接抖一下再回来：前台事件本身不许重放被取消的 turn。
+      connection.setConnected(false);
+      await settle(container);
+      connection.setConnected(true);
+      container.read(appVisibilityProvider.notifier).setForeground(false);
+      container.read(appVisibilityProvider.notifier).setForeground(true);
+      await settle(container);
+      await settle(container);
+
+      expect(
+        container.read(aiChatProvider).recoveryStatus,
+        SessionRecoveryStatus.idle,
+        reason: '被取消的 turn 不是待恢复状态',
+      );
+      expect(loadRequestCount(), baselineLoads, reason: '前台事件不得重放被取消的 turn');
+      expect(promptCount(), 0, reason: '被取消的 turn 不得被自动重发');
+
+      // 用户显式要求恢复时，才允许同步一次历史。
+      await notifier.recoverConnection();
+      await settle(container);
+      expect(
+        loadRequestCount() - baselineLoads,
+        1,
+        reason: '显式恢复是有意的远端操作，允许一次回放',
+      );
+      expect(container.read(aiChatProvider).activeSessionId, beforeId);
+      expect(promptCount(), 0, reason: '显式恢复也不得发起 prompt');
+    });
+
     test('recoverConnection 是单飞的：连接回来只同步一次', () async {
       final container = await importedContainer();
       final notifier = container.read(aiChatProvider.notifier);
-      // 初次导入本身就会 session/load 一次，这里从它的计数往后看。
+      await loseTurn(container);
+      // 丢失本身不新建传输，但基线仍要取在它之后，计数才只反映恢复。
       final baseline = loadRequestCount();
-      connection.setConnected(false);
-      await settle(container);
 
       // 并发调用复用同一个 future。
       final first = notifier.recoverConnection();
@@ -399,16 +516,16 @@ void main() {
       expect(loadRequestCount() - baseline, 1, reason: '远端历史只允许被拉取一次');
       expect(
         container.read(aiChatProvider).recoveryStatus,
-        SessionRecoveryStatus.idle,
+        SessionRecoveryStatus.incomplete,
+        reason: '本地还留着一条无法被回放证明完成的 unknown turn，必须诚实标成 incomplete',
       );
     });
 
     test('后台时不恢复，回前台才继续', () async {
       final container = await importedContainer();
       final notifier = container.read(aiChatProvider.notifier);
+      await loseTurn(container);
       final baseline = loadRequestCount();
-      connection.setConnected(false);
-      await settle(container);
 
       // 先在后台把连接恢复好：此时不得发起任何远端同步。
       container.read(appVisibilityProvider.notifier).setForeground(false);
@@ -436,25 +553,29 @@ void main() {
     test('真实断线恢复后仍是原会话 id，消息不重复', () async {
       final container = await importedContainer();
       final beforeId = container.read(aiChatProvider).activeSessionId;
-      // 初次导入本身就会 session/load 一次，这里从它的计数往后看。
+      // 真实的传输丢失：留下一条本地记着、远端回放里没有的 turn。
+      await loseTurn(container);
+      // 丢失本身不新建传输，基线取在它之后，计数才只反映恢复。
       final baselineLoads = loadRequestCount();
       final baselineResumes = resumeRequestCount();
       final baselineNews = newSessionCount();
 
-      connection.setConnected(false);
-      await settle(container);
       connection.setConnected(true);
       // 恢复已经被连接监听器发起；这里 await 的是同一个 future。
       final status = await awaitRecoverySettled(container);
       await settle(container);
 
       final after = container.read(aiChatProvider);
-      expect(status, SessionRecoveryStatus.idle, reason: '远端支持回放时应完全恢复');
+      expect(
+        status,
+        SessionRecoveryStatus.incomplete,
+        reason: '回放证明不了那条丢失的 turn 跑完了，不得谎称完整恢复',
+      );
       expect(after.activeSessionId, beforeId, reason: '恢复的是同一个会话');
       expect(
         after.activeSession!.messages.map((m) => m.content),
-        ['old question', 'old answer'],
-        reason: '重放同一段历史不得产生重复消息',
+        ['old question', 'old answer', 'in flight', ''],
+        reason: '重放同一段历史不得产生重复消息，也不得抹掉本地丢失的 turn',
       );
       final sessions = await stored(container);
       expect(sessions, hasLength(1), reason: '不得因为恢复多出一条本地会话');
@@ -467,8 +588,8 @@ void main() {
       );
       expect(
         resumeRequestCount() - baselineResumes,
-        1,
-        reason: '回放之后的正常适配器用 session/resume 恢复，不再回放',
+        0,
+        reason: '回放之后复用同一个已加载的适配器：不再 resume，也不再回放',
       );
       expect(newSessionCount() - baselineNews, 0, reason: '恢复不得新建替代会话');
       expect(promptCount(), 0, reason: '恢复不得自动发起 prompt');
@@ -484,10 +605,14 @@ void main() {
         reason: '前提：本地已经有内容，恢复不能把它弄丢',
       );
 
-      connection.setConnected(false);
-      await settle(container);
+      await loseTurn(container);
       // 之后的适配器都不支持 loadSession：只能诚实地降级。
       futurePairsWithoutReplay = true;
+
+      // 丢失本身不新建传输，基线取在它之后，计数才只反映恢复。
+      final baselineLoads = loadRequestCount();
+      final baselineResumes = resumeRequestCount();
+      final baselineNews = newSessionCount();
 
       connection.setConnected(true);
       final status = await awaitRecoverySettled(container);
@@ -502,10 +627,20 @@ void main() {
       expect(after.activeSessionId, beforeId);
       expect(
         after.activeSession!.messages.map((m) => m.content),
-        ['old question', 'old answer'],
+        ['old question', 'old answer', 'in flight', ''],
         reason: '无法恢复的部分不影响已经显示的内容',
       );
-      expect(newSessionCount(), 0, reason: '不得用新会话顶替');
+      expect(
+        loadRequestCount() - baselineLoads,
+        1,
+        reason: '回放通道不通时，降级走同一个已初始化的适配器补一次同步',
+      );
+      expect(
+        resumeRequestCount() - baselineResumes,
+        0,
+        reason: '没有 resume 能力就不得硬试 resume',
+      );
+      expect(newSessionCount() - baselineNews, 0, reason: '不得用新会话顶替');
       expect(promptCount(), 0, reason: '不得自动发起 prompt');
     });
   });

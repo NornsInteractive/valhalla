@@ -104,7 +104,7 @@ class _FakeDockerNotifier extends DockerNotifier {
   }
 
   @override
-  Future<void> refresh() async {}
+  Future<void> refresh({bool quiet = false}) async {}
 }
 
 late LocalStorageService _testLocalStorage;

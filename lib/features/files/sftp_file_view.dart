@@ -562,14 +562,33 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   }
 
   String _mapErrorMessage(String code) {
-    if (code == 'SSH_DISCONNECTED') {
-      return context.l10n.stateOffline;
+    if (code == 'SSH_DISCONNECTED' || code == 'SFTP_DOWNLOAD_DISCONNECTED') {
+      return context.l10n.sftpDownloadDisconnected;
+    }
+    if (code == 'SFTP_DOWNLOAD_PERMISSION_DENIED') {
+      return context.l10n.sftpDownloadPermissionDenied;
+    }
+    if (code == 'SFTP_DOWNLOAD_NOT_FOUND') {
+      return context.l10n.sftpDownloadNotFound;
+    }
+    if (code == 'SFTP_DOWNLOAD_TIMEOUT') {
+      return context.l10n.sftpDownloadTimeout;
+    }
+    if (code == 'SFTP_DOWNLOAD_LOCAL_SPACE') {
+      return context.l10n.sftpDownloadLocalSpace;
+    }
+    if (code == 'SFTP_DOWNLOAD_LOCAL_IO') {
+      return context.l10n.sftpDownloadLocalIo;
+    }
+    if (code == 'SFTP_DOWNLOAD_INCOMPLETE') {
+      return context.l10n.sftpDownloadIncomplete;
+    }
+    if (code == 'SFTP_DOWNLOAD_FAILED' ||
+        code == SftpNotifier.downloadFailedCode) {
+      return context.l10n.sftpDownloadFailed;
     }
     if (code == SftpNotifier.uploadFailedCode) {
       return context.l10n.sftpUploadFailed;
-    }
-    if (code == SftpNotifier.downloadFailedCode) {
-      return context.l10n.sftpDownloadFailed;
     }
     if (code == SftpNotifier.previewUnsupportedCode) {
       return context.l10n.sftpOpenUnsupported;
@@ -615,8 +634,13 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   }
 
   Widget _buildErrorBanner(String errorCode) {
+    if (errorCode == 'SSH_DISCONNECTED') {
+      return const SizedBox.shrink();
+    }
     final message = _mapErrorMessage(errorCode);
-    final isOffline = errorCode == 'SSH_DISCONNECTED';
+    final isOffline =
+        errorCode == 'SSH_DISCONNECTED' ||
+        errorCode == 'SFTP_DOWNLOAD_DISCONNECTED';
     return Container(
       key: const Key('sftpErrorBanner'),
       width: double.infinity,
@@ -1344,14 +1368,34 @@ class SftpTransferListItem extends ConsumerWidget {
   const SftpTransferListItem({super.key, required this.transfer});
 
   String _mapTransferError(BuildContext context, String? code) {
-    if (code == 'SSH_DISCONNECTED') {
-      return context.l10n.stateOffline;
+    if (code == null) return context.l10n.transferStatusFailed;
+    if (code == 'SSH_DISCONNECTED' || code == 'SFTP_DOWNLOAD_DISCONNECTED') {
+      return context.l10n.sftpDownloadDisconnected;
+    }
+    if (code == 'SFTP_DOWNLOAD_PERMISSION_DENIED') {
+      return context.l10n.sftpDownloadPermissionDenied;
+    }
+    if (code == 'SFTP_DOWNLOAD_NOT_FOUND') {
+      return context.l10n.sftpDownloadNotFound;
+    }
+    if (code == 'SFTP_DOWNLOAD_TIMEOUT') {
+      return context.l10n.sftpDownloadTimeout;
+    }
+    if (code == 'SFTP_DOWNLOAD_LOCAL_SPACE') {
+      return context.l10n.sftpDownloadLocalSpace;
+    }
+    if (code == 'SFTP_DOWNLOAD_LOCAL_IO') {
+      return context.l10n.sftpDownloadLocalIo;
+    }
+    if (code == 'SFTP_DOWNLOAD_INCOMPLETE') {
+      return context.l10n.sftpDownloadIncomplete;
+    }
+    if (code == 'SFTP_DOWNLOAD_FAILED' ||
+        code == SftpNotifier.downloadFailedCode) {
+      return context.l10n.sftpDownloadFailed;
     }
     if (code == SftpNotifier.uploadFailedCode) {
       return context.l10n.transferFailedUpload;
-    }
-    if (code == SftpNotifier.downloadFailedCode) {
-      return context.l10n.transferFailedDownload;
     }
     return context.l10n.transferStatusFailed;
   }
@@ -1370,7 +1414,11 @@ class SftpTransferListItem extends ConsumerWidget {
     final statusText = switch (transfer.status) {
       SftpTransferStatus.queued => context.l10n.transferStatusQueued,
       SftpTransferStatus.running => context.l10n.transferStatusRunning,
-      SftpTransferStatus.paused => context.l10n.transferStatusPaused,
+      SftpTransferStatus.paused =>
+        (transfer.errorMessage == 'SSH_DISCONNECTED' ||
+                transfer.errorMessage == 'SFTP_DOWNLOAD_DISCONNECTED')
+            ? context.l10n.transferStatusWaitingConnection
+            : context.l10n.transferStatusPaused,
       SftpTransferStatus.completed => context.l10n.transferStatusCompleted,
       SftpTransferStatus.failed => context.l10n.transferStatusFailed,
       SftpTransferStatus.canceled => context.l10n.transferStatusCanceled,

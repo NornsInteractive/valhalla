@@ -112,7 +112,7 @@ class AgentProfile {
     containerBinding: json['containerBinding'] as String? ?? 'id',
     containerReference: json['containerReference'] as String?,
     containerUser: json['containerUser'] as String?,
-    // 为 null 或缺失时表示该 Agent 无 ACP 模式，属正常情况（如 agy）。
+    // 为 null 或缺失时表示该配置仅用于 CLI。
     acpCommand: json['acpCommand'] as String?,
     installCommand: json['installCommand'] as String?,
     // 向后兼容：旧版本 JSON 没有该键，读取时为 null。

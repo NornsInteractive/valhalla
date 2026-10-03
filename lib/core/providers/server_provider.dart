@@ -189,6 +189,7 @@ class ServerConnectionNotifier extends Notifier<ServerConnectionState> {
           status: ConnectionStateEnum.connected,
           clearError: true,
         );
+        _scheduleAgentDetection();
       case ReconnectStatus.connecting:
       case ReconnectStatus.reconnecting:
         state = state.copyWith(
@@ -208,6 +209,20 @@ class ServerConnectionNotifier extends Notifier<ServerConnectionState> {
           );
         }
     }
+  }
+
+  void _scheduleAgentDetection() {
+    final epoch = _connectionEpoch;
+    Future.microtask(() {
+      if (ref.mounted && epoch == _connectionEpoch && state.isConnected) {
+        // Imperative bootstrap, not a connection provider dependency: the
+        // registry itself listens to this connection provider. Ref.read here
+        // creates a circular dependency when the registry first mounts.
+        // Existing listeners handle transitions; newly mounted registries
+        // detect the already-connected initial state themselves.
+        ref.container.read(agentRegistryProvider);
+      }
+    });
   }
 
   Future<bool> connect({
@@ -273,6 +288,7 @@ class ServerConnectionNotifier extends Notifier<ServerConnectionState> {
         status: ConnectionStateEnum.connected,
         clearError: true,
       );
+      _scheduleAgentDetection();
       return true;
     } catch (e) {
       if (!isCurrent()) return false;

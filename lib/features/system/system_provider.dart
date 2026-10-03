@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/providers/infrastructure_providers.dart';
@@ -87,13 +89,32 @@ class SystemState {
 }
 
 class SystemNotifier extends Notifier<SystemState> {
+  int _epoch = 0;
+  int _processSequence = 0;
+  int _serviceSequence = 0;
   @override
   SystemState build() {
-    final activeServer = ref.watch(activeServerProvider);
-    final connState = ref.watch(serverConnectionProvider);
+    final epoch = ++_epoch;
+    ref.watch(activeServerProvider.select((server) => server?.connectionKey));
+    final activeServer = ref.read(activeServerProvider);
+    final connState = ref.read(serverConnectionProvider);
+    ref.listen(serverConnectionProvider, (previous, next) {
+      if (next.isConnected && previous?.isConnected != true) {
+        unawaited(refreshAll(quiet: true));
+      } else if (!next.isConnected) {
+        _processSequence++;
+        _serviceSequence++;
+        state = state.copyWith(
+          isProcessesLoading: false,
+          isServicesLoading: false,
+        );
+      }
+    });
 
     if (activeServer != null && connState.isConnected) {
-      Future.microtask(() => refreshAll());
+      Future.microtask(() {
+        if (ref.mounted && epoch == _epoch) unawaited(refreshAll());
+      });
     }
 
     return const SystemState();
@@ -115,11 +136,16 @@ class SystemNotifier extends Notifier<SystemState> {
     }
   }
 
-  Future<void> refreshAll() async {
-    await Future.wait([refreshProcesses(), refreshServices()]);
+  Future<void> refreshAll({bool quiet = false}) async {
+    await Future.wait([
+      refreshProcesses(quiet: quiet),
+      refreshServices(quiet: quiet),
+    ]);
   }
 
-  Future<void> refreshProcesses() async {
+  Future<void> refreshProcesses({bool quiet = false}) async {
+    final epoch = _epoch;
+    final sequence = ++_processSequence;
     final activeServer = ref.read(activeServerProvider);
     final connState = ref.read(serverConnectionProvider);
 
@@ -128,25 +154,35 @@ class SystemNotifier extends Notifier<SystemState> {
       return;
     }
 
-    state = state.copyWith(isProcessesLoading: true, processError: null);
+    state = state.copyWith(isProcessesLoading: !quiet, processError: null);
 
     try {
       final procService = ref.read(processServiceProvider);
       final list = await procService.list(activeServer.id);
+      if (!ref.mounted || epoch != _epoch || sequence != _processSequence) {
+        return;
+      }
       state = state.copyWith(
         processes: list,
         isProcessesLoading: false,
         processError: null,
       );
     } catch (e) {
+      if (!ref.mounted || epoch != _epoch || sequence != _processSequence) {
+        return;
+      }
       state = state.copyWith(
         isProcessesLoading: false,
-        processError: e.toString(),
+        processError: ref.read(serverConnectionProvider).isConnected
+            ? e.toString()
+            : null,
       );
     }
   }
 
-  Future<void> refreshServices() async {
+  Future<void> refreshServices({bool quiet = false}) async {
+    final epoch = _epoch;
+    final sequence = ++_serviceSequence;
     final activeServer = ref.read(activeServerProvider);
     final connState = ref.read(serverConnectionProvider);
 
@@ -155,20 +191,28 @@ class SystemNotifier extends Notifier<SystemState> {
       return;
     }
 
-    state = state.copyWith(isServicesLoading: true, serviceError: null);
+    state = state.copyWith(isServicesLoading: !quiet, serviceError: null);
 
     try {
       final svcManager = ref.read(serviceManagerProvider);
       final list = await svcManager.list(activeServer.id);
+      if (!ref.mounted || epoch != _epoch || sequence != _serviceSequence) {
+        return;
+      }
       state = state.copyWith(
         services: list,
         isServicesLoading: false,
         serviceError: null,
       );
     } catch (e) {
+      if (!ref.mounted || epoch != _epoch || sequence != _serviceSequence) {
+        return;
+      }
       state = state.copyWith(
         isServicesLoading: false,
-        serviceError: e.toString(),
+        serviceError: ref.read(serverConnectionProvider).isConnected
+            ? e.toString()
+            : null,
       );
     }
   }

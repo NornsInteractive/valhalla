@@ -44,7 +44,9 @@ class DashboardView extends ConsumerWidget {
       }
     }();
     final metricsAsync = ref.watch(systemMetricsStreamProvider);
-    final snapshot = metricsAsync.asData?.value;
+    final snapshot =
+        metricsAsync.asData?.value ??
+        ref.watch(systemMetricsHistoryProvider).lastOrNull;
 
     if (activeServer == null) {
       return Scaffold(
@@ -57,7 +59,7 @@ class DashboardView extends ConsumerWidget {
     }
 
     final history = ref.watch(systemMetricsHistoryProvider);
-    final lastSnapshot = snapshot ?? (history.isNotEmpty ? history.last : null);
+    final lastSnapshot = snapshot;
     final isReconnecting = connState.isConnecting;
     final hasExistingData = lastSnapshot != null || history.isNotEmpty;
 
@@ -250,11 +252,11 @@ class DashboardView extends ConsumerWidget {
                 index: 2,
                 child: metricsAsync.when(
                   data: (snap) => _buildMetricsGrid(context, snap),
-                  loading: () => lastSnapshot != null
-                      ? _buildMetricsGrid(context, lastSnapshot)
+                  loading: () => snapshot != null
+                      ? _buildMetricsGrid(context, snapshot)
                       : const SkeletonMetricGrid(columns: 2, rows: 2),
-                  error: (err, _) => lastSnapshot != null
-                      ? _buildMetricsGrid(context, lastSnapshot)
+                  error: (err, _) => snapshot != null
+                      ? _buildMetricsGrid(context, snapshot)
                       : ValhallaCard(
                           padding: const EdgeInsets.all(16),
                           child: ErrorStateView(
@@ -1530,10 +1532,9 @@ class _ServerHardwareSpecsSectionState
                     userHost: server == null
                         ? ''
                         : '${server.username}@${server.host}',
-                    metrics: ref
-                        .read(systemMetricsStreamProvider)
-                        .asData
-                        ?.value,
+                    metrics:
+                        ref.read(systemMetricsStreamProvider).asData?.value ??
+                        ref.read(systemMetricsHistoryProvider).lastOrNull,
                   );
                 },
               ),

@@ -827,6 +827,135 @@ void main() {
     });
   });
 
+  group('SftpNotifier 下载重试门', () {
+    /// 只有 TIMEOUT / DISCONNECTED 会被重试，且**每个任务只重试一次**。
+    /// 其余分类（权限、缺失、磁盘、截断）都是永久失败，立刻定案。
+    Future<SftpTransfer> failedAfterRetry(Object failure, _FakeOps ops) async {
+      final container = await _container(ops);
+      addTearDown(container.dispose);
+      final notifier = container.read(sftpProvider.notifier);
+      await pumpEventQueue();
+
+      ops.handleFailure = failure;
+      await notifier.downloadTo(_item('big.iso'), '/tmp/big.iso');
+      final id = container.read(sftpProvider).transfers.single.id;
+      final task = await _awaitStatus(container, id, SftpTransferStatus.failed);
+      expect(
+        container.read(sftpProvider).activeTransfer,
+        isNull,
+        reason: '重试结束后不能留下悬挂的活动任务',
+      );
+      return task;
+    }
+
+    test('超时重试一次，两次都超时后才记成 TIMEOUT', () async {
+      final ops = _FakeOps();
+      final task = await failedAfterRetry(
+        TimeoutException('read', const Duration(seconds: 1)),
+        ops,
+      );
+
+      expect(task.errorMessage, 'SFTP_DOWNLOAD_TIMEOUT');
+      expect(ops.downloads, hasLength(2), reason: '只允许一次重试');
+    });
+
+    test('断线重试一次，两次都断线后记成 DISCONNECTED', () async {
+      final ops = _FakeOps();
+      final task = await failedAfterRetry(
+        const SSHConnectionException('SSH_DISCONNECTED'),
+        ops,
+      );
+
+      expect(task.errorMessage, 'SFTP_DOWNLOAD_DISCONNECTED');
+      expect(ops.downloads, hasLength(2), reason: '只允许一次重试');
+    });
+
+    test('权限不足是永久失败，不消耗重试', () async {
+      final ops = _FakeOps();
+      final task = await failedAfterRetry(
+        SftpStatusError(SftpStatusCode.permissionDenied, 'denied'),
+        ops,
+      );
+
+      expect(task.errorMessage, 'SFTP_DOWNLOAD_PERMISSION_DENIED');
+      expect(ops.downloads, hasLength(1), reason: '重试不可能改变结果');
+    });
+
+    test('截断（early EOF）是永久失败，不消耗重试', () async {
+      final ops = _FakeOps();
+      final task = await failedAfterRetry(
+        const SFTPException('SFTP_DOWNLOAD_INCOMPLETE'),
+        ops,
+      );
+
+      expect(task.errorMessage, 'SFTP_DOWNLOAD_INCOMPLETE');
+      expect(ops.downloads, hasLength(1));
+    });
+
+    test('磁盘写满是永久失败，不消耗重试', () async {
+      final ops = _FakeOps();
+      final task = await failedAfterRetry(
+        const FileSystemException(
+          'write',
+          '/tmp/big.iso',
+          OSError('No space left on device', 28),
+        ),
+        ops,
+      );
+
+      expect(task.errorMessage, 'SFTP_DOWNLOAD_LOCAL_SPACE');
+      expect(ops.downloads, hasLength(1));
+    });
+
+    test('重试用的是同一个任务 id，不会把自己算成第二个任务', () async {
+      final ops = _FakeOps();
+      final container = await _container(ops);
+      addTearDown(container.dispose);
+      final notifier = container.read(sftpProvider.notifier);
+      await pumpEventQueue();
+
+      ops.handleFailure = TimeoutException('read', const Duration(seconds: 1));
+      await notifier.downloadTo(_item('big.iso'), '/tmp/big.iso');
+      final id = container.read(sftpProvider).transfers.single.id;
+      await _awaitStatus(container, id, SftpTransferStatus.failed);
+
+      final state = container.read(sftpProvider);
+      expect(state.transfers.map((t) => t.id), [id], reason: '没有新任务');
+      expect(ops.downloads, hasLength(2));
+    });
+
+    test('上一个任务耗尽重试后，新任务仍然有自己的重试额度', () async {
+      final ops = _FakeOps();
+      final container = await _container(ops);
+      addTearDown(container.dispose);
+      final notifier = container.read(sftpProvider.notifier);
+      await pumpEventQueue();
+
+      ops.handleFailure = TimeoutException('read', const Duration(seconds: 1));
+      await notifier.downloadTo(_item('first.iso'), '/tmp/first.iso');
+      final firstId = container.read(sftpProvider).transfers.single.id;
+      await _awaitStatus(container, firstId, SftpTransferStatus.failed);
+      expect(ops.downloads, hasLength(2));
+
+      await notifier.downloadTo(_item('second.iso'), '/tmp/second.iso');
+      final secondId = container.read(sftpProvider).transfers.last.id;
+      expect(secondId, isNot(firstId));
+      final second = await _awaitStatus(
+        container,
+        secondId,
+        SftpTransferStatus.failed,
+      );
+
+      expect(second.errorMessage, 'SFTP_DOWNLOAD_TIMEOUT');
+      expect(ops.downloads, hasLength(4), reason: '新任务也有一次重试额度');
+      expect(
+        container.read(sftpProvider).transferById(firstId)!.errorMessage,
+        'SFTP_DOWNLOAD_TIMEOUT',
+        reason: '已完成的失败记录不得被后来的任务改写',
+      );
+    });
+  });
+
   group('SftpNotifier 传输队列', () {
     /// 建一个「第一个任务卡在闸门上」的容器，方便测队列的中间态。
     Future<(ProviderContainer, SftpNotifier, _FakeOps)> busyContainer() async {

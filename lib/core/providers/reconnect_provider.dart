@@ -131,6 +131,9 @@ class ReconnectController {
   /// 首次连接成功，进入稳定态并清零退避计数。
   void markConnected() {
     _cancelTimer();
+    // Foreground health checks are not new connections. Avoid broadcasting a
+    // fresh state that restarts streams/rebinds healthy terminal channels.
+    if (_state.isConnected) return;
     _emit(const ReconnectState(status: ReconnectStatus.connected));
   }
 
@@ -138,7 +141,12 @@ class ReconnectController {
   ///
   /// 正常路径由 `SSHClientManager.transportDied` 触发。
   void handleTransportDied() {
-    if (!_shouldRetry) return;
+    if (!_shouldRetry) {
+      if (!_disposed && _userIntent && _appDetached) {
+        _emit(_state.copyWith(status: ReconnectStatus.idle, clearDelay: true));
+      }
+      return;
+    }
     _scheduleRetry();
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/agent_profile.dart';
 import '../../infrastructure/acp/agent_environment_service.dart';
 import '../errors/app_exceptions.dart';
+import '../logging/sanitizer.dart';
 import 'infrastructure_providers.dart';
 import 'server_provider.dart';
 import 'storage_providers.dart';
@@ -95,9 +96,12 @@ class AgentRegistryState {
 ///
 /// 监听 `activeServerProvider`：切换服务器时整体重建，绝不复用其它服务器的
 /// 运行时状态。监听 `serverConnectionProvider`：SSH 连上后自动检测一次，断连
-/// 时把运行时结果重置为 unknown（不触碰网络，也不重建本 provider）。
+/// 保留最后检测结果；实际操作仍独立校验连接，不把缓存当作在线证明。
 class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
   int _environmentEpoch = 0;
+  Future<void>? _refreshing;
+  int? _refreshEpoch;
+  final Map<(int, String), Future<void>> _agentChecks = {};
   static const disconnectedCode = 'SSH_DISCONNECTED';
 
   @override
@@ -108,7 +112,7 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
     final repo = ref.watch(agentRepositoryProvider);
 
     // 连接状态变化的两个职责，都放在这一个监听里：
-    //   - 断开：把上一次的运行时检测结果清空（全 unknown + 断连 reason code）。
+    //   - 断开：保留检测缓存，取消本轮加载，禁止迟到检测回写。
     //   - 连上（首次连接或重连）：自动检测一次，用户不必再去点「检测状态」。
     //
     // 这里刻意**不** `ref.watch(serverConnectionProvider)`，也不用
@@ -117,7 +121,7 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
     // automatically be removed when the provider rebuilds"），回调永远来不及
     // 跑——表现为「自动检测」完全失效，且没有任何报错。改用 `weak: true` 只能
     // 让回调收到**第一次**变化，weak 订阅在重建后不会被重新接线，重连那次依旧
-    // 收不到。所以正解是根本不重建：由监听自己调 `_markAllDisconnected()` 重置。
+    // 收不到。所以这里不重建：由监听自己调 `_markAllDisconnected()` 保留缓存。
     //
     // 另注意要裸调 refresh()，不能 ref.read(agentRegistryProvider.notifier)：
     // 那会让 provider 依赖自己，Riverpod 断言 "A provider cannot depend on
@@ -147,6 +151,12 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
         )
         .toList();
 
+    final epoch = _environmentEpoch;
+    Future.microtask(() {
+      if (ref.mounted && epoch == _environmentEpoch && _isConnected) {
+        unawaited(refresh());
+      }
+    });
     return AgentRegistryState(serverId: server.id, agents: agents);
   }
 
@@ -159,11 +169,25 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
     final executorConnected = ref
         .read(sshCommandExecutorProvider)
         .isConnected(serverId);
-    return executorConnected || ref.read(serverConnectionProvider).isConnected;
+    final connection = ref.read(serverConnectionProvider);
+    return executorConnected ||
+        (connection.activeServerId == serverId && connection.isConnected);
   }
 
   /// 只读检测：刷新所有 Agent 的环境状态。
-  Future<void> refresh() async {
+  Future<void> refresh() {
+    if (_refreshEpoch == _environmentEpoch && _refreshing != null) {
+      return _refreshing!;
+    }
+    _refreshEpoch = _environmentEpoch;
+    late final Future<void> pending;
+    pending = _refreshAll().whenComplete(() {
+      if (identical(_refreshing, pending)) _refreshing = null;
+    });
+    return _refreshing = pending;
+  }
+
+  Future<void> _refreshAll() async {
     final epoch = _environmentEpoch;
     final serverId = state.serverId;
     if (serverId == null) return;
@@ -174,41 +198,35 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
     }
 
     state = state.copyWith(isLoading: true);
-    final service = ref.read(agentEnvironmentServiceProvider);
-    final updated = <AgentRuntimeState>[];
-    for (final agent in state.agents) {
-      final status = await service.inspect(agent.profile, serverId);
-      if (!ref.mounted ||
-          epoch != _environmentEpoch ||
-          state.serverId != serverId) {
-        return;
+    final agents = List<AgentRuntimeState>.of(state.agents);
+    try {
+      for (var index = 0; index < agents.length; index += 2) {
+        if (!ref.mounted || epoch != _environmentEpoch) return;
+        await Future.wait([
+          for (final agent in agents.skip(index).take(2))
+            refreshAgent(agent.profile.id),
+        ]);
       }
-      updated.add(
-        agent.copyWith(
-          status: status,
-          clearError: status.kind == AgentEnvironmentStatusKind.ready,
-        ),
-      );
+    } finally {
+      if (ref.mounted && epoch == _environmentEpoch) {
+        state = state.copyWith(isLoading: false);
+      }
     }
-    state = state.copyWith(
-      agents: state.agents.map((current) {
-        final checked = updated
-            .where((entry) => entry.profile.id == current.profile.id)
-            .firstOrNull;
-        return checked == null
-            ? current
-            : current.copyWith(
-                status: checked.status,
-                clearError:
-                    checked.status.kind == AgentEnvironmentStatusKind.ready,
-              );
-      }).toList(),
-      isLoading: false,
-    );
   }
 
   /// 只读检测单个 Agent。
-  Future<void> refreshAgent(String agentId) async {
+  Future<void> refreshAgent(String agentId) {
+    final key = (_environmentEpoch, agentId);
+    final current = _agentChecks[key];
+    if (current != null) return current;
+    late final Future<void> pending;
+    pending = _refreshAgent(agentId).whenComplete(() {
+      if (identical(_agentChecks[key], pending)) _agentChecks.remove(key);
+    });
+    return _agentChecks[key] = pending;
+  }
+
+  Future<void> _refreshAgent(String agentId) async {
     final epoch = _environmentEpoch;
     final serverId = state.serverId;
     final runtime = state.findRuntime(agentId);
@@ -224,17 +242,55 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
       return;
     }
 
-    final service = ref.read(agentEnvironmentServiceProvider);
-    final status = await service.inspect(runtime.profile, serverId);
-    if (!ref.mounted ||
-        epoch != _environmentEpoch ||
-        state.serverId != serverId) {
+    final AgentEnvironmentStatus status;
+    try {
+      status = await ref
+          .read(agentEnvironmentServiceProvider)
+          .inspect(runtime.profile, serverId);
+    } catch (error) {
+      if (ref.mounted &&
+          epoch == _environmentEpoch &&
+          identical(state.findRuntime(agentId)?.profile, runtime.profile)) {
+        _replace(
+          runtime.copyWith(
+            errorMessage: LogSanitizer.sanitize(error.toString()),
+          ),
+        );
+      }
       return;
     }
+    if (!ref.mounted ||
+        epoch != _environmentEpoch ||
+        state.serverId != serverId ||
+        !identical(state.findRuntime(agentId)?.profile, runtime.profile)) {
+      return;
+    }
+    final latest = state.findRuntime(agentId)!;
     _replace(
-      runtime.copyWith(
+      latest.copyWith(
         status: status,
         clearError: status.kind == AgentEnvironmentStatusKind.ready,
+      ),
+    );
+  }
+
+  Future<void> confirmAuthentication(AgentProfile profile) async {
+    final epoch = _environmentEpoch;
+    await refreshAgent(profile.id);
+    if (!ref.mounted || epoch != _environmentEpoch) return;
+    final runtime = state.findRuntime(profile.id);
+    if (runtime == null || !identical(runtime.profile, profile)) return;
+    // A successful official RPC proves this runtime, not permanent validity.
+    _replace(
+      runtime.copyWith(
+        status: runtime.status.copyWith(
+          authentication: AgentAuthenticationStatus.authenticated,
+          clearDetail: {
+            'AGY_ACP_CREDENTIALS_NOT_VALIDATED',
+            'AGY_ACP_SIGN_IN_REQUIRED',
+            'AGY_AUTH_CHECK_UNAVAILABLE',
+          }.contains(runtime.status.detail),
+        ),
       ),
     );
   }
@@ -388,16 +444,9 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
   }
 
   void _markAllDisconnected() {
-    state = state.copyWith(
-      agents: state.agents
-          .map(
-            (a) => a.copyWith(
-              status: AgentEnvironmentStatus.unknown(),
-              errorMessage: disconnectedCode,
-            ),
-          )
-          .toList(),
-    );
+    // Cached environment results are not current connection health. Keep them;
+    // execution/install/login still guard the live connection independently.
+    state = state.copyWith(isLoading: false);
   }
 
   void _replace(AgentRuntimeState runtime) {

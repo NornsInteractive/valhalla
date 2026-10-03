@@ -105,6 +105,11 @@ class FakeAcpPair {
   /// When true, the fake agent answers `authenticate` with an error.
   bool failAuthenticate = false;
 
+  /// When true, `authenticate` is recorded but never answered, so the caller
+  /// stays mid-flight. Models an agent that blocks while it waits for the
+  /// user to complete an authorization challenge.
+  bool holdAuthenticate = false;
+
   /// How many `authenticate` requests the fake agent received.
   int authenticateCallCount = 0;
 
@@ -203,6 +208,9 @@ class FakeAcpPair {
         case 'authenticate':
           authenticateCallCount++;
           lastAuthenticateMethodId = _methodIdOf(message.params);
+          if (holdAuthenticate) {
+            break;
+          }
           if (failAuthenticate) {
             _respondError(message.id, -32000, 'authentication failed');
           } else {

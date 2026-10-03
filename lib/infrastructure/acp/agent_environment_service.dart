@@ -5,6 +5,7 @@ import '../../core/errors/app_exceptions.dart';
 import '../../core/logging/sanitizer.dart';
 import '../../core/security/agent_command_validator.dart';
 import '../../data/models/agent_profile.dart';
+import '../../data/models/builtin_agent_preset.dart';
 import '../../core/utils/shell_quote.dart';
 import '../cli/agent_execution_target.dart';
 import '../ssh/ssh_client_manager.dart';
@@ -74,10 +75,14 @@ class AgentEnvironmentStatus {
 
 /// 通过既有 SSH 登录 Shell 检测、安装和登录 ACP Agent。
 ///
-/// 只做只读探测；安装与登录命令必须由上层确认后显式调用，绝不在 [inspect]
-/// 中自动执行。所有远端输出已由 [SshCommandExecutor] 脱敏。
+/// 不自动安装或发起交互登录；[inspect] 可复验已保存的官方凭据，但收到
+/// 新授权挑战即停止。安装与交互登录由上层确认后显式调用，所有远端命令
+/// 输出已由 [SshCommandExecutor] 脱敏。
 class AgentEnvironmentService {
-  AgentEnvironmentService(this._ssh);
+  AgentEnvironmentService(this._ssh, {this.validateSavedAuth});
+
+  final Future<AgentAuthenticationStatus> Function(AgentProfile, String)?
+  validateSavedAuth;
 
   final SshCommandExecutor _ssh;
 
@@ -224,7 +229,12 @@ class AgentEnvironmentService {
         }
         final acp = await probe(
           'acp availability',
-          agentTargetCommand(profile, 'command -v $acpBinary'),
+          agentTargetCommand(
+            profile,
+            acpBinary == 'agy_acp_server.par' && usesAntigravityAcp(profile)
+                ? antigravityAcpLookupCommand
+                : 'command -v $acpBinary',
+          ),
           requestedCommand: 'command -v $acpBinary',
         );
         if (!acp.isSuccess) {
@@ -260,6 +270,78 @@ class AgentEnvironmentService {
         agentTargetCommand(profile, loginCheck),
         requestedCommand: loginCheck,
       );
+      if (loginCheck.trim() == kAntigravityLoginCheckCommand.trim()) {
+        // Storage presence is useful setup evidence, never a live login proof.
+        if (!login.isSuccess) {
+          return finish(
+            acpMissingDetail == null
+                ? AgentEnvironmentStatusKind.ready
+                : AgentEnvironmentStatusKind.acpMissing,
+            version: _tail(cli.stdout),
+            detail: acpMissingDetail ?? 'AGY_AUTH_CHECK_UNAVAILABLE',
+          );
+        }
+        try {
+          final result = jsonDecode(login.stdout);
+          if (result is! Map ||
+              result['scope'] != 'antigravity-acp' ||
+              !{'missing', 'saved', 'unknown'}.contains(result['state'])) {
+            throw const FormatException('AGY_AUTH_CHECK_INVALID');
+          }
+          final missing =
+              requireAcp &&
+              usesAntigravityAcp(profile) &&
+              result['state'] == 'missing';
+          note(
+            'authentication: ACP credential readiness only; CLI login is separate',
+          );
+          var authentication = missing
+              ? AgentAuthenticationStatus.unauthenticated
+              : AgentAuthenticationStatus.unknown;
+          if (result['state'] == 'saved' &&
+              acpMissingDetail == null &&
+              requireAcp &&
+              usesAntigravityAcp(profile) &&
+              {
+                'oauth-personal',
+                'oauth-business',
+              }.contains(result['authType']) &&
+              validateSavedAuth != null) {
+            authentication = await validateSavedAuth!(
+              profile,
+              result['authType'] as String,
+            );
+            note(
+              'authentication: saved credential official RPC check ${authentication.name}',
+            );
+          }
+          return finish(
+            acpMissingDetail != null
+                ? AgentEnvironmentStatusKind.acpMissing
+                : AgentEnvironmentStatusKind.ready,
+            version: _tail(cli.stdout),
+            detail:
+                acpMissingDetail ??
+                (authentication == AgentAuthenticationStatus.authenticated
+                    ? null
+                    : authentication ==
+                          AgentAuthenticationStatus.unauthenticated
+                    ? 'AGY_ACP_SIGN_IN_REQUIRED'
+                    : result['state'] == 'saved'
+                    ? 'AGY_ACP_CREDENTIALS_NOT_VALIDATED'
+                    : 'AGY_AUTH_CHECK_UNAVAILABLE'),
+            authentication: authentication,
+          );
+        } on FormatException {
+          return finish(
+            acpMissingDetail == null
+                ? AgentEnvironmentStatusKind.ready
+                : AgentEnvironmentStatusKind.acpMissing,
+            version: _tail(cli.stdout),
+            detail: acpMissingDetail ?? 'AGY_AUTH_CHECK_INVALID',
+          );
+        }
+      }
       if (profile.cliCommand == 'claude' &&
           loginCheck == 'claude auth status --json') {
         if (!login.isSuccess && login.exitCode != 1) {

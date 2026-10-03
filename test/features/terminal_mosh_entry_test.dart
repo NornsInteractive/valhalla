@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/terminal_provider.dart';
+import 'package:valhalla/core/providers/terminal_settings_provider.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/features/terminal/terminal_view.dart';
 import 'package:valhalla/infrastructure/mosh/mosh_bridge_adapter.dart';
@@ -107,6 +108,13 @@ class _MockTerminalNotifier extends TerminalNotifier {
   SshTerminalState build() => _initial;
 }
 
+/// 画布会 watch 字号；这些用例不测字号，给固定值以免整棵树去读还没初始化的
+/// LocalStorageService（会以 ProviderException 炸掉整个 build）。
+class _FixedTerminalSettingsNotifier extends TerminalSettingsNotifier {
+  @override
+  TerminalSettings build() => const TerminalSettings();
+}
+
 Widget _buildTestApp({
   required _FakeMoshService moshService,
   required ServerProfile? activeServer,
@@ -116,6 +124,7 @@ Widget _buildTestApp({
   return ProviderScope(
     overrides: [
       terminalProvider.overrideWith(() => notifier),
+      terminalSettingsProvider.overrideWith(_FixedTerminalSettingsNotifier.new),
       activeServerProvider.overrideWith(
         () => _FakeActiveServerNotifier(activeServer),
       ),

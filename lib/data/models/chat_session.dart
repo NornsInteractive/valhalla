@@ -39,7 +39,77 @@ const Map<String, String> kLegacyAgentTypeToId = {
 
 enum MessageRole { user, assistant, system }
 
-enum ChatTurnStatus { streaming, completed, interrupted, failed }
+enum ChatTurnStatus {
+  streaming,
+  completed,
+  interrupted,
+  failed,
+  unknown,
+  awaitingAuthentication,
+}
+
+enum ChatContentBlockType { text, tool }
+
+/// Text ranges reference [ChatMessage.content], avoiding a second transcript.
+/// Tool updates retain their first-seen position through the stable tool ID.
+class ChatContentBlock {
+  final ChatContentBlockType type;
+  final int start, end;
+  final String? toolId;
+  const ChatContentBlock.text(this.start, this.end)
+    : type = ChatContentBlockType.text,
+      toolId = null;
+  const ChatContentBlock.tool(this.toolId)
+    : type = ChatContentBlockType.tool,
+      start = 0,
+      end = 0;
+
+  static List<ChatContentBlock> appendText(
+    List<ChatContentBlock> blocks,
+    int start,
+    int end,
+  ) {
+    if (start == end) return blocks;
+    final last = blocks.lastOrNull;
+    return last?.type == ChatContentBlockType.text && last?.end == start
+        ? [
+            ...blocks.take(blocks.length - 1),
+            ChatContentBlock.text(last!.start, end),
+          ]
+        : [...blocks, ChatContentBlock.text(start, end)];
+  }
+
+  static List<ChatContentBlock> appendTool(
+    List<ChatContentBlock> blocks,
+    String id,
+  ) =>
+      blocks.any(
+        (block) =>
+            block.type == ChatContentBlockType.tool && block.toolId == id,
+      )
+      ? blocks
+      : [...blocks, ChatContentBlock.tool(id)];
+
+  Map<String, dynamic> toJson() => {
+    'type': type.name,
+    if (type == ChatContentBlockType.text) 'start': start,
+    if (type == ChatContentBlockType.text) 'end': end,
+    if (type == ChatContentBlockType.tool) 'toolId': toolId,
+  };
+
+  static ChatContentBlock? fromJson(Object? value) {
+    if (value is! Map) return null;
+    if (value['type'] == 'tool' && value['toolId'] is String) {
+      return ChatContentBlock.tool(value['toolId'] as String);
+    }
+    if (value['type'] == 'text' &&
+        value['start'] is int &&
+        value['end'] is int) {
+      return ChatContentBlock.text(value['start'] as int, value['end'] as int);
+    }
+    return null;
+  }
+}
 
 enum ToolExecutionStatus { pending, running, completed, failed }
 
@@ -252,6 +322,35 @@ class ChatAttachment {
 }
 
 class ChatMessage {
+  final List<ChatContentBlock> contentBlocks;
+  List<ChatContentBlock> get orderedContentBlocks {
+    final tools = toolExecutions.map((tool) => tool.id).toSet();
+    var offset = 0;
+    final seenTools = <String>{};
+    final valid =
+        contentBlocks.isNotEmpty &&
+        contentBlocks.every((block) {
+          if (block.type == ChatContentBlockType.tool) {
+            return tools.contains(block.toolId) && seenTools.add(block.toolId!);
+          }
+          if (block.start != offset ||
+              block.end <= block.start ||
+              block.end > content.length) {
+            return false;
+          }
+          offset = block.end;
+          return true;
+        });
+    if (valid && offset == content.length && seenTools.length == tools.length) {
+      return contentBlocks;
+    }
+    // Legacy records have no chronology; preserve their original presentation.
+    return [
+      for (final tool in toolExecutions) ChatContentBlock.tool(tool.id),
+      if (content.isNotEmpty) ChatContentBlock.text(0, content.length),
+    ];
+  }
+
   final String? remoteMessageId;
   final List<ChatAttachment> attachments;
   final ChatTurnStatus status;
@@ -266,6 +365,7 @@ class ChatMessage {
   final DateTime createdAt;
 
   const ChatMessage({
+    this.contentBlocks = const [],
     this.remoteMessageId,
     this.attachments = const [],
     this.status = ChatTurnStatus.completed,
@@ -281,6 +381,7 @@ class ChatMessage {
   });
 
   ChatMessage copyWith({
+    List<ChatContentBlock>? contentBlocks,
     String? remoteMessageId,
     List<ChatAttachment>? attachments,
     ChatTurnStatus? status,
@@ -295,6 +396,7 @@ class ChatMessage {
     DateTime? createdAt,
   }) {
     return ChatMessage(
+      contentBlocks: contentBlocks ?? this.contentBlocks,
       remoteMessageId: remoteMessageId ?? this.remoteMessageId,
       attachments: attachments ?? this.attachments,
       status: status ?? this.status,
@@ -311,6 +413,7 @@ class ChatMessage {
   }
 
   Map<String, dynamic> toJson() => {
+    'contentBlocks': contentBlocks.map((block) => block.toJson()).toList(),
     'remoteMessageId': remoteMessageId,
     'attachments': attachments.map((a) => a.toJson()).toList(),
     'status': status.name,
@@ -326,6 +429,13 @@ class ChatMessage {
   };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
+    contentBlocks:
+        (json['contentBlocks'] is List
+                ? json['contentBlocks'] as List
+                : const [])
+            .map(ChatContentBlock.fromJson)
+            .whereType<ChatContentBlock>()
+            .toList(),
     remoteMessageId: json['remoteMessageId'] as String?,
     attachments: (json['attachments'] as List? ?? const [])
         .map(

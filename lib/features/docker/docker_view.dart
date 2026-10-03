@@ -377,13 +377,13 @@ class _DockerViewState extends ConsumerState<DockerView> {
 
   @override
   Widget build(BuildContext context) {
-    final connState = ref.watch(serverConnectionProvider);
-    if (!connState.isConnected) {
+    final activeServer = ref.watch(activeServerProvider);
+    if (activeServer == null) {
       return Scaffold(
-        body: OfflineStateView(
-          onConnect: () {
-            ref.read(serverConnectionProvider.notifier).connect();
-          },
+        body: EmptyStateView(
+          icon: Icons.dns_outlined,
+          title: context.l10n.noServerSelected,
+          description: context.l10n.addServer,
         ),
       );
     }
@@ -431,7 +431,13 @@ class _DockerViewState extends ConsumerState<DockerView> {
                   IconButton(
                     icon: const Icon(Icons.refresh),
                     tooltip: context.l10n.sftpRefresh,
-                    onPressed: dockerState.isLoading
+                    onPressed:
+                        (dockerState.isLoading ||
+                            !ref.watch(
+                              serverConnectionProvider.select(
+                                (s) => s.isConnected,
+                              ),
+                            ))
                         ? null
                         : () => ref.read(dockerProvider.notifier).refresh(),
                   ),
@@ -470,7 +476,9 @@ class _DockerViewState extends ConsumerState<DockerView> {
                         dockerState.filterState == DockerContainerState.exited,
                     onSelected: (val) => ref
                         .read(dockerProvider.notifier)
-                        .setFilterState(val ? DockerContainerState.exited : null),
+                        .setFilterState(
+                          val ? DockerContainerState.exited : null,
+                        ),
                   ),
                   const SizedBox(width: 8),
                   FilterChip(
@@ -479,7 +487,9 @@ class _DockerViewState extends ConsumerState<DockerView> {
                         dockerState.filterState == DockerContainerState.paused,
                     onSelected: (val) => ref
                         .read(dockerProvider.notifier)
-                        .setFilterState(val ? DockerContainerState.paused : null),
+                        .setFilterState(
+                          val ? DockerContainerState.paused : null,
+                        ),
                   ),
                 ],
               ),
@@ -562,6 +572,10 @@ class _DockerViewState extends ConsumerState<DockerView> {
   }) {
     final pendingAction = dockerState.pendingActions[container.id];
     final isContainerBusy = pendingAction != null;
+    final isConnected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
+    final isRemoteDisabled = isContainerBusy || !isConnected;
     final activeServer = ref.watch(activeServerProvider);
     String containerShell = 'bash';
     if (activeServer != null) {
@@ -688,7 +702,9 @@ class _DockerViewState extends ConsumerState<DockerView> {
                                     : context.colorScheme.outlineVariant
                                           .withValues(alpha: 0.5),
                               ),
-                              borderRadius: BorderRadius.circular(VRadius.input),
+                              borderRadius: BorderRadius.circular(
+                                VRadius.input,
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -822,7 +838,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
                 IconButton(
                   icon: const Icon(Icons.receipt_long_outlined, size: 18),
                   tooltip: context.l10n.dockerActionLogs,
-                  onPressed: isContainerBusy
+                  onPressed: isRemoteDisabled
                       ? null
                       : () => _showLogsDialog(container),
                 ),
@@ -835,7 +851,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
                         )
                       : const Icon(Icons.info_outline, size: 18),
                   tooltip: context.l10n.dockerActionInspect,
-                  onPressed: isContainerBusy
+                  onPressed: isRemoteDisabled
                       ? null
                       : () => _showInspectModal(container),
                 ),
@@ -844,7 +860,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
                   icon: const Icon(Icons.terminal_rounded, size: 18),
                   tooltip: context.l10n.dockerActionTerminal,
                   onPressed:
-                      (isContainerBusy ||
+                      (isRemoteDisabled ||
                           container.state != DockerContainerState.running)
                       ? null
                       : () => _openContainerTerminal(container),
@@ -868,7 +884,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
                             color: context.vSuccess,
                           ),
                     tooltip: context.l10n.dockerActionStart,
-                    onPressed: isContainerBusy
+                    onPressed: isRemoteDisabled
                         ? null
                         : () => _handleLifecycleAction(container, 'start'),
                   )
@@ -891,7 +907,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
                             color: context.vWarning,
                           ),
                     tooltip: context.l10n.dockerActionStop,
-                    onPressed: isContainerBusy
+                    onPressed: isRemoteDisabled
                         ? null
                         : () => _handleLifecycleAction(container, 'stop'),
                   ),
@@ -913,7 +929,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
                             color: context.vInfo,
                           ),
                     tooltip: context.l10n.dockerActionRestart,
-                    onPressed: isContainerBusy
+                    onPressed: isRemoteDisabled
                         ? null
                         : () => _handleLifecycleAction(container, 'restart'),
                   ),
@@ -936,7 +952,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
                           color: context.vDanger,
                         ),
                   tooltip: context.l10n.dockerActionRm,
-                  onPressed: isContainerBusy
+                  onPressed: isRemoteDisabled
                       ? null
                       : () => _handleLifecycleAction(container, 'rm'),
                 ),

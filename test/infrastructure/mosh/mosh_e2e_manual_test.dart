@@ -62,8 +62,13 @@ class _ProbeExecutor implements SshCommandExecutor {
 void main() {
   final enabled = Platform.environment['VALHALLA_MOSH_E2E'] == '1';
   final host = Platform.environment['VALHALLA_MOSH_HOST'] ?? '172.30.242.84';
-  final keyPath = Platform.environment['VALHALLA_MOSH_KEY'] ??
-      '${Platform.environment['USERPROFILE']!}\\.ssh\\id_rsa';
+  // 收集阶段就要算出来（skip 在 test 注册之后才生效），所以任何平台都不能
+  // 用 `!`：POSIX 上没有 USERPROFILE，直接崩会连带整个文件加载失败。
+  final home =
+      Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'] ?? '';
+  final keyPath =
+      Platform.environment['VALHALLA_MOSH_KEY'] ??
+      '$home${Platform.pathSeparator}.ssh${Platform.pathSeparator}id_rsa';
 
   test(
     'real mosh-server e2e: bootstrap with locale fallback + UDP round-trip',
@@ -114,8 +119,10 @@ void main() {
       handle.send(utf8.encode('echo E2E_MOSH_OK\r'));
       final marker = await got.future.timeout(Duration(seconds: 20));
       // ignore: avoid_print
-      print('[4] round-trip OK: '
-          '${marker.replaceAll(RegExp(r'\s+'), ' ').trim()}');
+      print(
+        '[4] round-trip OK: '
+        '${marker.replaceAll(RegExp(r'\s+'), ' ').trim()}',
+      );
 
       await handle.dispose();
       await sub.cancel();

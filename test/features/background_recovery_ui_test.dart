@@ -155,157 +155,46 @@ Future<void> pumpFrames(WidgetTester tester) async {
 }
 
 void main() {
-  group('SessionRecoveryBanner - recovery state contract', () {
-    testWidgets('idle renders nothing at all', (tester) async {
-      await tester.pumpWidget(
-        _bannerHost(SessionRecoveryStatus.idle, ConnectionStateEnum.connected),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byType(SessionRecoveryBanner), findsOneWidget);
-      expect(find.byKey(_offlineBanner), findsNothing);
-      expect(find.byKey(_reconnectingBanner), findsNothing);
-      expect(find.byKey(_syncingBanner), findsNothing);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-    });
-
-    testWidgets('incomplete offers a working retry action', (tester) async {
-      var retries = 0;
-      await tester.pumpWidget(
-        _bannerHost(
-          SessionRecoveryStatus.incomplete,
-          ConnectionStateEnum.connected,
-          onRetry: () => retries++,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(_incompleteBanner), findsOneWidget);
-      final retry = tester.widget<TextButton>(find.byKey(_retryButton));
-      expect(retry.onPressed, isNotNull, reason: 'retry must be actionable');
-
-      await tester.tap(find.byKey(_retryButton));
-      await tester.pumpAndSettle();
-      expect(retries, 1, reason: 'one tap triggers exactly one recovery');
-    });
-
-    testWidgets('failed offers a working retry action', (tester) async {
-      var retries = 0;
-      await tester.pumpWidget(
-        _bannerHost(
-          SessionRecoveryStatus.failed,
-          ConnectionStateEnum.connected,
-          onRetry: () => retries++,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(_failedBanner), findsOneWidget);
-      expect(
-        tester.widget<TextButton>(find.byKey(_retryButton)).onPressed,
-        isNotNull,
-      );
-
-      await tester.tap(find.byKey(_retryButton));
-      await tester.pumpAndSettle();
-      expect(retries, 1);
-    });
-
-    testWidgets(
-      'reconnecting is suppressed while the connection banner is up',
-      (tester) async {
+  group('SessionRecoveryBanner - legacy surface is a no-op', () {
+    testWidgets('旧的会话内恢复横幅在任何恢复状态下都不再内联展示', (tester) async {
+      for (final status in [
+        SessionRecoveryStatus.idle,
+        SessionRecoveryStatus.reconnecting,
+        SessionRecoveryStatus.syncing,
+        SessionRecoveryStatus.incomplete,
+        SessionRecoveryStatus.failed,
+      ]) {
         await tester.pumpWidget(
-          _bannerHost(
-            SessionRecoveryStatus.reconnecting,
-            ConnectionStateEnum.connecting,
-          ),
+          _bannerHost(status, ConnectionStateEnum.connected),
         );
         await tester.pumpAndSettle();
 
         expect(
-          find.byKey(_reconnectingBanner),
+          find.byType(SessionRecoveryBanner),
+          findsOneWidget,
+          reason: '旧入口保留，但必须只是占位',
+        );
+        expect(
+          find.byKey(_offlineBanner),
           findsNothing,
-          reason: 'the global connection banner already says reconnecting',
+          reason: '恢复状态一律不再内联展示',
         );
-        expect(find.byType(CircularProgressIndicator), findsNothing);
-      },
-    );
-
-    testWidgets('reconnecting is shown when the connection banner is absent', (
-      tester,
-    ) async {
-      // Control for the case above: suppression must be conditioned on the
-      // active connection banner, not unconditional.
-      await tester.pumpWidget(
-        _bannerHost(
-          SessionRecoveryStatus.reconnecting,
-          ConnectionStateEnum.connected,
-        ),
-      );
-      await pumpFrames(tester);
-
-      expect(find.byKey(_reconnectingBanner), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byKey(_reconnectingBanner),
-          matching: find.byType(CircularProgressIndicator),
-        ),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets(
-      'a manual disconnect shows offline instead of an endless spinner',
-      (tester) async {
-        await tester.pumpWidget(
-          _bannerHost(
-            SessionRecoveryStatus.reconnecting,
-            ConnectionStateEnum.disconnected,
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.byKey(_offlineBanner), findsOneWidget);
         expect(find.byKey(_reconnectingBanner), findsNothing);
-        expect(
-          find.byType(CircularProgressIndicator),
-          findsNothing,
-          reason:
-              'a user-initiated disconnect must not keep promising to retry',
-        );
+        expect(find.byKey(_syncingBanner), findsNothing);
+        expect(find.byKey(_incompleteBanner), findsNothing);
+        expect(find.byKey(_failedBanner), findsNothing);
         expect(
           find.byKey(_retryButton),
           findsNothing,
-          reason: 'offline is a state, not a failure to retry',
-        );
-      },
-    );
-
-    testWidgets(
-      'syncing stays visible even while the connection is reconnecting',
-      (tester) async {
-        await tester.pumpWidget(
-          _bannerHost(
-            SessionRecoveryStatus.syncing,
-            ConnectionStateEnum.connecting,
-          ),
-        );
-        await pumpFrames(tester);
-
-        expect(
-          find.byKey(_syncingBanner),
-          findsOneWidget,
-          reason: 'only reconnecting is suppressed, not syncing',
+          reason: '恢复与重试入口已收拢到 shell 顶栏',
         );
         expect(
-          find.descendant(
-            of: find.byKey(_syncingBanner),
-            matching: find.byType(CircularProgressIndicator),
-          ),
-          findsOneWidget,
+          find.byType(CircularProgressIndicator),
+          findsNothing,
+          reason: '不得再画无止境的转圈',
         );
-      },
-    );
+      }
+    });
   });
 
   group('AiChatView - conversation survives recovery', () {
@@ -363,7 +252,11 @@ void main() {
       );
       expect(find.byKey(const ValueKey('assistant_msg_m2')), findsOneWidget);
       expect(find.text('the nightly build is green'), findsOneWidget);
-      expect(find.byKey(_reconnectingBanner), findsOneWidget);
+      expect(
+        find.byKey(_reconnectingBanner),
+        findsNothing,
+        reason: '恢复横幅已收拢到 shell 顶栏，会话内不再重复',
+      );
 
       notifier.emit(baseState(SessionRecoveryStatus.syncing));
       await tester.pump();
@@ -372,7 +265,12 @@ void main() {
       expect(find.byKey(const ValueKey('user_msg_m1')), findsOneWidget);
       expect(find.byKey(const ValueKey('assistant_msg_m2')), findsOneWidget);
       expect(find.text('the nightly build is green'), findsOneWidget);
-      expect(find.byKey(_syncingBanner), findsOneWidget);
+      expect(
+        find.byKey(_syncingBanner),
+        findsNothing,
+        reason: '同步状态同样只在 shell 顶栏出现',
+      );
+      expect(find.byType(SessionRecoveryBanner), findsNothing);
     });
 
     testWidgets('recovery while the connection banner is up stays quiet', (
@@ -389,7 +287,12 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
-      expect(find.byKey(_recoveryBannerSlot), findsOneWidget);
+      expect(
+        find.byKey(_recoveryBannerSlot),
+        findsNothing,
+        reason: '会话内已经没有恢复横幅插槽，只剩 shell 顶栏一条状态',
+      );
+      expect(find.byType(SessionRecoveryBanner), findsNothing);
       expect(
         find.byKey(_reconnectingBanner),
         findsNothing,
@@ -417,8 +320,13 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 50));
 
-        expect(find.byKey(_offlineBanner), findsOneWidget);
+        expect(
+          find.byKey(_offlineBanner),
+          findsNothing,
+          reason: '离线提示也收拢到 shell 顶栏，会话内不再内联展示',
+        );
         expect(find.byKey(_reconnectingBanner), findsNothing);
+        expect(find.byType(SessionRecoveryBanner), findsNothing);
         expect(
           find.byKey(const ValueKey('assistant_msg_m2')),
           findsOneWidget,
@@ -530,60 +438,67 @@ void main() {
     });
   });
 
-  group('AiChatView - recovery retry is wired to recovery', () {
+  group('AiChatView - 会话内不再提供恢复横幅与内联重试', () {
     for (final status in [
       SessionRecoveryStatus.incomplete,
       SessionRecoveryStatus.failed,
     ]) {
-      testWidgets('${status.name} exposes a retry that recovers', (
-        tester,
-      ) async {
-        final notifier = RecoveryChatNotifier(
-          AiChatState(
-            recoveryStatus: status,
-            sessions: [
-              _session(
-                'sess-1',
-                messages: [_message('m1', 'kept while partial')],
+      testWidgets(
+        '${status.name} keeps what was received without an inline retry',
+        (tester) async {
+          final notifier = RecoveryChatNotifier(
+            AiChatState(
+              recoveryStatus: status,
+              sessions: [
+                _session(
+                  'sess-1',
+                  messages: [_message('m1', 'kept while partial')],
+                ),
+              ],
+              activeSessionId: 'sess-1',
+              activeAgentProfile: harnessAgent,
+              readyAgents: [harnessAgent],
+            ),
+          );
+          await pumpChatView(
+            tester,
+            notifier: notifier,
+            connection: FakeConnectionNotifier(
+              const ServerConnectionState(
+                status: ConnectionStateEnum.connected,
               ),
-            ],
-            activeSessionId: 'sess-1',
-            activeAgentProfile: harnessAgent,
-            readyAgents: [harnessAgent],
-          ),
-        );
-        await pumpChatView(
-          tester,
-          notifier: notifier,
-          connection: FakeConnectionNotifier(
-            const ServerConnectionState(status: ConnectionStateEnum.connected),
-          ),
-        );
-        await tester.pumpAndSettle();
+            ),
+          );
+          await tester.pumpAndSettle();
 
-        expect(
-          find.byKey(
-            status == SessionRecoveryStatus.incomplete
-                ? _incompleteBanner
-                : _failedBanner,
-          ),
-          findsOneWidget,
-        );
-        expect(
-          tester.widget<TextButton>(find.byKey(_retryButton)).onPressed,
-          isNotNull,
-        );
-
-        await tester.tap(find.byKey(_retryButton));
-        await tester.pumpAndSettle();
-
-        expect(notifier.recoverConnectionCalls, 1);
-        expect(
-          find.byKey(const ValueKey('assistant_msg_m1')),
-          findsOneWidget,
-          reason: 'a partial recovery must not hide what was already received',
-        );
-      });
+          expect(
+            find.byKey(
+              status == SessionRecoveryStatus.incomplete
+                  ? _incompleteBanner
+                  : _failedBanner,
+            ),
+            findsNothing,
+            reason: '恢复横幅已收拢到 shell 顶栏，会话内不再重复',
+          );
+          expect(
+            find.byKey(_retryButton),
+            findsNothing,
+            reason: '内联重试已移除，重试入口只在 shell 顶栏',
+          );
+          expect(find.byType(SessionRecoveryBanner), findsNothing);
+          expect(
+            notifier.recoverConnectionCalls,
+            0,
+            reason: '会话内没有恢复入口，视图不得自作主张发起恢复',
+          );
+          expect(
+            find.byKey(const ValueKey('assistant_msg_m1')),
+            findsOneWidget,
+            reason:
+                'a partial recovery must not hide what was already received',
+          );
+        },
+      );
     }
   });
 }

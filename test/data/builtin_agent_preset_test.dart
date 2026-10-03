@@ -52,10 +52,12 @@ void main() {
       );
     });
 
-    test('agy has no ACP mode because the CLI offers no such flag', () {
+    test('agy uses the separate official ACP server', () {
       final agy = kBuiltinAgentPresets['builtin-agy']!;
-      expect(agy.acpCommand, anyOf(isNull, isEmpty));
-      expect(agy.acpInstallCommand, isNull);
+      expect(agy.acpCommand, 'agy_acp_server.par');
+      expect(agy.acpInstallCommand, kAntigravityAcpInstallCommand);
+      expect(agy.cliCommand, 'agy');
+      expect(agy.loginCommand, 'agy');
     });
 
     test('no preset invents an --acp flag', () {
@@ -94,7 +96,6 @@ void main() {
           kBuiltinAgentPresets['builtin-opencode']!.acpInstallCommand,
           isNull,
         );
-        expect(kBuiltinAgentPresets['builtin-agy']!.acpInstallCommand, isNull);
       },
     );
 

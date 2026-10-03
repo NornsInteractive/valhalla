@@ -1093,8 +1093,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Upload failed. Check permissions and try again.';
 
   @override
-  String get sftpDownloadFailed =>
-      'Download failed. Check permissions and local storage.';
+  String get sftpDownloadFailed => 'Download failed';
 
   @override
   String get sftpOpenUnsupported => 'This file format cannot be opened.';
@@ -2059,6 +2058,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatStatusFailed => 'Failed';
+
+  @override
+  String get chatStatusAwaitingAuth => 'Awaiting ACP Authentication';
 
   @override
   String get chatShowFullOutput => 'Show full output';
@@ -3446,4 +3448,116 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chatCommandsDiscoveryFailed =>
       'Failed to discover commands or skills';
+
+  @override
+  String get chatAuthWaitingForBrowser =>
+      'Waiting for authorization in browser...';
+
+  @override
+  String get chatAuthBrowserLaunchFailed =>
+      'Could not open external browser. Please reopen or copy the authorization link below.';
+
+  @override
+  String get chatAuthReopenBrowser => 'Reopen Browser';
+
+  @override
+  String get chatAuthCopyLink => 'Copy Link';
+
+  @override
+  String get chatAuthManualCallback => 'Manual Callback';
+
+  @override
+  String get chatAuthManualCallbackTitle => 'Enter Authorization Callback URL';
+
+  @override
+  String get chatAuthManualCallbackDesc =>
+      'Paste the complete redirect URL (http://127.0.0.1:PORT/...?code=...&state=...) from the browser to complete authorization. Raw authorization codes are not accepted.';
+
+  @override
+  String get chatAuthCallbackInputLabel => 'Callback URL';
+
+  @override
+  String get chatAuthCallbackInputHint =>
+      'http://127.0.0.1:PORT/...?code=...&state=...';
+
+  @override
+  String get chatAuthCallbackInvalidError =>
+      'Invalid callback URL format or delivery failed';
+
+  @override
+  String get agentAuthAgYNotice =>
+      'Antigravity ACP requires official account authorization, separate from terminal CLI login.';
+
+  @override
+  String get chatAuthDiscoveryPrompt =>
+      'This turn requires ACP authentication. Reconnect and request authorization to proceed.';
+
+  @override
+  String get chatRequestAuthButton => 'Request Authentication';
+
+  @override
+  String get agentActionAcpLogin => 'ACP Sign-In';
+
+  @override
+  String get agentActionCliLogin => 'CLI Login';
+
+  @override
+  String get agentAgyAcpSignInRequired =>
+      'ACP credentials missing (ACP sign-in required)';
+
+  @override
+  String get agentAgyAcpCredentialsSaved =>
+      'ACP credentials saved (unverified)';
+
+  @override
+  String get chatAuthMethodUnavailable =>
+      'The selected authentication method is not available.';
+
+  @override
+  String get chatAuthConnectionExpired =>
+      'Authentication connection expired. Please try again.';
+
+  @override
+  String get chatAuthCallbackDeliveryFailed =>
+      'Failed to deliver authorization callback to server.';
+
+  @override
+  String get agentTargetChangedNotice =>
+      'Target server has changed. Please reopen agent management on the current server.';
+
+  @override
+  String get agentAgyAuthCheckUnavailable =>
+      'Antigravity authentication check unavailable';
+
+  @override
+  String get agentAgyAuthCheckInvalid =>
+      'Antigravity authentication check response invalid';
+
+  @override
+  String get sftpDownloadDisconnected => 'Download disconnected';
+
+  @override
+  String get sftpDownloadPermissionDenied => 'Permission denied';
+
+  @override
+  String get sftpDownloadNotFound => 'Remote file not found';
+
+  @override
+  String get sftpDownloadTimeout => 'Download timed out';
+
+  @override
+  String get sftpDownloadLocalSpace => 'Insufficient local storage space';
+
+  @override
+  String get sftpDownloadLocalIo => 'Local storage write failed';
+
+  @override
+  String get sftpDownloadIncomplete => 'Incomplete download';
+
+  @override
+  String get transferStatusWaitingConnection => 'Waiting for connection';
+
+  @override
+  String get chatAuthCallbackListenerFailed =>
+      'Failed to start local authorization callback listener. Please retry authentication.';
 }

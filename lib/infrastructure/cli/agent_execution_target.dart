@@ -2,6 +2,13 @@ import '../../core/utils/shell_quote.dart';
 import '../../data/models/agent_profile.dart';
 import '../../data/models/native_cli_session.dart';
 
+bool usesAntigravityAcp(AgentProfile profile) => RegExp(
+  r'^(?:/[^\s]+/)?agy_acp_server\.par(?:\s|$)',
+).hasMatch(profile.acpCommand?.trim() ?? '');
+
+const antigravityAcpLookupCommand =
+    r'command -v agy_acp_server.par || { test -x "$HOME/.local/bin/agy_acp_server.par" && printf "%s\n" "$HOME/.local/bin/agy_acp_server.par"; }';
+
 /// Standard Codex ACP must use the same executable as independent CLI queries.
 /// Explicit custom launch scripts keep their own runtime/environment semantics.
 String agentAcpLaunchCommand(AgentProfile profile) {
@@ -10,6 +17,19 @@ String agentAcpLaunchCommand(AgentProfile profile) {
     throw StateError('AGENT_ACP_COMMAND_MISSING');
   }
   var script = command;
+  if (RegExp(
+    r'^(?:/[^\s]+/)?agy_acp_server\.par(?:\s+--uid=)?$',
+  ).hasMatch(command)) {
+    final executable = command.split(RegExp(r'\s+')).first;
+    final lookup = executable == 'agy_acp_server.par'
+        ? antigravityAcpLookupCommand
+        : 'command -v ${cliShellQuote(executable)}';
+    script =
+        'valhalla_agy_acp_path=\$($lookup) || exit 127; '
+        'if [ "\$(uname -s)" = Linux ]; then '
+        'exec "\$valhalla_agy_acp_path" --uid=; else '
+        'exec "\$valhalla_agy_acp_path"; fi';
+  }
   if (nativeCliKind(profile.cliCommand) == NativeCliKind.codex &&
       RegExp(r'^(?:/[^\s]+/)?codex-acp(?:\s+--stdio)?$').hasMatch(command)) {
     final cli = cliShellQuote(profile.cliCommand);
@@ -66,6 +86,9 @@ String agentTargetCommand(
   // for images that provide Bash.
   final bash = '/bin/bash -ic ${cliShellQuote(command)}';
   final shellScript =
+      // docker exec --user changes uid, but can retain the image's HOME.
+      // Resolve the selected user's home before Bash reads its startup files.
+      '${user == null || user.isEmpty ? '' : r'''valhalla_uid=$(id -u); valhalla_home=$(awk -F: -v uid="$valhalla_uid" '$3 == uid {print $6; exit}' /etc/passwd); if [ -n "$valhalla_home" ]; then export HOME="$valhalla_home"; fi; '''}'
       'if [ -x /bin/bash ]; then exec $bash; else exec /bin/sh -lc ${cliShellQuote(command)}; fi';
   return 'docker exec ${interactive ? '-it' : '-i'} '
       '${user == null || user.isEmpty ? '' : '--user ${cliShellQuote(user)} '}'

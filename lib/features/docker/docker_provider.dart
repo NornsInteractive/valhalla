@@ -81,11 +81,23 @@ class DockerNotifier extends Notifier<DockerState> {
   @override
   DockerState build() {
     _epoch++;
-    final activeServer = ref.watch(activeServerProvider);
-    final connState = ref.watch(serverConnectionProvider);
+    ref.watch(activeServerProvider.select((server) => server?.connectionKey));
+    final activeServer = ref.read(activeServerProvider);
+    final connState = ref.read(serverConnectionProvider);
+    final epoch = _epoch;
+    ref.listen(serverConnectionProvider, (previous, next) {
+      if (next.isConnected && previous?.isConnected != true) {
+        unawaited(refresh(quiet: true));
+      } else if (!next.isConnected) {
+        _refreshSequence++;
+        state = state.copyWith(isLoading: false);
+      }
+    });
 
     if (activeServer != null && connState.isConnected) {
-      Future.microtask(() => refresh());
+      Future.microtask(() {
+        if (ref.mounted && epoch == _epoch) unawaited(refresh());
+      });
     }
 
     return const DockerState();
@@ -103,7 +115,7 @@ class DockerNotifier extends Notifier<DockerState> {
     }
   }
 
-  Future<void> refresh() async {
+  Future<void> refresh({bool quiet = false}) async {
     final sequence = ++_refreshSequence;
     final epoch = _epoch;
     final activeServer = ref.read(activeServerProvider);
@@ -114,7 +126,11 @@ class DockerNotifier extends Notifier<DockerState> {
       return;
     }
 
-    state = state.copyWith(isLoading: true, errorMessage: null, exitCode: null);
+    state = state.copyWith(
+      isLoading: !quiet,
+      errorMessage: null,
+      exitCode: null,
+    );
 
     try {
       final dockerService = ref.read(dockerCliServiceProvider);
@@ -137,7 +153,9 @@ class DockerNotifier extends Notifier<DockerState> {
       }
       state = state.copyWith(
         isLoading: false,
-        errorMessage: e.toString(),
+        errorMessage: ref.read(serverConnectionProvider).isConnected
+            ? e.toString()
+            : null,
         exitCode: code,
       );
     }

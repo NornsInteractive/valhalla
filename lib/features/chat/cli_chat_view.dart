@@ -16,13 +16,11 @@ import '../../data/models/agent_profile.dart';
 import '../../infrastructure/acp/agent_environment_service.dart';
 import '../agents/agent_management_view.dart';
 import '../../widgets/remote_directory_picker_dialog.dart';
-import '../../widgets/state_views.dart';
 import '../../widgets/valhalla_card.dart';
 import '../../core/providers/commands_provider.dart';
 import '../../data/models/chat_launch_preference.dart';
 import 'widgets/chat_run_settings_dialog.dart';
 import 'widgets/chat_run_settings_strip.dart';
-import 'widgets/session_recovery_banner.dart';
 
 class CliChatView extends ConsumerStatefulWidget {
   const CliChatView({super.key});
@@ -222,6 +220,9 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
       _lastReportedError = state.errorCode;
       _lastReportedErrorDetail = state.errorDetail;
       final code = state.errorCode!;
+      if (code == 'CLI_DISCONNECTED') {
+        return;
+      }
       final message = _getLocalizedError(
         context,
         code,
@@ -383,15 +384,29 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
     });
 
     final cliState = ref.watch(cliChatProvider);
-    final connState = ref.watch(serverConnectionProvider);
     _listenError(context, cliState);
 
-    if (!connState.isConnected) {
+    final activeServer = ref.watch(activeServerProvider);
+    if (activeServer == null && cliState.agents.isEmpty) {
       return Scaffold(
         body: Center(
-          child: OfflineStateView(
-            onConnect: () =>
-                ref.read(serverConnectionProvider.notifier).connect(),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.dns_outlined,
+                  size: 64,
+                  color: context.colorScheme.outline,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.l10n.noServerSelected,
+                  style: context.textTheme.titleMedium,
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -444,19 +459,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
               ),
             ),
             const VerticalDivider(width: 1),
-            Expanded(
-              child: Column(
-                children: [
-                  SessionRecoveryBanner(
-                    key: const Key('cliChatSessionRecoveryBannerDesktop'),
-                    status: cliState.recoveryStatus,
-                    onRetry: () =>
-                        ref.read(cliChatProvider.notifier).recoverConnection(),
-                  ),
-                  Expanded(child: _buildMainContent(context, cliState)),
-                ],
-              ),
-            ),
+            Expanded(child: _buildMainContent(context, cliState)),
           ],
         ),
       );
@@ -515,12 +518,6 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
             ),
           ),
           const Divider(height: 1),
-          SessionRecoveryBanner(
-            key: const Key('cliChatSessionRecoveryBannerMobile'),
-            status: cliState.recoveryStatus,
-            onRetry: () =>
-                ref.read(cliChatProvider.notifier).recoverConnection(),
-          ),
           Expanded(child: _buildMainContent(context, cliState)),
         ],
       ),
@@ -950,7 +947,14 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
       );
     }
 
-    final isBusy = state.isSending || state.isLoading || state.terminal != null;
+    final isConnected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
+    final isBusy =
+        state.isSending ||
+        state.isLoading ||
+        state.terminal != null ||
+        !isConnected;
 
     return ListView.builder(
       itemCount: state.sessions.length + (state.cursor != null ? 1 : 0),
@@ -1203,7 +1207,13 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
                   ),
                   FilledButton(
                     key: const Key('cli_install_sdk_button'),
-                    onPressed: state.isLoading
+                    onPressed:
+                        (state.isLoading ||
+                            !ref.watch(
+                              serverConnectionProvider.select(
+                                (s) => s.isConnected,
+                              ),
+                            ))
                         ? null
                         : () => _confirmInstallSdk(context),
                     child: Text(context.l10n.cliInstallSdkAction),

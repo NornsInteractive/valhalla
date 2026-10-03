@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/logging/sanitizer.dart';
 import '../../core/providers/infrastructure_providers.dart';
 import '../../core/providers/server_provider.dart';
 import '../../core/providers/app_visibility_provider.dart';
@@ -6,6 +8,12 @@ import '../../infrastructure/system/system_metrics_sampler.dart';
 import '../../infrastructure/system/process_service.dart';
 import '../../infrastructure/system/disk_usage_service.dart';
 import '../../infrastructure/system/system_hardware_service.dart';
+
+// One cache per currently selected endpoint, never shared across servers.
+final _dashboardSnapshotsProvider = Provider<Map<String, Object>>((ref) {
+  ref.watch(activeServerProvider.select((server) => server?.connectionKey));
+  return {};
+});
 
 final systemHardwareProvider = FutureProvider.autoDispose<SystemHardwareInfo>((
   ref,
@@ -16,18 +24,50 @@ final systemHardwareProvider = FutureProvider.autoDispose<SystemHardwareInfo>((
   final connected = ref.watch(
     serverConnectionProvider.select((s) => s.isConnected),
   );
-  if (serverId == null || !connected) throw StateError('SSH_DISCONNECTED');
-  return ref.watch(systemHardwareServiceProvider).read(serverId);
+  final cache = ref.watch(_dashboardSnapshotsProvider);
+  final previous = cache['hardware'] as SystemHardwareInfo?;
+  if (serverId == null || !connected) {
+    if (previous != null) return previous;
+    throw StateError('SSH_DISCONNECTED');
+  }
+  final service = ref.watch(systemHardwareServiceProvider);
+  try {
+    final data = await service.read(serverId);
+    if (ref.mounted) cache['hardware'] = data;
+    return data;
+  } catch (_) {
+    if (previous != null) return previous;
+    rethrow;
+  }
 });
 
 final resourceProcessesProvider = StreamProvider.autoDispose<List<ProcessInfo>>(
   (ref) async* {
-    final server = ref.watch(activeServerProvider);
-    final connected = ref.watch(serverConnectionProvider).isConnected;
+    ref.watch(activeServerProvider.select((server) => server?.connectionKey));
+    final server = ref.read(activeServerProvider);
+    final connected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
+    final cache = ref.watch(_dashboardSnapshotsProvider);
+    final previous = cache['processes'] as List<ProcessInfo>?;
+    if (previous != null) yield previous;
     if (server == null || !connected) return;
     final service = ref.watch(processServiceProvider);
     while (ref.mounted) {
-      if (ref.read(appVisibilityProvider)) yield await service.list(server.id);
+      if (ref.read(appVisibilityProvider) &&
+          ref.read(serverConnectionProvider).isConnected) {
+        try {
+          final data = await service.list(server.id);
+          if (!ref.mounted) return;
+          cache['processes'] = data;
+          yield data;
+        } catch (error) {
+          // Keep the last known process allocation during transient failures.
+          if (ref.mounted) {
+            debugPrint(LogSanitizer.sanitize('Process refresh failed: $error'));
+          }
+        }
+      }
       await Future<void>.delayed(const Duration(seconds: 3));
     }
   },
@@ -36,18 +76,37 @@ final resourceProcessesProvider = StreamProvider.autoDispose<List<ProcessInfo>>(
 final rootDiskUsageProvider = FutureProvider.autoDispose<RootDiskUsage>((
   ref,
 ) async {
-  final server = ref.watch(activeServerProvider);
-  final connected = ref.watch(serverConnectionProvider).isConnected;
-  if (server == null || !connected) throw StateError('SSH_DISCONNECTED');
-  return ref.watch(diskUsageServiceProvider).root(server.id);
+  ref.watch(activeServerProvider.select((server) => server?.connectionKey));
+  final server = ref.read(activeServerProvider);
+  final connected = ref.watch(
+    serverConnectionProvider.select((s) => s.isConnected),
+  );
+  final cache = ref.watch(_dashboardSnapshotsProvider);
+  final previous = cache['disk'] as RootDiskUsage?;
+  if (server == null || !connected) {
+    if (previous != null) return previous;
+    throw StateError('SSH_DISCONNECTED');
+  }
+  final service = ref.watch(diskUsageServiceProvider);
+  try {
+    final data = await service.root(server.id);
+    if (ref.mounted) cache['disk'] = data;
+    return data;
+  } catch (_) {
+    if (previous != null) return previous;
+    rethrow;
+  }
 });
 
 final systemMetricsStreamProvider =
     StreamProvider.autoDispose<SystemMetricsSnapshot>((ref) {
-      final activeServer = ref.watch(activeServerProvider);
-      final connState = ref.watch(serverConnectionProvider);
+      ref.watch(activeServerProvider.select((server) => server?.connectionKey));
+      final activeServer = ref.read(activeServerProvider);
+      final connected = ref.watch(
+        serverConnectionProvider.select((state) => state.isConnected),
+      );
 
-      if (activeServer == null || !connState.isConnected) {
+      if (activeServer == null || !connected) {
         return const Stream.empty();
       }
 

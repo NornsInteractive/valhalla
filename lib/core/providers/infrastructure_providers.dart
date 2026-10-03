@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../infrastructure/acp/agent_environment_service.dart';
+import '../../infrastructure/acp/agy_saved_auth_probe.dart';
+import '../../infrastructure/acp/acp_ssh_transport.dart';
+import '../../infrastructure/cli/agent_execution_target.dart';
 import '../../infrastructure/docker/docker_cli_service.dart';
 import '../../infrastructure/ssh/ssh_client_manager.dart';
 import '../../infrastructure/system/process_service.dart';
@@ -48,7 +51,21 @@ final systemHardwareServiceProvider = Provider<SystemHardwareService>((ref) {
 final agentEnvironmentServiceProvider = Provider<AgentEnvironmentService>((
   ref,
 ) {
-  return AgentEnvironmentService(ref.watch(sshClientManagerProvider));
+  final manager = ref.watch(sshClientManagerProvider);
+  return AgentEnvironmentService(
+    manager,
+    validateSavedAuth: (profile, method) async {
+      final client = manager.getClient(profile.serverId);
+      if (client == null) return AgentAuthenticationStatus.unknown;
+      return probeAgySavedAuth(
+        profile,
+        method,
+        () async => AcpSshTransport(
+          await client.execute(agentAcpLaunchCommand(profile)),
+        ),
+      );
+    },
+  );
 });
 
 final nasScanServiceProvider = Provider<NasScanService>((ref) {

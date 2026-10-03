@@ -1,9 +1,52 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valhalla/core/providers/connection_lifecycle_provider.dart';
 import 'package:valhalla/core/providers/reconnect_provider.dart';
 import 'package:valhalla/core/services/keep_alive_service.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
+
+/// 手动触发的调度器：把退避等待变成测试可控的一步。
+class _FakeScheduler {
+  final List<({Duration delay, void Function()? action})> pending = [];
+
+  Timer call(Duration delay, void Function() action) {
+    pending.add((delay: delay, action: action));
+    final index = pending.length - 1;
+    return _FakeTimer(() {
+      if (index < pending.length) {
+        pending[index] = (delay: pending[index].delay, action: null);
+      }
+    });
+  }
+
+  int get pendingCount => pending.where((e) => e.action != null).length;
+
+  Duration fireLatest() {
+    final index = pending.lastIndexWhere((entry) => entry.action != null);
+    if (index < 0) fail('没有待执行的排期，但测试期望有一次');
+    final entry = pending[index];
+    pending[index] = (delay: entry.delay, action: null);
+    entry.action!.call();
+    return entry.delay;
+  }
+}
+
+class _FakeTimer implements Timer {
+  _FakeTimer(this._cancel);
+
+  final void Function() _cancel;
+
+  @override
+  void cancel() => _cancel();
+
+  @override
+  bool get isActive => true;
+
+  @override
+  int get tick => 0;
+}
 
 /// 记录调用的假保活服务。
 class _RecordingService implements KeepAliveService {
@@ -235,19 +278,83 @@ void main() {
       expect(service.stopCalls, 1);
     });
 
-    test('detached 不停止前台服务，也不暂停重连', () async {
+    test('detached 不停止前台服务，暂停重试但保留用户意图', () async {
+      var attempts = 0;
+      final scheduler = _FakeScheduler();
       final server = _server('a');
-      controller.start(server);
-      controller.markConnected();
-      final lifecycle = build(server: server);
+      final own = ReconnectController(
+        connectAttempt: (_) async {
+          attempts++;
+        },
+        scheduler: scheduler.call,
+      );
+      own.start(server);
+      own.markConnected();
+      final lifecycle = build(server: server, withController: own);
 
       await lifecycle.onPaused();
       await lifecycle.onDetached();
 
       expect(service.stopCalls, 0, reason: 'Activity detached 时 FGS 仍在托着进程');
 
-      controller.handleTransportDied();
-      expect(controller.state.isReconnecting, isTrue, reason: '划掉任务不等于用户断开');
+      own.handleTransportDied();
+      expect(own.userIntent, isTrue, reason: '划掉任务不等于用户断开');
+      expect(
+        own.state.isReconnecting,
+        isFalse,
+        reason: '后台期间暂停重试：进程可能马上被回收，不该再排期',
+      );
+      expect(scheduler.pendingCount, 0, reason: '后台期间不得排任何重试');
+      expect(attempts, 0, reason: '后台期间不得发起任何连接尝试');
+
+      // 回前台：先复验，连接还活着就直接回到 connected，不必空转重连。
+      final alive = await lifecycle.onResumed();
+
+      expect(alive, isTrue, reason: '复验通过说明连接确实活着');
+      expect(ssh.verifyCalls, 1, reason: '回前台必须主动探活一次');
+      expect(own.state.isConnected, isTrue);
+      expect(own.userIntent, isTrue, reason: '暂停不改变用户保持连接的意图');
+      expect(scheduler.pendingCount, 0, reason: '连接健康就一次重试都不该排');
+      expect(attempts, 0, reason: '连接健康就一次连接都不该建');
+    });
+
+    test('detached 暂停重试，回前台复验失败后恰好补试一次', () async {
+      var attempts = 0;
+      final scheduler = _FakeScheduler();
+      final server = _server('a');
+      final own = ReconnectController(
+        connectAttempt: (_) async {
+          attempts++;
+        },
+        scheduler: scheduler.call,
+      );
+      own.start(server);
+      final lifecycle = build(server: server, withController: own);
+
+      await lifecycle.onDetached();
+      ssh.alive = false;
+      own.handleTransportDied();
+      expect(own.state.isReconnecting, isFalse, reason: '后台暂停重试');
+      expect(scheduler.pendingCount, 0, reason: '后台期间不得排任何重试');
+      expect(attempts, 0, reason: '后台期间不得发起任何连接尝试');
+
+      final alive = await lifecycle.onResumed();
+
+      expect(alive, isFalse, reason: '复验失败必须如实上报');
+      expect(ssh.verifyCalls, 1);
+      expect(own.state.isReconnecting, isTrue, reason: '用户仍想保持连接，复验失败必须重新排期重连');
+      expect(own.userIntent, isTrue, reason: '暂停不改变用户保持连接的意图');
+      expect(scheduler.pendingCount, 1, reason: '复验失败后恰好排一次补试');
+      expect(scheduler.pending.single.delay, Duration.zero, reason: '回前台立即补试');
+      expect(attempts, 0, reason: '补试还没跑');
+
+      expect(scheduler.fireLatest(), Duration.zero);
+      await pumpEventQueue();
+
+      expect(attempts, 1, reason: '补试恰好跑一次');
+      expect(own.state.isConnected, isTrue, reason: '补试成功后回到已连接');
+      expect(scheduler.pendingCount, 0, reason: '成功后不再排下一次');
+      expect(own.userIntent, isTrue);
     });
 
     test('detached 保留用户意图，但连接还活着时不发起重连', () async {
@@ -269,7 +376,12 @@ void main() {
       expect(alive, isTrue, reason: '连接还活着，复验通过');
       expect(ssh.verifyCalls, 1, reason: '回前台必须复验一次');
       expect(attempts, 0, reason: '连接健康时不得无故重连：重连只会打断正在跑的远端会话');
-      expect(own.state.isConnected, isFalse, reason: '没有发起过连接，不算已连接');
+      expect(
+        own.state.isConnected,
+        isTrue,
+        reason: '回前台复验通过说明连接确实活着，控制器必须反映真实连接状态',
+      );
+      expect(own.userIntent, isTrue);
     });
 
     test('detached 期间传输层真的死了，回前台立刻排重连', () async {

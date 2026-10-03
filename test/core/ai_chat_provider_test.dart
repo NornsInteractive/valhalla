@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dartssh2/dartssh2.dart';
@@ -692,6 +693,217 @@ void main() {
 
       expect(pair.authenticateCallCount, 1, reason: '复用 adapter 后认证仍必须在建会话前重放');
       expect(pair.lastAuthenticateMethodId, 'chat-gpt');
+    });
+
+    test('revoked auth 失去确认：authRequired 之后的 complete 事件不能收起卡片', () async {
+      configurePair = (p) {
+        p.authMethods = [
+          {'id': 'chat-gpt', 'name': 'ChatGPT'},
+        ];
+        p.failPrompt = true;
+      };
+      final container = await authContainer(connected: true);
+      addTearDown(container.dispose);
+
+      await _sendAndSettle(container, 'hi');
+
+      // adapter 在 authRequired 里把 _authenticated 复位，随后同一段 catch
+      // 还会补发 ACPCompleteEvent。若确认没被复位，那条 complete 会把卡片
+      // 清掉——所以这里断言卡片仍然在，就是在断言「吊销 = 失去确认」。
+      final state = container.read(aiChatProvider);
+      expect(state.authChallenge, isNotNull);
+      expect(state.lastErrorCode, AiChatNotifier.authRequiredCode);
+      expect(state.isGenerating, isFalse);
+    });
+
+    test('应用外登录后重发同一条消息：卡片与报错都清掉，且不重复写入这一轮', () async {
+      configurePair = (p) {
+        p.authMethods = [
+          {'id': 'chat-gpt', 'name': 'ChatGPT'},
+        ];
+        p.failPrompt = true;
+      };
+      final container = await authContainer(connected: true);
+      addTearDown(container.dispose);
+
+      await _sendAndSettle(container, 'hi');
+
+      final challenged = container.read(aiChatProvider);
+      expect(challenged.authChallenge, isNotNull);
+      expect(challenged.lastErrorCode, AiChatNotifier.authRequiredCode);
+      final afterChallenge = challenged.activeSession!.messages;
+      expect(afterChallenge, hasLength(2));
+      expect(afterChallenge.last.content, isEmpty);
+
+      // 用户在应用外完成登录（不经过 respondAuth），再点一次发送。
+      configurePair = (p) => p.failPrompt = false;
+      pair.failPrompt = false;
+      await _sendAndSettle(container, 'hi');
+
+      final state = container.read(aiChatProvider);
+      expect(state.authChallenge, isNull, reason: '会话成功建立后必须自动收起卡片');
+      expect(
+        state.lastErrorCode,
+        isNot(AiChatNotifier.authRequiredCode),
+        reason: '卡片收起时同步清掉 ACP_AUTH_REQUIRED',
+      );
+
+      final messages = state.activeSession!.messages;
+      expect(
+        messages.where((m) => m.role == MessageRole.user && m.content == 'hi'),
+        hasLength(1),
+        reason: '重试是补发同一轮，不能写第二条用户消息',
+      );
+      expect(messages, hasLength(2), reason: '气泡数与登录前一致');
+    });
+
+    test('只有 initialize 成功时不能算已认证，卡片必须保留', () async {
+      configurePair = (p) {
+        p.authMethods = [
+          {'id': 'chat-gpt', 'name': 'ChatGPT'},
+        ];
+        p.failSessionNew = true;
+        p.sessionNewErrorCode = -32000;
+      };
+      final container = await authContainer(connected: true);
+      addTearDown(container.dispose);
+
+      await _sendAndSettle(container, 'hi');
+
+      // fake 的 initialize 永远成功，但远端会话没建立——这不构成认证。
+      final kept = container.read(aiChatProvider);
+      expect(kept.authChallenge, isNotNull);
+      expect(kept.lastErrorCode, AiChatNotifier.authRequiredCode);
+
+      // 只有真正把会话建起来，确认才成立，卡片才允许被收起。
+      configurePair = (p) => p.failSessionNew = false;
+      pair.failSessionNew = false;
+      await _sendAndSettle(container, 'hi');
+
+      final state = container.read(aiChatProvider);
+      expect(state.authChallenge, isNull);
+      expect(state.lastErrorCode, isNot(AiChatNotifier.authRequiredCode));
+    });
+
+    test('卡片在屏时，与认证无关的远端报错不得把它清掉', () async {
+      configurePair = (p) {
+        p.authMethods = [
+          {'id': 'chat-gpt', 'name': 'ChatGPT'},
+        ];
+        p.failPrompt = true;
+      };
+      final container = await authContainer(connected: true);
+      addTearDown(container.dispose);
+
+      await _sendAndSettle(container, 'hi');
+      expect(container.read(aiChatProvider).authChallenge, isNotNull);
+
+      // 换成一个非 -32000 的普通远端错误：它只该改写报错，不该顺手收卡片。
+      configurePair = (p) {
+        p.failPrompt = true;
+        p.promptErrorCode = -32603;
+      };
+      pair.failPrompt = true;
+      pair.promptErrorCode = -32603;
+      await _sendAndSettle(container, 'hi');
+
+      final state = container.read(aiChatProvider);
+      expect(state.authChallenge, isNotNull, reason: '无关错误不能收起认证卡片');
+    });
+
+    test('-32000 只标 awaitingAuthentication，绝不标成 interrupted', () async {
+      configurePair = (p) {
+        p.authMethods = [
+          {'id': 'chat-gpt', 'name': 'ChatGPT'},
+        ];
+        p.failPrompt = true;
+      };
+      final container = await authContainer(connected: true);
+      addTearDown(container.dispose);
+
+      await _sendAndSettle(container, 'hi');
+
+      final state = container.read(aiChatProvider);
+      final messages = state.activeSession!.messages;
+      expect(messages, hasLength(2), reason: '认证失败不得自动重发或补写消息');
+      expect(messages.first.role, MessageRole.user);
+      expect(messages.first.content, 'hi');
+
+      final assistant = messages.last;
+      expect(assistant.role, MessageRole.assistant);
+      expect(
+        assistant.status,
+        ChatTurnStatus.awaitingAuthentication,
+        reason: '-32000 是等待 ACP 认证，不是用户停止',
+      );
+      expect(
+        assistant.status,
+        isNot(ChatTurnStatus.interrupted),
+        reason: 'host 侧曾静默显示「已中断」，这里就是它的回归点',
+      );
+      expect(state.lastErrorCode, AiChatNotifier.authRequiredCode);
+      expect(state.authChallenge, isNotNull);
+    });
+
+    test('显式重试复用占位并最终 completed：恰好一条用户 + 一条助手', () async {
+      configurePair = (p) {
+        p.authMethods = [
+          {'id': 'chat-gpt', 'name': 'ChatGPT'},
+        ];
+        p.failPrompt = true;
+      };
+      final container = await authContainer(connected: true);
+      addTearDown(container.dispose);
+
+      await _sendAndSettle(container, 'hi');
+      final challenged = container.read(aiChatProvider);
+      expect(challenged.authChallenge, isNotNull);
+      expect(
+        challenged.activeSession!.messages.last.status,
+        ChatTurnStatus.awaitingAuthentication,
+      );
+
+      // 用户在应用外完成登录后，显式重发同一条消息。
+      // 复用同一个 adapter（不会新建 pair），所以两处都要改。
+      const retryChunk = [
+        {
+          'sessionUpdate': 'agent_message_chunk',
+          'messageId': 'a1',
+          'content': {'type': 'text', 'text': 'host is up'},
+        },
+      ];
+      configurePair = (p) {
+        p.failPrompt = false;
+        p.promptUpdates = retryChunk;
+      };
+      pair.failPrompt = false;
+      pair.promptUpdates = retryChunk;
+      await _sendAndSettle(container, 'hi');
+
+      final state = container.read(aiChatProvider);
+      expect(state.authChallenge, isNull, reason: '重试成功必须清掉旧卡片');
+      expect(
+        state.lastErrorCode,
+        isNot(AiChatNotifier.authRequiredCode),
+        reason: '卡片收起时同步清掉 ACP_AUTH_REQUIRED',
+      );
+
+      final messages = state.activeSession!.messages;
+      expect(messages, hasLength(2), reason: '不自动补发，仍是 1 用户 + 1 助手');
+      expect(
+        messages.where((m) => m.role == MessageRole.user && m.content == 'hi'),
+        hasLength(1),
+        reason: '同一条用户消息只允许有一条',
+      );
+
+      final assistant = messages.last;
+      expect(assistant.role, MessageRole.assistant);
+      expect(
+        assistant.status,
+        ChatTurnStatus.completed,
+        reason: '成功重试后是 completed，不保留认证/中断标签',
+      );
+      expect(assistant.content, contains('host is up'));
     });
 
     test('同一 Agent 的连续两次发送复用同一个 transport（不再每个进程重启）', () async {
@@ -1412,7 +1624,210 @@ void main() {
       expect(tools.single.output, 'Mem: 7912', reason: '部分更新不能清掉输出');
       expect(tools.single.status, ToolExecutionStatus.completed);
     });
+
+    test('流式文本与工具交错时 contentBlocks 保持到达顺序', () async {
+      final container = await acpContainer(
+        configurePair: (target) {
+          target.promptUpdates = [
+            {
+              'sessionUpdate': 'agent_message_chunk',
+              'messageId': 'a1',
+              'content': {'type': 'text', 'text': 'step one'},
+            },
+            {
+              'sessionUpdate': 'tool_call',
+              'toolCallId': 't1',
+              'title': 'ls',
+              'kind': 'execute',
+              'status': 'in_progress',
+              'rawInput': 'ls',
+            },
+            {
+              'sessionUpdate': 'agent_message_chunk',
+              'messageId': 'a1',
+              'content': {'type': 'text', 'text': ' then '},
+            },
+            {
+              'sessionUpdate': 'tool_call',
+              'toolCallId': 't2',
+              'title': 'df',
+              'kind': 'execute',
+              'status': 'completed',
+              'rawInput': 'df',
+            },
+            {
+              'sessionUpdate': 'agent_message_chunk',
+              'messageId': 'a1',
+              'content': {'type': 'text', 'text': 'done'},
+            },
+          ];
+        },
+      );
+
+      await _sendAndSettle(container, 'interleave');
+
+      final session = container.read(aiChatProvider).activeSession!;
+      final assistant = session.messages.last;
+      expect(assistant.role, MessageRole.assistant);
+      expect(assistant.content, 'step one then done');
+      expect(assistant.toolExecutions.map((t) => t.id), ['t1', 't2']);
+      List<String> shapes(Iterable<ChatContentBlock> blocks) => [
+        for (final block in blocks)
+          block.type == ChatContentBlockType.text
+              ? 'text:${block.start}-${block.end}'
+              : 'tool:${block.toolId}',
+      ];
+      expect(shapes(assistant.orderedContentBlocks), [
+        'text:0-8',
+        'tool:t1',
+        'text:8-14',
+        'tool:t2',
+        'text:14-18',
+      ], reason: '块必须按远端到达顺序渲染，工具不得被挪到末尾');
+
+      final rendered = [
+        for (final block in assistant.orderedContentBlocks)
+          if (block.type == ChatContentBlockType.text)
+            assistant.content.substring(block.start, block.end),
+      ];
+      expect(
+        rendered.join(),
+        'step one then done',
+        reason: 'range 指向 content 本身',
+      );
+
+      final stored = (await _storedSessions(
+        container,
+      )).singleWhere((s) => s.id == session.id).messages.last;
+      expect(
+        shapes(stored.orderedContentBlocks),
+        shapes(assistant.orderedContentBlocks),
+        reason: '落盘后必须仍按同一顺序渲染',
+      );
+    });
   });
+
+  group('requestAuthenticationForAgent', () {
+    Future<ProviderContainer> authContainer({
+      required AiChatNotifier notifier,
+    }) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      return ProviderContainer(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(
+            LocalStorageService(prefs),
+          ),
+          tempChatRepositoryOverride(),
+          agentRegistryProvider.overrideWith(
+            () => _AllReadyRegistry([
+              _profile('builtin-codex'),
+              _profile('agy-alt'),
+            ]),
+          ),
+          activeServerProvider.overrideWith(_StubActiveServer.new),
+          serverConnectionProvider.overrideWith(
+            () => _StaticConnection(connected: true),
+          ),
+          // 认证只发现方法：任何一次真正拉起 transport 都直接失败。
+          acpTransportFactoryProvider.overrideWithValue((_, _) {
+            throw StateError('transport must not be created in this test');
+          }),
+          aiChatProvider.overrideWith(() => notifier),
+        ],
+      );
+    }
+
+    test('切换到目标 Agent 并保持零错误，且不建会话不碰传输', () async {
+      final notifier = _AuthSpyNotifier();
+      final container = await authContainer(notifier: notifier);
+      addTearDown(container.dispose);
+      container.read(aiChatProvider);
+      await pumpEventQueue();
+
+      await notifier.requestAuthenticationForAgent('srv-1', 'agy-alt');
+      await pumpEventQueue();
+
+      final state = container.read(aiChatProvider);
+      expect(state.activeAgentProfile?.id, 'agy-alt');
+      expect(notifier.switchRequests, ['agy-alt']);
+      expect(state.authError, isNull, reason: '没有拉起 transport');
+      expect(state.sessions, isEmpty, reason: '只发现方法，不建会话');
+      expect(state.activeSessionId, isNull);
+    });
+
+    test('服务器不匹配时立刻返回，不切 Agent 也不排任何工作', () async {
+      final notifier = _AuthSpyNotifier();
+      final container = await authContainer(notifier: notifier);
+      addTearDown(container.dispose);
+      container.read(aiChatProvider);
+      await pumpEventQueue();
+
+      await notifier.requestAuthenticationForAgent('srv-OTHER', 'agy-alt');
+      await pumpEventQueue();
+
+      expect(notifier.switchRequests, isEmpty);
+      expect(container.read(aiChatProvider).authError, isNull);
+    });
+
+    test('正在认证时不重复发起，也不切走当前 Agent', () async {
+      final notifier = _AuthSpyNotifier();
+      final container = await authContainer(notifier: notifier);
+      addTearDown(container.dispose);
+      container.read(aiChatProvider);
+      await pumpEventQueue();
+
+      notifier.debugMarkAuthenticating();
+      await notifier.requestAuthenticationForAgent('srv-1', 'agy-alt');
+      await pumpEventQueue();
+
+      expect(notifier.switchRequests, isEmpty);
+    });
+
+    test('管理路由被销毁后仍安全返回：不写状态也不抛异常', () async {
+      final gate = Completer<void>();
+      final notifier = _AuthSpyNotifier(gate: gate);
+      final container = await authContainer(notifier: notifier);
+      container.read(aiChatProvider);
+      await pumpEventQueue();
+
+      final pending = notifier.requestAuthenticationForAgent(
+        'srv-1',
+        'agy-alt',
+      );
+      await pumpEventQueue();
+      expect(notifier.switchRequests, ['agy-alt'], reason: '已经进入切换');
+
+      // 用户从管理页返回：provider 随路由一起被销毁，切换还没结束。
+      container.dispose();
+      gate.complete();
+
+      // 必须正常结束——既不能把异常抛给调用方，也不能在 ref 已销毁后写 state。
+      await pending;
+      await pumpEventQueue();
+    });
+  });
+}
+
+/// 拦下 `switchAgent`，让测试能把「管理路由已经销毁」的窗口撑开。
+class _AuthSpyNotifier extends AiChatNotifier {
+  _AuthSpyNotifier({this.gate});
+
+  /// 非空时切换会停在闸门上，直到测试主动放行。
+  final Completer<void>? gate;
+  final List<String> switchRequests = [];
+
+  @override
+  Future<void> switchAgent(String agentId) async {
+    switchRequests.add(agentId);
+    final pending = gate;
+    if (pending != null && !pending.isCompleted) await pending.future;
+    await super.switchAgent(agentId);
+  }
+
+  /// 只给测试用：把 provider 置于「正在认证」，用来检查重复发起的闸门。
+  void debugMarkAuthenticating() =>
+      state = state.copyWith(isAuthenticating: true);
 }
 
 /// SSH manager stub: `getClient` returns a non-null client so `sendMessage`

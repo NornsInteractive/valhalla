@@ -1,5 +1,47 @@
 # Valhalla - 标准协议与通信接口规范
 
+## 2026-10-03 AgY ACP OAuth 桥接
+
+`ACPClientAdapter.authenticateNow(methodId)` 仅 initialize + 广告 authenticate，
+不创建/加载聊天会话。`AcpSshTransport.authorizationRequests` 在完整 stderr
+行脱敏前提取官方 Google HTTPS 授权请求，诊断仍经过统一脱敏。请求仅存
+`AiChatState.authRequest`；`isAuthenticating/authError` 用于局部进度/错误。
+`authenticationConfirmed` 仅在真实 authenticate/会话 RPC 成功时置真，
+initialize、选择认证方式、取消或发现凭据文件均不能视为认证成功。
+`claimAuthBrowserLaunch(request)` 为同一 provider 的同步抢占，防止保留的
+主界面与弹出的聊天页重复打开浏览器；手动重新打开不受自动抢占限制。
+`requestAuthentication()` 可在草稿或待认证历史中重新发现方式；
+`respondAuth()` 立即认证；`submitAuthCallback()` 校验当前请求并发送到原
+执行目标。`AcpOAuthLoopback` 镜像手机回环端口，curl 仅从 stdin 接收 URL，
+不跟随远端重定向，不输出响应体。代理不获取或保存 OAuth token，凭据仍
+由官方 ACP 存放；取消、重连、换目标按 epoch/adapter 隔离并关闭监听。
+默认检查只读取 settings.json 的 auth.type 及凭据文件存在性，结果与真实
+认证成功分离。具体边界及验证记录见本轮登录交接。
+管理入口等待 `switchAgent()` 的本地会话选择完成，再 initialize 发现认证
+方式；调用前后校验当前服务器与 Agent，不隐式切换服务器、不自动发送消息。
+回调手机监听失败可手动粘贴本次完整回环 URL（必须匹配 state/端口/路径）；
+转发仍需要原目标宿主机或容器用户环境的 `curl`，不是把授权码换成手机登录。
+远端不具备此命令或回调不可达时报告失败，不自动安装依赖或复制 CLI 凭据。
+授权回调 exec 通道打开后，发送前就接管 stdout、stderr 与 done；stdout /
+stderr 均处理完毕、stdin 已关闭、通道结束且 curl 返回有效成功状态，才算
+转发完成。任一路流异常均立即返回失败，不让正常完成抢先掩盖 stderr
+异常；20 秒限时覆盖通道打开后的写入/读取/完成等待。即使 session.close
+抛错，仍取消 stderr 监听。该结果仅表示转发完成，认证仍以官方 RPC
+成功为准；不把模拟回归视为真实账号授权或实际网络断线根因证明。
+
+## 2026-10-02 ACP 输出顺序与恢复兼容
+
+`ChatMessage.contentBlocks` 为可选 JSON 数组：text(start,end) 引用 `content`
+UTF-16 偏移，tool(toolId) 引用现有工具数组，无重复文本、无数据库迁移。
+文本相邻合并，工具首次出现定位、后续仅更新；非法/旧字段整段退回旧展示。
+`ChatTurnStatus.unknown` 表示丢失传输后的结果未知，`interrupted` 保留用户
+取消含义。回放成功复用同一 ACP adapter，结束捕获后恢复现有 session ID；
+不额外启进程、prompt/new/cancel，不自动重放审批。未声明回放或身份歧义
+保留本地内容并报告不完整，失败后仅显式重试。
+Antigravity 默认 `agy_acp_server.par`，Linux 使用 registry 的 `--uid=` 参数，
+安装保留完整 runtime；官方认证由 ACP 广告能力处理，不复用 CLI 登录假设。
+Codex 模型发现仍为独立 CLI app-server `model/list`，不从历史会话发现。
+
 ## 2026-09-21 NAS Range 流与会话启动接口
 
 `ChatLaunchPreference` 按 `<serverId>::<cli|acp>::<agentId>` 保存 `rememberLast`、`fixed(sessionId)` 或 `blankDraft`，最后选择的会话另存且不得跨服务器/Agent 复用。解析不到指定会话时回退空白草稿。
@@ -321,3 +363,21 @@ CREATE TABLE session_cache (
   通过后台 isolate 访问应用支持目录中的 `valhalla_nas.sqlite3`。
 - NAS 媒体打开复用 SFTP 传输队列。图片缩略源文件最大 20 MiB，缓存键包含
   服务器、路径与修改时间；超限或解码失败由界面显示类型占位图。
+# 2026-10-03 ACP 认证与中断状态补充
+
+`ChatTurnStatus.awaitingAuthentication` 表示远端实际认证请求，不能显示为用户
+停止（`interrupted`）。新状态沿用 JSON 名称解析，不改库表、不批量重写旧记录。
+initialize/CLI 安装不是 ACP 登录证明；只有实际 authenticate RPC、会话建立或
+prompt RPC 成功后，才清理当前 adapter/agent/server 匹配的旧认证挑战及单一
+`ACP_AUTH_REQUIRED` 错误，不能清除无关错误。再次认证失败撤回确认。
+用户明确重试时复用待认证的空助手消息，并重置 streaming；完成后 completed，
+不自动重发、不创建替代远端会话、不复制 CLI token。未知检测不算未登录。
+# 2026-10-03 恢复与授权增量接口
+
+- `AgentRegistryNotifier.refresh` 按环境 epoch 合并，单 Agent 检测去重；每批最多两个，结果逐个发布。连接层挂载 Registry，Registry 负责已连接初态与后续重连。旧环境/旧配置结果不得回写。
+- 已保存 AgY OAuth 凭据通过独立 `probeAgySavedAuth` 执行官方 initialize/authenticate 复验，20 秒上限。新授权链接或 auth-required 即结束并标记需登录，网络故障保留待验证状态，不弹浏览器、不建会话、不复制令牌。
+- `AgyModelCatalog.query/parse`：在 profile 指定宿主机或容器用户内执行 `agy models`，20 秒限时、256 KiB 输出上限，保留 Gemini 完整 ID。目录不声明账号授权，实际选择由 ACP 校验。
+- `AcpOAuthLoopback.bind` 接受可选展示 renderer，由应用层注入；回调成功需远端交付及官方认证完成。`valhalla://oauth-return` 仅导航，不能设置认证状态，不接收 code/state/token。监听失败不可发布浏览器启动请求。
+- 下载使用独立 SFTP 子通道，目录超时不能销毁下载通道；已知长度提前 EOF 为不完整。原任务临时文件只在成功后提交，网络错误单次重试，不跨服务器恢复。
+
+本轮实现与实际验收状态见 `agent-workflow/2026-10-03-recovery-auth-download.md`，未验证不能视为交付完成。

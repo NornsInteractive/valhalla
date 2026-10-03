@@ -12,6 +12,7 @@ import '../../data/models/agent_profile.dart';
 import '../../data/models/chat_session.dart';
 import '../../data/models/acp_account_info.dart';
 import 'acp_ssh_transport.dart';
+import 'acp_oauth_request.dart';
 
 /// Agent 声明的一种认证方式，供 UI 呈现给用户选择。
 ///
@@ -30,6 +31,11 @@ class AcpAuthMethod {
 /// 这些类型是基础设施层与 provider 层之间的稳定契约，与 acpd 的 wire 类型
 /// 解耦，避免 UI 状态直接依赖协议 schema。
 sealed class ACPEvent {}
+
+class ACPAuthorizationRequestEvent extends ACPEvent {
+  final AcpOAuthRequest request;
+  ACPAuthorizationRequestEvent(this.request);
+}
 
 class ACPThinkingChunkEvent extends ACPEvent {
   final String chunk;
@@ -185,14 +191,18 @@ class ACPClientAdapter {
     this.requestTimeout = const Duration(minutes: 5),
     this.onSessionUpdate,
     this.resumeSessionId,
-    this.captureReplay = false,
-  });
+    bool captureReplay = false,
+  }) : _captureReplay = captureReplay;
 
   final AgentProfile profile;
   final Transport transport;
   final String workingDirectory;
   final Duration requestTimeout;
-  final bool captureReplay;
+  bool _captureReplay;
+  bool get captureReplay => _captureReplay;
+
+  /// A successful replay keeps its existing connection for subsequent turns.
+  void finishReplayCapture() => _captureReplay = false;
 
   /// 可选的独立订阅回调（在映射为本地事件之后调用）。
   final void Function(SessionUpdate update)? onSessionUpdate;
@@ -372,8 +382,13 @@ class ACPClientAdapter {
   /// 用户已选择、待在下一次建会话前执行的认证方式。
   String? _pendingAuthMethodId;
 
-  /// 本轮连接是否已成功完成 `authenticate`。
+  /// 本轮连接是否已完成 authenticate 或成功建立可用的远端会话。
   bool _authenticated = false;
+
+  /// initialize/安装成功不证明认证；实际会话建立或认证 RPC 成功才证明。
+  bool get authenticationConfirmed => _authenticated;
+  List<AcpAuthMethod> get authMethods => List.unmodifiable(_authMethods);
+  StreamSubscription<AcpOAuthRequest>? _authorizationSubscription;
 
   /// 当前会话 id；建立成功后即有值。
   String? get sessionId => _sessionId;
@@ -431,6 +446,7 @@ class ACPClientAdapter {
     if (_sessionId != null) return;
     final result = await _establishSession(connection);
     if (_disposed) throw StateError(disconnectedCode);
+    _authenticated = true;
     _sessionId = result.$1;
     _configOptions = result.$2;
     _modes = result.$3;
@@ -447,6 +463,15 @@ class ACPClientAdapter {
 
   Future<void> _initializeConnection() async {
     if (_initialized) return;
+
+    final ssh = transport;
+    if (ssh is AcpSshTransport && _authorizationSubscription == null) {
+      _authorizationSubscription = ssh.authorizationRequests.listen((request) {
+        if (!_disposed) {
+          _eventController.add(ACPAuthorizationRequestEvent(request));
+        }
+      });
+    }
 
     final role = ClientRole()
       ..onSessionUpdate((_, notification) {
@@ -627,6 +652,7 @@ class ACPClientAdapter {
         _idleFailure!.future,
       ]);
       await Future<void>.delayed(Duration.zero);
+      _authenticated = true;
       _handleStopReason(result.stopReason);
       _complete();
     } catch (e) {
@@ -736,6 +762,23 @@ class ACPClientAdapter {
     if (_pendingAuthMethodId == methodId && _authenticated) return;
     _pendingAuthMethodId = methodId;
     _authenticated = false;
+  }
+
+  /// Explicit sign-in action: authenticate now, without creating a chat session.
+  Future<void> authenticateNow(String methodId) async {
+    await _ensureConnection();
+    if (!_authMethods.any((method) => method.id == methodId)) {
+      throw StateError('ACP_AUTH_METHOD_UNAVAILABLE');
+    }
+    _pendingAuthMethodId = methodId;
+    _authenticated = false;
+    await _connection!.client.authenticate(
+      AuthenticateRequest(methodId: methodId),
+      timeout: requestTimeout,
+    );
+    if (_disposed) throw StateError(disconnectedCode);
+    _authenticated = true;
+    _eventController.add(ACPSettingsChangedEvent());
   }
 
   /// 判定异常是否为 agent 的认证要求（`RpcError(-32000)`）。
@@ -974,6 +1017,7 @@ class ACPClientAdapter {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    unawaited(_authorizationSubscription?.cancel());
     _idleTimer?.cancel();
     _disposedSignal.complete();
     // Give cancelled permission handlers a chance to serialize their replies

@@ -153,6 +153,7 @@ class SftpClientService implements SftpOperations {
   final SSHClient? _sshClient;
   SftpClient? _sftp;
   Future<SftpClient>? _openingSftp;
+  final Set<SftpClient> _downloadClients = {};
   int _sessionEpoch = 0;
   bool _disposed = false;
   final Duration operationTimeout;
@@ -199,6 +200,10 @@ class SftpClientService implements SftpOperations {
   void dispose() {
     _disposed = true;
     _discardSession(_sessionEpoch);
+    for (final client in _downloadClients) {
+      _closeClient(client);
+    }
+    _downloadClients.clear();
   }
 
   Future<SftpClient> _getRealSftp() async {
@@ -354,19 +359,58 @@ class SftpClientService implements SftpOperations {
     String localPath, {
     void Function(int bytesRead)? onProgress,
   }) async {
-    final sftp = await _getRealSftp();
-    final attrs = await sftp.stat(remotePath);
-    final total = attrs.size ?? 0;
-    final remote = await sftp.open(remotePath, mode: SftpFileOpenMode.read);
-    final local = File(localPath).openSync(mode: FileMode.write);
-    final handle = _DownloadHandle(
-      remote: remote,
-      local: local,
-      totalBytes: total,
-      onProgress: onProgress,
-    );
-    handle.start();
-    return handle;
+    if (!isRealConnected) {
+      throw const SSHConnectionException('SSH_DISCONNECTED');
+    }
+    // Browsing timeouts discard their channel; they must not abort downloads.
+    var openingExpired = false;
+    final SftpClient sftp;
+    try {
+      sftp = await _sshClient!
+          .sftp()
+          .then((client) {
+            if (openingExpired || _disposed) {
+              _closeClient(client);
+              throw const SSHConnectionException('SSH_DISCONNECTED');
+            }
+            return client;
+          })
+          .timeout(operationTimeout);
+    } finally {
+      openingExpired = true;
+    }
+    _downloadClients.add(sftp);
+    void closeChannel() {
+      _downloadClients.remove(sftp);
+      _closeClient(sftp);
+    }
+
+    try {
+      final attrs = await sftp.stat(remotePath).timeout(operationTimeout);
+      final total = attrs.size ?? 0;
+      final remote = await sftp
+          .open(remotePath, mode: SftpFileOpenMode.read)
+          .timeout(operationTimeout);
+      final RandomAccessFile local;
+      try {
+        local = await File(localPath).open(mode: FileMode.write);
+      } catch (_) {
+        await remote.close().timeout(_cleanupTimeout).catchError((Object _) {});
+        rethrow;
+      }
+      final handle = _DownloadHandle(
+        remote: remote,
+        local: local,
+        totalBytes: total,
+        onProgress: onProgress,
+        onClose: closeChannel,
+      );
+      handle.start();
+      return handle;
+    } catch (_) {
+      closeChannel();
+      rethrow;
+    }
   }
 
   @override
@@ -451,6 +495,7 @@ class _DownloadHandle implements SftpTransferHandle {
   final SftpFile _remote;
   final RandomAccessFile _local;
   final void Function(int bytesRead)? _onProgress;
+  final void Function()? _onClose;
 
   @override
   final int totalBytes;
@@ -469,8 +514,10 @@ class _DownloadHandle implements SftpTransferHandle {
     required RandomAccessFile local,
     required this.totalBytes,
     void Function(int bytesRead)? onProgress,
+    void Function()? onClose,
   }) : _remote = remote,
        _local = local,
+       _onClose = onClose,
        _onProgress = onProgress;
 
   @override
@@ -497,17 +544,22 @@ class _DownloadHandle implements SftpTransferHandle {
         final want = remaining < 0
             ? _chunkSize
             : (remaining < _chunkSize ? remaining : _chunkSize);
-        final chunk = await _remote.readBytes(
-          offset: _transferred,
-          length: want,
-        );
-        if (chunk.isEmpty) break; // EOF
+        final chunk = await _remote
+            .readBytes(offset: _transferred, length: want)
+            .timeout(const Duration(seconds: 30));
+        if (chunk.isEmpty) {
+          if (remaining > 0) {
+            throw const SFTPException('SFTP_DOWNLOAD_INCOMPLETE');
+          }
+          break;
+        }
 
         await _local.writeFrom(chunk);
         _transferred += chunk.length;
         _onProgress?.call(_transferred);
         if (remaining > 0) remaining -= chunk.length;
       }
+      await _local.flush();
       await _close();
       if (!_aborted) _done.complete();
     } catch (error, stackTrace) {
@@ -560,8 +612,9 @@ class _DownloadHandle implements SftpTransferHandle {
       await _local.close();
     } catch (_) {}
     try {
-      await _remote.close();
+      await _remote.close().timeout(const Duration(seconds: 2));
     } catch (_) {}
+    _onClose?.call();
   }
 }
 

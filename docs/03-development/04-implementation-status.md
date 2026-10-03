@@ -1,5 +1,198 @@
 # Valhalla - 实施状态与工程基线
 
+## 当前：2026-10-03 后台恢复 / AgY / 下载修复（检查通过，新包已覆盖安装）
+
+业务代码已完成同目标数据保留和健康探活去重、连接后的自动 Agent 检测、
+AgY 已保存凭据官方复验、OAuth 回调返回、独立 CLI 模型目录与下载隔离/
+错误分类/单次网络重试。AgY 原 Valhalla 会话已完成展示层改动；新增认证
+探针测试复现同步事件回调内关闭 controller 的错误，业务层窄层补修后
+5 项探针回归通过。连接自动检测又暴露真实注册表与连接层的循环依赖，
+已调整命令式启动入口，真实注册表参与的 7 项连接回归通过。
+需求与专项实现不能等同于完整验收。
+
+原 ADB `127.0.0.1:14251` 已恢复。OpenCode 最新全量
+**1881 通过、18 跳过、0 失败**（`fullsuite_final2.log`），多语言生成、
+格式化及静态分析零告警通过。旧包已保留为
+`app-release.apk.bak-20261003-224443`。本轮 release 构建退出码 0，新包
+**123916842 字节**，mtime **2026-10-03 14:47:01 UTC / 北京时间 22:47:01**，
+SHA-256 `8a0bdd0de0897605623aae9f2745ed49c30d2ff56ebc649079a1905a056cd47f`。
+新旧签名一致，仍是 Android Debug 签名，不是商店签名。OpenCode 对原设备
+`install -r` 返回退出码 0 / Success，设备取回的已安装 APK 与上述 SHA-256
+完全一致，新包/设备包独立签名校验均退出码 0。未卸载或清数据；启动自动连接 racknerd、
+短时 Home/锁屏恢复检查可见原内容及更新后的指标，但新包运行期间记录了
+**14:49:27 UTC 的 `dart.unhandled / SSH connection closed`**，具体触发和
+未处理 Future 来源未知。不能宣称设备零异常或所有恢复问题已排除，
+有界补查确认，智能会话后台 25 秒后返回首帧和 12 秒后的画面均保留原 Agent/
+已有消息，PID 始终 12893；不能代替长时间后台/进程回收验收。
+实际模型下拉框可见独立 CLI 候选 Gemini 3.8/3.7/3.6 Flash（各 High/
+Medium/Low）、Gemini 3.1 Pro（High/Low）；仅打开查看并取消，未应用设置，
+不据此证明账号对候选模型的调用权限。实际 Agent 管理页未手动刷新即显示
+CLI 已安装、ACP 已就绪、Auth 已登录，最近检测 23:03:37 +08:00。
+本轮没有进行 Google 同意、真实 prompt/历史修改或真实文件下载。
+下方旧 APK 和通过数字均是历史记录。
+MiMo 和 Big Pickle 遇到上游 429 后，按用户免费模型例外，
+核验零价格及官方 Free 说明，改由同会话主/辅助 `opencode/space-bunny-free`
+继续验证。Google 授权、真实远端模型应用和 Docker 端到端仍不能宣称通过。
+见[当前验收契约](../../agent-workflow/2026-10-03-recovery-auth-final-gates.md)
+及[工作记录](../../agent-workflow/2026-10-03-recovery-auth-download.md)和
+[本轮验证报告](../../agent-workflow/2026-10-03-recovery-auth-verification.md)。
+
+## 2026-10-03 授权转发断线补修（验证/构建完成，ADB 离线待安装）
+
+继续检查上轮 SSH 断开诊断，新增已认证真实 SSHClient / 模拟 socket 掉线
+测试正常返回 false、清理连接并广播掉线，未复现历史 `dart.unhandled`；
+真实 racknerd 连接为什么断开仍未知，不改心跳/重连策略，不声称根因已修复。
+另复现授权回调转发的 stderr 流错误不进入调用方，并在同一流程确认
+done 错误观察过晚的代码风险；done 初期夹具的 zone 错误不能当作严格的
+修复前产品断言证据，最终四条失败路径均已覆盖。首次补修以 Future.any
+竞争仍可能让成功先于 stderr
+处理；最终改为发送前接管输出及结束事件，两路输出都处理完毕才判断
+成功，任一路异常立即失败，通道打开后的写入/读取/完成等待共享 20 秒
+期限，关闭抛错仍取消监听。仅修改业务基础设施，无 UI 或依赖变更；
+不复制 CLI 凭据、不自动重发，认证成功仍由官方 RPC 确认。
+
+OpenCode 主/辅助均为 `opencode/mimo-v2.6-flash-free`。11 项回调与 19 项
+SSH 传输专项 **30/30 通过**；全量 **1808 通过、18 跳过、0 失败**，静态
+分析零告警，本轮明确授权的 3 个文件格式检查通过。初始测试夹具的 void /
+错误 zone 跨界等待导致编译失败/超时，已修正；模拟正常 exec 也补齐 stderr
+结束事件，所有原有断言和 4 个新失败路径断言保留，没有新增跳过。
+
+新 `build/app/outputs/flutter-apk/app-release.apk` 构建退出码 0，大小
+**123736478 字节**，mtime **2026-10-03 08:17:03 UTC**（北京时间 16:17:03），
+SHA-256 `5f0f3bae6d07ed83be1c3e2b6c234ce2e9008c1be43dd462d32eb6095aa7c4db`。
+14:44 包已保留为 `app-release.apk.bak-20261003-161602`，保留原 mtime 与
+SHA-256 `6ff2244ea5cf00db417c3b956b5aa7f2d5332610f1da5bc7315c40e8aa13035e`。
+新包与备份签名核验一致，仍为 release 构建 / Android Debug 签名，不是
+商店签名包；相同大小不表示相同内容，本轮 hash 与旧包不同。
+
+**当前尚未覆盖安装或启动新包**：OpenCode 检查 ADB 列表为空，原目标
+`127.0.0.1:14251` 连接被拒绝。没有新建模拟器、卸载、清数据或读取账号
+信息；需用户恢复同一设备或提供新地址，由 OpenCode 继续安装和有限启动
+检查。下方 14:45 的安装及 13:40 的浏览器实测均是历史版本，不能代替
+16:17 包的设备验收。Google 授权、真实回调及 Docker 端到端仍待用户。
+见[本轮验证/安装契约](../../agent-workflow/2026-10-03-ssh-auth-disconnect-final-gates.md)
+及[最终结果](../../agent-workflow/2026-10-03-ssh-auth-disconnect-investigation-result.md)。
+
+## 2026-10-03 AgY ACP 浏览器登录（补修完成，新 release 已覆盖安装）
+
+**最终代码验收**：原 AgY 修复手动回调弹窗取消时
+`TextEditingController was used after being disposed`，控制器等路由退场完成
+后再释放；取消/提交立即清空输入。草稿认证卡片增加滚动约束，输入工具栏
+用外层及目录内层弹性约束修复 320dp / 两倍字体的 53px 横向溢出。
+OpenCode 新增 8 项严格控件测试，覆盖打开一次、打开失败、手动回调校验、
+取消、真实 RPC 成功语义及窄屏，全部通过并重复验证三次；没有吞掉异常
+或放宽溢出断言。新滚动布局下四个既有测试夹具增加 ensureVisible，保留
+原认证行为断言。最终全量 **1803 通过、18 跳过、0 失败**，静态分析零告警，
+多语言生成及明确授权的本轮路径格式检查通过。
+
+OpenCode 初查旧版本时在现有 ADB / `racknerd` 只读核实：AgY CLI 与 ACP 二进制就绪，
+登录检查字段为空，检测日志为 authentication: not configured；当时点击登录
+无浏览器跳转。官方 1.2.1 源码确认 CLI/ACP 独立凭据，旧应用仅缓存认证
+方式，下一次发送才认证，授权 stderr 仅进诊断日志。
+
+业务层已补 immediate authenticate、官方授权请求提取、手机回环与 SSH 原
+目标回调、配置只读检查及旧配置回填；不读取 token、不新建会话、不自动
+重发。AgY 原会话完成浏览器/回调/管理入口展示并退出，OpenCode 主/辅助均为
+`opencode/mimo-v2.6-flash-free`。13:40 阶段全量测试为
+**1795 通过、18 跳过、0 失败**，不能代替上面的最终 1803 项验收。首轮两个旧夹具仍期待空登录检查和仅选择
+认证方式就提示成功，已按实际登录检查及 RPC 成功语义更新，相关 34 项
+与全量重新通过；没有改回产品错误行为。全仓格式只读检查发现 34 个
+未格式化文件（尚未确认是否全部属于既有基线），没有为本轮修改无关 UI；
+随后由 OpenCode 对明确授权的本轮产品/测试/生成路径机械格式化并检查通过，
+没有改变 UI 语义或为本轮重写无关页面。
+
+新 `build/app/outputs/flutter-apk/app-release.apk` 为 **123736478 字节**，
+mtime **2026-10-03 06:44:39 UTC**（北京时间 14:44:39），SHA-256
+`6ff2244ea5cf00db417c3b956b5aa7f2d5332610f1da5bc7315c40e8aa13035e`。
+13:40 阶段包保留在
+`build/app/outputs/flutter-apk/app-release.apk.bak-20261003-144316`，SHA-256
+`3e748162ab1dc2a29649073d581d73b91d529f6e614251dc078bb64f304b424a`；
+11:30 旧包另保留在 `build/app/outputs/flutter-apk/app-release.apk.bak-20261003-133900`。
+仍为 release 构建、Android Debug 签名，不是商店签名包；新旧签名一致。
+OpenCode 已对现有 `127.0.0.1:14251` 执行 `install -r`，退出码 0 / Success，
+原配置和数据保留；从设备取回的已安装 APK 与新构建 SHA-256 一致。
+设备更新记录为北京时间 **14:45:52**，启动退出码 0，MainActivity 前台、
+进程存活；45 秒有限日志观察未见 Android fatal / ANR，不代表所有功能
+或长时间后台恢复均已完成真机验收。
+
+OpenCode 在 **13:40 阶段包**的 racknerd 已通过实际 initialize 获取四种官方认证方式，选择
+Google 后点击“去登录”，设备前台切换到 Chrome，授权目标为
+`https://accounts.google.com/o/oauth2/v2/auth`（证据不含授权查询参数）。
+返回应用仍保留原对话、显示等待浏览器授权；取消仅结束本次认证，恢复
+“请求认证”入口，无自动发送。**Google 账号授权未完成**，由用户确认；
+真实授权回调后的对话及 Docker 端到端登录尚未验收，不能据此宣称登录成功。
+最终新包的安装/启动检查与上述阶段包浏览器实测分开记录，不假称在最终包
+再次完成了 Google 登录或真实回调。
+设备期间另记录一次 SSH 断开后的 `dart.unhandled / SSHStateError`，登录按钮
+操作前已发生，来源尚未定位；不能宣称设备检查零异常。**下面此前 APK
+和测试记录均为历史版本证据，不可代替本轮验收**。
+详见[本轮契约](../../agent-workflow/2026-10-03-agy-login-flow.md)和
+[只读设备证据](../../agent-workflow/2026-10-03-agy-login-device.md)和
+[最终验证报告](../../agent-workflow/2026-10-03-agy-login-verification.md)。
+
+## 2026-10-03 合并远程 mosh 修复与 AgY 认证提示（release 已构建并覆盖安装）
+
+已 fetch 并快进至 `de37ed6`，保留远程 mosh locale 协商、僵尸 SSH 清理、
+终端字号设置、仪表盘 neofetch，同时恢复本地 ACP/缓存/重连修改；没有文本
+冲突，合并前工作区完整备份仍在 `valhalla-before-origin-update-20261003` stash。
+不自动提交或推送。OpenCode 合并与认证专项 447 项通过，mosh 真机用例默认
+跳过，未读取真实 SSH 密钥或运行真实远端推理。
+
+AgY 原 Valhalla / Gemini3.8Flash High 修复无条件登录催促和长安装命令弹窗
+滚动。业务层区分实际 ACP 认证请求与用户取消，新增
+`awaitingAuthentication` 状态；真实会话/请求成功才清除匹配目标的旧认证
+提示，明确重试复用占位消息并恢复 streaming→completed，不自动重发。
+initialize/安装成功不算登录，认证失败仍显示真实挑战。AgY 补充 UI 已
+FINAL READY 并退出，挑战在待认证消息附近单处显示，草稿仍有入口；安装
+弹窗支持滚动/复制及窄屏换行。OpenCode 主/辅助仍为
+`opencode/mimo-v2.6-flash-free`：专项 120 项、修正终端字号设置测试夹具后
+相关 65 项通过；最终全量 **1713 通过、18 跳过、0 失败**，格式/多语言/
+静态分析通过且零告警。首轮 24 个缺少设置依赖的测试失败已通过夹具注入
+修复，未修改产品初始化、放宽断言或增加跳过；320dp/两倍字体弹窗测试
+发现的溢出已由 AgY 修复并严格复测。
+
+新 `build/app/outputs/flutter-apk/app-release.apk` 为 **123419671 字节**，
+mtime **2026-10-03 03:30:19 UTC**（北京时间 11:30:19），SHA-256
+`23cc6e9175643e5c4b17e6c9fc1e9bb9fec8990566f6556f505d103ceef594a8`。
+版本 1.0.0+1；release 构建仍用 Android Debug 签名，不是商店签名包。
+旧包已备份到 `build/apk-backup/app-release-prev-20261003-20261003T032851Z.apk`。
+
+现有 ADB 目标 `127.0.0.1:14251` 单次重连成功，OpenCode `install -r`
+实际退出码 0 / Success，启动成功、进程存活且前台显示；有限启动日志检查
+未发现 FATAL EXCEPTION、am_crash、am_anr。没有卸载、清应用数据或新建
+模拟器。**启动检查不等于远端验收**：用户实际宿主机（及 Docker）认证、
+登录共享和真实 ACP 对话尚未端到端验证，也未激活真实 mosh e2e。
+见[本轮交接](../../agent-workflow/2026-10-03-merge-mosh-agy-auth.md)。
+最终证据见[OpenCode 验证报告](../../agent-workflow/2026-10-03-merge-agy-verification.md)。
+
+## 2026-10-02 官方 Antigravity ACP、消息顺序与重连（release 已构建，ADB 待连接）
+
+官方入口与用户确认安装、按首次事件交错输出、未知结果状态、单 adapter
+恢复及同目标列表/仪表盘缓存保留已写入业务层；AgY 原 Valhalla / 指定 High
+模型已完成展示复核并退出。OpenCode 主/辅助均使用
+`opencode/mimo-v2.6-flash-free`，核心目录 615 项及后台生命周期专项 32 项
+通过；统一顶部状态、ACP/CLI 内容与草稿保留的四个控件文件 72 项通过。
+最终全量 1664 项通过、17 项既有环境跳过、无失败；多语言生成和静态分析
+零告警通过。首轮编译/旧语义失败已修正，不作为最终验收结果。
+
+`flutter build apk --release` 实际退出码 0；新包为
+`build/app/outputs/flutter-apk/app-release.apk`，123304935 字节，mtime
+**2026-10-02 10:55:18 UTC**（北京时间 18:55:18），SHA-256
+`6dfed53b4e8f14241a9c200e2c841c54aadc5a56f3b81b8e43c7ea8f1b3dd4b9`。
+版本仍为 1.0.0+1，release 构建但沿用 Android Debug 签名，不是商店签名包。
+旧包已备份到 `build/apk-backup/app-release-prev-20261002-105359.apk`，
+保留原 SHA-256 `e7efc0ce52f1466a92c31e79c05e8d716c2a8c2c8c1263203d2491be140dd34b`。
+
+**本轮尚未 ADB 安装或设备启动验收**：设备列表为空，原目标
+`127.0.0.1:14251` 连接被拒绝，`get-state` 退出码 1。`adb connect`
+虽返回退出码 0，其文本明确失败，不能据此宣称连接成功。没有卸载或清数据；
+待用户恢复设备后由 OpenCode 继续覆盖安装与有限启动/崩溃/ANR 检查。
+真实官方登录/对话、用户远端后台恢复尚未验收；没有读取当前运行 Agent
+的凭据或发送真实 prompt。完成证据更新至
+[本轮契约](../../agent-workflow/2026-10-02-acp-and-reconnect.md)、
+[UI 报告](../../agent-workflow/2026-10-02-acp-reconnect-ui-status.md)和
+[验证报告](../../agent-workflow/2026-10-02-acp-reconnect-verification.md)。
+
 ## 2026-10-01 ACP运行时对齐与首轮前命令：回归、打包与覆盖安装完成
 
 已确认当前环境PATH Codex 0.159.3、codex-acp 2.0.0内置Codex 0.158.0，
@@ -456,3 +649,8 @@ flutter test
 ```
 
 不得提交敏感凭证明文、假造远端数据、空异常捕获或绕过高危操作确认的执行路径。
+# 2026-10-03 连接/AgY/下载修复（进行中）
+
+本轮业务与 AgY 原 Valhalla 会话 UI 修改已完成。OpenCode 原会话负责新增回归、格式化、检查、构建与安装；MiMo/Big Pickle 上游限流后，按用户确认的免费模型例外切换主/辅助 `opencode/space-bunny-free`。本轮全量 1881 通过、18 跳过、0 失败，分析零告警，多语言/格式化通过；新 release 已在原 ADB 设备覆盖安装并核验设备包哈希。有限设备检查已记录；SSH 未处理异常来源仍未知，Google 回调/真实对话/下载仍待验收，不宣称全部完成。最新进展以上方“当前”节及本轮工作记录为准。
+
+初次 ADB 检查无设备且 127.0.0.1:14251 不可用；用户恢复后 OpenCode 已复查连接成功，检查全绿后 `install -r` 返回 Success。Google OAuth 账号同意由用户本人完成，不以模拟测试代替真实授权成功。详见本轮工作记录。

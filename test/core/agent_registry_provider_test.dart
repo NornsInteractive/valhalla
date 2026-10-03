@@ -33,6 +33,11 @@ class _FakeEnvService implements AgentEnvironmentService {
   /// 流式安装时按序产出的片段。
   final List<String> installChunks = [];
 
+  /// 只读凭据探针在替身里不可用：registry 不得把它当成检测的一部分。
+  @override
+  Future<AgentAuthenticationStatus> Function(AgentProfile, String)?
+  get validateSavedAuth => null;
+
   @override
   Future<AgentEnvironmentStatus> inspect(
     AgentProfile profile,
@@ -145,6 +150,9 @@ class _ConnectedNotifier extends ServerConnectionNotifier {
       status: _connected
           ? ConnectionStateEnum.connected
           : ConnectionStateEnum.disconnected,
+      // 生产里 connect() 一定会写 activeServerId；registry 的
+      // `_isConnected` 也用它区分「连上的是不是当前这台」。
+      activeServerId: ref.read(activeServerProvider)?.id,
     );
   }
 }
@@ -154,13 +162,17 @@ class _SwitchableConnection extends ServerConnectionNotifier {
   _SwitchableConnection(this._status);
 
   ConnectionStateEnum _status;
+  String? _serverId;
 
   @override
-  ServerConnectionState build() => ServerConnectionState(status: _status);
+  ServerConnectionState build() {
+    _serverId = ref.read(activeServerProvider)?.id;
+    return ServerConnectionState(status: _status, activeServerId: _serverId);
+  }
 
   void go(ConnectionStateEnum next) {
     _status = next;
-    state = ServerConnectionState(status: next);
+    state = ServerConnectionState(status: next, activeServerId: _serverId);
   }
 }
 
@@ -310,27 +322,48 @@ void main() {
       expect(container.read(agentRegistryProvider).agents, isEmpty);
     });
 
-    test('disconnected ssh blocks refresh with actionable error', () async {
-      final env = _FakeEnvService(
-        connected: false,
-        results: {'a1': _kind(AgentEnvironmentStatusKind.error)},
-      );
-      final container = await _container(
-        prefs: {
-          'valhalla_servers_v1': _serversPrefs([_server('s1')]),
-          'valhalla_active_server_id_v1': 's1',
-          'valhalla_agents_v1': _agentsPrefs([_agent('a1', 's1')]),
-        },
-        envService: env,
-        connected: false,
-      );
-      addTearDown(container.dispose);
+    test(
+      'disconnected ssh blocks refresh but keeps the last snapshot',
+      () async {
+        final env = _FakeEnvService();
+        late _SwitchableConnection connection;
+        final container = await _container(
+          prefs: {
+            'valhalla_servers_v1': _serversPrefs([_server('s1')]),
+            'valhalla_active_server_id_v1': 's1',
+            'valhalla_agents_v1': _agentsPrefs([_agent('a1', 's1')]),
+          },
+          envService: env,
+          connectionFactory: () =>
+              connection = _SwitchableConnection(ConnectionStateEnum.connected),
+        );
+        addTearDown(container.dispose);
 
-      await container.read(agentRegistryProvider.notifier).refresh();
+        await container.read(agentRegistryProvider.notifier).refresh();
+        expect(env.inspectedAgentIds, ['a1']);
+        expect(
+          container.read(agentRegistryProvider).findRuntime('a1')?.isReady,
+          isTrue,
+          reason: '前提：连着的时候拿到过一次真实检测结果',
+        );
 
-      final runtime = container.read(agentRegistryProvider).findRuntime('a1');
-      expect(runtime?.errorMessage, 'SSH_DISCONNECTED');
-    });
+        connection.go(ConnectionStateEnum.disconnected);
+        await pumpEventQueue();
+        await container.read(agentRegistryProvider.notifier).refresh();
+
+        final runtime = container.read(agentRegistryProvider).findRuntime('a1');
+        expect(env.inspectedAgentIds, [
+          'a1',
+        ], reason: '断连时 refresh 必须被挡住，不得发起远端检测');
+        expect(runtime?.isReady, isTrue, reason: '断连保留最后一次检测快照，界面不该被清空');
+        expect(
+          runtime?.errorMessage,
+          isNull,
+          reason: '断连不是 agent 出错，不得给缓存盖上错误码',
+        );
+        expect(container.read(agentRegistryProvider).isLoading, isFalse);
+      },
+    );
 
     test('disconnected ssh blocks install and login', () async {
       final env = _FakeEnvService(connected: false);
@@ -751,8 +784,7 @@ void main() {
         expect(env.inspectedAgentIds, ['a1', 'a1']);
       },
     );
-
-    test('resets runtime status when the connection drops', () async {
+    test('retains runtime status when the connection drops', () async {
       final env = _FakeEnvService();
       late _SwitchableConnection connection;
       final container = await _container(
@@ -780,14 +812,28 @@ void main() {
 
       connection.go(ConnectionStateEnum.disconnected);
       await pumpEventQueue();
+      await container.read(agentRegistryProvider.notifier).refresh();
 
-      // 断连后不能继续显示上一次的 ready 结果（那是已失效会话的状态）。
+      // 断连不是 agent 出错：缓存快照必须留着，也不许被盖上错误码。
       final runtime = container.read(agentRegistryProvider).findRuntime('a1');
-      expect(runtime?.isReady, isFalse);
+      expect(runtime?.isReady, isTrue, reason: '断连保留最后一次检测快照');
       expect(
         runtime?.errorMessage,
+        isNull,
+        reason: '断连不得给缓存盖上 SSH_DISCONNECTED',
+      );
+      expect(env.inspectedAgentIds, ['a1'], reason: '断连后不得再发起检测');
+      expect(container.read(agentRegistryProvider).isLoading, isFalse);
+
+      // 快照不等于在线证明：真正要动远端的操作仍然单独校验连接。
+      await container.read(agentRegistryProvider.notifier).installAgent('a1');
+      await container.read(agentRegistryProvider.notifier).loginAgent('a1');
+      expect(env.installedAgentIds, isEmpty, reason: '断连时不得执行安装');
+      expect(env.loggedInAgentIds, isEmpty, reason: '断连时不得触发登录');
+      expect(
+        container.read(agentRegistryProvider).findRuntime('a1')?.errorMessage,
         AgentRegistryNotifier.disconnectedCode,
-        reason: '应带上可映射文案的稳定 reason code',
+        reason: '用户主动发起的操作仍要给出可映射文案的 reason code',
       );
     });
 
@@ -849,6 +895,243 @@ void main() {
       await pumpEventQueue();
 
       expect(env.inspectedAgentIds, ['a1']);
+    });
+
+    test(
+      'builds while already connected and inspects without any event',
+      () async {
+        final env = _FakeEnvService();
+        final container = await _container(
+          prefs: {
+            'valhalla_servers_v1': _serversPrefs([_server('srv-1')]),
+            'valhalla_active_server_id_v1': 'srv-1',
+            'valhalla_agents_v1': _agentsPrefs([_agent('a1', 'srv-1')]),
+          },
+          envService: env,
+          connected: true,
+        );
+        addTearDown(container.dispose);
+
+        // Provider constructed late, long after the SSH link came up: there is
+        // no connection *change* left to listen to, so the build-time
+        // microtask is the only thing that can kick off detection.
+        container.read(agentRegistryProvider);
+        await pumpEventQueue();
+
+        expect(env.inspectedAgentIds, ['a1']);
+        expect(
+          container.read(agentRegistryProvider).findRuntime('a1')?.isReady,
+          isTrue,
+        );
+
+        // A plain re-read must not schedule a second round.
+        container.read(agentRegistryProvider);
+        await pumpEventQueue();
+        expect(env.inspectedAgentIds, ['a1']);
+      },
+    );
+
+    test('concurrent refresh() calls share one in-flight round', () async {
+      final env = _FakeEnvService();
+      final container = await _container(
+        prefs: {
+          'valhalla_servers_v1': _serversPrefs([_server('srv-1')]),
+          'valhalla_active_server_id_v1': 'srv-1',
+          'valhalla_agents_v1': _agentsPrefs([
+            _agent('a1', 'srv-1'),
+            _agent('a2', 'srv-1'),
+          ]),
+        },
+        envService: env,
+        connected: true,
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(agentRegistryProvider.notifier);
+      await pumpEventQueue();
+      expect(env.inspectedAgentIds, hasLength(2), reason: 'initial round');
+
+      final first = notifier.refresh();
+      final second = notifier.refresh();
+      final third = notifier.refresh();
+      expect(identical(first, second), isTrue, reason: 'shared future');
+      expect(identical(second, third), isTrue, reason: 'shared future');
+
+      await first;
+      await pumpEventQueue();
+      expect(
+        env.inspectedAgentIds,
+        hasLength(4),
+        reason: 'one extra round for three concurrent calls',
+      );
+
+      // The gate is per-round: once it settles the next refresh runs again.
+      await notifier.refresh();
+      await pumpEventQueue();
+      expect(env.inspectedAgentIds, hasLength(6));
+    });
+
+    test('concurrent refreshAgent() calls share one probe per agent', () async {
+      final env = _FakeEnvService();
+      final container = await _container(
+        prefs: {
+          'valhalla_servers_v1': _serversPrefs([_server('srv-1')]),
+          'valhalla_active_server_id_v1': 'srv-1',
+          'valhalla_agents_v1': _agentsPrefs([_agent('a1', 'srv-1')]),
+        },
+        envService: env,
+        connected: true,
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(agentRegistryProvider.notifier);
+      await pumpEventQueue();
+      expect(env.inspectedAgentIds, ['a1']);
+
+      final a = notifier.refreshAgent('a1');
+      final b = notifier.refreshAgent('a1');
+      expect(identical(a, b), isTrue, reason: 'the probe future is reused');
+      await a;
+      await pumpEventQueue();
+      expect(env.inspectedAgentIds, ['a1', 'a1']);
+
+      await notifier.refreshAgent('a1');
+      await pumpEventQueue();
+      expect(env.inspectedAgentIds, ['a1', 'a1', 'a1']);
+    });
+
+    test('updating one agent never rewrites or re-probes another', () async {
+      final env = _FakeEnvService();
+      final container = await _container(
+        prefs: {
+          'valhalla_servers_v1': _serversPrefs([_server('srv-1')]),
+          'valhalla_active_server_id_v1': 'srv-1',
+          'valhalla_agents_v1': _agentsPrefs([
+            _agent('a1', 'srv-1'),
+            _agent('a2', 'srv-1'),
+          ]),
+        },
+        envService: env,
+        connected: true,
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(agentRegistryProvider.notifier);
+      await pumpEventQueue();
+      expect(env.inspectedAgentIds, hasLength(2));
+
+      final beforeA2 = container.read(agentRegistryProvider).findRuntime('a2');
+      expect(beforeA2!.profile.executionTarget, 'host');
+
+      await notifier.updateAgent(
+        _agent('a1', 'srv-1').copyWith(
+          executionTarget: 'docker',
+          containerBinding: 'name',
+          containerReference: 'web.api',
+        ),
+      );
+      await pumpEventQueue();
+
+      final state = container.read(agentRegistryProvider);
+      expect(
+        state.findRuntime('a1')!.profile.executionTarget,
+        'docker',
+        reason: 'the edited target is what got saved',
+      );
+      expect(state.findRuntime('a2')!.profile.executionTarget, 'host');
+      expect(
+        identical(state.findRuntime('a2'), beforeA2),
+        isTrue,
+        reason: 'the untouched runtime object must be replaced by nothing',
+      );
+      expect(
+        env.inspectedAgentIds.where((id) => id == 'a1'),
+        hasLength(2),
+        reason: 'once on the initial round, once after the edit',
+      );
+      expect(
+        env.inspectedAgentIds.where((id) => id == 'a2'),
+        hasLength(1),
+        reason: 'the untouched agent is never re-probed',
+      );
+    });
+
+    group('confirmAuthentication 成功后只清 AgY 认证类陈旧 detail', () {
+      Future<(ProviderContainer, AgentRegistryNotifier, String, AgentProfile)>
+      scenarioFor(String detail) async {
+        final env = _FakeEnvService(
+          results: {
+            'a1': AgentEnvironmentStatus(
+              kind: AgentEnvironmentStatusKind.ready,
+              detail: detail,
+              authentication: AgentAuthenticationStatus.unauthenticated,
+              checkedAt: DateTime.utc(2026),
+            ),
+          },
+        );
+        final container = await _container(
+          prefs: {
+            'valhalla_servers_v1': _serversPrefs([_server('srv-1')]),
+            'valhalla_active_server_id_v1': 'srv-1',
+            'valhalla_agents_v1': _agentsPrefs([_agent('a1', 'srv-1')]),
+          },
+          envService: env,
+          connected: true,
+        );
+        addTearDown(container.dispose);
+        final notifier = container.read(agentRegistryProvider.notifier);
+        await pumpEventQueue();
+        final profile = container
+            .read(agentRegistryProvider)
+            .findRuntime('a1')!
+            .profile;
+        return (container, notifier, detail, profile);
+      }
+
+      for (final detail in const [
+        'AGY_ACP_SIGN_IN_REQUIRED',
+        'AGY_ACP_CREDENTIALS_NOT_VALIDATED',
+        'AGY_AUTH_CHECK_UNAVAILABLE',
+      ]) {
+        test('认证成功后 $detail 被清除', () async {
+          final (container, notifier, _, profile) = await scenarioFor(detail);
+
+          await notifier.confirmAuthentication(profile);
+          await pumpEventQueue();
+
+          final runtime = container
+              .read(agentRegistryProvider)
+              .findRuntime('a1')!;
+          expect(
+            runtime.status.detail,
+            isNull,
+            reason: '官方 RPC 成功后不得再显示需要登录/未验证',
+          );
+          expect(
+            runtime.status.authentication,
+            AgentAuthenticationStatus.authenticated,
+          );
+        });
+      }
+
+      test('非认证类 detail 保留（不得顺手抹掉安装/连接失败）', () async {
+        final (container, notifier, _, profile) = await scenarioFor(
+          'AGY_AUTH_CHECK_INVALID',
+        );
+
+        await notifier.confirmAuthentication(profile);
+        await pumpEventQueue();
+
+        final runtime = container
+            .read(agentRegistryProvider)
+            .findRuntime('a1')!;
+        expect(
+          runtime.status.detail,
+          'AGY_AUTH_CHECK_INVALID',
+          reason: '只清理三类陈旧认证 detail，其余原样保留',
+        );
+        expect(
+          runtime.status.authentication,
+          AgentAuthenticationStatus.authenticated,
+        );
+      });
     });
   });
 }

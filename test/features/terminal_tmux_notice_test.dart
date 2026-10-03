@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valhalla/core/providers/terminal_provider.dart';
+import 'package:valhalla/core/providers/terminal_settings_provider.dart';
 import 'package:valhalla/features/terminal/terminal_view.dart';
 import 'package:valhalla/infrastructure/terminal/terminal_session_bridge.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
@@ -62,6 +63,13 @@ class _MockTerminalNotifier extends TerminalNotifier {
   }
 }
 
+/// 画布会 watch 字号；这些用例不测字号，给固定值以免整棵树去读还没初始化的
+/// LocalStorageService（会以 ProviderException 炸掉整个 build）。
+class _FixedTerminalSettingsNotifier extends TerminalSettingsNotifier {
+  @override
+  TerminalSettings build() => const TerminalSettings();
+}
+
 Widget _buildTestApp({
   required _FakeBridge bridge,
   TmuxInstallOffer? tmuxInstallOffer,
@@ -82,7 +90,10 @@ Widget _buildTestApp({
   final actualNotifier = notifier ?? _MockTerminalNotifier(state);
 
   return ProviderScope(
-    overrides: [terminalProvider.overrideWith(() => actualNotifier)],
+    overrides: [
+      terminalProvider.overrideWith(() => actualNotifier),
+      terminalSettingsProvider.overrideWith(_FixedTerminalSettingsNotifier.new),
+    ],
     child: MaterialApp(
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

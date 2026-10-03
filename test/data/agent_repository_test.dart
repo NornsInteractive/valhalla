@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/data/models/agent_profile.dart';
+import 'package:valhalla/data/models/builtin_agent_preset.dart';
 import 'package:valhalla/data/repositories/agent_repository.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 
@@ -24,6 +25,73 @@ Future<AgentRepository> _repository({Map<String, dynamic>? initial}) async {
 }
 
 void main() {
+  test(
+    'upgrades old AGY profiles even after earlier migrations completed',
+    () async {
+      final repository = await _repository(
+        initial: {
+          'valhalla_agents_install_backfill_v1_complete': true,
+          'valhalla_agents_acp_repair_v1_complete': true,
+        },
+      );
+      final original = AgentProfile(
+        id: 'builtin-agy-docker',
+        serverId: 's',
+        name: 'My AGY',
+        description: 'My description',
+        cliCommand: 'agy',
+        executionTarget: 'docker',
+        containerBinding: 'name',
+        containerReference: 'workspace',
+        containerUser: '1000:1000',
+        installCommand: 'custom-install',
+        loginCommand: 'custom-login',
+        createdAt: DateTime.utc(2025),
+        updatedAt: DateTime.utc(2025, 2),
+      );
+      await repository.save(original);
+      expect(
+        repository.find('s', original.id),
+        original.copyWith(
+          acpCommand: 'agy_acp_server.par',
+          acpInstallCommand: kAntigravityAcpInstallCommand,
+          loginCheckCommand: kAntigravityLoginCheckCommand,
+        ),
+      );
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getString('valhalla_agents_v1');
+      repository.getAll('s');
+      expect(prefs.getString('valhalla_agents_v1'), stored);
+    },
+  );
+
+  test('AGY upgrade preserves custom ACP commands and custom agents', () async {
+    final repository = await _repository();
+    for (final agent in [
+      AgentProfile(
+        id: 'builtin-agy',
+        serverId: 's',
+        name: 'AGY',
+        description: '',
+        cliCommand: 'agy',
+        acpCommand: 'my-agy-wrapper --flag',
+        acpInstallCommand: 'my-installer',
+      ),
+      AgentProfile(
+        id: 'custom-agy',
+        serverId: 's',
+        name: 'Custom AGY',
+        description: '',
+        cliCommand: 'agy',
+      ),
+    ]) {
+      await repository.save(agent);
+      final result = repository.find('s', agent.id)!;
+      expect(result.acpCommand, agent.acpCommand);
+      expect(result.acpInstallCommand, agent.acpInstallCommand);
+    }
+  });
+
   test('AgentProfile JSON roundtrip preserves fields', () {
     final profile = AgentProfile(
       id: 'a',
@@ -323,14 +391,14 @@ void main() {
       }
     });
 
-    test(
-      'clears the bogus acp command for agy which has no ACP mode',
-      () async {
-        final repository = await withAcp('builtin-agy', 'agy --acp');
+    test('replaces the bogus agy flag with the official ACP server', () async {
+      final repository = await withAcp('builtin-agy', 'agy --acp');
 
-        expect(repository.find('s', 'builtin-agy')!.acpCommand, isNull);
-      },
-    );
+      expect(
+        repository.find('s', 'builtin-agy')!.acpCommand,
+        'agy_acp_server.par',
+      );
+    });
 
     test('repairs suffixed builtin ids too', () async {
       final repository = await withAcp(
