@@ -12,7 +12,8 @@ Windows x64 应用包见 [Releases](https://github.com/NornsInteractive/valhalla
 x64 运行库，当前应用未签名，Windows 实际功能仍需独立验收。
 自动打包已扩展到 Android、Windows、Linux、macOS、iOS，操作方法与签名边界见
 [多平台发布指南](docs/04-testing-and-deployment/04-multi-platform-github-actions.md)。
-Android 的未签名 APK/AAB 需签名后安装；iOS 的未签名应用 ZIP 不是可安装 IPA。
+Android 新构建使用固定发布密钥签名，不能覆盖 debug 签名的旧安装；iOS 的
+未签名应用 ZIP 不是可安装 IPA。密钥备份和自动签名见 [签名指南](docs/04-testing-and-deployment/05-android-release-signing.md)。
 已有 `v1.0.0` 仍只有此前验证的 Windows 包，新平台产物不回填到旧版本。
 
 ## 能力

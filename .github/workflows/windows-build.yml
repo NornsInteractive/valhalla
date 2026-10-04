@@ -140,7 +140,7 @@ jobs:
         include:
           - platform: android
             runner: ubuntu-24.04
-            package: android-unsigned
+            package: android-signed
           - platform: linux
             runner: ubuntu-24.04
             package: linux-x64
@@ -165,6 +165,22 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Prepare Android release keystore
+        if: matrix.platform == 'android'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          VALHALLA_ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          VALHALLA_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          VALHALLA_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for variable in KEYSTORE_BASE64 VALHALLA_ANDROID_STORE_PASSWORD VALHALLA_ANDROID_KEY_ALIAS VALHALLA_ANDROID_KEY_PASSWORD; do
+            test -n "${!variable}" || { echo "Missing signing secret: $variable" >&2; exit 1; }
+          done
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/valhalla-release.p12"
+          test -s "$RUNNER_TEMP/valhalla-release.p12"
+          echo "VALHALLA_ANDROID_KEYSTORE=$RUNNER_TEMP/valhalla-release.p12" >> "$GITHUB_ENV"
 
       - name: Install Linux native dependencies
         if: matrix.platform == 'linux'
@@ -193,7 +209,9 @@ jobs:
       - name: Build native release
         env:
           PLATFORM: ${{ matrix.platform }}
-          VALHALLA_CI_UNSIGNED: 'true'
+          VALHALLA_ANDROID_STORE_PASSWORD: ${{ matrix.platform == 'android' && secrets.ANDROID_KEYSTORE_PASSWORD || '' }}
+          VALHALLA_ANDROID_KEY_ALIAS: ${{ matrix.platform == 'android' && secrets.ANDROID_KEY_ALIAS || '' }}
+          VALHALLA_ANDROID_KEY_PASSWORD: ${{ matrix.platform == 'android' && secrets.ANDROID_KEY_PASSWORD || '' }}
         run: |
           case "$PLATFORM" in
             android)
@@ -226,6 +244,8 @@ jobs:
           PACKAGE: ${{ matrix.package }}
           BUILD_SHA: ${{ github.sha }}
           BUILD_RUN: ${{ github.run_number }}
+          VALHALLA_ANDROID_STORE_PASSWORD: ${{ matrix.platform == 'android' && secrets.ANDROID_KEYSTORE_PASSWORD || '' }}
+          VALHALLA_ANDROID_KEY_ALIAS: ${{ matrix.platform == 'android' && secrets.ANDROID_KEY_ALIAS || '' }}
         run: |
           output="$PWD/build/native-artifacts"
           mkdir -p "$output"
@@ -244,23 +264,31 @@ jobs:
               for abi in armeabi-v7a arm64-v8a x86_64; do
                 apk="build/app/outputs/flutter-apk/app-$abi-release.apk"
                 test -s "$apk"
-                # apksigner must reject these explicitly unsigned APKs.
                 signer=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
                 test -n "$signer"
-                if "$signer" verify "$apk" >/dev/null 2>&1; then
-                  echo 'Unexpected signed APK in unsigned CI' >&2; exit 1
-                fi
+                "$signer" verify --verbose --print-certs "$apk"
+                keytool -exportcert -alias "$VALHALLA_ANDROID_KEY_ALIAS" \
+                  -keystore "$VALHALLA_ANDROID_KEYSTORE" \
+                  -storepass:env VALHALLA_ANDROID_STORE_PASSWORD > "$RUNNER_TEMP/expected-cert.der"
+                expected=$(sha256sum "$RUNNER_TEMP/expected-cert.der" | cut -d ' ' -f 1)
+                actual=$("$signer" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+                test "$actual" = "$expected" || { echo 'APK signing certificate mismatch' >&2; exit 1; }
                 unzip -tq "$apk"
-                cp "$apk" "$output/valhalla-android-$abi-unsigned-$BUILD_RUN.apk"
+                cp "$apk" "$output/valhalla-android-$abi-signed-$BUILD_RUN.apk"
               done
               aab=build/app/outputs/bundle/release/app-release.aab
               test -s "$aab"
               unzip -tq "$aab"
-              if unzip -Z1 "$aab" | grep -Ei '^META-INF/[^/]+\.(RSA|DSA|EC|SF)$'; then
-                echo 'Unexpected signed AAB in unsigned CI' >&2; exit 1
-              fi
+              # A self-signed Android certificate is expected; verify integrity
+              # and compare its public certificate to the configured key.
+              jarsigner -verify "$aab"
+              keytool -printcert -jarfile "$aab" -rfc > "$RUNNER_TEMP/aab-cert.pem"
+              openssl x509 -in "$RUNNER_TEMP/aab-cert.pem" -outform DER -out "$RUNNER_TEMP/aab-cert.der"
+              actual=$(sha256sum "$RUNNER_TEMP/aab-cert.der" | cut -d ' ' -f 1)
+              test "$actual" = "$expected" || { echo 'AAB signing certificate mismatch' >&2; exit 1; }
               cp "$aab" "$output/$name.aab"
-              echo 'Unsigned APK/AAB: sign with your stable release key before installing or publishing.' >> "$output/$name-BUILD-INFO.txt"
+              echo "Android release certificate SHA256: $expected" >> "$output/$name-BUILD-INFO.txt"
+              echo 'Signed with the fixed release key; cannot update debug-signed installs. AAB still requires Play App Signing enrollment for Play distribution.' >> "$output/$name-BUILD-INFO.txt"
               ;;
             linux)
               bundle=build/linux/x64/release/bundle
@@ -314,7 +342,7 @@ jobs:
             echo "### $PACKAGE release"
             echo "Commit: $BUILD_SHA"
             echo 'Build outputs and SHA256 files are attached as an Artifact (14 days).'
-            echo 'Unsigned mobile/Apple artifacts need signing before distribution.'
+            echo 'Android uses the fixed release key; Apple artifacts still require distribution signing.'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload native package
@@ -324,6 +352,12 @@ jobs:
           path: build/native-artifacts/*
           if-no-files-found: error
           retention-days: 14
+
+      - name: Remove temporary Android signing material
+        if: always() && matrix.platform == 'android'
+        run: |
+          rm -f -- "$RUNNER_TEMP/valhalla-release.p12" "$RUNNER_TEMP/expected-cert.der" \
+            "$RUNNER_TEMP/aab-cert.pem" "$RUNNER_TEMP/aab-cert.der"
 
   release:
     name: Publish GitHub Release
@@ -356,11 +390,11 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
           RELEASE_NOTES: |
-            Native builds: Android (unsigned APKs for armv7/arm64/x64 and AAB), Windows x64, Linux x64, macOS universal (unsigned), iOS arm64 (unsigned app ZIP).
+            Native builds: Android (release-signed APKs for armv7/arm64/x64 and AAB), Windows x64, Linux x64, macOS universal (unsigned), iOS arm64 (unsigned app ZIP).
             Every asset includes a SHA256 checksum; platform BUILD-INFO records the exact source commit.
             Extract the entire application ZIP and launch valhalla.exe; keep all DLLs and the data directory together.
             Requires Windows 10/11 x64 and the Microsoft Visual C++ x64 runtime. This build is unsigned.
-            Android packages require signing with a stable release key before installation. Apple packages are not signed, provisioned or notarized; the iOS ZIP is NOT an installable IPA.
+            Android uses a fixed release key: APKs are installable, but cannot update debug-signed builds. AAB distribution requires Play App Signing enrollment. Apple packages have no distribution signature, provisioning or notarization; the iOS ZIP is NOT an installable IPA.
             Linux requires GTK 3, libsecret and libmpv runtime libraries. macOS archives include the complete app bundle.
             CI compilation and package integrity are verified; device, desktop and real-server functionality require separate acceptance testing.
         run: |

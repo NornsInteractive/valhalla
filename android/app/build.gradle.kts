@@ -5,6 +5,26 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val releaseStorePath = System.getenv("VALHALLA_ANDROID_KEYSTORE")
+val releaseSigningVariables = listOf(
+    "VALHALLA_ANDROID_KEYSTORE",
+    "VALHALLA_ANDROID_STORE_PASSWORD",
+    "VALHALLA_ANDROID_KEY_ALIAS",
+    "VALHALLA_ANDROID_KEY_PASSWORD",
+)
+val releaseSigningRequested = releaseSigningVariables.any { !System.getenv(it).isNullOrBlank() }
+val ciUnsigned = System.getenv("VALHALLA_CI_UNSIGNED") == "true"
+if (releaseSigningRequested && ciUnsigned) {
+    throw GradleException("Release signing and CI unsigned mode are mutually exclusive")
+}
+if (releaseSigningRequested) {
+    for (name in releaseSigningVariables) {
+        if (System.getenv(name).isNullOrBlank()) {
+            throw GradleException("Missing release signing variable: $name")
+        }
+    }
+}
+
 android {
     namespace = "com.antigravity.valhalla.valhalla"
     compileSdk = flutter.compileSdkVersion
@@ -30,14 +50,24 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (releaseSigningRequested) {
+            create("release") {
+                storeFile = file(releaseStorePath!!)
+                storePassword = System.getenv("VALHALLA_ANDROID_STORE_PASSWORD")
+                keyAlias = System.getenv("VALHALLA_ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("VALHALLA_ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // CI packages are explicitly unsigned until a release key is configured.
             // Preserve the existing local debug-key workflow for adb development.
-            signingConfig = if (System.getenv("VALHALLA_CI_UNSIGNED") == "true") {
-                null
-            } else {
-                signingConfigs.getByName("debug")
+            signingConfig = when {
+                releaseSigningRequested -> signingConfigs.getByName("release")
+                ciUnsigned -> null
+                else -> signingConfigs.getByName("debug")
             }
         }
     }

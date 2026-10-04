@@ -1,5 +1,10 @@
 # 多平台自动构建与 Releases
 
+更新：用户随后要求生成签名，Android 已接入固定发布密钥与 GitHub Secrets，
+新工作流产物改为 `android-signed`。Apple 仍无正式发布签名，其他平台边界
+不变。详见 [Android 签名指南](05-android-release-signing.md)；下方未签名方案
+和前两轮验证记录是本次改动之前的历史依据，不代表新的 Android 包未签名。
+
 ## 范围与产物
 
 复用现有 [`windows-build.yml`](../../.github/workflows/windows-build.yml)，显示名称
@@ -16,7 +21,7 @@ Release 盲目加 `--no-pub`：它会跳过平台注册代码重建，把 dev-on
 
 | 平台 | Runner | 产物 | 安装与运行边界 |
 | --- | --- | --- | --- |
-| Android | ubuntu-24.04 / Java 17 | armv7、arm64、x86_64 未签名 APK；未签名 AAB | 必须先用固定发布密钥签名；不能直接安装或提交商店 |
+| Android | ubuntu-24.04 / Java 17 | armv7、arm64、x86_64 发布签名 APK；签名 AAB | APK 可安装但不能更新 debug 签名包；AAB 发布仍需 Play 配置 |
 | Windows | windows-2022 | x64 完整便携 ZIP | 完整解压；需要 Visual C++ x64 运行库；未做发布者签名 |
 | Linux | ubuntu-24.04 | x64 完整 bundle tar.gz | 保留 lib/data 和可执行权限；目标系统需要 GTK 3、libsecret、libmpv；不保证兼容所有发行版 |
 | macOS | macos-15-intel | x64 + arm64 universal 未签名 .app ZIP | 无 Developer ID 签名或公证；不能当作已经可安全分发的正式包 |
@@ -70,7 +75,7 @@ gh run download <运行ID> --repo NornsInteractive/valhalla --dir ./packages
 已有 `v1.0.0` 保持原验证提交与 Windows 资产，不将不同提交的新平台包塞入旧版本。
 工作流完成并不代表已经发布新的多平台版本；以对应运行和 Releases Assets 为准。
 
-## 未签名实现与后续签名
+## 初始未签名实现（Android 已由后续签名方案取代）
 
 Android 仅在 CI 设置 `VALHALLA_CI_UNSIGNED=true`，让 release 的 signingConfig
 为空；本地未设置时继续原有 debug-key 构建方式，不更换现有 ADB 应用密钥。
@@ -102,10 +107,16 @@ iOS 13 失败。已将 Xcode 目标和 AppFrameworkInfo 的最低版本对齐为
 对应 `4ce178d`：Windows、Linux 编译/打包/上传成功；iOS 编译成功（Xcode 266s），
 macOS 编译成功（115.6MB app），两者在 `lipo -verify_arch` 校验阶段因参数顺序
 失败。已按实际工具 usage 修正为 `lipo <input_file> -verify_arch <arch...>`，
-保留架构校验，不绕过门禁。Android 状态与最终修复运行待 OpenCode 核验。
+保留架构校验，不绕过门禁。Android 此轮 APK/AAB 亦编译、校验、上传成功，
+之后在收尾阶段被新提交取消；整个运行不能标记为成功。
 本地 Android 三架构 APK、AAB 均编译成功，apksigner 校验/签名条目检查确认
 没有签名，归档完整性通过；本地 Linux 干净构建亦成功。清理了 Linux Release
 旧的生成缓存（错误安装前缀 `/usr/local`，可重新生成），未改源码安装路径。
+
+第三轮 [`37183446978`](https://github.com/NornsInteractive/valhalla/actions/runs/37183446978)
+对应 `4b3a2f678014162a1bc9e7597468b24612fed329`，五个平台的完整构建、归档
+与上传任务均成功，普通 main 推送的 Release job 按设计跳过。它证明原未签名
+流水线可用；新 Android 发布签名提交仍须另行验证，不能复用此运行当签名证明。
 
 首个 Windows 成功记录仍见
 [Windows 指南](03-windows-github-actions.md)。不将未运行平台标记为通过。

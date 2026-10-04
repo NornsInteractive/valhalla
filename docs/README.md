@@ -63,6 +63,7 @@ docs/
 | **测试交付** | [02-deployment-and-environment-guide.md](file:///workspace/projects/valhalla/docs/04-testing-and-deployment/02-deployment-and-environment-guide.md) | Android/Windows/Linux 打包流水线、服务端最低权限配置 | 运维、发布工程师 |
 | **Windows 构建** | [03-windows-github-actions.md](04-testing-and-deployment/03-windows-github-actions.md) | Actions 自动/手动打包、完整 ZIP 下载与运行 | 开发、发布、用户 |
 | **多平台构建** | [04-multi-platform-github-actions.md](04-testing-and-deployment/04-multi-platform-github-actions.md) | Android / Windows / Linux / macOS / iOS 自动编译及版本发布 | 开发、发布、用户 |
+| **Android 签名** | [05-android-release-signing.md](04-testing-and-deployment/05-android-release-signing.md) | 固定发布密钥、Secrets、签名校验与备份 | 发布、仓库管理员 |
 
 ---
 
