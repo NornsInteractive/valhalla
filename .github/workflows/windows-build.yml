@@ -1,4 +1,4 @@
-name: Windows Build
+name: Multi-platform Build
 
 on:
   workflow_dispatch:
@@ -9,6 +9,10 @@ on:
       - '.github/workflows/windows-build.yml'
       - 'lib/**'
       - 'windows/**'
+      - 'android/**'
+      - 'linux/**'
+      - 'macos/**'
+      - 'ios/**'
       - 'packages/**'
       - 'assets/**'
       - 'pubspec.yaml'
@@ -20,12 +24,32 @@ permissions:
   contents: read
 
 concurrency:
-  group: windows-build-${{ github.ref }}
-  cancel-in-progress: true
+  group: native-build-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
+  preflight:
+    name: Check source version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Verify release version tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          version=$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)
+          test "$RELEASE_TAG" = "v$version" || {
+            echo "Release tag must match pubspec.yaml version v$version" >&2
+            exit 1
+          }
+
   build:
     name: Windows x64 release
+    needs: preflight
     runs-on: windows-2022
     timeout-minutes: 45
     defaults:
@@ -113,19 +137,208 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  native:
+    name: ${{ matrix.platform }} release
+    needs: preflight
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android
+            runner: ubuntu-24.04
+            package: android-unsigned
+          - platform: linux
+            runner: ubuntu-24.04
+            package: linux-x64
+          - platform: macos
+            runner: macos-15-intel
+            package: macos-universal-unsigned
+          - platform: ios
+            runner: macos-15-intel
+            package: ios-arm64-unsigned
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        if: matrix.platform == 'android'
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Linux native dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev \
+            libstdc++-12-dev libsecret-1-dev libmpv-dev libepoxy-dev
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.38.1'
+          channel: stable
+          architecture: x64
+          cache: true
+
+      - name: Resolve dependencies and localizations
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter gen-l10n
+
+      - name: Run logic tests
+        if: matrix.platform == 'linux'
+        run: flutter test --no-pub
+
+      - name: Build native release
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          VALHALLA_CI_UNSIGNED: 'true'
+        run: |
+          case "$PLATFORM" in
+            android)
+              flutter build apk --release --split-per-abi --no-pub
+              flutter build appbundle --release --no-pub
+              ;;
+            linux)
+              flutter build linux --release --no-pub
+              ;;
+            macos)
+              # Flutter forwards FLUTTER_XCODE_* to Xcode build settings.
+              FLUTTER_XCODE_CODE_SIGNING_ALLOWED=NO \
+              FLUTTER_XCODE_CODE_SIGNING_REQUIRED=NO \
+              FLUTTER_XCODE_ARCHS='arm64 x86_64' \
+              FLUTTER_XCODE_ONLY_ACTIVE_ARCH=NO \
+                flutter build macos --release --no-pub
+              ;;
+            ios)
+              flutter build ios --release --no-codesign --no-pub
+              ;;
+          esac
+
+      - name: Verify and package native bundle
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          PACKAGE: ${{ matrix.package }}
+          BUILD_SHA: ${{ github.sha }}
+          BUILD_RUN: ${{ github.run_number }}
+        run: |
+          output="$PWD/build/native-artifacts"
+          mkdir -p "$output"
+          name="valhalla-$PACKAGE-$BUILD_RUN"
+          {
+            echo "Valhalla $PACKAGE release"
+            sed -n '/^version:/p' pubspec.yaml
+            echo "commit: $BUILD_SHA"
+            echo "run: $BUILD_RUN"
+            echo "built_utc: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            flutter --version --machine
+            echo 'CI compilation is not real-device or real-server acceptance testing.'
+          } > "$output/$name-BUILD-INFO.txt"
+          case "$PLATFORM" in
+            android)
+              for abi in armeabi-v7a arm64-v8a x86_64; do
+                apk="build/app/outputs/flutter-apk/app-$abi-release.apk"
+                test -s "$apk"
+                # apksigner must reject these explicitly unsigned APKs.
+                signer=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
+                test -n "$signer"
+                if "$signer" verify "$apk" >/dev/null 2>&1; then
+                  echo 'Unexpected signed APK in unsigned CI' >&2; exit 1
+                fi
+                unzip -tq "$apk"
+                cp "$apk" "$output/valhalla-android-$abi-unsigned-$BUILD_RUN.apk"
+              done
+              aab=build/app/outputs/bundle/release/app-release.aab
+              test -s "$aab"
+              unzip -tq "$aab"
+              if unzip -Z1 "$aab" | grep -Ei '^META-INF/[^/]+\.(RSA|DSA|EC|SF)$'; then
+                echo 'Unexpected signed AAB in unsigned CI' >&2; exit 1
+              fi
+              cp "$aab" "$output/$name.aab"
+              echo 'Unsigned APK/AAB: sign with your stable release key before installing or publishing.' >> "$output/$name-BUILD-INFO.txt"
+              ;;
+            linux)
+              bundle=build/linux/x64/release/bundle
+              test -x "$bundle/valhalla"
+              test -s "$bundle/lib/libflutter_linux_gtk.so"
+              test -s "$bundle/lib/libvalhalla_smb.so"
+              test -s "$bundle/data/icudtl.dat"
+              test -d "$bundle/data/flutter_assets"
+              file "$bundle/valhalla" | grep 'x86-64'
+              echo 'Extract the whole bundle; requires GTK 3, libsecret and libmpv on the target Linux system.' >> "$output/$name-BUILD-INFO.txt"
+              cp "$output/$name-BUILD-INFO.txt" "$bundle/BUILD-INFO.txt"
+              tar -czf "$output/$name.tar.gz" -C "$bundle" .
+              tar -tzf "$output/$name.tar.gz" >/dev/null
+              ;;
+            macos|ios)
+              if [[ "$PLATFORM" == macos ]]; then
+                app=build/macos/Build/Products/Release/Valhalla.app
+                executable="$app/Contents/MacOS/Valhalla"
+                lipo -verify_arch x86_64 arm64 "$executable"
+                test -d "$app/Contents/Frameworks/FlutterMacOS.framework"
+              else
+                app=build/ios/iphoneos/Runner.app
+                executable="$app/Runner"
+                lipo -verify_arch arm64 "$executable"
+                test -d "$app/Frameworks/Flutter.framework"
+              fi
+              test -s "$executable"
+              if codesign --verify "$app" >/dev/null 2>&1; then
+                echo 'Unexpected signed Apple app in unsigned CI' >&2; exit 1
+              fi
+              echo 'Unsigned Apple build: no provisioning, notarization or store distribution. iOS ZIP is not an installable IPA.' >> "$output/$name-BUILD-INFO.txt"
+              ditto -c -k --sequesterRsrc --keepParent "$app" "$output/$name.zip"
+              unzip -tq "$output/$name.zip"
+              ;;
+          esac
+          (
+            cd "$output"
+            for artifact in *; do
+              if [[ "$PLATFORM" == macos || "$PLATFORM" == ios ]]; then
+                shasum -a 256 "$artifact" > "$artifact.sha256"
+              else
+                sha256sum "$artifact" > "$artifact.sha256"
+              fi
+            done
+          )
+          {
+            echo "### $PACKAGE release"
+            echo "Commit: $BUILD_SHA"
+            echo 'Build outputs and SHA256 files are attached as an Artifact (14 days).'
+            echo 'Unsigned mobile/Apple artifacts need signing before distribution.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload native package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: valhalla-${{ matrix.package }}-${{ github.run_number }}
+          path: build/native-artifacts/*
+          if-no-files-found: error
+          retention-days: 14
+
   release:
     name: Publish GitHub Release
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: [build, native]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
     steps:
-      - name: Download verified build artifact
+      - name: Download all verified build artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: valhalla-windows-x64-${{ github.run_number }}
+          pattern: valhalla-*-${{ github.run_number }}
+          merge-multiple: true
           path: dist
 
       - name: Check package integrity
@@ -136,22 +349,25 @@ jobs:
             sha256sum --check --strict <(tr -d '\r' < "$checksum")
           done
 
-      - name: Publish versioned Windows package
+      - name: Publish versioned native packages
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
           RELEASE_NOTES: |
-            Windows x64 portable release. Download the application ZIP and its SHA256 file from Assets.
+            Native builds: Android (unsigned APKs for armv7/arm64/x64 and AAB), Windows x64, Linux x64, macOS universal (unsigned), iOS arm64 (unsigned app ZIP).
+            Every asset includes a SHA256 checksum; platform BUILD-INFO records the exact source commit.
             Extract the entire application ZIP and launch valhalla.exe; keep all DLLs and the data directory together.
             Requires Windows 10/11 x64 and the Microsoft Visual C++ x64 runtime. This build is unsigned.
-            CI compilation and package integrity are verified; Windows desktop and real-server functionality require separate acceptance testing.
+            Android packages require signing with a stable release key before installation. Apple packages are not signed, provisioned or notarized; the iOS ZIP is NOT an installable IPA.
+            Linux requires GTK 3, libsecret and libmpv runtime libraries. macOS archives include the complete app bundle.
+            CI compilation and package integrity are verified; device, desktop and real-server functionality require separate acceptance testing.
         run: |
           flags=()
           if [[ "$RELEASE_TAG" == *-* ]]; then
             flags+=(--prerelease)
           fi
-          gh release create "$RELEASE_TAG" dist/*.zip dist/*.sha256 \
+          gh release create "$RELEASE_TAG" dist/* \
             --verify-tag --title "Valhalla $RELEASE_TAG" \
             --generate-notes --notes "$RELEASE_NOTES" "${flags[@]}"

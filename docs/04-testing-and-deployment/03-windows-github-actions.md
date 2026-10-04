@@ -1,9 +1,13 @@
 # Windows GitHub Actions 自动打包
 
+2026-10-04：同一工作流已扩展为 **Multi-platform Build**，当前五平台行为见
+[多平台发布指南](04-multi-platform-github-actions.md)。本文保留 Windows 打包细节
+及首个已验证版本的历史记录；原工作流文件名不变，CLI 命令仍可使用。
+
 ## 工作流与范围
 
 工作流：[`windows-build.yml`](../../.github/workflows/windows-build.yml)。
-构建页面：[Valhalla / Windows Build](https://github.com/NornsInteractive/valhalla/actions/workflows/windows-build.yml)。
+构建页面：[Valhalla / Multi-platform Build](https://github.com/NornsInteractive/valhalla/actions/workflows/windows-build.yml)。
 
 使用 GitHub 的 `windows-2022` 运行器、Flutter `3.38.1` stable 和仓库中的
 `pubspec.lock`，生成 Windows x64 Release 便携包。复用现有 Windows 工程，
@@ -35,7 +39,7 @@ GitHub Actions 的工作流是提交在 `.github/workflows/` 目录中的 YAML �
 
 ## 手动构建
 
-1. 打开仓库 **Actions**，左侧选择 **Windows Build**。
+1. 打开仓库 **Actions**，左侧选择 **Multi-platform Build**。
 2. 点击 **Run workflow**，分支选择 `main`，再次点击 **Run workflow**。
 3. 打开新运行，逐步查看日志。全部绿色后，在运行页面下方 **Artifacts**
    下载 `valhalla-windows-x64-<运行编号>`。

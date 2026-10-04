@@ -10,7 +10,10 @@ Windows x64 应用包见 [Releases](https://github.com/NornsInteractive/valhalla
 下载 Assets 中的应用 ZIP，完整解压后运行 `valhalla.exe`；不要只复制 EXE，
 也不要将 Source code ZIP 当作安装包。需要 Windows 10/11 x64 和 Visual C++
 x64 运行库，当前应用未签名，Windows 实际功能仍需独立验收。
-自动打包与版本发布方法见 [Windows 发布指南](docs/04-testing-and-deployment/03-windows-github-actions.md)。
+自动打包已扩展到 Android、Windows、Linux、macOS、iOS，操作方法与签名边界见
+[多平台发布指南](docs/04-testing-and-deployment/04-multi-platform-github-actions.md)。
+Android 的未签名 APK/AAB 需签名后安装；iOS 的未签名应用 ZIP 不是可安装 IPA。
+已有 `v1.0.0` 仍只有此前验证的 Windows 包，新平台产物不回填到旧版本。
 
 ## 能力
 
@@ -33,7 +36,7 @@ NAS 媒体源独立管理，使用 SQLite 分批索引、游标分页和后台�
 
 ## 技术栈
 
-Flutter 3.47.5 / Dart 3.10、Material 3、Riverpod、dartssh2、acpd、xterm、dart_mosh、flutter_markdown_plus、syntax_highlight、flutter_secure_storage、file_picker；打包字体 Inter + JetBrains Mono。
+CI 固定 Flutter 3.38.1 / Dart 3.10（与锁文件及实际框架提交匹配）、Material 3、Riverpod、dartssh2、acpd、xterm、dart_mosh、flutter_markdown_plus、syntax_highlight、flutter_secure_storage、file_picker；打包字体 Inter + JetBrains Mono。
 
 界面语言：Norse Steel 设计系统 —— 钢灰表面阶梯 + 单一种子色强调、统一圆角体系（卡片 16 / 弹窗 20 / 输入 12）、语义状态色不随主题色漂移、数字与主机信息等宽字体。自定义令牌与动效组件位于 [`lib/core/design/`](lib/core/design/)，使用规则见 [设计规范](docs/design/REDESIGN-2026-09.md)。
 

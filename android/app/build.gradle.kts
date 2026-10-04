@@ -32,9 +32,13 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // CI packages are explicitly unsigned until a release key is configured.
+            // Preserve the existing local debug-key workflow for adb development.
+            signingConfig = if (System.getenv("VALHALLA_CI_UNSIGNED") == "true") {
+                null
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
