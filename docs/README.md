@@ -35,7 +35,8 @@ docs/
 │
 └── 04-testing-and-deployment/                        # 【阶段四：测试与交付阶段】
     ├── 01-testing-strategy-and-testcases.md          # 测试策略与全功能验收用例矩阵
-    └── 02-deployment-and-environment-guide.md        # 客户端跨平台编译打包与服务端环境指南
+    ├── 02-deployment-and-environment-guide.md        # 客户端跨平台编译打包与服务端环境指南
+    └── 03-windows-github-actions.md                 # Windows 自动打包工作流与下载说明
 
 另：`03-development/04-implementation-status.md` 记录当前实现基线、阶段性缺口及 Antigravity UI 协作约束。
 ```
@@ -59,6 +60,7 @@ docs/
 | **开发实施** | [03-coding-standards-and-guidelines.md](file:///workspace/projects/valhalla/docs/03-development/03-coding-standards-and-guidelines.md) | Dart 编码风格、Riverpod 不可变状态约束、异常模型 | 开发工程师、Code Reviewer |
 | **测试交付** | [01-testing-strategy-and-testcases.md](file:///workspace/projects/valhalla/docs/04-testing-and-deployment/01-testing-strategy-and-testcases.md) | 单元测试、Mock SSH/ACP 联调测试、验收用例矩阵 (TC-01~N) | QA、测试开发 |
 | **测试交付** | [02-deployment-and-environment-guide.md](file:///workspace/projects/valhalla/docs/04-testing-and-deployment/02-deployment-and-environment-guide.md) | Android/Windows/Linux 打包流水线、服务端最低权限配置 | 运维、发布工程师 |
+| **Windows 构建** | [03-windows-github-actions.md](04-testing-and-deployment/03-windows-github-actions.md) | Actions 自动/手动打包、完整 ZIP 下载与运行 | 开发、发布、用户 |
 
 ---
 

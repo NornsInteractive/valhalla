@@ -46,6 +46,7 @@ Valhalla 客户端基于 Flutter 构建，支持全平台独立二进制分发�
   ```
 
 ### 1.2 Windows 桌面端打包
+* **GitHub 自动打包**：见 [Windows GitHub Actions 工作流与操作指南](03-windows-github-actions.md)。支持推送 `main` 自动构建和手动触发，必须下载完整 ZIP，而不是单个 EXE。
 * **系统要求**：Windows 10 / 11 64位。
 * **依赖运行库**：目标机器需安装 Visual C++ 2015-2022 Redistributable。
 * **打包指令**：

@@ -1,0 +1,102 @@
+name: Windows Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/windows-build.yml'
+      - 'lib/**'
+      - 'windows/**'
+      - 'packages/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'l10n.yaml'
+      - 'analysis_options.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Windows x64 release
+    runs-on: windows-2022
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.44.2'
+          channel: stable
+          architecture: x64
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Static analysis
+        run: flutter analyze --no-pub
+
+      - name: Build Windows release
+        run: flutter build windows --release --no-pub
+
+      - name: Package complete Windows bundle
+        env:
+          BUILD_SHA: ${{ github.sha }}
+          BUILD_RUN: ${{ github.run_number }}
+        run: |
+          $bundle = 'build/windows/x64/runner/Release'
+          foreach ($required in @('valhalla.exe', 'flutter_windows.dll', 'data/icudtl.dat', 'data/flutter_assets')) {
+            if (!(Test-Path (Join-Path $bundle $required))) {
+              throw "Incomplete Windows bundle: $required is missing"
+            }
+          }
+          $output = 'build/windows-artifacts'
+          New-Item -ItemType Directory -Force -Path $output | Out-Null
+          $version = (Get-Content pubspec.yaml | Select-String '^version:').Line
+          @(
+            'Valhalla Windows x64 release'
+            $version
+            "commit: $env:BUILD_SHA"
+            "run: $env:BUILD_RUN"
+            "built_utc: $([DateTime]::UtcNow.ToString('o'))"
+            "flutter: $(flutter --version --machine)"
+            'Extract the entire ZIP and launch valhalla.exe. Keep DLLs and data together.'
+            'Requires Windows 10/11 x64 and the Microsoft Visual C++ x64 runtime.'
+          ) | Set-Content (Join-Path $bundle 'BUILD-INFO.txt') -Encoding utf8
+          $zip = Join-Path $output "valhalla-windows-x64-$env:BUILD_RUN.zip"
+          Compress-Archive -Path "$bundle/*" -DestinationPath $zip -CompressionLevel Optimal
+          $digest = Get-FileHash $zip -Algorithm SHA256
+          "$($digest.Hash.ToLower())  $([IO.Path]::GetFileName($zip))" |
+            Set-Content "$zip.sha256" -Encoding ascii
+          @(
+            '### Windows x64 release'
+            "Commit: ``$env:BUILD_SHA``"
+            "SHA256: ``$($digest.Hash.ToLower())``"
+            'Download the artifact below. Extract the inner ZIP completely before launching valhalla.exe.'
+            'Compilation does not prove real server/Agent or Windows desktop functionality.'
+          ) | Add-Content $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: valhalla-windows-x64-${{ github.run_number }}
+          path: build/windows-artifacts/*
+          if-no-files-found: error
+          retention-days: 14
