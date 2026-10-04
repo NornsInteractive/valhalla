@@ -94,4 +94,31 @@ Artifact 保留 14 天，过期需重新运行。当前不自动创建 GitHub Re
 - 包构建成功但运行失败：先确认完整解压和 VC++ 运行库，再记录 Windows
   版本及启动日志；编译成功不能代替桌面功能验收。
 
-首次运行的提交、运行链接、验证结果与产物校验值在实际完成后补录。
+## 首次交付证据（2026-10-04）
+
+- 源码提交：`b8839ab21835391c861d2730cea10219588676b8`，应用版本
+  `1.0.0+1`。后续仅补充文档的提交不改变本包来源。
+- [Windows 构建 #2](https://github.com/NornsInteractive/valhalla/actions/runs/37179693736)：
+  严格锁文件解析、多语言生成、静态分析、Windows Release 编译、完整打包与
+  上传步骤及 SDK 缓存收尾全部通过，运行最终状态为 `completed / success`。
+- [下载产物 valhalla-windows-x64-2](https://github.com/NornsInteractive/valhalla/actions/runs/37179693736/artifacts/11294957476)：
+  Artifact ID `11294957476`，产物保留至 `2026-10-18`。
+- 应用 ZIP：`valhalla-windows-x64-2.zip`，38,847,608 字节，构建时间
+  `2026-10-04T05:28:38.3731497Z`。
+- SHA256：`39275c19735e4b58d5a585f91fd8aa193d51ec3e63083baf35457166e1c5b631`。
+
+OpenCode 使用 `opencode/mimo-v2.6-flash-free` 完成以下验证：
+
+- `actionlint` v1.7.12：退出 0；修正前、后的工作流均无语法发现。
+- 本地 `flutter pub get --enforce-lockfile`、`flutter gen-l10n`、
+  `flutter analyze --no-pub`：退出 0；没有更改依赖锁文件或多语言源码。
+- 通过 GitHub CLI 读取 CI 结果、下载产物：退出 0。
+- ZIP SHA256 与上传校验文件相符；`unzip -t` 退出 0，完整解压得到 52 个文件。
+- 读取 PE 文件头确认 EXE、Flutter/SMB/SQLite/SMTC/libmpv DLL 为 x86-64。
+  确认 `data/app.so`、`data/icudtl.dat`、29 个 Flutter 资源文件及插件 DLL
+  存在，`BUILD-INFO.txt` 的版本与源码提交匹配。
+
+产物下载及核验目录：`/tmp/opencode/windows-run-37179693736/`。此处是临时
+验证副本，正式下载入口仍为上方 GitHub Artifact。
+当前未在真实 Windows 桌面启动应用或连接服务器，不将结构/编译检查作为
+SSH、ACP、NAS 播放等功能的验收证明。
