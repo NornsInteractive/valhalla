@@ -79,6 +79,10 @@ macOS 使用 `flutter build macos`，通过 Flutter 支持的 `FLUTTER_XCODE_*` 
 变量向 Xcode 传递禁用签名、双架构与 `ONLY_ACTIVE_ARCH=NO`，
 打包前验证两个架构；iOS 使用 `--no-codesign` 并验证 arm64。Apple 构建在 macOS
 Runner 上由 Flutter 配置 CocoaPods；不在 Linux 上伪造 Apple 验证。
+Apple linker 可能给 arm64 二进制附加 ad-hoc 完整性签名，这不等于 Apple
+发布者签名或签名分发。打包门禁拒绝 Authority / TeamIdentifier，允许没有
+发布身份的 ad-hoc 签名，并记录签名诊断；不将 codesign 校验能通过等同于
+有证书、可安装或已经公证。
 
 正式 Android 签名需固定 keystore、alias 和密码，通过 GitHub Secrets 注入临时
 文件并配置 Gradle，不提交私钥，不用每次随机产生的 CI debug key 分发更新。
@@ -92,7 +96,17 @@ OpenCode（原会话，`opencode/mimo-v2.6-flash-free`）已通过 actionlint、
 [`37182300368`](https://github.com/NornsInteractive/valhalla/actions/runs/37182300368)
 对应提交 `cf7454d`；iOS 因现有 `file_picker_darwin` 要求至少 iOS 14 而工程仍是
 iOS 13 失败。已将 Xcode 目标和 AppFrameworkInfo 的最低版本对齐为 14，不降级
-依赖、不跳过编译错误。等待修复提交的真实 Runner 验证，其他平台状态待核验。
+依赖、不跳过编译错误。
+
+第二轮 [`37182694881`](https://github.com/NornsInteractive/valhalla/actions/runs/37182694881)
+对应 `4ce178d`：Windows、Linux 编译/打包/上传成功；iOS 编译成功（Xcode 266s），
+macOS 编译成功（115.6MB app），两者在 `lipo -verify_arch` 校验阶段因参数顺序
+失败。已按实际工具 usage 修正为 `lipo <input_file> -verify_arch <arch...>`，
+保留架构校验，不绕过门禁。Android 状态与最终修复运行待 OpenCode 核验。
+本地 Android 三架构 APK、AAB 均编译成功，apksigner 校验/签名条目检查确认
+没有签名，归档完整性通过；本地 Linux 干净构建亦成功。清理了 Linux Release
+旧的生成缓存（错误安装前缀 `/usr/local`，可重新生成），未改源码安装路径。
+
 首个 Windows 成功记录仍见
 [Windows 指南](03-windows-github-actions.md)。不将未运行平台标记为通过。
 跨平台业务功能、真实服务器、NAS 播放与移动设备行为另行验收。

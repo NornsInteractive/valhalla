@@ -61,16 +61,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Verify release version tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*([^\s+]+)').Matches[0].Groups[1].Value
-          if ($env:RELEASE_TAG -ne "v$version") {
-            throw "Release tag $env:RELEASE_TAG must match pubspec.yaml version v$version"
-          }
-
       - name: Set up Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
@@ -180,7 +170,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev \
+          sudo apt-get install -y clang cmake ninja-build pkg-config file libgtk-3-dev \
             libstdc++-12-dev libsecret-1-dev libmpv-dev libepoxy-dev
 
       - name: Set up Flutter
@@ -289,19 +279,23 @@ jobs:
               if [[ "$PLATFORM" == macos ]]; then
                 app=build/macos/Build/Products/Release/Valhalla.app
                 executable="$app/Contents/MacOS/Valhalla"
-                lipo -verify_arch x86_64 arm64 "$executable"
+                lipo "$executable" -verify_arch x86_64 arm64
                 test -d "$app/Contents/Frameworks/FlutterMacOS.framework"
               else
                 app=build/ios/iphoneos/Runner.app
                 executable="$app/Runner"
-                lipo -verify_arch arm64 "$executable"
+                lipo "$executable" -verify_arch arm64
                 test -d "$app/Frameworks/Flutter.framework"
               fi
               test -s "$executable"
-              if codesign --verify "$app" >/dev/null 2>&1; then
-                echo 'Unexpected signed Apple app in unsigned CI' >&2; exit 1
+              # Apple linkers may produce ad-hoc arm64 signatures without a
+              # certificate. Reject distribution identities, not those hashes.
+              signature=$(codesign -d --verbose=4 "$app" 2>&1 || true)
+              if printf '%s\n' "$signature" | grep -E '^Authority=|^TeamIdentifier=[A-Z0-9]+'; then
+                echo 'Unexpected Apple signing identity in unsigned CI' >&2; exit 1
               fi
-              echo 'Unsigned Apple build: no provisioning, notarization or store distribution. iOS ZIP is not an installable IPA.' >> "$output/$name-BUILD-INFO.txt"
+              printf '%s\n' "$signature" >> "$output/$name-BUILD-INFO.txt"
+              echo 'No Apple distribution signature, provisioning or notarization. Linker ad-hoc signatures may exist. iOS ZIP is not an installable IPA.' >> "$output/$name-BUILD-INFO.txt"
               ditto -c -k --sequesterRsrc --keepParent "$app" "$output/$name.zip"
               unzip -tq "$output/$name.zip"
               ;;

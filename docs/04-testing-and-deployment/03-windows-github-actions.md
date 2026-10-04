@@ -29,7 +29,7 @@ GitHub Actions 的工作流是提交在 `.github/workflows/` 目录中的 YAML �
 1. `on` 指定何时触发：手动 `workflow_dispatch`、推送到 `main` 或版本标签。
 2. `jobs.build.runs-on: windows-2022` 指定真正的 Windows 编译环境。
 3. `steps` 顺序检出源码、安装 Flutter、按锁文件解析依赖、生成多语言、
-   静态分析、执行 `flutter build windows --release --no-pub`。
+   静态分析、执行 `flutter build windows --release`，核对锁文件未变化。
 4. 构建成功后压缩整个 `build/windows/x64/runner/Release/`，生成 SHA256
    校验文件，并以 Actions Artifact 上传。
 
