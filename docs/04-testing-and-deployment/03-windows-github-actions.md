@@ -117,6 +117,15 @@ Artifact 保留 14 天，过期需重新运行。版本发布使用下方 Releas
 侧栏展示。下载 ZIP 后完整解压，不要下载 GitHub 自动生成的 Source code
 ZIP 来代替应用包。
 
+首发已发布：[Valhalla v1.0.0 — Windows x64](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.0)，
+Release ID `402866005`，非草稿。ZIP 资产 ID `609236094`，校验文件资产 ID
+`609236096`，两者状态均为 `uploaded`。OpenCode 使用指定 MiMo 免费模型从
+Releases 重新下载，两份资产的大小、ZIP SHA256、CRC、52 个文件与
+`BUILD-INFO.txt` 的源码提交/版本均与构建 #2 的原始包一致，下载与校验
+退出 0。验证副本位于 `/tmp/opencode/release-v1.0.0-verification/`。
+发布自动化新增步骤的 actionlint 与 CRLF 校验文件处理验证均退出 0；
+仍不把首次 CLI 发布作为新标签流水线或 Windows 实际功能的验收证明。
+
 ## 排错与证据
 
 - 无 `Run workflow`：确认工作流已合并到默认分支且 Actions 已启用。
