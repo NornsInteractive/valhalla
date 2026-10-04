@@ -8,13 +8,19 @@ stable / Dart `3.10`，严格使用 `pubspec.lock`，不自动升级依赖。
 UI、ARB 与业务行为不在本次改动范围；测试、构建和产物核验全部交给 OpenCode。
 用户确认先做未签名自动构建，之后再接入正式签名。
 
+先执行 `flutter pub get --enforce-lockfile`，Release 构建保留 Flutter 默认的
+插件注册生成步骤，构建后检查 pubspec 与 lockfile 未改变。不能对 Android
+Release 盲目加 `--no-pub`：它会跳过平台注册代码重建，把 dev-only 的
+`integration_test` 留在 Java registrant 中，但 Gradle Release 不包含该插件，
+因此编译失败。不手改生成代码、不把集成测试插件移到生产依赖。
+
 | 平台 | Runner | 产物 | 安装与运行边界 |
 | --- | --- | --- | --- |
 | Android | ubuntu-24.04 / Java 17 | armv7、arm64、x86_64 未签名 APK；未签名 AAB | 必须先用固定发布密钥签名；不能直接安装或提交商店 |
 | Windows | windows-2022 | x64 完整便携 ZIP | 完整解压；需要 Visual C++ x64 运行库；未做发布者签名 |
 | Linux | ubuntu-24.04 | x64 完整 bundle tar.gz | 保留 lib/data 和可执行权限；目标系统需要 GTK 3、libsecret、libmpv；不保证兼容所有发行版 |
 | macOS | macos-15-intel | x64 + arm64 universal 未签名 .app ZIP | 无 Developer ID 签名或公证；不能当作已经可安全分发的正式包 |
-| iOS | macos-15-intel | arm64 未签名 Runner.app ZIP | 编译产物，不是可安装 IPA；仍需证书、描述文件与导出签名 |
+| iOS | macos-15-intel | arm64 未签名 Runner.app ZIP | 最低 iOS 14；编译产物，不是可安装 IPA；仍需证书、描述文件与导出签名 |
 
 目前没有 Web 工程，SSH、FFI 和文件能力大量依赖原生 I/O，所以本工作流不宣称
 支持 Web。新增 Web 是独立的平台适配任务，不是加一条构建命令。
@@ -81,7 +87,12 @@ Apple 正式签名需证书、描述文件和相应 Apple 账号权限；macOS �
 
 ## 验证记录
 
-当前阶段：工作流与 native 构建配置已编写，等待 OpenCode 门禁与真实 GitHub
-Runner 的五个平台编译结果。首个 Windows 成功记录仍见
+OpenCode（原会话，`opencode/mimo-v2.6-flash-free`）已通过 actionlint、静态分析
+与本地逻辑测试（1881 通过 / 18 跳过）。首轮五平台运行
+[`37182300368`](https://github.com/NornsInteractive/valhalla/actions/runs/37182300368)
+对应提交 `cf7454d`；iOS 因现有 `file_picker_darwin` 要求至少 iOS 14 而工程仍是
+iOS 13 失败。已将 Xcode 目标和 AppFrameworkInfo 的最低版本对齐为 14，不降级
+依赖、不跳过编译错误。等待修复提交的真实 Runner 验证，其他平台状态待核验。
+首个 Windows 成功记录仍见
 [Windows 指南](03-windows-github-actions.md)。不将未运行平台标记为通过。
 跨平台业务功能、真实服务器、NAS 播放与移动设备行为另行验收。

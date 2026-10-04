@@ -90,7 +90,9 @@ jobs:
         run: flutter analyze --no-pub
 
       - name: Build Windows release
-        run: flutter build windows --release --no-pub
+        run: |
+          flutter build windows --release
+          git diff --exit-code -- pubspec.yaml pubspec.lock
 
       - name: Package complete Windows bundle
         env:
@@ -205,11 +207,13 @@ jobs:
         run: |
           case "$PLATFORM" in
             android)
-              flutter build apk --release --split-per-abi --no-pub
-              flutter build appbundle --release --no-pub
+              # Release builds must regenerate registrants without dev plugins.
+              # --no-pub leaves integration_test in GeneratedPluginRegistrant.
+              flutter build apk --release --split-per-abi
+              flutter build appbundle --release
               ;;
             linux)
-              flutter build linux --release --no-pub
+              flutter build linux --release
               ;;
             macos)
               # Flutter forwards FLUTTER_XCODE_* to Xcode build settings.
@@ -217,12 +221,14 @@ jobs:
               FLUTTER_XCODE_CODE_SIGNING_REQUIRED=NO \
               FLUTTER_XCODE_ARCHS='arm64 x86_64' \
               FLUTTER_XCODE_ONLY_ACTIVE_ARCH=NO \
-                flutter build macos --release --no-pub
+                flutter build macos --release
               ;;
             ios)
-              flutter build ios --release --no-codesign --no-pub
+              flutter build ios --release --no-codesign
               ;;
           esac
+          # Build-time regeneration must not silently upgrade locked packages.
+          git diff --exit-code -- pubspec.yaml pubspec.lock
 
       - name: Verify and package native bundle
         env:
