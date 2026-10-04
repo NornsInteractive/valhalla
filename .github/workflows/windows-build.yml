@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    tags: ['v[0-9]*']
     paths:
       - '.github/workflows/windows-build.yml'
       - 'lib/**'
@@ -35,6 +36,16 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+
+      - name: Verify release version tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*([^\s+]+)').Matches[0].Groups[1].Value
+          if ($env:RELEASE_TAG -ne "v$version") {
+            throw "Release tag $env:RELEASE_TAG must match pubspec.yaml version v$version"
+          }
 
       - name: Set up Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
@@ -101,3 +112,46 @@ jobs:
           path: build/windows-artifacts/*
           if-no-files-found: error
           retention-days: 14
+
+  release:
+    name: Publish GitHub Release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified build artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: valhalla-windows-x64-${{ github.run_number }}
+          path: dist
+
+      - name: Check package integrity
+        working-directory: dist
+        shell: bash
+        run: |
+          for checksum in *.sha256; do
+            sha256sum --check --strict <(tr -d '\r' < "$checksum")
+          done
+
+      - name: Publish versioned Windows package
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_NOTES: |
+            Windows x64 portable release. Download the application ZIP and its SHA256 file from Assets.
+            Extract the entire application ZIP and launch valhalla.exe; keep all DLLs and the data directory together.
+            Requires Windows 10/11 x64 and the Microsoft Visual C++ x64 runtime. This build is unsigned.
+            CI compilation and package integrity are verified; Windows desktop and real-server functionality require separate acceptance testing.
+        run: |
+          flags=()
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            flags+=(--prerelease)
+          fi
+          gh release create "$RELEASE_TAG" dist/*.zip dist/*.sha256 \
+            --verify-tag --title "Valhalla $RELEASE_TAG" \
+            --generate-notes --notes "$RELEASE_NOTES" "${flags[@]}"

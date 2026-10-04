@@ -4,6 +4,14 @@
 
 Valhalla 是基于 Flutter 的 AI-Native 远程服务器与 Agent 管理客户端，优先支持 Android 和 Windows Native。
 
+## 下载
+
+Windows x64 应用包见 [Releases](https://github.com/NornsInteractive/valhalla/releases)。
+下载 Assets 中的应用 ZIP，完整解压后运行 `valhalla.exe`；不要只复制 EXE，
+也不要将 Source code ZIP 当作安装包。需要 Windows 10/11 x64 和 Visual C++
+x64 运行库，当前应用未签名，Windows 实际功能仍需独立验收。
+自动打包与版本发布方法见 [Windows 发布指南](docs/04-testing-and-deployment/03-windows-github-actions.md)。
+
 ## 能力
 
 - SSH/SFTP 服务器配置、Host Key 校验和安全凭证存储

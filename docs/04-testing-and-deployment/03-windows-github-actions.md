@@ -22,15 +22,16 @@ SDK 选择依据：本机 SDK 元数据虽然显示 `3.44.2`，实际框架提�
 GitHub Actions 的工作流是提交在 `.github/workflows/` 目录中的 YAML 文件。
 本仓库已提供，无需重新在网页创建：
 
-1. `on` 指定何时触发：手动 `workflow_dispatch` 或推送到 `main`。
+1. `on` 指定何时触发：手动 `workflow_dispatch`、推送到 `main` 或版本标签。
 2. `jobs.build.runs-on: windows-2022` 指定真正的 Windows 编译环境。
 3. `steps` 顺序检出源码、安装 Flutter、按锁文件解析依赖、生成多语言、
    静态分析、执行 `flutter build windows --release --no-pub`。
 4. 构建成功后压缩整个 `build/windows/x64/runner/Release/`，生成 SHA256
    校验文件，并以 Actions Artifact 上传。
 
-第三方 Actions 固定到提交 SHA；工作流只需要 `contents: read`，不需要
-新增 SSH 密钥、服务器登录信息或发布 Token。不要把账号凭据写进 YAML。
+第三方 Actions 固定到提交 SHA；构建 job 只需要 `contents: read`，仅标签
+发布 job 使用 `contents: write` 和 GitHub 自动提供的 `GITHUB_TOKEN`。
+不需要新增 SSH 密钥、服务器登录信息或长期发布 Token，不把账号凭据写进 YAML。
 
 ## 手动构建
 
@@ -80,8 +81,41 @@ PowerShell 校验示例：
 Get-FileHash .\valhalla-windows-x64-<运行编号>.zip -Algorithm SHA256
 ```
 
-Artifact 保留 14 天，过期需重新运行。当前不自动创建 GitHub Release，
-也不自动发布到商店；需要长期发布或安装器时另行明确签名与发布策略。
+Artifact 保留 14 天，过期需重新运行。版本发布使用下方 Releases，
+不受 Artifact 的 14 天期限影响。本轮不发布到商店、不引入安装器或代码签名。
+
+## Releases 版本发布
+
+应用下载入口：[仓库 Releases](https://github.com/NornsInteractive/valhalla/releases)。
+普通 `main` 推送和手动分支构建只生成 Artifact，不创建版本发布。
+推送 `v<版本号>` 标签才自动创建 Release：先验证标签与 `pubspec.yaml` 中
+版本号（不含 `+构建号`）一致，完整构建成功后下载同次运行的 Artifact，
+复验 SHA256，再上传 ZIP 和 `.sha256`。发布 job 无权使用服务器凭证，
+不覆盖已有 Release 或资产；预发布版本（版本号含 `-`）标记为 prerelease。
+
+后续发布示例（版本号只是示例，不要直接给旧源码打新版本）：
+
+1. 将 `pubspec.yaml` 的版本改为 `1.0.1+2`，经 OpenCode 验证后提交并推送。
+2. 确认待发布提交已经包含发布工作流，创建并推送**新的**标签：
+
+   ```bash
+   git tag v1.0.1 <待发布提交SHA>
+   git push origin v1.0.1
+   ```
+
+3. 在 Actions 查看标签运行；构建及 `Publish GitHub Release` 成功后，
+   仓库首页右侧 Releases 和 Releases 页面可下载该版本。
+
+用户已授权本次发布。首个 `v1.0.0` 使用上一轮已验证的构建 #2 原始 ZIP，
+标签绑定其真实源码 `b8839ab21835391c861d2730cea10219588676b8`，不重新打包
+或改写 `BUILD-INFO.txt`。该旧提交没有自动发布步骤，首发通过 GitHub CLI
+上传既有产物；后续新标签才使用新增的自动发布 job。该 job 的语法与本地
+校验逻辑由 OpenCode 验证，首发不能冒充新增标签流水线的实际运行证明。
+
+仓库当前为私有仓库，Releases 下载仍需要仓库读取权限；不会为发布更改
+仓库可见性。若首页没有显示 Releases，可在仓库 About 设置中开启 Releases
+侧栏展示。下载 ZIP 后完整解压，不要下载 GitHub 自动生成的 Source code
+ZIP 来代替应用包。
 
 ## 排错与证据
 
