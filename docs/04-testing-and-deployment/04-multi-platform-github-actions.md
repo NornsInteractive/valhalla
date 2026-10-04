@@ -116,7 +116,21 @@ macOS 编译成功（115.6MB app），两者在 `lipo -verify_arch` 校验阶段
 第三轮 [`37183446978`](https://github.com/NornsInteractive/valhalla/actions/runs/37183446978)
 对应 `4b3a2f678014162a1bc9e7597468b24612fed329`，五个平台的完整构建、归档
 与上传任务均成功，普通 main 推送的 Release job 按设计跳过。它证明原未签名
-流水线可用；新 Android 发布签名提交仍须另行验证，不能复用此运行当签名证明。
+流水线可用，不能复用此运行当签名证明。
+
+接入 Android 固定签名后的最终运行
+[`37185136227`](https://github.com/NornsInteractive/valhalla/actions/runs/37185136227)
+（运行编号 8，源码 `174884275a8467ff7efc21a9329916540b685af4`）已全部成功。
+对应五份 Artifact 为 `valhalla-windows-x64-8`、`valhalla-linux-x64-8`、
+`valhalla-macos-universal-unsigned-8`、`valhalla-ios-arm64-unsigned-8`、
+`valhalla-android-signed-8`。仅 Android 具有本次生成的固定发布签名，Apple
+仍是未签名构建产物，Windows 没有发布者签名。
+
+OpenCode 在 MiMo Free 限流后按用户已授权的免费模型例外，使用
+`opencode/space-bunny-free` 主/辅助模型下载 Android Artifact，复核三份 APK
+及 AAB 的签名、完整性、五份 SHA256、BUILD-INFO 源码与证书指纹，全部通过。
+细节见 [Android 签名验收记录](05-android-release-signing.md#正式签名流水线与下载包验收)。
+本次是 main 构建，不创建新 Release；后续推送与版本匹配的新标签才自动发布。
 
 首个 Windows 成功记录仍见
 [Windows 指南](03-windows-github-actions.md)。不将未运行平台标记为通过。

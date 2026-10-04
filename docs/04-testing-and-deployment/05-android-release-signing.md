@@ -72,13 +72,44 @@ debug-key Release APK 及 `.bak-*`；未执行 ADB 替换安装。
 digest: ...`，本地版本输出 `Signer #1 certificate SHA-256 digest: ...`；两者
 实际指纹一致，原脚本仅匹配旧前缀导致误判。已改为提取严格 64 位证书 SHA256，
 兼容前缀、CRLF、重复签名方案输出，去重后仍严格比较期望指纹；不跳过签名
-验证，不接受多份不同证书或无法提取的输出。等待修复后的 CI 门禁和上传结果，
-不以此前未签名 CI 成功作为新签名流水线证明。
+验证，不接受多份不同证书或无法提取的输出。不以此前未签名 CI 成功作为
+新签名流水线证明；修复后的实际验证结果如下。
 
 OpenCode / Space Bunny Free 对修复执行 actionlint（exit 0）、9 个解析回归场景
 （旧/新前缀、CRLF 大写、重复同证书通过；空输出、63 位、错证书、不同双证书、
 仅 public-key 指纹拒绝），并对真实 CI 日志和本地三份签名 APK 验证新解析器，
 均符合预期。未改依赖与锁文件，新增私钥库扩展名 gitignore 防止误提交。
+
+### 正式签名流水线与下载包验收
+
+2026-10-04 实际运行
+[`37185136227`](https://github.com/NornsInteractive/valhalla/actions/runs/37185136227)
+（运行编号 8，源码 `174884275a8467ff7efc21a9329916540b685af4`）已完成并成功。
+Windows、Linux、macOS、iOS、Android 五个平台均完成编译、打包、校验和上传。
+普通 main 推送不发布 Release，发布任务按设计跳过；没有修改已有 v1.0.0。
+
+OpenCode 原会话使用已获授权的免费模型 `opencode/space-bunny-free`，下载
+Android Artifact `valhalla-android-signed-8`（ID `11296722973`，135903756 字节）
+到 `/tmp/opencode/android-signed-CI37185136227` 后完成独立验收：
+
+- armv7、arm64、x86_64 三份 APK：apksigner 验证和 ZIP 完整性均 exit 0；
+  全部证书 SHA256 与上面的固定发布证书一致。
+- AAB：jarsigner 验证、ZIP 完整性均 exit 0；从归档签名证书提取的 SHA256
+  与固定证书一致。它不是直接可安装的 APK。
+- 三份 APK、AAB、BUILD-INFO 的五份 SHA256 sidecar：严格校验全部通过。
+- BUILD-INFO：版本 `1.0.0+1`、完整源码提交、运行编号、公开证书指纹均匹配；
+  构建时间为 `2026-10-04T07:25:00Z`。
+- 产物不含私钥库或密码文件；未执行 ADB 安装、卸载或清除应用数据。
+
+可在该运行页面下载 Artifact（保留 14 天），或执行：
+
+```bash
+gh run download 37185136227 --repo NornsInteractive/valhalla \
+  --name valhalla-android-signed-8 --dir ./android-signed-8
+```
+
+该记录证明固定 Android 签名与自动构建可用，不表示 Apple / Windows 已获得
+正式发布者签名，也不代表所有跨平台业务或真机迁移已完成验收。
 
 参考：[Android 官方签名说明](https://developer.android.com/studio/publish/app-signing)、
 [Flutter Android 发布指南](https://docs.flutter.dev/deployment/android)。
