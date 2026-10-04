@@ -5,11 +5,17 @@
 工作流：[`windows-build.yml`](../../.github/workflows/windows-build.yml)。
 构建页面：[Valhalla / Windows Build](https://github.com/NornsInteractive/valhalla/actions/workflows/windows-build.yml)。
 
-使用 GitHub 的 `windows-2022` 运行器、Flutter `3.44.2` stable 和仓库中的
+使用 GitHub 的 `windows-2022` 运行器、Flutter `3.38.1` stable 和仓库中的
 `pubspec.lock`，生成 Windows x64 Release 便携包。复用现有 Windows 工程，
 不更改 UI，不引入安装器、代码签名或新的服务端组件。构建验证与产物核验
 由 OpenCode 执行；CI 成功不代表 Windows 上的 SSH、ACP、媒体播放等业务
 已通过真实环境验收。
+
+SDK 选择依据：本机 SDK 元数据虽然显示 `3.44.2`，实际框架提交是
+`b45fa18946ecc2d9b4009952c636ba7e2ffbb787`，官方发布清单对应 Flutter
+`3.38.1` / Dart `3.10.0`。首次使用官方 `3.44.2` 的 CI 在严格锁文件检查
+时失败，要求修改 7 个 SDK 依赖。工作流因此固定到实际兼容的官方版本，
+保留现有锁文件与 Android 构建环境，不在本次打包中进行 SDK/依赖升级。
 
 ## 如何建立工作流
 
