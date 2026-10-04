@@ -51,5 +51,11 @@ docs_backup/
 /.mcp.json
 /mcp_config.json
 
+# Private signing key stores; public certificate fingerprints belong in docs.
+*.jks
+*.keystore
+*.p12
+*.pfx
+
 # Private device captures (server details and local diagnostic history).
 /agent-workflow/evidence/2026-10-03-agy-login/

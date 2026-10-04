@@ -52,8 +52,33 @@ Gradle 接收 `VALHALLA_ANDROID_KEYSTORE`、`VALHALLA_ANDROID_STORE_PASSWORD`、
 ## 验证状态
 
 密钥生成和 Secrets 配置属于 root 的部署步骤。签名构建、证书身份、归档
-完整性与工作流检查由原 OpenCode 会话、`opencode/mimo-v2.6-flash-free` 完成。
-签名版构建尚待核验，不把未运行的签名包标记为通过；不执行 ADB 替换安装。
+完整性与工作流检查由原 OpenCode 会话完成。MiMo Free 持续限流后，按用户
+此前授权改用 `opencode/space-bunny-free`，主/辅助模型均固定该免费模型；
+本机 input/output/cache 计价为 0，官方 Zen 目录亦确认免费。
+
+actionlint 通过，本地发布签名的三架构 APK 和 AAB 编译均 exit 0；APK 的
+apksigner 验证通过，三份 APK 和 AAB 的证书指纹均与生成的私钥库/公开证书
+匹配：
+
+```text
+73dc6d178bbd7aba1ef85dd18b266ad491ae000c08915b9ee62cfc8383a92c7d
+```
+
+公开证书 SHA256 指纹不是私钥，可用于以后核验应用签名。保留原 universal
+debug-key Release APK 及 `.bak-*`；未执行 ADB 替换安装。
+实际 CI [`37184283762`](https://github.com/NornsInteractive/valhalla/actions/runs/37184283762)
+对应 `e165d4eef05d5febdf807ea26388d7cae8947258`：五平台编译成功，但 Android
+证书解析门禁失败。CI 新 build-tools 输出 `V2 Signer: certificate SHA-256
+digest: ...`，本地版本输出 `Signer #1 certificate SHA-256 digest: ...`；两者
+实际指纹一致，原脚本仅匹配旧前缀导致误判。已改为提取严格 64 位证书 SHA256，
+兼容前缀、CRLF、重复签名方案输出，去重后仍严格比较期望指纹；不跳过签名
+验证，不接受多份不同证书或无法提取的输出。等待修复后的 CI 门禁和上传结果，
+不以此前未签名 CI 成功作为新签名流水线证明。
+
+OpenCode / Space Bunny Free 对修复执行 actionlint（exit 0）、9 个解析回归场景
+（旧/新前缀、CRLF 大写、重复同证书通过；空输出、63 位、错证书、不同双证书、
+仅 public-key 指纹拒绝），并对真实 CI 日志和本地三份签名 APK 验证新解析器，
+均符合预期。未改依赖与锁文件，新增私钥库扩展名 gitignore 防止误提交。
 
 参考：[Android 官方签名说明](https://developer.android.com/studio/publish/app-signing)、
 [Flutter Android 发布指南](https://docs.flutter.dev/deployment/android)。

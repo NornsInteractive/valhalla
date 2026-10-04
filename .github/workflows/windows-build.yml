@@ -271,7 +271,11 @@ jobs:
                   -keystore "$VALHALLA_ANDROID_KEYSTORE" \
                   -storepass:env VALHALLA_ANDROID_STORE_PASSWORD > "$RUNNER_TEMP/expected-cert.der"
                 expected=$(sha256sum "$RUNNER_TEMP/expected-cert.der" | cut -d ' ' -f 1)
-                actual=$("$signer" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+                # Build-tools versions label the same certificate either
+                # "Signer #1" or "V2 Signer"; do not depend on that prefix.
+                actual=$("$signer" verify --print-certs "$apk" | tr -d '\r' | \
+                  sed -nE 's/^.*certificate SHA-256 digest: ([0-9a-fA-F]{64})$/\1/p' | \
+                  tr 'A-F' 'a-f' | sort -u)
                 test "$actual" = "$expected" || { echo 'APK signing certificate mismatch' >&2; exit 1; }
                 unzip -tq "$apk"
                 cp "$apk" "$output/valhalla-android-$abi-signed-$BUILD_RUN.apk"
