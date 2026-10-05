@@ -6,6 +6,29 @@ PKCS12 发布密钥，alias `valhalla`，有效期 10000 天。它不是 debug k
 生成发布密钥；Windows 受信任代码签名、Apple 发布证书需单独接入，不能将
 本密钥用于替代这些平台的正式证书。
 
+## 开发者与团队名称
+
+用户指定发布名称为 **Norns Interactive**。GitHub 自动构建统一使用工作流
+顶层 `VALHALLA_PUBLISHER`，各平台 BUILD-INFO 的 `developer`、`organization`
+字段、Actions 构建摘要与新 Release 描述均从这个固定值读取。
+`organization` 在此仅表示团队名称，不表示已注册公司；仓库地址中的
+`NornsInteractive` 是 GitHub 组织账号，不改为带空格的名称。
+
+现有 Android 签名证书主体仍为 `CN=Valhalla, O=NornsInteractive`，沿用
+固定证书与指纹。构建说明的团队名称不等于证书主体；即使复用同一私钥，
+重新签发带不同主体的证书也会改变证书指纹，不能当作无损修改来覆盖原证书。
+本次不重新生成或修改证书、私钥、别名、Secrets 或应用包名，不改变旧包
+与已发布资产；如将来必须让证书主体也精确使用 `Norns Interactive`，需要
+单独确认签名迁移及已安装应用的兼容性。
+
+2026-10-05 名称配置验证：OpenCode / `opencode/fledge-alpha-free` 执行
+`actionlint .github/workflows/windows-build.yml` 与三份相关文件的
+`git diff --check`，均 exit 0；确认 Bash / PowerShell 的两处 BUILD-INFO、
+两处构建摘要和 Release 描述都读取统一名称，签名配置未变。
+以上为提交前验证记录，验证时名称改动仅在工作区，尚未推送或触发新的
+Actions 构建；后续推送后才影响新产物，不能将已有包或历史运行视为
+已经使用新名称。推送和构建状态以实际 Git 提交、远端分支及 Actions 为准。
+
 ## 备份位置（仅当前开发环境，绝不提交）
 
 - `/home/dev/.local/share/valhalla-signing/android-release.p12`：加密私钥库。
@@ -50,6 +73,28 @@ Gradle 接收 `VALHALLA_ANDROID_KEYSTORE`、`VALHALLA_ANDROID_STORE_PASSWORD`、
 密钥签名的包可持续更新。不要将 debug 密钥当作正式发布密钥。
 
 ## 验证状态
+
+### 2026-10-05 Android-only 复验
+
+用户明确本次只需要 Android 证书，Windows / iOS 签名不在本次范围内。
+沿用上面的固定发布密钥，没有覆盖或重新生成，未改构建与业务代码。
+
+OpenCode 使用 `opencode/fledge-alpha-free`（主/辅助模型均固定该免费模型）
+执行只读检查：`keytool -list -v -storetype PKCS12` 通过 `-storepass:file`
+读取受保护密码文件，确认 `valhalla` 为 `PrivateKeyEntry`，RSA 3072，
+SHA256withRSA；`openssl x509 -noout -subject -dates -fingerprint -sha256`
+确认公开证书与私钥库证书 SHA256 都与本页固定指纹一致。证书有效期为
+2026-10-04 06:51:02 UTC 至 2054-02-19 06:51:02 UTC，当前有效。
+目录 0700、三份文件均 0600。证书中的 `O=NornsInteractive` 仅为自签名
+项目标识，不代表已注册公司或经过机构资质认证。
+
+本机 `gh secret list` 不支持 `--json`，改用仅返回名称和更新时间的
+`gh secret list --repo NornsInteractive/valhalla`，实际确认上面的四项
+Android Secrets 存在；未读取或改变其值。Gradle 与 Actions 仍接入这些
+发布签名配置。此轮未重新打包、触发 CI、推送、安装或卸载应用；既有签名
+包的构建验收见下方历史记录。私钥和密码仍需分别离线备份。
+
+### 原始签名与构建验收
 
 密钥生成和 Secrets 配置属于 root 的部署步骤。签名构建、证书身份、归档
 完整性与工作流检查由原 OpenCode 会话完成。MiMo Free 持续限流后，按用户

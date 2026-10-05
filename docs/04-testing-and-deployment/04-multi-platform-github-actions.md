@@ -34,6 +34,11 @@ Release 盲目加 `--no-pub`：它会跳过平台注册代码重建，把 dev-on
 时间、Flutter 版本和签名边界。Apple 用 `ditto` 打包完整 app，Linux 用 tar
 保留权限与链接，Windows 保留所有 DLL 和 data，而不是仅上传可执行文件。
 
+开发者／团队名称统一为 **Norns Interactive**，通过工作流顶层
+`VALHALLA_PUBLISHER` 写入所有平台 BUILD-INFO 的 `developer` 和 `organization`
+字段、构建摘要和新 Release 描述。这是团队发布标识，不是公司资质声明；
+不修改既有 Android 签名证书、不为 Windows / Apple 增加签名，也不改旧产物。
+
 ## 自动触发与下载
 
 推送到 `main`，改动涉及 `lib/`、五个平台工程、`packages/`、`assets/`、锁文件、

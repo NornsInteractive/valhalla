@@ -23,6 +23,9 @@ on:
 permissions:
   contents: read
 
+env:
+  VALHALLA_PUBLISHER: 'Norns Interactive'
+
 concurrency:
   group: native-build-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
@@ -100,6 +103,8 @@ jobs:
           $version = (Get-Content pubspec.yaml | Select-String '^version:').Line
           @(
             'Valhalla Windows x64 release'
+            "developer: $env:VALHALLA_PUBLISHER"
+            "organization: $env:VALHALLA_PUBLISHER"
             $version
             "commit: $env:BUILD_SHA"
             "run: $env:BUILD_RUN"
@@ -115,6 +120,7 @@ jobs:
             Set-Content "$zip.sha256" -Encoding ascii
           @(
             '### Windows x64 release'
+            "Developer / team: $env:VALHALLA_PUBLISHER"
             "Commit: ``$env:BUILD_SHA``"
             "SHA256: ``$($digest.Hash.ToLower())``"
             'Download the artifact below. Extract the inner ZIP completely before launching valhalla.exe.'
@@ -252,6 +258,8 @@ jobs:
           name="valhalla-$PACKAGE-$BUILD_RUN"
           {
             echo "Valhalla $PACKAGE release"
+            echo "developer: $VALHALLA_PUBLISHER"
+            echo "organization: $VALHALLA_PUBLISHER"
             sed -n '/^version:/p' pubspec.yaml
             echo "commit: $BUILD_SHA"
             echo "run: $BUILD_RUN"
@@ -344,6 +352,7 @@ jobs:
           )
           {
             echo "### $PACKAGE release"
+            echo "Developer / team: $VALHALLA_PUBLISHER"
             echo "Commit: $BUILD_SHA"
             echo 'Build outputs and SHA256 files are attached as an Artifact (14 days).'
             echo 'Android uses the fixed release key; Apple artifacts still require distribution signing.'
@@ -394,6 +403,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
           RELEASE_NOTES: |
+            Developer / team: ${{ env.VALHALLA_PUBLISHER }}.
             Native builds: Android (release-signed APKs for armv7/arm64/x64 and AAB), Windows x64, Linux x64, macOS universal (unsigned), iOS arm64 (unsigned app ZIP).
             Every asset includes a SHA256 checksum; platform BUILD-INFO records the exact source commit.
             Extract the entire application ZIP and launch valhalla.exe; keep all DLLs and the data directory together.
