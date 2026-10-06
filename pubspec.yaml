@@ -97,6 +97,9 @@ flutter:
   uses-material-design: true
   generate: true
 
+  assets:
+    - assets/icons/valhalla_icon.png
+
   fonts:
     - family: Inter
       fonts:

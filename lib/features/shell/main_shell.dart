@@ -17,6 +17,7 @@ import '../../core/providers/storage_providers.dart';
 import '../../data/models/server_profile.dart';
 import '../../widgets/context_inspector.dart';
 import '../../widgets/delete_server_dialog.dart';
+import '../../widgets/valhalla_app_icon.dart';
 import '../settings/widgets/diagnostics_view.dart';
 import '../chat/ai_chat_view.dart';
 import '../chat/cli_chat_view.dart';
@@ -692,11 +693,19 @@ class _MainShellState extends ConsumerState<MainShell> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(
-                context.l10n.navMore,
-                style: context.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Row(
+                children: [
+                  const ValhallaAppIcon(size: 32),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      context.l10n.navMore,
+                      style: context.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const Divider(),
@@ -919,22 +928,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         child: Entrance(
           index: 0,
           offset: const Offset(-12, 0),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: context.colorScheme.primary,
-              borderRadius: BorderRadius.circular(VRadius.input),
-              boxShadow: [
-                BoxShadow(
-                  color: context.colorScheme.primary.withValues(alpha: 0.28),
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.shield, color: Colors.white, size: 21),
-          ),
+          child: const ValhallaAppIcon(),
         ),
       ),
       trailing: Padding(
