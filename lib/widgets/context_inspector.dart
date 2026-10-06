@@ -5,6 +5,7 @@ import '../core/design/tokens.dart';
 import '../core/extensions/context_extensions.dart';
 import '../core/providers/ai_chat_provider.dart';
 import '../core/providers/server_provider.dart';
+import '../data/models/server_profile.dart';
 import '../features/dashboard/dashboard_provider.dart';
 import '../features/docker/docker_provider.dart';
 import 'status_badge.dart';
@@ -80,7 +81,7 @@ class ContextInspector extends ConsumerWidget {
   Widget _buildInspectorContent(
     BuildContext context,
     WidgetRef ref,
-    dynamic server,
+    ServerProfile? server,
     ServerConnectionState connState,
   ) {
     if (server == null) {
@@ -105,7 +106,7 @@ class ContextInspector extends ConsumerWidget {
   Widget _buildDashboardInspector(
     BuildContext context,
     WidgetRef ref,
-    dynamic server,
+    ServerProfile server,
     ServerConnectionState connState,
   ) {
     final metrics = ref.watch(systemMetricsStreamProvider).asData?.value;
@@ -162,7 +163,7 @@ class ContextInspector extends ConsumerWidget {
   Widget _buildAiOpsInspector(
     BuildContext context,
     WidgetRef ref,
-    dynamic server,
+    ServerProfile server,
     ServerConnectionState connState,
   ) {
     final chatState = ref.watch(aiChatProvider);
@@ -187,7 +188,11 @@ class ContextInspector extends ConsumerWidget {
         const SizedBox(height: 16),
         _buildSectionTitle(context, 'Session Stats'),
         const SizedBox(height: 8),
-        _buildInfoTile(context, 'Session ID', chatState.activeSessionId ?? 'None'),
+        _buildInfoTile(
+          context,
+          'Session ID',
+          chatState.activeSessionId ?? 'None',
+        ),
         _buildInfoTile(
           context,
           'Messages',
@@ -260,7 +265,7 @@ class ContextInspector extends ConsumerWidget {
 
   Widget _buildGenericServerInspector(
     BuildContext context,
-    dynamic server,
+    ServerProfile server,
     ServerConnectionState connState,
   ) {
     return Column(
@@ -271,9 +276,16 @@ class ContextInspector extends ConsumerWidget {
         _buildInfoTile(context, 'Name', server.name),
         _buildInfoTile(context, 'Endpoint', '${server.host}:${server.port}'),
         _buildInfoTile(context, 'Username', server.username),
-        _buildInfoTile(context, 'Auth Method', server.authType.name.toUpperCase()),
+        _buildInfoTile(
+          context,
+          'Auth Method',
+          server.authType.name.toUpperCase(),
+        ),
         const SizedBox(height: 12),
-        Row(
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             const Text(
               'Link Status: ',

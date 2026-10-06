@@ -12,6 +12,7 @@ import 'package:valhalla/features/servers/server_form_dialog.dart';
 import 'package:valhalla/features/shell/main_shell.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 import 'package:valhalla/core/design/motion_widgets.dart';
+import 'package:valhalla/widgets/context_inspector.dart';
 
 class _FakeSftpNotifier extends SftpNotifier {
   @override
@@ -78,6 +79,7 @@ Future<ProviderContainer> _pumpShell(
   List<ServerProfile> servers = const [],
   ServerProfile? activeServer,
   _TestSettingsNotifier? settingsNotifier,
+  Widget home = const MainShell(),
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -104,10 +106,10 @@ Future<ProviderContainer> _pumpShell(
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: const MaterialApp(
+      child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: MainShell(),
+        home: home,
       ),
     ),
   );
@@ -116,6 +118,92 @@ Future<ProviderContainer> _pumpShell(
 }
 
 void main() {
+  for (final authType in AuthType.values) {
+    for (final tab in [0, 2]) {
+      testWidgets('Inspector displays ${authType.name} on tab $tab', (
+        tester,
+      ) async {
+        final server = ServerProfile(
+          id: 'inspector-auth-test',
+          name: 'Inspector test',
+          host: '127.0.0.1',
+          username: 'tester',
+          authType: authType,
+        );
+        await _pumpShell(
+          tester,
+          activeServer: server,
+          home: Scaffold(
+            body: ContextInspector(activeTabIndex: tab, onClose: () {}),
+          ),
+        );
+        expect(find.text(authType.name.toUpperCase()), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
+  for (final width in [1025.0, 1200.0, 1920.0]) {
+    testWidgets(
+      'Windows inspector has bounded layout at $width px',
+      (tester) async {
+        const server = ServerProfile(
+          id: 'inspector-test',
+          name: 'Inspector test',
+          host: '127.0.0.1',
+          username: 'tester',
+        );
+        await _pumpShell(
+          tester,
+          size: Size(width, 800),
+          servers: [server],
+          activeServer: server,
+        );
+        final pages = find.byType(AnimatedIndexedStack);
+        final originalSize = tester.getSize(pages);
+        final originalState = tester.state(pages);
+        for (var i = 0; i < 3; i++) {
+          await tester.tap(find.byTooltip('Inspector'));
+          await tester.pumpAndSettle();
+          expect(
+            tester.getSize(pages),
+            Size(originalSize.width - 320, originalSize.height),
+          );
+          expect(tester.state(pages), same(originalState));
+          expect(find.text('Server Name'), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byType(ContextInspector),
+              matching: find.text('PASSWORD'),
+            ),
+            findsOneWidget,
+          );
+          expect(tester.takeException(), isNull);
+          await tester.tap(find.byTooltip('Close'));
+          await tester.pumpAndSettle();
+          expect(tester.getSize(pages), originalSize);
+          expect(tester.takeException(), isNull);
+        }
+      },
+      variant: TargetPlatformVariant.only(TargetPlatform.windows),
+    );
+  }
+
+  testWidgets('Desktop inspector opens and closes without layout errors', (
+    tester,
+  ) async {
+    await _pumpShell(tester, size: const Size(1200, 800));
+    final toggle = find.byTooltip('Inspector');
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Close'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Close'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   group('Group 1: 移除右上角添加服务器按钮', () {
     testWidgets('紧凑模式 AppBar 右上角不再有添加按钮', (tester) async {
       await _pumpShell(tester, size: const Size(580, 1000));

@@ -849,10 +849,16 @@ class _MainShellState extends ConsumerState<MainShell> {
                         ),
                       ),
                       if (_isInspectorOpen)
-                        ContextInspector(
-                          activeTabIndex: _currentIndex,
-                          onClose: () =>
-                              setState(() => _isInspectorOpen = false),
+                        // Keep the panel bounded even if its content fails to
+                        // build; a fallback ErrorWidget must not collapse the
+                        // page stack (including offstage terminal canvases).
+                        SizedBox(
+                          width: 320,
+                          child: ContextInspector(
+                            activeTabIndex: _currentIndex,
+                            onClose: () =>
+                                setState(() => _isInspectorOpen = false),
+                          ),
                         ),
                     ],
                   ),
