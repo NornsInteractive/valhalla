@@ -162,6 +162,14 @@ class CliChatNotifier extends Notifier<CliChatState> {
   int _historyReadSequence = 0;
   @override
   CliChatState build() {
+    ref.listen(
+      settingsProvider.select(
+        (settings) => settings.isSectionEnabled(AppSection.cliChat),
+      ),
+      (_, enabled) {
+        if (enabled) unawaited(_selectPreferredAgent());
+      },
+    );
     final server = ref.watch(
       activeServerProvider.select((s) => (s?.id, s?.connectionKey)),
     );
@@ -237,6 +245,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
 
   Future<void> _selectPreferredAgent() async {
     if (!ref.mounted ||
+        !ref.read(settingsProvider).isSectionEnabled(AppSection.cliChat) ||
         _selectingAgent ||
         !ref.read(serverConnectionProvider).isConnected ||
         state.activeAgent != null ||

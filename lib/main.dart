@@ -22,6 +22,7 @@ import 'core/logging/sanitizer.dart';
 import 'features/agents/oauth_callback_page.dart';
 import 'features/settings/widgets/startup_failure_app.dart';
 import 'core/services/window_service.dart';
+import 'core/localization/app_locales.dart';
 import 'features/shell/main_shell.dart';
 import 'l10n/app_localizations.dart';
 
@@ -337,6 +338,7 @@ class ValhallaApp extends ConsumerWidget {
       locale: settings.locale.languageCode == 'system' ? null : settings.locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      localeListResolutionCallback: resolveAppLocale,
       theme: AppTheme.buildTheme(
         brightness: Brightness.light,
         seedColor: settings.lightAccentColor,

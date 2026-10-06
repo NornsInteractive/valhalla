@@ -110,22 +110,6 @@ class _MainShellState extends ConsumerState<MainShell> {
   bool _isInspectorOpen = false;
   bool _globalMiniPlayerCommandInProgress = false;
 
-  late final List<Widget> _views = [
-    DashboardView(
-      onNavigate: (idx) => setState(() => _currentIndex = idx),
-      onConnect: () => _handleConnect(),
-    ),
-    const AiChatView(),
-    const SshTerminalView(),
-    SftpFileView(openTransfersRequest: _openTransfersRequest),
-    const DockerView(),
-    const SystemView(),
-    const QuickCommandsView(),
-    const SettingsView(),
-    const CliChatView(),
-    const NasMediaView(),
-  ];
-
   /// 由「点传输完成通知」发起的跳转请求，供文件页消费一次。
   ///
   /// 放在 shell 上而不是文件页里：点通知可能发生在 app 冷启动、当前不在
@@ -134,11 +118,49 @@ class _MainShellState extends ConsumerState<MainShell> {
   final Set<String> _deletingServerIds = {};
   static const _downloadsChannel = MethodChannel('valhalla/downloads');
 
+  late final Widget _dashboardView = DashboardView(
+    onNavigate: _navigateToSectionIndex,
+    onConnect: () => _handleConnect(),
+  );
+
+  late final Widget _sftpView = SftpFileView(
+    openTransfersRequest: _openTransfersRequest,
+  );
+
+  List<Widget> _buildViews(SettingsState settings) => [
+    _dashboardView,
+    const AiChatView(),
+    const SshTerminalView(),
+    _sftpView,
+    const DockerView(),
+    const SystemView(),
+    const QuickCommandsView(),
+    const SettingsView(),
+    if (settings.isSectionEnabled(AppSection.cliChat))
+      const CliChatView()
+    else
+      const SizedBox.shrink(key: Key('cli_chat_disabled_placeholder')),
+    if (settings.isSectionEnabled(AppSection.nas))
+      const NasMediaView()
+    else
+      const SizedBox.shrink(key: Key('nas_disabled_placeholder')),
+  ];
+
+  void _navigateToSectionIndex(int idx) {
+    if (!mounted) return;
+    final targetSection = viewIndexToAppSection(idx);
+    final settings = ref.read(settingsProvider);
+    final safeIndex = settings.isSectionEnabled(targetSection)
+        ? idx
+        : appSectionToViewIndex(AppSection.dashboard);
+    setState(() => _currentIndex = safeIndex);
+  }
+
   @override
   void initState() {
     super.initState();
     _currentIndex = appSectionToViewIndex(
-      ref.read(settingsProvider).startupSection,
+      ref.read(settingsProvider).effectiveStartupSection,
     );
     _downloadsChannel.setMethodCallHandler(_handleDownloadsMethodCall);
     unawaited(_consumeLaunchAction());
@@ -661,6 +683,8 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Widget _buildDrawer(BuildContext context) {
+    final availableSections = ref.watch(settingsProvider).availableSections;
+
     return Drawer(
       child: SafeArea(
         child: ListView(
@@ -676,7 +700,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               ),
             ),
             const Divider(),
-            ...AppSection.values.map((section) {
+            ...availableSections.map((section) {
               final idx = appSectionToViewIndex(section);
               return Entrance(
                 index: appSectionToViewIndex(section),
@@ -751,6 +775,15 @@ class _MainShellState extends ConsumerState<MainShell> {
       });
     });
 
+    ref.listen<SettingsState>(settingsProvider, (previous, next) {
+      final currentSection = viewIndexToAppSection(_currentIndex);
+      if (!next.isSectionEnabled(currentSection)) {
+        setState(() {
+          _currentIndex = appSectionToViewIndex(AppSection.dashboard);
+        });
+      }
+    });
+
     final sftpState = ref.watch(sftpProvider);
     final onFilesTab = _currentIndex == _sftpTabIndex;
     final backGoesUp = onFilesTab && !sftpState.isAtRoot;
@@ -780,12 +813,17 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Widget _buildExpandedDesktopShell() {
+    final settings = ref.watch(settingsProvider);
+    final hasRail = settings.visibleBottomNavigationSections.isNotEmpty;
+
     return Scaffold(
       drawer: _buildDrawer(context),
       body: Row(
         children: [
-          _buildNavigationRail(extended: false, showLabels: true),
-          const VerticalDivider(width: 1),
+          if (hasRail) ...[
+            _buildNavigationRail(extended: false, showLabels: true),
+            const VerticalDivider(width: 1),
+          ],
           Expanded(
             child: Column(
               children: [
@@ -798,7 +836,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                       Expanded(
                         child: AnimatedIndexedStack(
                           index: _currentIndex,
-                          children: _views,
+                          children: _buildViews(settings),
                         ),
                       ),
                       if (_isInspectorOpen)
@@ -820,12 +858,17 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Widget _buildMediumRailShell() {
+    final settings = ref.watch(settingsProvider);
+    final hasRail = settings.visibleBottomNavigationSections.isNotEmpty;
+
     return Scaffold(
       drawer: _buildDrawer(context),
       body: Row(
         children: [
-          _buildNavigationRail(extended: false, showLabels: false),
-          const VerticalDivider(width: 1),
+          if (hasRail) ...[
+            _buildNavigationRail(extended: false, showLabels: false),
+            const VerticalDivider(width: 1),
+          ],
           Expanded(
             child: Column(
               children: [
@@ -835,7 +878,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 Expanded(
                   child: AnimatedIndexedStack(
                     index: _currentIndex,
-                    children: _views,
+                    children: _buildViews(settings),
                   ),
                 ),
                 _buildGlobalMiniPlayer(),
@@ -851,13 +894,26 @@ class _MainShellState extends ConsumerState<MainShell> {
     required bool extended,
     required bool showLabels,
   }) {
+    final settings = ref.watch(settingsProvider);
+    final visibleSections = settings.visibleBottomNavigationSections;
+    if (visibleSections.isEmpty) return const SizedBox.shrink();
+    final currentSection = viewIndexToAppSection(_currentIndex);
+    final railIndex = visibleSections.indexOf(currentSection);
+
     return NavigationRail(
-      selectedIndex: _currentIndex,
+      selectedIndex: railIndex >= 0 ? railIndex : null,
       extended: extended,
+      scrollable: true,
+      trailingAtBottom: true,
       labelType: showLabels
           ? NavigationRailLabelType.all
           : NavigationRailLabelType.none,
-      onDestinationSelected: (index) => setState(() => _currentIndex = index),
+      onDestinationSelected: (index) {
+        if (index >= 0 && index < visibleSections.length) {
+          final targetSection = visibleSections[index];
+          setState(() => _currentIndex = appSectionToViewIndex(targetSection));
+        }
+      },
       leading: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Entrance(
@@ -881,76 +937,26 @@ class _MainShellState extends ConsumerState<MainShell> {
           ),
         ),
       ),
-      trailing: Expanded(
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: IconButton(
-              icon: const Icon(Icons.power_settings_new),
-              tooltip: context.l10n.quickDisconnect,
-              onPressed: () {
-                ref.read(serverConnectionProvider.notifier).disconnect();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(context.l10n.sshDisconnectedSuccess)),
-                );
-              },
-            ),
-          ),
+      trailing: Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: IconButton(
+          icon: const Icon(Icons.power_settings_new),
+          tooltip: context.l10n.quickDisconnect,
+          onPressed: () {
+            ref.read(serverConnectionProvider.notifier).disconnect();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(context.l10n.sshDisconnectedSuccess)),
+            );
+          },
         ),
       ),
-      destinations: [
-        NavigationRailDestination(
-          icon: const Icon(Icons.dashboard_outlined),
-          selectedIcon: const Icon(Icons.dashboard),
-          label: Text(context.l10n.navDashboard),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(Icons.smart_toy_outlined),
-          selectedIcon: const Icon(Icons.smart_toy),
-          label: Text(context.l10n.navAiChat),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(Icons.terminal_outlined),
-          selectedIcon: const Icon(Icons.terminal),
-          label: Text(context.l10n.navTerminal),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(Icons.folder_outlined),
-          selectedIcon: const Icon(Icons.folder),
-          label: Text(context.l10n.navFiles),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(Icons.directions_boat_outlined),
-          selectedIcon: const Icon(Icons.directions_boat),
-          label: Text(context.l10n.navDocker),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(Icons.memory_outlined),
-          selectedIcon: const Icon(Icons.memory),
-          label: Text(context.l10n.navSystem),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(Icons.bolt_outlined),
-          selectedIcon: const Icon(Icons.bolt),
-          label: Text(context.l10n.navCommands),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(Icons.settings_outlined),
-          selectedIcon: const Icon(Icons.settings),
-          label: Text(context.l10n.navSettings),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(Icons.forum_outlined),
-          selectedIcon: const Icon(Icons.forum),
-          label: Text(context.l10n.navCliChat),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(Icons.perm_media_outlined),
-          selectedIcon: const Icon(Icons.perm_media),
-          label: Text(context.l10n.navNas),
-        ),
-      ],
+      destinations: visibleSections.map((section) {
+        return NavigationRailDestination(
+          icon: Icon(appSectionIcon(section)),
+          selectedIcon: Icon(appSectionIcon(section, selected: true)),
+          label: Text(localizedAppSectionName(context, section)),
+        );
+      }).toList(),
     );
   }
 
@@ -1228,7 +1234,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     }
 
     final settings = ref.watch(settingsProvider);
-    final bottomSections = settings.bottomNavigationSections;
+    final bottomSections = settings.visibleBottomNavigationSections;
 
     return Scaffold(
       drawer: _buildDrawer(context),
@@ -1350,7 +1356,10 @@ class _MainShellState extends ConsumerState<MainShell> {
         children: [
           const ConnectionStatusBanner(),
           Expanded(
-            child: AnimatedIndexedStack(index: _currentIndex, children: _views),
+            child: AnimatedIndexedStack(
+              index: _currentIndex,
+              children: _buildViews(settings),
+            ),
           ),
           _buildGlobalMiniPlayer(),
         ],
@@ -1370,6 +1379,11 @@ class _MainShellState extends ConsumerState<MainShell> {
   Widget _buildGlobalMiniPlayer() {
     return Consumer(
       builder: (context, ref, _) {
+        final settings = ref.watch(settingsProvider);
+        final isNasEnabled = settings.isSectionEnabled(AppSection.nas);
+        if (!isNasEnabled && !ref.exists(nasMediaPlayerProvider)) {
+          return const SizedBox.shrink();
+        }
         final playbackAsync = ref.watch(nasPlaybackProvider);
         return playbackAsync.when(
           data: (snapshot) {

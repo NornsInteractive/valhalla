@@ -261,6 +261,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get langEn => 'English (US)';
 
   @override
+  String get langZhHant => '繁體中文 (Traditional Chinese)';
+
+  @override
+  String get langJa => '日本語';
+
+  @override
+  String get langKo => '한국어';
+
+  @override
+  String get langDe => 'Deutsch';
+
+  @override
+  String get langFr => 'Français';
+
+  @override
+  String get langEs => 'Español';
+
+  @override
+  String get langPt => 'Português';
+
+  @override
+  String get langRu => 'Русский';
+
+  @override
+  String get langAr => 'العربية';
+
+  @override
+  String get langHi => 'हिन्दी';
+
+  @override
+  String get langId => 'Bahasa Indonesia';
+
+  @override
+  String get langIt => 'Italiano';
+
+  @override
+  String get langTr => 'Türkçe';
+
+  @override
+  String get langVi => 'Tiếng Việt';
+
+  @override
+  String get langTh => 'ไทย';
+
+  @override
   String get settingsAiOps => 'AI Ops & Engine';
 
   @override
@@ -1113,6 +1158,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sftpDownloading => 'Downloading...';
+
+  @override
+  String get sftpUpDirectory => 'Up to parent directory';
+
+  @override
+  String get sftpShowHiddenFiles => 'Show hidden files';
+
+  @override
+  String get sftpHideHiddenFiles => 'Hide hidden files';
+
+  @override
+  String get sftpHiddenPreferenceSaveFailed =>
+      'Failed to save hidden files preference';
+
+  @override
+  String get sftpSymlink => 'Symlink';
+
+  @override
+  String get sftpLinkTargetUnavailable =>
+      'Symlink target is broken or unavailable';
+
+  @override
+  String get sftpLinkTargetPermissionDenied =>
+      'Permission denied reading symlink target';
 
   @override
   String get settingsAutoConnect => 'Auto connect on launch';
@@ -3560,4 +3629,35 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chatAuthCallbackListenerFailed =>
       'Failed to start local authorization callback listener. Please retry authentication.';
+
+  @override
+  String get settingsExperimentalFeatures => 'Experimental Features';
+
+  @override
+  String get settingsExperimentalFeaturesDesc =>
+      'Try preview and experimental capabilities';
+
+  @override
+  String get settingsExperimentalCliChatTitle => 'CLI Smart Chat';
+
+  @override
+  String get settingsExperimentalCliChatDesc =>
+      'Enable dedicated command-line agent chat interface';
+
+  @override
+  String get settingsExperimentalDialogClose => 'Close';
+
+  @override
+  String get settingsExperimentalSaveFailed =>
+      'Failed to update experimental feature settings';
+
+  @override
+  String get settingsExperimentalNasTitle => 'NAS Media';
+
+  @override
+  String get settingsExperimentalNasDesc =>
+      'Enable media library, scan folders, and audio playback';
+
+  @override
+  String get settingsLanguageSaveFailed => 'Failed to update language settings';
 }

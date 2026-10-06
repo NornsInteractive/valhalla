@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:valhalla/core/localization/app_locales.dart';
 import 'package:valhalla/core/providers/settings_provider.dart';
 import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
@@ -20,6 +21,16 @@ Future<ProviderContainer> _container() async {
   return ProviderContainer(
     overrides: [localStorageServiceProvider.overrideWithValue(localStorage)],
   );
+}
+
+/// 模拟落盘失败：写入抛错且不改动既有存储值。
+class _FailingLocaleStorage extends LocalStorageService {
+  _FailingLocaleStorage(super.prefs);
+
+  @override
+  Future<void> setLocale(String languageTag) async {
+    throw StateError('Could not persist language preference');
+  }
 }
 
 void main() {
@@ -181,6 +192,81 @@ void main() {
 
       expect(container.read(settingsProvider).locale, const Locale('en'));
       final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(_localeKey), 'en');
+    });
+
+    test('应用语言选择 17 项逐个保存、重启后保持 canonical tag 完备且相等', () async {
+      expect(appLanguageLocales.length, 17);
+      final expectedTags = appLanguageLocales
+          .map((locale) => appLocaleToStorage(locale))
+          .toList();
+      for (final tag in expectedTags) {
+        final container = await _container();
+        addTearDown(container.dispose);
+        final locale = appLocaleFromStorage(tag);
+
+        await container.read(settingsProvider.notifier).setLocale(locale);
+
+        expect(
+          container.read(settingsProvider).locale,
+          appLocaleFromStorage(tag),
+        );
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getString(_localeKey), tag);
+
+        // 重启：新容器共享同一份 SharedPreferences。
+        final second = ProviderContainer(
+          overrides: [
+            localStorageServiceProvider.overrideWithValue(
+              LocalStorageService(prefs),
+            ),
+          ],
+        );
+        addTearDown(second.dispose);
+        expect(
+          second.read(settingsProvider).locale,
+          appLocaleFromStorage(tag),
+          reason: 'tag=$tag must survive restart',
+        );
+      }
+    });
+
+    test('setLocale(system) 选择跟随系统并持久化 system', () async {
+      final container = await _container();
+      addTearDown(container.dispose);
+
+      await container
+          .read(settingsProvider.notifier)
+          .setLocale(const Locale('system'));
+
+      expect(container.read(settingsProvider).locale, const Locale('system'));
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(_localeKey), 'system');
+    });
+
+    test('setLocale 写入失败：抛错、状态不变、磁盘仍是旧值', () async {
+      SharedPreferences.setMockInitialValues({_localeKey: 'en'});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(
+            _FailingLocaleStorage(prefs),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      expect(container.read(settingsProvider).locale, const Locale('en'));
+
+      await expectLater(
+        container.read(settingsProvider.notifier).setLocale(const Locale('ja')),
+        throwsStateError,
+      );
+
+      expect(
+        container.read(settingsProvider).locale,
+        const Locale('en'),
+        reason: '失败必须不能把内存先改成已选语言',
+      );
       expect(prefs.getString(_localeKey), 'en');
     });
 

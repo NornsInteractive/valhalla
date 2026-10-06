@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
+import '../localization/app_locales.dart';
 import 'storage_providers.dart';
 
 export '../../app/theme.dart' show AppThemeMode, AppAccentColor;
@@ -18,6 +19,16 @@ enum AppSection {
   cliChat,
   nas,
 }
+
+/// Experimental features are opt-in; names remain stable across upgrades.
+enum ExperimentalFeature { cliChat, nas }
+
+Set<ExperimentalFeature> experimentalFeaturesFromStorage(List<String>? raw) =>
+    Set.unmodifiable(
+      ExperimentalFeature.values.where(
+        (feature) => raw?.contains(feature.name) ?? false,
+      ),
+    );
 
 const defaultBottomNavigationSections = <AppSection>[
   AppSection.dashboard,
@@ -90,6 +101,7 @@ class SettingsState {
   final List<AppSection> dashboardQuickSections;
   final AppSection startupSection;
   final int cliHistoryPageSize;
+  final Set<ExperimentalFeature> enabledExperimentalFeatures;
 
   const SettingsState({
     this.themeMode = AppThemeMode.system,
@@ -102,6 +114,7 @@ class SettingsState {
     this.dashboardQuickSections = defaultDashboardQuickSections,
     this.startupSection = AppSection.dashboard,
     this.cliHistoryPageSize = defaultCliHistoryPageSize,
+    this.enabledExperimentalFeatures = const {},
   });
 
   SettingsState copyWith({
@@ -115,6 +128,7 @@ class SettingsState {
     List<AppSection>? dashboardQuickSections,
     AppSection? startupSection,
     int? cliHistoryPageSize,
+    Set<ExperimentalFeature>? enabledExperimentalFeatures,
   }) {
     return SettingsState(
       themeMode: themeMode ?? this.themeMode,
@@ -129,8 +143,33 @@ class SettingsState {
           dashboardQuickSections ?? this.dashboardQuickSections,
       startupSection: startupSection ?? this.startupSection,
       cliHistoryPageSize: cliHistoryPageSize ?? this.cliHistoryPageSize,
+      enabledExperimentalFeatures:
+          enabledExperimentalFeatures ?? this.enabledExperimentalFeatures,
     );
   }
+
+  bool isSectionEnabled(AppSection section) => switch (section) {
+    AppSection.cliChat => enabledExperimentalFeatures.contains(
+      ExperimentalFeature.cliChat,
+    ),
+    AppSection.nas => enabledExperimentalFeatures.contains(
+      ExperimentalFeature.nas,
+    ),
+    _ => true,
+  };
+
+  List<AppSection> get availableSections =>
+      AppSection.values.where(isSectionEnabled).toList(growable: false);
+
+  // Keep configured entries intact so opting back in restores their order.
+  List<AppSection> get visibleBottomNavigationSections =>
+      bottomNavigationSections.where(isSectionEnabled).toList(growable: false);
+
+  List<AppSection> get visibleDashboardQuickSections =>
+      dashboardQuickSections.where(isSectionEnabled).toList(growable: false);
+
+  AppSection get effectiveStartupSection =>
+      isSectionEnabled(startupSection) ? startupSection : AppSection.dashboard;
 
   Color colorForTheme(AppThemeMode mode) => switch (mode) {
     AppThemeMode.light => lightAccentColor,
@@ -193,7 +232,7 @@ class SettingsNotifier extends Notifier<SettingsState> {
         storage.getThemeAccentColor('amoled'),
         fallback: legacyAccent.color,
       ),
-      locale: Locale(storage.getLocale()),
+      locale: appLocaleFromStorage(storage.getLocale()),
       bottomNavigationSections: bottomNavigationFromStorage(
         storage.getBottomNavigationSections(),
       ),
@@ -205,6 +244,9 @@ class SettingsNotifier extends Notifier<SettingsState> {
           AppSection.dashboard,
       cliHistoryPageSize: cliHistoryPageSizeFromStorage(
         storage.getCliHistoryPageSize(),
+      ),
+      enabledExperimentalFeatures: experimentalFeaturesFromStorage(
+        storage.getExperimentalFeatures(),
       ),
     );
   }
@@ -259,8 +301,9 @@ class SettingsNotifier extends Notifier<SettingsState> {
   }
 
   Future<void> setLocale(Locale locale) async {
-    state = state.copyWith(locale: locale);
-    await ref.read(localStorageServiceProvider).setLocale(locale.languageCode);
+    final code = appLocaleToStorage(locale);
+    await ref.read(localStorageServiceProvider).setLocale(code);
+    state = state.copyWith(locale: appLocaleFromStorage(code));
   }
 
   Future<void> setBottomNavigationSections(
@@ -276,6 +319,38 @@ class SettingsNotifier extends Notifier<SettingsState> {
         .read(localStorageServiceProvider)
         .setBottomNavigationSections(next.map((item) => item.name).toList());
   }
+
+  // UI edits only the visible subset; hidden configured entries keep their slots.
+  List<AppSection> _mergeVisibleSections(
+    List<AppSection> configured,
+    Iterable<AppSection> visible,
+  ) {
+    final items = visible.where(state.isSectionEnabled).toSet().iterator;
+    final result = <AppSection>[];
+    for (final section in configured) {
+      if (!state.isSectionEnabled(section)) {
+        result.add(section);
+      } else if (items.moveNext()) {
+        result.add(items.current);
+      }
+    }
+    while (items.moveNext()) {
+      result.add(items.current);
+    }
+    return result;
+  }
+
+  Future<void> setVisibleBottomNavigationSections(
+    Iterable<AppSection> sections,
+  ) => setBottomNavigationSections(
+    _mergeVisibleSections(state.bottomNavigationSections, sections),
+  );
+
+  Future<void> setVisibleDashboardQuickSections(
+    Iterable<AppSection> sections,
+  ) => setDashboardQuickSections(
+    _mergeVisibleSections(state.dashboardQuickSections, sections),
+  );
 
   Future<void> setDashboardQuickSections(Iterable<AppSection> sections) async {
     final next = <AppSection>[];
@@ -294,6 +369,23 @@ class SettingsNotifier extends Notifier<SettingsState> {
   Future<void> setStartupSection(AppSection section) async {
     state = state.copyWith(startupSection: section);
     await ref.read(localStorageServiceProvider).setStartupSection(section.name);
+  }
+
+  Future<void> setExperimentalFeature(
+    ExperimentalFeature feature,
+    bool enabled,
+  ) async {
+    final next = {...state.enabledExperimentalFeatures};
+    if (enabled) {
+      next.add(feature);
+    } else {
+      next.remove(feature);
+    }
+    // Persist before reporting success; a failed write must not appear enabled.
+    await ref
+        .read(localStorageServiceProvider)
+        .setExperimentalFeatures(next.map((item) => item.name).toList());
+    state = state.copyWith(enabledExperimentalFeatures: Set.unmodifiable(next));
   }
 
   Future<void> setCliHistoryPageSize(int value) async {
@@ -334,6 +426,7 @@ class SettingsNotifier extends Notifier<SettingsState> {
     );
     await storage.setStartupSection(defaults.startupSection.name);
     await storage.setCliHistoryPageSize(defaults.cliHistoryPageSize);
+    await storage.setExperimentalFeatures([]);
   }
 }
 

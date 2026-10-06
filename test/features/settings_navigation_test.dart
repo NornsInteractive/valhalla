@@ -41,6 +41,10 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
 
         final storage = await _freshStorage();
+        await storage.setExperimentalFeatures([
+          ExperimentalFeature.cliChat.name,
+          ExperimentalFeature.nas.name,
+        ]);
 
         await tester.pumpWidget(
           _buildSettingsApp(
@@ -349,5 +353,147 @@ void main() {
         isTrue,
       );
     });
+
+    testWidgets('experimental features dialog toggles CLI chat and persists', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(640, 1136);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final storage = await _freshStorage();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [localStorageServiceProvider.overrideWithValue(storage)],
+          child: const MaterialApp(
+            locale: Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: SettingsView()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final tile = find.byKey(const Key('settings_experimental_features_tile'));
+      final scrollable = find.byType(Scrollable).first;
+      var scrollAttempts = 0;
+      while (tile.evaluate().isEmpty && scrollAttempts < 40) {
+        await tester.drag(scrollable, const Offset(0, -300));
+        await tester.pump();
+        scrollAttempts++;
+      }
+      await tester.pumpAndSettle();
+      expect(tile, findsOneWidget);
+      await tester.ensureVisible(tile);
+      await tester.pumpAndSettle();
+      expect(tile, findsOneWidget);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('settings_experimental_features_dialog')),
+        findsOneWidget,
+      );
+
+      final cliTile = find.byKey(
+        const Key('settings_experimental_cli_chat_tile'),
+      );
+      expect(tester.widget<CheckboxListTile>(cliTile).value, isFalse);
+
+      await tester.tap(cliTile);
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<CheckboxListTile>(cliTile).value, isTrue);
+      expect(storage.getExperimentalFeatures(), contains('cliChat'));
+
+      await tester.tap(cliTile);
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<CheckboxListTile>(cliTile).value, isFalse);
+      expect(storage.getExperimentalFeatures() ?? const <String>[], isEmpty);
+
+      await tester.tap(
+        find.byKey(const Key('settings_experimental_dialog_close_button')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('settings_experimental_features_dialog')),
+        findsNothing,
+      );
+    });
+
+    testWidgets(
+      'experimental dialog keeps CLI and NAS checkboxes independent',
+      (tester) async {
+        tester.view.physicalSize = const Size(640, 1136);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final storage = await _freshStorage();
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [localStorageServiceProvider.overrideWithValue(storage)],
+            child: const MaterialApp(
+              locale: Locale('en'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(body: SettingsView()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final tile = find.byKey(
+          const Key('settings_experimental_features_tile'),
+        );
+        final scrollable = find.byType(Scrollable).first;
+        var scrollAttempts = 0;
+        while (tile.evaluate().isEmpty && scrollAttempts < 40) {
+          await tester.drag(scrollable, const Offset(0, -300));
+          await tester.pump();
+          scrollAttempts++;
+        }
+        await tester.pumpAndSettle();
+        expect(tile, findsOneWidget);
+        await tester.ensureVisible(tile);
+        await tester.pumpAndSettle();
+        expect(tile, findsOneWidget);
+        await tester.tap(tile);
+        await tester.pumpAndSettle();
+
+        final cliTile = find.byKey(
+          const Key('settings_experimental_cli_chat_tile'),
+        );
+        final nasTile = find.byKey(const Key('settings_experimental_nas_tile'));
+        expect(tester.widget<CheckboxListTile>(cliTile).value, isFalse);
+        expect(tester.widget<CheckboxListTile>(nasTile).value, isFalse);
+
+        await tester.tap(nasTile);
+        await tester.pumpAndSettle();
+        expect(tester.widget<CheckboxListTile>(nasTile).value, isTrue);
+        expect(tester.widget<CheckboxListTile>(cliTile).value, isFalse);
+        expect(storage.getExperimentalFeatures(), ['nas']);
+
+        await tester.tap(cliTile);
+        await tester.pumpAndSettle();
+        expect(tester.widget<CheckboxListTile>(cliTile).value, isTrue);
+        expect(tester.widget<CheckboxListTile>(nasTile).value, isTrue);
+        expect(
+          storage.getExperimentalFeatures(),
+          containsAll(['nas', 'cliChat']),
+        );
+
+        await tester.tap(nasTile);
+        await tester.pumpAndSettle();
+        expect(tester.widget<CheckboxListTile>(nasTile).value, isFalse);
+        expect(tester.widget<CheckboxListTile>(cliTile).value, isTrue);
+        expect(storage.getExperimentalFeatures(), ['cliChat']);
+      },
+    );
   });
 }

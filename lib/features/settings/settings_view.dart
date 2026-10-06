@@ -12,6 +12,7 @@ import '../../core/providers/diagnostics_provider.dart';
 import '../../core/providers/terminal_settings_provider.dart';
 import '../../data/models/server_profile.dart';
 import '../agents/agent_management_view.dart';
+import '../../core/localization/app_locales.dart';
 import 'widgets/diagnostics_view.dart';
 import 'widgets/theme_accent_color_dialog.dart';
 
@@ -138,10 +139,26 @@ class SettingsView extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
 
         Entrance(
           index: 7,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(
+                context,
+                context.l10n.settingsExperimentalFeatures,
+                Icons.science_outlined,
+              ),
+              _buildExperimentalFeaturesCard(context),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        Entrance(
+          index: 8,
           child: Center(
             child: OutlinedButton.icon(
               icon: const Icon(Icons.restart_alt, size: 16),
@@ -251,6 +268,35 @@ class SettingsView extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildExperimentalFeaturesCard(BuildContext context) {
+    return Card(
+      child: ListTile(
+        key: const Key('settings_experimental_features_tile'),
+        leading: Icon(
+          Icons.science_outlined,
+          color: context.colorScheme.primary,
+        ),
+        title: Text(
+          context.l10n.settingsExperimentalFeatures,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          context.l10n.settingsExperimentalFeaturesDesc,
+          style: const TextStyle(fontSize: 11),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _showExperimentalFeaturesDialog(context),
+      ),
+    );
+  }
+
+  void _showExperimentalFeaturesDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => const _ExperimentalFeaturesDialog(),
     );
   }
 
@@ -492,17 +538,19 @@ class SettingsView extends ConsumerWidget {
     required Color color,
     required String hexText,
   }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4,
+      runSpacing: 2,
       children: [
         Container(
           width: 8,
           height: 8,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 3),
         Text(
           '$label: $hexText',
+          softWrap: true,
           style: monoTextStyle(fontSize: 10, fontWeight: FontWeight.w400),
         ),
       ],
@@ -514,12 +562,10 @@ class SettingsView extends ConsumerWidget {
     SettingsState settings,
     SettingsNotifier notifier,
   ) {
-    final langCode = settings.locale.languageCode;
-    final langText = switch (langCode) {
-      'zh' => context.l10n.langZh,
-      'en' => context.l10n.langEn,
-      _ => context.l10n.langSystem,
-    };
+    final currentTag = settings.locale.languageCode == 'system'
+        ? 'system'
+        : settings.locale.toLanguageTag();
+    final langText = _localizedLanguageName(context, currentTag);
 
     return Card(
       child: ListTile(
@@ -531,82 +577,20 @@ class SettingsView extends ConsumerWidget {
         ),
         subtitle: Text(langText, style: const TextStyle(fontSize: 11)),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => _showLanguageDialog(context, langCode, notifier),
+        onTap: () => _showLanguageDialog(context, settings, notifier),
       ),
     );
   }
 
   void _showLanguageDialog(
     BuildContext context,
-    String currentCode,
+    SettingsState settings,
     SettingsNotifier notifier,
   ) {
     showDialog<void>(
       context: context,
-      builder: (dialogCtx) {
-        return AlertDialog(
-          title: Text(context.l10n.selectLanguageTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<String>(
-                key: const Key('settings_lang_system'),
-                dense: true,
-                title: Text(
-                  context.l10n.langSystem,
-                  style: const TextStyle(fontSize: 13),
-                ),
-                value: 'system',
-                groupValue: currentCode,
-                onChanged: (val) {
-                  if (val != null) {
-                    notifier.setLocale(Locale(val));
-                    Navigator.of(dialogCtx).pop();
-                  }
-                },
-              ),
-              RadioListTile<String>(
-                key: const Key('settings_lang_zh'),
-                dense: true,
-                title: Text(
-                  context.l10n.langZh,
-                  style: const TextStyle(fontSize: 13),
-                ),
-                value: 'zh',
-                groupValue: currentCode,
-                onChanged: (val) {
-                  if (val != null) {
-                    notifier.setLocale(Locale(val));
-                    Navigator.of(dialogCtx).pop();
-                  }
-                },
-              ),
-              RadioListTile<String>(
-                key: const Key('settings_lang_en'),
-                dense: true,
-                title: Text(
-                  context.l10n.langEn,
-                  style: const TextStyle(fontSize: 13),
-                ),
-                value: 'en',
-                groupValue: currentCode,
-                onChanged: (val) {
-                  if (val != null) {
-                    notifier.setLocale(Locale(val));
-                    Navigator.of(dialogCtx).pop();
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text(context.l10n.cancel),
-            ),
-          ],
-        );
-      },
+      builder: (_) =>
+          _LanguageSelectionDialog(settings: settings, notifier: notifier),
     );
   }
 
@@ -959,6 +943,9 @@ class SettingsView extends ConsumerWidget {
     SettingsState settings,
     SettingsNotifier notifier,
   ) {
+    final visibleQuick = settings.visibleDashboardQuickSections;
+    final visibleBottom = settings.visibleBottomNavigationSections;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -970,7 +957,7 @@ class SettingsView extends ConsumerWidget {
               key: const Key('settings_startup_page_tile'),
               contentPadding: EdgeInsets.zero,
               leading: Icon(
-                _getAppSectionIcon(settings.startupSection),
+                _getAppSectionIcon(settings.effectiveStartupSection),
                 color: context.colorScheme.primary,
               ),
               title: Text(
@@ -981,15 +968,14 @@ class SettingsView extends ConsumerWidget {
                 ),
               ),
               subtitle: Text(
-                _getLocalizedSectionName(context, settings.startupSection),
+                _getLocalizedSectionName(
+                  context,
+                  settings.effectiveStartupSection,
+                ),
                 style: const TextStyle(fontSize: 11),
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showStartupPageDialog(
-                context,
-                settings.startupSection,
-                notifier,
-              ),
+              onTap: () => _showStartupPageDialog(context, settings, notifier),
             ),
             const SizedBox(height: 8),
             const Divider(),
@@ -1010,7 +996,7 @@ class SettingsView extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
 
-            if (settings.dashboardQuickSections.isNotEmpty) ...[
+            if (visibleQuick.isNotEmpty) ...[
               Text(
                 context.l10n.settingsDashboardQuickActionsOrderTitle,
                 style: const TextStyle(
@@ -1023,18 +1009,16 @@ class SettingsView extends ConsumerWidget {
                 key: const Key('settings_dashboard_quick_reorder_list'),
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: settings.dashboardQuickSections.length,
+                itemCount: visibleQuick.length,
                 onReorder: (oldIndex, newIndex) {
                   if (oldIndex < newIndex) newIndex -= 1;
-                  final items = List<AppSection>.from(
-                    settings.dashboardQuickSections,
-                  );
+                  final items = List<AppSection>.from(visibleQuick);
                   final item = items.removeAt(oldIndex);
                   items.insert(newIndex, item);
-                  notifier.setDashboardQuickSections(items);
+                  notifier.setVisibleDashboardQuickSections(items);
                 },
                 itemBuilder: (context, index) {
-                  final sec = settings.dashboardQuickSections[index];
+                  final sec = visibleQuick[index];
                   return ListTile(
                     key: ValueKey('settings_quick_reorder_${sec.name}'),
                     dense: true,
@@ -1067,12 +1051,10 @@ class SettingsView extends ConsumerWidget {
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
             ),
             const SizedBox(height: 4),
-            ...AppSection.values
+            ...settings.availableSections
                 .where((sec) => sec != AppSection.dashboard)
                 .map((sec) {
-                  final isChecked = settings.dashboardQuickSections.contains(
-                    sec,
-                  );
+                  final isChecked = visibleQuick.contains(sec);
                   return CheckboxListTile(
                     key: Key('settings_dashboard_quick_checkbox_${sec.name}'),
                     dense: true,
@@ -1090,9 +1072,7 @@ class SettingsView extends ConsumerWidget {
                     ),
                     value: isChecked,
                     onChanged: (bool? checked) {
-                      final current = List<AppSection>.from(
-                        settings.dashboardQuickSections,
-                      );
+                      final current = List<AppSection>.from(visibleQuick);
                       if (checked == true) {
                         if (!current.contains(sec)) {
                           current.add(sec);
@@ -1100,7 +1080,7 @@ class SettingsView extends ConsumerWidget {
                       } else {
                         current.remove(sec);
                       }
-                      notifier.setDashboardQuickSections(current);
+                      notifier.setVisibleDashboardQuickSections(current);
                     },
                   );
                 }),
@@ -1122,7 +1102,7 @@ class SettingsView extends ConsumerWidget {
                 color: context.colorScheme.outline,
               ),
             ),
-            if (settings.bottomNavigationSections.isNotEmpty) ...[
+            if (visibleBottom.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text(
                 context.l10n.settingsBottomNavOrderTitle,
@@ -1136,18 +1116,16 @@ class SettingsView extends ConsumerWidget {
                 key: const Key('settings_bottom_nav_reorder_list'),
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: settings.bottomNavigationSections.length,
+                itemCount: visibleBottom.length,
                 onReorder: (oldIndex, newIndex) {
                   if (oldIndex < newIndex) newIndex -= 1;
-                  final items = List<AppSection>.from(
-                    settings.bottomNavigationSections,
-                  );
+                  final items = List<AppSection>.from(visibleBottom);
                   final item = items.removeAt(oldIndex);
                   items.insert(newIndex, item);
-                  notifier.setBottomNavigationSections(items);
+                  notifier.setVisibleBottomNavigationSections(items);
                 },
                 itemBuilder: (context, index) {
-                  final sec = settings.bottomNavigationSections[index];
+                  final sec = visibleBottom[index];
                   return ListTile(
                     key: ValueKey('settings_reorder_${sec.name}'),
                     dense: true,
@@ -1162,8 +1140,8 @@ class SettingsView extends ConsumerWidget {
               const Divider(),
             ],
             const SizedBox(height: 8),
-            ...AppSection.values.map((sec) {
-              final isChecked = settings.bottomNavigationSections.contains(sec);
+            ...settings.availableSections.map((sec) {
+              final isChecked = visibleBottom.contains(sec);
               return CheckboxListTile(
                 key: Key('settings_bottom_nav_checkbox_${sec.name}'),
                 dense: true,
@@ -1181,9 +1159,7 @@ class SettingsView extends ConsumerWidget {
                 ),
                 value: isChecked,
                 onChanged: (bool? checked) {
-                  final current = List<AppSection>.from(
-                    settings.bottomNavigationSections,
-                  );
+                  final current = List<AppSection>.from(visibleBottom);
                   if (checked == true) {
                     if (!current.contains(sec)) {
                       current.add(sec);
@@ -1191,7 +1167,7 @@ class SettingsView extends ConsumerWidget {
                   } else {
                     current.remove(sec);
                   }
-                  notifier.setBottomNavigationSections(current);
+                  notifier.setVisibleBottomNavigationSections(current);
                 },
               );
             }),
@@ -1203,9 +1179,12 @@ class SettingsView extends ConsumerWidget {
 
   void _showStartupPageDialog(
     BuildContext context,
-    AppSection currentSection,
+    SettingsState settings,
     SettingsNotifier notifier,
   ) {
+    final available = settings.availableSections;
+    final currentSection = settings.effectiveStartupSection;
+
     showDialog<void>(
       context: context,
       builder: (dialogCtx) {
@@ -1215,7 +1194,7 @@ class SettingsView extends ConsumerWidget {
             width: double.maxFinite,
             child: ListView(
               shrinkWrap: true,
-              children: AppSection.values.map((sec) {
+              children: available.map((sec) {
                 final isSelected = sec == currentSection;
                 return RadioListTile<AppSection>(
                   key: Key('settings_startup_page_radio_${sec.name}'),
@@ -1477,6 +1456,349 @@ class _AutoConnectCardState extends ConsumerState<_AutoConnectCard> {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _ExperimentalFeaturesDialog extends ConsumerStatefulWidget {
+  const _ExperimentalFeaturesDialog();
+
+  @override
+  ConsumerState<_ExperimentalFeaturesDialog> createState() =>
+      _ExperimentalFeaturesDialogState();
+}
+
+class _ExperimentalFeaturesDialogState
+    extends ConsumerState<_ExperimentalFeaturesDialog> {
+  ExperimentalFeature? _savingFeature;
+  bool get _isSaving => _savingFeature != null;
+  String? _errorMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = ref.watch(settingsProvider);
+    final isCliChatEnabled = settings.enabledExperimentalFeatures.contains(
+      ExperimentalFeature.cliChat,
+    );
+    final isNasEnabled = settings.enabledExperimentalFeatures.contains(
+      ExperimentalFeature.nas,
+    );
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      key: const Key('settings_experimental_features_dialog'),
+      title: Text(context.l10n.settingsExperimentalFeatures),
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+          maxWidth: 400,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CheckboxListTile(
+                key: const Key('settings_experimental_cli_chat_tile'),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  context.l10n.settingsExperimentalCliChatTitle,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  context.l10n.settingsExperimentalCliChatDesc,
+                  style: const TextStyle(fontSize: 11),
+                ),
+                secondary: _savingFeature == ExperimentalFeature.cliChat
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : null,
+                value: isCliChatEnabled,
+                onChanged: _isSaving
+                    ? null
+                    : (bool? checked) async {
+                        setState(() {
+                          _savingFeature = ExperimentalFeature.cliChat;
+                          _errorMessage = null;
+                        });
+                        try {
+                          await ref
+                              .read(settingsProvider.notifier)
+                              .setExperimentalFeature(
+                                ExperimentalFeature.cliChat,
+                                checked ?? false,
+                              );
+                        } catch (_) {
+                          if (mounted) {
+                            setState(() {
+                              _errorMessage =
+                                  context.l10n.settingsExperimentalSaveFailed;
+                            });
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _savingFeature = null;
+                            });
+                          }
+                        }
+                      },
+              ),
+              const Divider(height: 1),
+              CheckboxListTile(
+                key: const Key('settings_experimental_nas_tile'),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  context.l10n.settingsExperimentalNasTitle,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  context.l10n.settingsExperimentalNasDesc,
+                  style: const TextStyle(fontSize: 11),
+                ),
+                secondary: _savingFeature == ExperimentalFeature.nas
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : null,
+                value: isNasEnabled,
+                onChanged: _isSaving
+                    ? null
+                    : (bool? checked) async {
+                        setState(() {
+                          _savingFeature = ExperimentalFeature.nas;
+                          _errorMessage = null;
+                        });
+                        try {
+                          await ref
+                              .read(settingsProvider.notifier)
+                              .setExperimentalFeature(
+                                ExperimentalFeature.nas,
+                                checked ?? false,
+                              );
+                        } catch (_) {
+                          if (mounted) {
+                            setState(() {
+                              _errorMessage =
+                                  context.l10n.settingsExperimentalSaveFailed;
+                            });
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _savingFeature = null;
+                            });
+                          }
+                        }
+                      },
+              ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage!,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          key: const Key('settings_experimental_dialog_close_button'),
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(context.l10n.settingsExperimentalDialogClose),
+        ),
+      ],
+    );
+  }
+}
+
+String _localizedLanguageName(BuildContext context, String tag) {
+  final l10n = context.l10n;
+  switch (tag) {
+    case 'system':
+      return l10n.langSystem;
+    case 'zh':
+      return l10n.langZh;
+    case 'en':
+      return l10n.langEn;
+    case 'zh-Hant':
+      return l10n.langZhHant;
+    case 'ja':
+      return l10n.langJa;
+    case 'ko':
+      return l10n.langKo;
+    case 'de':
+      return l10n.langDe;
+    case 'fr':
+      return l10n.langFr;
+    case 'es':
+      return l10n.langEs;
+    case 'pt':
+      return l10n.langPt;
+    case 'ru':
+      return l10n.langRu;
+    case 'ar':
+      return l10n.langAr;
+    case 'hi':
+      return l10n.langHi;
+    case 'id':
+      return l10n.langId;
+    case 'it':
+      return l10n.langIt;
+    case 'tr':
+      return l10n.langTr;
+    case 'vi':
+      return l10n.langVi;
+    case 'th':
+      return l10n.langTh;
+    default:
+      return l10n.langSystem;
+  }
+}
+
+class _LanguageSelectionDialog extends StatefulWidget {
+  final SettingsState settings;
+  final SettingsNotifier notifier;
+
+  const _LanguageSelectionDialog({
+    required this.settings,
+    required this.notifier,
+  });
+
+  @override
+  State<_LanguageSelectionDialog> createState() =>
+      _LanguageSelectionDialogState();
+}
+
+class _LanguageSelectionDialogState extends State<_LanguageSelectionDialog> {
+  bool _isSaving = false;
+  String? _savingTag;
+  String? _errorMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final currentTag = widget.settings.locale.languageCode == 'system'
+        ? 'system'
+        : widget.settings.locale.toLanguageTag();
+
+    final choices = <({String tag, Locale locale})>[
+      (tag: 'system', locale: const Locale('system')),
+      for (final locale in appLanguageLocales)
+        (tag: locale.toLanguageTag(), locale: locale),
+    ];
+
+    return AlertDialog(
+      title: Text(context.l10n.selectLanguageTitle),
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+          maxWidth: 400,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final choice in choices)
+                RadioListTile<String>(
+                  key: Key('settings_lang_${choice.tag}'),
+                  dense: true,
+                  title: Text(
+                    _localizedLanguageName(context, choice.tag),
+                    style: const TextStyle(fontSize: 13),
+                    softWrap: true,
+                  ),
+                  secondary: _isSaving && _savingTag == choice.tag
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : null,
+                  value: choice.tag,
+                  groupValue: currentTag,
+                  onChanged: _isSaving
+                      ? null
+                      : (val) async {
+                          if (val == null) return;
+                          final saveFailedMessage =
+                              context.l10n.settingsLanguageSaveFailed;
+                          setState(() {
+                            _isSaving = true;
+                            _savingTag = choice.tag;
+                            _errorMessage = null;
+                          });
+                          try {
+                            await widget.notifier.setLocale(choice.locale);
+                            if (!mounted) return;
+                            if (!context.mounted) return;
+                            Navigator.of(context).pop();
+                          } catch (_) {
+                            if (mounted) {
+                              setState(() {
+                                _errorMessage = saveFailedMessage;
+                                _isSaving = false;
+                                _savingTag = null;
+                              });
+                            }
+                          }
+                        },
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        SizedBox(
+          width: double.infinity,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.error,
+                    ),
+                    softWrap: true,
+                  ),
+                ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _isSaving
+                      ? null
+                      : () => Navigator.of(context).pop(),
+                  child: Text(context.l10n.cancel),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

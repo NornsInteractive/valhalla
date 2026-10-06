@@ -1441,6 +1441,8 @@ void main() {
         final notifier = _FakeNasNotifier(const NasState());
         final sourcesNotifier = _TestNasSourcesNotifier();
 
+        await defaultStorage.setExperimentalFeatures(['nas']);
+
         await tester.pumpWidget(
           ProviderScope(
             overrides: [

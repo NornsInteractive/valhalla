@@ -258,6 +258,51 @@ class AppLocalizationsZh extends AppLocalizations {
   String get langEn => 'English (US)';
 
   @override
+  String get langZhHant => '繁體中文 (Traditional Chinese)';
+
+  @override
+  String get langJa => '日本語';
+
+  @override
+  String get langKo => '한국어';
+
+  @override
+  String get langDe => 'Deutsch';
+
+  @override
+  String get langFr => 'Français';
+
+  @override
+  String get langEs => 'Español';
+
+  @override
+  String get langPt => 'Português';
+
+  @override
+  String get langRu => 'Русский';
+
+  @override
+  String get langAr => 'العربية';
+
+  @override
+  String get langHi => 'हिन्दी';
+
+  @override
+  String get langId => 'Bahasa Indonesia';
+
+  @override
+  String get langIt => 'Italiano';
+
+  @override
+  String get langTr => 'Türkçe';
+
+  @override
+  String get langVi => 'Tiếng Việt';
+
+  @override
+  String get langTh => 'ไทย';
+
+  @override
   String get settingsAiOps => 'AI 运维助手与引擎 (Agent Ops)';
 
   @override
@@ -1072,6 +1117,27 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sftpDownloading => '正在下载...';
+
+  @override
+  String get sftpUpDirectory => '返回上一级目录';
+
+  @override
+  String get sftpShowHiddenFiles => '显示隐藏文件';
+
+  @override
+  String get sftpHideHiddenFiles => '隐藏点文件';
+
+  @override
+  String get sftpHiddenPreferenceSaveFailed => '保存隐藏文件设置失败';
+
+  @override
+  String get sftpSymlink => '软链接';
+
+  @override
+  String get sftpLinkTargetUnavailable => '符号链接目标失效或不存在';
+
+  @override
+  String get sftpLinkTargetPermissionDenied => '无权限访问符号链接目标';
 
   @override
   String get settingsAutoConnect => '启动时自动连接';
@@ -3413,4 +3479,3535 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatAuthCallbackListenerFailed => '本地授权回调监听启动失败，请重试认证。';
+
+  @override
+  String get settingsExperimentalFeatures => '实验性功能';
+
+  @override
+  String get settingsExperimentalFeaturesDesc => '体验处于预览或测试阶段的实验性功能';
+
+  @override
+  String get settingsExperimentalCliChatTitle => 'CLI 智能对话';
+
+  @override
+  String get settingsExperimentalCliChatDesc => '开启独立的命令行 Agent 对话界面';
+
+  @override
+  String get settingsExperimentalDialogClose => '关闭';
+
+  @override
+  String get settingsExperimentalSaveFailed => '更新实验性功能设置失败';
+
+  @override
+  String get settingsExperimentalNasTitle => 'NAS 媒体库';
+
+  @override
+  String get settingsExperimentalNasDesc => '开启媒体库、目录扫描与音频播放功能';
+
+  @override
+  String get settingsLanguageSaveFailed => '更新语言设置失败';
+}
+
+/// The translations for Chinese, using the Han script (`zh_Hant`).
+class AppLocalizationsZhHant extends AppLocalizationsZh {
+  AppLocalizationsZhHant() : super('zh_Hant');
+
+  @override
+  String get appName => 'Valhalla';
+
+  @override
+  String get appSubtitle => 'AI 原生遠程伺服器與 Agent 運維中心';
+
+  @override
+  String get navAiChat => '智能工作階段';
+
+  @override
+  String get navTerminal => 'SSH終端機';
+
+  @override
+  String get navFiles => '遠程檔案';
+
+  @override
+  String get navCommands => '快捷運維';
+
+  @override
+  String get navSettings => '系統設定';
+
+  @override
+  String get serverConnected => '已連線';
+
+  @override
+  String get serverOnline => '連線';
+
+  @override
+  String get serverOffline => '離線';
+
+  @override
+  String get latencyMs => '毫秒';
+
+  @override
+  String get reconnect => '重新連線';
+
+  @override
+  String get disconnect => '中斷連線';
+
+  @override
+  String get quickDisconnect => '快速中斷';
+
+  @override
+  String get newSession => '新建工作階段';
+
+  @override
+  String get historySessions => '歷史工作階段';
+
+  @override
+  String get switchAgent => '切換運維 Agent';
+
+  @override
+  String get agentClaudeCode => 'Claude CodeX';
+
+  @override
+  String get agentCodex => 'OpenAI Codex';
+
+  @override
+  String get agentOpenCode => 'OpenCode ACP';
+
+  @override
+  String get agentGemini => 'Gemini CLI';
+
+  @override
+  String get activeAgent => '當前生效 Agent';
+
+  @override
+  String get inputPromptHint => '讓 Agent 診斷系統、調用工具或編寫腳本... (Enter 發送)';
+
+  @override
+  String get thinking => '思考邏輯鏈';
+
+  @override
+  String get executionPlan => '執行計畫步驟';
+
+  @override
+  String get toolCall => '工具調用';
+
+  @override
+  String get toolStatusPending => '排隊中';
+
+  @override
+  String get toolStatusRunning => '正在執行...';
+
+  @override
+  String get toolStatusCompleted => '已完成';
+
+  @override
+  String get toolStatusFailed => '執行失敗';
+
+  @override
+  String get permissionRequired => '需要操作審批';
+
+  @override
+  String get permissionDescription => 'Agent 請求在目標伺服器上執行以下指令：';
+
+  @override
+  String get permissionReject => '拒絕執行';
+
+  @override
+  String get permissionAllowOnce => '允許執行一次';
+
+  @override
+  String get permissionAllowAlways => '始終信任允許';
+
+  @override
+  String get quickTroubleshootCpu => '排查 CPU 佔用異常';
+
+  @override
+  String get quickDockerHealth => 'Docker 容器健康診斷';
+
+  @override
+  String get quickCleanCache => '清理系統無用快取';
+
+  @override
+  String get quickNginxLogs => '排查 Nginx 錯誤記錄';
+
+  @override
+  String get terminalNewTab => '新標籤頁';
+
+  @override
+  String get terminalCloseTab => '關閉標籤';
+
+  @override
+  String get terminalClear => '清屏';
+
+  @override
+  String get terminalQuickCmds => '常用命令庫';
+
+  @override
+  String get terminalPaste => '貼上';
+
+  @override
+  String get sftpCurrentPath => '當前工作路徑';
+
+  @override
+  String get sftpUpload => '上傳檔案';
+
+  @override
+  String get sftpNewFolder => '新建目錄';
+
+  @override
+  String get sftpNewFile => '新建檔案';
+
+  @override
+  String get sftpRefresh => '重新整理列表';
+
+  @override
+  String get sftpSearchHint => '搜索檔案或目錄名...';
+
+  @override
+  String get sftpEmpty => '當前目錄暫無檔案';
+
+  @override
+  String get sftpFileName => '檔案名';
+
+  @override
+  String get sftpFileSize => '大小';
+
+  @override
+  String get sftpFilePerm => '權限';
+
+  @override
+  String get sftpFileModified => '最後修改時間';
+
+  @override
+  String get cmdCategoryDocker => 'DOCKER CONTAINER STACK · 容器生態';
+
+  @override
+  String get cmdCategorySystem => 'SYSTEM MAINTENANCE · 宿主機維保';
+
+  @override
+  String get cmdCategoryNetwork => 'NETWORK & PORTS · 網路與端口';
+
+  @override
+  String get cmdExecute => '執行';
+
+  @override
+  String get cmdDangerous => '高危危險指令';
+
+  @override
+  String get cmdDangerousWarning => '此操作不可逆且可能引發服務中斷，您確定要強制執行嗎？';
+
+  @override
+  String get cmdParamRequired => '需要提供動態參數';
+
+  @override
+  String get cmdConfirm => '確認並執行';
+
+  @override
+  String get cmdCancel => '取消';
+
+  @override
+  String get settingsAppearance => '外觀與個性化';
+
+  @override
+  String get settingsThemeMode => '顯示主題模式';
+
+  @override
+  String get themeSystem => '跟隨系統';
+
+  @override
+  String get themeSystemDesc => '自動適應系統外觀';
+
+  @override
+  String get themeLight => '明亮淺色';
+
+  @override
+  String get themeLightDesc => '高對比清爽白底';
+
+  @override
+  String get themeDark => '極客暗黑';
+
+  @override
+  String get themeDarkDesc => '經典沉浸炭黑';
+
+  @override
+  String get themeAmoled => '高對比純黑';
+
+  @override
+  String get themeAmoledDesc => 'OLED 0x000000 極致省電';
+
+  @override
+  String get settingsAccentColor => '主題強調色';
+
+  @override
+  String get accentCyberEmerald => '極客翠綠 (Cyber Emerald)';
+
+  @override
+  String get accentTechBlue => '科技深藍 (Tech Blue)';
+
+  @override
+  String get accentElectricViolet => '電光紫 (Electric Violet)';
+
+  @override
+  String get accentCrimsonRed => '活力緋紅 (Crimson Red)';
+
+  @override
+  String get accentAmberOrange => '溫暖明橙 (Amber Orange)';
+
+  @override
+  String get settingsLanguage => '語言與字符編碼';
+
+  @override
+  String get langZh => '簡體中文 (Simplified Chinese)';
+
+  @override
+  String get langEn => 'English (US)';
+
+  @override
+  String get langZhHant => '繁體中文 (Traditional Chinese)';
+
+  @override
+  String get langJa => '日本語';
+
+  @override
+  String get langKo => '한국어';
+
+  @override
+  String get langDe => 'Deutsch';
+
+  @override
+  String get langFr => 'Français';
+
+  @override
+  String get langEs => 'Español';
+
+  @override
+  String get langPt => 'Português';
+
+  @override
+  String get langRu => 'Русский';
+
+  @override
+  String get langAr => 'العربية';
+
+  @override
+  String get langHi => 'हिन्दी';
+
+  @override
+  String get langId => 'Bahasa Indonesia';
+
+  @override
+  String get langIt => 'Italiano';
+
+  @override
+  String get langTr => 'Türkçe';
+
+  @override
+  String get langVi => 'Tiếng Việt';
+
+  @override
+  String get langTh => 'ไทย';
+
+  @override
+  String get settingsAiOps => 'AI 運維助理與引擎 (Agent Ops)';
+
+  @override
+  String get settingsSecurity => '連線與系統安全';
+
+  @override
+  String get settingsKnownHosts => '已知主機公鑰指紋 (Known Hosts)';
+
+  @override
+  String get settingsClearStorage => '清除憑據快取';
+
+  @override
+  String get settingsResetDefault => '重置所有設定';
+
+  @override
+  String get settingsTerminalUseTmux => '工作階段保活 (tmux)';
+
+  @override
+  String get settingsTerminalUseTmuxSubtitle => '在遠端伺服器上用 tmux 承載終端機工作階段';
+
+  @override
+  String get settingsTerminalUseTmuxDescription =>
+      '斷線後仍保留終端機輸出，需要遠端已安裝 tmux。更改僅對新打開的終端機標籤頁生效。';
+
+  @override
+  String get settingsTerminalFontSize => '終端機字體大小';
+
+  @override
+  String get settingsTerminalFontSizeSubtitle => '調整 SSH 與 CLI 終端機的字號';
+
+  @override
+  String get version => '版本';
+
+  @override
+  String get addServer => '添加伺服器';
+
+  @override
+  String get editServer => '編輯伺服器';
+
+  @override
+  String get serverName => '伺服器名稱';
+
+  @override
+  String get serverHost => '主機地址 / IP';
+
+  @override
+  String get serverPort => '端口';
+
+  @override
+  String get serverUsername => '使用者名';
+
+  @override
+  String get serverAuthType => '認證方式';
+
+  @override
+  String get serverPassword => '登入密碼';
+
+  @override
+  String get serverPrivateKey => '私鑰內容';
+
+  @override
+  String get serverSave => '保存伺服器';
+
+  @override
+  String get serverDelete => '刪除伺服器';
+
+  @override
+  String get fileEditor => '檔案編輯器';
+
+  @override
+  String get fileEditorSave => '保存修改';
+
+  @override
+  String get fileSavedSuccess => '檔案已成功保存回寫';
+
+  @override
+  String get addCommand => '新建指令';
+
+  @override
+  String get commandTitle => '指令標題';
+
+  @override
+  String get commandContent => '執行腳本';
+
+  @override
+  String get commandCategory => '分類';
+
+  @override
+  String get commandDescription => '指令描述';
+
+  @override
+  String get save => '保存';
+
+  @override
+  String get delete => '刪除';
+
+  @override
+  String get cancel => '取消';
+
+  @override
+  String get confirm => '確認';
+
+  @override
+  String get cmdExecutionChannel => '選擇執行通道';
+
+  @override
+  String get cmdChannelTerminal => '直通當前 SSH 終端機';
+
+  @override
+  String get cmdChannelTerminalDesc => '指令將鍵入至活躍終端機並執行，適合交互式查看實時輸出';
+
+  @override
+  String get cmdChannelBackground => '後臺獨立通道運行';
+
+  @override
+  String get cmdChannelBackgroundDesc =>
+      '通過 SSH 獨立工作階段以 Login Shell 方式執行，並彈窗捕獲輸出';
+
+  @override
+  String get cmdInjectedToTerminal => '指令已注入活躍終端機';
+
+  @override
+  String get cmdExecutionCompleted => '指令執行完成';
+
+  @override
+  String get cmdExecutionFailed => '指令執行失敗';
+
+  @override
+  String get cmdExecutingRemote => '正在通過遠端 SSH 執行指令...';
+
+  @override
+  String get cmdClose => '關閉';
+
+  @override
+  String get navDashboard => '儀表盤';
+
+  @override
+  String get navDocker => '容器管理';
+
+  @override
+  String get navSystem => '系統運維';
+
+  @override
+  String get navMore => '更多功能';
+
+  @override
+  String get dashboardTitle => '伺服器儀表盤';
+
+  @override
+  String get metricsCpu => 'CPU 使用率';
+
+  @override
+  String get metricsMemory => '記憶體佔用率';
+
+  @override
+  String get metricsLoadAvg => '系統平均負載';
+
+  @override
+  String get metricsUptime => '系統持續運行';
+
+  @override
+  String get metricsRootDisk => '根分區儲存';
+
+  @override
+  String get quickActions => '常用快捷入口';
+
+  @override
+  String get activeServerStatus => '目標伺服器狀態';
+
+  @override
+  String get noServerSelected => '當前未連線到任何伺服器，請先選擇並連線伺服器。';
+
+  @override
+  String get serverDisconnected => '未連線';
+
+  @override
+  String get serverConnecting => '正在連線...';
+
+  @override
+  String get connectNow => '立即連線';
+
+  @override
+  String get serverSpecs => '伺服器規格與資訊';
+
+  @override
+  String get dockerTitle => 'Docker 容器';
+
+  @override
+  String get dockerSearchHint => '搜索容器名稱或映像檔...';
+
+  @override
+  String get dockerFilterAll => '全部';
+
+  @override
+  String get dockerFilterRunning => '運行中';
+
+  @override
+  String get dockerFilterExited => '已登出';
+
+  @override
+  String get dockerFilterPaused => '已暫停';
+
+  @override
+  String get dockerActionStart => '啟動';
+
+  @override
+  String get dockerActionStop => '停止';
+
+  @override
+  String get dockerActionRestart => '重啟';
+
+  @override
+  String get dockerActionPause => '暫停';
+
+  @override
+  String get dockerActionUnpause => '恢復';
+
+  @override
+  String get dockerActionRm => '刪除容器';
+
+  @override
+  String get dockerActionLogs => '記錄';
+
+  @override
+  String get dockerActionInspect => '詳細元數據';
+
+  @override
+  String get dockerLogsTitle => '容器標準輸出記錄';
+
+  @override
+  String get dockerInspectTitle => '容器 Inspect 詳情';
+
+  @override
+  String get dockerNoContainers => '伺服器上未找到 Docker 容器';
+
+  @override
+  String get dockerEmptyRunning => '暫無運行中的容器';
+
+  @override
+  String get dockerPorts => '端口映射';
+
+  @override
+  String get dockerCreated => '建立時間';
+
+  @override
+  String get dockerImage => '映像檔';
+
+  @override
+  String get systemTitle => '行程與系統服務';
+
+  @override
+  String get tabProcesses => '系統行程';
+
+  @override
+  String get tabServices => 'Systemd 服務';
+
+  @override
+  String get processSearchHint => '按行程名或 PID 檢索...';
+
+  @override
+  String get processPid => 'PID';
+
+  @override
+  String get processCpu => 'CPU %';
+
+  @override
+  String get processMem => '記憶體 %';
+
+  @override
+  String get processStat => '狀態';
+
+  @override
+  String get processCommand => '命令/行程';
+
+  @override
+  String get processTerminate => '終止 (SIGTERM)';
+
+  @override
+  String get processForceKill => '強制終止 (SIGKILL)';
+
+  @override
+  String get processKillForbidden => '拒絕終止系統根行程 (PID <= 1)';
+
+  @override
+  String get serviceSearchHint => '搜索系統服務名稱...';
+
+  @override
+  String get serviceName => '服務單元';
+
+  @override
+  String get serviceDescription => '描述';
+
+  @override
+  String get serviceStatus => '運行狀態';
+
+  @override
+  String get serviceStartup => '自啟狀態';
+
+  @override
+  String get serviceActionStart => '啟動服務';
+
+  @override
+  String get serviceActionStop => '停止服務';
+
+  @override
+  String get serviceActionRestart => '重啟服務';
+
+  @override
+  String get serviceActionReload => '重載配置';
+
+  @override
+  String get serviceActionEnable => '啟用自啟';
+
+  @override
+  String get serviceActionDisable => '停用自啟';
+
+  @override
+  String get serviceNoServices => '未找到相關 systemd 服務';
+
+  @override
+  String get riskDangerTitle => '高危操作風險確認';
+
+  @override
+  String get riskWarningTitle => '操作確認警示';
+
+  @override
+  String get riskSafeTitle => '確認執行操作';
+
+  @override
+  String get riskIrreversibleWarning => '該操作被識別為【高危風險】，執行後不可逆，可能引發系統瘫痪或嚴重數據損壞！';
+
+  @override
+  String get riskWarningDescription => '該操作可能中斷正在運行的線上業務或重啟系統服務，請確認後操作。';
+
+  @override
+  String get riskCommandPreview => '待執行指令預覽';
+
+  @override
+  String get riskConfirmButton => '確認繼續執行';
+
+  @override
+  String get riskCancelButton => '取消放棄';
+
+  @override
+  String get stateLoading => '正在獲取遠端數據...';
+
+  @override
+  String get stateOffline => '伺服器離線未連線';
+
+  @override
+  String get stateOfflineDesc => '請先連線目標伺服器，隨後即可實時查看指標與管理資源。';
+
+  @override
+  String get stateError => '執行操作時發生錯誤';
+
+  @override
+  String get stateRetry => '重試重新整理';
+
+  @override
+  String get stateEmpty => '暫無匹配數據';
+
+  @override
+  String get inspectorTitle => '檢查器';
+
+  @override
+  String get inspectorClose => '收起檢查器';
+
+  @override
+  String get inspectorDetails => '檢查器詳細資訊';
+
+  @override
+  String get selectServerTitle => '選擇目標伺服器';
+
+  @override
+  String get sshDisconnectedSuccess => '已中斷 SSH 連線';
+
+  @override
+  String get trustHostFingerprintTitle => '信任主機公鑰指紋？';
+
+  @override
+  String get trustAndConnect => '信任並連線';
+
+  @override
+  String get reject => '拒絕';
+
+  @override
+  String get confirmDeleteServerTitle => '刪除伺服器';
+
+  @override
+  String get noServersFound => '暫無已配置的伺服器';
+
+  @override
+  String get agentNotReadyError => '選中的 Agent 尚未就緒，請先檢查其運行環境與配置。';
+
+  @override
+  String get sshDisconnectedError => 'SSH 連線已中斷，請先連線伺服器後再使用 AI 運維功能。';
+
+  @override
+  String get noAgentAvailable => '無可用 Agent';
+
+  @override
+  String get noAgentAvailablePrompt => '當前無可用 Agent，請先配置或就緒 Agent。';
+
+  @override
+  String get noAgentAvailableHint => '請先選擇或配置可用 Agent 才能發送消息...';
+
+  @override
+  String get manageAgents => '管理 Agent';
+
+  @override
+  String get noReadyAgentsTitle => '暫無就緒的 Agent';
+
+  @override
+  String get noReadyAgentsDesc => '當前伺服器上尚無通過環境檢測的 Agent。';
+
+  @override
+  String get agentStatusReady => '已就緒';
+
+  @override
+  String get agentStatusChecking => '檢測中...';
+
+  @override
+  String get agentStatusCliMissing => '未檢測到安裝';
+
+  @override
+  String get agentStatusAcpMissing => '未檢測到 ACP 元件';
+
+  @override
+  String get agentStatusNotLoggedIn => '未登入';
+
+  @override
+  String get agentStatusError => '異常';
+
+  @override
+  String get agentStatusUnknown => '未檢測';
+
+  @override
+  String get agentActionInstall => '安裝';
+
+  @override
+  String get agentActionLogin => '登入';
+
+  @override
+  String get agentActionRefresh => '檢測狀態';
+
+  @override
+  String get noConfiguredAgents => '當前伺服器未配置任何 Agent';
+
+  @override
+  String get agentManagementTitle => 'Agent 管理';
+
+  @override
+  String get settingsAgentManagement => 'Agent 管理';
+
+  @override
+  String get settingsAgentManagementSubtitle => '配置、檢測與管理當前伺服器的 ACP Agent 環境';
+
+  @override
+  String get addAgentButton => '添加 Agent';
+
+  @override
+  String get noServerSelectedForAgents => '未選擇伺服器，請先在主介面選擇目標伺服器。';
+
+  @override
+  String get sshDisconnectedAgentWarning =>
+      '當前未連線 SSH，無法執行探測、安裝或登入操作。請先建立 SSH 連線。';
+
+  @override
+  String get noAgentsConfiguredTitle => '當前伺服器暫未添加任何 Agent';
+
+  @override
+  String get noAgentsConfiguredDesc =>
+      '您可以添加 Claude Code、Codex、OpenCode、AGY 或自定義 ACP Agent，在當前伺服器檢測通過後即可在 AI 運維中使用。';
+
+  @override
+  String get agentPresetLabel => '配置預設';
+
+  @override
+  String get agentPresetClaudeCode => 'Claude Code';
+
+  @override
+  String get agentPresetCodex => 'OpenAI Codex';
+
+  @override
+  String get agentPresetOpenCode => 'OpenCode ACP';
+
+  @override
+  String get agentPresetAgy => 'Antigravity AGY';
+
+  @override
+  String get agentPresetCustom => '自定義';
+
+  @override
+  String get agentNameLabel => 'Agent 名稱';
+
+  @override
+  String get agentNameHint => '例如：生產環境 Codex';
+
+  @override
+  String get agentDescriptionLabel => '說明';
+
+  @override
+  String get agentDescriptionHint => '簡要說明此 Agent 的用途或模型';
+
+  @override
+  String get agentCliCommandLabel => 'CLI 探測命令';
+
+  @override
+  String get agentCliCommandHint => '例如：claude, codex';
+
+  @override
+  String get agentAcpCommandLabel => 'ACP 啟動命令';
+
+  @override
+  String get agentAcpCommandHint => '例如：codex-acp --stdio';
+
+  @override
+  String get agentInstallCommandLabel => '安裝命令 (選填)';
+
+  @override
+  String get agentInstallCommandHint => '例如：npm install -g @openai/codex';
+
+  @override
+  String get agentLoginCheckCommandLabel => '登入檢查命令 (選填)';
+
+  @override
+  String get agentLoginCheckCommandHint => '例如：codex --version';
+
+  @override
+  String get agentLoginCommandLabel => '登入命令 (選填)';
+
+  @override
+  String get agentLoginCommandHint => '例如：codex login';
+
+  @override
+  String get agentSaveButton => '保存並檢測';
+
+  @override
+  String get agentCliRequired => 'CLI 探測命令不能為空';
+
+  @override
+  String get agentAcpRequired => 'ACP 啟動命令不能為空';
+
+  @override
+  String get agentNameRequired => 'Agent 名稱不能為空';
+
+  @override
+  String get confirmInstallAgentTitle => '確認執行安裝命令';
+
+  @override
+  String get confirmLoginAgentTitle => '確認執行登入命令';
+
+  @override
+  String get agentCommandRiskWarning =>
+      '此命令將在遠程伺服器上以當前登入使用者權限直接執行，可能修改系統環境或安裝軟體包。請確認命令安全後再繼續。';
+
+  @override
+  String get targetServerLabel => '目標伺服器';
+
+  @override
+  String get commandPreviewLabel => '命令預覽';
+
+  @override
+  String get executeButton => '執行';
+
+  @override
+  String get deleteAgentTitle => '刪除 Agent';
+
+  @override
+  String get deleteAgentConfirm => '刪除';
+
+  @override
+  String get agentStatusCheckingDesc => '正在遠程伺服器探測環境...';
+
+  @override
+  String get agentStatusInstalling => '正在遠程伺服器安裝依賴...';
+
+  @override
+  String get agentStatusLoggingIn => '正在遠程伺服器執行登入...';
+
+  @override
+  String get agentNoLoginCheckProvided => '未配置登入檢查命令';
+
+  @override
+  String get agentInstallPrompt => '未檢測到安裝，是否自動安裝？';
+
+  @override
+  String get agentActionAutoInstall => '自動安裝';
+
+  @override
+  String get agentLoginPrompt => '未登入，是否立即執行登入？';
+
+  @override
+  String get agentActionExecuteLogin => '立即登入';
+
+  @override
+  String get agentNeedsInstallOrReadyPrompt =>
+      '當前伺服器上的 Agent 尚未安裝或未就緒，請前往管理並完成環境安裝。';
+
+  @override
+  String get agentNeedsInstallOrReadyHint => '請先安裝並就緒 Agent 後開始對話...';
+
+  @override
+  String get agentAcpInstallPrompt => '未檢測到 ACP 元件，是否自動安裝？';
+
+  @override
+  String get agentInstallCommandAcpLabel => 'ACP 安裝命令（選填）';
+
+  @override
+  String get agentInstallCommandAcpHint =>
+      '例如：npm install -g @zed-industries/codex-acp';
+
+  @override
+  String get agentNoInstallCommand => '該 Agent 未配置安裝命令，請手動編輯';
+
+  @override
+  String get agentInstallLogTitle => '安裝輸出';
+
+  @override
+  String get agentInstallLogEmpty => '等待安裝輸出…';
+
+  @override
+  String get agentInstallLogTruncated => '輸出過長，僅顯示最近部分';
+
+  @override
+  String get agentAcpOptional => '選填；留空表示僅使用 CLI';
+
+  @override
+  String get acpStreaming => 'ACP 流式輸出中...';
+
+  @override
+  String get aiOpsAgentTitle => 'Valhalla AI 運維 Agent';
+
+  @override
+  String get aiOpsEmptySubtitle => '通過 SSH 通道上的 ACP stdio 連線';
+
+  @override
+  String get agentAuthRequiredTitle => '需要登入認證';
+
+  @override
+  String get agentAuthRequiredDesc => '該 Agent 需要先完成認證才能處理你的請求。';
+
+  @override
+  String get agentAuthMethodLabel => '認證方式';
+
+  @override
+  String get agentAuthNoMethodsNotice => 'Agent 未提供登入方式，請在伺服器上檢查其配置。';
+
+  @override
+  String get agentAuthProceedButton => '去登入';
+
+  @override
+  String get agentAuthCancelButton => '取消';
+
+  @override
+  String get agentAuthRetryHint => '完成登入後，請重新發送消息。';
+
+  @override
+  String get agentAuthRequiredError => '需要登入認證，請先完成登入。';
+
+  @override
+  String get agentLoginTerminalTitle => '交互式登入終端機';
+
+  @override
+  String get agentLoginTerminalSubtitle => '請在下方終端機中完成登入，按提示打開連結或輸入驗證碼。';
+
+  @override
+  String get agentLoginTerminalRunning => '登入命令正在終端機中運行...';
+
+  @override
+  String get agentLoginTerminalDisconnected => 'SSH 連線已中斷，登入工作階段被中斷。';
+
+  @override
+  String get agentLoginTerminalRetry => '重連終端機';
+
+  @override
+  String get agentLoginTerminalFinish => '完成並檢測';
+
+  @override
+  String get agentLoginTerminalClose => '關閉';
+
+  @override
+  String get agentLoginTerminalNoTtyHint => '若需要貼上驗證碼，可長按終端機貼上，或使用 PASTE 按鍵。';
+
+  @override
+  String get agentLoginTerminalUrlLabel => '檢測到登入連結';
+
+  @override
+  String get agentLoginTerminalUrlCopy => '複製連結';
+
+  @override
+  String get agentLoginTerminalUrlCopied => '登入連結已複製到剪貼板';
+
+  @override
+  String get agentLoginTerminalCopyAll => '複製全部輸出';
+
+  @override
+  String get agentLoginTerminalCopiedAll => '終端機輸出已複製到剪貼板';
+
+  @override
+  String get sshStatusReconnected => '連線已恢復';
+
+  @override
+  String get sshStatusDisconnectedRetrying => '連線已中斷，正在重試';
+
+  @override
+  String get sshStatusDisconnectedManual => '已中斷';
+
+  @override
+  String get sshStatusHostKeyChanged => '主機密鑰已變更 — 已拒絕連線';
+
+  @override
+  String get sshKeepAliveNotificationTitle => 'Valhalla 正在保持工作階段連線';
+
+  @override
+  String get terminalTmuxMissingNotice => '未檢測到 tmux — 斷線後工作階段無法保留';
+
+  @override
+  String get terminalTmuxSessionRestored => '終端機工作階段已恢復';
+
+  @override
+  String get moshSectionTitle => 'Mosh';
+
+  @override
+  String get moshEnable => '啟用 Mosh — 支援斷線漫游、切換網路不掉線的終端機工作階段';
+
+  @override
+  String get moshServerPathLabel => 'mosh-server 路徑';
+
+  @override
+  String get moshPortRangeLabel => 'UDP 端口範圍';
+
+  @override
+  String get moshNewSession => '新建 Mosh 工作階段';
+
+  @override
+  String get moshNotInstalled =>
+      '遠端未找到 mosh-server。請先安裝：sudo apt install mosh（Debian/Ubuntu）或 sudo dnf install mosh（Fedora/RHEL）。';
+
+  @override
+  String moshBootstrapFailed(String detail) {
+    return 'Mosh 工作階段啟動失敗：$detail';
+  }
+
+  @override
+  String get moshUdpTimeout => 'Mosh 連線超時 — 請檢查 UDP 流量是否被防火牆攔截。';
+
+  @override
+  String get moshSessionTag => 'mosh';
+
+  @override
+  String get acpSessionRestored => 'Agent 工作階段已恢復';
+
+  @override
+  String get acpSessionRestartNotice => 'Agent 工作階段已重啟 — 之前的上下文不可用';
+
+  @override
+  String get terminalTmuxInstallDialogTitle => '在遠端伺服器安裝 tmux？';
+
+  @override
+  String get terminalTmuxInstallDialogMessage =>
+      '遠端伺服器未檢測到 tmux。安裝 tmux 可在網路斷線後繼續保留終端機工作階段並支援重連恢復。是否現在安裝？';
+
+  @override
+  String get terminalTmuxInstallCommandLabel => '執行安裝命令：';
+
+  @override
+  String get terminalTmuxInstallUnsupported =>
+      '遠端伺服器未檢測到受支援的包管理器，無法自動安裝，請手動安裝 tmux。';
+
+  @override
+  String get terminalTmuxInstallFailed => 'tmux 安裝失敗，請檢查伺服器執行權限及網路環境。';
+
+  @override
+  String get terminalTmuxInstallDisconnected => 'SSH 連線已中斷，請重新連線伺服器後再安裝 tmux。';
+
+  @override
+  String get terminalTmuxInstallInstalling => '正在安裝 tmux...';
+
+  @override
+  String get terminalTmuxInstallConfirm => '確認安裝';
+
+  @override
+  String get terminalTmuxInstallSkip => '跳過（僅普通工作階段）';
+
+  @override
+  String get sftpDownload => '下載';
+
+  @override
+  String get sftpOpen => '打開';
+
+  @override
+  String get sftpUploadFailed => '上傳失敗，請檢查權限後重試。';
+
+  @override
+  String get sftpDownloadFailed => '下載失敗';
+
+  @override
+  String get sftpOpenUnsupported => '暫不支援打開該格式';
+
+  @override
+  String get sftpReadFailed => '讀取檔案失敗，請檢查權限後重試。';
+
+  @override
+  String get sftpTransferFailed => '檔案操作失敗，請重試。';
+
+  @override
+  String get sftpDownloadSuccess => '檔案下載成功';
+
+  @override
+  String get sftpUploading => '正在上傳...';
+
+  @override
+  String get sftpDownloading => '正在下載...';
+
+  @override
+  String get sftpUpDirectory => '返回上一層目錄';
+
+  @override
+  String get sftpShowHiddenFiles => '顯示隱藏檔案';
+
+  @override
+  String get sftpHideHiddenFiles => '隱藏點檔案';
+
+  @override
+  String get sftpHiddenPreferenceSaveFailed => '儲存隱藏檔案偏好失敗';
+
+  @override
+  String get sftpSymlink => '符號連結';
+
+  @override
+  String get sftpLinkTargetUnavailable => '符號連結目標失效或不存在';
+
+  @override
+  String get sftpLinkTargetPermissionDenied => '無權限存取符號連結目標';
+
+  @override
+  String get settingsAutoConnect => '啟動時自動連線';
+
+  @override
+  String get settingsAutoConnectFixed => '固定預設SSH';
+
+  @override
+  String get settingsAutoConnectFixedDesc => '每次啟動自動連線下方指定的伺服器';
+
+  @override
+  String get settingsAutoConnectLast => '記住最後一次連線';
+
+  @override
+  String get settingsAutoConnectLastDesc => '啟動時自動連線最近一次成功連線的伺服器';
+
+  @override
+  String get settingsAutoConnectPickServer => '指定伺服器';
+
+  @override
+  String get settingsAutoConnectNoServer => '尚未指定伺服器';
+
+  @override
+  String get sftpSort => '排序';
+
+  @override
+  String get sftpSortName => '名稱';
+
+  @override
+  String get sftpSortSize => '大小';
+
+  @override
+  String get sftpSortDate => '修改時間';
+
+  @override
+  String get sftpSortAscending => '升序';
+
+  @override
+  String get sftpSortDescending => '降序';
+
+  @override
+  String get themeQuickSwitch => '主題';
+
+  @override
+  String get transferList => '傳輸列表';
+
+  @override
+  String get transferEmpty => '暫無傳輸任務';
+
+  @override
+  String get transferUpload => '上傳';
+
+  @override
+  String get transferDownload => '下載';
+
+  @override
+  String get transferStatusQueued => '排隊中';
+
+  @override
+  String get transferStatusRunning => '傳輸中';
+
+  @override
+  String get transferStatusPaused => '已暫停';
+
+  @override
+  String get transferStatusCompleted => '已完成';
+
+  @override
+  String get transferStatusFailed => '失敗';
+
+  @override
+  String get transferStatusCanceled => '已取消';
+
+  @override
+  String get transferPause => '暫停';
+
+  @override
+  String get transferResume => '繼續';
+
+  @override
+  String get transferCancel => '取消';
+
+  @override
+  String get transferRemove => '刪除';
+
+  @override
+  String get transferClearFinished => '清除已完成';
+
+  @override
+  String get transferSizeUnknown => '大小未知';
+
+  @override
+  String get transferFailedUpload => '上傳失敗';
+
+  @override
+  String get transferFailedDownload => '下載失敗';
+
+  @override
+  String get stopGeneration => '停止';
+
+  @override
+  String get chatServerBindingRequired => '當前工作階段未綁定伺服器，請綁定到當前伺服器後繼續。';
+
+  @override
+  String get chatSessionUnboundNotice => '當前工作階段尚未綁定到任何伺服器。';
+
+  @override
+  String get bindServerAction => '綁定伺服器';
+
+  @override
+  String get bindServerDialogTitle => '綁定工作階段到伺服器';
+
+  @override
+  String get bindServerConfirmAction => '確認綁定';
+
+  @override
+  String get chatSessionIdentityMismatch =>
+      '當前伺服器或 Agent 與此工作階段綁定的身份不匹配，請切換到匹配的伺服器和 Agent 後繼續。';
+
+  @override
+  String get deleteSessionTitle => '刪除工作階段';
+
+  @override
+  String get deleteSessionConfirmAction => '刪除';
+
+  @override
+  String get shareAgentSessionsTitle => '共享 Agent 工作階段';
+
+  @override
+  String get shareAgentSessionsSubtitle => '在當前伺服器的不同 Agent 間共享工作階段';
+
+  @override
+  String get shareAgentSessionsEnabled => '已開啟 Agent 工作階段共享';
+
+  @override
+  String get shareAgentSessionsDisabled => '已關閉 Agent 工作階段共享';
+
+  @override
+  String get agentCliStatusInstalled => 'CLI: 已安裝';
+
+  @override
+  String get agentCliStatusMissing => 'CLI: 未安裝';
+
+  @override
+  String get agentCliStatusChecking => 'CLI: 檢測中...';
+
+  @override
+  String get agentCliStatusUnknown => 'CLI: 未知';
+
+  @override
+  String get agentCliStatusError => 'CLI: 異常';
+
+  @override
+  String get agentAcpStatusReady => 'ACP: 已就緒';
+
+  @override
+  String get agentAcpStatusMissing => 'ACP: 未安裝';
+
+  @override
+  String get agentAcpStatusChecking => 'ACP: 檢測中...';
+
+  @override
+  String get agentAcpStatusPendingCli => 'ACP: 待CLI安裝';
+
+  @override
+  String get agentAcpStatusUnknown => 'ACP: 未知';
+
+  @override
+  String get agentAcpStatusError => 'ACP: 異常';
+
+  @override
+  String get agentAcpStatusNa => 'ACP: 不適用';
+
+  @override
+  String get agentAuthStatusAuthenticated => 'Auth: 已登入';
+
+  @override
+  String get agentAuthStatusUnauthenticated => 'Auth: 未登入';
+
+  @override
+  String get agentAuthStatusUnknown => 'Auth: 未檢測';
+
+  @override
+  String get downloadNotificationsUnavailable => '系統下載通知未開啟或不可用，下載仍在後臺繼續。';
+
+  @override
+  String get downloadOpenFailed => '無法打開已下載的檔案。';
+
+  @override
+  String get dockerActionPending => '當前容器已有正在執行的操作';
+
+  @override
+  String get dockerNoLogs => '（無記錄）';
+
+  @override
+  String get serverReboot => '重啟';
+
+  @override
+  String get serverRebootDialogTitle => '確認重啟伺服器';
+
+  @override
+  String get serverRebootDialogMessage => '確定要重啟此伺服器嗎？所有活躍連線及後臺服務都將被終止。';
+
+  @override
+  String get serverRebootConfirmButton => '立即重啟';
+
+  @override
+  String get serverRebootPasswordTitle => '需要 Sudo 密碼';
+
+  @override
+  String get serverRebootPasswordMessage =>
+      '重啟伺服器需要 Root 權限。請輸入 Sudo 密碼（僅本次使用，不保存）：';
+
+  @override
+  String get serverRebootPasswordHint => 'Sudo 密碼';
+
+  @override
+  String get serverRebootSubmitting => '正在發送重啟命令...';
+
+  @override
+  String get serverRebootAccepted => '命令已受理，尚未驗證伺服器完成重啟。請待伺服器恢復後重新連線。';
+
+  @override
+  String get serverRebootVerified => '伺服器重啟已驗證完成，系統已恢復連線。';
+
+  @override
+  String get serverRebootUnknown => '重啟結果未知。命令已發送但未確認是否成功完成，請手動檢查連線。';
+
+  @override
+  String get serverRebootReconnect => '重新連線';
+
+  @override
+  String get serverRebootServerChanged => '目標伺服器已變更，重啟已取消';
+
+  @override
+  String get navCliChat => 'CLI 智能工作階段';
+
+  @override
+  String get cliChatTitle => 'CLI 智能工作階段';
+
+  @override
+  String get cliChatSubtitle => '遠端伺服器原生 CLI Agent 智能工作階段';
+
+  @override
+  String get cliSelectAgent => '選擇 Agent';
+
+  @override
+  String get cliNoAgentsConfigured => '當前伺服器未添加任何 Agent';
+
+  @override
+  String get cliAgentNeedsSetup => 'Agent 未安裝或未登入';
+
+  @override
+  String get cliManageAgentsGuide => '前往 Agent 管理配置';
+
+  @override
+  String get cliNewDraft => '新建草稿';
+
+  @override
+  String get cliNewDraftTooltip => '建立空白草稿（首次發送時建立遠程工作階段）';
+
+  @override
+  String get cliDeleteSessionTitle => '刪除遠端 CLI 原生工作階段歷史';
+
+  @override
+  String get cliDeleteSessionMessage => '此操作將從遠端永久刪除該 CLI 工作階段記錄，不可恢復。是否確認？';
+
+  @override
+  String get cliDeleteConfirmButton => '確認刪除';
+
+  @override
+  String get cliCannotDeleteTooltip => '當前不可刪除遠端工作階段';
+
+  @override
+  String get cliSessionsHeader => '工作階段列表';
+
+  @override
+  String get cliNoSessions => '暫無 CLI 工作階段記錄';
+
+  @override
+  String get cliFilterCwdHint => '按工作目錄過濾...';
+
+  @override
+  String get cliFilterCwdAction => '過濾';
+
+  @override
+  String get cliClearCwdAction => '清除';
+
+  @override
+  String get cliLoadMoreSessions => '載入更多工作階段';
+
+  @override
+  String get cliRefreshSessions => '重新整理';
+
+  @override
+  String get cliClaudeReadOnlyNotice => 'Claude 歷史記錄只讀，可在真實終端機中繼續工作階段。';
+
+  @override
+  String get cliContinueInTerminal => '在終端機中繼續';
+
+  @override
+  String get cliOpenTerminal => '打開終端機';
+
+  @override
+  String get cliCloseTerminal => '關閉終端機';
+
+  @override
+  String get cliTerminalRunning => '交互式 CLI 終端機';
+
+  @override
+  String get cliAgyTerminalOnlyNotice =>
+      '此 Agent 暫不支援結構化歷史同步，請使用 CLI 原生終端機進行交互與工作階段選擇。';
+
+  @override
+  String get cliInstallSdkTitle => '安裝官方 Claude History SDK';
+
+  @override
+  String get cliInstallSdkMessage =>
+      '遠端伺服器未檢測到官方 Claude Code History SDK。是否確認現在安裝？';
+
+  @override
+  String get cliInstallSdkAction => '確認安裝官方 SDK';
+
+  @override
+  String get cliApprovalsTitle => '待處理原生審批';
+
+  @override
+  String get cliApprovalDetails => '詳細參數';
+
+  @override
+  String get cliApprovalAllow => '允許';
+
+  @override
+  String get cliApprovalDecline => '拒絕';
+
+  @override
+  String get cliInputHint => '向 CLI Agent 發送指令或消息...';
+
+  @override
+  String get cliSend => '發送';
+
+  @override
+  String get cliStop => '停止';
+
+  @override
+  String get cliBusy => '操作正在進行中，請稍候...';
+
+  @override
+  String get cliDisconnected => 'SSH 未連線或已中斷';
+
+  @override
+  String get cliServerChanged => '目標伺服器已變更';
+
+  @override
+  String get cliTurnFailed => 'CLI 工作階段輪次執行失敗';
+
+  @override
+  String get cliUseTerminal => '需要交互式輸入，請打開終端機繼續';
+
+  @override
+  String get cliDeleteFailed => '刪除遠端工作階段失敗';
+
+  @override
+  String get cliDeleteUnsupported => '當前 CLI 不支援刪除遠端工作階段';
+
+  @override
+  String get cliOperationFailed => 'CLI 操作執行失敗';
+
+  @override
+  String get cliHistorySdkMissing => '遠端伺服器缺少官方歷史記錄 SDK';
+
+  @override
+  String get cliHistoryRuntimeMissing =>
+      'Claude 歷史解析需要伺服器具備 Node.js/npm 環境。請手動安裝 Node.js；您仍可使用終端機運行真實 CLI。';
+
+  @override
+  String get cliLoginRequired => 'Agent 未登入，請前往 Agent 管理完成登入。';
+
+  @override
+  String get cliNotInstalled => 'Agent CLI 未安裝，請前往 Agent 管理進行安裝。';
+
+  @override
+  String get cliVersionUnsupported => '當前 Agent CLI 版本不受支援，請前往 Agent 管理升級或重裝。';
+
+  @override
+  String get settingsNavigation => '導航設定';
+
+  @override
+  String get settingsNavigationDesc => '配置預設啟動頁與底部導航列';
+
+  @override
+  String get settingsStartupPage => '預設啟動頁';
+
+  @override
+  String get settingsStartupPageDesc => '應用打開時預設展示的頁面';
+
+  @override
+  String get settingsBottomNav => '底部導航列';
+
+  @override
+  String get settingsBottomNavDesc => '選擇在移動端底部導航列展示的頁面（支援 0 到 9 項）';
+
+  @override
+  String get settingsResetSuccess => '所有設定已恢復為預設值';
+
+  @override
+  String get metricsTrendSubtitle => '最近約 3 分鐘（最多 60 個採樣點）';
+
+  @override
+  String get metricsCurrent => '當前值';
+
+  @override
+  String get metricsPeak => '峰值';
+
+  @override
+  String get metricsValley => '谷值';
+
+  @override
+  String get metricsTrendWaiting => '正在收集採樣數據...';
+
+  @override
+  String get metricsTrendStopped => '採樣已停止（SSH 未連線）';
+
+  @override
+  String get dockerActionTerminal => '進入容器';
+
+  @override
+  String get dockerTerminalTitle => '容器終端機';
+
+  @override
+  String get dockerTerminalNotRunning => '容器未運行，無法進入終端機';
+
+  @override
+  String get setDefaultAgent => '設為預設';
+
+  @override
+  String get defaultBadge => '預設';
+
+  @override
+  String get isDefaultAgent => '預設 Agent';
+
+  @override
+  String get setAsDefaultAgent => '設為當前伺服器預設 Agent';
+
+  @override
+  String get agentGroupBasic => '基本資訊';
+
+  @override
+  String get agentGroupCommands => '執行命令';
+
+  @override
+  String get agentGroupAuth => '安裝與登入';
+
+  @override
+  String get agentPresetTitle => '預設模板';
+
+  @override
+  String get resourceProcessList => '行程資源佔用';
+
+  @override
+  String get resourceDiskScanning => '正在掃描磁碟頂層目錄，可能需要幾秒鐘...';
+
+  @override
+  String get resourceDiskScanPartial => '部分目錄因權限或超時未完全統計';
+
+  @override
+  String get resourceDiskDirectories => '頂層目錄佔用';
+
+  @override
+  String get resourceSortCpu => '按 CPU 排序';
+
+  @override
+  String get resourceSortMemory => '按記憶體排序';
+
+  @override
+  String get resourceRss => '物理常驻記憶體 (RSS)';
+
+  @override
+  String get resourceUsed => '已用';
+
+  @override
+  String get resourceAvailable => '可用';
+
+  @override
+  String get resourceTotal => '總量';
+
+  @override
+  String get settingsBottomNavOrderTitle => '已選專案排序（可拖動調整順序）';
+
+  @override
+  String get langSystem => '跟隨系統';
+
+  @override
+  String get serverFieldRequired => '此項必填';
+
+  @override
+  String get serverPortInvalid => '端口必須在 1 到 65535 之間';
+
+  @override
+  String get serverTestReachability => '測試連通性';
+
+  @override
+  String get serverSaveFailedGeneric => '保存伺服器失敗，請檢查配置後重試。';
+
+  @override
+  String get serverViewPrivateKey => '查看私鑰';
+
+  @override
+  String get serverHidePrivateKey => '隱藏私鑰';
+
+  @override
+  String get dockerBashFallbackNotice => '容器內 Bash 不可用，已自動回退至 Sh';
+
+  @override
+  String get dockerShellLabel => 'Shell';
+
+  @override
+  String get dockerShellBash => 'Bash';
+
+  @override
+  String get dockerShellSh => 'Sh';
+
+  @override
+  String get cliDraftWorkingDirLabel => '工作目錄';
+
+  @override
+  String get cliDefaultWorkingDir => '預設 (/)';
+
+  @override
+  String get cliPickWorkingDirTitle => '選擇遠端工作目錄';
+
+  @override
+  String get cliClearWorkingDir => '重置為預設';
+
+  @override
+  String get cliBrowseWorkingDir => '瀏覽';
+
+  @override
+  String get cliSelectCurrentDir => '選擇當前目錄';
+
+  @override
+  String get cliNavigateUp => '上一級';
+
+  @override
+  String get chatSessionsTooltip => '工作階段列表';
+
+  @override
+  String get hardwareSpecsTitle => '硬體與系統配置';
+
+  @override
+  String get hardwareCpu => '處理器';
+
+  @override
+  String get hardwareMemory => '物理記憶體';
+
+  @override
+  String get hardwareDisk => '根分區容量';
+
+  @override
+  String get hardwareDistribution => '操作系統';
+
+  @override
+  String get hardwareKernel => '核心版本';
+
+  @override
+  String get hardwareLoading => '正在載入硬體資訊...';
+
+  @override
+  String get hardwareUnavailable => '硬體資訊不可用';
+
+  @override
+  String get hardwareUnknown => '未知';
+
+  @override
+  String get systemInfoTitle => '系統資訊';
+
+  @override
+  String get systemInfoTapHint => '點擊查看字符畫';
+
+  @override
+  String get systemInfoHost => '主機';
+
+  @override
+  String get serverShutdown => '關機';
+
+  @override
+  String get serverShutdownDialogTitle => '確認關閉伺服器';
+
+  @override
+  String get serverShutdownDialogMessage =>
+      '確定要關閉該伺服器嗎？伺服器將徹底斷電關機，在人工物理開機前將無法透過網路遠端訪問。';
+
+  @override
+  String get serverShutdownConfirmButton => '立即關機';
+
+  @override
+  String get serverShutdownSubmitting => '正在發送關機指令...';
+
+  @override
+  String get serverShutdownAccepted => '關機命令已受理，尚未驗證關機完成。';
+
+  @override
+  String get serverShutdownUnknown => '關機結果未知：命令可能已發送但無法確認，請手動檢查；不會自動重試';
+
+  @override
+  String get serverShutdownPasswordTitle => '關機需要 Sudo 密碼';
+
+  @override
+  String get serverShutdownPasswordMessage =>
+      '關閉伺服器需要 Root 權限。請輸入 Sudo 密碼（僅本次使用，不保存）：';
+
+  @override
+  String get serverShutdownPasswordHint => 'Sudo 密碼';
+
+  @override
+  String get serverShutdownServerChanged => '目標伺服器已切換，關機已取消';
+
+  @override
+  String get metricsNetwork => '網路速率';
+
+  @override
+  String get networkModalTitle => '全網卡速率詳情';
+
+  @override
+  String get networkDownloadRate => '下行速率';
+
+  @override
+  String get networkUploadRate => '上行速率';
+
+  @override
+  String get networkTotalRx => '累計接收';
+
+  @override
+  String get networkTotalTx => '累計發送';
+
+  @override
+  String get networkPrimary => '預設路由';
+
+  @override
+  String get networkRatesEmpty => '未檢測到活躍的網路介面';
+
+  @override
+  String get networkWaitingSecondSample => '等待第二次採樣';
+
+  @override
+  String get networkUnavailable => '不可用';
+
+  @override
+  String get networkNoDefaultInterface => '未檢測到預設路由';
+
+  @override
+  String get selectThemeModeTitle => '選擇外觀模式';
+
+  @override
+  String get selectLanguageTitle => '選擇介面語言';
+
+  @override
+  String get selectStartupPageTitle => '選擇預設啟動頁';
+
+  @override
+  String get selectAutoConnectModeTitle => '選擇自動連線模式';
+
+  @override
+  String get accentColorDialogTitle => '自定義強調色';
+
+  @override
+  String get accentColorLightMode => '淺色模式';
+
+  @override
+  String get accentColorDarkMode => '深色模式';
+
+  @override
+  String get accentColorAmoledMode => 'AMOLED (極客黑)';
+
+  @override
+  String get accentColorPresets => '預設色塊';
+
+  @override
+  String get accentColorHsvPicker => '調色盤';
+
+  @override
+  String get accentColorHexCode => '十六進位色值';
+
+  @override
+  String get accentColorPreview => '實時預覽';
+
+  @override
+  String get accentColorSampleButton => '按鈕樣例';
+
+  @override
+  String get accentColorInvalidHex => '無效的十六進位格式（如 #10B981）';
+
+  @override
+  String get settingsDashboardQuickActions => '儀表盤快捷入口';
+
+  @override
+  String get settingsDashboardQuickActionsDesc =>
+      '配置在儀表盤上展示的快捷入口與順序。清除後將完全隱藏快捷入口區。';
+
+  @override
+  String get settingsDashboardQuickActionsEmpty => '快捷入口已隱藏（未選擇任何入口）';
+
+  @override
+  String get settingsDashboardQuickActionsOrderTitle => '拖拽調整快捷入口順序';
+
+  @override
+  String get settingsDashboardQuickActionsCandidates => '勾選啟用的快捷入口';
+
+  @override
+  String get terminalCopySelection => '複製';
+
+  @override
+  String get terminalSelectionCopied => '選區已複製到剪貼板';
+
+  @override
+  String get editAgent => '編輯 Agent';
+
+  @override
+  String get agentExecutionTarget => '執行位置';
+
+  @override
+  String get agentExecutionHost => '宿主機';
+
+  @override
+  String get agentExecutionDocker => 'Docker 容器';
+
+  @override
+  String get agentContainerBinding => '容器綁定方式';
+
+  @override
+  String get agentContainerBindingId => '按 ID 綁定';
+
+  @override
+  String get agentContainerBindingName => '按名稱綁定';
+
+  @override
+  String get agentContainerReference => '目標容器';
+
+  @override
+  String get agentContainerReferenceHint => '選擇或輸入容器 ID 或名稱';
+
+  @override
+  String get agentContainerRequired => 'Docker 容器執行位置必須指定目標容器';
+
+  @override
+  String get agentLoadingContainers => '正在查詢伺服器容器列表...';
+
+  @override
+  String get agentNoContainersFound => '當前伺服器未檢測到容器';
+
+  @override
+  String get agentContainerUser => '容器執行使用者（可選）';
+
+  @override
+  String get agentContainerUserHint => '例如 dev';
+
+  @override
+  String get agentContainerUserHelper =>
+      '留空使用映像檔預設使用者；例如 dev；支援 user、UID、user:group、UID:GID';
+
+  @override
+  String get agentContainerUserSelect => '選擇容器使用者';
+
+  @override
+  String get agentContainerUsersLoading => '正在獲取容器使用者...';
+
+  @override
+  String get agentContainerUsersEmpty => '無 passwd 使用者';
+
+  @override
+  String get agentViewDiagnosticLog => '查看檢測記錄';
+
+  @override
+  String get agentDiagnosticLogCopied => '檢測記錄已複製到剪貼板';
+
+  @override
+  String get agentDiagnosticLogCopy => '複製';
+
+  @override
+  String get agentDiagnosticLogClose => '關閉';
+
+  @override
+  String get settingsCliHistoryPageSize => 'CLI 歷史載入條數';
+
+  @override
+  String get settingsCliHistoryPageSizeDesc => '向上滑動載入更早歷史消息的單頁條數（5-100）';
+
+  @override
+  String get settingsCliHistoryPageSizeTitle => '選擇 CLI 歷史載入條數';
+
+  @override
+  String get cliLoadingOlderMessages => '正在載入更早歷史消息...';
+
+  @override
+  String get chatLoadOlderMessages => '載入更早消息';
+
+  @override
+  String get chatCommandsTooltip => '命令菜單';
+
+  @override
+  String get chatAttachTooltip => '添加附件';
+
+  @override
+  String get chatAttachImage => '添加本地圖片';
+
+  @override
+  String get chatAttachLocalText => '添加本地文本檔案';
+
+  @override
+  String get chatAttachRemoteText => '引入遠端文本檔案';
+
+  @override
+  String get chatAttachRemotePathTitle => '引入遠端文本檔案';
+
+  @override
+  String get chatAttachRemotePathHint => '/path/to/file.txt';
+
+  @override
+  String get chatAttachTooLarge => '檔案超出大小上限';
+
+  @override
+  String get chatUsageAndDiagnostics => '用量與診斷';
+
+  @override
+  String get chatWorkingDirTooltip => '草稿工作目錄';
+
+  @override
+  String get chatAttachFailed => '添加附件失敗';
+
+  @override
+  String get chatInvalidRemotePath => '無效的遠端檔案路徑（必須以 / 開頭）';
+
+  @override
+  String get chatRemoteReadFailed => '讀取遠端檔案失敗';
+
+  @override
+  String get chatInvalidDirPath => '無效的目錄路徑（必須以 / 開頭）';
+
+  @override
+  String get chatNoSubdirectories => '無子目錄';
+
+  @override
+  String get chatUsageTitle => 'Token 與費用用量';
+
+  @override
+  String get chatUsageUsed => '已消耗 Token';
+
+  @override
+  String get chatUsageSize => '上下文容量';
+
+  @override
+  String get chatUsageCost => '費用';
+
+  @override
+  String get chatDiagnosticsTitle => '診斷脫敏記錄';
+
+  @override
+  String get chatNoDiagnostics => '暫無診斷記錄';
+
+  @override
+  String get deleteSessionLocalOnlyNotice =>
+      '此操作僅從 Valhalla 本地移除工作階段記錄，不會刪除伺服器上的 Agent 原生歷史。';
+
+  @override
+  String get chatSearchSessionsHint => '搜索工作階段...';
+
+  @override
+  String get chatLoadMoreSessions => '載入更多工作階段';
+
+  @override
+  String get chatLoadingMoreSessions => '正在載入更多工作階段...';
+
+  @override
+  String get chatExportSession => '導出 Markdown';
+
+  @override
+  String get chatExportSuccess => '工作階段導出成功';
+
+  @override
+  String get chatExportFailed => '導出工作階段失敗';
+
+  @override
+  String get chatRemoteSessions => '遠端歷史';
+
+  @override
+  String get chatRemoteSessionsTitle => '遠端 Agent 工作階段';
+
+  @override
+  String get chatRemoteSessionsDesc => '查看並導入伺服器上 Agent 的原生歷史工作階段';
+
+  @override
+  String get chatRemoteSessionsEmpty => '未找到遠端工作階段';
+
+  @override
+  String get chatRemoteImporting => '正在導入遠端工作階段完整歷史...';
+
+  @override
+  String get chatRemoteImportFailed => '導入遠端工作階段失敗';
+
+  @override
+  String get chatStatusInterrupted => '已中斷';
+
+  @override
+  String get chatStatusFailed => '生成失敗';
+
+  @override
+  String get chatStatusAwaitingAuth => '等待 ACP 認證';
+
+  @override
+  String get chatShowFullOutput => '查看完整輸出';
+
+  @override
+  String get chatShowLessOutput => '收起長輸出';
+
+  @override
+  String get chatToolLocations => '關聯路徑';
+
+  @override
+  String cmdParamPlaceholder(String param) {
+    return '請輸入參數 $param 的值';
+  }
+
+  @override
+  String processTerminateSuccess(Object pid) {
+    return '已向行程 $pid 發送終止信號';
+  }
+
+  @override
+  String serviceActionSuccess(Object action, Object service) {
+    return '服務 $service 執行 $action 成功';
+  }
+
+  @override
+  String riskPatternMatched(Object pattern) {
+    return '觸發風險規則: $pattern';
+  }
+
+  @override
+  String stateExitCode(Object code) {
+    return '遠端登出碼: $code';
+  }
+
+  @override
+  String sshConnectedSuccess(Object server) {
+    return '已成功建立與 $server 的真實 SSH 連線！';
+  }
+
+  @override
+  String sshConnectionFailed(Object error) {
+    return 'SSH 連線失敗: $error';
+  }
+
+  @override
+  String trustHostFingerprintMessage(
+    Object fingerprint,
+    Object host,
+    Object type,
+  ) {
+    return '首次連線到 $host ($type)\n\nSHA-256 指紋:\n$fingerprint\n\n是否信任該指紋並繼續連線？';
+  }
+
+  @override
+  String enterPasswordTitle(Object server) {
+    return '輸入 $server 登入密碼';
+  }
+
+  @override
+  String confirmDeleteServerMessage(Object name) {
+    return '確定要刪除伺服器 \'$name\' 嗎？此操作不可撤銷。';
+  }
+
+  @override
+  String deleteAgentMessage(Object name) {
+    return '確定要刪除 Agent \'$name\' 嗎？這將移除該 Agent 在當前伺服器的配置和檢測狀態，但不會影響歷史工作階段記錄或 SSH 憑據。';
+  }
+
+  @override
+  String agentLastChecked(Object time) {
+    return '最近檢測：$time';
+  }
+
+  @override
+  String agentAuthPickerTitle(Object agent) {
+    return '選擇登入 $agent 的方式';
+  }
+
+  @override
+  String sshStatusReconnecting(Object n) {
+    return '正在重連…（第 $n 次）';
+  }
+
+  @override
+  String sshKeepAliveNotificationBody(Object n) {
+    return '$n 個活躍工作階段';
+  }
+
+  @override
+  String bindServerConfirmMessage(Object serverName) {
+    return '確認將此工作階段綁定到伺服器「$serverName」嗎？綁定後此工作階段將與該伺服器關聯。';
+  }
+
+  @override
+  String deleteSessionConfirmMessage(Object title) {
+    return '確認刪除工作階段「$title」嗎？刪除後將無法恢復。';
+  }
+
+  @override
+  String dockerActionSuccess(Object action, Object name) {
+    return '容器 $name 執行 $action 成功';
+  }
+
+  @override
+  String dockerActionFailed(Object error) {
+    return '操作失敗：$error';
+  }
+
+  @override
+  String serverRebootTarget(Object address, Object name) {
+    return '目標伺服器：$name（$address）';
+  }
+
+  @override
+  String serverRebootRunningTerminals(Object count) {
+    return '終端機工作階段：$count';
+  }
+
+  @override
+  String serverRebootRunningAgents(Object count) {
+    return 'Agent 工作階段：$count';
+  }
+
+  @override
+  String serverRebootRunningTransfers(Object count) {
+    return '檔案傳輸：$count';
+  }
+
+  @override
+  String serverRebootFailed(Object error) {
+    return '重啟失敗：$error';
+  }
+
+  @override
+  String cliDeleteFailedWithDetail(Object detail) {
+    return '刪除遠端工作階段失敗：$detail';
+  }
+
+  @override
+  String metricsTrendTitle(Object metric) {
+    return '$metric 實時趨勢';
+  }
+
+  @override
+  String metricsThresholdWarning(Object value) {
+    return '預警: $value';
+  }
+
+  @override
+  String metricsThresholdDanger(Object value) {
+    return '危險: $value';
+  }
+
+  @override
+  String metricsHistoryPoints(Object count) {
+    return '$count 個採樣點';
+  }
+
+  @override
+  String resourceUsageTitle(Object metric) {
+    return '$metric 當前資源佔用';
+  }
+
+  @override
+  String serverPortReachable(Object port) {
+    return 'TCP 端口 $port 可連通';
+  }
+
+  @override
+  String serverConnectionFailed(Object error) {
+    return '連線失敗：$error';
+  }
+
+  @override
+  String serverSaveFailed(Object error) {
+    return '保存伺服器失敗：$error';
+  }
+
+  @override
+  String hardwareCpuCores(Object cores) {
+    return '$cores 核';
+  }
+
+  @override
+  String serverShutdownFailed(Object error) {
+    return '關機失敗：$error';
+  }
+
+  @override
+  String networkInterface(Object name) {
+    return '網卡接口：$name';
+  }
+
+  @override
+  String agentContainersLoadFailed(Object error) {
+    return '獲取容器列表失敗：$error';
+  }
+
+  @override
+  String agentContainerUsersFailed(Object error) {
+    return '獲取容器使用者失敗：$error';
+  }
+
+  @override
+  String agentDiagnosticLogTitle(Object name) {
+    return '檢測記錄 - $name';
+  }
+
+  @override
+  String get agentDockerDetectionFailed => 'Docker/容器環境檢測失敗';
+
+  @override
+  String get chatCopiedAllMessages => '已複製全部消息';
+
+  @override
+  String get chatCopyAllMessages => '複製全部消息';
+
+  @override
+  String get cliModelAtCapacity => '當前模型容量已滿，請嘗試其他模型。';
+
+  @override
+  String get chatLaunchBlankDraft => '空白草稿';
+
+  @override
+  String get chatLaunchFixedSession => '固定工作階段';
+
+  @override
+  String get chatLaunchRememberLast => '記住上次工作階段';
+
+  @override
+  String get chatPermissionAskEveryTime => '每次詢問';
+
+  @override
+  String get chatPermissionAutoAllowAll => '自動允許全部操作';
+
+  @override
+  String get chatPermissionAutoAllowAllConfirmMessage =>
+      'Agent 將不再詢問並直接執行所有操作，是否繼續？';
+
+  @override
+  String get chatPermissionAutoAllowAllConfirmTitle => '確認自動允許全部操作？';
+
+  @override
+  String get chatPermissionAutoAllowSafe => '自動允許安全操作';
+
+  @override
+  String get chatRunSettingsDefault => '預設';
+
+  @override
+  String get chatRunSettingsInteractiveCli => '由交互式 CLI 管理';
+
+  @override
+  String get chatRunSettingsModel => '模型';
+
+  @override
+  String get chatRunSettingsPermissions => '操作權限';
+
+  @override
+  String get chatRunSettingsReasoning => '推理等級';
+
+  @override
+  String get chatRunSettingsTitle => '運行設定';
+
+  @override
+  String get cliActionInsertCommand => '插入命令';
+
+  @override
+  String get cliActionInsertFile => '插入檔案';
+
+  @override
+  String get cliActionInsertWorkdir => '插入工作目錄';
+
+  @override
+  String get cliComposerInsertAction => '插入';
+
+  @override
+  String cliOperationFailedWithDetail(String detail) {
+    return 'CLI 操作執行失敗：$detail';
+  }
+
+  @override
+  String get cliSelectCommandTitle => '選擇命令';
+
+  @override
+  String get defaultAgentTitle => '預設 Agent';
+
+  @override
+  String get insertSkills => '插入 Skills';
+
+  @override
+  String get isDefaultSession => '預設工作階段';
+
+  @override
+  String get sessionLaunchMode => '工作階段啟動方式';
+
+  @override
+  String get setAsDefaultSession => '設為預設工作階段';
+
+  @override
+  String get navNas => 'NAS 媒體庫';
+
+  @override
+  String get nasAddExcludePath => '添加排除路徑';
+
+  @override
+  String get nasAddIncludePath => '添加掃描路徑';
+
+  @override
+  String get nasCancelScan => '取消掃描';
+
+  @override
+  String get nasClearSearch => '清除搜索';
+
+  @override
+  String get nasConfigDialogTitle => '媒體庫設定';
+
+  @override
+  String get nasConfigure => '配置';
+
+  @override
+  String get nasConfigureScanDirs => '配置掃描資料夾';
+
+  @override
+  String get nasCreatePlaylist => '新建播放列表';
+
+  @override
+  String get nasEmptyConfigDesc => '請至少添加一個資料夾以開始構建媒體庫。';
+
+  @override
+  String get nasEmptyConfigTitle => '未配置掃描目錄';
+
+  @override
+  String get nasExcludePaths => '排除資料夾';
+
+  @override
+  String get nasExcludedBadge => '已排除';
+
+  @override
+  String get nasFilterImages => '圖片';
+
+  @override
+  String get nasFilterVideos => '視頻';
+
+  @override
+  String get nasIncludePaths => '掃描資料夾';
+
+  @override
+  String nasItemCount(Object value) {
+    return '$value 項';
+  }
+
+  @override
+  String nasLastScan(Object value) {
+    return '上次掃描：$value';
+  }
+
+  @override
+  String get nasLibrarySettings => '媒體庫設定';
+
+  @override
+  String nasMediaOpening(Object value) {
+    return '正在打開 $value…';
+  }
+
+  @override
+  String get nasMiniPlayer => '迷你播放器';
+
+  @override
+  String get nasNoExcludePaths => '沒有排除資料夾';
+
+  @override
+  String get nasNoFavorites => '暫無收藏';
+
+  @override
+  String get nasNoIncludePaths => '沒有掃描資料夾';
+
+  @override
+  String get nasNoIndexDesc => '請配置資料夾並執行掃描以建立媒體索引。';
+
+  @override
+  String get nasNoIndexTitle => '媒體庫暫無索引';
+
+  @override
+  String get nasNoPlaylists => '暫無播放列表';
+
+  @override
+  String get nasNoSearchResults => '沒有匹配的媒體';
+
+  @override
+  String get nasNotScanned => '尚未掃描';
+
+  @override
+  String get nasNowPlaying => '正在播放';
+
+  @override
+  String get nasOpenMethodPrompt => '請選擇打開此檔案的方式';
+
+  @override
+  String get nasOpenPolicyAsk => '每次詢問';
+
+  @override
+  String get nasOpenPolicyExternal => '使用其他應用打開';
+
+  @override
+  String get nasOpenPolicyInApp => '在應用內打開';
+
+  @override
+  String get nasOpeningPolicy => '預設打開方式';
+
+  @override
+  String get nasPlaylistName => '播放列表名稱';
+
+  @override
+  String get nasQuickStats => '媒體庫概覽';
+
+  @override
+  String get nasScan => '立即掃描';
+
+  @override
+  String get nasScanCancelled => '掃描已取消';
+
+  @override
+  String nasScanFailed(Object value) {
+    return '掃描失敗：$value';
+  }
+
+  @override
+  String get nasScanning => '正在掃描…';
+
+  @override
+  String get nasScopeBadge => '掃描範圍';
+
+  @override
+  String get nasSearchHint => '搜索媒體';
+
+  @override
+  String get nasStatMusic => '音頻數';
+
+  @override
+  String get nasStatPhotos => '照片數';
+
+  @override
+  String get nasStatTotal => '總計';
+
+  @override
+  String get nasStatVideos => '視頻數';
+
+  @override
+  String get nasTabFavorites => '收藏';
+
+  @override
+  String get nasTabFolders => '資料夾';
+
+  @override
+  String get nasTabHome => '首頁';
+
+  @override
+  String get nasTabMusic => '音樂';
+
+  @override
+  String get nasTabPhotos => '圖片';
+
+  @override
+  String get nasTabPlaylists => '播放列表';
+
+  @override
+  String get nasTabVideos => '視頻';
+
+  @override
+  String get nasSources => '媒體源';
+
+  @override
+  String get nasAddSource => '添加媒體源';
+
+  @override
+  String get nasEditSource => '編輯媒體源';
+
+  @override
+  String get nasRemoveSource => '移除媒體源';
+
+  @override
+  String nasRemoveSourceConfirm(Object name) {
+    return '確定要移除媒體源「$name」嗎？此操作不會刪除遠端檔案。';
+  }
+
+  @override
+  String get nasNoSources => '未配置媒體源';
+
+  @override
+  String get nasNoSourcesDesc =>
+      '添加 SFTP、SMB、WebDAV、Jellyfin 或 Emby 媒體源開始瀏覽媒體庫。';
+
+  @override
+  String get nasSourceType => '源類型';
+
+  @override
+  String get nasSourceName => '源名稱';
+
+  @override
+  String get nasProbe => '測試連線';
+
+  @override
+  String get nasProbeSuccess => '連線成功';
+
+  @override
+  String get nasProbeFailed => '連線測試失敗';
+
+  @override
+  String get nasEndpoint => '服務地址 / URL';
+
+  @override
+  String get nasRootPath => '根路徑';
+
+  @override
+  String get nasUsername => '使用者名';
+
+  @override
+  String get nasPassword => '密碼';
+
+  @override
+  String get nasDomain => '域名（可選）';
+
+  @override
+  String get nasAuthenticate => '登入認證';
+
+  @override
+  String get nasAuthSuccess => '認證成功';
+
+  @override
+  String get nasAuthFailed => '認證失敗';
+
+  @override
+  String get nasTabDownloads => '下載';
+
+  @override
+  String get nasNoDownloads => '暫無下載任務';
+
+  @override
+  String get nasDownloadQueued => '排隊中';
+
+  @override
+  String get nasDownloadDownloading => '下載中';
+
+  @override
+  String get nasDownloadCompleted => '已完成';
+
+  @override
+  String get nasDownloadCancelled => '已取消';
+
+  @override
+  String get nasDownloadFailed => '下載失敗';
+
+  @override
+  String get nasRetryDownload => '重試';
+
+  @override
+  String get nasCancelDownload => '取消';
+
+  @override
+  String get nasOpenDownloadedFile => '打開檔案';
+
+  @override
+  String get nasQueue => '播放隊列';
+
+  @override
+  String get nasNoQueue => '播放隊列為空';
+
+  @override
+  String get nasSpeed => '倍速';
+
+  @override
+  String get nasQuality => '畫質';
+
+  @override
+  String get nasAudioTrack => '音軌';
+
+  @override
+  String get nasSubtitleTrack => '字幕';
+
+  @override
+  String get nasRepeatOff => '不循環';
+
+  @override
+  String get nasRepeatAll => '列表循環';
+
+  @override
+  String get nasRepeatOne => '單曲循環';
+
+  @override
+  String get nasShuffle => '隨機播放';
+
+  @override
+  String get nasCast => '投屏';
+
+  @override
+  String get nasCastUnavailable => '未發現可投屏設備';
+
+  @override
+  String get nasSlideshow => '幻燈片';
+
+  @override
+  String get nasByFolder => '資料夾';
+
+  @override
+  String get nasByArtist => '藝術家';
+
+  @override
+  String get nasByAlbum => '專輯';
+
+  @override
+  String get nasAllTracks => '全部曲目';
+
+  @override
+  String get nasPlayAll => '播放全部';
+
+  @override
+  String get nasPreviousPage => '上一頁';
+
+  @override
+  String get nasNextPage => '下一頁';
+
+  @override
+  String get nasClearScope => '返回全部';
+
+  @override
+  String get nasRenamePlaylist => '重命名播放列表';
+
+  @override
+  String get nasRemoveFromPlaylist => '從播放列表中移除';
+
+  @override
+  String get nasMoveUp => '上移';
+
+  @override
+  String get nasMoveDown => '下移';
+
+  @override
+  String get nasSshServer => 'SSH 伺服器';
+
+  @override
+  String get nasSelectSshServer => '選擇已保存的 SSH 伺服器';
+
+  @override
+  String get nasQualityOriginal => '原畫';
+
+  @override
+  String get nasQualityAuto => '自動';
+
+  @override
+  String get nasQuality4Mbps => '4 Mbps';
+
+  @override
+  String get nasQuality10Mbps => '10 Mbps';
+
+  @override
+  String get nasQuality20Mbps => '20 Mbps';
+
+  @override
+  String get nasCastDevices => '可用 DLNA 設備';
+
+  @override
+  String get nasCastDiscovering => '正在搜索 DLNA 設備...';
+
+  @override
+  String get nasCastRelayingNotice => '正在通過前臺應用中繼流媒體，請保持應用處於前臺。';
+
+  @override
+  String get nasCastStop => '停止投屏';
+
+  @override
+  String get nasCastVolume => '音量';
+
+  @override
+  String get nasCastRetry => '重試搜索';
+
+  @override
+  String get nasInstallTitle => '部署 NAS 媒體服務';
+
+  @override
+  String get nasInstallProduct => '服務產品';
+
+  @override
+  String get nasInstallMediaPath => '媒體目錄（唯讀掛載）';
+
+  @override
+  String get nasInstallDataRoot => '數據與配置目錄';
+
+  @override
+  String get nasInstallPort => '端口';
+
+  @override
+  String get nasInstallBindAddress => '綁定監聽地址';
+
+  @override
+  String get nasInstallWebdavUser => 'WebDAV 使用者名';
+
+  @override
+  String get nasInstallWebdavPassword => 'WebDAV 密碼（至少12位）';
+
+  @override
+  String get nasInstallPreparePlan => '生成並審核部署方案';
+
+  @override
+  String get nasInstallPlanTitle => '技術方案審核與確認';
+
+  @override
+  String get nasInstallBlockersTitle => '阻礙部署的問題';
+
+  @override
+  String get nasInstallConfirmDeploy => '確認並開始部署';
+
+  @override
+  String get nasInstallDeploying => '正在部署容器...';
+
+  @override
+  String get nasInstallSuccess => '部署成功';
+
+  @override
+  String get nasInstallSuccessDesc =>
+      '服務已成功啟動運行。在將其添加為媒體源之前，請先在瀏覽器中完成初始向導與帳號建立。';
+
+  @override
+  String get nasInstallContainerId => '容器 ID';
+
+  @override
+  String get nasInstallEndpoint => '訪問位址';
+
+  @override
+  String get nasUseSshTunnel => '使用 SSH 隧道';
+
+  @override
+  String get nasUseSshTunnelDesc =>
+      '通過已保存的 SSH 伺服器轉發內網服務（如 http://127.0.0.1:8096）';
+
+  @override
+  String get nasSshTunnelHint => '地址需為 SSH 伺服器端可訪問位址，如 http://127.0.0.1:8096';
+
+  @override
+  String get nasKeepEmptyPassword => '留空則保留現有密碼或 Token';
+
+  @override
+  String get nasSourceNameRequired => '請輸入源名稱';
+
+  @override
+  String get nasInvalidEndpoint => '無效的端點位址或協議';
+
+  @override
+  String get nasSourceUnreachable => '無法連線媒體源';
+
+  @override
+  String get nasSshTunnelFailed => 'SSH 隧道連線失敗';
+
+  @override
+  String get nasOperationFailed => '操作失敗';
+
+  @override
+  String get nasInstallStepCreateDir => '建立私有隔離目錄';
+
+  @override
+  String get nasInstallStepWriteCompose => '生成 docker-compose.json 配置';
+
+  @override
+  String get nasInstallStepWriteCreds => '安全寫入私有認證憑據';
+
+  @override
+  String get nasInstallStepPullImage => '拉取校驗的指定容器映像檔';
+
+  @override
+  String get nasInstallStepStartService => '啟動 Compose 容器服務';
+
+  @override
+  String get nasInstallStepCheckHttp => '驗證服務 HTTP 健康狀態';
+
+  @override
+  String get nasInstallBlockerDocker => '目標伺服器需安裝 Docker Engine';
+
+  @override
+  String get nasInstallBlockerCompose => '目標伺服器需安裝 Docker Compose 外掛程式';
+
+  @override
+  String get nasInstallBlockerIdentity => '無法驗證目標伺服器機器身份';
+
+  @override
+  String get nasInstallBlockerTools => '目標伺服器缺少必要工具 (curl, ss, realpath)';
+
+  @override
+  String get nasInstallBlockerMedia => '媒體目錄不存在或無讀取權限';
+
+  @override
+  String get nasInstallBlockerParent => '數據根目錄的父目錄無寫入權限';
+
+  @override
+  String get nasInstallBlockerOverlap => '媒體目錄與數據目錄不能重疊';
+
+  @override
+  String get nasInstallBlockerCollision => '目標數據目錄已存在或為軟連結';
+
+  @override
+  String get nasInstallBlockerPort => '指定端口已被目標伺服器上的服務佔用';
+
+  @override
+  String get nasInstallBlockerContainer => '同名容器專案已存在';
+
+  @override
+  String get nasInstallBlockerImage => '映像檔驗證失敗，請檢查映像檔名稱、網路連線和伺服器架構後重試。';
+
+  @override
+  String get nasInstallGuidanceTunnel => '綁定 127.0.0.1 需透過 SSH 隧道訪問';
+
+  @override
+  String get nasInstallGuidanceTls => '公開網路綁定建議前置 TLS 反向代理';
+
+  @override
+  String get nasInstallGuidanceSetup => '初次啟動請在瀏覽器中完成管理員帳號初始化';
+
+  @override
+  String get nasInstallGuidanceReadOnly => '媒體目錄以唯讀方式掛載，確保數據安全';
+
+  @override
+  String get nasInstallGuidancePreserved => '部署失敗將保留數據目錄以便排查';
+
+  @override
+  String get nasDownloadCompletedWithOpenError => '已下載（外部應用打開失敗）';
+
+  @override
+  String get nasRetryOpen => '重試打開';
+
+  @override
+  String get nasExternalOpenFailed => '無法在外部應用中打開檔案';
+
+  @override
+  String get nasTitle => 'NAS 媒體中心';
+
+  @override
+  String get nasLoadMoreGroups => '載入更多分組';
+
+  @override
+  String get nasMetadataEnriching => '正在解析音樂標籤...';
+
+  @override
+  String nasMetadataEnrichingWithCount(int count) {
+    return '正在解析音樂標籤（已處理 $count 首）...';
+  }
+
+  @override
+  String nasDownloading(String value) {
+    return '正在下載 $value…';
+  }
+
+  @override
+  String get nasSubtitleNone => '無';
+
+  @override
+  String get nasLibraryId => '媒體庫 ID';
+
+  @override
+  String get nasLibraryIdHint => '預設全庫（/），或輸入指定庫 ID';
+
+  @override
+  String nasScanPathRelativeHint(String value) {
+    return '相對於源根目錄（$value）';
+  }
+
+  @override
+  String get nasSourceChangedError => '源已切換，已取消保存';
+
+  @override
+  String get nasInvalidLibraryId => '媒體庫 ID 無效';
+
+  @override
+  String get startupFailed => '應用啟動失敗';
+
+  @override
+  String get startupFailedDesc => '啟動過程中發生異常。您可以重試啟動或導出診斷記錄。';
+
+  @override
+  String get retryStartup => '重試啟動';
+
+  @override
+  String get viewDiagnostics => '查看診斷記錄';
+
+  @override
+  String get exportDiagnostics => '導出診斷記錄';
+
+  @override
+  String diagnosticsExportSuccess(String path) {
+    return '診斷記錄已導出至 $path';
+  }
+
+  @override
+  String get diagnosticsExportFailed => '導出診斷記錄失敗';
+
+  @override
+  String get diagnosticsTitle => '應用診斷';
+
+  @override
+  String get settingsDiagnostics => '診斷與記錄';
+
+  @override
+  String get settingsDiagnosticsDesc => '查看並導出本地脫敏應用記錄';
+
+  @override
+  String get diagnosticsEmpty => '暫無診斷記錄';
+
+  @override
+  String diagnosticsStorageError(String error) {
+    return '診斷記錄儲存異常：$error';
+  }
+
+  @override
+  String diagnosticsIncidentNotice(String category) {
+    return '系統已記錄異常事件：$category';
+  }
+
+  @override
+  String get diagnosticsRefresh => '重新整理記錄';
+
+  @override
+  String get nasInstallTaskTitle => '部署任務';
+
+  @override
+  String get nasInstallStagePreflight => '前置檢查';
+
+  @override
+  String get nasInstallStageReview => '方案審查';
+
+  @override
+  String get nasInstallStageWriting => '寫入配置';
+
+  @override
+  String get nasInstallStagePulling => '拉取映像檔';
+
+  @override
+  String get nasInstallStageStarting => '啟動容器';
+
+  @override
+  String get nasInstallStageHealth => '健康檢查';
+
+  @override
+  String get nasInstallStageCleanup => '清理殘留';
+
+  @override
+  String get nasInstallStageSucceeded => '部署成功';
+
+  @override
+  String get nasInstallStageFailed => '部署失敗';
+
+  @override
+  String get nasInstallStageCancelled => '部署已取消';
+
+  @override
+  String get nasInstallStageNeedsInspection => '需要人工復檢';
+
+  @override
+  String get nasInstallStageReconciling => '對齊狀態中';
+
+  @override
+  String get nasInstallCancel => '取消部署';
+
+  @override
+  String get nasInstallReconcile => '復檢對齊狀態';
+
+  @override
+  String get nasInstallServerNotFound => '選中的伺服器不存在';
+
+  @override
+  String get nasInstallPortRangeError => '端口範圍必須為 1 至 65535';
+
+  @override
+  String nasInstallElapsedTime(String time) {
+    return '已耗時：$time';
+  }
+
+  @override
+  String get nasInstallLogTail => '最近記錄';
+
+  @override
+  String get nasInstallCleanupCompleted => '復原清理已完成';
+
+  @override
+  String get nasInstallCleanupIncomplete => '復原清理未完全完成';
+
+  @override
+  String get nasInstallNewDeployment => '新建部署';
+
+  @override
+  String get nasInstallBackEdit => '返回 / 修改配置';
+
+  @override
+  String get nasInstallClose => '關閉';
+
+  @override
+  String get nasInstallMediaPathHint => '主機上唯讀掛載路徑（例如 /mnt/media）';
+
+  @override
+  String get nasInstallDataRootHint => '私有數據與配置目錄（不能已存在）';
+
+  @override
+  String get nasInstallBindAddressHint => '127.0.0.1 配合隧道，0.0.0.0 用於局域網';
+
+  @override
+  String get nasInstallWebdavPasswordHint => '至少需要 12 個字元';
+
+  @override
+  String get nasInstallTargetServer => '目標伺服器';
+
+  @override
+  String get nasInstallTargetImage => '目標映像檔';
+
+  @override
+  String get nasInstallContainerName => '容器名稱';
+
+  @override
+  String get nasInstallBindAndPort => '綁定位址與端口';
+
+  @override
+  String get nasInstallComposePreview => 'docker-compose.json 預覽';
+
+  @override
+  String get nasInstallPlannedSteps => '計畫執行步驟';
+
+  @override
+  String get nasInstallGuidanceNotes => '部署說明與建議';
+
+  @override
+  String get nasInstallNoLogsYet => '暫無記錄';
+
+  @override
+  String get sftpPreviewTooLarge => '檔案大小超過 1 MiB 預覽上限，請下載後使用外部應用打開。';
+
+  @override
+  String get sftpSaveFailed => '保存檔案失敗，請檢查寫入權限或網路連線。';
+
+  @override
+  String get sftpSaving => '正在保存...';
+
+  @override
+  String get nasInstallBlockerConnectionChanged => '目標伺服器連線配置已變更，繼續前請檢查遠端狀態';
+
+  @override
+  String get nasInstallBlockerCancelled => '部署已由使用者取消。請檢查配置並在需要時重試。';
+
+  @override
+  String get nasInstallBlockerInspectFailed => '核驗遠程容器失敗。請檢查伺服器網路連線或手動排查。';
+
+  @override
+  String get nasInstallBlockerDeadlineExceeded => '部署步驟超時。請檢查伺服器負載或網路連線後重試。';
+
+  @override
+  String get nasInstallBlockerInterrupted => '部署已中斷；繼續前請檢查遠端狀態。';
+
+  @override
+  String get nasInstallBlockerHealthTimeout =>
+      '服務已啟動但 HTTP 健康檢查超時。請查看服務記錄或確認端口可用性。';
+
+  @override
+  String get nasInstallBlockerReconciliationFailed =>
+      '狀態對齊失敗。請手動檢查遠程容器狀態或重新部署。';
+
+  @override
+  String get nasInstallBlockerRemoteInspectionRequired =>
+      '遠程容器狀態不明確。需要手動檢查並執行狀態對齊。';
+
+  @override
+  String get nasInstallBlockerServiceExited => '容器行程意外登出。請查看記錄排查配置或權限問題。';
+
+  @override
+  String get nasInstallBlockerWriteFailed => '在目標伺服器寫入部署檔案失敗。請檢查磁碟空間與目錄權限。';
+
+  @override
+  String get nasInstallBlockerPlanStale => '部署方案已過期。請重新執行預檢。';
+
+  @override
+  String get nasInstallBlockerOwnershipChanged => '現有容器非本應用建立。請手動檢查以防止覆蓋其他服務。';
+
+  @override
+  String get nasInstallBlockerSshRequired => '需要先建立與目標伺服器的 SSH 連線。';
+
+  @override
+  String get nasInstallBlockerReconciliationRequired =>
+      '遠程狀態與本地不一致。請先執行狀態對齊後再繼續。';
+
+  @override
+  String get nasInstallBlockerFailed => '部署過程中發生錯誤。請查看記錄並重試。';
+
+  @override
+  String get nasInstallBlockerBusy => '已有安裝任務正在運行，請查看當前任務進度。';
+
+  @override
+  String get nasInstallBlockerStateSaveFailed => '保存部署狀態失敗，請檢查本機儲存空間與檔案讀寫權限。';
+
+  @override
+  String get nasInstallBlockerCommandResultUnknown =>
+      '遠端執行結果未知，請進行只讀核驗，切勿直接重試安裝。';
+
+  @override
+  String get nasInstallBlockerPreflightFailed => '部署前環境預檢失敗，請先排除阻斷項後再繼續。';
+
+  @override
+  String serverDeleteFailed(String error) {
+    return '刪除伺服器失敗：$error';
+  }
+
+  @override
+  String get chatRunSettingsAgentMode => 'Agent 模式';
+
+  @override
+  String get chatRunSettingsApprovalPolicy => '本地審批策略';
+
+  @override
+  String get chatRunSettingsExtraSettings => '附加設定';
+
+  @override
+  String get chatPermissionAutoAllowSafeDesc => '自動放行已知安全操作；無法確定操作安全性時仍會提示確認。';
+
+  @override
+  String chatRunSettingsSaveFailed(String error) {
+    return '應用運行配置失敗：$error';
+  }
+
+  @override
+  String get chatMessageCopied => '消息已複製到剪貼板';
+
+  @override
+  String get copy => '複製';
+
+  @override
+  String get rename => '重命名';
+
+  @override
+  String get refresh => '重新整理';
+
+  @override
+  String get sessionTitle => '工作階段標題';
+
+  @override
+  String get chatSettingsStale => '已過期';
+
+  @override
+  String get chatSettingsAvailableAfterFirstMessage => '首次發送後可用';
+
+  @override
+  String get chatReimportAsCopy => '重新導入為副本';
+
+  @override
+  String get chatSearchCommandsHint => '搜索命令或技能...';
+
+  @override
+  String get chatCommandsTab => '命令';
+
+  @override
+  String get chatSkillsTab => '技能';
+
+  @override
+  String get chatAccountAndQuotaTitle => '帳號與额度';
+
+  @override
+  String get chatAccountSectionTitle => '帳號資訊';
+
+  @override
+  String get chatAccountNotProvided => '未上報帳號詳情';
+
+  @override
+  String get chatAccountKind => '類型';
+
+  @override
+  String get chatAccountLabel => '標識';
+
+  @override
+  String get chatAccountPlan => '訂閱計畫';
+
+  @override
+  String get chatAccountEmail => '郵箱';
+
+  @override
+  String get chatAccountUpdatedAt => '更新時間';
+
+  @override
+  String get chatQuotaSectionTitle => '额度與狀態';
+
+  @override
+  String get chatStatusSourceNote => 'Agent /status 原文';
+
+  @override
+  String get chatStatusNotQueried => '尚未查詢 /status 狀態';
+
+  @override
+  String get chatQueryStatusAction => '查詢狀態 (/status)';
+
+  @override
+  String get chatQueryStatusUnavailable => '當前工作階段無法查詢狀態';
+
+  @override
+  String get chatAttachmentMissing => '附件檔案缺失或無法讀取';
+
+  @override
+  String get chatViewModeList => '列表';
+
+  @override
+  String get chatViewModeCards => '卡片';
+
+  @override
+  String get chatViewModeGrid => '圖庫';
+
+  @override
+  String get chatRemoteBrowserTitle => '遠端工作區';
+
+  @override
+  String get chatSelectDirectory => '選擇目錄';
+
+  @override
+  String chatAttachSelectedFiles(int count) {
+    return '添加所選 ($count)';
+  }
+
+  @override
+  String get chatNoFilesFound => '未找到檔案';
+
+  @override
+  String get chatRootDirectory => '根目錄';
+
+  @override
+  String get chatSelectThisDirectory => '使用此目錄';
+
+  @override
+  String get chatAgentVersion => 'Agent 版本';
+
+  @override
+  String get chatParentDirectory => '上一級目錄';
+
+  @override
+  String get chatSearchFilesHint => '搜索檔案...';
+
+  @override
+  String get chatCommandsEmpty => '當前 Agent 未提供斜杠命令';
+
+  @override
+  String get chatSkillsEmpty => '當前 Agent 未提供技能';
+
+  @override
+  String get chatFileUnsupported => '不支援此類型檔案作為附件';
+
+  @override
+  String get chatStatusNotProvided => '當前 Agent 未提供狀態查詢';
+
+  @override
+  String get sessionRecoveryReconnecting => '重連中...';
+
+  @override
+  String get sessionRecoverySyncing => '同步輸出...';
+
+  @override
+  String get sessionRecoveryIncomplete => '部分輸出無法恢復';
+
+  @override
+  String get sessionRecoveryFailed => '恢復失敗';
+
+  @override
+  String get sessionRecoveryRetry => '重試';
+
+  @override
+  String get dashboardUpdatesPaused => '數據暫停更新';
+
+  @override
+  String get chatSettingsIndependentModelUnavailable =>
+      '當前 CLI 模型目錄不可用。模型可能受快取或 CLI 版本限制，您也可以選擇手動輸入模型名稱。';
+
+  @override
+  String get chatSettingsModelCatalogNote =>
+      '模型列表透過現有 CLI 登入向 app-server 查詢，可能存在快取或受版本限制；您可以手動重新整理或切換至手動輸入。';
+
+  @override
+  String get chatModelCatalogError403 =>
+      'CLI模型查詢被拒絕(403)。請檢查CLI登入和服務連通性，或手動輸入模型名。';
+
+  @override
+  String chatModelCatalogErrorGeneric(String error) {
+    return '模型目錄異常：$error';
+  }
+
+  @override
+  String get chatModelAuthorizeButton => '授權獨立模型目錄';
+
+  @override
+  String get chatModelAuthorizeConfirmTitle => '確認獨立模型授權';
+
+  @override
+  String get chatModelAuthorizeConfirmMessage =>
+      '將在目標主機/容器上發起模型目錄的瀏覽器授權流程。您既有的 Codex 登入和終端機工作階段將保持完全不變。是否繼續？';
+
+  @override
+  String get chatModelAuthorizing => '正在通過瀏覽器授權...';
+
+  @override
+  String get chatModelAuthorizeCancel => '取消授權';
+
+  @override
+  String get chatCommandsFirstTurnNote =>
+      '斜杠命令將在工作階段初始化後由 Agent 運行時發布，無需先完成普通對話；草稿不會自動建立工作階段。';
+
+  @override
+  String get chatCommandsClientActionRunSettings => '運行設定';
+
+  @override
+  String get chatCommandsClientActionWorkingDirectory => '工作目錄';
+
+  @override
+  String get chatCommandsClientActionsSection => '本地快捷操作';
+
+  @override
+  String get chatRunSettingsModelSourceCatalog => '模型列表';
+
+  @override
+  String get chatRunSettingsModelSourceCustom => '手動輸入';
+
+  @override
+  String get chatRunSettingsCustomModelHint => '輸入模型ID';
+
+  @override
+  String get chatRunSettingsCustomModelNotice =>
+      '手動輸入的模型名稱未經驗證，將直接傳給 Agent 運行時，若不受支援可能會被拒絕。';
+
+  @override
+  String get chatRunSettingsCustomModelEmptyError => '模型名稱不能為空';
+
+  @override
+  String get chatRunSettingsCustomModelInvalidError =>
+      '模型名稱不能包含空格或控制字元，且長度不能超過 256 字元';
+
+  @override
+  String get chatCommandsDraftPreviewNotice =>
+      '當前適配器版本驗證的兼容命令預覽。選擇僅將命令插入輸入框，發送時將按需初始化工作階段並直接執行。';
+
+  @override
+  String get chatCommandsDiscoveryFailed => '獲取命令與技能失敗';
+
+  @override
+  String get chatAuthWaitingForBrowser => '等待在瀏覽器中完成授權...';
+
+  @override
+  String get chatAuthBrowserLaunchFailed => '無法打開外部瀏覽器。請重新打開或複製下方的授權連結。';
+
+  @override
+  String get chatAuthReopenBrowser => '重新打開瀏覽器';
+
+  @override
+  String get chatAuthCopyLink => '複製連結';
+
+  @override
+  String get chatAuthManualCallback => '手動回調';
+
+  @override
+  String get chatAuthManualCallbackTitle => '輸入授權回調 URL';
+
+  @override
+  String get chatAuthManualCallbackDesc =>
+      '貼上瀏覽器中帶有 code 和 state 的完整重定向 URL（http://127.0.0.1:端口/...?code=...&state=...）以完成授權，不支援裸授權碼。';
+
+  @override
+  String get chatAuthCallbackInputLabel => '回調 URL';
+
+  @override
+  String get chatAuthCallbackInputHint =>
+      'http://127.0.0.1:端口/...?code=...&state=...';
+
+  @override
+  String get chatAuthCallbackInvalidError => '回調 URL 格式無效或傳遞失敗';
+
+  @override
+  String get agentAuthAgYNotice => 'Antigravity ACP 需要官方帳號授權，與終端機 CLI 登入相互獨立。';
+
+  @override
+  String get chatAuthDiscoveryPrompt => '此輪對話需要 ACP 認證。重新連線並請求授權以繼續。';
+
+  @override
+  String get chatRequestAuthButton => '請求認證';
+
+  @override
+  String get agentActionAcpLogin => 'ACP 登入';
+
+  @override
+  String get agentActionCliLogin => 'CLI 登入';
+
+  @override
+  String get agentAgyAcpSignInRequired => 'ACP 憑據缺失（需 ACP 登入）';
+
+  @override
+  String get agentAgyAcpCredentialsSaved => 'ACP 憑據已保存（未驗證）';
+
+  @override
+  String get chatAuthMethodUnavailable => '所選認證方式不可用。';
+
+  @override
+  String get chatAuthConnectionExpired => '認證連線已過期，請重試。';
+
+  @override
+  String get chatAuthCallbackDeliveryFailed => '向伺服器傳遞授權回調失敗。';
+
+  @override
+  String get agentTargetChangedNotice => '目標伺服器已變更，請在當前伺服器上重新打開 Agent 管理。';
+
+  @override
+  String get agentAgyAuthCheckUnavailable => 'Antigravity 認證檢測不可用';
+
+  @override
+  String get agentAgyAuthCheckInvalid => 'Antigravity 認證檢測響應無效';
+
+  @override
+  String get sftpDownloadDisconnected => '下載已中斷';
+
+  @override
+  String get sftpDownloadPermissionDenied => '權限不足';
+
+  @override
+  String get sftpDownloadNotFound => '遠程檔案不存在';
+
+  @override
+  String get sftpDownloadTimeout => '下載超時';
+
+  @override
+  String get sftpDownloadLocalSpace => '本機儲存空間不足';
+
+  @override
+  String get sftpDownloadLocalIo => '本機儲存寫入失敗';
+
+  @override
+  String get sftpDownloadIncomplete => '下載不完整';
+
+  @override
+  String get transferStatusWaitingConnection => '等待連線';
+
+  @override
+  String get chatAuthCallbackListenerFailed => '本地授權回調監聽啟動失敗，請重試認證。';
+
+  @override
+  String get settingsExperimentalFeatures => '實驗性功能';
+
+  @override
+  String get settingsExperimentalFeaturesDesc => '體驗處於預覽或測試階段的實驗性功能';
+
+  @override
+  String get settingsExperimentalCliChatTitle => 'CLI 智能對話';
+
+  @override
+  String get settingsExperimentalCliChatDesc => '開啟獨立的命令行 Agent 對話介面';
+
+  @override
+  String get settingsExperimentalDialogClose => '關閉';
+
+  @override
+  String get settingsExperimentalSaveFailed => '更新實驗性功能設定失敗';
+
+  @override
+  String get settingsExperimentalNasTitle => 'NAS 媒體庫';
+
+  @override
+  String get settingsExperimentalNasDesc => '開啟媒體庫、目錄掃描與音頻播放功能';
+
+  @override
+  String get settingsLanguageSaveFailed => '更新語言設定失敗';
 }

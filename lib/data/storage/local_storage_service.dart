@@ -92,6 +92,8 @@ class LocalStorageService {
   /// App 创建主界面时默认打开的页面名称。
   static const _keyStartupSection = 'valhalla_startup_section_v1';
 
+  static const _keyExperimentalFeatures = 'valhalla_experimental_features_v1';
+
   /// CLI 历史会话首次及向上加载的消息条数。
   static const _keyCliHistoryPageSize = 'valhalla_cli_history_page_size_v1';
   static const _keyChatRunDefaults = 'valhalla_chat_run_defaults_v1';
@@ -541,12 +543,14 @@ class LocalStorageService {
     await _prefs.setStringList(_keyDashboardQuickSections, sections);
   }
 
-  /// 界面语言代码；缺键时返回 [fallback]。
+  /// 界面语言标签（兼容旧语言代码）；缺键时返回 [fallback]。
   String getLocale({String fallback = 'system'}) =>
       _prefs.getString(_keyLocale) ?? fallback;
 
-  Future<void> setLocale(String languageCode) async {
-    await _prefs.setString(_keyLocale, languageCode);
+  Future<void> setLocale(String languageTag) async {
+    if (!await _prefs.setString(_keyLocale, languageTag)) {
+      throw StateError('Could not persist language preference');
+    }
   }
 
   /// Agent defaults are server-scoped and mode-scoped. Missing means first eligible.
@@ -663,6 +667,15 @@ class LocalStorageService {
 
   Future<void> setStartupSection(String section) async {
     await _prefs.setString(_keyStartupSection, section);
+  }
+
+  List<String>? getExperimentalFeatures() =>
+      _prefs.getStringList(_keyExperimentalFeatures);
+
+  Future<void> setExperimentalFeatures(List<String> features) async {
+    if (!await _prefs.setStringList(_keyExperimentalFeatures, features)) {
+      throw StateError('Could not persist experimental features');
+    }
   }
 
   int getCliHistoryPageSize({int fallback = 10}) =>

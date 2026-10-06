@@ -38,7 +38,7 @@ class DashboardView extends ConsumerWidget {
     final powerState = ref.watch(serverPowerProvider);
     final quickSections = () {
       try {
-        return ref.watch(settingsProvider).dashboardQuickSections;
+        return ref.watch(settingsProvider).visibleDashboardQuickSections;
       } catch (_) {
         return defaultDashboardQuickSections;
       }

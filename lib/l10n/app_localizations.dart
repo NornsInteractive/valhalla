@@ -5,7 +5,21 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_ar.dart';
+import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_es.dart';
+import 'app_localizations_fr.dart';
+import 'app_localizations_hi.dart';
+import 'app_localizations_id.dart';
+import 'app_localizations_it.dart';
+import 'app_localizations_ja.dart';
+import 'app_localizations_ko.dart';
+import 'app_localizations_pt.dart';
+import 'app_localizations_ru.dart';
+import 'app_localizations_th.dart';
+import 'app_localizations_tr.dart';
+import 'app_localizations_vi.dart';
 import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -94,8 +108,23 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
+    Locale('ar'),
+    Locale('de'),
     Locale('en'),
+    Locale('es'),
+    Locale('fr'),
+    Locale('hi'),
+    Locale('id'),
+    Locale('it'),
+    Locale('ja'),
+    Locale('ko'),
+    Locale('pt'),
+    Locale('ru'),
+    Locale('th'),
+    Locale('tr'),
+    Locale('vi'),
     Locale('zh'),
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
   ];
 
   /// No description provided for @appName.
@@ -595,6 +624,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'English (US)'**
   String get langEn;
+
+  /// No description provided for @langZhHant.
+  ///
+  /// In en, this message translates to:
+  /// **'繁體中文 (Traditional Chinese)'**
+  String get langZhHant;
+
+  /// No description provided for @langJa.
+  ///
+  /// In en, this message translates to:
+  /// **'日本語'**
+  String get langJa;
+
+  /// No description provided for @langKo.
+  ///
+  /// In en, this message translates to:
+  /// **'한국어'**
+  String get langKo;
+
+  /// No description provided for @langDe.
+  ///
+  /// In en, this message translates to:
+  /// **'Deutsch'**
+  String get langDe;
+
+  /// No description provided for @langFr.
+  ///
+  /// In en, this message translates to:
+  /// **'Français'**
+  String get langFr;
+
+  /// No description provided for @langEs.
+  ///
+  /// In en, this message translates to:
+  /// **'Español'**
+  String get langEs;
+
+  /// No description provided for @langPt.
+  ///
+  /// In en, this message translates to:
+  /// **'Português'**
+  String get langPt;
+
+  /// No description provided for @langRu.
+  ///
+  /// In en, this message translates to:
+  /// **'Русский'**
+  String get langRu;
+
+  /// No description provided for @langAr.
+  ///
+  /// In en, this message translates to:
+  /// **'العربية'**
+  String get langAr;
+
+  /// No description provided for @langHi.
+  ///
+  /// In en, this message translates to:
+  /// **'हिन्दी'**
+  String get langHi;
+
+  /// No description provided for @langId.
+  ///
+  /// In en, this message translates to:
+  /// **'Bahasa Indonesia'**
+  String get langId;
+
+  /// No description provided for @langIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Italiano'**
+  String get langIt;
+
+  /// No description provided for @langTr.
+  ///
+  /// In en, this message translates to:
+  /// **'Türkçe'**
+  String get langTr;
+
+  /// No description provided for @langVi.
+  ///
+  /// In en, this message translates to:
+  /// **'Tiếng Việt'**
+  String get langVi;
+
+  /// No description provided for @langTh.
+  ///
+  /// In en, this message translates to:
+  /// **'ไทย'**
+  String get langTh;
 
   /// No description provided for @settingsAiOps.
   ///
@@ -2203,6 +2322,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Downloading...'**
   String get sftpDownloading;
+
+  /// No description provided for @sftpUpDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to parent directory'**
+  String get sftpUpDirectory;
+
+  /// No description provided for @sftpShowHiddenFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Show hidden files'**
+  String get sftpShowHiddenFiles;
+
+  /// No description provided for @sftpHideHiddenFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide hidden files'**
+  String get sftpHideHiddenFiles;
+
+  /// No description provided for @sftpHiddenPreferenceSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save hidden files preference'**
+  String get sftpHiddenPreferenceSaveFailed;
+
+  /// No description provided for @sftpSymlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Symlink'**
+  String get sftpSymlink;
+
+  /// No description provided for @sftpLinkTargetUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Symlink target is broken or unavailable'**
+  String get sftpLinkTargetUnavailable;
+
+  /// No description provided for @sftpLinkTargetPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied reading symlink target'**
+  String get sftpLinkTargetPermissionDenied;
 
   /// No description provided for @settingsAutoConnect.
   ///
@@ -6599,6 +6760,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to start local authorization callback listener. Please retry authentication.'**
   String get chatAuthCallbackListenerFailed;
+
+  /// No description provided for @settingsExperimentalFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Experimental Features'**
+  String get settingsExperimentalFeatures;
+
+  /// No description provided for @settingsExperimentalFeaturesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Try preview and experimental capabilities'**
+  String get settingsExperimentalFeaturesDesc;
+
+  /// No description provided for @settingsExperimentalCliChatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'CLI Smart Chat'**
+  String get settingsExperimentalCliChatTitle;
+
+  /// No description provided for @settingsExperimentalCliChatDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable dedicated command-line agent chat interface'**
+  String get settingsExperimentalCliChatDesc;
+
+  /// No description provided for @settingsExperimentalDialogClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get settingsExperimentalDialogClose;
+
+  /// No description provided for @settingsExperimentalSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update experimental feature settings'**
+  String get settingsExperimentalSaveFailed;
+
+  /// No description provided for @settingsExperimentalNasTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NAS Media'**
+  String get settingsExperimentalNasTitle;
+
+  /// No description provided for @settingsExperimentalNasDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable media library, scan folders, and audio playback'**
+  String get settingsExperimentalNasDesc;
+
+  /// No description provided for @settingsLanguageSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update language settings'**
+  String get settingsLanguageSaveFailed;
 }
 
 class _AppLocalizationsDelegate
@@ -6611,18 +6826,74 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>[
+    'ar',
+    'de',
+    'en',
+    'es',
+    'fr',
+    'hi',
+    'id',
+    'it',
+    'ja',
+    'ko',
+    'pt',
+    'ru',
+    'th',
+    'tr',
+    'vi',
+    'zh',
+  ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when language+script codes are specified.
+  switch (locale.languageCode) {
+    case 'zh':
+      {
+        switch (locale.scriptCode) {
+          case 'Hant':
+            return AppLocalizationsZhHant();
+        }
+        break;
+      }
+  }
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'ar':
+      return AppLocalizationsAr();
+    case 'de':
+      return AppLocalizationsDe();
     case 'en':
       return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
+    case 'fr':
+      return AppLocalizationsFr();
+    case 'hi':
+      return AppLocalizationsHi();
+    case 'id':
+      return AppLocalizationsId();
+    case 'it':
+      return AppLocalizationsIt();
+    case 'ja':
+      return AppLocalizationsJa();
+    case 'ko':
+      return AppLocalizationsKo();
+    case 'pt':
+      return AppLocalizationsPt();
+    case 'ru':
+      return AppLocalizationsRu();
+    case 'th':
+      return AppLocalizationsTh();
+    case 'tr':
+      return AppLocalizationsTr();
+    case 'vi':
+      return AppLocalizationsVi();
     case 'zh':
       return AppLocalizationsZh();
   }

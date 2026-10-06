@@ -52,6 +52,11 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
+        // Explicit NAS experiment opt-in: NAS-only storage seed enables the
+        // drawer entry without enabling the CLI feature.
+        SharedPreferences.setMockInitialValues(const <String, Object>{
+          'valhalla_experimental_features_v1': <String>['nas'],
+        });
         final local = await LocalStorageService.init();
 
         final container = ProviderContainer(
