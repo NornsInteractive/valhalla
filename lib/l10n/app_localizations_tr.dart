@@ -3680,4 +3680,60 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settingsLanguageSaveFailed => 'Dil ayarları güncellenemedi';
+
+  @override
+  String get settingsAboutPrivacy => 'Hakkında ve gizlilik';
+
+  @override
+  String get privacyPolicyTitle => 'Gizlilik politikası';
+
+  @override
+  String get privacyPolicyDescription => 'Veri kullanımı ve seçenekleriniz';
+
+  @override
+  String get privacyContactTitle => 'Gizlilik iletişimi';
+
+  @override
+  String get privacyCopyEmail => 'E-posta adresini kopyala';
+
+  @override
+  String get privacyEmailCopied => 'E-posta adresi kopyalandı';
+
+  @override
+  String get privacyOnlineVersion => 'Çevrimiçi sürümü görüntüle';
+
+  @override
+  String get privacyLinkFailed =>
+      'Bağlantı açılamadı. E-posta adresini kopyalayabilirsiniz.';
+
+  @override
+  String get privacyLoadFailed =>
+      'Politika yüklenemedi. Çevrimiçi sürümü görüntüleyin.';
+
+  @override
+  String get privacyVersionUnknown => 'Sürüm bilgisi yok';
+
+  @override
+  String get aboutWebsite => 'Resmî web sitesi';
+
+  @override
+  String get aboutLicense => 'Uygulama lisansı';
+
+  @override
+  String get aboutThirdPartyLicenses => 'Üçüncü taraf açık kaynak lisansları';
+
+  @override
+  String get aboutLicenseSummary =>
+      'Valhalla özgün içeriği PolyForm Noncommercial 1.0.0 kapsamında ticari olmayan kullanım için lisanslanmıştır. Lisans izinleri dışındaki ticari kullanım ayrı yetkilendirme gerektirir. Üçüncü taraf bileşenler kendi lisanslarını korur. Kullanımı aşağıdaki tam koşullar belirler.';
+
+  @override
+  String get aboutCopyrightNotice => 'Telif hakkı bildirimleri';
+
+  @override
+  String get aboutLicenseLoadFailed =>
+      'Lisans yüklenemedi. norns.soft@gmail.com ile iletişime geçin.';
+
+  @override
+  String get aboutLinkFailed =>
+      'Bağlantı açılamadı. Tarayıcınızda https://norns.cc.cd adresini açın.';
 }

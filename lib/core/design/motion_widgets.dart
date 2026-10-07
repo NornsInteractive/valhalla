@@ -128,7 +128,7 @@ class _EntranceState extends State<Entrance>
 /// [AnimatedIndexedStack] — 保活的动画页面栈。
 ///
 /// 与 [IndexedStack] 一样保持全部子页状态 (Offstage + TickerMode),
-/// 但切页时对进入/退出页做 fade + slide + scale 转场。
+/// 但切页时对进入/退出页做 fade + scale (Fade-Through) 转场。
 /// 尊重系统"减少动态效果"。
 class AnimatedIndexedStack extends StatefulWidget {
   const AnimatedIndexedStack({
@@ -159,13 +159,13 @@ class _AnimatedIndexedStackState extends State<AnimatedIndexedStack>
       AlwaysStoppedAnimation<Offset>(Offset.zero);
 
   late Animation<double> _inFade = _opaque;
+  late Animation<double> _inScale = _opaque;
   late Animation<Offset> _inSlide = _noSlide;
   late Animation<double> _outFade = _opaque;
   late Animation<Offset> _outSlide = _noSlide;
 
   int _incoming = 0;
   int? _outgoing;
-  double _direction = 1;
   bool _reduce = false;
 
   @override
@@ -196,7 +196,6 @@ class _AnimatedIndexedStackState extends State<AnimatedIndexedStack>
     // 上一帧正在显示的页 (无论是否处于上一次转场中) 现在退场。
     final leaving = _incoming;
     _incoming = widget.index;
-    _direction = widget.index > leaving ? 1.0 : -1.0;
 
     if (_reduce) {
       setState(() => _outgoing = null);
@@ -206,24 +205,20 @@ class _AnimatedIndexedStackState extends State<AnimatedIndexedStack>
     // 若上一次转场还在半途, 从当前透明度开始淡出, 避免闪白。
     final double outFrom =
         _outgoing != null && _controller.isAnimating ? _inFade.value : 1.0;
-    final dir = _direction;
 
     setState(() {
       _outgoing = leaving;
       _inFade = Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(parent: _controller, curve: VCurves.decelerate),
       );
-      _inSlide = Tween<Offset>(
-        begin: Offset(20 * dir, 0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: _controller, curve: VCurves.decelerate));
+      _inScale = Tween<double>(begin: 0.985, end: 1.0).animate(
+        CurvedAnimation(parent: _controller, curve: VCurves.decelerate),
+      );
       _outFade = Tween<double>(begin: outFrom, end: 0).animate(
         CurvedAnimation(parent: _controller, curve: VCurves.accelerate),
       );
-      _outSlide = Tween<Offset>(
-        begin: Offset.zero,
-        end: Offset(-16 * dir, 0),
-      ).animate(CurvedAnimation(parent: _controller, curve: VCurves.accelerate));
+      _inSlide = _noSlide;
+      _outSlide = _noSlide;
     });
     _controller.forward(from: 0);
   }
@@ -238,46 +233,46 @@ class _AnimatedIndexedStackState extends State<AnimatedIndexedStack>
   Widget build(BuildContext context) {
     final animating = _outgoing != null;
     final active = _incoming;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        for (var i = 0; i < widget.children.length; i++)
-          Offstage(
-            offstage: animating
-                ? (i != active && i != _outgoing)
-                : (i != widget.index),
-            child: TickerMode(
-              enabled: animating
-                  ? (i == active || i == _outgoing)
-                  : i == widget.index,
-              child: FadeTransition(
-                opacity: animating
-                    ? (i == active
-                          ? _inFade
-                          : (i == _outgoing ? _outFade : _opaque))
-                    : _opaque,
-                child: SlideTransition(
-                  position: animating
+    return ClipRect(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          for (var i = 0; i < widget.children.length; i++)
+            Offstage(
+              offstage: animating
+                  ? (i != active && i != _outgoing)
+                  : (i != widget.index),
+              child: TickerMode(
+                enabled: animating
+                    ? (i == active || i == _outgoing)
+                    : i == widget.index,
+                child: FadeTransition(
+                  opacity: animating
                       ? (i == active
-                            ? _inSlide
-                            : (i == _outgoing ? _outSlide : _noSlide))
-                      : _noSlide,
-                  child: ScaleTransition(
-                    scale: animating
+                            ? _inFade
+                            : (i == _outgoing ? _outFade : _opaque))
+                      : _opaque,
+                  child: SlideTransition(
+                    position: animating
                         ? (i == active
-                              ? AlwaysStoppedAnimation<double>(1)
-                              : _opaque)
-                        : _opaque,
-                    child: ExcludeSemantics(
-                      excluding: animating ? i == _outgoing : i != widget.index,
-                      child: widget.children[i],
+                              ? _inSlide
+                              : (i == _outgoing ? _outSlide : _noSlide))
+                        : _noSlide,
+                    child: ScaleTransition(
+                      scale: animating
+                          ? (i == active ? _inScale : _opaque)
+                          : _opaque,
+                      child: ExcludeSemantics(
+                        excluding: animating ? i == _outgoing : i != widget.index,
+                        child: widget.children[i],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -1211,6 +1211,22 @@
   "settingsExperimentalSaveFailed": "Failed to update experimental feature settings",
   "settingsExperimentalNasTitle": "NAS Media",
   "settingsExperimentalNasDesc": "Enable media library, scan folders, and audio playback",
-  "settingsLanguageSaveFailed": "Failed to update language settings"
+  "settingsLanguageSaveFailed": "Failed to update language settings",
+  "settingsAboutPrivacy": "About & privacy",
+  "privacyPolicyTitle": "Privacy policy",
+  "privacyPolicyDescription": "Data use and your choices",
+  "privacyContactTitle": "Privacy contact",
+  "privacyCopyEmail": "Copy email address",
+  "privacyEmailCopied": "Email address copied",
+  "privacyOnlineVersion": "View online version",
+  "privacyLinkFailed": "Unable to open the link. You can copy the email address.",
+  "privacyLoadFailed": "Unable to load the privacy policy. View the online version.",
+  "privacyVersionUnknown": "Version unavailable",
+  "aboutWebsite": "Official website",
+  "aboutLicense": "Application license",
+  "aboutThirdPartyLicenses": "Third-party open source licenses",
+  "aboutLicenseSummary": "Original Valhalla material is licensed for noncommercial use under PolyForm Noncommercial 1.0.0. Commercial use beyond the license permissions requires separate authorization. Third-party components retain their own licenses. The complete terms below govern use.",
+  "aboutCopyrightNotice": "Copyright notices",
+  "aboutLicenseLoadFailed": "Unable to load the license. Please contact norns.soft@gmail.com.",
+  "aboutLinkFailed": "Unable to open the link. Please open https://norns.cc.cd in your browser."
 }
-

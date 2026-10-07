@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "更新實驗性功能設定失敗",
   "settingsExperimentalNasTitle": "NAS 媒體庫",
   "settingsExperimentalNasDesc": "開啟媒體庫、目錄掃描與音頻播放功能",
-  "settingsLanguageSaveFailed": "更新語言設定失敗"
+  "settingsLanguageSaveFailed": "更新語言設定失敗",
+  "settingsAboutPrivacy": "關於與隱私",
+  "privacyPolicyTitle": "隱私政策",
+  "privacyPolicyDescription": "了解資料使用與你的選擇",
+  "privacyContactTitle": "隱私聯絡",
+  "privacyCopyEmail": "複製電子郵件地址",
+  "privacyEmailCopied": "電子郵件地址已複製",
+  "privacyOnlineVersion": "查看線上版本",
+  "privacyLinkFailed": "無法開啟連結，你仍可複製電子郵件地址。",
+  "privacyLoadFailed": "無法載入隱私政策，請查看線上版本。",
+  "privacyVersionUnknown": "版本資訊暫不可用",
+  "aboutWebsite": "官方網站",
+  "aboutLicense": "應用程式授權條款",
+  "aboutThirdPartyLicenses": "第三方開源授權",
+  "aboutLicenseSummary": "Valhalla 原創內容採用 PolyForm Noncommercial 1.0.0 非商用授權。超出授權允許範圍的商業使用須另行取得授權。第三方元件保留各自的授權條款。使用條件以以下完整條款為準。",
+  "aboutCopyrightNotice": "著作權聲明",
+  "aboutLicenseLoadFailed": "無法載入授權條款，請聯絡 norns.soft@gmail.com。",
+  "aboutLinkFailed": "無法開啟連結，請在瀏覽器中造訪 https://norns.cc.cd。"
 }

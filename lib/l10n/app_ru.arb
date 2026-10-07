@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "Не удалось обновить настройки экспериментальных функций",
   "settingsExperimentalNasTitle": "NAS Медиа",
   "settingsExperimentalNasDesc": "Включить медиатеку, сканирование папок и воспроизведение аудио",
-  "settingsLanguageSaveFailed": "Не удалось обновить настройки языка"
+  "settingsLanguageSaveFailed": "Не удалось обновить настройки языка",
+  "settingsAboutPrivacy": "О приложении и конфиденциальность",
+  "privacyPolicyTitle": "Политика конфиденциальности",
+  "privacyPolicyDescription": "Использование данных и ваш выбор",
+  "privacyContactTitle": "Контакт по вопросам конфиденциальности",
+  "privacyCopyEmail": "Копировать адрес почты",
+  "privacyEmailCopied": "Адрес почты скопирован",
+  "privacyOnlineVersion": "Открыть онлайн-версию",
+  "privacyLinkFailed": "Не удалось открыть ссылку. Адрес почты можно скопировать.",
+  "privacyLoadFailed": "Не удалось загрузить политику. Откройте онлайн-версию.",
+  "privacyVersionUnknown": "Версия недоступна",
+  "aboutWebsite": "Официальный сайт",
+  "aboutLicense": "Лицензия приложения",
+  "aboutThirdPartyLicenses": "Лицензии сторонних компонентов с открытым кодом",
+  "aboutLicenseSummary": "Оригинальные материалы Valhalla доступны для некоммерческого использования по лицензии PolyForm Noncommercial 1.0.0. Коммерческое использование за пределами разрешений лицензии требует отдельного разрешения. Сторонние компоненты сохраняют собственные лицензии. Использование регулируется полными условиями ниже.",
+  "aboutCopyrightNotice": "Уведомления об авторских правах",
+  "aboutLicenseLoadFailed": "Не удалось загрузить лицензию. Свяжитесь с norns.soft@gmail.com.",
+  "aboutLinkFailed": "Не удалось открыть ссылку. Откройте https://norns.cc.cd в браузере."
 }

@@ -1,0 +1,21 @@
+Required Notice: Copyright (c) 2026 Norns.
+
+Valhalla original code and assets made available by Norns are licensed under
+the PolyForm Noncommercial License 1.0.0. See LICENSE for the unmodified
+official terms and https://polyformproject.org/licenses/noncommercial/1.0.0.
+
+Licensing contact: norns.soft@gmail.com
+
+This license applies only to material that Norns has the right to license.
+Third-party libraries, vendored code, fonts, tools and other third-party
+material remain under their respective copyright notices and licenses.
+Their existing permissions and obligations are not replaced or restricted
+by the Valhalla license.
+
+In particular, vendored libsmb2 retains its upstream licenses. See
+packages/valhalla_smb/NOTICE, packages/valhalla_smb/vendor/libsmb2/COPYING
+and packages/valhalla_smb/vendor/libsmb2/LICENCE-LGPL-2.1.txt.
+
+Flutter dependency notices are included in the distributed application at
+data/flutter_assets/NOTICES.Z where applicable. Other third-party notices
+must also be retained when distributing their corresponding components.

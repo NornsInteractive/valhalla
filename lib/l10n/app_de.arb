@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "Aktualisierung der experimentellen Funktionseinstellungen fehlgeschlagen",
   "settingsExperimentalNasTitle": "NAS-Medien",
   "settingsExperimentalNasDesc": "Medienbibliothek, Scan-Ordner und Audiowiedergabe aktivieren",
-  "settingsLanguageSaveFailed": "Aktualisierung der Spracheinstellungen fehlgeschlagen"
+  "settingsLanguageSaveFailed": "Aktualisierung der Spracheinstellungen fehlgeschlagen",
+  "settingsAboutPrivacy": "Über & Datenschutz",
+  "privacyPolicyTitle": "Datenschutzerklärung",
+  "privacyPolicyDescription": "Datennutzung und Ihre Möglichkeiten",
+  "privacyContactTitle": "Datenschutzkontakt",
+  "privacyCopyEmail": "E-Mail-Adresse kopieren",
+  "privacyEmailCopied": "E-Mail-Adresse kopiert",
+  "privacyOnlineVersion": "Online-Version anzeigen",
+  "privacyLinkFailed": "Link konnte nicht geöffnet werden. Die E-Mail-Adresse kann kopiert werden.",
+  "privacyLoadFailed": "Datenschutzerklärung konnte nicht geladen werden. Bitte die Online-Version öffnen.",
+  "privacyVersionUnknown": "Version nicht verfügbar",
+  "aboutWebsite": "Offizielle Website",
+  "aboutLicense": "Anwendungslizenz",
+  "aboutThirdPartyLicenses": "Open-Source-Lizenzen von Drittanbietern",
+  "aboutLicenseSummary": "Originalmaterial von Valhalla steht unter PolyForm Noncommercial 1.0.0 für nichtkommerzielle Nutzung. Kommerzielle Nutzung außerhalb der erlaubten Lizenzbedingungen erfordert eine gesonderte Genehmigung. Drittanbieterkomponenten behalten ihre eigenen Lizenzen. Maßgeblich sind die vollständigen Bedingungen unten.",
+  "aboutCopyrightNotice": "Urheberrechtshinweise",
+  "aboutLicenseLoadFailed": "Die Lizenz konnte nicht geladen werden. Kontaktieren Sie norns.soft@gmail.com.",
+  "aboutLinkFailed": "Der Link konnte nicht geöffnet werden. Öffnen Sie https://norns.cc.cd in Ihrem Browser."
 }

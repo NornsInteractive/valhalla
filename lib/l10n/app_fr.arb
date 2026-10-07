@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "Échec de la mise à jour des paramètres des fonctionnalités expérimentales",
   "settingsExperimentalNasTitle": "Média NAS",
   "settingsExperimentalNasDesc": "Activer la médiathèque, l'analyse des dossiers et la lecture audio",
-  "settingsLanguageSaveFailed": "Échec de la mise à jour des paramètres de langue"
+  "settingsLanguageSaveFailed": "Échec de la mise à jour des paramètres de langue",
+  "settingsAboutPrivacy": "À propos et confidentialité",
+  "privacyPolicyTitle": "Politique de confidentialité",
+  "privacyPolicyDescription": "Utilisation des données et vos choix",
+  "privacyContactTitle": "Contact confidentialité",
+  "privacyCopyEmail": "Copier l’adresse e-mail",
+  "privacyEmailCopied": "Adresse e-mail copiée",
+  "privacyOnlineVersion": "Voir la version en ligne",
+  "privacyLinkFailed": "Impossible d’ouvrir le lien. Vous pouvez copier l’adresse e-mail.",
+  "privacyLoadFailed": "Impossible de charger la politique. Consultez la version en ligne.",
+  "privacyVersionUnknown": "Version indisponible",
+  "aboutWebsite": "Site officiel",
+  "aboutLicense": "Licence de l’application",
+  "aboutThirdPartyLicenses": "Licences open source tierces",
+  "aboutLicenseSummary": "Le contenu original de Valhalla est sous licence PolyForm Noncommercial 1.0.0 pour un usage non commercial. Tout usage commercial dépassant les permissions de la licence nécessite une autorisation distincte. Les composants tiers conservent leurs propres licences. Les conditions complètes ci-dessous régissent l’utilisation.",
+  "aboutCopyrightNotice": "Mentions de droit d’auteur",
+  "aboutLicenseLoadFailed": "Impossible de charger la licence. Contactez norns.soft@gmail.com.",
+  "aboutLinkFailed": "Impossible d’ouvrir le lien. Ouvrez https://norns.cc.cd dans votre navigateur."
 }

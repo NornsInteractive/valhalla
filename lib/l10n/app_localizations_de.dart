@@ -3711,4 +3711,61 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settingsLanguageSaveFailed =>
       'Aktualisierung der Spracheinstellungen fehlgeschlagen';
+
+  @override
+  String get settingsAboutPrivacy => 'Über & Datenschutz';
+
+  @override
+  String get privacyPolicyTitle => 'Datenschutzerklärung';
+
+  @override
+  String get privacyPolicyDescription => 'Datennutzung und Ihre Möglichkeiten';
+
+  @override
+  String get privacyContactTitle => 'Datenschutzkontakt';
+
+  @override
+  String get privacyCopyEmail => 'E-Mail-Adresse kopieren';
+
+  @override
+  String get privacyEmailCopied => 'E-Mail-Adresse kopiert';
+
+  @override
+  String get privacyOnlineVersion => 'Online-Version anzeigen';
+
+  @override
+  String get privacyLinkFailed =>
+      'Link konnte nicht geöffnet werden. Die E-Mail-Adresse kann kopiert werden.';
+
+  @override
+  String get privacyLoadFailed =>
+      'Datenschutzerklärung konnte nicht geladen werden. Bitte die Online-Version öffnen.';
+
+  @override
+  String get privacyVersionUnknown => 'Version nicht verfügbar';
+
+  @override
+  String get aboutWebsite => 'Offizielle Website';
+
+  @override
+  String get aboutLicense => 'Anwendungslizenz';
+
+  @override
+  String get aboutThirdPartyLicenses =>
+      'Open-Source-Lizenzen von Drittanbietern';
+
+  @override
+  String get aboutLicenseSummary =>
+      'Originalmaterial von Valhalla steht unter PolyForm Noncommercial 1.0.0 für nichtkommerzielle Nutzung. Kommerzielle Nutzung außerhalb der erlaubten Lizenzbedingungen erfordert eine gesonderte Genehmigung. Drittanbieterkomponenten behalten ihre eigenen Lizenzen. Maßgeblich sind die vollständigen Bedingungen unten.';
+
+  @override
+  String get aboutCopyrightNotice => 'Urheberrechtshinweise';
+
+  @override
+  String get aboutLicenseLoadFailed =>
+      'Die Lizenz konnte nicht geladen werden. Kontaktieren Sie norns.soft@gmail.com.';
+
+  @override
+  String get aboutLinkFailed =>
+      'Der Link konnte nicht geöffnet werden. Öffnen Sie https://norns.cc.cd in Ihrem Browser.';
 }

@@ -3647,4 +3647,60 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsLanguageSaveFailed => 'فشل تحديث إعدادات اللغة';
+
+  @override
+  String get settingsAboutPrivacy => 'حول التطبيق والخصوصية';
+
+  @override
+  String get privacyPolicyTitle => 'سياسة الخصوصية';
+
+  @override
+  String get privacyPolicyDescription => 'استخدام البيانات وخياراتك';
+
+  @override
+  String get privacyContactTitle => 'جهة اتصال الخصوصية';
+
+  @override
+  String get privacyCopyEmail => 'نسخ عنوان البريد';
+
+  @override
+  String get privacyEmailCopied => 'تم نسخ عنوان البريد';
+
+  @override
+  String get privacyOnlineVersion => 'عرض النسخة عبر الإنترنت';
+
+  @override
+  String get privacyLinkFailed => 'تعذر فتح الرابط. يمكنك نسخ عنوان البريد.';
+
+  @override
+  String get privacyLoadFailed =>
+      'تعذر تحميل السياسة. اعرض النسخة عبر الإنترنت.';
+
+  @override
+  String get privacyVersionUnknown => 'الإصدار غير متاح';
+
+  @override
+  String get aboutWebsite => 'الموقع الرسمي';
+
+  @override
+  String get aboutLicense => 'ترخيص التطبيق';
+
+  @override
+  String get aboutThirdPartyLicenses =>
+      'تراخيص المكونات الخارجية مفتوحة المصدر';
+
+  @override
+  String get aboutLicenseSummary =>
+      'المحتوى الأصلي لتطبيق Valhalla مرخص للاستخدام غير التجاري بموجب PolyForm Noncommercial 1.0.0. يتطلب الاستخدام التجاري خارج نطاق أذونات الترخيص تصريحًا منفصلًا. تحتفظ المكونات الخارجية بتراخيصها الخاصة. يخضع الاستخدام للشروط الكاملة أدناه.';
+
+  @override
+  String get aboutCopyrightNotice => 'إشعارات حقوق النشر';
+
+  @override
+  String get aboutLicenseLoadFailed =>
+      'تعذر تحميل الترخيص. يرجى التواصل عبر norns.soft@gmail.com.';
+
+  @override
+  String get aboutLinkFailed =>
+      'تعذر فتح الرابط. افتح https://norns.cc.cd في المتصفح.';
 }

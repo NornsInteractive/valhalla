@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "فشل تحديث إعدادات الميزات التجريبية",
   "settingsExperimentalNasTitle": "وسائط NAS",
   "settingsExperimentalNasDesc": "تمكين مكتبة الوسائط، وفحص المجلدات، وتشغيل الصوتيات",
-  "settingsLanguageSaveFailed": "فشل تحديث إعدادات اللغة"
+  "settingsLanguageSaveFailed": "فشل تحديث إعدادات اللغة",
+  "settingsAboutPrivacy": "حول التطبيق والخصوصية",
+  "privacyPolicyTitle": "سياسة الخصوصية",
+  "privacyPolicyDescription": "استخدام البيانات وخياراتك",
+  "privacyContactTitle": "جهة اتصال الخصوصية",
+  "privacyCopyEmail": "نسخ عنوان البريد",
+  "privacyEmailCopied": "تم نسخ عنوان البريد",
+  "privacyOnlineVersion": "عرض النسخة عبر الإنترنت",
+  "privacyLinkFailed": "تعذر فتح الرابط. يمكنك نسخ عنوان البريد.",
+  "privacyLoadFailed": "تعذر تحميل السياسة. اعرض النسخة عبر الإنترنت.",
+  "privacyVersionUnknown": "الإصدار غير متاح",
+  "aboutWebsite": "الموقع الرسمي",
+  "aboutLicense": "ترخيص التطبيق",
+  "aboutThirdPartyLicenses": "تراخيص المكونات الخارجية مفتوحة المصدر",
+  "aboutLicenseSummary": "المحتوى الأصلي لتطبيق Valhalla مرخص للاستخدام غير التجاري بموجب PolyForm Noncommercial 1.0.0. يتطلب الاستخدام التجاري خارج نطاق أذونات الترخيص تصريحًا منفصلًا. تحتفظ المكونات الخارجية بتراخيصها الخاصة. يخضع الاستخدام للشروط الكاملة أدناه.",
+  "aboutCopyrightNotice": "إشعارات حقوق النشر",
+  "aboutLicenseLoadFailed": "تعذر تحميل الترخيص. يرجى التواصل عبر norns.soft@gmail.com.",
+  "aboutLinkFailed": "تعذر فتح الرابط. افتح https://norns.cc.cd في المتصفح."
 }

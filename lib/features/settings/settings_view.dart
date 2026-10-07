@@ -15,6 +15,7 @@ import '../agents/agent_management_view.dart';
 import '../../core/localization/app_locales.dart';
 import 'widgets/diagnostics_view.dart';
 import 'widgets/theme_accent_color_dialog.dart';
+import 'widgets/about_privacy_card.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -155,10 +156,25 @@ class SettingsView extends ConsumerWidget {
             ],
           ),
         ),
+        const SizedBox(height: 24),
+        Entrance(
+          index: 8,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(
+                context,
+                context.l10n.settingsAboutPrivacy,
+                Icons.info_outline,
+              ),
+              const AboutPrivacyCard(),
+            ],
+          ),
+        ),
         const SizedBox(height: 32),
 
         Entrance(
-          index: 8,
+          index: 9,
           child: Center(
             child: OutlinedButton.icon(
               icon: const Icon(Icons.restart_alt, size: 16),
@@ -169,15 +185,6 @@ class SettingsView extends ConsumerWidget {
                   SnackBar(content: Text(context.l10n.settingsResetSuccess)),
                 );
               },
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Center(
-          child: Text(
-            'Valhalla v1.0.0-stable · Antigravity AI',
-            style: context.textTheme.bodySmall?.copyWith(
-              color: context.colorScheme.outline,
             ),
           ),
         ),

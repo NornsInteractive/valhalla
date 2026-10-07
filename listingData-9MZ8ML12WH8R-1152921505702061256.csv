@@ -1,0 +1,2902 @@
+﻿Field,ID,Type (类型),default,en,zh-hans,zh-hant,ja,ko,de,fr,es,pt,ru,ar,hi,id,it,tr,vi,th
+Description,2,文本,,"Valhalla is a remote server management client for developers, system administrators, and personal server owners. It brings SSH terminals, server monitoring, file transfers, and everyday administration together in one Windows app, helping you connect to and maintain your own servers.
+
+Connect to remote hosts over SSH, open multiple terminal sessions, and view CPU, memory, disk usage, and system load. Manage processes, systemd services, and Docker containers. The built-in SFTP file manager lets you browse remote directories, edit text files, and upload or download files. Save frequently used commands for quick access.
+
+Valhalla also connects to AI Agents you configure, displays streaming responses and tool calls, and lets you handle operations that require authorization. Optional experimental CLI sessions and a NAS media library can be enabled in Settings to access remote tools and personal media services.
+
+The app offers 17 interface languages, along with theme and accent color settings. No Valhalla account is required. Connection settings, preferences, and associated session data are stored locally. Connecting to servers, using AI, or accessing media involves communication with the services you select. Chinese and English privacy policies are available for offline reading within the app.
+
+To use remote features, you need a server you are authorized to access and valid connection credentials. Server management primarily targets Linux hosts with SSH support. The systemd and Docker features require the corresponding components on the remote host. AI features require compatible tools or services that you configure and may involve third-party accounts, subscriptions, or usage fees. Valhalla does not provide server hosting or a built-in AI model service.
+
+Original Valhalla material is licensed under PolyForm Noncommercial 1.0.0. Uses outside the permissions of that license require separate authorization. Third-party components retain their own licenses. Licensing contact: norns.soft@gmail.com.","Valhalla 是面向开发者、系统管理员和个人服务器用户的远程运维客户端。将 SSH 终端、服务器状态监控、文件传输与日常管理集中在一个 Windows 应用中，方便你连接和维护自己的服务器。
+
+通过 SSH 连接远程主机，打开多个终端会话，查看 CPU、内存、磁盘和系统负载，管理进程、systemd 服务及 Docker 容器。内置 SFTP 文件管理器，可浏览远程目录、编辑文本文件，以及上传和下载文件；常用操作可保存为快捷命令。
+
+Valhalla 支持连接你配置的 AI Agent，查看流式响应与工具调用，并处理需要授权的操作。可在设置中启用实验性的 CLI 会话和 NAS 媒体库功能，连接远端工具及个人媒体服务。
+
+应用提供 17 种界面语言，以及主题和强调色设置。无需注册 Valhalla 账号。连接配置、偏好和相关会话数据保存在本地；连接服务器、使用 AI 或访问媒体时，会与所选服务通信。应用内可离线阅读中文和英文隐私政策。
+
+使用前请准备你有权访问的服务器及连接凭据。服务器管理主要面向支持 SSH 的 Linux 主机；systemd 和 Docker 功能需要远端安装相应组件。AI 功能需要自行配置兼容工具或服务，可能涉及第三方账号、订阅或用量费用。Valhalla 不提供服务器托管或内置模型服务。
+
+Valhalla 原创部分采用 PolyForm Noncommercial 1.0.0 非商用许可。超出该许可允许范围的用途须另行授权，第三方组件保留各自许可证。授权联系：norns.soft@gmail.com。","Valhalla 是面向開發者、系統管理員和個人伺服器使用者的遠端維運用戶端。將 SSH 終端、伺服器狀態監控、檔案傳輸與日常管理集中在一個 Windows 應用程式中，方便你連線和維護自己的伺服器。
+
+透過 SSH 連線至遠端主機，開啟多個終端工作階段，查看 CPU、記憶體、磁碟和系統負載，管理程序、systemd 服務及 Docker 容器。內建 SFTP 檔案管理員，可瀏覽遠端目錄、編輯文字檔案，以及上傳和下載檔案；常用操作可儲存為快捷命令。
+
+Valhalla 支援連線至你設定的 AI Agent，查看串流回應與工具呼叫，並處理需要授權的操作。可在設定中啟用實驗性的 CLI 工作階段和 NAS 媒體庫功能，連線至遠端工具及個人媒體服務。
+
+應用程式提供 17 種介面語言，以及佈景主題和強調色設定。無需註冊 Valhalla 帳號。連線設定、偏好和相關工作階段資料儲存在本機；連線至伺服器、使用 AI 或存取媒體時，會與所選服務通訊。應用程式內可離線閱讀中文和英文隱私權政策。
+
+使用前請準備你有權存取的伺服器及連線憑證。伺服器管理主要面向支援 SSH 的 Linux 主機；systemd 和 Docker 功能需要遠端安裝相應元件。AI 功能需要自行設定相容工具或服務，可能涉及第三方帳號、訂閱或用量費用。Valhalla 不提供伺服器託管或內建模型服務。
+
+Valhalla 原創部分採用 PolyForm Noncommercial 1.0.0 非商用授權。超出該授權允許範圍的用途須另行取得授權，第三方元件保留各自授權。授權聯絡：norns.soft@gmail.com。","Valhalla は、開発者、システム管理者、個人サーバーの所有者向けのリモートサーバー管理クライアントです。SSH ターミナル、サーバー監視、ファイル転送、日常的な管理を一つの Windows アプリにまとめ、自分のサーバーへの接続と保守を支援します。
+
+SSH でリモートホストに接続し、複数のターミナルセッションを開いて、CPU、メモリ、ディスク使用量、システム負荷を確認できます。プロセス、systemd サービス、Docker コンテナーを管理できます。内蔵の SFTP ファイルマネージャーでリモートディレクトリの閲覧、テキストファイルの編集、アップロードやダウンロードが可能です。よく使うコマンドを保存し、すぐに実行できます。
+
+自分で設定した AI エージェントに接続し、ストリーミング応答やツール呼び出しを確認して、承認が必要な操作に対応できます。設定で実験的な CLI セッションと NAS メディアライブラリを有効にすると、リモートツールや個人のメディアサービスにアクセスできます。
+
+17 言語のインターフェースと、テーマやアクセントカラーの設定に対応しています。Valhalla アカウントの登録は不要です。接続設定、各種設定、関連するセッションデータは端末内に保存されます。サーバーへの接続、AI の利用、メディアへのアクセスでは、選択したサービスと通信します。中国語と英語のプライバシーポリシーはアプリ内でオフラインでも閲覧できます。
+
+リモート機能を利用するには、アクセス権のあるサーバーと有効な認証情報が必要です。サーバー管理は主に SSH に対応した Linux ホストを対象としています。systemd と Docker の機能には、リモートホストへの対応コンポーネントの導入が必要です。AI 機能は互換性のあるツールやサービスを自分で設定する必要があり、第三者のアカウント、サブスクリプション、従量課金が必要になる場合があります。Valhalla はサーバーホスティングや組み込みの AI モデルサービスを提供しません。
+
+Valhalla の独自部分は PolyForm Noncommercial 1.0.0 に基づき提供されます。このライセンスの許可範囲外の用途には別途許可が必要です。第三者コンポーネントには各自のライセンスが適用されます。許可に関する連絡先：norns.soft@gmail.com。","Valhalla는 개발자, 시스템 관리자, 개인 서버 사용자를 위한 원격 서버 관리 클라이언트입니다. SSH 터미널, 서버 모니터링, 파일 전송과 일상적인 관리 작업을 하나의 Windows 앱에 모아 자신의 서버에 연결하고 유지 관리할 수 있도록 돕습니다.
+
+SSH로 원격 호스트에 연결하고 여러 터미널 세션을 열어 CPU, 메모리, 디스크 사용량과 시스템 부하를 확인하세요. 프로세스, systemd 서비스와 Docker 컨테이너를 관리할 수 있습니다. 내장 SFTP 파일 관리자로 원격 디렉터리를 탐색하고 텍스트 파일을 편집하며 파일을 업로드하거나 다운로드할 수 있습니다. 자주 사용하는 명령을 저장해 빠르게 실행할 수 있습니다.
+
+직접 구성한 AI 에이전트에 연결해 스트리밍 응답과 도구 호출을 확인하고 승인이 필요한 작업을 처리할 수 있습니다. 설정에서 실험적인 CLI 세션과 NAS 미디어 라이브러리를 선택적으로 활성화하면 원격 도구와 개인 미디어 서비스에 접근할 수 있습니다.
+
+17개 인터페이스 언어와 테마 및 강조 색상 설정을 제공합니다. Valhalla 계정 등록은 필요하지 않습니다. 연결 설정, 환경설정과 관련 세션 데이터는 로컬에 저장됩니다. 서버 연결, AI 사용 또는 미디어 접근 시 선택한 서비스와 통신합니다. 중국어와 영어 개인정보 처리방침을 앱에서 오프라인으로 읽을 수 있습니다.
+
+원격 기능을 사용하려면 접근 권한이 있는 서버와 유효한 인증 정보가 필요합니다. 서버 관리 기능은 주로 SSH를 지원하는 Linux 호스트를 대상으로 합니다. systemd 및 Docker 기능을 사용하려면 원격 호스트에 해당 구성 요소가 설치되어 있어야 합니다. AI 기능은 호환되는 도구나 서비스를 직접 구성해야 하며 타사 계정, 구독 또는 사용량 요금이 필요할 수 있습니다. Valhalla는 서버 호스팅이나 내장 AI 모델 서비스를 제공하지 않습니다.
+
+Valhalla의 독자적인 부분에는 PolyForm Noncommercial 1.0.0 비상업용 라이선스가 적용됩니다. 허용 범위를 벗어난 사용에는 별도 승인이 필요합니다. 타사 구성 요소에는 각자의 라이선스가 적용됩니다. 라이선스 문의: norns.soft@gmail.com.","Valhalla ist ein Client zur Fernverwaltung von Servern für Entwickler, Systemadministratoren und Betreiber privater Server. Die Windows-App vereint SSH-Terminals, Serverüberwachung, Dateiübertragungen und alltägliche Verwaltungsaufgaben, damit Sie Ihre eigenen Server verbinden und warten können.
+
+Verbinden Sie sich per SSH mit entfernten Hosts, öffnen Sie mehrere Terminalsitzungen und prüfen Sie CPU, Arbeitsspeicher, Festplattenbelegung und Systemlast. Verwalten Sie Prozesse, systemd-Dienste und Docker-Container. Mit dem integrierten SFTP-Dateimanager können Sie entfernte Verzeichnisse durchsuchen, Textdateien bearbeiten sowie Dateien hoch- und herunterladen. Speichern Sie häufig verwendete Befehle für den schnellen Zugriff.
+
+Valhalla verbindet sich auch mit KI-Agenten, die Sie selbst konfigurieren. Sie können fortlaufende Antworten und Werkzeugaufrufe ansehen und Vorgänge bearbeiten, die eine Genehmigung erfordern. In den Einstellungen lassen sich experimentelle CLI-Sitzungen und eine NAS-Medienbibliothek optional aktivieren, um auf entfernte Werkzeuge und private Mediendienste zuzugreifen.
+
+Die App bietet 17 Oberflächensprachen sowie Einstellungen für Design und Akzentfarbe. Ein Valhalla-Konto ist nicht erforderlich. Verbindungseinstellungen, persönliche Einstellungen und zugehörige Sitzungsdaten werden lokal gespeichert. Beim Verbinden mit Servern, bei der Nutzung von KI oder beim Medienzugriff kommuniziert die App mit den ausgewählten Diensten. Die Datenschutzhinweise auf Chinesisch und Englisch können Sie in der App auch offline lesen.
+
+Für die Fernzugriffsfunktionen benötigen Sie einen Server, auf den Sie zugreifen dürfen, und gültige Zugangsdaten. Die Serververwaltung richtet sich hauptsächlich an Linux-Hosts mit SSH-Unterstützung. Für systemd und Docker müssen die entsprechenden Komponenten auf dem entfernten Host installiert sein. KI-Funktionen erfordern selbst konfigurierte kompatible Werkzeuge oder Dienste und können Konten, Abonnements oder nutzungsabhängige Gebühren von Drittanbietern voraussetzen. Valhalla bietet weder Serverhosting noch einen integrierten KI-Modelldienst.
+
+Für eigenständige Valhalla-Inhalte gilt PolyForm Noncommercial 1.0.0. Nutzungen außerhalb der dortigen Erlaubnisse benötigen eine gesonderte Genehmigung. Drittanbieterkomponenten behalten ihre eigenen Lizenzen. Lizenzkontakt: norns.soft@gmail.com.","Valhalla est un client de gestion de serveurs à distance destiné aux développeurs, aux administrateurs système et aux propriétaires de serveurs personnels. Il réunit les terminaux SSH, la surveillance des serveurs, les transferts de fichiers et les tâches d'administration courantes dans une seule application Windows pour vous aider à vous connecter à vos serveurs et à les entretenir.
+
+Connectez-vous à des hôtes distants via SSH, ouvrez plusieurs sessions de terminal et consultez l'utilisation du processeur, de la mémoire, des disques et la charge système. Gérez les processus, les services systemd et les conteneurs Docker. Le gestionnaire de fichiers SFTP intégré permet de parcourir les répertoires distants, de modifier des fichiers texte et de transférer des fichiers dans les deux sens. Enregistrez vos commandes fréquentes pour y accéder rapidement.
+
+Valhalla se connecte également aux agents IA que vous configurez, affiche leurs réponses en continu et leurs appels d'outils, et vous permet de traiter les opérations nécessitant une autorisation. Vous pouvez activer dans les paramètres des sessions CLI expérimentales et une bibliothèque multimédia NAS pour accéder à des outils distants et à vos services multimédias personnels.
+
+L'application propose 17 langues d'interface ainsi que des réglages de thème et de couleur d'accentuation. Aucun compte Valhalla n'est nécessaire. Les paramètres de connexion, les préférences et les données de session associées sont stockés localement. La connexion aux serveurs, l'utilisation de l'IA et l'accès aux médias impliquent des échanges avec les services que vous sélectionnez. Les politiques de confidentialité en chinois et en anglais sont consultables hors ligne dans l'application.
+
+Les fonctions distantes nécessitent un serveur auquel vous êtes autorisé à accéder et des identifiants valides. La gestion des serveurs vise principalement les hôtes Linux compatibles SSH. Les fonctions systemd et Docker nécessitent l'installation des composants correspondants sur l'hôte distant. Les fonctions IA exigent des outils ou services compatibles que vous configurez et peuvent nécessiter des comptes tiers, des abonnements ou des frais liés à l'utilisation. Valhalla ne fournit ni hébergement de serveurs ni service de modèle IA intégré.
+
+Les éléments originaux de Valhalla sont soumis à PolyForm Noncommercial 1.0.0. Tout usage hors des autorisations de cette licence nécessite une autorisation distincte. Les composants tiers conservent leurs licences. Contact : norns.soft@gmail.com.","Valhalla es un cliente de gestión remota de servidores para desarrolladores, administradores de sistemas y usuarios con servidores personales. Reúne terminales SSH, supervisión de servidores, transferencias de archivos y tareas de administración habituales en una sola aplicación de Windows para ayudarte a conectarte a tus propios servidores y mantenerlos.
+
+Conéctate a equipos remotos mediante SSH, abre varias sesiones de terminal y consulta el uso de CPU, memoria y disco, así como la carga del sistema. Gestiona procesos, servicios systemd y contenedores Docker. El gestor de archivos SFTP integrado permite explorar directorios remotos, editar archivos de texto y subir o descargar archivos. Guarda los comandos que utilizas con frecuencia para acceder a ellos rápidamente.
+
+Valhalla también se conecta a los agentes de IA que configures, muestra respuestas en tiempo real y llamadas a herramientas, y te permite gestionar operaciones que requieren autorización. En la configuración puedes activar sesiones CLI experimentales y una biblioteca multimedia NAS opcionales para acceder a herramientas remotas y servicios multimedia personales.
+
+La aplicación ofrece 17 idiomas de interfaz y opciones de tema y color de énfasis. No necesitas una cuenta de Valhalla. La configuración de conexión, las preferencias y los datos de sesión asociados se almacenan localmente. Al conectarte a servidores, usar IA o acceder a contenidos multimedia, la aplicación se comunica con los servicios que selecciones. Las políticas de privacidad en chino e inglés se pueden leer sin conexión dentro de la aplicación.
+
+Para utilizar las funciones remotas necesitas un servidor al que tengas autorización para acceder y credenciales válidas. La gestión de servidores está orientada principalmente a equipos Linux compatibles con SSH. Las funciones de systemd y Docker requieren los componentes correspondientes instalados en el equipo remoto. Las funciones de IA requieren herramientas o servicios compatibles que debes configurar y pueden implicar cuentas de terceros, suscripciones o cargos por uso. Valhalla no proporciona alojamiento de servidores ni un servicio de modelos de IA integrado.
+
+El contenido original de Valhalla se licencia bajo PolyForm Noncommercial 1.0.0. Los usos fuera de sus permisos requieren autorización independiente. Los componentes de terceros conservan sus licencias. Contacto: norns.soft@gmail.com.","Valhalla é um cliente de gerenciamento remoto de servidores para desenvolvedores, administradores de sistemas e usuários de servidores pessoais. Ele reúne terminais SSH, monitoramento de servidores, transferências de arquivos e tarefas diárias de administração em um único aplicativo Windows, ajudando você a se conectar aos seus próprios servidores e mantê-los.
+
+Conecte-se a hosts remotos por SSH, abra várias sessões de terminal e consulte o uso de CPU, memória e disco, além da carga do sistema. Gerencie processos, serviços systemd e contêineres Docker. O gerenciador de arquivos SFTP integrado permite navegar por diretórios remotos, editar arquivos de texto e enviar ou baixar arquivos. Salve os comandos usados com frequência para acessá-los rapidamente.
+
+Valhalla também se conecta aos agentes de IA que você configurar, exibe respostas em fluxo e chamadas de ferramentas e permite tratar operações que exigem autorização. Nas configurações, você pode ativar sessões CLI experimentais e uma biblioteca de mídia NAS opcionais para acessar ferramentas remotas e serviços de mídia pessoais.
+
+O aplicativo oferece 17 idiomas de interface e configurações de tema e cor de destaque. Não é necessário criar uma conta Valhalla. Configurações de conexão, preferências e dados de sessão associados são armazenados localmente. Ao conectar-se a servidores, usar IA ou acessar mídia, o aplicativo se comunica com os serviços que você selecionar. As políticas de privacidade em chinês e inglês estão disponíveis para leitura offline no aplicativo.
+
+Para usar os recursos remotos, você precisa de um servidor ao qual tenha autorização de acesso e credenciais válidas. O gerenciamento de servidores é voltado principalmente a hosts Linux com suporte a SSH. Os recursos systemd e Docker exigem os componentes correspondentes instalados no host remoto. Os recursos de IA exigem ferramentas ou serviços compatíveis configurados por você e podem envolver contas de terceiros, assinaturas ou cobranças por uso. Valhalla não fornece hospedagem de servidores nem um serviço de modelo de IA integrado.
+
+O material original do Valhalla é licenciado sob PolyForm Noncommercial 1.0.0. Usos fora das permissões dessa licença exigem autorização separada. Componentes de terceiros mantêm suas licenças. Contato: norns.soft@gmail.com.","Valhalla — клиент для удалённого управления серверами, предназначенный для разработчиков, системных администраторов и владельцев личных серверов. Он объединяет SSH-терминалы, мониторинг серверов, передачу файлов и повседневное администрирование в одном приложении Windows, помогая подключаться к собственным серверам и обслуживать их.
+
+Подключайтесь к удалённым узлам по SSH, открывайте несколько терминальных сеансов и проверяйте загрузку процессора, использование памяти и дисков, а также нагрузку на систему. Управляйте процессами, службами systemd и контейнерами Docker. Встроенный файловый менеджер SFTP позволяет просматривать удалённые каталоги, редактировать текстовые файлы, загружать и скачивать файлы. Сохраняйте часто используемые команды для быстрого доступа.
+
+Valhalla также подключается к настроенным вами ИИ-агентам, отображает потоковые ответы и вызовы инструментов и позволяет обрабатывать операции, требующие разрешения. В настройках можно включить экспериментальные сеансы CLI и медиатеку NAS для доступа к удалённым инструментам и личным медиасервисам.
+
+Приложение поддерживает 17 языков интерфейса, выбор темы и акцентного цвета. Учётная запись Valhalla не требуется. Параметры подключения, настройки и связанные данные сеансов хранятся локально. При подключении к серверам, использовании ИИ или доступе к медиа приложение обменивается данными с выбранными сервисами. Политики конфиденциальности на китайском и английском языках доступны в приложении для чтения без интернета.
+
+Для удалённых функций необходимы сервер, к которому у вас есть право доступа, и действительные учётные данные. Управление серверами ориентировано прежде всего на узлы Linux с поддержкой SSH. Для функций systemd и Docker соответствующие компоненты должны быть установлены на удалённом узле. Функции ИИ требуют совместимых инструментов или сервисов, настроенных вами, и могут предполагать сторонние учётные записи, подписки или оплату по использованию. Valhalla не предоставляет хостинг серверов или встроенный сервис моделей ИИ.
+
+Оригинальные материалы Valhalla лицензируются по PolyForm Noncommercial 1.0.0. Использование вне разрешений этой лицензии требует отдельного разрешения. Сторонние компоненты сохраняют свои лицензии. Контакт: norns.soft@gmail.com.","Valhalla هو تطبيق عميل لإدارة الخوادم عن بُعد، موجّه للمطوّرين ومسؤولي الأنظمة وأصحاب الخوادم الشخصية. يجمع طرفيات SSH ومراقبة الخوادم ونقل الملفات ومهام الإدارة اليومية في تطبيق واحد لنظام Windows، لمساعدتك على الاتصال بخوادمك وصيانتها.
+
+اتصل بالأجهزة البعيدة عبر SSH، وافتح جلسات طرفية متعددة، وتابع استخدام المعالج والذاكرة والأقراص وحمل النظام. يمكنك إدارة العمليات وخدمات systemd وحاويات Docker. يتيح مدير ملفات SFTP المدمج استعراض المجلدات البعيدة وتحرير الملفات النصية ورفع الملفات وتنزيلها. احفظ الأوامر التي تستخدمها كثيرًا للوصول إليها بسرعة.
+
+يتصل Valhalla أيضًا بوكلاء الذكاء الاصطناعي الذين تضبط إعداداتهم، ويعرض الردود المتدفقة واستدعاءات الأدوات، ويتيح التعامل مع العمليات التي تتطلب موافقة. يمكنك تفعيل جلسات CLI التجريبية ومكتبة وسائط NAS الاختيارية من الإعدادات للوصول إلى الأدوات البعيدة وخدمات الوسائط الشخصية.
+
+يوفّر التطبيق واجهة بـ17 لغة، مع إعدادات للمظهر ولون التمييز. لا يلزم إنشاء حساب Valhalla. تُحفظ إعدادات الاتصال والتفضيلات وبيانات الجلسات المرتبطة بها محليًا. عند الاتصال بالخوادم أو استخدام الذكاء الاصطناعي أو الوصول إلى الوسائط، يتواصل التطبيق مع الخدمات التي تختارها. يمكن قراءة سياسات الخصوصية بالصينية والإنجليزية داخل التطبيق دون اتصال بالإنترنت.
+
+لاستخدام الميزات البعيدة، تحتاج إلى خادم تملك صلاحية الوصول إليه وبيانات اعتماد صالحة. تستهدف إدارة الخوادم أساسًا أجهزة Linux التي تدعم SSH. تتطلب ميزات systemd وDocker تثبيت المكوّنات المقابلة على الجهاز البعيد. تتطلب ميزات الذكاء الاصطناعي أدوات أو خدمات متوافقة تضبطها بنفسك، وقد تستلزم حسابات لدى جهات خارجية أو اشتراكات أو رسومًا حسب الاستخدام. لا يوفّر Valhalla استضافة للخوادم أو خدمة نماذج ذكاء اصطناعي مدمجة.
+
+تخضع الأجزاء الأصلية من Valhalla لترخيص PolyForm Noncommercial 1.0.0. يتطلب الاستخدام خارج الصلاحيات التي يمنحها الترخيص إذنًا منفصلًا. تحتفظ مكوّنات الجهات الخارجية بتراخيصها. للتواصل: norns.soft@gmail.com.","Valhalla डेवलपर, सिस्टम एडमिनिस्ट्रेटर और निजी सर्वर के मालिकों के लिए रिमोट सर्वर प्रबंधन क्लाइंट है। यह SSH टर्मिनल, सर्वर निगरानी, फ़ाइल ट्रांसफ़र और रोज़मर्रा के प्रशासन को एक Windows ऐप में जोड़ता है, जिससे आप अपने सर्वर से कनेक्ट होकर उनका रखरखाव कर सकते हैं।
+
+SSH से रिमोट होस्ट से कनेक्ट करें, कई टर्मिनल सत्र खोलें और CPU, मेमोरी, डिस्क उपयोग तथा सिस्टम लोड देखें। प्रोसेस, systemd सेवाओं और Docker कंटेनरों का प्रबंधन करें। अंतर्निहित SFTP फ़ाइल मैनेजर से रिमोट डायरेक्टरी ब्राउज़ करें, टेक्स्ट फ़ाइलें संपादित करें और फ़ाइलें अपलोड या डाउनलोड करें। अक्सर इस्तेमाल होने वाले कमांड सेव करके उन तक जल्दी पहुँचें।
+
+Valhalla आपके द्वारा कॉन्फ़िगर किए गए AI एजेंट से भी कनेक्ट होता है, स्ट्रीमिंग उत्तर और टूल कॉल दिखाता है तथा अनुमति माँगने वाली कार्रवाइयों को संभालने देता है। सेटिंग्स में वैकल्पिक प्रायोगिक CLI सत्र और NAS मीडिया लाइब्रेरी चालू करके रिमोट टूल और निजी मीडिया सेवाओं तक पहुँच सकते हैं।
+
+ऐप में 17 इंटरफ़ेस भाषाएँ और थीम व एक्सेंट रंग की सेटिंग्स उपलब्ध हैं। Valhalla खाता बनाना आवश्यक नहीं है। कनेक्शन सेटिंग्स, प्राथमिकताएँ और संबंधित सत्र डेटा स्थानीय रूप से सेव किए जाते हैं। सर्वर से कनेक्ट होने, AI का उपयोग करने या मीडिया खोलने पर ऐप आपकी चुनी हुई सेवाओं से संचार करता है। चीनी और अंग्रेज़ी में गोपनीयता नीतियाँ ऐप में ऑफ़लाइन पढ़ी जा सकती हैं।
+
+रिमोट सुविधाओं के लिए ऐसा सर्वर चाहिए जिसे एक्सेस करने की आपको अनुमति हो, और वैध लॉगिन जानकारी चाहिए। सर्वर प्रबंधन मुख्य रूप से SSH समर्थित Linux होस्ट के लिए है। systemd और Docker सुविधाओं के लिए संबंधित घटक रिमोट होस्ट पर इंस्टॉल होने चाहिए। AI सुविधाओं के लिए आपको संगत टूल या सेवाएँ कॉन्फ़िगर करनी होंगी; तृतीय-पक्ष खाते, सदस्यता या उपयोग के आधार पर शुल्क लग सकते हैं। Valhalla सर्वर होस्टिंग या अंतर्निहित AI मॉडल सेवा प्रदान नहीं करता।
+
+Valhalla की मूल सामग्री पर PolyForm Noncommercial 1.0.0 गैर-वाणिज्यिक लाइसेंस लागू है। इसकी अनुमति के बाहर उपयोग के लिए अलग प्राधिकरण आवश्यक है। तृतीय-पक्ष घटकों के अपने लाइसेंस लागू रहते हैं। संपर्क: norns.soft@gmail.com.","Valhalla adalah klien pengelolaan server jarak jauh untuk pengembang, administrator sistem, dan pemilik server pribadi. Aplikasi ini menggabungkan terminal SSH, pemantauan server, transfer berkas, dan tugas administrasi sehari-hari dalam satu aplikasi Windows untuk membantu Anda terhubung ke server sendiri dan merawatnya.
+
+Hubungkan ke host jarak jauh melalui SSH, buka beberapa sesi terminal, dan periksa penggunaan CPU, memori, disk, serta beban sistem. Kelola proses, layanan systemd, dan kontainer Docker. Pengelola berkas SFTP bawaan memungkinkan Anda menjelajahi direktori jarak jauh, mengedit berkas teks, serta mengunggah atau mengunduh berkas. Simpan perintah yang sering digunakan agar mudah diakses.
+
+Valhalla juga terhubung ke agen AI yang Anda konfigurasi, menampilkan respons secara bertahap dan pemanggilan alat, serta memungkinkan Anda menangani operasi yang membutuhkan persetujuan. Sesi CLI eksperimental dan pustaka media NAS opsional dapat diaktifkan di Pengaturan untuk mengakses alat jarak jauh dan layanan media pribadi.
+
+Aplikasi menyediakan 17 bahasa antarmuka serta pengaturan tema dan warna aksen. Akun Valhalla tidak diperlukan. Pengaturan koneksi, preferensi, dan data sesi terkait disimpan secara lokal. Koneksi ke server, penggunaan AI, atau akses media melibatkan komunikasi dengan layanan yang Anda pilih. Kebijakan privasi dalam bahasa Tionghoa dan Inggris dapat dibaca secara offline di dalam aplikasi.
+
+Untuk menggunakan fitur jarak jauh, Anda memerlukan server yang berhak Anda akses dan kredensial yang valid. Pengelolaan server terutama ditujukan untuk host Linux dengan dukungan SSH. Fitur systemd dan Docker memerlukan komponen terkait yang terpasang pada host jarak jauh. Fitur AI memerlukan alat atau layanan kompatibel yang Anda konfigurasi dan mungkin melibatkan akun pihak ketiga, langganan, atau biaya berdasarkan penggunaan. Valhalla tidak menyediakan hosting server atau layanan model AI bawaan.
+
+Materi asli Valhalla dilisensikan berdasarkan PolyForm Noncommercial 1.0.0. Penggunaan di luar izin lisensi tersebut memerlukan izin terpisah. Komponen pihak ketiga tetap menggunakan lisensinya sendiri. Kontak: norns.soft@gmail.com.","Valhalla è un client per la gestione remota dei server, pensato per sviluppatori, amministratori di sistema e proprietari di server personali. Riunisce terminali SSH, monitoraggio dei server, trasferimenti di file e attività di amministrazione quotidiane in un'unica app Windows, per aiutarti a connetterti ai tuoi server e mantenerli.
+
+Connettiti agli host remoti tramite SSH, apri più sessioni di terminale e controlla l'utilizzo di CPU, memoria e disco e il carico del sistema. Gestisci processi, servizi systemd e container Docker. Il gestore di file SFTP integrato permette di esplorare directory remote, modificare file di testo e caricare o scaricare file. Salva i comandi utilizzati di frequente per accedervi rapidamente.
+
+Valhalla si connette anche agli agenti IA che configuri, mostra risposte in streaming e chiamate agli strumenti e consente di gestire le operazioni che richiedono autorizzazione. Nelle impostazioni puoi attivare sessioni CLI sperimentali e una libreria multimediale NAS opzionali per accedere a strumenti remoti e servizi multimediali personali.
+
+L'app offre 17 lingue dell'interfaccia e impostazioni per temi e colori di evidenziazione. Non è necessario un account Valhalla. Le impostazioni di connessione, le preferenze e i dati delle sessioni associati sono salvati localmente. La connessione ai server, l'uso dell'IA e l'accesso ai contenuti multimediali comportano comunicazioni con i servizi selezionati. Le informative sulla privacy in cinese e inglese sono consultabili offline nell'app.
+
+Per utilizzare le funzionalità remote servono un server a cui sei autorizzato ad accedere e credenziali valide. La gestione dei server è rivolta principalmente a host Linux con supporto SSH. Le funzionalità systemd e Docker richiedono i relativi componenti installati sull'host remoto. Le funzionalità IA richiedono strumenti o servizi compatibili configurati da te e possono comportare account di terze parti, abbonamenti o costi a consumo. Valhalla non offre hosting di server né un servizio di modelli IA integrato.
+
+Il materiale originale di Valhalla è concesso sotto PolyForm Noncommercial 1.0.0. Gli usi non consentiti dalla licenza richiedono un’autorizzazione separata. I componenti di terze parti mantengono le proprie licenze. Contatto: norns.soft@gmail.com.","Valhalla; geliştiriciler, sistem yöneticileri ve kişisel sunucu sahipleri için bir uzak sunucu yönetim istemcisidir. SSH terminallerini, sunucu izlemeyi, dosya aktarımlarını ve günlük yönetim işlemlerini tek bir Windows uygulamasında birleştirerek kendi sunucularınıza bağlanmanıza ve bakım yapmanıza yardımcı olur.
+
+Uzak makinelere SSH üzerinden bağlanın, birden fazla terminal oturumu açın ve CPU, bellek, disk kullanımı ile sistem yükünü görüntüleyin. İşlemleri, systemd hizmetlerini ve Docker kapsayıcılarını yönetin. Yerleşik SFTP dosya yöneticisiyle uzak dizinlere göz atabilir, metin dosyalarını düzenleyebilir ve dosya yükleyip indirebilirsiniz. Sık kullandığınız komutları hızlı erişim için kaydedin.
+
+Valhalla, sizin yapılandırdığınız yapay zekâ ajanlarına da bağlanır; akış hâlindeki yanıtları ve araç çağrılarını gösterir, yetkilendirme gerektiren işlemleri ele almanıza olanak tanır. Uzak araçlara ve kişisel medya hizmetlerine erişmek için Ayarlar'da isteğe bağlı deneysel CLI oturumlarını ve NAS medya kitaplığını etkinleştirebilirsiniz.
+
+Uygulama 17 arayüz dili ile tema ve vurgu rengi ayarları sunar. Valhalla hesabı gerekmez. Bağlantı ayarları, tercihler ve ilgili oturum verileri yerel olarak saklanır. Sunuculara bağlanırken, yapay zekâ kullanırken veya medyaya erişirken seçtiğiniz hizmetlerle iletişim kurulur. Çince ve İngilizce gizlilik politikaları uygulama içinde çevrimdışı okunabilir.
+
+Uzak özellikleri kullanmak için erişim yetkinizin olduğu bir sunucu ve geçerli kimlik bilgileri gerekir. Sunucu yönetimi öncelikle SSH destekleyen Linux makinelerine yöneliktir. systemd ve Docker özellikleri, ilgili bileşenlerin uzak makinede kurulu olmasını gerektirir. Yapay zekâ özellikleri, sizin yapılandırdığınız uyumlu araçları veya hizmetleri gerektirir; üçüncü taraf hesapları, abonelikler veya kullanıma bağlı ücretler söz konusu olabilir. Valhalla sunucu barındırma veya yerleşik bir yapay zekâ modeli hizmeti sağlamaz.
+
+Valhalla’nın özgün materyalleri PolyForm Noncommercial 1.0.0 kapsamında lisanslanır. Lisansın izinleri dışındaki kullanımlar ayrı yetkilendirme gerektirir. Üçüncü taraf bileşenler kendi lisanslarını korur. İletişim: norns.soft@gmail.com.","Valhalla là ứng dụng quản lý máy chủ từ xa dành cho nhà phát triển, quản trị viên hệ thống và người sở hữu máy chủ cá nhân. Ứng dụng kết hợp terminal SSH, giám sát máy chủ, truyền tệp và các tác vụ quản trị hằng ngày trong một ứng dụng Windows, giúp bạn kết nối và bảo trì máy chủ của mình.
+
+Kết nối với máy từ xa qua SSH, mở nhiều phiên terminal và xem mức sử dụng CPU, bộ nhớ, ổ đĩa cùng tải hệ thống. Quản lý tiến trình, dịch vụ systemd và container Docker. Trình quản lý tệp SFTP tích hợp cho phép duyệt thư mục từ xa, chỉnh sửa tệp văn bản, tải tệp lên hoặc xuống. Lưu các lệnh thường dùng để truy cập nhanh.
+
+Valhalla cũng kết nối với các tác nhân AI do bạn cấu hình, hiển thị phản hồi theo luồng và lời gọi công cụ, đồng thời cho phép xử lý những thao tác cần được cấp quyền. Bạn có thể bật các phiên CLI thử nghiệm và thư viện đa phương tiện NAS tùy chọn trong phần Cài đặt để truy cập công cụ từ xa và dịch vụ đa phương tiện cá nhân.
+
+Ứng dụng cung cấp 17 ngôn ngữ giao diện cùng cài đặt giao diện và màu nhấn. Không cần đăng ký tài khoản Valhalla. Cài đặt kết nối, tùy chọn và dữ liệu phiên liên quan được lưu trên thiết bị. Khi kết nối máy chủ, sử dụng AI hoặc truy cập nội dung đa phương tiện, ứng dụng trao đổi dữ liệu với dịch vụ bạn chọn. Chính sách quyền riêng tư bằng tiếng Trung và tiếng Anh có thể đọc ngoại tuyến trong ứng dụng.
+
+Để sử dụng tính năng từ xa, bạn cần máy chủ mà bạn có quyền truy cập và thông tin xác thực hợp lệ. Quản lý máy chủ chủ yếu dành cho máy Linux hỗ trợ SSH. Tính năng systemd và Docker yêu cầu cài đặt các thành phần tương ứng trên máy từ xa. Tính năng AI yêu cầu công cụ hoặc dịch vụ tương thích do bạn cấu hình và có thể cần tài khoản bên thứ ba, gói đăng ký hoặc phí theo mức sử dụng. Valhalla không cung cấp dịch vụ lưu trữ máy chủ hay dịch vụ mô hình AI tích hợp.
+
+Nội dung gốc của Valhalla được cấp phép theo PolyForm Noncommercial 1.0.0. Việc sử dụng ngoài phạm vi cho phép cần được cấp phép riêng. Thành phần bên thứ ba giữ giấy phép riêng. Liên hệ: norns.soft@gmail.com.","Valhalla เป็นแอปไคลเอนต์สำหรับจัดการเซิร์ฟเวอร์ระยะไกล ออกแบบมาสำหรับนักพัฒนา ผู้ดูแลระบบ และผู้ใช้เซิร์ฟเวอร์ส่วนตัว โดยรวมเทอร์มินัล SSH การตรวจสอบเซิร์ฟเวอร์ การถ่ายโอนไฟล์ และงานดูแลระบบประจำวันไว้ในแอป Windows เดียว เพื่อช่วยให้คุณเชื่อมต่อและบำรุงรักษาเซิร์ฟเวอร์ของตนเองได้
+
+เชื่อมต่อเครื่องระยะไกลผ่าน SSH เปิดเทอร์มินัลหลายเซสชัน และดูการใช้ CPU หน่วยความจำ ดิสก์ และภาระของระบบ จัดการโปรเซส บริการ systemd และคอนเทนเนอร์ Docker ตัวจัดการไฟล์ SFTP ในแอปช่วยให้เรียกดูไดเรกทอรีระยะไกล แก้ไขไฟล์ข้อความ อัปโหลดและดาวน์โหลดไฟล์ได้ พร้อมบันทึกคำสั่งที่ใช้บ่อยเพื่อเรียกใช้ได้อย่างรวดเร็ว
+
+Valhalla ยังเชื่อมต่อกับเอเจนต์ AI ที่คุณตั้งค่า แสดงคำตอบแบบสตรีมและการเรียกใช้เครื่องมือ รวมถึงช่วยให้คุณจัดการการดำเนินการที่ต้องได้รับอนุญาต คุณสามารถเปิดใช้เซสชัน CLI แบบทดลองและคลังสื่อ NAS ซึ่งเป็นตัวเลือกเสริมในการตั้งค่า เพื่อเข้าถึงเครื่องมือระยะไกลและบริการสื่อส่วนตัว
+
+แอปรองรับอินเทอร์เฟซ 17 ภาษา พร้อมการตั้งค่าธีมและสีเน้น ไม่จำเป็นต้องสมัครบัญชี Valhalla การตั้งค่าการเชื่อมต่อ การตั้งค่าส่วนบุคคล และข้อมูลเซสชันที่เกี่ยวข้องจะบันทึกไว้ในอุปกรณ์ เมื่อเชื่อมต่อเซิร์ฟเวอร์ ใช้งาน AI หรือเข้าถึงสื่อ แอปจะสื่อสารกับบริการที่คุณเลือก สามารถอ่านนโยบายความเป็นส่วนตัวภาษาจีนและภาษาอังกฤษแบบออฟไลน์ภายในแอปได้
+
+การใช้งานระยะไกลต้องมีเซิร์ฟเวอร์ที่คุณมีสิทธิ์เข้าถึงและข้อมูลรับรองที่ถูกต้อง การจัดการเซิร์ฟเวอร์มุ่งเน้นเครื่อง Linux ที่รองรับ SSH เป็นหลัก ฟังก์ชัน systemd และ Docker ต้องติดตั้งส่วนประกอบที่เกี่ยวข้องบนเครื่องระยะไกล ฟังก์ชัน AI ต้องใช้เครื่องมือหรือบริการที่เข้ากันได้ซึ่งคุณตั้งค่าเอง และอาจต้องใช้บัญชีบุคคลที่สาม การสมัครสมาชิก หรือชำระค่าบริการตามการใช้งาน Valhalla ไม่ได้ให้บริการโฮสต์เซิร์ฟเวอร์หรือบริการโมเดล AI ในตัว
+
+เนื้อหาต้นฉบับของ Valhalla อยู่ภายใต้ PolyForm Noncommercial 1.0.0 การใช้นอกขอบเขตที่ใบอนุญาตอนุญาตต้องได้รับอนุญาตแยกต่างหาก ส่วนประกอบบุคคลที่สามคงใบอนุญาตของตนเอง ติดต่อ norns.soft@gmail.com"
+ReleaseNotes,3,文本,,,,,,,,,,,,,,,,,,
+Title,4,文本,,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具,Valhalla-服务器运维管理工具
+ShortTitle,5,文本,,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla
+SortTitle,6,文本,,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla,Valhalla
+VoiceTitle,7,文本,,,,,,,,,,,,,,,,,,
+ShortDescription,8,文本,,"Connect to and maintain your servers in one Windows app, with multiple SSH terminal sessions, resource monitoring, SFTP file transfers, Docker management, and connections to AI Agents you configure.",在一个 Windows 应用中连接和维护你的服务器：SSH 多会话终端、资源监控、SFTP 文件传输与 Docker 管理，并可连接自配置 AI Agent。,在一個 Windows 應用程式中連線和維護你的伺服器：SSH 多工作階段終端、資源監控、SFTP 檔案傳輸與 Docker 管理，並可連線至自行設定的 AI Agent。,一つの Windows アプリでサーバーに接続して管理。複数の SSH ターミナル、リソース監視、SFTP ファイル転送、Docker 管理、自分で設定した AI エージェントへの接続に対応します。,"하나의 Windows 앱에서 서버에 연결하고 관리하세요. 다중 SSH 터미널 세션, 리소스 모니터링, SFTP 파일 전송, Docker 관리와 직접 구성한 AI 에이전트 연결을 지원합니다.","Verwalten Sie Ihre Server in einer Windows-App: mehrere SSH-Terminalsitzungen, Ressourcenüberwachung, SFTP-Dateiübertragung, Docker-Verwaltung und Verbindungen zu selbst konfigurierten KI-Agenten.","Gérez vos serveurs dans une application Windows : sessions de terminal SSH multiples, surveillance des ressources, transferts SFTP, gestion Docker et connexion aux agents IA que vous configurez.","Gestiona tus servidores desde una aplicación de Windows: varias sesiones SSH, supervisión de recursos, transferencias SFTP, gestión de Docker y conexión a los agentes de IA que configures.","Gerencie seus servidores em um aplicativo Windows: várias sessões SSH, monitoramento de recursos, transferências SFTP, gerenciamento Docker e conexões com agentes de IA configurados por você.","Управляйте серверами в одном приложении Windows: несколько SSH-сеансов, мониторинг ресурсов, передача файлов по SFTP, управление Docker и подключение к настроенным вами ИИ-агентам.",أدر خوادمك في تطبيق Windows واحد: جلسات SSH متعددة، ومراقبة الموارد، ونقل ملفات SFTP، وإدارة Docker، والاتصال بوكلاء الذكاء الاصطناعي الذين تضبط إعداداتهم.,"एक Windows ऐप में सर्वर का प्रबंधन करें: कई SSH टर्मिनल सत्र, संसाधन निगरानी, SFTP फ़ाइल ट्रांसफ़र, Docker प्रबंधन और आपके कॉन्फ़िगर किए AI एजेंट से कनेक्शन।","Kelola server Anda dalam satu aplikasi Windows: beberapa sesi SSH, pemantauan sumber daya, transfer berkas SFTP, pengelolaan Docker, dan koneksi ke agen AI yang Anda konfigurasi.","Gestisci i tuoi server in un'app Windows: più sessioni SSH, monitoraggio delle risorse, trasferimenti SFTP, gestione di Docker e connessioni agli agenti IA che configuri.","Sunucularınızı tek bir Windows uygulamasında yönetin: çoklu SSH oturumları, kaynak izleme, SFTP dosya aktarımı, Docker yönetimi ve yapılandırdığınız yapay zekâ ajanlarına bağlantı.","Quản lý máy chủ trong một ứng dụng Windows: nhiều phiên SSH, giám sát tài nguyên, truyền tệp SFTP, quản lý Docker và kết nối với các tác nhân AI do bạn cấu hình.",จัดการเซิร์ฟเวอร์ในแอป Windows เดียว พร้อม SSH หลายเซสชัน การตรวจสอบทรัพยากร การถ่ายโอนไฟล์ SFTP การจัดการ Docker และการเชื่อมต่อเอเจนต์ AI ที่คุณตั้งค่า
+DevStudio,9,文本,,Norns,Norns,Norns,Norns,Norns,Norns,Norns,Norns,Norns,Norns,Norns,Norns,Norns,Norns,Norns,Norns,Norns
+CopyrightTrademarkInformation,12,文本,,© 2026 Norns. Third-party components remain subject to their respective owners' copyrights and licenses. Relevant notices are distributed with the app.,© 2026 Norns。第三方组件的版权及许可归其各自权利人所有；相关声明随应用分发。,© 2026 Norns。第三方元件的著作權及授權歸其各自權利人所有；相關聲明隨應用程式散布。,© 2026 Norns。第三者コンポーネントの著作権とライセンスは各権利者に帰属します。関連する通知はアプリに同梱されています。,© 2026 Norns. 타사 구성 요소의 저작권과 라이선스는 각 권리자에게 귀속됩니다. 관련 고지는 앱과 함께 배포됩니다.,© 2026 Norns. Für Drittanbieterkomponenten gelten die Urheberrechte und Lizenzen ihrer jeweiligen Rechteinhaber. Zugehörige Hinweise werden mit der App bereitgestellt.,© 2026 Norns. Les composants tiers restent soumis aux droits d'auteur et licences de leurs titulaires respectifs. Les mentions correspondantes sont fournies avec l'application.,© 2026 Norns. Los componentes de terceros están sujetos a los derechos de autor y las licencias de sus respectivos titulares. Los avisos correspondientes se distribuyen con la aplicación.,© 2026 Norns. Componentes de terceiros estão sujeitos aos direitos autorais e às licenças dos respectivos titulares. Os avisos correspondentes são distribuídos com o aplicativo.,© 2026 Norns. Права и лицензии на сторонние компоненты принадлежат их правообладателям. Соответствующие уведомления распространяются с приложением.,© 2026 Norns. تخضع مكوّنات الجهات الخارجية لحقوق النشر والتراخيص الخاصة بأصحابها. تُوزّع الإشعارات ذات الصلة مع التطبيق.,© 2026 Norns. तृतीय-पक्ष घटकों के कॉपीराइट और लाइसेंस उनके अधिकारधारकों के हैं। संबंधित सूचनाएँ ऐप के साथ वितरित की जाती हैं।,© 2026 Norns. Komponen pihak ketiga tunduk pada hak cipta dan lisensi pemegang hak masing-masing. Pemberitahuan terkait didistribusikan bersama aplikasi.,© 2026 Norns. I componenti di terze parti sono soggetti ai diritti d'autore e alle licenze dei rispettivi titolari. Le relative informazioni sono distribuite con l'app.,© 2026 Norns. Üçüncü taraf bileşenler ilgili hak sahiplerinin telif haklarına ve lisanslarına tabidir. İlgili bildirimler uygulamayla birlikte dağıtılır.,© 2026 Norns. Thành phần bên thứ ba tuân theo bản quyền và giấy phép của chủ sở hữu tương ứng. Các thông báo liên quan được phân phối cùng ứng dụng.,© 2026 Norns ส่วนประกอบของบุคคลที่สามอยู่ภายใต้ลิขสิทธิ์และใบอนุญาตของเจ้าของสิทธิ์แต่ละราย ประกาศที่เกี่ยวข้องเผยแพร่มาพร้อมแอป
+AdditionalLicenseTerms,13,文本,,"Original Valhalla material is licensed under PolyForm Noncommercial 1.0.0. Uses outside the permissions of that license require separate authorization. Third-party components retain their own licenses. Licensing contact: norns.soft@gmail.com. The official English terms follow.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Valhalla 原创部分采用 PolyForm Noncommercial 1.0.0 非商用许可。超出该许可允许范围的用途须另行授权，第三方组件保留各自许可证。授权联系：norns.soft@gmail.com。以下为英文正式条款。
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Valhalla 原創部分採用 PolyForm Noncommercial 1.0.0 非商用授權。超出該授權允許範圍的用途須另行取得授權，第三方元件保留各自授權。授權聯絡：norns.soft@gmail.com。以下為英文正式條款。
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Valhalla の独自部分は PolyForm Noncommercial 1.0.0 に基づき提供されます。このライセンスの許可範囲外の用途には別途許可が必要です。第三者コンポーネントには各自のライセンスが適用されます。許可に関する連絡先：norns.soft@gmail.com。以下は正式な英語の条項です。
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Valhalla의 독자적인 부분에는 PolyForm Noncommercial 1.0.0 비상업용 라이선스가 적용됩니다. 허용 범위를 벗어난 사용에는 별도 승인이 필요합니다. 타사 구성 요소에는 각자의 라이선스가 적용됩니다. 라이선스 문의: norns.soft@gmail.com. 아래는 공식 영문 약관입니다.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Für eigenständige Valhalla-Inhalte gilt PolyForm Noncommercial 1.0.0. Nutzungen außerhalb der dortigen Erlaubnisse benötigen eine gesonderte Genehmigung. Drittanbieterkomponenten behalten ihre eigenen Lizenzen. Lizenzkontakt: norns.soft@gmail.com. Es folgen die offiziellen englischen Bedingungen.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Les éléments originaux de Valhalla sont soumis à PolyForm Noncommercial 1.0.0. Tout usage hors des autorisations de cette licence nécessite une autorisation distincte. Les composants tiers conservent leurs licences. Contact : norns.soft@gmail.com. Les conditions officielles en anglais suivent.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","El contenido original de Valhalla se licencia bajo PolyForm Noncommercial 1.0.0. Los usos fuera de sus permisos requieren autorización independiente. Los componentes de terceros conservan sus licencias. Contacto: norns.soft@gmail.com. A continuación figuran los términos oficiales en inglés.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","O material original do Valhalla é licenciado sob PolyForm Noncommercial 1.0.0. Usos fora das permissões dessa licença exigem autorização separada. Componentes de terceiros mantêm suas licenças. Contato: norns.soft@gmail.com. Os termos oficiais em inglês estão abaixo.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Оригинальные материалы Valhalla лицензируются по PolyForm Noncommercial 1.0.0. Использование вне разрешений этой лицензии требует отдельного разрешения. Сторонние компоненты сохраняют свои лицензии. Контакт: norns.soft@gmail.com. Ниже приведены официальные условия на английском языке.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","تخضع الأجزاء الأصلية من Valhalla لترخيص PolyForm Noncommercial 1.0.0. يتطلب الاستخدام خارج الصلاحيات التي يمنحها الترخيص إذنًا منفصلًا. تحتفظ مكوّنات الجهات الخارجية بتراخيصها. للتواصل: norns.soft@gmail.com. ترد أدناه الشروط الرسمية بالإنجليزية.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Valhalla की मूल सामग्री पर PolyForm Noncommercial 1.0.0 गैर-वाणिज्यिक लाइसेंस लागू है। इसकी अनुमति के बाहर उपयोग के लिए अलग प्राधिकरण आवश्यक है। तृतीय-पक्ष घटकों के अपने लाइसेंस लागू रहते हैं। संपर्क: norns.soft@gmail.com. आधिकारिक अंग्रेज़ी शर्तें नीचे हैं।
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Materi asli Valhalla dilisensikan berdasarkan PolyForm Noncommercial 1.0.0. Penggunaan di luar izin lisensi tersebut memerlukan izin terpisah. Komponen pihak ketiga tetap menggunakan lisensinya sendiri. Kontak: norns.soft@gmail.com. Ketentuan resmi bahasa Inggris tercantum di bawah.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Il materiale originale di Valhalla è concesso sotto PolyForm Noncommercial 1.0.0. Gli usi non consentiti dalla licenza richiedono un’autorizzazione separata. I componenti di terze parti mantengono le proprie licenze. Contatto: norns.soft@gmail.com. Seguono i termini ufficiali in inglese.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Valhalla’nın özgün materyalleri PolyForm Noncommercial 1.0.0 kapsamında lisanslanır. Lisansın izinleri dışındaki kullanımlar ayrı yetkilendirme gerektirir. Üçüncü taraf bileşenler kendi lisanslarını korur. İletişim: norns.soft@gmail.com. Resmî İngilizce koşullar aşağıdadır.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","Nội dung gốc của Valhalla được cấp phép theo PolyForm Noncommercial 1.0.0. Việc sử dụng ngoài phạm vi cho phép cần được cấp phép riêng. Thành phần bên thứ ba giữ giấy phép riêng. Liên hệ: norns.soft@gmail.com. Điều khoản chính thức bằng tiếng Anh nằm bên dưới.
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.","เนื้อหาต้นฉบับของ Valhalla อยู่ภายใต้ PolyForm Noncommercial 1.0.0 การใช้นอกขอบเขตที่ใบอนุญาตอนุญาตต้องได้รับอนุญาตแยกต่างหาก ส่วนประกอบบุคคลที่สามคงใบอนุญาตของตนเอง ติดต่อ norns.soft@gmail.com ข้อกำหนดภาษาอังกฤษอย่างเป็นทางการอยู่ด้านล่าง
+
+Required Notice: Copyright (c) 2026 Norns.
+
+# PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
+
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have ""fair use"" rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses."
+DesktopScreenshot1,100,相对路径(或指向合作伙伴中心文件的 URL),,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118658/listingassets/3014151769108623112,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118658/listingassets/3014151769108623112,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3058142015872260541
+DesktopScreenshot2,101,相对路径(或指向合作伙伴中心文件的 URL),,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118658/listingassets/3012268173903330785,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118658/listingassets/3012268173903330785,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118656/listingassets/3002319991733379592
+DesktopScreenshot3,102,相对路径(或指向合作伙伴中心文件的 URL),,,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118658/listingassets/3060712601172039086,https://developer.microsoft.com/en-us/dashboard/apps/9MZ8ML12WH8R/submissions/1152921505702061256/listings/1152922700028118658/listingassets/3060712601172039086,,,,,,,,,,,,,,
+DesktopScreenshot4,103,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot5,104,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot6,105,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot7,106,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot8,107,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot9,108,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot10,109,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot11,110,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot12,111,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot13,112,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot14,113,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot15,114,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot16,115,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot17,116,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot18,117,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot19,118,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot20,119,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot21,120,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot22,121,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot23,122,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot24,123,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot25,124,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot26,125,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot27,126,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot28,127,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot29,128,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshot30,129,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption1,150,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption2,151,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption3,152,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption4,153,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption5,154,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption6,155,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption7,156,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption8,157,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption9,158,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption10,159,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption11,160,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption12,161,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption13,162,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption14,163,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption15,164,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption16,165,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption17,166,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption18,167,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption19,168,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption20,169,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption21,170,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption22,171,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption23,172,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption24,173,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption25,174,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption26,175,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption27,176,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption28,177,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption29,178,文本,,,,,,,,,,,,,,,,,,
+DesktopScreenshotCaption30,179,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshot1,200,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot2,201,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot3,202,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot4,203,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot5,204,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot6,205,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot7,206,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot8,207,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot9,208,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot10,209,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot11,210,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot12,211,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot13,212,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot14,213,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot15,214,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot16,215,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot17,216,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot18,217,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot19,218,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot20,219,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot21,220,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot22,221,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot23,222,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot24,223,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot25,224,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot26,225,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot27,226,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot28,227,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot29,228,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshot30,229,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption1,250,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption2,251,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption3,252,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption4,253,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption5,254,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption6,255,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption7,256,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption8,257,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption9,258,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption10,259,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption11,260,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption12,261,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption13,262,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption14,263,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption15,264,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption16,265,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption17,266,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption18,267,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption19,268,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption20,269,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption21,270,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption22,271,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption23,272,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption24,273,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption25,274,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption26,275,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption27,276,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption28,277,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption29,278,文本,,,,,,,,,,,,,,,,,,
+MobileScreenshotCaption30,279,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshot1,300,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot2,301,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot3,302,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot4,303,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot5,304,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot6,305,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot7,306,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot8,307,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot9,308,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot10,309,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot11,310,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot12,311,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot13,312,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot14,313,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot15,314,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot16,315,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot17,316,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot18,317,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot19,318,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot20,319,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot21,320,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot22,321,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot23,322,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot24,323,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot25,324,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot26,325,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot27,326,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot28,327,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot29,328,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshot30,329,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption1,350,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption2,351,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption3,352,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption4,353,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption5,354,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption6,355,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption7,356,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption8,357,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption9,358,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption10,359,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption11,360,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption12,361,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption13,362,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption14,363,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption15,364,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption16,365,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption17,366,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption18,367,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption19,368,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption20,369,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption21,370,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption22,371,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption23,372,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption24,373,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption25,374,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption26,375,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption27,376,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption28,377,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption29,378,文本,,,,,,,,,,,,,,,,,,
+XboxScreenshotCaption30,379,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshot1,400,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot2,401,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot3,402,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot4,403,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot5,404,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot6,405,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot7,406,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot8,407,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot9,408,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot10,409,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot11,410,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot12,411,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot13,412,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot14,413,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot15,414,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot16,415,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot17,416,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot18,417,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot19,418,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot20,419,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot21,420,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot22,421,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot23,422,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot24,423,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot25,424,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot26,425,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot27,426,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot28,427,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot29,428,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshot30,429,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption1,450,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption2,451,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption3,452,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption4,453,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption5,454,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption6,455,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption7,456,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption8,457,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption9,458,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption10,459,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption11,460,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption12,461,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption13,462,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption14,463,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption15,464,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption16,465,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption17,466,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption18,467,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption19,468,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption20,469,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption21,470,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption22,471,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption23,472,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption24,473,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption25,474,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption26,475,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption27,476,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption28,477,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption29,478,文本,,,,,,,,,,,,,,,,,,
+HolographicScreenshotCaption30,479,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot11,510,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot12,511,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot13,512,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot14,513,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot15,514,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot16,515,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot17,516,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot18,517,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot19,518,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot20,519,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot21,520,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot22,521,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot23,522,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot24,523,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot25,524,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot26,525,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot27,526,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot28,527,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot29,528,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshot30,529,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption11,560,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption12,561,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption13,562,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption14,563,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption15,564,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption16,565,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption17,566,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption18,567,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption19,568,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption20,569,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption21,570,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption22,571,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption23,572,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption24,573,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption25,574,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption26,575,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption27,576,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption28,577,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption29,578,文本,,,,,,,,,,,,,,,,,,
+SurfaceHubScreenshotCaption30,579,文本,,,,,,,,,,,,,,,,,,
+StoreLogo720x1080,600,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+StoreLogo1080x1080,601,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+StoreLogo300x300,602,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+OverrideLogosForWin10,603,True/False,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+StoreLogoOverride150x150,604,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+StoreLogoOverride71x71,605,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+PromoImage1920x1080,606,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+PromoImage2400x1200,607,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxBrandedKeyArt584x800,608,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxTitledHero1920x1080,609,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+XboxFeaturedPromo1080x1080,610,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+OptionalPromo358x358,611,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+OptionalPromo1000x800,612,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+OptionalPromo414x180,613,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Feature1,700,文本,,Manage multiple SSH server connections,管理多个 SSH 服务器连接,管理多個 SSH 伺服器連線,複数の SSH サーバー接続を管理,여러 SSH 서버 연결 관리,Mehrere SSH-Serververbindungen verwalten,Gérer plusieurs connexions à des serveurs SSH,Gestionar varias conexiones a servidores SSH,Gerenciar várias conexões com servidores SSH,Управление несколькими подключениями к SSH-серверам,إدارة اتصالات متعددة بخوادم SSH,कई SSH सर्वर कनेक्शन का प्रबंधन,Kelola beberapa koneksi server SSH,Gestire più connessioni a server SSH,Birden fazla SSH sunucu bağlantısını yönetin,Quản lý nhiều kết nối máy chủ SSH,จัดการการเชื่อมต่อเซิร์ฟเวอร์ SSH หลายรายการ
+Feature2,701,文本,,Interactive SSH terminals and multiple sessions,SSH 交互终端与多会话操作,SSH 互動終端與多工作階段操作,対話型 SSH ターミナルと複数セッション,대화형 SSH 터미널과 다중 세션,Interaktive SSH-Terminals und mehrere Sitzungen,Terminaux SSH interactifs et sessions multiples,Terminales SSH interactivos y múltiples sesiones,Terminais SSH interativos e várias sessões,Интерактивные SSH-терминалы и несколько сеансов,طرفيات SSH تفاعلية وجلسات متعددة,इंटरैक्टिव SSH टर्मिनल और कई सत्र,Terminal SSH interaktif dan beberapa sesi,Terminali SSH interattivi e più sessioni,Etkileşimli SSH terminalleri ve çoklu oturumlar,Terminal SSH tương tác và nhiều phiên,เทอร์มินัล SSH แบบโต้ตอบและหลายเซสชัน
+Feature3,702,文本,,"Monitor CPU, memory, disk usage, and system load",查看 CPU、内存、磁盘和系统负载,查看 CPU、記憶體、磁碟和系統負載,CPU、メモリ、ディスク使用量、システム負荷を監視,"CPU, 메모리, 디스크 사용량과 시스템 부하 모니터링","CPU, Arbeitsspeicher, Festplattenbelegung und Systemlast überwachen","Surveiller le processeur, la mémoire, les disques et la charge système","Supervisar CPU, memoria, uso del disco y carga del sistema","Monitorar CPU, memória, uso de disco e carga do sistema","Мониторинг процессора, памяти, дисков и нагрузки на систему",مراقبة المعالج والذاكرة والأقراص وحمل النظام,"CPU, मेमोरी, डिस्क उपयोग और सिस्टम लोड की निगरानी","Pantau CPU, memori, penggunaan disk, dan beban sistem","Monitorare CPU, memoria, utilizzo del disco e carico del sistema","CPU, bellek, disk kullanımı ve sistem yükünü izleyin","Giám sát CPU, bộ nhớ, ổ đĩa và tải hệ thống",ตรวจสอบ CPU หน่วยความจำ การใช้ดิสก์ และภาระของระบบ
+Feature4,703,文本,,"Browse, upload, download, and edit files over SFTP",SFTP 文件浏览、上传、下载和文本编辑,SFTP 檔案瀏覽、上傳、下載和文字編輯,SFTP でファイルを閲覧、転送、編集,"SFTP 파일 탐색, 업로드, 다운로드와 편집","Dateien per SFTP durchsuchen, übertragen und bearbeiten","Parcourir, transférer et modifier des fichiers via SFTP","Explorar, transferir y editar archivos mediante SFTP","Navegar, transferir e editar arquivos por SFTP","Просмотр, передача и редактирование файлов по SFTP",استعراض الملفات ونقلها وتحريرها عبر SFTP,"SFTP से फ़ाइलें ब्राउज़, ट्रांसफ़र और संपादित करें","Jelajahi, transfer, dan edit berkas melalui SFTP","Esplorare, trasferire e modificare file tramite SFTP","SFTP ile dosyalara göz atın, dosya aktarın ve düzenleyin","Duyệt, truyền và chỉnh sửa tệp qua SFTP",เรียกดู ถ่ายโอน และแก้ไขไฟล์ผ่าน SFTP
+Feature5,704,文本,,Manage remote processes and systemd services,远程进程与 systemd 服务管理,遠端程序與 systemd 服務管理,リモートプロセスと systemd サービスを管理,원격 프로세스와 systemd 서비스 관리,Entfernte Prozesse und systemd-Dienste verwalten,Gérer les processus distants et les services systemd,Gestionar procesos remotos y servicios systemd,Gerenciar processos remotos e serviços systemd,Управление удалёнными процессами и службами systemd,إدارة العمليات البعيدة وخدمات systemd,रिमोट प्रोसेस और systemd सेवाओं का प्रबंधन,Kelola proses jarak jauh dan layanan systemd,Gestire processi remoti e servizi systemd,Uzak işlemleri ve systemd hizmetlerini yönetin,Quản lý tiến trình từ xa và dịch vụ systemd,จัดการโปรเซสระยะไกลและบริการ systemd
+Feature6,705,文本,,"View Docker container status, logs, and container terminals",查看 Docker 容器状态、日志和容器终端,查看 Docker 容器狀態、記錄和容器終端,Docker コンテナーの状態、ログ、ターミナルを表示,"Docker 컨테이너 상태, 로그와 컨테이너 터미널 확인","Docker-Containerstatus, Protokolle und Containerterminals anzeigen","Consulter l'état, les journaux et les terminaux des conteneurs Docker","Consultar el estado, los registros y los terminales de contenedores Docker","Consultar status, logs e terminais de contêineres Docker","Просмотр состояния, журналов и терминалов контейнеров Docker",عرض حالة حاويات Docker وسجلاتها وطرفياتها,"Docker कंटेनर की स्थिति, लॉग और टर्मिनल देखें","Lihat status, log, dan terminal kontainer Docker","Visualizzare stato, log e terminali dei container Docker","Docker kapsayıcı durumunu, günlüklerini ve terminallerini görüntüleyin","Xem trạng thái, nhật ký và terminal của container Docker",ดูสถานะ บันทึก และเทอร์มินัลของคอนเทนเนอร์ Docker
+Feature7,706,文本,,Save and run frequently used commands,保存与执行常用快捷命令,儲存與執行常用快捷命令,よく使うコマンドを保存して実行,자주 사용하는 명령 저장 및 실행,Häufig verwendete Befehle speichern und ausführen,Enregistrer et exécuter les commandes fréquentes,Guardar y ejecutar comandos frecuentes,Salvar e executar comandos usados com frequência,Сохранение и запуск часто используемых команд,حفظ الأوامر المستخدمة كثيرًا وتشغيلها,अक्सर इस्तेमाल होने वाले कमांड सेव करें और चलाएँ,Simpan dan jalankan perintah yang sering digunakan,Salvare ed eseguire i comandi più utilizzati,Sık kullanılan komutları kaydedin ve çalıştırın,Lưu và chạy các lệnh thường dùng,บันทึกและเรียกใช้คำสั่งที่ใช้บ่อย
+Feature8,707,文本,,Connect to AI Agents you configure and view streaming responses and tool calls,连接自配置 AI Agent，查看流式响应与工具调用,連線至自行設定的 AI Agent，查看串流回應與工具呼叫,自分で設定した AI エージェントの応答とツール呼び出しを確認,직접 구성한 AI 에이전트의 스트리밍 응답과 도구 호출 확인,Antworten und Werkzeugaufrufe selbst konfigurierter KI-Agenten verfolgen,Afficher les réponses en continu et les appels d'outils des agents IA configurés,Ver respuestas en tiempo real y llamadas a herramientas de agentes de IA configurados,Ver respostas em fluxo e chamadas de ferramentas dos agentes de IA configurados,Просмотр потоковых ответов и вызовов инструментов настроенных ИИ-агентов,عرض الردود المتدفقة واستدعاءات الأدوات لوكلاء الذكاء الاصطناعي الذين تضبطهم,कॉन्फ़िगर किए AI एजेंट के स्ट्रीमिंग उत्तर और टूल कॉल देखें,Lihat respons bertahap dan pemanggilan alat dari agen AI yang Anda konfigurasi,Visualizzare risposte in streaming e chiamate agli strumenti degli agenti IA configurati,Yapılandırdığınız yapay zekâ ajanlarının yanıtlarını ve araç çağrılarını görüntüleyin,Xem phản hồi theo luồng và lời gọi công cụ của tác nhân AI đã cấu hình,ดูคำตอบแบบสตรีมและการเรียกใช้เครื่องมือของเอเจนต์ AI ที่ตั้งค่าไว้
+Feature9,708,文本,,Optional experimental CLI sessions and NAS media library,可选实验性 CLI 会话与 NAS 媒体库,可選實驗性 CLI 工作階段與 NAS 媒體庫,実験的な CLI セッションと NAS メディアライブラリを任意で有効化,선택적으로 활성화하는 실험적 CLI 세션과 NAS 미디어 라이브러리,Optionale experimentelle CLI-Sitzungen und NAS-Medienbibliothek,Sessions CLI expérimentales et bibliothèque multimédia NAS en option,Sesiones CLI experimentales y biblioteca multimedia NAS opcionales,Sessões CLI experimentais e biblioteca de mídia NAS opcionais,Экспериментальные сеансы CLI и медиатека NAS по выбору пользователя,جلسات CLI تجريبية ومكتبة وسائط NAS اختيارية,वैकल्पिक प्रायोगिक CLI सत्र और NAS मीडिया लाइब्रेरी,Sesi CLI eksperimental dan pustaka media NAS opsional,Sessioni CLI sperimentali e libreria multimediale NAS opzionali,İsteğe bağlı deneysel CLI oturumları ve NAS medya kitaplığı,Phiên CLI thử nghiệm và thư viện đa phương tiện NAS tùy chọn,เซสชัน CLI แบบทดลองและคลังสื่อ NAS ที่เลือกเปิดใช้ได้
+Feature10,709,文本,,17 interface languages with theme customization,17 种界面语言与主题设置,17 種介面語言與佈景主題設定,17 言語のインターフェースとテーマ設定,17개 인터페이스 언어와 테마 설정,17 Oberflächensprachen und anpassbares Design,17 langues d'interface et thèmes personnalisables,17 idiomas de interfaz y temas personalizables,17 idiomas de interface e temas personalizáveis,17 языков интерфейса и настройка темы,واجهة بـ17 لغة وإعدادات للمظهر,17 इंटरफ़ेस भाषाएँ और थीम सेटिंग्स,17 bahasa antarmuka dan tema yang dapat disesuaikan,17 lingue dell'interfaccia e temi personalizzabili,17 arayüz dili ve özelleştirilebilir temalar,17 ngôn ngữ giao diện và tùy chỉnh giao diện,อินเทอร์เฟซ 17 ภาษาและการปรับแต่งธีม
+Feature11,710,文本,,Offline privacy policies and privacy contact options within the app,应用内离线隐私政策与隐私联系入口,應用程式內離線隱私權政策與隱私聯絡入口,アプリ内でオフラインのプライバシーポリシーと連絡先を確認,앱 내 오프라인 개인정보 처리방침과 연락처,Offline-Datenschutzhinweise und Kontaktmöglichkeiten in der App,Politiques de confidentialité hors ligne et coordonnées dans l'application,Políticas de privacidad sin conexión y opciones de contacto en la aplicación,Políticas de privacidade offline e opções de contato no aplicativo,Политики конфиденциальности без интернета и контакты в приложении,سياسات خصوصية دون اتصال وخيارات للتواصل داخل التطبيق,ऐप में ऑफ़लाइन गोपनीयता नीतियाँ और संपर्क विकल्प,Kebijakan privasi offline dan pilihan kontak di dalam aplikasi,Informative sulla privacy offline e contatti nell'app,Uygulama içinde çevrimdışı gizlilik politikaları ve iletişim seçenekleri,Chính sách quyền riêng tư ngoại tuyến và thông tin liên hệ trong ứng dụng,นโยบายความเป็นส่วนตัวแบบออฟไลน์และช่องทางติดต่อในแอป
+Feature12,711,文本,,No Valhalla account required,无需注册 Valhalla 账号,無需註冊 Valhalla 帳號,Valhalla アカウントの登録不要,Valhalla 계정 등록 불필요,Kein Valhalla-Konto erforderlich,Aucun compte Valhalla nécessaire,No requiere una cuenta de Valhalla,Não exige uma conta Valhalla,Учётная запись Valhalla не требуется,لا يتطلب حساب Valhalla,Valhalla खाता आवश्यक नहीं,Tidak memerlukan akun Valhalla,Nessun account Valhalla richiesto,Valhalla hesabı gerekmez,Không cần tài khoản Valhalla,ไม่ต้องสมัครบัญชี Valhalla
+Feature13,712,文本,,,,,,,,,,,,,,,,,,
+Feature14,713,文本,,,,,,,,,,,,,,,,,,
+Feature15,714,文本,,,,,,,,,,,,,,,,,,
+Feature16,715,文本,,,,,,,,,,,,,,,,,,
+Feature17,716,文本,,,,,,,,,,,,,,,,,,
+Feature18,717,文本,,,,,,,,,,,,,,,,,,
+Feature19,718,文本,,,,,,,,,,,,,,,,,,
+Feature20,719,文本,,,,,,,,,,,,,,,,,,
+MinimumHardwareReq1,800,文本,,"Windows 10 version 2004 (build 19041) or later, or Windows 11; x64 processor.",Windows 10 版本 2004（内部版本 19041）或更高版本，或 Windows 11；x64 处理器。,Windows 10 版本 2004（組建 19041）或更新版本，或 Windows 11；x64 處理器。,Windows 10 バージョン 2004（ビルド 19041）以降、または Windows 11。x64 プロセッサー。,"Windows 10 버전 2004(빌드 19041) 이상 또는 Windows 11, x64 프로세서.",Windows 10 ab Version 2004 (Build 19041) oder Windows 11; x64-Prozessor.,"Windows 10 version 2004 (build 19041) ou ultérieure, ou Windows 11 ; processeur x64.","Windows 10 versión 2004 (compilación 19041) o posterior, o Windows 11; procesador x64.","Windows 10 versão 2004 (build 19041) ou posterior, ou Windows 11; processador x64.",Windows 10 версии 2004 (сборка 19041) или новее либо Windows 11; процессор x64.,Windows 10 الإصدار 2004 (البنية 19041) أو أحدث، أو Windows 11؛ معالج x64.,"Windows 10 संस्करण 2004 (बिल्ड 19041) या नया, अथवा Windows 11; x64 प्रोसेसर।","Windows 10 versi 2004 (build 19041) atau lebih baru, atau Windows 11; prosesor x64.","Windows 10 versione 2004 (build 19041) o successiva, oppure Windows 11; processore x64.",Windows 10 sürüm 2004 (derleme 19041) veya üzeri ya da Windows 11; x64 işlemci.,Windows 10 phiên bản 2004 (bản dựng 19041) trở lên hoặc Windows 11; bộ xử lý x64.,Windows 10 เวอร์ชัน 2004 (บิลด์ 19041) ขึ้นไป หรือ Windows 11 พร้อมตัวประมวลผล x64
+MinimumHardwareReq2,801,文本,,"Remote management requires a reachable SSH server, a network connection, and valid credentials.",远程管理需要可访问的 SSH 服务器、网络连接及有效凭据。,遠端管理需要可存取的 SSH 伺服器、網路連線及有效憑證。,リモート管理には、接続可能な SSH サーバー、ネットワーク接続、有効な認証情報が必要です。,"원격 관리에는 연결 가능한 SSH 서버, 네트워크 연결과 유효한 인증 정보가 필요합니다.","Fernverwaltung erfordert einen erreichbaren SSH-Server, eine Netzwerkverbindung und gültige Zugangsdaten.","La gestion à distance nécessite un serveur SSH accessible, une connexion réseau et des identifiants valides.","La gestión remota requiere un servidor SSH accesible, conexión de red y credenciales válidas.","O gerenciamento remoto exige um servidor SSH acessível, conexão de rede e credenciais válidas.","Для удалённого управления нужны доступный SSH-сервер, сетевое подключение и действительные учётные данные.",تتطلب الإدارة عن بُعد خادم SSH يمكن الوصول إليه واتصالًا بالشبكة وبيانات اعتماد صالحة.,"रिमोट प्रबंधन के लिए पहुँच योग्य SSH सर्वर, नेटवर्क कनेक्शन और वैध लॉगिन जानकारी आवश्यक है।","Pengelolaan jarak jauh memerlukan server SSH yang dapat diakses, koneksi jaringan, dan kredensial yang valid.","La gestione remota richiede un server SSH raggiungibile, una connessione di rete e credenziali valide.","Uzak yönetim için erişilebilir bir SSH sunucusu, ağ bağlantısı ve geçerli kimlik bilgileri gerekir.","Quản lý từ xa cần máy chủ SSH có thể truy cập, kết nối mạng và thông tin xác thực hợp lệ.",การจัดการระยะไกลต้องมีเซิร์ฟเวอร์ SSH ที่เข้าถึงได้ การเชื่อมต่อเครือข่าย และข้อมูลรับรองที่ถูกต้อง
+MinimumHardwareReq3,802,文本,,"systemd, Docker, and AI features require the corresponding components or services to be installed and configured on the remote host.",systemd、Docker 和 AI 功能需要远端安装并配置相应组件或服务。,systemd、Docker 和 AI 功能需要遠端安裝並設定相應元件或服務。,systemd、Docker、AI の機能には、リモートホストへの対応コンポーネントやサービスの導入と設定が必要です。,"systemd, Docker 및 AI 기능에는 원격 호스트의 해당 구성 요소 또는 서비스 설치와 구성이 필요합니다.","Für systemd, Docker und KI müssen die entsprechenden Komponenten oder Dienste auf dem entfernten Host installiert und konfiguriert sein.","Les fonctions systemd, Docker et IA nécessitent des composants ou services correspondants installés et configurés sur l'hôte distant.","Las funciones de systemd, Docker e IA requieren los componentes o servicios correspondientes instalados y configurados en el equipo remoto.","Os recursos systemd, Docker e IA exigem os componentes ou serviços correspondentes instalados e configurados no host remoto.","Функции systemd, Docker и ИИ требуют установки и настройки соответствующих компонентов или сервисов на удалённом узле.",تتطلب ميزات systemd وDocker والذكاء الاصطناعي تثبيت المكوّنات أو الخدمات المقابلة وإعدادها على الجهاز البعيد.,"systemd, Docker और AI सुविधाओं के लिए संबंधित घटक या सेवाएँ रिमोट होस्ट पर इंस्टॉल और कॉन्फ़िगर होनी चाहिए।","Fitur systemd, Docker, dan AI memerlukan komponen atau layanan terkait yang terpasang dan dikonfigurasi pada host jarak jauh.","Le funzionalità systemd, Docker e IA richiedono i relativi componenti o servizi installati e configurati sull'host remoto.","systemd, Docker ve yapay zekâ özellikleri, ilgili bileşenlerin veya hizmetlerin uzak makinede kurulu ve yapılandırılmış olmasını gerektirir.","Tính năng systemd, Docker và AI cần các thành phần hoặc dịch vụ tương ứng được cài đặt và cấu hình trên máy từ xa.","ฟังก์ชัน systemd, Docker และ AI ต้องติดตั้งและตั้งค่าส่วนประกอบหรือบริการที่เกี่ยวข้องบนเครื่องระยะไกล"
+MinimumHardwareReq4,803,文本,,,,,,,,,,,,,,,,,,
+MinimumHardwareReq5,804,文本,,,,,,,,,,,,,,,,,,
+MinimumHardwareReq6,805,文本,,,,,,,,,,,,,,,,,,
+MinimumHardwareReq7,806,文本,,,,,,,,,,,,,,,,,,
+MinimumHardwareReq8,807,文本,,,,,,,,,,,,,,,,,,
+MinimumHardwareReq9,808,文本,,,,,,,,,,,,,,,,,,
+MinimumHardwareReq10,809,文本,,,,,,,,,,,,,,,,,,
+MinimumHardwareReq11,810,文本,,,,,,,,,,,,,,,,,,
+RecommendedHardwareReq1,850,文本,,,,,,,,,,,,,,,,,,
+RecommendedHardwareReq2,851,文本,,,,,,,,,,,,,,,,,,
+RecommendedHardwareReq3,852,文本,,,,,,,,,,,,,,,,,,
+RecommendedHardwareReq4,853,文本,,,,,,,,,,,,,,,,,,
+RecommendedHardwareReq5,854,文本,,,,,,,,,,,,,,,,,,
+RecommendedHardwareReq6,855,文本,,,,,,,,,,,,,,,,,,
+RecommendedHardwareReq7,856,文本,,,,,,,,,,,,,,,,,,
+RecommendedHardwareReq8,857,文本,,,,,,,,,,,,,,,,,,
+RecommendedHardwareReq9,858,文本,,,,,,,,,,,,,,,,,,
+RecommendedHardwareReq10,859,文本,,,,,,,,,,,,,,,,,,
+RecommendedHardwareReq11,860,文本,,,,,,,,,,,,,,,,,,
+SearchTerm1,900,文本,,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH
+SearchTerm2,901,文本,,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP
+SearchTerm3,902,文本,,Linux administration,Linux 运维,Linux 維運,Linux 管理,Linux 관리,Linux-Verwaltung,Administration Linux,Administración Linux,Administração Linux,Администрирование Linux,إدارة Linux,Linux प्रशासन,Administrasi Linux,Amministrazione Linux,Linux yönetimi,Quản trị Linux,ดูแลระบบ Linux
+SearchTerm4,903,文本,,Remote terminal,远程终端,遠端終端,リモートターミナル,원격 터미널,Remote-Terminal,Terminal distant,Terminal remoto,Terminal remoto,Удалённый терминал,طرفية بعيدة,रिमोट टर्मिनल,Terminal jarak jauh,Terminale remoto,Uzak terminal,Terminal từ xa,เทอร์มินัลระยะไกล
+SearchTerm5,904,文本,,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker
+SearchTerm6,905,文本,,Container management,容器管理,容器管理,コンテナー管理,컨테이너 관리,Containerverwaltung,Gestion de conteneurs,Gestión de contenedores,Gerenciamento de contêineres,Управление контейнерами,إدارة الحاويات,कंटेनर प्रबंधन,Pengelolaan kontainer,Gestione container,Kapsayıcı yönetimi,Quản lý container,จัดการคอนเทนเนอร์
+SearchTerm7,906,文本,,AI Agent,AI Agent,AI Agent,AI エージェント,AI 에이전트,KI-Agent,Agent IA,Agente de IA,Agente de IA,ИИ-агент,وكيل ذكاء اصطناعي,AI एजेंट,Agen AI,Agente IA,Yapay zekâ ajanı,Tác nhân AI,เอเจนต์ AI
+TrailerToPlayAtTopOfListing,999,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer1,1000,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer2,1001,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer3,1002,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer4,1003,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer5,1004,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer6,1005,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer7,1006,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer8,1007,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer9,1008,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer10,1009,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer11,1010,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer12,1011,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer13,1012,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer14,1013,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+Trailer15,1014,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerTitle1,1020,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle2,1021,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle3,1022,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle4,1023,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle5,1024,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle6,1025,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle7,1026,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle8,1027,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle9,1028,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle10,1029,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle11,1030,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle12,1031,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle13,1032,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle14,1033,文本,,,,,,,,,,,,,,,,,,
+TrailerTitle15,1034,文本,,,,,,,,,,,,,,,,,,
+TrailerThumbnail1,1040,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail2,1041,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail3,1042,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail4,1043,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail5,1044,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail6,1045,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail7,1046,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail8,1047,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail9,1048,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail10,1049,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail11,1050,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail12,1051,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail13,1052,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail14,1053,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerThumbnail15,1054,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption1,1055,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption2,1056,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption3,1057,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption4,1058,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption5,1059,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption6,1060,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption7,1061,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption8,1062,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption9,1063,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption10,1064,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption11,1065,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption12,1066,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption13,1067,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption14,1068,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerClosedCaption15,1069,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription1,1070,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription2,1071,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription3,1072,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription4,1073,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription5,1074,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription6,1075,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription7,1076,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription8,1077,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription9,1078,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription10,1079,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription11,1080,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription12,1081,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription13,1082,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription14,1083,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+TrailerAudioDescription15,1084,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,

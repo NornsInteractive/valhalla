@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "Gagal memperbarui pengaturan fitur eksperimental",
   "settingsExperimentalNasTitle": "Media NAS",
   "settingsExperimentalNasDesc": "Aktifkan pustaka media, pindai folder, dan pemutaran audio",
-  "settingsLanguageSaveFailed": "Gagal memperbarui pengaturan bahasa"
+  "settingsLanguageSaveFailed": "Gagal memperbarui pengaturan bahasa",
+  "settingsAboutPrivacy": "Tentang dan privasi",
+  "privacyPolicyTitle": "Kebijakan privasi",
+  "privacyPolicyDescription": "Penggunaan data dan pilihan Anda",
+  "privacyContactTitle": "Kontak privasi",
+  "privacyCopyEmail": "Salin alamat email",
+  "privacyEmailCopied": "Alamat email disalin",
+  "privacyOnlineVersion": "Lihat versi online",
+  "privacyLinkFailed": "Tautan tidak dapat dibuka. Anda dapat menyalin alamat email.",
+  "privacyLoadFailed": "Kebijakan tidak dapat dimuat. Lihat versi online.",
+  "privacyVersionUnknown": "Versi tidak tersedia",
+  "aboutWebsite": "Situs web resmi",
+  "aboutLicense": "Lisensi aplikasi",
+  "aboutThirdPartyLicenses": "Lisensi sumber terbuka pihak ketiga",
+  "aboutLicenseSummary": "Materi asli Valhalla dilisensikan untuk penggunaan nonkomersial berdasarkan PolyForm Noncommercial 1.0.0. Penggunaan komersial di luar izin lisensi memerlukan izin terpisah. Komponen pihak ketiga tetap menggunakan lisensinya masing-masing. Ketentuan lengkap di bawah mengatur penggunaan.",
+  "aboutCopyrightNotice": "Pemberitahuan hak cipta",
+  "aboutLicenseLoadFailed": "Lisensi tidak dapat dimuat. Hubungi norns.soft@gmail.com.",
+  "aboutLinkFailed": "Tautan tidak dapat dibuka. Buka https://norns.cc.cd di browser Anda."
 }

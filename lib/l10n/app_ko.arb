@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "실험적 기능 설정 업데이트 실패",
   "settingsExperimentalNasTitle": "NAS 미디어",
   "settingsExperimentalNasDesc": "미디어 라이브러리, 폴더 검사 및 오디오 재생 활성화",
-  "settingsLanguageSaveFailed": "언어 설정 업데이트 실패"
+  "settingsLanguageSaveFailed": "언어 설정 업데이트 실패",
+  "settingsAboutPrivacy": "정보 및 개인정보",
+  "privacyPolicyTitle": "개인정보 처리방침",
+  "privacyPolicyDescription": "데이터 사용 및 선택 사항",
+  "privacyContactTitle": "개인정보 문의",
+  "privacyCopyEmail": "이메일 주소 복사",
+  "privacyEmailCopied": "이메일 주소를 복사했습니다",
+  "privacyOnlineVersion": "온라인 버전 보기",
+  "privacyLinkFailed": "링크를 열 수 없습니다. 이메일 주소를 복사할 수 있습니다.",
+  "privacyLoadFailed": "처리방침을 불러올 수 없습니다. 온라인 버전을 확인하세요.",
+  "privacyVersionUnknown": "버전 정보 없음",
+  "aboutWebsite": "공식 웹사이트",
+  "aboutLicense": "앱 라이선스",
+  "aboutThirdPartyLicenses": "타사 오픈 소스 라이선스",
+  "aboutLicenseSummary": "Valhalla의 자체 콘텐츠에는 비상업용 PolyForm Noncommercial 1.0.0 라이선스가 적용됩니다. 라이선스 허용 범위를 벗어나는 상업적 사용에는 별도 승인이 필요합니다. 타사 구성 요소에는 해당 라이선스가 적용됩니다. 아래 전체 약관이 사용 조건을 규정합니다.",
+  "aboutCopyrightNotice": "저작권 고지",
+  "aboutLicenseLoadFailed": "라이선스를 불러올 수 없습니다. norns.soft@gmail.com으로 문의하세요.",
+  "aboutLinkFailed": "링크를 열 수 없습니다. 브라우저에서 https://norns.cc.cd에 접속하세요."
 }

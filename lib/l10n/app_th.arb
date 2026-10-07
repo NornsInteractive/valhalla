@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "อัปเดตการตั้งค่าคุณสมบัติทดลองไม่สำเร็จ",
   "settingsExperimentalNasTitle": "NAS มีเดีย",
   "settingsExperimentalNasDesc": "เปิดใช้งานคลังสื่อ การสแกนโฟลเดอร์ และการเล่นเสียง",
-  "settingsLanguageSaveFailed": "อัปเดตการตั้งค่าภาษาไม่สำเร็จ"
+  "settingsLanguageSaveFailed": "อัปเดตการตั้งค่าภาษาไม่สำเร็จ",
+  "settingsAboutPrivacy": "เกี่ยวกับและความเป็นส่วนตัว",
+  "privacyPolicyTitle": "นโยบายความเป็นส่วนตัว",
+  "privacyPolicyDescription": "การใช้ข้อมูลและตัวเลือกของคุณ",
+  "privacyContactTitle": "ติดต่อเรื่องความเป็นส่วนตัว",
+  "privacyCopyEmail": "คัดลอกอีเมล",
+  "privacyEmailCopied": "คัดลอกอีเมลแล้ว",
+  "privacyOnlineVersion": "ดูเวอร์ชันออนไลน์",
+  "privacyLinkFailed": "เปิดลิงก์ไม่ได้ คุณยังคัดลอกอีเมลได้",
+  "privacyLoadFailed": "โหลดนโยบายไม่ได้ โปรดดูเวอร์ชันออนไลน์",
+  "privacyVersionUnknown": "ไม่มีข้อมูลเวอร์ชัน",
+  "aboutWebsite": "เว็บไซต์ทางการ",
+  "aboutLicense": "สัญญาอนุญาตของแอป",
+  "aboutThirdPartyLicenses": "สัญญาอนุญาตโอเพนซอร์สของบุคคลที่สาม",
+  "aboutLicenseSummary": "เนื้อหาต้นฉบับของ Valhalla ได้รับอนุญาตให้ใช้แบบไม่ใช่เชิงพาณิชย์ภายใต้ PolyForm Noncommercial 1.0.0 การใช้เชิงพาณิชย์นอกขอบเขตที่สัญญาอนุญาตกำหนดต้องได้รับอนุญาตแยกต่างหาก ส่วนประกอบของบุคคลที่สามยังคงใช้สัญญาอนุญาตของตน การใช้งานอยู่ภายใต้ข้อกำหนดฉบับเต็มด้านล่าง",
+  "aboutCopyrightNotice": "ประกาศลิขสิทธิ์",
+  "aboutLicenseLoadFailed": "ไม่สามารถโหลดสัญญาอนุญาตได้ โปรดติดต่อ norns.soft@gmail.com",
+  "aboutLinkFailed": "ไม่สามารถเปิดลิงก์ได้ โปรดเปิด https://norns.cc.cd ในเบราว์เซอร์"
 }

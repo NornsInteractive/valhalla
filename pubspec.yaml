@@ -29,6 +29,7 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   path_provider: ^2.1.5
+  package_info_plus: ^10.2.1
   flutter:
     sdk: flutter
   flutter_localizations:
@@ -99,6 +100,10 @@ flutter:
 
   assets:
     - assets/icons/valhalla_icon.png
+    - PRIVACY.md
+    - PRIVACY.en.md
+    - LICENSE
+    - NOTICE
 
   fonts:
     - family: Inter

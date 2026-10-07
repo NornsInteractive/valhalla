@@ -3730,4 +3730,60 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settingsLanguageSaveFailed =>
       'Échec de la mise à jour des paramètres de langue';
+
+  @override
+  String get settingsAboutPrivacy => 'À propos et confidentialité';
+
+  @override
+  String get privacyPolicyTitle => 'Politique de confidentialité';
+
+  @override
+  String get privacyPolicyDescription => 'Utilisation des données et vos choix';
+
+  @override
+  String get privacyContactTitle => 'Contact confidentialité';
+
+  @override
+  String get privacyCopyEmail => 'Copier l’adresse e-mail';
+
+  @override
+  String get privacyEmailCopied => 'Adresse e-mail copiée';
+
+  @override
+  String get privacyOnlineVersion => 'Voir la version en ligne';
+
+  @override
+  String get privacyLinkFailed =>
+      'Impossible d’ouvrir le lien. Vous pouvez copier l’adresse e-mail.';
+
+  @override
+  String get privacyLoadFailed =>
+      'Impossible de charger la politique. Consultez la version en ligne.';
+
+  @override
+  String get privacyVersionUnknown => 'Version indisponible';
+
+  @override
+  String get aboutWebsite => 'Site officiel';
+
+  @override
+  String get aboutLicense => 'Licence de l’application';
+
+  @override
+  String get aboutThirdPartyLicenses => 'Licences open source tierces';
+
+  @override
+  String get aboutLicenseSummary =>
+      'Le contenu original de Valhalla est sous licence PolyForm Noncommercial 1.0.0 pour un usage non commercial. Tout usage commercial dépassant les permissions de la licence nécessite une autorisation distincte. Les composants tiers conservent leurs propres licences. Les conditions complètes ci-dessous régissent l’utilisation.';
+
+  @override
+  String get aboutCopyrightNotice => 'Mentions de droit d’auteur';
+
+  @override
+  String get aboutLicenseLoadFailed =>
+      'Impossible de charger la licence. Contactez norns.soft@gmail.com.';
+
+  @override
+  String get aboutLinkFailed =>
+      'Impossible d’ouvrir le lien. Ouvrez https://norns.cc.cd dans votre navigateur.';
 }

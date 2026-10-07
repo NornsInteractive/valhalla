@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "Cập nhật cài đặt tính năng thử nghiệm thất bại",
   "settingsExperimentalNasTitle": "Media NAS",
   "settingsExperimentalNasDesc": "Bật thư viện phương tiện, quét thư mục và phát âm thanh",
-  "settingsLanguageSaveFailed": "Cập nhật cài đặt ngôn ngữ thất bại"
+  "settingsLanguageSaveFailed": "Cập nhật cài đặt ngôn ngữ thất bại",
+  "settingsAboutPrivacy": "Giới thiệu và quyền riêng tư",
+  "privacyPolicyTitle": "Chính sách quyền riêng tư",
+  "privacyPolicyDescription": "Sử dụng dữ liệu và lựa chọn của bạn",
+  "privacyContactTitle": "Liên hệ về quyền riêng tư",
+  "privacyCopyEmail": "Sao chép địa chỉ email",
+  "privacyEmailCopied": "Đã sao chép địa chỉ email",
+  "privacyOnlineVersion": "Xem phiên bản trực tuyến",
+  "privacyLinkFailed": "Không thể mở liên kết. Bạn có thể sao chép địa chỉ email.",
+  "privacyLoadFailed": "Không thể tải chính sách. Hãy xem phiên bản trực tuyến.",
+  "privacyVersionUnknown": "Không có thông tin phiên bản",
+  "aboutWebsite": "Trang web chính thức",
+  "aboutLicense": "Giấy phép ứng dụng",
+  "aboutThirdPartyLicenses": "Giấy phép nguồn mở của bên thứ ba",
+  "aboutLicenseSummary": "Nội dung gốc của Valhalla được cấp phép cho mục đích phi thương mại theo PolyForm Noncommercial 1.0.0. Việc sử dụng thương mại ngoài phạm vi cho phép của giấy phép cần được cấp phép riêng. Các thành phần bên thứ ba giữ nguyên giấy phép của mình. Việc sử dụng tuân theo toàn bộ điều khoản bên dưới.",
+  "aboutCopyrightNotice": "Thông báo bản quyền",
+  "aboutLicenseLoadFailed": "Không thể tải giấy phép. Vui lòng liên hệ norns.soft@gmail.com.",
+  "aboutLinkFailed": "Không thể mở liên kết. Hãy mở https://norns.cc.cd trong trình duyệt."
 }

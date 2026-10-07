@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "प्रायोगिक सुविधा सेटिंग्स अद्यतन करने में विफल",
   "settingsExperimentalNasTitle": "NAS मीडिया",
   "settingsExperimentalNasDesc": "मीडिया लाइब्रेरी, फ़ोल्डर स्कैन और ऑडियो प्लेबैक सक्षम करें",
-  "settingsLanguageSaveFailed": "भाषा सेटिंग्स अद्यतन करने में विफल"
+  "settingsLanguageSaveFailed": "भाषा सेटिंग्स अद्यतन करने में विफल",
+  "settingsAboutPrivacy": "परिचय और गोपनीयता",
+  "privacyPolicyTitle": "गोपनीयता नीति",
+  "privacyPolicyDescription": "डेटा का उपयोग और आपके विकल्प",
+  "privacyContactTitle": "गोपनीयता संपर्क",
+  "privacyCopyEmail": "ईमेल पता कॉपी करें",
+  "privacyEmailCopied": "ईमेल पता कॉपी किया गया",
+  "privacyOnlineVersion": "ऑनलाइन संस्करण देखें",
+  "privacyLinkFailed": "लिंक नहीं खुल सका। आप ईमेल पता कॉपी कर सकते हैं।",
+  "privacyLoadFailed": "नीति लोड नहीं हुई। ऑनलाइन संस्करण देखें।",
+  "privacyVersionUnknown": "संस्करण उपलब्ध नहीं",
+  "aboutWebsite": "आधिकारिक वेबसाइट",
+  "aboutLicense": "ऐप लाइसेंस",
+  "aboutThirdPartyLicenses": "तृतीय-पक्ष ओपन सोर्स लाइसेंस",
+  "aboutLicenseSummary": "Valhalla की मूल सामग्री PolyForm Noncommercial 1.0.0 के अंतर्गत गैर-व्यावसायिक उपयोग के लिए लाइसेंस प्राप्त है। लाइसेंस की अनुमतियों से बाहर व्यावसायिक उपयोग के लिए अलग अनुमति आवश्यक है। तृतीय-पक्ष घटकों के अपने लाइसेंस लागू रहते हैं। उपयोग नीचे दी गई पूरी शर्तों के अधीन है।",
+  "aboutCopyrightNotice": "कॉपीराइट सूचनाएँ",
+  "aboutLicenseLoadFailed": "लाइसेंस लोड नहीं हो सका। norns.soft@gmail.com से संपर्क करें।",
+  "aboutLinkFailed": "लिंक नहीं खुल सका। अपने ब्राउज़र में https://norns.cc.cd खोलें।"
 }

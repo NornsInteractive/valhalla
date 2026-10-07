@@ -3682,4 +3682,60 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get settingsLanguageSaveFailed =>
       'Gagal memperbarui pengaturan bahasa';
+
+  @override
+  String get settingsAboutPrivacy => 'Tentang dan privasi';
+
+  @override
+  String get privacyPolicyTitle => 'Kebijakan privasi';
+
+  @override
+  String get privacyPolicyDescription => 'Penggunaan data dan pilihan Anda';
+
+  @override
+  String get privacyContactTitle => 'Kontak privasi';
+
+  @override
+  String get privacyCopyEmail => 'Salin alamat email';
+
+  @override
+  String get privacyEmailCopied => 'Alamat email disalin';
+
+  @override
+  String get privacyOnlineVersion => 'Lihat versi online';
+
+  @override
+  String get privacyLinkFailed =>
+      'Tautan tidak dapat dibuka. Anda dapat menyalin alamat email.';
+
+  @override
+  String get privacyLoadFailed =>
+      'Kebijakan tidak dapat dimuat. Lihat versi online.';
+
+  @override
+  String get privacyVersionUnknown => 'Versi tidak tersedia';
+
+  @override
+  String get aboutWebsite => 'Situs web resmi';
+
+  @override
+  String get aboutLicense => 'Lisensi aplikasi';
+
+  @override
+  String get aboutThirdPartyLicenses => 'Lisensi sumber terbuka pihak ketiga';
+
+  @override
+  String get aboutLicenseSummary =>
+      'Materi asli Valhalla dilisensikan untuk penggunaan nonkomersial berdasarkan PolyForm Noncommercial 1.0.0. Penggunaan komersial di luar izin lisensi memerlukan izin terpisah. Komponen pihak ketiga tetap menggunakan lisensinya masing-masing. Ketentuan lengkap di bawah mengatur penggunaan.';
+
+  @override
+  String get aboutCopyrightNotice => 'Pemberitahuan hak cipta';
+
+  @override
+  String get aboutLicenseLoadFailed =>
+      'Lisensi tidak dapat dimuat. Hubungi norns.soft@gmail.com.';
+
+  @override
+  String get aboutLinkFailed =>
+      'Tautan tidak dapat dibuka. Buka https://norns.cc.cd di browser Anda.';
 }

@@ -1,5 +1,9 @@
 # Valhalla
 
+许可：**PolyForm Noncommercial 1.0.0**，源码可用、仅限许可允许的非商用等用途；这不是 OSI 开源许可。
+完整条款见 [LICENSE](LICENSE)，版权和第三方范围见 [NOTICE](NOTICE)，中英文说明见 [许可说明](docs/licensing.md)。
+不在许可允许范围内的商业使用须另行授权，联系：<norns.soft@gmail.com>。
+
 隐私政策：[简体中文](PRIVACY.md) · [English](PRIVACY.en.md)。隐私联系：<norns.soft@gmail.com>。
 
 微软商店隐私政策公开地址：[Valhalla Privacy Policy](https://gist.github.com/Naruto9Kurama/743fc88a1f2739f0a43ee733ca74afc6)，无需 GitHub 登录。

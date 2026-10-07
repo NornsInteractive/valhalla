@@ -3660,4 +3660,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLanguageSaveFailed => 'Failed to update language settings';
+
+  @override
+  String get settingsAboutPrivacy => 'About & privacy';
+
+  @override
+  String get privacyPolicyTitle => 'Privacy policy';
+
+  @override
+  String get privacyPolicyDescription => 'Data use and your choices';
+
+  @override
+  String get privacyContactTitle => 'Privacy contact';
+
+  @override
+  String get privacyCopyEmail => 'Copy email address';
+
+  @override
+  String get privacyEmailCopied => 'Email address copied';
+
+  @override
+  String get privacyOnlineVersion => 'View online version';
+
+  @override
+  String get privacyLinkFailed =>
+      'Unable to open the link. You can copy the email address.';
+
+  @override
+  String get privacyLoadFailed =>
+      'Unable to load the privacy policy. View the online version.';
+
+  @override
+  String get privacyVersionUnknown => 'Version unavailable';
+
+  @override
+  String get aboutWebsite => 'Official website';
+
+  @override
+  String get aboutLicense => 'Application license';
+
+  @override
+  String get aboutThirdPartyLicenses => 'Third-party open source licenses';
+
+  @override
+  String get aboutLicenseSummary =>
+      'Original Valhalla material is licensed for noncommercial use under PolyForm Noncommercial 1.0.0. Commercial use beyond the license permissions requires separate authorization. Third-party components retain their own licenses. The complete terms below govern use.';
+
+  @override
+  String get aboutCopyrightNotice => 'Copyright notices';
+
+  @override
+  String get aboutLicenseLoadFailed =>
+      'Unable to load the license. Please contact norns.soft@gmail.com.';
+
+  @override
+  String get aboutLinkFailed =>
+      'Unable to open the link. Please open https://norns.cc.cd in your browser.';
 }

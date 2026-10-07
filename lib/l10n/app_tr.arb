@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "Deneysel özellik ayarları güncellenemedi",
   "settingsExperimentalNasTitle": "NAS Medya",
   "settingsExperimentalNasDesc": "Medya kitaplığını, klasör taramasını ve ses oynatmayı etkinleştirin",
-  "settingsLanguageSaveFailed": "Dil ayarları güncellenemedi"
+  "settingsLanguageSaveFailed": "Dil ayarları güncellenemedi",
+  "settingsAboutPrivacy": "Hakkında ve gizlilik",
+  "privacyPolicyTitle": "Gizlilik politikası",
+  "privacyPolicyDescription": "Veri kullanımı ve seçenekleriniz",
+  "privacyContactTitle": "Gizlilik iletişimi",
+  "privacyCopyEmail": "E-posta adresini kopyala",
+  "privacyEmailCopied": "E-posta adresi kopyalandı",
+  "privacyOnlineVersion": "Çevrimiçi sürümü görüntüle",
+  "privacyLinkFailed": "Bağlantı açılamadı. E-posta adresini kopyalayabilirsiniz.",
+  "privacyLoadFailed": "Politika yüklenemedi. Çevrimiçi sürümü görüntüleyin.",
+  "privacyVersionUnknown": "Sürüm bilgisi yok",
+  "aboutWebsite": "Resmî web sitesi",
+  "aboutLicense": "Uygulama lisansı",
+  "aboutThirdPartyLicenses": "Üçüncü taraf açık kaynak lisansları",
+  "aboutLicenseSummary": "Valhalla özgün içeriği PolyForm Noncommercial 1.0.0 kapsamında ticari olmayan kullanım için lisanslanmıştır. Lisans izinleri dışındaki ticari kullanım ayrı yetkilendirme gerektirir. Üçüncü taraf bileşenler kendi lisanslarını korur. Kullanımı aşağıdaki tam koşullar belirler.",
+  "aboutCopyrightNotice": "Telif hakkı bildirimleri",
+  "aboutLicenseLoadFailed": "Lisans yüklenemedi. norns.soft@gmail.com ile iletişime geçin.",
+  "aboutLinkFailed": "Bağlantı açılamadı. Tarayıcınızda https://norns.cc.cd adresini açın."
 }

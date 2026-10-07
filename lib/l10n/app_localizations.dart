@@ -6814,6 +6814,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to update language settings'**
   String get settingsLanguageSaveFailed;
+
+  /// No description provided for @settingsAboutPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'About & privacy'**
+  String get settingsAboutPrivacy;
+
+  /// No description provided for @privacyPolicyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get privacyPolicyTitle;
+
+  /// No description provided for @privacyPolicyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Data use and your choices'**
+  String get privacyPolicyDescription;
+
+  /// No description provided for @privacyContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy contact'**
+  String get privacyContactTitle;
+
+  /// No description provided for @privacyCopyEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy email address'**
+  String get privacyCopyEmail;
+
+  /// No description provided for @privacyEmailCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address copied'**
+  String get privacyEmailCopied;
+
+  /// No description provided for @privacyOnlineVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'View online version'**
+  String get privacyOnlineVersion;
+
+  /// No description provided for @privacyLinkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open the link. You can copy the email address.'**
+  String get privacyLinkFailed;
+
+  /// No description provided for @privacyLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load the privacy policy. View the online version.'**
+  String get privacyLoadFailed;
+
+  /// No description provided for @privacyVersionUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Version unavailable'**
+  String get privacyVersionUnknown;
+
+  /// No description provided for @aboutWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Official website'**
+  String get aboutWebsite;
+
+  /// No description provided for @aboutLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'Application license'**
+  String get aboutLicense;
+
+  /// No description provided for @aboutThirdPartyLicenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Third-party open source licenses'**
+  String get aboutThirdPartyLicenses;
+
+  /// No description provided for @aboutLicenseSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Original Valhalla material is licensed for noncommercial use under PolyForm Noncommercial 1.0.0. Commercial use beyond the license permissions requires separate authorization. Third-party components retain their own licenses. The complete terms below govern use.'**
+  String get aboutLicenseSummary;
+
+  /// No description provided for @aboutCopyrightNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Copyright notices'**
+  String get aboutCopyrightNotice;
+
+  /// No description provided for @aboutLicenseLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load the license. Please contact norns.soft@gmail.com.'**
+  String get aboutLicenseLoadFailed;
+
+  /// No description provided for @aboutLinkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open the link. Please open https://norns.cc.cd in your browser.'**
+  String get aboutLinkFailed;
 }
 
 class _AppLocalizationsDelegate

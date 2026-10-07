@@ -3680,4 +3680,60 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsLanguageSaveFailed => 'Cập nhật cài đặt ngôn ngữ thất bại';
+
+  @override
+  String get settingsAboutPrivacy => 'Giới thiệu và quyền riêng tư';
+
+  @override
+  String get privacyPolicyTitle => 'Chính sách quyền riêng tư';
+
+  @override
+  String get privacyPolicyDescription => 'Sử dụng dữ liệu và lựa chọn của bạn';
+
+  @override
+  String get privacyContactTitle => 'Liên hệ về quyền riêng tư';
+
+  @override
+  String get privacyCopyEmail => 'Sao chép địa chỉ email';
+
+  @override
+  String get privacyEmailCopied => 'Đã sao chép địa chỉ email';
+
+  @override
+  String get privacyOnlineVersion => 'Xem phiên bản trực tuyến';
+
+  @override
+  String get privacyLinkFailed =>
+      'Không thể mở liên kết. Bạn có thể sao chép địa chỉ email.';
+
+  @override
+  String get privacyLoadFailed =>
+      'Không thể tải chính sách. Hãy xem phiên bản trực tuyến.';
+
+  @override
+  String get privacyVersionUnknown => 'Không có thông tin phiên bản';
+
+  @override
+  String get aboutWebsite => 'Trang web chính thức';
+
+  @override
+  String get aboutLicense => 'Giấy phép ứng dụng';
+
+  @override
+  String get aboutThirdPartyLicenses => 'Giấy phép nguồn mở của bên thứ ba';
+
+  @override
+  String get aboutLicenseSummary =>
+      'Nội dung gốc của Valhalla được cấp phép cho mục đích phi thương mại theo PolyForm Noncommercial 1.0.0. Việc sử dụng thương mại ngoài phạm vi cho phép của giấy phép cần được cấp phép riêng. Các thành phần bên thứ ba giữ nguyên giấy phép của mình. Việc sử dụng tuân theo toàn bộ điều khoản bên dưới.';
+
+  @override
+  String get aboutCopyrightNotice => 'Thông báo bản quyền';
+
+  @override
+  String get aboutLicenseLoadFailed =>
+      'Không thể tải giấy phép. Vui lòng liên hệ norns.soft@gmail.com.';
+
+  @override
+  String get aboutLinkFailed =>
+      'Không thể mở liên kết. Hãy mở https://norns.cc.cd trong trình duyệt.';
 }

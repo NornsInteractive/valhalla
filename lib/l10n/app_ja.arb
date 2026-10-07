@@ -1211,5 +1211,22 @@
   "settingsExperimentalSaveFailed": "実験的機能の設定更新に失敗しました",
   "settingsExperimentalNasTitle": "NAS メディア",
   "settingsExperimentalNasDesc": "メディアライブラリ、フォルダーのスキャン、オーディオ再生を有効化",
-  "settingsLanguageSaveFailed": "言語設定の更新に失敗しました"
+  "settingsLanguageSaveFailed": "言語設定の更新に失敗しました",
+  "settingsAboutPrivacy": "情報とプライバシー",
+  "privacyPolicyTitle": "プライバシーポリシー",
+  "privacyPolicyDescription": "データの使用と選択肢",
+  "privacyContactTitle": "プライバシーに関する連絡先",
+  "privacyCopyEmail": "メールアドレスをコピー",
+  "privacyEmailCopied": "メールアドレスをコピーしました",
+  "privacyOnlineVersion": "オンライン版を表示",
+  "privacyLinkFailed": "リンクを開けません。メールアドレスはコピーできます。",
+  "privacyLoadFailed": "ポリシーを読み込めません。オンライン版をご覧ください。",
+  "privacyVersionUnknown": "バージョン情報なし",
+  "aboutWebsite": "公式サイト",
+  "aboutLicense": "アプリのライセンス",
+  "aboutThirdPartyLicenses": "サードパーティのオープンソースライセンス",
+  "aboutLicenseSummary": "Valhalla の独自コンテンツには、非商用向けの PolyForm Noncommercial 1.0.0 が適用されます。ライセンスの許可範囲を超える商用利用には別途許諾が必要です。第三者のコンポーネントには各自のライセンスが適用されます。利用条件は以下の全文に従います。",
+  "aboutCopyrightNotice": "著作権表示",
+  "aboutLicenseLoadFailed": "ライセンスを読み込めません。norns.soft@gmail.com にお問い合わせください。",
+  "aboutLinkFailed": "リンクを開けません。ブラウザで https://norns.cc.cd にアクセスしてください。"
 }

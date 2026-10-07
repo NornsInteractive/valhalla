@@ -3506,6 +3506,58 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsLanguageSaveFailed => '更新语言设置失败';
+
+  @override
+  String get settingsAboutPrivacy => '关于与隐私';
+
+  @override
+  String get privacyPolicyTitle => '隐私政策';
+
+  @override
+  String get privacyPolicyDescription => '了解数据使用和你的选择';
+
+  @override
+  String get privacyContactTitle => '隐私联系';
+
+  @override
+  String get privacyCopyEmail => '复制邮箱地址';
+
+  @override
+  String get privacyEmailCopied => '邮箱地址已复制';
+
+  @override
+  String get privacyOnlineVersion => '查看在线版本';
+
+  @override
+  String get privacyLinkFailed => '无法打开链接，你仍可复制邮箱地址。';
+
+  @override
+  String get privacyLoadFailed => '无法加载隐私政策，请查看在线版本。';
+
+  @override
+  String get privacyVersionUnknown => '版本信息暂不可用';
+
+  @override
+  String get aboutWebsite => '官方网站';
+
+  @override
+  String get aboutLicense => '应用许可协议';
+
+  @override
+  String get aboutThirdPartyLicenses => '第三方开源许可';
+
+  @override
+  String get aboutLicenseSummary =>
+      'Valhalla 原创内容采用 PolyForm Noncommercial 1.0.0 非商用许可。超出许可允许范围的商业使用需另行授权。第三方组件保留各自的许可协议。使用条件以以下完整条款为准。';
+
+  @override
+  String get aboutCopyrightNotice => '版权声明';
+
+  @override
+  String get aboutLicenseLoadFailed => '无法加载许可协议，请联系 norns.soft@gmail.com。';
+
+  @override
+  String get aboutLinkFailed => '无法打开链接，请在浏览器中访问 https://norns.cc.cd。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -7010,4 +7062,56 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get settingsLanguageSaveFailed => '更新語言設定失敗';
+
+  @override
+  String get settingsAboutPrivacy => '關於與隱私';
+
+  @override
+  String get privacyPolicyTitle => '隱私政策';
+
+  @override
+  String get privacyPolicyDescription => '了解資料使用與你的選擇';
+
+  @override
+  String get privacyContactTitle => '隱私聯絡';
+
+  @override
+  String get privacyCopyEmail => '複製電子郵件地址';
+
+  @override
+  String get privacyEmailCopied => '電子郵件地址已複製';
+
+  @override
+  String get privacyOnlineVersion => '查看線上版本';
+
+  @override
+  String get privacyLinkFailed => '無法開啟連結，你仍可複製電子郵件地址。';
+
+  @override
+  String get privacyLoadFailed => '無法載入隱私政策，請查看線上版本。';
+
+  @override
+  String get privacyVersionUnknown => '版本資訊暫不可用';
+
+  @override
+  String get aboutWebsite => '官方網站';
+
+  @override
+  String get aboutLicense => '應用程式授權條款';
+
+  @override
+  String get aboutThirdPartyLicenses => '第三方開源授權';
+
+  @override
+  String get aboutLicenseSummary =>
+      'Valhalla 原創內容採用 PolyForm Noncommercial 1.0.0 非商用授權。超出授權允許範圍的商業使用須另行取得授權。第三方元件保留各自的授權條款。使用條件以以下完整條款為準。';
+
+  @override
+  String get aboutCopyrightNotice => '著作權聲明';
+
+  @override
+  String get aboutLicenseLoadFailed => '無法載入授權條款，請聯絡 norns.soft@gmail.com。';
+
+  @override
+  String get aboutLinkFailed => '無法開啟連結，請在瀏覽器中造訪 https://norns.cc.cd。';
 }
