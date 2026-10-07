@@ -1,5 +1,7 @@
 # Valhalla
 
+隐私政策：[简体中文](PRIVACY.md) · [English](PRIVACY.en.md)。隐私联系：<norns.soft@gmail.com>。
+
 2026-09-26 增量：**Norse Steel 全量 UI 重设计**（打包 Inter / JetBrains Mono 字体、语义状态色、骨架屏、交错入场与指标动效，尊重系统"减少动态效果"）、**Mosh 终端支持**（UDP/SSP 漫游连接，掉线与 IP 切换不断线）、切标签闪烁修复。变更全记录与接手须知见[接手文档](docs/handoffs/2026-09-26-durandal-norse-steel-redesign-and-mosh.md)，设计系统规则见 [REDESIGN-2026-09](docs/design/REDESIGN-2026-09.md)。
 
 Valhalla 是基于 Flutter 的 AI-Native 远程服务器与 Agent 管理客户端，优先支持 Android 和 Windows Native。
