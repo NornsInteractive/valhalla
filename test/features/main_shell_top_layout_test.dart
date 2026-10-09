@@ -80,6 +80,7 @@ Future<ProviderContainer> _pumpShell(
   ServerProfile? activeServer,
   _TestSettingsNotifier? settingsNotifier,
   Widget home = const MainShell(),
+  double textScale = 1,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -109,6 +110,12 @@ Future<ProviderContainer> _pumpShell(
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         home: home,
       ),
     ),
@@ -118,6 +125,59 @@ Future<ProviderContainer> _pumpShell(
 }
 
 void main() {
+  for (final width in [480.0, 640.0, 1025.0, 1280.0]) {
+    testWidgets(
+      'Windows appearance actions are accessible at $width',
+      (tester) async {
+        final settings = _TestSettingsNotifier();
+        await _pumpShell(
+          tester,
+          size: Size(width, 800),
+          settingsNotifier: settings,
+        );
+        for (final key in [
+          'windows_accent_button',
+          'windows_theme_button',
+          'windows_language_button',
+        ]) {
+          expect(find.byKey(Key(key)), findsOneWidget);
+        }
+        await tester.tap(find.byKey(const Key('windows_theme_button')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('settings_theme_mode_light')));
+        await tester.pumpAndSettle();
+        expect(settings.setThemeModeCalls, contains(AppThemeMode.light));
+        await tester.tap(find.byKey(const Key('windows_language_button')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('settings_lang_en')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('windows_accent_button')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('accent_hex_input')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+      variant: TargetPlatformVariant({TargetPlatform.windows}),
+    );
+  }
+  testWidgets(
+    'Android has no Windows toolbar actions',
+    (tester) async {
+      await _pumpShell(tester, size: const Size(1280, 800));
+      expect(find.byKey(const Key('windows_theme_button')), findsNothing);
+    },
+    variant: TargetPlatformVariant({TargetPlatform.android}),
+  );
+  testWidgets(
+    'Windows toolbar supports large text at minimum width',
+    (tester) async {
+      await _pumpShell(tester, size: const Size(480, 800), textScale: 2);
+      expect(find.byKey(const Key('windows_theme_button')), findsOneWidget);
+      expect(find.byKey(const Key('windows_accent_button')), findsOneWidget);
+      expect(find.byKey(const Key('windows_language_button')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+    variant: TargetPlatformVariant({TargetPlatform.windows}),
+  );
   for (final authType in AuthType.values) {
     for (final tab in [0, 2]) {
       testWidgets('Inspector displays ${authType.name} on tab $tab', (

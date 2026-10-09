@@ -44,6 +44,14 @@ class DownloadPlatformService {
     await channel.invokeMethod<void>('openFile', {'path': path});
   }
 
+  Future<void> revealFile(String path) async {
+    if (!Platform.isWindows) throw UnsupportedError('Windows only');
+    if (!await File(path).parent.exists()) {
+      throw const FileSystemException('DOWNLOAD_DIRECTORY_MISSING');
+    }
+    await channel.invokeMethod<void>('revealFile', {'path': path});
+  }
+
   Future<bool> report(Map<String, Object?> transfer) async {
     try {
       return await channel.invokeMethod<bool>('reportProgress', transfer) ??

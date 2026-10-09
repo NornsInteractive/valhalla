@@ -12,6 +12,10 @@ material remain under their respective copyright notices and licenses.
 Their existing permissions and obligations are not replaced or restricted
 by the Valhalla license.
 
+The bundled xterm 4.0.0 source retains its MIT license and upstream copyright.
+See packages/xterm/LICENSE. The local Windows input patch supplies the current
+Flutter view ID when establishing a text input connection.
+
 In particular, vendored libsmb2 retains its upstream licenses. See
 packages/valhalla_smb/NOTICE, packages/valhalla_smb/vendor/libsmb2/COPYING
 and packages/valhalla_smb/vendor/libsmb2/LICENCE-LGPL-2.1.txt.

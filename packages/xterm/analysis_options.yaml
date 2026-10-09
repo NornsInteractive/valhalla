@@ -1,0 +1,14 @@
+# Preserve upstream 4.0.0 style while keeping errors and warnings enabled.
+include: package:flutter_lints/flutter.yaml
+analyzer:
+  errors:
+    deprecated_member_use: ignore
+    strict_top_level_inference: ignore
+linter:
+  rules:
+    avoid_print: false
+    sort_child_properties_last: false
+    prefer_const_constructors_in_immutables: false
+    sized_box_for_whitespace: false
+    avoid_unnecessary_containers: false
+    use_key_in_widget_constructors: false

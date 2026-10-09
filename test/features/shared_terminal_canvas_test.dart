@@ -27,7 +27,9 @@ void main() {
       // 画布 watch terminalSettingsProvider；用固定字号 notifier 免注入存储。
       return ProviderScope(
         overrides: [
-          terminalSettingsProvider.overrideWith(() => _FixedFontSizeNotifier(13)),
+          terminalSettingsProvider.overrideWith(
+            () => _FixedFontSizeNotifier(13),
+          ),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -48,6 +50,94 @@ void main() {
         ),
       );
     }
+
+    testWidgets(
+      'Windows text client has a view ID and supports text and IME',
+      (tester) async {
+        final output = <String>[];
+        terminal.onOutput = output.add;
+        await tester.pumpWidget(buildCanvas());
+        await tester.tap(find.byType(TerminalView));
+        await tester.pumpAndSettle();
+        final call = tester.testTextInput.log.lastWhere(
+          (call) => call.method == 'TextInput.setClient',
+        );
+        final config = (call.arguments as List)[1] as Map;
+        expect(config['viewId'], tester.view.viewId);
+        tester.testTextInput.enterText('abc123');
+        await tester.pump();
+        expect(output.join(), 'abc123');
+        output.clear();
+        tester.testTextInput.updateEditingValue(
+          const TextEditingValue(
+            text: 'zhong',
+            selection: TextSelection.collapsed(offset: 5),
+            composing: TextRange(start: 0, end: 5),
+          ),
+        );
+        await tester.pump();
+        expect(output, isEmpty);
+        tester.testTextInput.updateEditingValue(
+          const TextEditingValue(
+            text: '中文',
+            selection: TextSelection.collapsed(offset: 2),
+          ),
+        );
+        await tester.pump();
+        expect(output.join(), '中文');
+        output.clear();
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        expect(output.join(), contains('\r'));
+        expect(output.join(), contains('\x7f'));
+        expect(output.join(), contains('\x1b[A'));
+        expect(output.join(), contains('\x03'));
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+              if (call.method == 'Clipboard.getData') {
+                return {'text': 'paste-中文'};
+              }
+              return null;
+            });
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(SystemChannels.platform, null);
+        });
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        await tester.pump();
+        expect(output.join(), contains('paste-中文'));
+        expect(tester.takeException(), isNull);
+        // A new client must attach correctly after another control takes focus.
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pump();
+        await tester.tap(find.byType(TerminalView));
+        await tester.pumpAndSettle();
+        tester.testTextInput.enterText('again');
+        expect(output.join(), contains('again'));
+      },
+      variant: TargetPlatformVariant({TargetPlatform.windows}),
+    );
+
+    testWidgets(
+      'non-Windows text input preserves its existing configuration',
+      (tester) async {
+        await tester.pumpWidget(buildCanvas());
+        await tester.tap(find.byType(TerminalView));
+        await tester.pumpAndSettle();
+        final call = tester.testTextInput.log.lastWhere(
+          (call) => call.method == 'TextInput.setClient',
+        );
+        expect(((call.arguments as List)[1] as Map)['viewId'], isNull);
+        await tester.pump(const Duration(milliseconds: 400));
+      },
+      variant: TargetPlatformVariant({TargetPlatform.android}),
+    );
 
     testWidgets('renders terminal and accessory bar with action buttons', (
       tester,
@@ -219,9 +309,10 @@ void main() {
     Future<LocalStorageService> freshStorage() async =>
         LocalStorageService(await SharedPreferences.getInstance());
 
-    double pumpedViewFontSize(WidgetTester tester) =>
-        tester.widget<TerminalView>(find.byType(TerminalView)).textStyle
-            .fontSize;
+    double pumpedViewFontSize(WidgetTester tester) => tester
+        .widget<TerminalView>(find.byType(TerminalView))
+        .textStyle
+        .fontSize;
 
     testWidgets('defaults to fontSize 13 from terminalSettingsProvider', (
       tester,
@@ -229,9 +320,7 @@ void main() {
       // 走真实 provider + 缺键存储，验证默认字号路径。
       final container = ProviderContainer(
         overrides: [
-          localStorageServiceProvider.overrideWithValue(
-            await freshStorage(),
-          ),
+          localStorageServiceProvider.overrideWithValue(await freshStorage()),
         ],
       );
       addTearDown(container.dispose);
@@ -292,9 +381,7 @@ void main() {
     ) async {
       final container = ProviderContainer(
         overrides: [
-          localStorageServiceProvider.overrideWithValue(
-            await freshStorage(),
-          ),
+          localStorageServiceProvider.overrideWithValue(await freshStorage()),
         ],
       );
       addTearDown(container.dispose);
@@ -309,9 +396,7 @@ void main() {
 
       expect(pumpedViewFontSize(tester), 13);
 
-      await container
-          .read(terminalSettingsProvider.notifier)
-          .setFontSize(20);
+      await container.read(terminalSettingsProvider.notifier).setFontSize(20);
       await tester.pumpAndSettle();
 
       expect(pumpedViewFontSize(tester), 20);
@@ -346,6 +431,5 @@ class _FixedFontSizeNotifier extends TerminalSettingsNotifier {
   _FixedFontSizeNotifier(this.size);
 
   @override
-  TerminalSettings build() =>
-      TerminalSettings(useTmux: false, fontSize: size);
+  TerminalSettings build() => TerminalSettings(useTmux: false, fontSize: size);
 }

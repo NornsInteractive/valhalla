@@ -1228,5 +1228,7 @@
   "aboutLicenseSummary": "Valhalla 原创内容采用 PolyForm Noncommercial 1.0.0 非商用许可。超出许可允许范围的商业使用需另行授权。第三方组件保留各自的许可协议。使用条件以以下完整条款为准。",
   "aboutCopyrightNotice": "版权声明",
   "aboutLicenseLoadFailed": "无法加载许可协议，请联系 norns.soft@gmail.com。",
-  "aboutLinkFailed": "无法打开链接，请在浏览器中访问 https://norns.cc.cd。"
+  "aboutLinkFailed": "无法打开链接，请在浏览器中访问 https://norns.cc.cd。",
+  "downloadReveal": "在文件资源管理器中显示",
+  "downloadRevealFailed": "无法打开下载文件夹，该文件夹可能已被移动或删除。"
 }

@@ -1228,5 +1228,7 @@
   "aboutLicenseSummary": "Valhalla の独自コンテンツには、非商用向けの PolyForm Noncommercial 1.0.0 が適用されます。ライセンスの許可範囲を超える商用利用には別途許諾が必要です。第三者のコンポーネントには各自のライセンスが適用されます。利用条件は以下の全文に従います。",
   "aboutCopyrightNotice": "著作権表示",
   "aboutLicenseLoadFailed": "ライセンスを読み込めません。norns.soft@gmail.com にお問い合わせください。",
-  "aboutLinkFailed": "リンクを開けません。ブラウザで https://norns.cc.cd にアクセスしてください。"
+  "aboutLinkFailed": "リンクを開けません。ブラウザで https://norns.cc.cd にアクセスしてください。",
+  "downloadReveal": "エクスプローラーで表示",
+  "downloadRevealFailed": "ダウンロードフォルダーを開けません。移動または削除された可能性があります。"
 }

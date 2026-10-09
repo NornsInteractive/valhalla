@@ -3703,4 +3703,11 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get aboutLinkFailed =>
       'تعذر فتح الرابط. افتح https://norns.cc.cd في المتصفح.';
+
+  @override
+  String get downloadReveal => 'إظهار في مستكشف الملفات';
+
+  @override
+  String get downloadRevealFailed =>
+      'تعذر فتح مجلد التنزيل. ربما تم نقله أو حذفه.';
 }

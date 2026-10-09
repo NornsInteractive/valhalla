@@ -2795,9 +2795,9 @@ RecommendedHardwareReq10,859,文本,,,,,,,,,,,,,,,,,,
 RecommendedHardwareReq11,860,文本,,,,,,,,,,,,,,,,,,
 SearchTerm1,900,文本,,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH,SSH
 SearchTerm2,901,文本,,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP,SFTP
-SearchTerm3,902,文本,,Linux administration,Linux 运维,Linux 維運,Linux 管理,Linux 관리,Linux-Verwaltung,Administration Linux,Administración Linux,Administração Linux,Администрирование Linux,إدارة Linux,Linux प्रशासन,Administrasi Linux,Amministrazione Linux,Linux yönetimi,Quản trị Linux,ดูแลระบบ Linux
+SearchTerm3,902,文本,,Server management,服务器管理,伺服器管理,サーバー管理,서버 관리,Serververwaltung,Gestion de serveurs,Gestión de servidores,Gerenciamento de servidores,Управление серверами,إدارة الخوادم,सर्वर प्रबंधन,Pengelolaan server,Gestione server,Sunucu yönetimi,Quản lý máy chủ,จัดการเซิร์ฟเวอร์
 SearchTerm4,903,文本,,Remote terminal,远程终端,遠端終端,リモートターミナル,원격 터미널,Remote-Terminal,Terminal distant,Terminal remoto,Terminal remoto,Удалённый терминал,طرفية بعيدة,रिमोट टर्मिनल,Terminal jarak jauh,Terminale remoto,Uzak terminal,Terminal từ xa,เทอร์มินัลระยะไกล
-SearchTerm5,904,文本,,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker,Docker
+SearchTerm5,904,文本,,Server monitoring,服务器监控,伺服器監控,サーバー監視,서버 모니터링,Serverüberwachung,Surveillance de serveurs,Supervisión de servidores,Monitoramento de servidores,Мониторинг серверов,مراقبة الخوادم,सर्वर निगरानी,Pemantauan server,Monitoraggio server,Sunucu izleme,Giám sát máy chủ,ตรวจสอบเซิร์ฟเวอร์
 SearchTerm6,905,文本,,Container management,容器管理,容器管理,コンテナー管理,컨테이너 관리,Containerverwaltung,Gestion de conteneurs,Gestión de contenedores,Gerenciamento de contêineres,Управление контейнерами,إدارة الحاويات,कंटेनर प्रबंधन,Pengelolaan kontainer,Gestione container,Kapsayıcı yönetimi,Quản lý container,จัดการคอนเทนเนอร์
 SearchTerm7,906,文本,,AI Agent,AI Agent,AI Agent,AI エージェント,AI 에이전트,KI-Agent,Agent IA,Agente de IA,Agente de IA,ИИ-агент,وكيل ذكاء اصطناعي,AI एजेंट,Agen AI,Agente IA,Yapay zekâ ajanı,Tác nhân AI,เอเจนต์ AI
 TrailerToPlayAtTopOfListing,999,相对路径(或指向合作伙伴中心文件的 URL),,,,,,,,,,,,,,,,,,

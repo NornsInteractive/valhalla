@@ -42,9 +42,9 @@ SFTP 文件浏览、上传、下载和文本编辑
 ```text
 SSH
 SFTP
-Linux 运维
+服务器管理
 远程终端
-Docker
+服务器监控
 容器管理
 AI Agent
 ```

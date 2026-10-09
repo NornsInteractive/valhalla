@@ -3738,4 +3738,11 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get aboutLinkFailed =>
       'Tautan tidak dapat dibuka. Buka https://norns.cc.cd di browser Anda.';
+
+  @override
+  String get downloadReveal => 'Tampilkan di File Explorer';
+
+  @override
+  String get downloadRevealFailed =>
+      'Folder unduhan tidak dapat dibuka. Folder mungkin telah dipindahkan atau dihapus.';
 }

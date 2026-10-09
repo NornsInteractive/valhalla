@@ -13,6 +13,14 @@ class _RecordingSftpNotifier extends SftpNotifier {
   final List<String> cancelCalls = [];
   final List<String> removeCalls = [];
   int clearFinishedCalls = 0;
+  String? revealed;
+  bool revealFails = false;
+
+  @override
+  Future<void> revealCompletedTransfer(String id) async {
+    revealed = id;
+    if (revealFails) throw StateError('missing directory');
+  }
 
   _RecordingSftpNotifier(this._initial);
 
@@ -98,6 +106,50 @@ Widget _buildTestApp({
 }
 
 void main() {
+  testWidgets(
+    'Windows completed downloads can be revealed and failures are visible',
+    (tester) async {
+      final notifier = _RecordingSftpNotifier(
+        const SftpState(
+          transfers: [
+            SftpTransfer(
+              id: 'completed',
+              kind: SftpTransferKind.download,
+              remotePath: '/a.txt',
+              localPath: 'C:/Downloads/a.txt',
+              status: SftpTransferStatus.completed,
+            ),
+            SftpTransfer(
+              id: 'failed',
+              kind: SftpTransferKind.download,
+              remotePath: '/b.txt',
+              localPath: 'C:/Downloads/b.txt',
+              status: SftpTransferStatus.failed,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpWidget(
+        _buildTestApp(notifier: notifier, child: const SftpTransferListSheet()),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('transfer_reveal_failed')), findsNothing);
+      final reveal = find.byKey(const Key('transfer_reveal_completed'));
+      await tester.tap(reveal);
+      await tester.pumpAndSettle();
+      expect(notifier.revealed, 'completed');
+      notifier.revealFails = true;
+      await tester.tap(reveal);
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Unable to open the download folder. It may have been moved or deleted.',
+        ),
+        findsOneWidget,
+      );
+    },
+    variant: TargetPlatformVariant({TargetPlatform.windows}),
+  );
   group('Sftp Transfer List UI', () {
     testWidgets(
       'action bar entry button shows tooltip and badge reflecting pendingTransferCount',

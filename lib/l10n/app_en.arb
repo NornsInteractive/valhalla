@@ -1228,5 +1228,7 @@
   "aboutLicenseSummary": "Original Valhalla material is licensed for noncommercial use under PolyForm Noncommercial 1.0.0. Commercial use beyond the license permissions requires separate authorization. Third-party components retain their own licenses. The complete terms below govern use.",
   "aboutCopyrightNotice": "Copyright notices",
   "aboutLicenseLoadFailed": "Unable to load the license. Please contact norns.soft@gmail.com.",
-  "aboutLinkFailed": "Unable to open the link. Please open https://norns.cc.cd in your browser."
+  "aboutLinkFailed": "Unable to open the link. Please open https://norns.cc.cd in your browser.",
+  "downloadReveal": "Show in File Explorer",
+  "downloadRevealFailed": "Unable to open the download folder. It may have been moved or deleted."
 }

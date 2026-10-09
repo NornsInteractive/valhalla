@@ -3736,4 +3736,11 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get aboutLinkFailed =>
       'Bağlantı açılamadı. Tarayıcınızda https://norns.cc.cd adresini açın.';
+
+  @override
+  String get downloadReveal => 'Dosya Gezgini’nde göster';
+
+  @override
+  String get downloadRevealFailed =>
+      'İndirme klasörü açılamadı. Taşınmış veya silinmiş olabilir.';
 }

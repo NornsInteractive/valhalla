@@ -3765,4 +3765,11 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get aboutLinkFailed =>
       'Não foi possível abrir o link. Abra https://norns.cc.cd no navegador.';
+
+  @override
+  String get downloadReveal => 'Mostrar no Explorador de Arquivos';
+
+  @override
+  String get downloadRevealFailed =>
+      'Não foi possível abrir a pasta de downloads. Ela pode ter sido movida ou excluída.';
 }

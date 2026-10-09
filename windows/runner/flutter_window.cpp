@@ -38,7 +38,45 @@ bool FlutterWindow::OnCreate() {
   download_channel_->SetMethodCallHandler(
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
-        if (call.method_name().compare("openFile") == 0) {
+        if (call.method_name().compare("revealFile") == 0) {
+          const auto* args = std::get_if<flutter::EncodableMap>(call.arguments());
+          if (!args) { result->Error("INVALID_ARGUMENT", "args must be map"); return; }
+          const auto it = args->find(flutter::EncodableValue("path"));
+          if (it == args->end() || !std::holds_alternative<std::string>(it->second)) {
+            result->Error("INVALID_ARGUMENT", "path required"); return;
+          }
+          const auto& path = std::get<std::string>(it->second);
+          if (path.empty() || path.find('\0') != std::string::npos) {
+            result->Error("INVALID_ARGUMENT", "invalid path"); return;
+          }
+          const int length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path.data(), static_cast<int>(path.size()), nullptr, 0);
+          if (!length) { result->Error("INVALID_ARGUMENT", "invalid UTF-8"); return; }
+          std::wstring wide(length, L'\0');
+          MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path.data(), static_cast<int>(path.size()), wide.data(), length);
+          for (auto& character : wide) if (character == L'/') character = L'\\';
+          const DWORD attributes = GetFileAttributesW(wide.c_str());
+          HRESULT hr = E_FAIL;
+          if (attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+            PIDLIST_ABSOLUTE item = nullptr;
+            hr = SHParseDisplayName(wide.c_str(), nullptr, &item, 0, nullptr);
+            if (SUCCEEDED(hr)) {
+              hr = SHOpenFolderAndSelectItems(item, 0, nullptr, 0);
+              CoTaskMemFree(item);
+            }
+          } else {
+            const size_t separator = wide.find_last_of(L'\\');
+            if (separator != std::wstring::npos) {
+              const std::wstring parent = wide.substr(0, separator + 1);
+              const DWORD parent_attributes = GetFileAttributesW(parent.c_str());
+              if (parent_attributes != INVALID_FILE_ATTRIBUTES && (parent_attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                const auto opened = reinterpret_cast<INT_PTR>(ShellExecuteW(GetHandle(), L"open", parent.c_str(), nullptr, nullptr, SW_SHOWNORMAL));
+                hr = opened > 32 ? S_OK : E_FAIL;
+              }
+            }
+          }
+          if (SUCCEEDED(hr)) result->Success();
+          else result->Error("REVEAL_FAILED", "Could not show the download location");
+        } else if (call.method_name().compare("openFile") == 0) {
           const auto* args = std::get_if<flutter::EncodableMap>(call.arguments());
           if (!args) {
             result->Error("INVALID_ARGUMENT", "args must be map");

@@ -82,6 +82,9 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../packages/valhalla_smb/NOTICE"
               "${CMAKE_CURRENT_SOURCE_DIR}/../packages/valhalla_smb/vendor/libsmb2/COPYING"
               "${CMAKE_CURRENT_SOURCE_DIR}/../packages/valhalla_smb/vendor/libsmb2/LICENCE-LGPL-2.1.txt"
   DESTINATION "${CMAKE_INSTALL_PREFIX}/licenses/libsmb2" COMPONENT Runtime)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../packages/xterm/LICENSE"
+              "${CMAKE_CURRENT_SOURCE_DIR}/../packages/xterm/NOTICE"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/licenses/xterm" COMPONENT Runtime)
 
 install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   COMPONENT Runtime)

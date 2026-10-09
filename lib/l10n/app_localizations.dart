@@ -6916,6 +6916,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to open the link. Please open https://norns.cc.cd in your browser.'**
   String get aboutLinkFailed;
+
+  /// No description provided for @downloadReveal.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in File Explorer'**
+  String get downloadReveal;
+
+  /// No description provided for @downloadRevealFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open the download folder. It may have been moved or deleted.'**
+  String get downloadRevealFailed;
 }
 
 class _AppLocalizationsDelegate

@@ -1,5 +1,45 @@
 # Windows Microsoft Store package
 
+## Windows 1.0.2 fixes (2026-10-09)
+
+The Windows runner now enforces one instance per user/session across the
+installed, portable and Store editions. Repeated launches restore the existing
+window without recreating terminal sessions. The top-right toolbar provides
+accent color, theme mode and language actions using the same settings dialogs
+and persistence as Settings. Completed SFTP and NAS downloads have a separate
+File Explorer action; deleted files fall back to their existing parent folder.
+
+The local `packages/xterm` copy is upstream 4.0.0 with a Windows-only patch
+which supplies `View.of(context).viewId` to `TextInputConfiguration`. This
+addresses the Windows text-input client errors and missing terminal character
+input while preserving IME composition. The package remains MIT licensed;
+its original license and modification notice ship in `licenses/xterm`.
+
+Verification covers 104 related tests, including theme/language persistence,
+480-pixel layouts with large text, download actions and failures, terminal
+text/IME composition, paste, Enter, Backspace, arrow keys and Ctrl+C. Actual
+Windows Release checks cover concurrent startup, minimize/reactivate, normal
+close/restart and abnormal exit/restart. A separate Release fixture confirms
+that native Unicode window messages reach the shared canvas and a localhost
+SSH server without unhandled text-input errors, and exercises the real Windows
+Shell reveal calls. Physical keyboard input and a real IME candidate window
+were not manually verified because the tool desktop cannot activate that
+fixture. The fixture is never packaged as the application.
+
+Run `tool/verify_windows_single_instance.ps1` after closing existing Valhalla
+windows. For native-input verification, install AsyncSSH under
+`D:\Data\Env\windows-smoke-deps`, run `tool/build_windows_native_smoke.ps1`,
+then run `tool/verify_windows_native_input.ps1` using Windows PowerShell with
+`-STA`. These checks use the existing portable build environment under
+`D:\Data\Env` and restore the production bundle before packaging. The SSH
+fixture binds only to localhost and uses test-only credentials.
+
+Keep the app at `1.0.2+3` and Store package at `1.0.2.0` for this replacement
+submission. EXE and portable ZIP updates belong to GitHub Release `v1.0.2`;
+the unsigned MSIX is for Partner Center upload. Store search terms in all
+17 listing languages now use generic feature terms rather than Docker or
+Linux product names.
+
 Product: Valhalla (Store ID `9MZ8ML12WH8R`).
 
 | Property | Value |

@@ -3737,4 +3737,11 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get aboutLinkFailed =>
       'लिंक नहीं खुल सका। अपने ब्राउज़र में https://norns.cc.cd खोलें।';
+
+  @override
+  String get downloadReveal => 'फ़ाइल एक्सप्लोरर में दिखाएँ';
+
+  @override
+  String get downloadRevealFailed =>
+      'डाउनलोड फ़ोल्डर नहीं खुल सका। संभव है कि उसे स्थानांतरित या हटा दिया गया हो।';
 }

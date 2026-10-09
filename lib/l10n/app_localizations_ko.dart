@@ -3607,4 +3607,10 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get aboutLinkFailed =>
       '링크를 열 수 없습니다. 브라우저에서 https://norns.cc.cd에 접속하세요.';
+
+  @override
+  String get downloadReveal => '파일 탐색기에 표시';
+
+  @override
+  String get downloadRevealFailed => '다운로드 폴더를 열 수 없습니다. 이동되었거나 삭제되었을 수 있습니다.';
 }

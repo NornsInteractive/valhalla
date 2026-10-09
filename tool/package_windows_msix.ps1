@@ -32,6 +32,11 @@ foreach ($notice in @('LICENSE', 'NOTICE')) {
     Copy-Item -LiteralPath (Join-Path $Project $notice) -Destination $stage -Force
 }
 $smbNotices = Join-Path $stage 'licenses\libsmb2'
+$xtermNotices = Join-Path $stage 'licenses\xterm'
+New-Item -ItemType Directory -Path $xtermNotices -Force | Out-Null
+foreach ($notice in @('packages\xterm\LICENSE', 'packages\xterm\NOTICE')) {
+    Copy-Item -LiteralPath (Join-Path $Project $notice) -Destination $xtermNotices -Force
+}
 New-Item -ItemType Directory -Path $smbNotices -Force | Out-Null
 foreach ($notice in @('packages\valhalla_smb\NOTICE', 'packages\valhalla_smb\vendor\libsmb2\COPYING', 'packages\valhalla_smb\vendor\libsmb2\LICENCE-LGPL-2.1.txt')) {
     Copy-Item -LiteralPath (Join-Path $Project $notice) -Destination $smbNotices -Force

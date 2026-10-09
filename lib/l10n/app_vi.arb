@@ -1228,5 +1228,7 @@
   "aboutLicenseSummary": "Nội dung gốc của Valhalla được cấp phép cho mục đích phi thương mại theo PolyForm Noncommercial 1.0.0. Việc sử dụng thương mại ngoài phạm vi cho phép của giấy phép cần được cấp phép riêng. Các thành phần bên thứ ba giữ nguyên giấy phép của mình. Việc sử dụng tuân theo toàn bộ điều khoản bên dưới.",
   "aboutCopyrightNotice": "Thông báo bản quyền",
   "aboutLicenseLoadFailed": "Không thể tải giấy phép. Vui lòng liên hệ norns.soft@gmail.com.",
-  "aboutLinkFailed": "Không thể mở liên kết. Hãy mở https://norns.cc.cd trong trình duyệt."
+  "aboutLinkFailed": "Không thể mở liên kết. Hãy mở https://norns.cc.cd trong trình duyệt.",
+  "downloadReveal": "Hiển thị trong File Explorer",
+  "downloadRevealFailed": "Không thể mở thư mục tải xuống. Thư mục có thể đã được di chuyển hoặc xóa."
 }

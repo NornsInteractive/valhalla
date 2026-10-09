@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design/motion_widgets.dart';
 import '../../../core/design/tokens.dart';
+import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/nas_provider.dart';
 import '../../../core/services/nas_download_service.dart';
 import '../../../infrastructure/sftp/sftp_client_service.dart';
@@ -200,6 +202,26 @@ class NasDownloadsSheet extends ConsumerWidget {
               tooltip: context.nasRetryDownload,
               onPressed: () => downloadService.retry(task.id),
             ),
+          if (task.status == NasDownloadStatus.completed)
+            if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows)
+              IconButton(
+                key: Key('nas_reveal_download_${task.id}'),
+                icon: const Icon(Icons.folder_open_outlined, size: 18),
+                tooltip: context.l10n.downloadReveal,
+                onPressed: () async {
+                  try {
+                    await downloadService.reveal(task.id);
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(context.l10n.downloadRevealFailed),
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
           if (task.status == NasDownloadStatus.completed)
             IconButton(
               key: Key('nas_open_download_${task.id}'),

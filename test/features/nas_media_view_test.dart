@@ -403,6 +403,15 @@ class _TestServerListNotifier extends ServerListNotifier {
 }
 
 class _FakeDownloadService extends NasDownloadService {
+  String? revealedTaskId;
+  bool revealFails = false;
+
+  @override
+  Future<void> reveal(String id) async {
+    revealedTaskId = id;
+    if (revealFails) throw StateError('missing directory');
+  }
+
   String? openedTaskId;
   String? retriedTaskId;
   String? cancelledTaskId;
@@ -1190,6 +1199,7 @@ void main() {
           createNasApp(
             notifier: notifier,
             downloads: [failedTask],
+            locale: const Locale('en'),
             downloadService: downloadService,
             home: Builder(
               builder: (ctx) => Scaffold(
@@ -1214,7 +1224,22 @@ void main() {
         await tester.pump();
 
         expect(downloadService.openedTaskId, 'dl-task-1');
+        final reveal = find.byKey(const Key('nas_reveal_download_dl-task-1'));
+        expect(reveal, findsOneWidget);
+        await tester.tap(reveal);
+        await tester.pumpAndSettle();
+        expect(downloadService.revealedTaskId, 'dl-task-1');
+        downloadService.revealFails = true;
+        await tester.tap(reveal);
+        await tester.pumpAndSettle();
+        expect(
+          find.text(
+            'Unable to open the download folder. It may have been moved or deleted.',
+          ),
+          findsOneWidget,
+        );
       },
+      variant: TargetPlatformVariant({TargetPlatform.windows}),
     );
 
     testWidgets(

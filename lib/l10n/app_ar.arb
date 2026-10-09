@@ -1228,5 +1228,7 @@
   "aboutLicenseSummary": "المحتوى الأصلي لتطبيق Valhalla مرخص للاستخدام غير التجاري بموجب PolyForm Noncommercial 1.0.0. يتطلب الاستخدام التجاري خارج نطاق أذونات الترخيص تصريحًا منفصلًا. تحتفظ المكونات الخارجية بتراخيصها الخاصة. يخضع الاستخدام للشروط الكاملة أدناه.",
   "aboutCopyrightNotice": "إشعارات حقوق النشر",
   "aboutLicenseLoadFailed": "تعذر تحميل الترخيص. يرجى التواصل عبر norns.soft@gmail.com.",
-  "aboutLinkFailed": "تعذر فتح الرابط. افتح https://norns.cc.cd في المتصفح."
+  "aboutLinkFailed": "تعذر فتح الرابط. افتح https://norns.cc.cd في المتصفح.",
+  "downloadReveal": "إظهار في مستكشف الملفات",
+  "downloadRevealFailed": "تعذر فتح مجلد التنزيل. ربما تم نقله أو حذفه."
 }

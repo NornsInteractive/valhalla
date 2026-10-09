@@ -3736,4 +3736,11 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get aboutLinkFailed =>
       'Không thể mở liên kết. Hãy mở https://norns.cc.cd trong trình duyệt.';
+
+  @override
+  String get downloadReveal => 'Hiển thị trong File Explorer';
+
+  @override
+  String get downloadRevealFailed =>
+      'Không thể mở thư mục tải xuống. Thư mục có thể đã được di chuyển hoặc xóa.';
 }

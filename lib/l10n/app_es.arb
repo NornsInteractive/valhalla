@@ -1228,5 +1228,7 @@
   "aboutLicenseSummary": "El contenido original de Valhalla se licencia para uso no comercial bajo PolyForm Noncommercial 1.0.0. El uso comercial fuera de los permisos de la licencia requiere una autorización adicional. Los componentes de terceros conservan sus propias licencias. Las condiciones completas siguientes rigen el uso.",
   "aboutCopyrightNotice": "Avisos de derechos de autor",
   "aboutLicenseLoadFailed": "No se pudo cargar la licencia. Contacte con norns.soft@gmail.com.",
-  "aboutLinkFailed": "No se pudo abrir el enlace. Abra https://norns.cc.cd en su navegador."
+  "aboutLinkFailed": "No se pudo abrir el enlace. Abra https://norns.cc.cd en su navegador.",
+  "downloadReveal": "Mostrar en el Explorador de archivos",
+  "downloadRevealFailed": "No se pudo abrir la carpeta de descargas. Puede haberse movido o eliminado."
 }

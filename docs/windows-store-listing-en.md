@@ -45,9 +45,9 @@ Keywords — enter each line separately:
 ```text
 SSH
 SFTP
-Linux administration
+Server management
 Remote terminal
-Docker
+Server monitoring
 Container management
 AI Agent
 ```

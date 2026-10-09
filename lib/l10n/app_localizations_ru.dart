@@ -3753,4 +3753,11 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get aboutLinkFailed =>
       'Не удалось открыть ссылку. Откройте https://norns.cc.cd в браузере.';
+
+  @override
+  String get downloadReveal => 'Показать в Проводнике';
+
+  @override
+  String get downloadRevealFailed =>
+      'Не удалось открыть папку загрузки. Возможно, она перемещена или удалена.';
 }

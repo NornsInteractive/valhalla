@@ -3558,6 +3558,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get aboutLinkFailed => '无法打开链接，请在浏览器中访问 https://norns.cc.cd。';
+
+  @override
+  String get downloadReveal => '在文件资源管理器中显示';
+
+  @override
+  String get downloadRevealFailed => '无法打开下载文件夹，该文件夹可能已被移动或删除。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -7114,4 +7120,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get aboutLinkFailed => '無法開啟連結，請在瀏覽器中造訪 https://norns.cc.cd。';
+
+  @override
+  String get downloadReveal => '在檔案總管中顯示';
+
+  @override
+  String get downloadRevealFailed => '無法開啟下載資料夾，該資料夾可能已被移動或刪除。';
 }

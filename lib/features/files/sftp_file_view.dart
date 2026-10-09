@@ -1497,6 +1497,26 @@ class SftpTransferListItem extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               if (isCompletedDownload)
+                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows)
+                  IconButton(
+                    key: Key('transfer_reveal_${transfer.id}'),
+                    icon: const Icon(Icons.folder_open_outlined, size: 18),
+                    tooltip: context.l10n.downloadReveal,
+                    onPressed: () async {
+                      try {
+                        await notifier.revealCompletedTransfer(transfer.id);
+                      } catch (_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(context.l10n.downloadRevealFailed),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+              if (isCompletedDownload)
                 IconButton(
                   key: Key('transfer_open_${transfer.id}'),
                   icon: const Icon(Icons.open_in_new, size: 18),

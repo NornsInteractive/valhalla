@@ -3725,4 +3725,11 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get aboutLinkFailed =>
       'ไม่สามารถเปิดลิงก์ได้ โปรดเปิด https://norns.cc.cd ในเบราว์เซอร์';
+
+  @override
+  String get downloadReveal => 'แสดงใน File Explorer';
+
+  @override
+  String get downloadRevealFailed =>
+      'ไม่สามารถเปิดโฟลเดอร์ดาวน์โหลดได้ โฟลเดอร์อาจถูกย้ายหรือลบแล้ว';
 }

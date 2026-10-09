@@ -1,0 +1,6 @@
+Based on TerminalStudio/xterm.dart 4.0.0 (https://github.com/TerminalStudio/xterm.dart).
+Copyright (c) 2020 xuty. Distributed under the MIT License; see LICENSE.
+
+Local modification by Norns: on Windows, include the current Flutter view ID
+in TextInputConfiguration to support the Windows text input plugin.
+This package remains licensed under MIT.

@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,6 +34,7 @@ import '../nas/widgets/nas_mini_player.dart';
 import '../nas/widgets/nas_source_dialog.dart';
 import '../servers/server_form_dialog.dart';
 import '../settings/settings_view.dart';
+import '../settings/widgets/windows_appearance_actions.dart';
 import '../system/system_view.dart';
 import '../terminal/terminal_view.dart';
 import 'widgets/connection_status_banner.dart';
@@ -1205,6 +1207,8 @@ class _MainShellState extends ConsumerState<MainShell> {
               ),
             ),
           ],
+          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows)
+            const WindowsAppearanceActions(),
         ],
       ),
     );
@@ -1283,7 +1287,13 @@ class _MainShellState extends ConsumerState<MainShell> {
                     PulseDot(color: statusColor, size: 8),
                     const SizedBox(width: 7),
                     ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 130),
+                      constraints: BoxConstraints(
+                        maxWidth:
+                            !kIsWeb &&
+                                defaultTargetPlatform == TargetPlatform.windows
+                            ? 70
+                            : 130,
+                      ),
                       child: Text(
                         activeServer?.name ?? context.l10n.noServerSelected,
                         style: context.textTheme.titleSmall,
@@ -1349,6 +1359,8 @@ class _MainShellState extends ConsumerState<MainShell> {
               ),
             ),
           ],
+          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows)
+            const WindowsAppearanceActions(),
           const SizedBox(width: 4),
         ],
       ),

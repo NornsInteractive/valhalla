@@ -735,6 +735,16 @@ class SftpNotifier extends Notifier<SftpState> {
     }
   }
 
+  Future<void> revealCompletedTransfer(String id) async {
+    final task = state.transferById(id);
+    if (task == null ||
+        task.kind != SftpTransferKind.download ||
+        task.status != SftpTransferStatus.completed) {
+      return;
+    }
+    await ref.read(downloadPlatformServiceProvider).revealFile(task.localPath);
+  }
+
   /// 队列调度：没有正在跑的任务时，取队首的 queued 任务开始执行。
   ///
   /// 这是**唯一**能把任务从 queued 推进到 running 的地方。任何时候

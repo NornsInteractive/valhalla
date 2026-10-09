@@ -112,6 +112,15 @@ class NasDownloadService {
     if (!_disposed) _changes.add(tasks);
   }
 
+  Future<void> reveal(String id) async {
+    final task = _tasks[id];
+    if (task?.status != NasDownloadStatus.completed ||
+        task?.localPath == null) {
+      throw StateError('NAS_DOWNLOAD_NOT_COMPLETE');
+    }
+    await platform.revealFile(task!.localPath!);
+  }
+
   void _pump() {
     if (_disposed) return;
     while (_running < 2) {

@@ -3613,4 +3613,10 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get aboutLinkFailed =>
       'リンクを開けません。ブラウザで https://norns.cc.cd にアクセスしてください。';
+
+  @override
+  String get downloadReveal => 'エクスプローラーで表示';
+
+  @override
+  String get downloadRevealFailed => 'ダウンロードフォルダーを開けません。移動または削除された可能性があります。';
 }

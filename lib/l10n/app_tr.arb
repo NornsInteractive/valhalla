@@ -1228,5 +1228,7 @@
   "aboutLicenseSummary": "Valhalla özgün içeriği PolyForm Noncommercial 1.0.0 kapsamında ticari olmayan kullanım için lisanslanmıştır. Lisans izinleri dışındaki ticari kullanım ayrı yetkilendirme gerektirir. Üçüncü taraf bileşenler kendi lisanslarını korur. Kullanımı aşağıdaki tam koşullar belirler.",
   "aboutCopyrightNotice": "Telif hakkı bildirimleri",
   "aboutLicenseLoadFailed": "Lisans yüklenemedi. norns.soft@gmail.com ile iletişime geçin.",
-  "aboutLinkFailed": "Bağlantı açılamadı. Tarayıcınızda https://norns.cc.cd adresini açın."
+  "aboutLinkFailed": "Bağlantı açılamadı. Tarayıcınızda https://norns.cc.cd adresini açın.",
+  "downloadReveal": "Dosya Gezgini’nde göster",
+  "downloadRevealFailed": "İndirme klasörü açılamadı. Taşınmış veya silinmiş olabilir."
 }

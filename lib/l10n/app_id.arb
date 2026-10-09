@@ -1228,5 +1228,7 @@
   "aboutLicenseSummary": "Materi asli Valhalla dilisensikan untuk penggunaan nonkomersial berdasarkan PolyForm Noncommercial 1.0.0. Penggunaan komersial di luar izin lisensi memerlukan izin terpisah. Komponen pihak ketiga tetap menggunakan lisensinya masing-masing. Ketentuan lengkap di bawah mengatur penggunaan.",
   "aboutCopyrightNotice": "Pemberitahuan hak cipta",
   "aboutLicenseLoadFailed": "Lisensi tidak dapat dimuat. Hubungi norns.soft@gmail.com.",
-  "aboutLinkFailed": "Tautan tidak dapat dibuka. Buka https://norns.cc.cd di browser Anda."
+  "aboutLinkFailed": "Tautan tidak dapat dibuka. Buka https://norns.cc.cd di browser Anda.",
+  "downloadReveal": "Tampilkan di File Explorer",
+  "downloadRevealFailed": "Folder unduhan tidak dapat dibuka. Folder mungkin telah dipindahkan atau dihapus."
 }
