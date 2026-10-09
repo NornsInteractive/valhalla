@@ -1,67 +1,128 @@
+<p align="center">
+  <img src="assets/icons/valhalla_icon.png" alt="Valhalla 应用图标" width="96">
+</p>
+
 # Valhalla
 
-许可：**PolyForm Noncommercial 1.0.0**，源码可用、仅限许可允许的非商用等用途；这不是 OSI 开源许可。
-完整条款见 [LICENSE](LICENSE)，版权和第三方范围见 [NOTICE](NOTICE)，中英文说明见 [许可说明](docs/licensing.md)。
-不在许可允许范围内的商业使用须另行授权，联系：<norns.soft@gmail.com>。
+**服务器运维管理工具**
 
-隐私政策：[简体中文](PRIVACY.md) · [English](PRIVACY.en.md)。隐私联系：<norns.soft@gmail.com>。
+Valhalla 是基于 Flutter 开发的远程服务器管理客户端，主要面向 Windows 和 Android。通过 SSH 连接服务器，在一个应用中使用终端、管理文件与容器、查看系统状态，以及访问远端 AI Agent 和 NAS 媒体库。
 
-微软商店隐私政策公开地址：[Valhalla Privacy Policy](https://gist.github.com/Naruto9Kurama/743fc88a1f2739f0a43ee733ca74afc6)，无需 GitHub 登录。
+[官网](https://norns.cc.cd) · [下载应用](https://github.com/NornsInteractive/valhalla/releases) · [项目文档](docs/README.md) · [问题反馈](https://github.com/NornsInteractive/valhalla/issues)
 
-2026-09-26 增量：**Norse Steel 全量 UI 重设计**（打包 Inter / JetBrains Mono 字体、语义状态色、骨架屏、交错入场与指标动效，尊重系统"减少动态效果"）、**Mosh 终端支持**（UDP/SSP 漫游连接，掉线与 IP 切换不断线）、切标签闪烁修复。变更全记录与接手须知见[接手文档](docs/handoffs/2026-09-26-durandal-norse-steel-redesign-and-mosh.md)，设计系统规则见 [REDESIGN-2026-09](docs/design/REDESIGN-2026-09.md)。
+## 主要功能
 
-Valhalla 是基于 Flutter 的 AI-Native 远程服务器与 Agent 管理客户端，优先支持 Android 和 Windows Native。
+| 功能 | 说明 |
+| --- | --- |
+| 服务器连接 | 管理 SSH 连接配置，校验主机密钥，使用安全存储保存凭据 |
+| SSH 终端 | 多标签终端、移动端辅助按键、可选 tmux 会话与 Mosh 连接 |
+| 远程文件 | SFTP 文件浏览、编辑、上传与下载；Windows 支持定位已下载文件 |
+| 系统运维 | 查看 CPU、内存、磁盘、负载和运行时间，管理进程、systemd 服务及快捷命令 |
+| 容器管理 | 通过 Docker CLI 查看容器状态、日志及容器终端 |
+| AI Agent | ACP 会话与工具调用、权限确认；独立 CLI 会话支持 Codex、OpenCode、Claude 等工具 |
+| NAS 媒体库 | 接入 SFTP、WebDAV / HTTP(S)、SMB、Jellyfin 和 Emby，浏览图片、播放音视频、下载媒体及管理收藏与播放列表 |
+| 外观与语言 | 跟随系统、明亮、深色及 AMOLED 主题，自定义主题色，支持 17 种界面语言 |
 
-## 下载
+Windows 版支持单实例启动，重复打开时恢复现有窗口。顶部工具栏提供主题色、主题和语言快捷入口。
 
-Windows x64 应用包见 [Releases](https://github.com/NornsInteractive/valhalla/releases)。
-下载 Assets 中的应用 ZIP，完整解压后运行 `valhalla.exe`；不要只复制 EXE，
-也不要将 Source code ZIP 当作安装包。需要 Windows 10/11 x64 和 Visual C++
-x64 运行库，当前应用未签名，Windows 实际功能仍需独立验收。
-自动打包已扩展到 Android、Windows、Linux、macOS、iOS，操作方法与签名边界见
-[多平台发布指南](docs/04-testing-and-deployment/04-multi-platform-github-actions.md)。
-Android 新构建使用固定发布密钥签名，不能覆盖 debug 签名的旧安装；iOS 的
-未签名应用 ZIP 不是可安装 IPA。密钥备份和自动签名见 [签名指南](docs/04-testing-and-deployment/05-android-release-signing.md)。
-已有 `v1.0.0` 仍只有此前验证的 Windows 包，新平台产物不回填到旧版本。
+## 下载与安装
 
-## 能力
+当前发布版本为 **v1.0.2**。请从 [GitHub Releases](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.2) 的 **Assets** 下载应用包。
 
-- SSH/SFTP 服务器配置、Host Key 校验和安全凭证存储
-- xterm SSH PTY、多终端会话和移动端辅助按键
-- **Mosh 终端会话**：SSH 引导 mosh-server，UDP/SSP 长连接漫游（基于 dart_mosh，AES-OCB 加密）
-- ACP Agent 会话、流式响应、Tool Call 和权限审批
-- 独立 CLI 原生会话：Codex（app-server JSON-RPC）、OpenCode（SSH 隧道 HTTP/SSE）、Claude（真实终端审批 + 官方 SDK 历史）
-- SFTP 文件浏览、编辑与传输
-- Docker CLI 远程管理、日志和容器终端
-- 快捷命令、危险操作拦截、进程与 systemd 服务管理
-- CPU、内存、磁盘、Load 和 Uptime 监控（数字滚动与动画进度）
-- 独立 NAS 媒体库：SFTP、WebDAV / HTTP(S)、SMB、Jellyfin / Emby，图片预览、音视频流播放、收藏与播放列表
+| 平台 | 安装方式 / 架构 | 下载 |
+| --- | --- | --- |
+| Windows | x64 安装版 | [EXE 安装程序](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-1.0.2-windows-x64-setup.exe) |
+| Windows | x64 便携版 | [ZIP 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-1.0.2-windows-x64-portable.zip) |
+| Android | ARM64，多数现代手机 | [arm64-v8a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-android-arm64-v8a-v1.0.2-signed.apk) |
+| Android | 32 位 ARM | [armeabi-v7a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-android-armeabi-v7a-v1.0.2-signed.apk) |
+| Android | x86_64 设备 / 模拟器 | [x86_64 APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-android-x86_64-v1.0.2-signed.apk) |
 
-## NAS 媒体库
+### Windows
 
-NAS 媒体源独立管理，使用 SQLite 分批索引、游标分页和后台音乐标签探测；音视频复用 `media_kit`，支持 Range / HLS、续播及系统媒体控制。提供 DLNA 投屏、下载后系统打开，以及需要预览确认的可选 Jellyfin / Emby / rclone WebDAV 部署向导和 SSH HTTP 隧道。
+- 需要 Windows 10/11 x64，系统版本至少为 `10.0.19041.0`。
+- **安装版**：运行 EXE，按向导完成安装。
+- **便携版**：完整解压 ZIP，再运行 `valhalla.exe`；保留同目录下的 DLL 和 `data` 文件夹。
+- Windows 包已附带所需的 Visual C++ 运行库 DLL。EXE 和 ZIP 各有对应的 `.sha256` 校验文件。
+- 当前 EXE 安装程序尚未进行代码签名。
 
-当前最终索引结构的百万条合成数据测试：首页 / 95% 深页查询 P95 为 2.352 / 1.662 ms。真实 Jellyfin / Emby API、签名 SMB2 及 Android 模拟器上的 NAS 集成测试已通过。集成测试仅可在无用户数据的专用测试模拟器运行，正常安装使用 `adb install -r`。能力边界、基准环境和重放说明见 [NAS 架构](docs/02-architecture/04-nas-streaming-architecture.md) 与 [实施状态](docs/03-development/04-implementation-status.md)。
+GitHub 自动生成的 **Source code (zip/tar.gz)** 是源码归档，安装应用请使用上表中的文件。
 
-## 技术栈
+### Android
 
-CI 固定 Flutter 3.38.1 / Dart 3.10（与锁文件及实际框架提交匹配）、Material 3、Riverpod、dartssh2、acpd、xterm、dart_mosh、flutter_markdown_plus、syntax_highlight、flutter_secure_storage、file_picker；打包字体 Inter + JetBrains Mono。
+下载与你的设备架构匹配的 APK 后安装。更新时使用相同发布签名的安装包；开发用 debug 签名安装与正式发布包不兼容。
 
-界面语言：Norse Steel 设计系统 —— 钢灰表面阶梯 + 单一种子色强调、统一圆角体系（卡片 16 / 弹窗 20 / 输入 12）、语义状态色不随主题色漂移、数字与主机信息等宽字体。自定义令牌与动效组件位于 [`lib/core/design/`](lib/core/design/)，使用规则见 [设计规范](docs/design/REDESIGN-2026-09.md)。
+其他平台的构建方式见 [多平台构建与发布指南](docs/04-testing-and-deployment/04-multi-platform-github-actions.md)，可下载产物以各版本的 Release 附件为准。
 
-## 开发检查
+## 快速开始
+
+1. 安装并启动 Valhalla。
+2. 添加服务器，填写 SSH 地址、端口、用户名及认证信息。
+3. 首次连接时核对服务器主机密钥。
+4. 连接后使用仪表盘、SSH 终端、远程文件、容器或系统管理功能。
+5. 按需配置远端 Agent 工具或独立的 NAS 媒体源。
+
+服务器管理需要可访问的 SSH 服务及相应账号权限。Mosh、tmux、容器和 Agent 功能依赖远端安装并配置对应工具。
+
+## 开发
+
+项目使用 **Flutter 3.38.1 / Dart 3.10.0**，依赖版本记录在 [pubspec.lock](pubspec.lock)。开发前请配置目标平台的原生工具链。
 
 ```bash
-flutter pub get
-flutter analyze
-flutter test
+git clone https://github.com/NornsInteractive/valhalla.git
+cd valhalla
+flutter pub get --enforce-lockfile
+flutter gen-l10n
+flutter run
 ```
 
-基线：analyze 零告警，测试 1153 通过 / 18 跳过（2026-09-26）。新增循环动画必须走 `_loopingAnimationsSuspended` 测试闸门（见 `lib/core/design/motion_widgets.dart`），否则 `pumpAndSettle` 测试会失败。
+运行静态检查与测试：
 
-产品需求、架构、协议、开发规则和测试矩阵位于 [`docs/`](docs/README.md)；重大决策记录见 [`docs/design/`](docs/design/)（ADR / SPEC）。
+```bash
+flutter analyze --no-pub
+flutter test --no-pub
+```
 
-## 分支
+主要技术栈：Flutter / Material 3、Riverpod、dartssh2、xterm、ACP、SQLite 和 media_kit。项目中的 [xterm 本地依赖](packages/xterm)包含 Windows 文本输入修复，并保留上游 MIT 许可证。
 
-- `main` — 当前开发主线
-- `OldBranch` — 2026-09 Norse Steel 重设计前的代码快照（存档，不再更新）
+### 项目结构
+
+```text
+lib/
+├── core/              # 配置、状态管理、服务与设计组件
+├── data/              # 数据模型与存储
+├── features/          # 服务器、终端、文件、Agent、NAS 等界面
+├── infrastructure/    # SSH、终端、Mosh 等底层集成
+└── l10n/              # 多语言资源
+packages/              # 本地依赖与原生组件
+test/                  # 单元与组件测试
+integration_test/      # 集成测试
+tool/                  # 打包与验证工具
+docs/                  # 产品、架构、开发和发布文档
+```
+
+## 文档
+
+- [文档索引](docs/README.md)
+- [产品需求](docs/01-requirements/01-prd-product-requirements.md)
+- [系统架构](docs/02-architecture/01-system-architecture.md)
+- [NAS 媒体库架构](docs/02-architecture/04-nas-streaming-architecture.md)
+- [界面设计规范](docs/design/REDESIGN-2026-09.md)
+- [构建与环境指南](docs/04-testing-and-deployment/02-deployment-and-environment-guide.md)
+- [Windows 商店打包说明](docs/windows-store-submission.md)
+- [Android 发布签名](docs/04-testing-and-deployment/05-android-release-signing.md)
+
+## 反馈与联系
+
+遇到问题或提出功能建议，请提交 [GitHub Issue](https://github.com/NornsInteractive/valhalla/issues)。报告问题时请附上应用版本、操作系统及复现步骤，并隐去密码、私钥、令牌等敏感信息。
+
+- 官网：[norns.cc.cd](https://norns.cc.cd)
+- 联系邮箱：[norns.soft@gmail.com](mailto:norns.soft@gmail.com)
+- 开发者：**Norns Interactive**
+
+## 隐私与许可
+
+隐私政策：[简体中文](PRIVACY.md) · [English](PRIVACY.en.md)。
+
+本项目采用 **PolyForm Noncommercial License 1.0.0**，属于非商用源码许可。完整条款见 [LICENSE](LICENSE)，版权与第三方组件声明见 [NOTICE](NOTICE)，另有 [中英文许可说明](docs/licensing.md)。商业授权请联系 `norns.soft@gmail.com`。
+
+第三方库、字体和其他组件保留各自的许可证。

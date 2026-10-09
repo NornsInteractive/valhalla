@@ -48,19 +48,19 @@ docs/
 
 | 阶段 | 文档名称 | 核心关注点 | 建议读者 |
 | :--- | :--- | :--- | :--- |
-| **最高铁律** | [01-project-engineering-rules.md](file:///workspace/projects/valhalla/docs/00-rules/01-project-engineering-rules.md) | **严禁重复造轮子**、零服务端侵入、安全隔离、单向依赖架构 | 全体研发、Reviewer |
-| **前端铁律** | [02-frontend-design-and-ui-rules.md](file:///workspace/projects/valhalla/docs/00-rules/02-frontend-design-and-ui-rules.md) | **100%使用组件库**、**全界面强制多语言化 (Zero Hardcoded String)**、**4大主题切换**、**动态主题色系切换** | 前端开发、UI/UX |
-| **全景总览** | [项目设计文档.md](file:///workspace/projects/valhalla/docs/%E9%A1%B9%E7%9B%AE%E8%AE%BE%E8%AE%A1%E6%96%87%E6%A1%A3.md) | 项目全景总述、设计原则、选型对比（已集成6大修正） | 全员 |
-| **需求设计** | [01-prd-product-requirements.md](file:///workspace/projects/valhalla/docs/01-requirements/01-prd-product-requirements.md) | 业务背景、用户故事、9大功能域详细规格 | 产品、开发、QA |
-| **需求设计** | [02-ui-ux-design-spec.md](file:///workspace/projects/valhalla/docs/01-requirements/02-ui-ux-design-spec.md) | Material 3 规范、桌面双栏/三栏布局、移动端抽屉与辅助键栏 | UI/UX、前端开发 |
-| **技术确认** | [01-system-architecture.md](file:///workspace/projects/valhalla/docs/02-architecture/01-system-architecture.md) | 5 层架构、6 大技术暗坑解决方案（Docker、ACP、PATH、Sudo 等） | 架构师、技术负责人 |
-| **技术确认** | [02-protocols-and-interfaces.md](file:///workspace/projects/valhalla/docs/02-architecture/02-protocols-and-interfaces.md) | SSH/SFTP 通道、ACP JSON-RPC 消息体、Docker 解析、Drift Schema | 核心开发、接口联调 |
-| **技术确认** | [03-technical-spikes-and-verification.md](file:///workspace/projects/valhalla/docs/02-architecture/03-technical-spikes-and-verification.md) | Flutter/Dart 环境验证、pub 依赖兼容性检验、Web 延迟论证 | 技术选型评估 |
-| **开发实施** | [01-detailed-design-and-modules.md](file:///workspace/projects/valhalla/docs/03-development/01-detailed-design-and-modules.md) | `lib/` 源码目录划分、各 Feature / Infrastructure 详细类设计 | 开发工程师 |
-| **开发实施** | [02-development-roadmap-and-tasks.md](file:///workspace/projects/valhalla/docs/03-development/02-development-roadmap-and-tasks.md) | MVP 第一期～后续演进里程碑、详细任务清单与验收标准 | 项目经理、敏捷团队 |
-| **开发实施** | [03-coding-standards-and-guidelines.md](file:///workspace/projects/valhalla/docs/03-development/03-coding-standards-and-guidelines.md) | Dart 编码风格、Riverpod 不可变状态约束、异常模型 | 开发工程师、Code Reviewer |
-| **测试交付** | [01-testing-strategy-and-testcases.md](file:///workspace/projects/valhalla/docs/04-testing-and-deployment/01-testing-strategy-and-testcases.md) | 单元测试、Mock SSH/ACP 联调测试、验收用例矩阵 (TC-01~N) | QA、测试开发 |
-| **测试交付** | [02-deployment-and-environment-guide.md](file:///workspace/projects/valhalla/docs/04-testing-and-deployment/02-deployment-and-environment-guide.md) | Android/Windows/Linux 打包流水线、服务端最低权限配置 | 运维、发布工程师 |
+| **最高铁律** | [01-project-engineering-rules.md](00-rules/01-project-engineering-rules.md) | **严禁重复造轮子**、零服务端侵入、安全隔离、单向依赖架构 | 全体研发、Reviewer |
+| **前端铁律** | [02-frontend-design-and-ui-rules.md](00-rules/02-frontend-design-and-ui-rules.md) | **100%使用组件库**、**全界面强制多语言化 (Zero Hardcoded String)**、**4大主题切换**、**动态主题色系切换** | 前端开发、UI/UX |
+| **全景总览** | [项目设计文档.md](项目设计文档.md) | 项目全景总述、设计原则、选型对比（已集成6大修正） | 全员 |
+| **需求设计** | [01-prd-product-requirements.md](01-requirements/01-prd-product-requirements.md) | 业务背景、用户故事、9大功能域详细规格 | 产品、开发、QA |
+| **需求设计** | [02-ui-ux-design-spec.md](01-requirements/02-ui-ux-design-spec.md) | Material 3 规范、桌面双栏/三栏布局、移动端抽屉与辅助键栏 | UI/UX、前端开发 |
+| **技术确认** | [01-system-architecture.md](02-architecture/01-system-architecture.md) | 5 层架构、6 大技术暗坑解决方案（Docker、ACP、PATH、Sudo 等） | 架构师、技术负责人 |
+| **技术确认** | [02-protocols-and-interfaces.md](02-architecture/02-protocols-and-interfaces.md) | SSH/SFTP 通道、ACP JSON-RPC 消息体、Docker 解析、Drift Schema | 核心开发、接口联调 |
+| **技术确认** | [03-technical-spikes-and-verification.md](02-architecture/03-technical-spikes-and-verification.md) | Flutter/Dart 环境验证、pub 依赖兼容性检验、Web 延迟论证 | 技术选型评估 |
+| **开发实施** | [01-detailed-design-and-modules.md](03-development/01-detailed-design-and-modules.md) | `lib/` 源码目录划分、各 Feature / Infrastructure 详细类设计 | 开发工程师 |
+| **开发实施** | [02-development-roadmap-and-tasks.md](03-development/02-development-roadmap-and-tasks.md) | MVP 第一期～后续演进里程碑、详细任务清单与验收标准 | 项目经理、敏捷团队 |
+| **开发实施** | [03-coding-standards-and-guidelines.md](03-development/03-coding-standards-and-guidelines.md) | Dart 编码风格、Riverpod 不可变状态约束、异常模型 | 开发工程师、Code Reviewer |
+| **测试交付** | [01-testing-strategy-and-testcases.md](04-testing-and-deployment/01-testing-strategy-and-testcases.md) | 单元测试、Mock SSH/ACP 联调测试、验收用例矩阵 (TC-01~N) | QA、测试开发 |
+| **测试交付** | [02-deployment-and-environment-guide.md](04-testing-and-deployment/02-deployment-and-environment-guide.md) | Android/Windows/Linux 打包流水线、服务端最低权限配置 | 运维、发布工程师 |
 | **Windows 构建** | [03-windows-github-actions.md](04-testing-and-deployment/03-windows-github-actions.md) | Actions 自动/手动打包、完整 ZIP 下载与运行 | 开发、发布、用户 |
 | **多平台构建** | [04-multi-platform-github-actions.md](04-testing-and-deployment/04-multi-platform-github-actions.md) | Android / Windows / Linux / macOS / iOS 自动编译及版本发布 | 开发、发布、用户 |
 | **Android 签名** | [05-android-release-signing.md](04-testing-and-deployment/05-android-release-signing.md) | 固定发布密钥、Secrets、签名校验与备份 | 发布、仓库管理员 |
