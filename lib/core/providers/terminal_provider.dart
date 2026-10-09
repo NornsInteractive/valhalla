@@ -344,16 +344,29 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
   }
 
   void closeTab(int index) {
-    if (state.tabs.length <= 1) return; // 保留至少一个 Tab
+    if (state.tabs.length <= 1 || index < 0 || index >= state.tabs.length) {
+      return; // 保留至少一个 Tab
+    }
     final tabToClose = state.tabs[index];
     tabToClose.bridge.dispose();
 
-    final newTabs = state.tabs.where((t) => t.id != tabToClose.id).toList();
-    final newActive = state.activeTabIndex >= newTabs.length
-        ? newTabs.length - 1
-        : state.activeTabIndex;
+    final newTabs = [...state.tabs]..removeAt(index);
+    final activeClosed = index == state.activeTabIndex;
+    final int newActive;
+    if (index < state.activeTabIndex) {
+      newActive = state.activeTabIndex - 1;
+    } else if (state.activeTabIndex >= newTabs.length) {
+      newActive = newTabs.length - 1;
+    } else {
+      newActive = state.activeTabIndex;
+    }
 
-    state = state.copyWith(tabs: newTabs, activeTabIndex: newActive);
+    state = state.copyWith(
+      tabs: newTabs,
+      activeTabIndex: newActive,
+      clearTmuxInstallOffer: activeClosed,
+    );
+    if (activeClosed) _syncTmuxOffer();
   }
 
   void toggleCtrl() {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design/tokens.dart';
@@ -431,6 +432,8 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
 
   Widget _buildTabBar(SshTerminalState state) {
     final notifier = ref.read(terminalProvider.notifier);
+    final isWindows =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
 
     return Container(
       color: context.colorScheme.surfaceContainerLowest,
@@ -447,31 +450,52 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 6),
-                    child: ChoiceChip(
-                      selected: isSelected,
-                      label: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            tab.title,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontFamily: 'JetBrains Mono',
+                    child: isWindows
+                        ? InputChip(
+                            key: ValueKey('terminal_tab_${tab.id}'),
+                            selected: isSelected,
+                            label: Text(
+                              tab.title,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'JetBrains Mono',
+                              ),
                             ),
+                            deleteIcon: const Icon(Icons.close, size: 14),
+                            deleteButtonTooltipMessage:
+                                context.l10n.terminalCloseTab,
+                            onDeleted: state.tabs.length > 1
+                                ? () => notifier.closeTab(index)
+                                : null,
+                            onSelected: (selected) {
+                              if (selected) notifier.selectTab(index);
+                            },
+                          )
+                        : ChoiceChip(
+                            selected: isSelected,
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  tab.title,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'JetBrains Mono',
+                                  ),
+                                ),
+                                if (state.tabs.length > 1) ...[
+                                  const SizedBox(width: 4),
+                                  InkWell(
+                                    onTap: () => notifier.closeTab(index),
+                                    child: const Icon(Icons.close, size: 14),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            onSelected: (selected) {
+                              if (selected) notifier.selectTab(index);
+                            },
                           ),
-                          if (state.tabs.length > 1) ...[
-                            const SizedBox(width: 4),
-                            InkWell(
-                              onTap: () => notifier.closeTab(index),
-                              child: const Icon(Icons.close, size: 14),
-                            ),
-                          ],
-                        ],
-                      ),
-                      onSelected: (selected) {
-                        if (selected) notifier.selectTab(index);
-                      },
-                    ),
                   );
                 }),
               ),
@@ -490,11 +514,19 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
               onPressed: () => notifier.addMoshTab(context.l10n.moshSessionTag),
             ),
           IconButton(
+            key: const Key('terminal_clear_button'),
             icon: const Icon(Icons.cleaning_services, size: 18),
             tooltip: context.l10n.terminalClear,
             onPressed: () {
-              state.activeTab?.terminal.eraseDisplay();
-              state.activeTab?.terminal.setCursor(0, 0);
+              final terminal = state.activeTab?.terminal;
+              if (isWindows) {
+                // Parse locally so xterm clears screen/history and repaints.
+                // This is display data, not a command sent to the SSH shell.
+                terminal?.write('\x1b[2J\x1b[3J\x1b[H');
+              } else {
+                terminal?.eraseDisplay();
+                terminal?.setCursor(0, 0);
+              }
             },
           ),
         ],

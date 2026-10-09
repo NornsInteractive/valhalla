@@ -2,6 +2,14 @@
 
 ## Windows 1.0.2 fixes (2026-10-09)
 
+The follow-up SSH toolbar fix gives Windows tabs a native chip delete action
+instead of nesting a close gesture inside the label. Closing an earlier tab
+keeps the same active session; closing the active tab switches to an adjacent
+session and refreshes its tmux offer. Clear now sends local screen/scrollback
+erase sequences through xterm's output parser, which also notifies the canvas
+to repaint immediately. It sends no command to the SSH shell. These changes
+passed 38 terminal regression tests, including seven toolbar cases.
+
 The Windows runner now enforces one instance per user/session across the
 installed, portable and Store editions. Repeated launches restore the existing
 window without recreating terminal sessions. The top-right toolbar provides
