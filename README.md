@@ -8,7 +8,7 @@
 
 Valhalla 是基于 Flutter 开发的远程服务器管理客户端，主要面向 Windows 和 Android。通过 SSH 连接服务器，在一个应用中使用终端、管理文件与容器、查看系统状态，以及访问远端 AI Agent 和 NAS 媒体库。
 
-[官网](https://norns.cc.cd) · [下载应用](https://github.com/NornsInteractive/valhalla/releases) · [项目文档](docs/README.md) · [问题反馈](https://github.com/NornsInteractive/valhalla/issues)
+[官网](https://norns.cc.cd) · [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) · [GitHub 下载](https://github.com/NornsInteractive/valhalla/releases) · [项目文档](docs/README.md) · [问题反馈](https://github.com/NornsInteractive/valhalla/issues)
 
 ## 主要功能
 
@@ -27,10 +27,11 @@ Windows 版支持单实例启动，重复打开时恢复现有窗口。顶部工
 
 ## 下载与安装
 
-当前发布版本为 **v1.0.2**。请从 [GitHub Releases](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.2) 的 **Assets** 下载应用包。
+Windows 版可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) 安装。GitHub 当前发布版本为 **v1.0.2**，安装版、便携版和 Android APK 位于 [GitHub Releases](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.2) 的 **Assets** 中。
 
 | 平台 | 安装方式 / 架构 | 下载 |
 | --- | --- | --- |
+| Windows | x64 商店版 | [微软商店下载](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) |
 | Windows | x64 安装版 | [EXE 安装程序](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-1.0.2-windows-x64-setup.exe) |
 | Windows | x64 便携版 | [ZIP 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-1.0.2-windows-x64-portable.zip) |
 | Android | ARM64，多数现代手机 | [arm64-v8a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-android-arm64-v8a-v1.0.2-signed.apk) |
@@ -40,6 +41,7 @@ Windows 版支持单实例启动，重复打开时恢复现有窗口。顶部工
 ### Windows
 
 - 需要 Windows 10/11 x64，系统版本至少为 `10.0.19041.0`。
+- **商店版**：通过 Microsoft Store 安装。
 - **安装版**：运行 EXE，按向导完成安装。
 - **便携版**：完整解压 ZIP，再运行 `valhalla.exe`；保留同目录下的 DLL 和 `data` 文件夹。
 - Windows 包已附带所需的 Visual C++ 运行库 DLL。EXE 和 ZIP 各有对应的 `.sha256` 校验文件。
