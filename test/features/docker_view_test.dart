@@ -396,4 +396,231 @@ void main() {
       },
     );
   });
+
+  group('DockerView filter row, cached error and empty states', () {
+    const mobileError =
+        'Cannot connect to the Docker daemon at unix:///var/run/docker.sock';
+    const mobileWidth = 390.0;
+    const mobileHeight = 844.0;
+
+    void useMobileViewport(WidgetTester tester) {
+      tester.view.physicalSize = const Size(mobileWidth, mobileHeight);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    }
+
+    /// Compose 模式下容器分组标题也复用 `dockerViewGroupContainers`，
+    /// 因此必须把查找范围限制在选择器内。
+    Finder selectorSegment(String label) => find.descendant(
+      of: find.byType(SegmentedButton<bool>),
+      matching: find.text(label),
+    );
+
+    /// 选择器分段必须在 390px 手机宽度内完整可见且可点击（不允许横向滚出去）。
+    void expectSegmentVisible(WidgetTester tester, String label) {
+      final finder = selectorSegment(label);
+      expect(finder, findsOneWidget);
+      final rect = tester.getRect(finder);
+      expect(rect.left, greaterThanOrEqualTo(0), reason: '$label 溢出左侧');
+      expect(
+        rect.right,
+        lessThanOrEqualTo(mobileWidth),
+        reason: '$label 溢出 390px 视口右侧',
+      );
+      expect(rect.top, greaterThanOrEqualTo(0));
+      expect(rect.bottom, lessThanOrEqualTo(mobileHeight));
+    }
+
+    /// `TextButton.icon` 生成的是 TextButton 的私有子类型，
+    /// `find.byType(TextButton)` 不会命中，运行时判定才可靠。
+    Finder retryButton() => find.ancestor(
+      of: find.text('Retry'),
+      matching: find.byWidgetPredicate((widget) => widget is TextButton),
+    );
+
+    testWidgets(
+      'mobile puts the status filter row below the Container/Compose selector',
+      (tester) async {
+        useMobileViewport(tester);
+        final dockerNotifier = _FakeDockerNotifier(
+          const DockerState(containers: [_container1, _container2]),
+        );
+
+        await tester.pumpWidget(_buildTestApp(dockerNotifier: dockerNotifier));
+        await tester.pumpAndSettle();
+
+        final selector = find.byType(SegmentedButton<bool>);
+        expect(selector, findsOneWidget);
+        expect(selectorSegment('Containers'), findsOneWidget);
+        expect(selectorSegment('Compose Projects'), findsOneWidget);
+
+        // Both segments must stay on screen and tappable on a 390px phone.
+        expectSegmentVisible(tester, 'Containers');
+        expectSegmentVisible(tester, 'Compose Projects');
+        await tester.tap(selectorSegment('Compose Projects'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.widget<SegmentedButton<bool>>(selector).selected,
+          <bool>{true},
+          reason: 'Compose 分段必须真的可以点中',
+        );
+        await tester.tap(selectorSegment('Containers'));
+        await tester.pumpAndSettle();
+
+        // The paused filter must survive the mobile re-layout.
+        for (final label in ['All', 'Running', 'Exited', 'Paused']) {
+          expect(find.text(label), findsOneWidget);
+        }
+
+        final selectorBottom = tester.getBottomLeft(selector).dy;
+        final filterRowTop = tester
+            .getTopLeft(
+              find
+                  .ancestor(
+                    of: find.byType(FilterChip).first,
+                    matching: find.byType(Row),
+                  )
+                  .first,
+            )
+            .dy;
+        expect(
+          filterRowTop,
+          greaterThan(selectorBottom),
+          reason: '状态过滤行必须单独一行，位于容器/Compose 选择器下方',
+        );
+      },
+    );
+
+    testWidgets(
+      'a failed refresh keeps the cached list and shows the retry error',
+      (tester) async {
+        useMobileViewport(tester);
+        final dockerNotifier = _CountingDockerNotifier(
+          const DockerState(
+            containers: [_container1, _container2],
+            errorMessage: mobileError,
+            exitCode: 1,
+          ),
+        );
+
+        await tester.pumpWidget(_buildTestApp(dockerNotifier: dockerNotifier));
+        await tester.pumpAndSettle();
+
+        // Cached containers stay visible next to the retry error.
+        expect(find.text('web-nginx'), findsOneWidget);
+        expect(find.text('redis-cache'), findsOneWidget);
+        expect(find.text(mobileError), findsOneWidget);
+
+        final retry = retryButton();
+        expect(retry, findsOneWidget);
+        expect(
+          tester.widgetList<TextButton>(retry).single.onPressed,
+          isNotNull,
+        );
+
+        await tester.tap(retry);
+        await tester.pumpAndSettle();
+        expect(dockerNotifier.refreshCalls, 1);
+      },
+    );
+
+    testWidgets(
+      'the error stays visible when a filter narrows the cache to empty',
+      (tester) async {
+        useMobileViewport(tester);
+        final dockerNotifier = _FakeDockerNotifier(
+          const DockerState(
+            containers: [_container1, _container2],
+            errorMessage: mobileError,
+            exitCode: 1,
+            // Nothing is paused, so the filtered list is empty while the cache is not.
+            filterState: DockerContainerState.paused,
+          ),
+        );
+
+        await tester.pumpWidget(_buildTestApp(dockerNotifier: dockerNotifier));
+        await tester.pumpAndSettle();
+
+        expect(find.text('web-nginx'), findsNothing);
+        expect(find.text('redis-cache'), findsNothing);
+        // Filtered-empty must not be mistaken for an error-free empty state.
+        expect(find.text(mobileError), findsOneWidget);
+        expect(retryButton(), findsOneWidget);
+        expect(find.text('No items found'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'a connected host with no containers is distinct from a disconnected one',
+      (tester) async {
+        useMobileViewport(tester);
+        final dockerNotifier = _FakeDockerNotifier(
+          const DockerState(containers: []),
+        );
+
+        await tester.pumpWidget(_buildTestApp(dockerNotifier: dockerNotifier));
+        await tester.pumpAndSettle();
+
+        // Containers mode: true empty of a live host.
+        expect(find.text('No containers found on server'), findsOneWidget);
+        expect(find.text('Disconnected'), findsNothing);
+        expect(find.text('Server is offline'), findsNothing);
+
+        // Compose mode: true empty of a live host, different message.
+        await tester.tap(selectorSegment('Compose Projects'));
+        await tester.pumpAndSettle();
+        expect(find.text('No Docker Compose projects found'), findsOneWidget);
+        expect(find.text('No containers found on server'), findsNothing);
+        expect(find.text('Disconnected'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'disconnected is reported in both modes instead of a true empty',
+      (tester) async {
+        useMobileViewport(tester);
+        final dockerNotifier = _FakeDockerNotifier(const DockerState());
+
+        for (final mode in ['Containers', 'Compose Projects']) {
+          await tester.pumpWidget(
+            _buildTestApp(
+              dockerNotifier: dockerNotifier,
+              connState: const ServerConnectionState(
+                status: ConnectionStateEnum.disconnected,
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          if (mode == 'Compose Projects') {
+            await tester.tap(selectorSegment('Compose Projects'));
+            await tester.pumpAndSettle();
+          }
+
+          expect(find.text('Disconnected'), findsOneWidget, reason: mode);
+          expect(
+            find.text(
+              'Establish an active SSH connection to manage resources and stream metrics.',
+            ),
+            findsOneWidget,
+            reason: mode,
+          );
+          expect(find.text('No containers found on server'), findsNothing);
+          expect(find.text('No Docker Compose projects found'), findsNothing);
+        }
+      },
+    );
+  });
+}
+
+class _CountingDockerNotifier extends _FakeDockerNotifier {
+  _CountingDockerNotifier(super.state);
+
+  int refreshCalls = 0;
+
+  @override
+  Future<void> refresh({bool quiet = false}) async {
+    refreshCalls++;
+  }
 }

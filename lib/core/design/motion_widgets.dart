@@ -115,7 +115,10 @@ class _EntranceState extends State<Entrance>
               lerpDouble(widget.offset.dx, 0, t)!,
               lerpDouble(widget.offset.dy, 0, t)!,
             ),
-            child: Transform.scale(scale: lerpDouble(0.985, 1, t)!, child: child),
+            child: Transform.scale(
+              scale: lerpDouble(0.985, 1, t)!,
+              child: child,
+            ),
           ),
         );
       },
@@ -155,8 +158,9 @@ class _AnimatedIndexedStackState extends State<AnimatedIndexedStack>
   // 绝不在"裸子页"与"包装后的子页"之间切换 widget 类型 —— 否则 Flutter
   // 会把页面 Element 拆掉重建, 页面状态丢失并重放入场动画 (闪烁)。
   static final Animation<double> _opaque = AlwaysStoppedAnimation<double>(1);
-  static final Animation<Offset> _noSlide =
-      AlwaysStoppedAnimation<Offset>(Offset.zero);
+  static final Animation<Offset> _noSlide = AlwaysStoppedAnimation<Offset>(
+    Offset.zero,
+  );
 
   late Animation<double> _inFade = _opaque;
   late Animation<double> _inScale = _opaque;
@@ -203,8 +207,9 @@ class _AnimatedIndexedStackState extends State<AnimatedIndexedStack>
     }
 
     // 若上一次转场还在半途, 从当前透明度开始淡出, 避免闪白。
-    final double outFrom =
-        _outgoing != null && _controller.isAnimating ? _inFade.value : 1.0;
+    final double outFrom = _outgoing != null && _controller.isAnimating
+        ? _inFade.value
+        : 1.0;
 
     setState(() {
       _outgoing = leaving;
@@ -262,9 +267,14 @@ class _AnimatedIndexedStackState extends State<AnimatedIndexedStack>
                       scale: animating
                           ? (i == active ? _inScale : _opaque)
                           : _opaque,
-                      child: ExcludeSemantics(
-                        excluding: animating ? i == _outgoing : i != widget.index,
-                        child: widget.children[i],
+                      child: ExcludeFocus(
+                        excluding: i != active,
+                        child: ExcludeSemantics(
+                          excluding: animating
+                              ? i == _outgoing
+                              : i != widget.index,
+                          child: widget.children[i],
+                        ),
                       ),
                     ),
                   ),
@@ -451,8 +461,7 @@ class CountUp extends StatefulWidget {
   State<CountUp> createState() => _CountUpState();
 }
 
-class _CountUpState extends State<CountUp>
-    with SingleTickerProviderStateMixin {
+class _CountUpState extends State<CountUp> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late double _from;
   late double _to;
@@ -493,7 +502,8 @@ class _CountUpState extends State<CountUp>
     }
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, _) => Text(widget.formatter(_current()), style: widget.style),
+      builder: (context, _) =>
+          Text(widget.formatter(_current()), style: widget.style),
     );
   }
 }
@@ -586,8 +596,7 @@ class AnimatedRingProgress extends StatelessWidget {
                 painter: _RingPainter(
                   progress: v,
                   color: color,
-                  trackColor:
-                      trackColor ?? scheme.surfaceContainerHighest,
+                  trackColor: trackColor ?? scheme.surfaceContainerHighest,
                   strokeWidth: strokeWidth,
                 ),
               ),
@@ -661,8 +670,7 @@ class Shimmer extends StatefulWidget {
   State<Shimmer> createState() => _ShimmerState();
 }
 
-class _ShimmerState extends State<Shimmer>
-    with SingleTickerProviderStateMixin {
+class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
@@ -758,7 +766,10 @@ class SkeletonListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: VSpace.lg, vertical: VSpace.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: VSpace.lg,
+        vertical: VSpace.md,
+      ),
       child: Row(
         children: [
           SkeletonBox(width: 40, height: 40, circle: true),

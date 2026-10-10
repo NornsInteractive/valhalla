@@ -118,6 +118,9 @@ class _MainShellState extends ConsumerState<MainShell> {
   /// 放在 shell 上而不是文件页里：点通知可能发生在 app 冷启动、当前不在
   /// 文件 tab 的时候，得先把 tab 切过去，文件页才有机会看到这个请求。
   final _openTransfersRequest = ValueNotifier<int>(0);
+  final FocusScopeNode _contentFocusScopeNode = FocusScopeNode(
+    debugLabel: 'MainShellContentFocusScope',
+  );
   final Set<String> _deletingServerIds = {};
   static const _downloadsChannel = MethodChannel('valhalla/downloads');
 
@@ -195,6 +198,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   void dispose() {
     _downloadsChannel.setMethodCallHandler(null);
     _openTransfersRequest.dispose();
+    _contentFocusScopeNode.dispose();
     super.dispose();
   }
 
@@ -829,47 +833,51 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     return Scaffold(
       drawer: _buildDrawer(context),
-      body: Row(
-        children: [
-          if (hasRail) ...[
-            _buildNavigationRail(extended: false, showLabels: true),
-            const VerticalDivider(width: 1),
-          ],
-          Expanded(
-            child: Column(
-              children: [
-                _buildTopBar(showInspectorToggle: true),
-                const Divider(height: 1),
-                const ConnectionStatusBanner(),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: AnimatedIndexedStack(
-                          index: _currentIndex,
-                          children: _buildViews(settings),
-                        ),
-                      ),
-                      if (_isInspectorOpen)
-                        // Keep the panel bounded even if its content fails to
-                        // build; a fallback ErrorWidget must not collapse the
-                        // page stack (including offstage terminal canvases).
-                        SizedBox(
-                          width: 320,
-                          child: ContextInspector(
-                            activeTabIndex: _currentIndex,
-                            onClose: () =>
-                                setState(() => _isInspectorOpen = false),
+      onDrawerChanged: (isOpened) => _contentFocusScopeNode.unfocus(),
+      body: FocusScope(
+        node: _contentFocusScopeNode,
+        child: Row(
+          children: [
+            if (hasRail) ...[
+              _buildNavigationRail(extended: false, showLabels: true),
+              const VerticalDivider(width: 1),
+            ],
+            Expanded(
+              child: Column(
+                children: [
+                  _buildTopBar(showInspectorToggle: true),
+                  const Divider(height: 1),
+                  const ConnectionStatusBanner(),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: AnimatedIndexedStack(
+                            index: _currentIndex,
+                            children: _buildViews(settings),
                           ),
                         ),
-                    ],
+                        if (_isInspectorOpen)
+                          // Keep the panel bounded even if its content fails to
+                          // build; a fallback ErrorWidget must not collapse the
+                          // page stack (including offstage terminal canvases).
+                          SizedBox(
+                            width: 320,
+                            child: ContextInspector(
+                              activeTabIndex: _currentIndex,
+                              onClose: () =>
+                                  setState(() => _isInspectorOpen = false),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                _buildGlobalMiniPlayer(),
-              ],
+                  _buildGlobalMiniPlayer(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -880,29 +888,33 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     return Scaffold(
       drawer: _buildDrawer(context),
-      body: Row(
-        children: [
-          if (hasRail) ...[
-            _buildNavigationRail(extended: false, showLabels: false),
-            const VerticalDivider(width: 1),
-          ],
-          Expanded(
-            child: Column(
-              children: [
-                _buildTopBar(showInspectorToggle: false),
-                const Divider(height: 1),
-                const ConnectionStatusBanner(),
-                Expanded(
-                  child: AnimatedIndexedStack(
-                    index: _currentIndex,
-                    children: _buildViews(settings),
+      onDrawerChanged: (isOpened) => _contentFocusScopeNode.unfocus(),
+      body: FocusScope(
+        node: _contentFocusScopeNode,
+        child: Row(
+          children: [
+            if (hasRail) ...[
+              _buildNavigationRail(extended: false, showLabels: false),
+              const VerticalDivider(width: 1),
+            ],
+            Expanded(
+              child: Column(
+                children: [
+                  _buildTopBar(showInspectorToggle: false),
+                  const Divider(height: 1),
+                  const ConnectionStatusBanner(),
+                  Expanded(
+                    child: AnimatedIndexedStack(
+                      index: _currentIndex,
+                      children: _buildViews(settings),
+                    ),
                   ),
-                ),
-                _buildGlobalMiniPlayer(),
-              ],
+                  _buildGlobalMiniPlayer(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1003,7 +1015,10 @@ class _MainShellState extends ConsumerState<MainShell> {
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu),
               tooltip: context.l10n.navMore,
-              onPressed: () => Scaffold.of(ctx).openDrawer(),
+              onPressed: () {
+                _contentFocusScopeNode.unfocus();
+                Scaffold.of(ctx).openDrawer();
+              },
             ),
           ),
           const SizedBox(width: 8),
@@ -1242,12 +1257,16 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     return Scaffold(
       drawer: _buildDrawer(context),
+      onDrawerChanged: (isOpened) => _contentFocusScopeNode.unfocus(),
       appBar: AppBar(
         leading: Builder(
           builder: (ctx) => IconButton(
             icon: const Icon(Icons.menu),
             tooltip: context.l10n.navMore,
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
+            onPressed: () {
+              _contentFocusScopeNode.unfocus();
+              Scaffold.of(ctx).openDrawer();
+            },
           ),
         ),
         titleSpacing: 0,
@@ -1364,17 +1383,20 @@ class _MainShellState extends ConsumerState<MainShell> {
           const SizedBox(width: 4),
         ],
       ),
-      body: Column(
-        children: [
-          const ConnectionStatusBanner(),
-          Expanded(
-            child: AnimatedIndexedStack(
-              index: _currentIndex,
-              children: _buildViews(settings),
+      body: FocusScope(
+        node: _contentFocusScopeNode,
+        child: Column(
+          children: [
+            const ConnectionStatusBanner(),
+            Expanded(
+              child: AnimatedIndexedStack(
+                index: _currentIndex,
+                children: _buildViews(settings),
+              ),
             ),
-          ),
-          _buildGlobalMiniPlayer(),
-        ],
+            _buildGlobalMiniPlayer(),
+          ],
+        ),
       ),
       bottomNavigationBar: bottomSections.isEmpty
           ? null

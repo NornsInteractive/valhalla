@@ -1074,13 +1074,13 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                         children: [
                           Icon(
                             Icons.chevron_right,
-                            size: 14,
+                            size: 10,
                             color: context.colorScheme.outline,
                           ),
                           _buildBreadcrumbSegment(
                             key: Key('sftp_breadcrumb_seg_$index'),
                             label: seg,
-                            tooltip: seg,
+                            tooltip: pathUpTo,
                             isCurrent: isLast,
                             onTap: isConnected
                                 ? () => notifier.navigateTo(pathUpTo)
@@ -1160,23 +1160,25 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
         child: Container(
           constraints: BoxConstraints(
             minHeight: 44,
-            minWidth: 44,
+            minWidth: 24,
             maxWidth: maxWidth,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: monoTextStyle(
-              fontSize: 12,
-              fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
-              color: isCurrent
-                  ? context.colorScheme.onSurface
-                  : (onTap != null
-                        ? context.colorScheme.primary
-                        : context.colorScheme.outline),
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+          child: Center(
+            widthFactor: 1,
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: monoTextStyle(
+                fontSize: 12,
+                fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
+                color: isCurrent
+                    ? context.colorScheme.onSurface
+                    : (onTap != null
+                          ? context.colorScheme.primary
+                          : context.colorScheme.outline),
+              ),
             ),
           ),
         ),

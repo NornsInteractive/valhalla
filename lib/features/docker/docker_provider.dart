@@ -62,6 +62,7 @@ class DockerState {
     bool? isLoading,
     String? errorMessage,
     int? exitCode,
+    bool clearError = false,
     String? searchQuery,
     DockerContainerState? filterState,
     bool clearFilterState = false,
@@ -74,8 +75,10 @@ class DockerState {
     return DockerState(
       containers: containers ?? this.containers,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
-      exitCode: exitCode,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      exitCode: clearError
+          ? null
+          : (errorMessage != null ? exitCode : (exitCode ?? this.exitCode)),
       searchQuery: searchQuery ?? this.searchQuery,
       filterState: clearFilterState ? null : (filterState ?? this.filterState),
       selectedContainer: clearSelectedContainer
@@ -102,7 +105,7 @@ class DockerNotifier extends Notifier<DockerState> {
         unawaited(refresh(quiet: true));
       } else if (!next.isConnected) {
         _refreshSequence++;
-        state = state.copyWith(isLoading: false);
+        state = state.copyWith(isLoading: false, clearError: true);
       }
     });
 
@@ -134,14 +137,13 @@ class DockerNotifier extends Notifier<DockerState> {
     final connState = ref.read(serverConnectionProvider);
 
     if (activeServer == null || !connState.isConnected) {
-      state = state.copyWith(isLoading: false, errorMessage: null);
+      state = state.copyWith(isLoading: false, clearError: true);
       return;
     }
 
     state = state.copyWith(
-      isLoading: !quiet,
-      errorMessage: null,
-      exitCode: null,
+      isLoading: !quiet || state.containers.isEmpty,
+      clearError: true,
     );
 
     try {
@@ -153,7 +155,7 @@ class DockerNotifier extends Notifier<DockerState> {
       state = state.copyWith(
         containers: list,
         isLoading: false,
-        errorMessage: null,
+        clearError: true,
       );
     } catch (e) {
       if (!ref.mounted || epoch != _epoch || sequence != _refreshSequence) {

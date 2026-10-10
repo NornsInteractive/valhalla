@@ -557,36 +557,51 @@ class _DockerViewState extends ConsumerState<DockerView> {
           ),
           Entrance(
             index: 1,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<bool>(
+                  segments: [
+                    ButtonSegment<bool>(
+                      value: false,
+                      label: Text(
+                        context.l10n.dockerViewGroupContainers,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      icon: const Icon(Icons.view_agenda_outlined, size: 16),
+                    ),
+                    ButtonSegment<bool>(
+                      value: true,
+                      label: Text(
+                        context.l10n.dockerViewGroupProjects,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      icon: const Icon(Icons.layers_outlined, size: 16),
+                    ),
+                  ],
+                  selected: {_isComposeGrouped},
+                  onSelectionChanged: (val) {
+                    setState(() {
+                      _isComposeGrouped = val.first;
+                    });
+                  },
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Entrance(
+            index: 2,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  SegmentedButton<bool>(
-                    segments: [
-                      ButtonSegment<bool>(
-                        value: false,
-                        label: Text(context.l10n.dockerViewGroupContainers),
-                        icon: const Icon(Icons.view_agenda_outlined, size: 16),
-                      ),
-                      ButtonSegment<bool>(
-                        value: true,
-                        label: Text(context.l10n.dockerViewGroupProjects),
-                        icon: const Icon(Icons.layers_outlined, size: 16),
-                      ),
-                    ],
-                    selected: {_isComposeGrouped},
-                    onSelectionChanged: (val) {
-                      setState(() {
-                        _isComposeGrouped = val.first;
-                      });
-                    },
-                    style: const ButtonStyle(
-                      visualDensity: VisualDensity.compact,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
                   FilterChip(
                     label: Text(context.l10n.dockerFilterAll),
                     selected: dockerState.filterState == null,
@@ -631,7 +646,51 @@ class _DockerViewState extends ConsumerState<DockerView> {
             ),
           ),
           const SizedBox(height: 8),
+          if (dockerState.errorMessage != null &&
+              dockerState.containers.isNotEmpty)
+            _buildCachedErrorBanner(context, dockerState),
           Expanded(child: _buildBody(context, dockerState)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCachedErrorBanner(
+    BuildContext context,
+    DockerState dockerState,
+  ) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: context.vDanger.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(VRadius.card),
+        border: Border.all(color: context.vDanger.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: context.vDanger, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              dockerState.errorMessage!,
+              style: TextStyle(fontSize: 12, color: context.vDanger),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: dockerState.isLoading
+                ? null
+                : () => ref.read(dockerProvider.notifier).refresh(),
+            icon: const Icon(Icons.refresh, size: 16),
+            label: Text(context.l10n.stateRetry),
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              foregroundColor: context.vDanger,
+            ),
+          ),
         ],
       ),
     );
@@ -654,14 +713,32 @@ class _DockerViewState extends ConsumerState<DockerView> {
       );
     }
 
+    final isConnected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
     final list = dockerState.filteredContainers;
     if (list.isEmpty) {
+      if (!isConnected && dockerState.containers.isEmpty) {
+        return EmptyStateView(
+          icon: Icons.link_off_rounded,
+          title: context.l10n.serverDisconnected,
+          description: context.l10n.stateOfflineDesc,
+        );
+      }
+      if (dockerState.containers.isNotEmpty) {
+        return EmptyStateView(
+          icon: Icons.filter_alt_off_outlined,
+          title: dockerState.filterState == DockerContainerState.running
+              ? context.l10n.dockerEmptyRunning
+              : context.l10n.stateEmpty,
+          description: dockerState.searchQuery.isNotEmpty
+              ? context.l10n.stateEmpty
+              : null,
+        );
+      }
       return EmptyStateView(
         icon: Icons.directions_boat_outlined,
         title: context.l10n.dockerNoContainers,
-        description: dockerState.searchQuery.isNotEmpty
-            ? context.l10n.stateEmpty
-            : null,
       );
     }
 
@@ -720,20 +797,32 @@ class _DockerViewState extends ConsumerState<DockerView> {
     final standaloneContainers = dockerState.filteredContainers
         .where((c) => c.composeProject == null)
         .toList();
-
-    if (projects.isEmpty && standaloneContainers.isEmpty) {
-      return EmptyStateView(
-        icon: Icons.layers_outlined,
-        title: context.l10n.dockerNoProjects,
-        description: dockerState.searchQuery.isNotEmpty
-            ? context.l10n.stateEmpty
-            : null,
-      );
-    }
-
     final isConnected = ref.watch(
       serverConnectionProvider.select((s) => s.isConnected),
     );
+
+    if (projects.isEmpty && standaloneContainers.isEmpty) {
+      if (!isConnected && dockerState.containers.isEmpty) {
+        return EmptyStateView(
+          icon: Icons.link_off_rounded,
+          title: context.l10n.serverDisconnected,
+          description: context.l10n.stateOfflineDesc,
+        );
+      }
+      if (dockerState.containers.isNotEmpty) {
+        return EmptyStateView(
+          icon: Icons.filter_alt_off_outlined,
+          title: context.l10n.stateEmpty,
+          description: dockerState.searchQuery.isNotEmpty
+              ? context.l10n.stateEmpty
+              : null,
+        );
+      }
+      return EmptyStateView(
+        icon: Icons.layers_outlined,
+        title: context.l10n.dockerNoProjects,
+      );
+    }
     final projectEntries = projects.entries.toList();
 
     return RefreshIndicator(

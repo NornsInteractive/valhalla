@@ -40,13 +40,17 @@ class DockerContainer {
   });
 
   factory DockerContainer.fromJson(Map<String, dynamic> json) {
+    final id = json['id'];
+    if (id is! String || id.trim().isEmpty) {
+      throw const FormatException('Docker container ID is missing');
+    }
     final rawState = (json['state'] as String? ?? '').toLowerCase();
     final state = DockerContainerState.values.firstWhere(
       (value) => value.name == rawState,
       orElse: () => DockerContainerState.unknown,
     );
     return DockerContainer(
-      id: json['id'] as String? ?? '',
+      id: id,
       name: json['names'] as String? ?? json['name'] as String? ?? '',
       image: json['image'] as String? ?? '',
       status: json['status'] as String? ?? '',
@@ -70,15 +74,32 @@ class DockerContainer {
 
   static List<DockerContainer> parseLines(Iterable<String> lines) {
     final result = <DockerContainer>[];
+    var lineNumber = 0;
+    var hasOutput = false;
     for (final line in lines) {
-      if (line.trim().isEmpty) continue;
+      lineNumber++;
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+      hasOutput = true;
+      // Login-shell banners may precede the records, but a broken record must
+      // not turn a real container list into an empty or partial success.
+      if (!trimmed.startsWith('{')) continue;
       try {
-        result.add(fromJsonLine(line));
+        result.add(fromJsonLine(trimmed));
       } on FormatException {
-        continue;
+        throw FormatException(
+          'Invalid Docker container record at line $lineNumber',
+        );
       } on TypeError {
-        continue;
+        throw FormatException(
+          'Invalid Docker container fields at line $lineNumber',
+        );
       }
+    }
+    if (hasOutput && result.isEmpty) {
+      throw const FormatException(
+        'Docker output contains no valid container records',
+      );
     }
     return result;
   }
@@ -172,7 +193,7 @@ class DockerCliService {
   Future<List<DockerContainer>> listContainers(String serverId) async {
     final result = await _sshManager.executeWithLoginShell(
       serverId,
-      r'''docker ps -a --no-trunc --format '{"id":{{json .ID}},"names":{{json .Names}},"image":{{json .Image}},"status":{{json .Status}},"state":{{json .State}},"ports":{{json .Ports}},"created":{{json .CreatedAt}},"composeProject":{{json (.Label "com.docker.compose.project")}},"composeService":{{json (.Label "com.docker.compose.service")}}' ''',
+      r'''docker ps -a --no-trunc --format '{"id":{{json .ID}},"names":{{json .Names}},"image":{{json .Image}},"status":{{json .Status}},"state":{{json .State}},"ports":{{json .Ports}},"created":{{json .CreatedAt}},"composeProject":{{json (.Label "com.docker.compose.project")}},"composeService":{{json (.Label "com.docker.compose.service")}}}' ''',
     );
     if (!result.isSuccess) {
       throw DockerExecutionException(
@@ -182,7 +203,11 @@ class DockerCliService {
         exitCode: result.exitCode,
       );
     }
-    return DockerContainer.parseLines(result.stdout.split('\n'));
+    try {
+      return DockerContainer.parseLines(result.stdout.split('\n'));
+    } on FormatException catch (error) {
+      throw DockerExecutionException(error.message, exitCode: result.exitCode);
+    }
   }
 
   /// Lists passwd entries in a running container. The caller may still enter

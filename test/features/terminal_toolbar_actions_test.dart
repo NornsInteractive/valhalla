@@ -63,7 +63,7 @@ Future<void> _pump(WidgetTester tester, _Notifier notifier) async {
 
 void main() {
   testWidgets(
-    'clicking close on the selected Windows tab removes its session',
+    'clicking close on the selected tab removes its session',
     (tester) async {
       final first = _tab('first');
       final second = _tab('second');
@@ -90,7 +90,10 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       first.bridge.dispose();
     },
-    variant: TargetPlatformVariant.only(TargetPlatform.windows),
+    variant: TargetPlatformVariant({
+      TargetPlatform.windows,
+      TargetPlatform.android,
+    }),
   );
 
   testWidgets(
@@ -120,7 +123,10 @@ void main() {
         tab.bridge.dispose();
       }
     },
-    variant: TargetPlatformVariant.only(TargetPlatform.windows),
+    variant: TargetPlatformVariant({
+      TargetPlatform.windows,
+      TargetPlatform.android,
+    }),
   );
 
   testWidgets(
@@ -155,7 +161,10 @@ void main() {
         tab.bridge.dispose();
       }
     },
-    variant: TargetPlatformVariant.only(TargetPlatform.windows),
+    variant: TargetPlatformVariant({
+      TargetPlatform.windows,
+      TargetPlatform.android,
+    }),
   );
 
   testWidgets(
@@ -185,7 +194,10 @@ void main() {
         tab.bridge.dispose();
       }
     },
-    variant: TargetPlatformVariant.only(TargetPlatform.windows),
+    variant: TargetPlatformVariant({
+      TargetPlatform.windows,
+      TargetPlatform.android,
+    }),
   );
 
   testWidgets(
@@ -210,11 +222,14 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       first.bridge.dispose();
     },
-    variant: TargetPlatformVariant.only(TargetPlatform.windows),
+    variant: TargetPlatformVariant({
+      TargetPlatform.windows,
+      TargetPlatform.android,
+    }),
   );
 
   testWidgets(
-    'Windows clear repaints immediately and clears scrollback only for the active tab',
+    'clear repaints immediately and clears scrollback only for the active tab',
     (tester) async {
       final tabs = [_tab('first'), _tab('second')];
       final notifier = _Notifier(
@@ -259,17 +274,37 @@ void main() {
         tab.bridge.dispose();
       }
     },
-    variant: TargetPlatformVariant.only(TargetPlatform.windows),
+    variant: TargetPlatformVariant({
+      TargetPlatform.windows,
+      TargetPlatform.android,
+    }),
   );
 
   testWidgets(
-    'Android retains the existing terminal tab layout',
+    'Android tabs expose independent, accessible close callbacks',
     (tester) async {
       final tabs = [_tab('first'), _tab('second')];
       final notifier = _Notifier(SshTerminalState(tabs: tabs));
       await _pump(tester, notifier);
-      expect(find.byType(ChoiceChip), findsNWidgets(2));
-      expect(find.byType(InputChip), findsNothing);
+
+      // Mobile reuses the same chip layout as Windows, so the close affordance
+      // stays a real, labelled and per-index callback instead of a nested tap
+      // target buried inside the label.
+      final chips = tester.widgetList<InputChip>(find.byType(InputChip));
+      expect(chips.length, 2);
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      for (final chip in chips) {
+        expect(chip.onDeleted, isNotNull);
+        expect(chip.deleteButtonTooltipMessage, l10n.terminalCloseTab);
+      }
+      // Closing one tab must not close the other.
+      await tester.tap(find.byIcon(Icons.close).first);
+      await tester.pump();
+      expect(notifier.state.tabs, [tabs[1]]);
+
+      final lastChip = tester.widget<InputChip>(find.byType(InputChip));
+      expect(lastChip.onDeleted, isNull);
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       for (final tab in tabs) {
         tab.bridge.dispose();

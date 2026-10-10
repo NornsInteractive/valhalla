@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,6 +63,7 @@ class _UiTestSftpNotifier extends SftpNotifier {
   final SftpState _initial;
   final setHiddenCalls = <bool>[];
   final navigatedTo = <String>[];
+  final upNavigations = <String>[];
   int refreshCount = 0;
   Completer<void>? hideToggleGate;
 
@@ -86,6 +88,16 @@ class _UiTestSftpNotifier extends SftpNotifier {
   Future<void> refresh() async {
     refreshCount++;
     state = state.copyWith(files: [...state.files]);
+  }
+
+  @override
+  Future<void> navigateUp() async {
+    upNavigations.add(state.currentPath);
+    final lastSlash = state.currentPath.lastIndexOf('/');
+    final parent = lastSlash <= 0
+        ? '/'
+        : state.currentPath.substring(0, lastSlash);
+    state = state.copyWith(currentPath: parent);
   }
 
   void updatePath(String path) {
@@ -363,6 +375,89 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('sftp_search_field')), findsOneWidget);
     expect(find.byKey(const Key('sftpToggleHiddenButton')), findsOneWidget);
+  });
+
+  testWidgets('compact breadcrumbs stay tight yet touchable and exact', (
+    tester,
+  ) async {
+    setSurface(tester, const Size(1080, 2400), 3);
+    const segments = ['a', 'b', 'c'];
+    final notifier = _UiTestSftpNotifier(
+      SftpState(currentPath: '/a/b/c', files: [_uiItem('alpha')]),
+    );
+    await tester.pumpWidget(_app(state: notifier.build(), notifier: notifier));
+    await tester.pumpAndSettle();
+
+    // Short segments must keep a 44dp touch height.
+    for (var index = 0; index < segments.length; index++) {
+      final segment = tester.getRect(
+        find.byKey(Key('sftp_breadcrumb_seg_$index')),
+      );
+      expect(segment.height, greaterThanOrEqualTo(44));
+    }
+
+    // The old 44dp minimum width inflated every short segment into a wide
+    // slot, so adjacent labels drifted far apart. The gap between two
+    // consecutive labels is chevron (14) + horizontal padding (6 + 6).
+    var maxGap = 0.0;
+    for (var index = 0; index < segments.length - 1; index++) {
+      final current = tester.getRect(
+        find.descendant(
+          of: find.byKey(
+            Key('sftp_breadcrumb_seg_$index'),
+            skipOffstage: false,
+          ),
+          matching: find.text(segments[index]),
+        ),
+      );
+      final next = tester.getRect(
+        find.descendant(
+          of: find.byKey(
+            Key('sftp_breadcrumb_seg_${index + 1}'),
+            skipOffstage: false,
+          ),
+          matching: find.text(segments[index + 1]),
+        ),
+      );
+      maxGap = math.max(maxGap, next.left - current.right);
+    }
+    expect(maxGap, lessThanOrEqualTo(30));
+
+    // Exact navigation targets survive the compaction. Segments are tapped
+    // from the deepest one so every recorded path stays unambiguous.
+    await tester.tap(find.byKey(const Key('sftp_breadcrumb_seg_2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sftp_breadcrumb_seg_1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sftp_breadcrumb_seg_0')));
+    await tester.pumpAndSettle();
+    expect(notifier.navigatedTo, ['/a/b/c', '/a/b', '/a']);
+
+    // Up still works while a parent directory exists.
+    await tester.tap(find.byKey(const Key('sftp_breadcrumb_up')));
+    await tester.pumpAndSettle();
+    expect(notifier.upNavigations, ['/a']);
+    expect(notifier.state.currentPath, '/');
+
+    // At the root the up button stays disabled.
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const Key('sftp_breadcrumb_up')))
+          .onPressed,
+      isNull,
+    );
+
+    // The root segment still navigates to '/'.
+    await tester.tap(find.byKey(const Key('sftp_breadcrumb_root')));
+    await tester.pumpAndSettle();
+    expect(notifier.navigatedTo, ['/a/b/c', '/a/b', '/a', '/']);
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const Key('sftp_breadcrumb_up')))
+          .onPressed,
+      isNull,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('目录链接按别名导航；坏链弹错误且无预览/下载选项', (tester) async {

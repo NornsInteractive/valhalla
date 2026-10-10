@@ -19,8 +19,14 @@ import 'package:valhalla/infrastructure/ssh/ssh_host_key_verifier.dart';
 /// 假的远端命令执行器：只按固定脚本回放 `docker ps` / `docker <action>`。
 class _FakeDockerExecutor implements SshCommandExecutor {
   String psOutput = '';
+  int psExitCode = 0;
+  String psStderr = '';
+
+  /// 非空时 `docker ps` 在这里挂起，用来观测「加载中」窗口。
+  Completer<void>? psGate;
+
   final lifecycleCalls =
-      <({String serverId, String action, String containerId})>[];
+      <({String serverId, String action, String containerId})>{};
   final otherCommands = <String>[];
 
   /// 按容器 id 指定生命周期命令的返回；未列出的默认成功。
@@ -46,7 +52,13 @@ class _FakeDockerExecutor implements SshCommandExecutor {
     String? sudoPassword,
   }) async {
     if (command.startsWith('docker ps')) {
-      return SSHExecutionResult(exitCode: 0, stdout: psOutput, stderr: '');
+      final gate = psGate;
+      if (gate != null) await gate.future;
+      return SSHExecutionResult(
+        exitCode: psExitCode,
+        stdout: psOutput,
+        stderr: psStderr,
+      );
     }
     final match = RegExp(r"^docker (\S+) '(.*)'$").firstMatch(command.trim());
     if (match != null &&
@@ -501,6 +513,112 @@ void main() {
         reason: '切换之后不得对新服务器执行确认过的动作',
       );
       expect(env.executor.lifecycleCalls, hasLength(1));
+    });
+  });
+
+  group('刷新失败与加载状态', () {
+    test('刷新失败保留缓存容器，错误不会被搜索或过滤清掉', () async {
+      final env = await _env(psOutput: _appPs);
+      await pumpEventQueue();
+      expect(env.container.read(dockerProvider).containers, hasLength(4));
+
+      env.executor.psExitCode = 1;
+      env.executor.psStderr =
+          'Cannot connect to the Docker daemon at unix:///var/run/docker.sock';
+      await env.notifier.refresh();
+      await pumpEventQueue();
+
+      final failed = env.container.read(dockerProvider);
+      expect(failed.isLoading, isFalse);
+      expect(
+        failed.errorMessage,
+        contains('Cannot connect to the Docker daemon'),
+        reason: '远端 docker ps 失败必须原样暴露，不能伪装成空列表成功',
+      );
+      expect(failed.exitCode, 1);
+      expect(failed.containers, hasLength(4), reason: '刷新失败必须保留上一次成功的容器缓存');
+
+      // 过滤/搜索只作用于缓存，不得顺手把错误一起清掉。
+      env.notifier.setFilterState(DockerContainerState.running);
+      expect(
+        env.container.read(dockerProvider).errorMessage,
+        contains('Cannot connect to the Docker daemon'),
+      );
+      expect(
+        env.container.read(dockerProvider).filteredContainers,
+        hasLength(3),
+      );
+
+      env.notifier.setSearchQuery('redis');
+      expect(
+        env.container.read(dockerProvider).errorMessage,
+        contains('Cannot connect to the Docker daemon'),
+      );
+      expect(
+        env.container.read(dockerProvider).filteredContainers,
+        isEmpty,
+        reason: '搜索+过滤后为空只是「筛选结果为空」，错误仍然要显示',
+      );
+      expect(env.container.read(dockerProvider).containers, hasLength(4));
+    });
+
+    test('刷新成功后错误被清除', () async {
+      final env = await _env(psOutput: _appPs);
+      await pumpEventQueue();
+
+      env.executor.psExitCode = 1;
+      env.executor.psStderr = 'docker daemon unavailable';
+      await env.notifier.refresh();
+      await pumpEventQueue();
+      expect(env.container.read(dockerProvider).errorMessage, isNotNull);
+
+      env.executor.psExitCode = 0;
+      env.executor.psStderr = '';
+      await env.notifier.refresh();
+      await pumpEventQueue();
+
+      final recovered = env.container.read(dockerProvider);
+      expect(recovered.errorMessage, isNull);
+      expect(recovered.exitCode, isNull);
+      expect(recovered.isLoading, isFalse);
+      expect(recovered.containers, hasLength(4));
+    });
+
+    test('quiet 刷新有缓存时不显示加载，无缓存时仍显示加载', () async {
+      final cached = await _env(psOutput: _appPs);
+      await pumpEventQueue();
+      final cacheGate = Completer<void>();
+      cached.executor.psGate = cacheGate;
+      final cachedRefresh = cached.notifier.refresh(quiet: true);
+      await pumpEventQueue();
+      expect(
+        cached.container.read(dockerProvider).isLoading,
+        isFalse,
+        reason: '已有缓存的后台刷新不应闪烁加载态',
+      );
+
+      final uncached = await _env(psOutput: '');
+      await pumpEventQueue();
+      expect(uncached.container.read(dockerProvider).containers, isEmpty);
+      final emptyGate = Completer<void>();
+      uncached.executor.psGate = emptyGate;
+      final emptyRefresh = uncached.notifier.refresh(quiet: true);
+      await pumpEventQueue();
+      expect(
+        uncached.container.read(dockerProvider).isLoading,
+        isTrue,
+        reason: '没有任何缓存时后台刷新也必须让用户看到加载中',
+      );
+
+      cacheGate.complete();
+      emptyGate.complete();
+      await Future.wait([cachedRefresh, emptyRefresh]);
+      await pumpEventQueue();
+
+      expect(cached.container.read(dockerProvider).isLoading, isFalse);
+      expect(cached.container.read(dockerProvider).containers, hasLength(4));
+      expect(uncached.container.read(dockerProvider).isLoading, isFalse);
+      expect(uncached.container.read(dockerProvider).containers, isEmpty);
     });
   });
 }
