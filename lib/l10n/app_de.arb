@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "Die Lizenz konnte nicht geladen werden. Kontaktieren Sie norns.soft@gmail.com.",
   "aboutLinkFailed": "Der Link konnte nicht geöffnet werden. Öffnen Sie https://norns.cc.cd in Ihrem Browser.",
   "downloadReveal": "Im Datei-Explorer anzeigen",
-  "downloadRevealFailed": "Der Downloadordner konnte nicht geöffnet werden. Er wurde möglicherweise verschoben oder gelöscht."
+  "downloadRevealFailed": "Der Downloadordner konnte nicht geöffnet werden. Er wurde möglicherweise verschoben oder gelöscht.",
+  "settingsKnownHostsSubtitle": "{count} vertrauenswürdige Host-Schlüssel",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "Keine vertrauenswürdigen Host-Schlüssel gefunden",
+  "settingsKnownHostsDialogTitle": "Bekannte Host-Schlüssel",
+  "settingsHostKeyRevoke": "Widerrufen",
+  "settingsHostKeyRevokeConfirmTitle": "Host-Schlüssel widerrufen",
+  "settingsHostKeyRevokeConfirmMessage": "Host-Schlüssel für {hostPort} widerrufen? Aktive SSH-Verbindungen zu diesem Host werden getrennt und der Schlüssel muss bei der nächsten Verbindung neu bestätigt werden.",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "Host-Fingerabdruck in die Zwischenablage kopiert",
+  "settingsHostKeyRevoked": "Host-Schlüssel widerrufen",
+  "settingsClearStorageSubtitle": "Gespeicherte Passwörter und private Schlüssel für ausgewählte Server löschen",
+  "settingsClearStorageDialogTitle": "Server-Zugangsdaten zurücksetzen",
+  "settingsClearStorageDesc": "Wählen Sie Server aus, um gespeicherte SSH-Passwörter und private Schlüssel aus dem sicheren Speicher zu löschen. Serverkonfigurationen und Chat-Verläufe bleiben erhalten.",
+  "settingsClearStorageNoServers": "Keine Server verfügbar",
+  "settingsClearStorageSelectAll": "Alle auswählen",
+  "settingsClearStorageDeselectAll": "Auswahl aufheben",
+  "settingsClearStorageConfirmTitle": "Zurücksetzen der Zugangsdaten bestätigen",
+  "settingsClearStorageConfirmMessage": "Möchten Sie die Zugangsdaten für {count} ausgewählte(n) Server wirklich löschen? Aktive Verbindungen werden sofort getrennt.",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "Ausgewählte löschen ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "Zugangsdaten für ausgewählte Server erfolgreich gelöscht",
+  "settingsClearStorageError": "Fehler beim Löschen der Zugangsdaten einiger Server. Bitte versuchen Sie es erneut.",
+  "settingsDefaultAcpAgent": "Standard-ACP-Agent",
+  "settingsDefaultAcpAgentSubtitle": "Standard-Agent für ACP-Chats auf diesem Server",
+  "settingsDefaultCliAgent": "Standard-CLI-Agent",
+  "settingsDefaultCliAgentSubtitle": "Standard-Agent für CLI-Chats auf diesem Server",
+  "settingsDefaultAgentAutomatic": "Automatisch (erster verfügbarer)",
+  "settingsDefaultAgentSelectTitle": "Standard-Agent auswählen",
+  "settingsDefaultAgentNoServer": "Kein Server ausgewählt",
+  "settingsDefaultAgentNoAgents": "Keine Agenten für diesen Server konfiguriert",
+  "settingsDefaultAgentSaveFailed": "Fehler beim Aktualisieren der Standard-Agent-Einstellung",
+  "dockerViewGroupContainers": "Container",
+  "dockerViewGroupProjects": "Compose-Projekte",
+  "dockerProjectActionStart": "Projekt starten",
+  "dockerProjectActionStop": "Projekt stoppen",
+  "dockerProjectActionRestart": "Projekt neu starten",
+  "dockerProjectConfirmStopTitle": "Compose-Projekt stoppen",
+  "dockerProjectConfirmRestartTitle": "Compose-Projekt neu starten",
+  "dockerProjectConfirmMessage": "Möchten Sie das Projekt „{project}“ wirklich {action}? Folgende {count} Container sind betroffen:",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "Projekt „{project}“: {action} erfolgreich abgeschlossen",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "Projekt „{project}“: {action} mit {failedCount} Fehler(n) abgeschlossen",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "Keine Docker-Compose-Projekte gefunden",
+  "dockerMountsTitle": "Mounts",
+  "dockerMountReadOnly": "Schreibgeschützt",
+  "dockerMountReadWrite": "Lesen/Schreiben",
+  "sftpBookmarksTitle": "Verzeichnis-Lesezeichen",
+  "sftpNoBookmarks": "Noch keine Lesezeichen gespeichert",
+  "sftpAddBookmark": "Lesezeichen hinzufügen",
+  "sftpRemoveBookmark": "Lesezeichen entfernen",
+  "sftpCurrentDirectory": "Aktuelles Verzeichnis",
+  "sftpSelectMode": "Mehrfachauswahl",
+  "sftpSelectedCount": "{count} ausgewählt",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "Alle auswählen",
+  "sftpDeselectAll": "Auswahl aufheben",
+  "sftpBatchCopy": "Kopieren",
+  "sftpBatchMove": "Verschieben",
+  "sftpBatchDeleteConfirmTitle": "Stapellöschung bestätigen",
+  "sftpBatchDeleteConfirmMessage": "Sind Sie sicher, dass Sie {count} ausgewählte Elemente löschen möchten?",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "Hinweis: Nicht leere Verzeichnisse können nicht rekursiv gelöscht werden und werden übersprungen.",
+  "sftpBatchCopyConfirmTitle": "Stapelkopie bestätigen",
+  "sftpBatchCopyConfirmMessage": "{count} ausgewählte Elemente nach \"{directory}\" kopieren?",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "Stapelverschiebung bestätigen",
+  "sftpBatchMoveConfirmMessage": "{count} ausgewählte Elemente nach \"{directory}\" verschieben?",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "Ergebnisse der Stapelverarbeitung",
+  "sftpBatchOutcomeSkipped": "Übersprungen (Ziel existiert bereits oder wird nicht unterstützt)",
+  "sftpBatchTargetRestricted": "Ausgewähltes Verzeichnis oder dessen Unterverzeichnisse können nicht als Ziel gewählt werden",
+  "sftpSelectCurrentDir": "Dieses Verzeichnis wählen",
+  "sftpBatchOperationSuccess": "{count} Elemente erfolgreich verarbeitet",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "Sicherung & Konfigurationsmigration",
+  "configExportTitle": "Konfiguration exportieren",
+  "configExportSubtitle": "Server, Agenten, Befehle, Lesezeichen und Einstellungen als JSON exportieren",
+  "configExportDialogTitle": "Valhalla-Konfiguration exportieren",
+  "configExportSuccess": "Konfiguration erfolgreich exportiert",
+  "configExportError": "Fehler beim Exportieren der Konfiguration: {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "Konfiguration importieren",
+  "configImportSubtitle": "Konfiguration aus einer Sicherungs-JSON-Datei importieren",
+  "configBackupTooLarge": "Sicherungsdatei überschreitet die maximale Größe (8 MB)",
+  "configImportPreviewTitle": "Vorschau des Konfigurationsimports",
+  "configImportPreviewDesc": "Überprüfen Sie den Inhalt vor dem Import. Vorhandene Elemente bleiben erhalten und werden zusammengeführt.",
+  "configImportServersCount": "Server ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "Agenten ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "Schnellbefehle ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "Lesezeichen ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "Benutzerdefinierte Befehle können sensible Skripte oder eingebettete Anmeldedaten enthalten. Keine Passwörter, privaten Schlüssel oder vertrauenswürdigen Fingerabdrücke werden übertragen.",
+  "configImportGlobalPreferences": "Globale Anwendungseinstellungen importieren",
+  "configImportGlobalPreferencesDesc": "Überschreibt aktuelle Design-, Terminal- und Navigationseinstellungen",
+  "configImportConfirmAction": "Import bestätigen",
+  "configImportSuccess": "Konfiguration erfolgreich importiert",
+  "configImportErrorTitle": "Ungültige Konfigurationssicherung",
+  "configImportErrorGeneric": "Fehler beim Importieren der Konfiguration: {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "Diagnosedetails kopieren",
+  "configImportErrorCopied": "Diagnosedetails in die Zwischenablage kopiert",
+  "configImportErrorUnsupportedVersion": "Nicht unterstütztes Sicherungsformat oder Version",
+  "configImportErrorMalformed": "Fehlerhafte oder beschädigte Konfigurations-JSON"
 }

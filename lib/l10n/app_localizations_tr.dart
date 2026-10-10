@@ -3743,4 +3743,345 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get downloadRevealFailed =>
       'İndirme klasörü açılamadı. Taşınmış veya silinmiş olabilir.';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count güvenilen ana bilgisayar anahtarı';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty =>
+      'Güvenilen ana bilgisayar anahtarı bulunamadı';
+
+  @override
+  String get settingsKnownHostsDialogTitle =>
+      'Bilinen Ana Bilgisayar Anahtarları';
+
+  @override
+  String get settingsHostKeyRevoke => 'İptal Et';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle =>
+      'Ana Bilgisayar Anahtarını İptal Et';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return '$hostPort için ana bilgisayar anahtarı iptal edilsin mi? Bu ana bilgisayara olan etkin SSH bağlantıları kesilecek ve sonraki bağlantıda anahtarı doğrulamanız gerekecektir.';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied =>
+      'Ana bilgisayar anahtarı parmak izi panoya kopyalandı';
+
+  @override
+  String get settingsHostKeyRevoked => 'Ana bilgisayar anahtarı iptal edildi';
+
+  @override
+  String get settingsClearStorageSubtitle =>
+      'Seçili sunucuların kayıtlı parolalarını ve özel anahtarlarını temizle';
+
+  @override
+  String get settingsClearStorageDialogTitle =>
+      'Sunucu Kimlik Bilgilerini Sıfırla';
+
+  @override
+  String get settingsClearStorageDesc =>
+      'Güvenli depolamadan SSH parolalarını ve özel anahtarlarını temizlemek için sunucuları seçin. Sunucu yapılandırmaları ve sohbet geçmişleri silinmeyecektir.';
+
+  @override
+  String get settingsClearStorageNoServers => 'Kullanılabilir sunucu yok';
+
+  @override
+  String get settingsClearStorageSelectAll => 'Tümünü Seç';
+
+  @override
+  String get settingsClearStorageDeselectAll => 'Seçimi Kaldır';
+
+  @override
+  String get settingsClearStorageConfirmTitle =>
+      'Kimlik Bilgisi Sıfırlamayı Onayla';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return 'Seçili $count sunucu için kimlik bilgilerini temizlemek istediğinizden emin misiniz? Etkin bağlantılar derhal kesilecektir.';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return 'Seçilenleri Temizle ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess =>
+      'Seçili sunucu kimlik bilgileri başarıyla temizlendi';
+
+  @override
+  String get settingsClearStorageError =>
+      'Bazı sunucuların kimlik bilgileri temizlenemedi. Lütfen tekrar deneyin.';
+
+  @override
+  String get settingsDefaultAcpAgent => 'Varsayılan ACP Temsilcisi';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle =>
+      'Bu sunucudaki ACP sohbeti için varsayılan temsilci';
+
+  @override
+  String get settingsDefaultCliAgent => 'Varsayılan CLI Temsilcisi';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle =>
+      'Bu sunucudaki CLI sohbeti için varsayılan temsilci';
+
+  @override
+  String get settingsDefaultAgentAutomatic => 'Otomatik (ilk kullanılabilir)';
+
+  @override
+  String get settingsDefaultAgentSelectTitle => 'Varsayılan Temsilciyi Seç';
+
+  @override
+  String get settingsDefaultAgentNoServer => 'Sunucu seçilmedi';
+
+  @override
+  String get settingsDefaultAgentNoAgents =>
+      'Bu sunucu için yapılandırılmış temsilci yok';
+
+  @override
+  String get settingsDefaultAgentSaveFailed =>
+      'Varsayılan temsilci ayarı güncellenemedi';
+
+  @override
+  String get dockerViewGroupContainers => 'Konteynerler';
+
+  @override
+  String get dockerViewGroupProjects => 'Compose Projeleri';
+
+  @override
+  String get dockerProjectActionStart => 'Projeyi Başlat';
+
+  @override
+  String get dockerProjectActionStop => 'Projeyi Durdur';
+
+  @override
+  String get dockerProjectActionRestart => 'Projeyi Yeniden Başlat';
+
+  @override
+  String get dockerProjectConfirmStopTitle => 'Compose Projesini Durdur';
+
+  @override
+  String get dockerProjectConfirmRestartTitle =>
+      'Compose Projesini Yeniden Başlat';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return '\"$project\" projesini $action istediğinizden emin misiniz? Aşağıdaki $count konteyner etkilenecektir:';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return '\"$project\" projesi $action başarıyla tamamlandı';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return '\"$project\" projesi $action $failedCount hata ile tamamlandı';
+  }
+
+  @override
+  String get dockerNoProjects => 'Docker Compose projesi bulunamadı';
+
+  @override
+  String get dockerMountsTitle => 'Bağlama Noktaları';
+
+  @override
+  String get dockerMountReadOnly => 'Salt okunur';
+
+  @override
+  String get dockerMountReadWrite => 'Okuma/Yazma';
+
+  @override
+  String get sftpBookmarksTitle => 'Dizin Yer İmleri';
+
+  @override
+  String get sftpNoBookmarks => 'Henüz kaydedilmiş yer imi yok';
+
+  @override
+  String get sftpAddBookmark => 'Yer İmi Ekle';
+
+  @override
+  String get sftpRemoveBookmark => 'Yer İmini Kaldır';
+
+  @override
+  String get sftpCurrentDirectory => 'Mevcut Dizin';
+
+  @override
+  String get sftpSelectMode => 'Çoklu Seçim Modu';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return '$count seçildi';
+  }
+
+  @override
+  String get sftpSelectAll => 'Tümünü Seç';
+
+  @override
+  String get sftpDeselectAll => 'Seçimi Kaldır';
+
+  @override
+  String get sftpBatchCopy => 'Kopyala';
+
+  @override
+  String get sftpBatchMove => 'Taşı';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => 'Toplu Silmeyi Onayla';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return 'Seçili $count öğeyi silmek istediğinizden emin misiniz?';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice =>
+      'Not: Boş olmayan dizinler özyinelemeli olarak silinemez ve atlanacaktır.';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => 'Toplu Kopyalamayı Onayla';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return 'Seçilen $count öğe \"$directory\" hedefine kopyalansın mı?';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => 'Toplu Taşımayı Onayla';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return 'Seçilen $count öğe \"$directory\" hedefine taşınsın mı?';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => 'Toplu İşlem Sonuçları';
+
+  @override
+  String get sftpBatchOutcomeSkipped =>
+      'Atlandı (hedef zaten var veya desteklenmiyor)';
+
+  @override
+  String get sftpBatchTargetRestricted =>
+      'Mevcut dizin veya alt dizinleri hedef olarak seçilemez';
+
+  @override
+  String get sftpSelectCurrentDir => 'Bu Dizini Seç';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return '$count öğe başarıyla işlendi';
+  }
+
+  @override
+  String get configMigrationTitle => 'Yedekleme ve Yapılandırma Taşıma';
+
+  @override
+  String get configExportTitle => 'Yapılandırmayı Dışa Aktar';
+
+  @override
+  String get configExportSubtitle =>
+      'Sunucuları, ajanları, komutları, yer imlerini ve tercihleri JSON\'a aktar';
+
+  @override
+  String get configExportDialogTitle => 'Valhalla Yapılandırmasını Dışa Aktar';
+
+  @override
+  String get configExportSuccess => 'Yapılandırma başarıyla dışa aktarıldı';
+
+  @override
+  String configExportError(String error) {
+    return 'Yapılandırma dışa aktarılamadı: $error';
+  }
+
+  @override
+  String get configImportTitle => 'Yapılandırmayı İçe Aktar';
+
+  @override
+  String get configImportSubtitle =>
+      'Yedek JSON dosyasından yapılandırmayı içe aktar';
+
+  @override
+  String get configBackupTooLarge =>
+      'Yedekleme dosyası izin verilen maksimum boyutu (8 MB) aşıyor';
+
+  @override
+  String get configImportPreviewTitle => 'Yapılandırma İçe Aktarma Önizlemesi';
+
+  @override
+  String get configImportPreviewDesc =>
+      'İçe aktarmadan önce içeriği gözden geçirin. Mevcut öğeler korunacak ve birleştirilecektir.';
+
+  @override
+  String configImportServersCount(int count) {
+    return 'Sunucular ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return 'Ajanlar ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return 'Hızlı Komutlar ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return 'Yer İmleri ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      'Özel komutlar hassas komut dosyaları veya gömülü kimlik bilgileri içerebilir. Hiçbir parola, özel anahtar veya güvenilen ana bilgisayar parmak izi aktarılmaz.';
+
+  @override
+  String get configImportGlobalPreferences =>
+      'Genel uygulama tercihlerini içe aktar';
+
+  @override
+  String get configImportGlobalPreferencesDesc =>
+      'Mevcut tema, terminal ve gezinme ayarlarının üzerine yazar';
+
+  @override
+  String get configImportConfirmAction => 'İçe Aktarmayı Onayla';
+
+  @override
+  String get configImportSuccess => 'Yapılandırma başarıyla içe aktarıldı';
+
+  @override
+  String get configImportErrorTitle => 'Geçersiz Yapılandırma Yedeği';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return 'Yapılandırma içe aktarılamadı: $error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => 'Tanılama Ayrıntılarını Kopyala';
+
+  @override
+  String get configImportErrorCopied =>
+      'Tanılama ayrıntıları panoya kopyalandı';
+
+  @override
+  String get configImportErrorUnsupportedVersion =>
+      'Desteklenmeyen yedekleme biçimi veya sürümü';
+
+  @override
+  String get configImportErrorMalformed =>
+      'Hatalı veya bozuk yapılandırma JSON\'u';
 }

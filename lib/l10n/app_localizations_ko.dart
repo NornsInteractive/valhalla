@@ -3613,4 +3613,322 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get downloadRevealFailed => '다운로드 폴더를 열 수 없습니다. 이동되었거나 삭제되었을 수 있습니다.';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count개의 신뢰할 수 있는 호스트 키';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty => '신뢰할 수 있는 호스트 키가 없습니다';
+
+  @override
+  String get settingsKnownHostsDialogTitle => '알려진 호스트 키';
+
+  @override
+  String get settingsHostKeyRevoke => '신뢰 취소';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle => '호스트 키 신뢰 취소';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return '$hostPort의 호스트 키를 취소하시겠습니까? 해당 호스트의 활성 SSH 연결이 끊어지며, 다음 연결 시 키를 다시 확인해야 합니다.';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied => '호스트 키 지문이 클립보드에 복사되었습니다';
+
+  @override
+  String get settingsHostKeyRevoked => '호스트 키가 취소되었습니다';
+
+  @override
+  String get settingsClearStorageSubtitle => '선택한 서버의 저장된 비밀번호 및 개인 키 삭제';
+
+  @override
+  String get settingsClearStorageDialogTitle => '서버 자격 증명 재설정';
+
+  @override
+  String get settingsClearStorageDesc =>
+      '보안 저장소에서 SSH 비밀번호 및 개인 키를 삭제할 서버를 선택하세요. 서버 구성 및 대화 기록은 삭제되지 않습니다.';
+
+  @override
+  String get settingsClearStorageNoServers => '사용 가능한 서버가 없습니다';
+
+  @override
+  String get settingsClearStorageSelectAll => '모두 선택';
+
+  @override
+  String get settingsClearStorageDeselectAll => '모두 선택 해제';
+
+  @override
+  String get settingsClearStorageConfirmTitle => '자격 증명 재설정 확인';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return '선택한 $count개 서버의 자격 증명을 삭제하시겠습니까? 해당 서버의 활성 연결이 즉시 끊어집니다.';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return '선택 항목 삭제 ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess => '선택한 서버의 자격 증명이 삭제되었습니다';
+
+  @override
+  String get settingsClearStorageError =>
+      '일부 서버의 자격 증명 삭제에 실패했습니다. 다시 시도해 주세요.';
+
+  @override
+  String get settingsDefaultAcpAgent => '기본 ACP 에이전트';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle => '이 서버의 ACP 대화용 기본 에이전트';
+
+  @override
+  String get settingsDefaultCliAgent => '기본 CLI 에이전트';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle => '이 서버의 CLI 대화용 기본 에이전트';
+
+  @override
+  String get settingsDefaultAgentAutomatic => '자동 (사용 가능한 첫 번째 항목)';
+
+  @override
+  String get settingsDefaultAgentSelectTitle => '기본 에이전트 선택';
+
+  @override
+  String get settingsDefaultAgentNoServer => '선택된 서버가 없습니다';
+
+  @override
+  String get settingsDefaultAgentNoAgents => '이 서버에 구성된 에이전트가 없습니다';
+
+  @override
+  String get settingsDefaultAgentSaveFailed => '기본 에이전트 설정 업데이트에 실패했습니다';
+
+  @override
+  String get dockerViewGroupContainers => '컨테이너';
+
+  @override
+  String get dockerViewGroupProjects => 'Compose 프로젝트';
+
+  @override
+  String get dockerProjectActionStart => '프로젝트 시작';
+
+  @override
+  String get dockerProjectActionStop => '프로젝트 중지';
+
+  @override
+  String get dockerProjectActionRestart => '프로젝트 재시작';
+
+  @override
+  String get dockerProjectConfirmStopTitle => 'Compose 프로젝트 중지';
+
+  @override
+  String get dockerProjectConfirmRestartTitle => 'Compose 프로젝트 재시작';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return '\"$project\" 프로젝트에 대해 $action 작업을 수행하시겠습니까? 다음 $count개 컨테이너에 영향을 줍니다:';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return '\"$project\" 프로젝트 $action 완료';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return '\"$project\" 프로젝트 $action 완료 ($failedCount개 실패)';
+  }
+
+  @override
+  String get dockerNoProjects => 'Docker Compose 프로젝트를 찾을 수 없습니다';
+
+  @override
+  String get dockerMountsTitle => '마운트';
+
+  @override
+  String get dockerMountReadOnly => '읽기 전용';
+
+  @override
+  String get dockerMountReadWrite => '읽기/쓰기';
+
+  @override
+  String get sftpBookmarksTitle => '디렉터리 북마크';
+
+  @override
+  String get sftpNoBookmarks => '저장된 디렉터리 북마크가 없습니다';
+
+  @override
+  String get sftpAddBookmark => '북마크 추가';
+
+  @override
+  String get sftpRemoveBookmark => '북마크 삭제';
+
+  @override
+  String get sftpCurrentDirectory => '현재 디렉터리';
+
+  @override
+  String get sftpSelectMode => '다중 선택 모드';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return '$count개 선택됨';
+  }
+
+  @override
+  String get sftpSelectAll => '전체 선택';
+
+  @override
+  String get sftpDeselectAll => '선택 해제';
+
+  @override
+  String get sftpBatchCopy => '복사';
+
+  @override
+  String get sftpBatchMove => '이동';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => '일괄 삭제 확인';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return '선택한 $count개 항목을 삭제하시겠습니까?';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice =>
+      '알림: 비어 있지 않은 디렉터리는 재귀적으로 삭제할 수 없어 건너뜁니다.';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => '일괄 복사 확인';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return '선택한 $count개 항목을 \"$directory\" 디렉터리로 복사하시겠습니까?';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => '일괄 이동 확인';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return '선택한 $count개 항목을 \"$directory\" 디렉터리로 이동하시겠습니까?';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => '일괄 작업 결과';
+
+  @override
+  String get sftpBatchOutcomeSkipped => '건너뜀 (대상 이미 존재 또는 미지원)';
+
+  @override
+  String get sftpBatchTargetRestricted => '자신 또는 하위 디렉터리를 대상으로 선택할 수 없습니다';
+
+  @override
+  String get sftpSelectCurrentDir => '현재 디렉터리 선택';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return '$count개 항목을 성공적으로 처리했습니다';
+  }
+
+  @override
+  String get configMigrationTitle => '백업 및 설정 마이그레이션';
+
+  @override
+  String get configExportTitle => '설정 내보내기';
+
+  @override
+  String get configExportSubtitle =>
+      '서버, 에이전트, 빠른 명령, 북마크 및 환경설정을 JSON으로 내보냅니다';
+
+  @override
+  String get configExportDialogTitle => 'Valhalla 설정 내보내기';
+
+  @override
+  String get configExportSuccess => '설정을 성공적으로 내보냈습니다';
+
+  @override
+  String configExportError(String error) {
+    return '설정 내보내기 실패: $error';
+  }
+
+  @override
+  String get configImportTitle => '설정 가져오기';
+
+  @override
+  String get configImportSubtitle => '백업 JSON 파일에서 설정을 가져옵니다';
+
+  @override
+  String get configBackupTooLarge => '백업 파일이 최대 허용 크기(8MB)를 초과합니다';
+
+  @override
+  String get configImportPreviewTitle => '설정 가져오기 미리보기';
+
+  @override
+  String get configImportPreviewDesc => '가져오기 전에 내용을 검토하세요. 기존 항목은 유지되며 병합됩니다.';
+
+  @override
+  String configImportServersCount(int count) {
+    return '서버 ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return '에이전트 ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return '빠른 명령 ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return '북마크 ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      '사용자 지정 명령에 민감한 스크립트나 포함된 자격 증명이 있을 수 있습니다. 비밀번호, 개인 키 또는 신뢰할 수 있는 호스트 지문은 전송되지 않습니다.';
+
+  @override
+  String get configImportGlobalPreferences => '전역 앱 환경설정 가져오기';
+
+  @override
+  String get configImportGlobalPreferencesDesc => '현재 테마, 터미널 및 탐색 설정을 덮어씁니다';
+
+  @override
+  String get configImportConfirmAction => '가져오기 확인';
+
+  @override
+  String get configImportSuccess => '설정을 성공적으로 가져왔습니다';
+
+  @override
+  String get configImportErrorTitle => '유효하지 않은 설정 백업 파일';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return '설정 가져오기 실패: $error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => '진단 세부 정보 복사';
+
+  @override
+  String get configImportErrorCopied => '진단 세부 정보를 클립보드에 복사했습니다';
+
+  @override
+  String get configImportErrorUnsupportedVersion => '지원되지 않는 백업 형식 또는 버전입니다';
+
+  @override
+  String get configImportErrorMalformed => '손상되었거나 잘못된 형식의 설정 JSON입니다';
 }

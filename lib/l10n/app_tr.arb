@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "Lisans yüklenemedi. norns.soft@gmail.com ile iletişime geçin.",
   "aboutLinkFailed": "Bağlantı açılamadı. Tarayıcınızda https://norns.cc.cd adresini açın.",
   "downloadReveal": "Dosya Gezgini’nde göster",
-  "downloadRevealFailed": "İndirme klasörü açılamadı. Taşınmış veya silinmiş olabilir."
+  "downloadRevealFailed": "İndirme klasörü açılamadı. Taşınmış veya silinmiş olabilir.",
+  "settingsKnownHostsSubtitle": "{count} güvenilen ana bilgisayar anahtarı",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "Güvenilen ana bilgisayar anahtarı bulunamadı",
+  "settingsKnownHostsDialogTitle": "Bilinen Ana Bilgisayar Anahtarları",
+  "settingsHostKeyRevoke": "İptal Et",
+  "settingsHostKeyRevokeConfirmTitle": "Ana Bilgisayar Anahtarını İptal Et",
+  "settingsHostKeyRevokeConfirmMessage": "{hostPort} için ana bilgisayar anahtarı iptal edilsin mi? Bu ana bilgisayara olan etkin SSH bağlantıları kesilecek ve sonraki bağlantıda anahtarı doğrulamanız gerekecektir.",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "Ana bilgisayar anahtarı parmak izi panoya kopyalandı",
+  "settingsHostKeyRevoked": "Ana bilgisayar anahtarı iptal edildi",
+  "settingsClearStorageSubtitle": "Seçili sunucuların kayıtlı parolalarını ve özel anahtarlarını temizle",
+  "settingsClearStorageDialogTitle": "Sunucu Kimlik Bilgilerini Sıfırla",
+  "settingsClearStorageDesc": "Güvenli depolamadan SSH parolalarını ve özel anahtarlarını temizlemek için sunucuları seçin. Sunucu yapılandırmaları ve sohbet geçmişleri silinmeyecektir.",
+  "settingsClearStorageNoServers": "Kullanılabilir sunucu yok",
+  "settingsClearStorageSelectAll": "Tümünü Seç",
+  "settingsClearStorageDeselectAll": "Seçimi Kaldır",
+  "settingsClearStorageConfirmTitle": "Kimlik Bilgisi Sıfırlamayı Onayla",
+  "settingsClearStorageConfirmMessage": "Seçili {count} sunucu için kimlik bilgilerini temizlemek istediğinizden emin misiniz? Etkin bağlantılar derhal kesilecektir.",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "Seçilenleri Temizle ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "Seçili sunucu kimlik bilgileri başarıyla temizlendi",
+  "settingsClearStorageError": "Bazı sunucuların kimlik bilgileri temizlenemedi. Lütfen tekrar deneyin.",
+  "settingsDefaultAcpAgent": "Varsayılan ACP Temsilcisi",
+  "settingsDefaultAcpAgentSubtitle": "Bu sunucudaki ACP sohbeti için varsayılan temsilci",
+  "settingsDefaultCliAgent": "Varsayılan CLI Temsilcisi",
+  "settingsDefaultCliAgentSubtitle": "Bu sunucudaki CLI sohbeti için varsayılan temsilci",
+  "settingsDefaultAgentAutomatic": "Otomatik (ilk kullanılabilir)",
+  "settingsDefaultAgentSelectTitle": "Varsayılan Temsilciyi Seç",
+  "settingsDefaultAgentNoServer": "Sunucu seçilmedi",
+  "settingsDefaultAgentNoAgents": "Bu sunucu için yapılandırılmış temsilci yok",
+  "settingsDefaultAgentSaveFailed": "Varsayılan temsilci ayarı güncellenemedi",
+  "dockerViewGroupContainers": "Konteynerler",
+  "dockerViewGroupProjects": "Compose Projeleri",
+  "dockerProjectActionStart": "Projeyi Başlat",
+  "dockerProjectActionStop": "Projeyi Durdur",
+  "dockerProjectActionRestart": "Projeyi Yeniden Başlat",
+  "dockerProjectConfirmStopTitle": "Compose Projesini Durdur",
+  "dockerProjectConfirmRestartTitle": "Compose Projesini Yeniden Başlat",
+  "dockerProjectConfirmMessage": "\"{project}\" projesini {action} istediğinizden emin misiniz? Aşağıdaki {count} konteyner etkilenecektir:",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "\"{project}\" projesi {action} başarıyla tamamlandı",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "\"{project}\" projesi {action} {failedCount} hata ile tamamlandı",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "Docker Compose projesi bulunamadı",
+  "dockerMountsTitle": "Bağlama Noktaları",
+  "dockerMountReadOnly": "Salt okunur",
+  "dockerMountReadWrite": "Okuma/Yazma",
+  "sftpBookmarksTitle": "Dizin Yer İmleri",
+  "sftpNoBookmarks": "Henüz kaydedilmiş yer imi yok",
+  "sftpAddBookmark": "Yer İmi Ekle",
+  "sftpRemoveBookmark": "Yer İmini Kaldır",
+  "sftpCurrentDirectory": "Mevcut Dizin",
+  "sftpSelectMode": "Çoklu Seçim Modu",
+  "sftpSelectedCount": "{count} seçildi",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "Tümünü Seç",
+  "sftpDeselectAll": "Seçimi Kaldır",
+  "sftpBatchCopy": "Kopyala",
+  "sftpBatchMove": "Taşı",
+  "sftpBatchDeleteConfirmTitle": "Toplu Silmeyi Onayla",
+  "sftpBatchDeleteConfirmMessage": "Seçili {count} öğeyi silmek istediğinizden emin misiniz?",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "Not: Boş olmayan dizinler özyinelemeli olarak silinemez ve atlanacaktır.",
+  "sftpBatchCopyConfirmTitle": "Toplu Kopyalamayı Onayla",
+  "sftpBatchCopyConfirmMessage": "Seçilen {count} öğe \"{directory}\" hedefine kopyalansın mı?",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "Toplu Taşımayı Onayla",
+  "sftpBatchMoveConfirmMessage": "Seçilen {count} öğe \"{directory}\" hedefine taşınsın mı?",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "Toplu İşlem Sonuçları",
+  "sftpBatchOutcomeSkipped": "Atlandı (hedef zaten var veya desteklenmiyor)",
+  "sftpBatchTargetRestricted": "Mevcut dizin veya alt dizinleri hedef olarak seçilemez",
+  "sftpSelectCurrentDir": "Bu Dizini Seç",
+  "sftpBatchOperationSuccess": "{count} öğe başarıyla işlendi",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "Yedekleme ve Yapılandırma Taşıma",
+  "configExportTitle": "Yapılandırmayı Dışa Aktar",
+  "configExportSubtitle": "Sunucuları, ajanları, komutları, yer imlerini ve tercihleri JSON'a aktar",
+  "configExportDialogTitle": "Valhalla Yapılandırmasını Dışa Aktar",
+  "configExportSuccess": "Yapılandırma başarıyla dışa aktarıldı",
+  "configExportError": "Yapılandırma dışa aktarılamadı: {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "Yapılandırmayı İçe Aktar",
+  "configImportSubtitle": "Yedek JSON dosyasından yapılandırmayı içe aktar",
+  "configBackupTooLarge": "Yedekleme dosyası izin verilen maksimum boyutu (8 MB) aşıyor",
+  "configImportPreviewTitle": "Yapılandırma İçe Aktarma Önizlemesi",
+  "configImportPreviewDesc": "İçe aktarmadan önce içeriği gözden geçirin. Mevcut öğeler korunacak ve birleştirilecektir.",
+  "configImportServersCount": "Sunucular ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "Ajanlar ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "Hızlı Komutlar ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "Yer İmleri ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "Özel komutlar hassas komut dosyaları veya gömülü kimlik bilgileri içerebilir. Hiçbir parola, özel anahtar veya güvenilen ana bilgisayar parmak izi aktarılmaz.",
+  "configImportGlobalPreferences": "Genel uygulama tercihlerini içe aktar",
+  "configImportGlobalPreferencesDesc": "Mevcut tema, terminal ve gezinme ayarlarının üzerine yazar",
+  "configImportConfirmAction": "İçe Aktarmayı Onayla",
+  "configImportSuccess": "Yapılandırma başarıyla içe aktarıldı",
+  "configImportErrorTitle": "Geçersiz Yapılandırma Yedeği",
+  "configImportErrorGeneric": "Yapılandırma içe aktarılamadı: {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "Tanılama Ayrıntılarını Kopyala",
+  "configImportErrorCopied": "Tanılama ayrıntıları panoya kopyalandı",
+  "configImportErrorUnsupportedVersion": "Desteklenmeyen yedekleme biçimi veya sürümü",
+  "configImportErrorMalformed": "Hatalı veya bozuk yapılandırma JSON'u"
 }

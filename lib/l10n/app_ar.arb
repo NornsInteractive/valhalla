@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "تعذر تحميل الترخيص. يرجى التواصل عبر norns.soft@gmail.com.",
   "aboutLinkFailed": "تعذر فتح الرابط. افتح https://norns.cc.cd في المتصفح.",
   "downloadReveal": "إظهار في مستكشف الملفات",
-  "downloadRevealFailed": "تعذر فتح مجلد التنزيل. ربما تم نقله أو حذفه."
+  "downloadRevealFailed": "تعذر فتح مجلد التنزيل. ربما تم نقله أو حذفه.",
+  "settingsKnownHostsSubtitle": "{count} من مفاتيح المضيفين الموثوقين",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "لم يتم العثور على مفاتيح مضيفين موثوقين",
+  "settingsKnownHostsDialogTitle": "مفاتيح المضيفين المعروفين",
+  "settingsHostKeyRevoke": "إلغاء الثقة",
+  "settingsHostKeyRevokeConfirmTitle": "إلغاء الثقة بمفتاح المضيف",
+  "settingsHostKeyRevokeConfirmMessage": "هل تريد بالتأكيد إلغاء مفتاح المضيف لـ {hostPort}؟ سيتم فصل اتصالات SSH النشطة بهذا المضيف وسيلزم التحقق منه عند الاتصال القادم.",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "تم نسخ بصمة مفتاح المضيف إلى الحافظة",
+  "settingsHostKeyRevoked": "تم إلغاء مفتاح المضيف",
+  "settingsClearStorageSubtitle": "مسح كلمات المرور والمفاتيح الخاصة المحفوظة للخوادم المحددة",
+  "settingsClearStorageDialogTitle": "إعادة ضبط بيانات اعتماد الخوادم",
+  "settingsClearStorageDesc": "حدد الخوادم لمسح كلمات مرور SSH والمفاتيح الخاصة من التخزين الآمن المحلي. لن يتم حذف إعدادات الخادم أو سجل المحادثات.",
+  "settingsClearStorageNoServers": "لا توجد خوادم متاحة",
+  "settingsClearStorageSelectAll": "تحديد الكل",
+  "settingsClearStorageDeselectAll": "إلغاء تحديد الكل",
+  "settingsClearStorageConfirmTitle": "تأكيد إعادة ضبط بيانات الاعتماد",
+  "settingsClearStorageConfirmMessage": "هل أنت متأكد من مسح بيانات الاعتماد لـ {count} خادم(خوادم) محدد؟ سيتم قطع الاتصالات النشطة بها على الفور.",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "مسح المحدد ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "تم مسح بيانات اعتماد الخوادم المحددة بنجاح",
+  "settingsClearStorageError": "فشل مسح بيانات اعتماد بعض الخوادم. يرجى المحاولة مرة أخرى.",
+  "settingsDefaultAcpAgent": "وكيل ACP الافتراضي",
+  "settingsDefaultAcpAgentSubtitle": "الوكيل الافتراضي لمحادثة ACP على هذا الخادم",
+  "settingsDefaultCliAgent": "وكيل CLI الافتراضي",
+  "settingsDefaultCliAgentSubtitle": "الوكيل الافتراضي لمحادثة CLI على هذا الخادم",
+  "settingsDefaultAgentAutomatic": "تلقائي (أول وكيل متاح)",
+  "settingsDefaultAgentSelectTitle": "تحديد الوكيل الافتراضي",
+  "settingsDefaultAgentNoServer": "لم يتم تحديد خادم",
+  "settingsDefaultAgentNoAgents": "لا توجد وكلاء مهيأة لهذا الخادم",
+  "settingsDefaultAgentSaveFailed": "فشل تحديث إعداد الوكيل الافتراضي",
+  "dockerViewGroupContainers": "الحاويات",
+  "dockerViewGroupProjects": "مشاريع Compose",
+  "dockerProjectActionStart": "بدء المشروع",
+  "dockerProjectActionStop": "إيقاف المشروع",
+  "dockerProjectActionRestart": "إعادة تشغيل المشروع",
+  "dockerProjectConfirmStopTitle": "إيقاف مشروع Compose",
+  "dockerProjectConfirmRestartTitle": "إعادة تشغيل مشروع Compose",
+  "dockerProjectConfirmMessage": "هل أنت متأكد من رغبتك في {action} المشروع \"{project}\"؟ ستتأثر الحاويات التالية ({count}):",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "تم {action} المشروع \"{project}\" بنجاح",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "اكتمل {action} المشروع \"{project}\" مع فشل {failedCount}",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "لم يتم العثور على أي مشاريع Docker Compose",
+  "dockerMountsTitle": "نقاط التوصيل",
+  "dockerMountReadOnly": "قراءة فقط",
+  "dockerMountReadWrite": "قراءة/كتابة",
+  "sftpBookmarksTitle": "إشارات المجلدات المرجعية",
+  "sftpNoBookmarks": "لا توجد إشارات مرجعية محفوظة بعد",
+  "sftpAddBookmark": "إضافة إشارة مرجعية",
+  "sftpRemoveBookmark": "إزالة الإشارة المرجعية",
+  "sftpCurrentDirectory": "المجلد الحالي",
+  "sftpSelectMode": "وضع التحديد المتعدد",
+  "sftpSelectedCount": "تم تحديد {count}",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "تحديد الكل",
+  "sftpDeselectAll": "إلغاء تحديد الكل",
+  "sftpBatchCopy": "نسخ",
+  "sftpBatchMove": "نقل",
+  "sftpBatchDeleteConfirmTitle": "تأكيد الحذف المجمع",
+  "sftpBatchDeleteConfirmMessage": "هل أنت متأكد من حذف {count} من العناصر المحددة؟",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "ملاحظة: لا يمكن حذف المجلدات غير الفارغة بشكل متكرر وسيتم تخطيها.",
+  "sftpBatchCopyConfirmTitle": "تأكيد النسخ المجمع",
+  "sftpBatchCopyConfirmMessage": "نسخ {count} من العناصر المحددة إلى \"{directory}\"؟",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "تأكيد النقل المجمع",
+  "sftpBatchMoveConfirmMessage": "نقل {count} من العناصر المحددة إلى \"{directory}\"؟",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "نتائج العملية المجمعة",
+  "sftpBatchOutcomeSkipped": "تم التخطي (الهدف موجود أو غير مدعوم)",
+  "sftpBatchTargetRestricted": "لا يمكن تحديد المجلد الحالي أو أحد مجلداته الفرعية كوجهة",
+  "sftpSelectCurrentDir": "اختيار هذا المجلد",
+  "sftpBatchOperationSuccess": "تمت معالجة {count} عنصر بنجاح",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "النسخ الاحتياطي ونقل الإعدادات",
+  "configExportTitle": "تصدير الإعدادات",
+  "configExportSubtitle": "تصدير الخوادم والوكلاء والأوامر والإشارات والتفضيلات إلى JSON",
+  "configExportDialogTitle": "تصدير إعدادات Valhalla",
+  "configExportSuccess": "تم تصدير الإعدادات بنجاح",
+  "configExportError": "فشل تصدير الإعدادات: {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "استيراد الإعدادات",
+  "configImportSubtitle": "استيراد الإعدادات من ملف نسخة احتياطية بتنسيق JSON",
+  "configBackupTooLarge": "يتجاوز ملف النسخة الاحتياطية الحد الأقصى المسموح به للحجم (8 ميغابايت)",
+  "configImportPreviewTitle": "معاينة استيراد الإعدادات",
+  "configImportPreviewDesc": "راجع المحتويات قبل الاستيراد. سيتم الاحتفاظ بالعناصر الحالية ودمجها.",
+  "configImportServersCount": "الخوادم ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "الوكلاء ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "الأوامر السريعة ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "الإشارات المرجعية ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "قد تحتوي الأوامر المخصصة على نصوص برمجية حساسة أو بيانات اعتماد مضمنة. لا يتم نقل أي كلمات مرور أو مفاتيح خاصة أو بصمات خوادم موثوقة.",
+  "configImportGlobalPreferences": "استيراد تفضيلات التطبيق العامة",
+  "configImportGlobalPreferencesDesc": "الكتابة فوق إعدادات السمة والطرفية والتنقل الحالية",
+  "configImportConfirmAction": "تأكيد الاستيراد",
+  "configImportSuccess": "تم استيراد الإعدادات بنجاح",
+  "configImportErrorTitle": "ملف نسخة احتياطية غير صالح",
+  "configImportErrorGeneric": "فشل استيراد الإعدادات: {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "نسخ تفاصيل التشخيص",
+  "configImportErrorCopied": "تم نسخ تفاصيل التشخيص إلى الحافظة",
+  "configImportErrorUnsupportedVersion": "تنسيق أو إصدار النسخة الاحتياطية غير مدعوم",
+  "configImportErrorMalformed": "ملف JSON للإعدادات تالف أو غير صالح"
 }

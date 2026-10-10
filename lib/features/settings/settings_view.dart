@@ -14,8 +14,14 @@ import '../../data/models/server_profile.dart';
 import '../agents/agent_management_view.dart';
 import 'widgets/diagnostics_view.dart';
 import 'widgets/theme_accent_color_dialog.dart';
+import '../../core/providers/security_settings_provider.dart';
+import '../../core/providers/storage_providers.dart';
 import 'widgets/about_privacy_card.dart';
 import 'widgets/appearance_dialogs.dart';
+import 'widgets/clear_credentials_dialog.dart';
+import 'widgets/configuration_migration_dialog.dart';
+import 'widgets/default_agent_dialog.dart';
+import 'widgets/trusted_hosts_dialog.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -72,7 +78,7 @@ class SettingsView extends ConsumerWidget {
                 context.l10n.settingsAiOps,
                 Icons.psychology,
               ),
-              _buildAiOpsCard(context, settings, notifier),
+              _buildAiOpsCard(context, ref, settings, notifier),
             ],
           ),
         ),
@@ -149,6 +155,22 @@ class SettingsView extends ConsumerWidget {
             children: [
               _buildSectionTitle(
                 context,
+                context.l10n.configMigrationTitle,
+                Icons.sync_alt,
+              ),
+              _buildConfigurationMigrationCard(context, ref),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        Entrance(
+          index: 8,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(
+                context,
                 context.l10n.settingsExperimentalFeatures,
                 Icons.science_outlined,
               ),
@@ -158,7 +180,7 @@ class SettingsView extends ConsumerWidget {
         ),
         const SizedBox(height: 24),
         Entrance(
-          index: 8,
+          index: 9,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -174,7 +196,7 @@ class SettingsView extends ConsumerWidget {
         const SizedBox(height: 32),
 
         Entrance(
-          index: 9,
+          index: 10,
           child: Center(
             child: OutlinedButton.icon(
               icon: const Icon(Icons.restart_alt, size: 16),
@@ -274,6 +296,55 @@ class SettingsView extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildConfigurationMigrationCard(BuildContext context, WidgetRef ref) {
+    return Card(
+      key: const Key('settings_configuration_migration_card'),
+      child: Column(
+        children: [
+          ListTile(
+            key: const Key('settings_export_configuration_tile'),
+            dense: true,
+            leading: const Icon(Icons.file_upload_outlined),
+            title: Text(
+              context.l10n.configExportTitle,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              context.l10n.configExportSubtitle,
+              style: const TextStyle(fontSize: 11),
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+              key: Key('settings_export_configuration_button'),
+            ),
+            onTap: () =>
+                ConfigurationMigrationManager.handleExport(context, ref),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            key: const Key('settings_import_configuration_tile'),
+            dense: true,
+            leading: const Icon(Icons.file_download_outlined),
+            title: Text(
+              context.l10n.configImportTitle,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              context.l10n.configImportSubtitle,
+              style: const TextStyle(fontSize: 11),
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+              key: Key('settings_import_configuration_button'),
+            ),
+            onTap: () =>
+                ConfigurationMigrationManager.handleImport(context, ref),
+          ),
+        ],
       ),
     );
   }
@@ -493,9 +564,47 @@ class SettingsView extends ConsumerWidget {
 
   Widget _buildAiOpsCard(
     BuildContext context,
+    WidgetRef ref,
     SettingsState settings,
     SettingsNotifier notifier,
   ) {
+    final activeServer = ref.watch(activeServerProvider);
+    final servers = ref.watch(serverListProvider);
+    final targetServer =
+        activeServer ?? (servers.isNotEmpty ? servers.first : null);
+    final defaultAgentSettings = ref.watch(defaultAgentSettingsProvider);
+    final storage = ref.watch(localStorageServiceProvider);
+
+    String acpSubtitle = context.l10n.settingsDefaultAgentNoServer;
+    String cliSubtitle = context.l10n.settingsDefaultAgentNoServer;
+
+    if (targetServer != null) {
+      final acpDefaultId = targetServer.id == activeServer?.id
+          ? defaultAgentSettings['acp']
+          : storage.getDefaultAgentId(targetServer.id, cli: false);
+      final allAgents = ref
+          .watch(agentRepositoryProvider)
+          .getAll(targetServer.id);
+      final acpAgent = acpDefaultId != null
+          ? allAgents.where((a) => a.id == acpDefaultId).firstOrNull
+          : null;
+      acpSubtitle = acpAgent != null
+          ? '${targetServer.name} · ${acpAgent.name}'
+          : '${targetServer.name} · ${context.l10n.settingsDefaultAgentAutomatic}';
+
+      if (settings.isSectionEnabled(AppSection.cliChat)) {
+        final cliDefaultId = targetServer.id == activeServer?.id
+            ? defaultAgentSettings['cli']
+            : storage.getDefaultAgentId(targetServer.id, cli: true);
+        final cliAgent = cliDefaultId != null
+            ? allAgents.where((a) => a.id == cliDefaultId).firstOrNull
+            : null;
+        cliSubtitle = cliAgent != null
+            ? '${targetServer.name} · ${cliAgent.name}'
+            : '${targetServer.name} · ${context.l10n.settingsDefaultAgentAutomatic}';
+      }
+    }
+
     return Card(
       child: Column(
         children: [
@@ -554,27 +663,47 @@ class SettingsView extends ConsumerWidget {
           ),
           const Divider(height: 1),
           ListTile(
+            key: const Key('settings_default_acp_agent_tile'),
             dense: true,
             leading: const Icon(Icons.psychology),
-            title: const Text('默认 AI 运维引擎', style: TextStyle(fontSize: 13)),
-            subtitle: const Text(
-              'Claude CodeX (Anthropic ACP)',
-              style: TextStyle(fontSize: 11),
+            title: Text(
+              context.l10n.settingsDefaultAcpAgent,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
+            subtitle: Text(acpSubtitle, style: const TextStyle(fontSize: 11)),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
+            onTap: targetServer == null
+                ? null
+                : () => DefaultAgentDialog.show(
+                    context,
+                    server: targetServer,
+                    isCli: false,
+                  ),
           ),
-          const Divider(height: 1),
-          ListTile(
-            dense: true,
-            leading: const Icon(Icons.cable),
-            title: const Text('ACP 协议管道标准', style: TextStyle(fontSize: 13)),
-            subtitle: const Text(
-              'Agent Client Protocol v1.0 (stdio over SSH)',
-              style: TextStyle(fontSize: 11),
+          if (settings.isSectionEnabled(AppSection.cliChat)) ...[
+            const Divider(height: 1),
+            ListTile(
+              key: const Key('settings_default_cli_agent_tile'),
+              dense: true,
+              leading: const Icon(Icons.forum),
+              title: Text(
+                context.l10n.settingsDefaultCliAgent,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(cliSubtitle, style: const TextStyle(fontSize: 11)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: targetServer == null
+                  ? null
+                  : () => DefaultAgentDialog.show(
+                      context,
+                      server: targetServer,
+                      isCli: true,
+                    ),
             ),
-            trailing: Icon(Icons.check, color: context.vSuccess),
-          ),
+          ],
         ],
       ),
     );
@@ -629,6 +758,7 @@ class SettingsView extends ConsumerWidget {
     final count = keepAlive.activeCount;
     final hasActive = keepAlive.hasActiveSessions;
     final terminalSettings = ref.watch(terminalSettingsProvider);
+    final trustedHosts = ref.watch(trustedHostsProvider);
 
     return Card(
       child: Column(
@@ -721,33 +851,39 @@ class SettingsView extends ConsumerWidget {
           ),
           const Divider(height: 1),
           ListTile(
+            key: const Key('settings_known_hosts_tile'),
             dense: true,
             leading: const Icon(Icons.fingerprint),
             title: Text(
               context.l10n.settingsKnownHosts,
-              style: const TextStyle(fontSize: 13),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
-            subtitle: const Text(
-              '2 个受信任的远程服务器指纹',
-              style: TextStyle(fontSize: 11),
+            subtitle: Text(
+              trustedHosts.isEmpty
+                  ? context.l10n.settingsKnownHostsEmpty
+                  : context.l10n.settingsKnownHostsSubtitle(
+                      trustedHosts.length,
+                    ),
+              style: const TextStyle(fontSize: 11),
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
+            onTap: () => TrustedHostsDialog.show(context),
           ),
           const Divider(height: 1),
           ListTile(
+            key: const Key('settings_clear_credentials_tile'),
             dense: true,
             leading: const Icon(Icons.lock_reset),
             title: Text(
               context.l10n.settingsClearStorage,
-              style: const TextStyle(fontSize: 13),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
-            subtitle: const Text(
-              '清除平台安全存储中的私钥与会话密码',
-              style: TextStyle(fontSize: 11),
+            subtitle: Text(
+              context.l10n.settingsClearStorageSubtitle,
+              style: const TextStyle(fontSize: 11),
             ),
             trailing: Icon(Icons.delete_outline, color: context.vDanger),
-            onTap: () {},
+            onTap: () => ClearCredentialsDialog.show(context),
           ),
         ],
       ),

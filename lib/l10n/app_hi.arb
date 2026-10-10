@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "लाइसेंस लोड नहीं हो सका। norns.soft@gmail.com से संपर्क करें।",
   "aboutLinkFailed": "लिंक नहीं खुल सका। अपने ब्राउज़र में https://norns.cc.cd खोलें।",
   "downloadReveal": "फ़ाइल एक्सप्लोरर में दिखाएँ",
-  "downloadRevealFailed": "डाउनलोड फ़ोल्डर नहीं खुल सका। संभव है कि उसे स्थानांतरित या हटा दिया गया हो।"
+  "downloadRevealFailed": "डाउनलोड फ़ोल्डर नहीं खुल सका। संभव है कि उसे स्थानांतरित या हटा दिया गया हो।",
+  "settingsKnownHostsSubtitle": "{count} विश्वसनीय होस्ट कुंजियाँ",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "कोई विश्वसनीय होस्ट कुंजी नहीं मिली",
+  "settingsKnownHostsDialogTitle": "ज्ञात होस्ट कुंजियाँ",
+  "settingsHostKeyRevoke": "रद्द करें",
+  "settingsHostKeyRevokeConfirmTitle": "होस्ट कुंजी रद्द करें",
+  "settingsHostKeyRevokeConfirmMessage": "क्या आप {hostPort} के लिए होस्ट कुंजी रद्द करना चाहते हैं? इस होस्ट के सक्रिय SSH कनेक्शन कट जाएंगे और अगली बार कुंजी की पुष्टि करनी होगी।",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "होस्ट कुंजी फ़िंगरप्रिंट क्लिपबोर्ड पर कॉपी किया गया",
+  "settingsHostKeyRevoked": "होस्ट कुंजी रद्द कर दी गई",
+  "settingsClearStorageSubtitle": "चयनित सर्वरों के सहेजे गए पासवर्ड और निजी कुंजियाँ हटाएं",
+  "settingsClearStorageDialogTitle": "सर्वर क्रेडेंशियल्स रीसेट करें",
+  "settingsClearStorageDesc": "सुरक्षित संग्रहण से SSH पासवर्ड और निजी कुंजियाँ हटाने के लिए सर्वर चुनें। सर्वर कॉन्फ़िगरेशन और चैट इतिहास नहीं हटाया जाएगा।",
+  "settingsClearStorageNoServers": "कोई सर्वर उपलब्ध नहीं है",
+  "settingsClearStorageSelectAll": "सभी चुनें",
+  "settingsClearStorageDeselectAll": "चयन हटाएं",
+  "settingsClearStorageConfirmTitle": "क्रेडेंशियल रीसेट की पुष्टि करें",
+  "settingsClearStorageConfirmMessage": "क्या आप वाकई {count} चयनित सर्वर(ों) के क्रेडेंशियल हटाना चाहते हैं? सक्रिय कनेक्शन तुरंत डिस्कनेक्ट हो जाएंगे।",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "चयनित हटाएं ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "चयनित सर्वर क्रेडेंशियल्स सफलतापूर्वक हटा दिए गए",
+  "settingsClearStorageError": "कुछ सर्वरों के क्रेडेंशियल हटाने में विफल। कृपया पुनः प्रयास करें।",
+  "settingsDefaultAcpAgent": "डिफ़ॉल्ट ACP एजेंट",
+  "settingsDefaultAcpAgentSubtitle": "इस सर्वर पर ACP चैट के लिए डिफ़ॉल्ट एजेंट",
+  "settingsDefaultCliAgent": "डिफ़ॉल्ट CLI एजेंट",
+  "settingsDefaultCliAgentSubtitle": "इस सर्वर पर CLI चैट के लिए डिफ़ॉल्ट एजेंट",
+  "settingsDefaultAgentAutomatic": "स्वचालित (पहला उपलब्ध)",
+  "settingsDefaultAgentSelectTitle": "डिफ़ॉल्ट एजेंट चुनें",
+  "settingsDefaultAgentNoServer": "कोई सर्वर चयनित नहीं है",
+  "settingsDefaultAgentNoAgents": "इस सर्वर के लिए कोई एजेंट कॉन्फ़िगर नहीं है",
+  "settingsDefaultAgentSaveFailed": "डिफ़ॉल्ट एजेंट सेटिंग अपडेट करने में विफल",
+  "dockerViewGroupContainers": "कंटेनर",
+  "dockerViewGroupProjects": "Compose प्रोजेक्ट",
+  "dockerProjectActionStart": "प्रोजेक्ट प्रारंभ करें",
+  "dockerProjectActionStop": "प्रोजेक्ट रोकें",
+  "dockerProjectActionRestart": "प्रोजेक्ट पुनरारंभ करें",
+  "dockerProjectConfirmStopTitle": "Compose प्रोजेक्ट रोकें",
+  "dockerProjectConfirmRestartTitle": "Compose प्रोजेक्ट पुनरारंभ करें",
+  "dockerProjectConfirmMessage": "क्या आप वाकई प्रोजेक्ट \"{project}\" को {action} करना चाहते हैं? निम्नलिखित {count} कंटेनर प्रभावित होंगे:",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "प्रोजेक्ट \"{project}\" {action} सफलतापूर्वक पूर्ण हुआ",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "प्रोजेक्ट \"{project}\" {action} {failedCount} विफलता(ओं) के साथ पूर्ण हुआ",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "कोई Docker Compose प्रोजेक्ट नहीं मिला",
+  "dockerMountsTitle": "माउंट्स",
+  "dockerMountReadOnly": "केवल पढ़ने योग्य",
+  "dockerMountReadWrite": "पढ़ना/लिखना",
+  "sftpBookmarksTitle": "डायरेक्टरी बुकमार्क",
+  "sftpNoBookmarks": "अभी तक कोई बुकमार्क सहेजा नहीं गया है",
+  "sftpAddBookmark": "बुकमार्क जोड़ें",
+  "sftpRemoveBookmark": "बुकमार्क हटाएं",
+  "sftpCurrentDirectory": "वर्तमान डायरेक्टरी",
+  "sftpSelectMode": "मल्टी-सेलेक्ट मोड",
+  "sftpSelectedCount": "{count} चयनित",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "सभी चुनें",
+  "sftpDeselectAll": "चयन हटाएं",
+  "sftpBatchCopy": "कॉपी करें",
+  "sftpBatchMove": "स्थानांतरित करें",
+  "sftpBatchDeleteConfirmTitle": "बैच विलोपन की पुष्टि करें",
+  "sftpBatchDeleteConfirmMessage": "क्या आप वाकई {count} चयनित आइटम हटाना चाहते हैं?",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "सूचना: गैर-रिक्त डायरेक्टरी को पुनरावर्ती रूप से नहीं हटाया जा सकता है और छोड़ दिया जाएगा।",
+  "sftpBatchCopyConfirmTitle": "बैच कॉपी की पुष्टि करें",
+  "sftpBatchCopyConfirmMessage": "{count} चयनित आइटम को \"{directory}\" में कॉपी करें?",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "बैच स्थानांतरण की पुष्टि करें",
+  "sftpBatchMoveConfirmMessage": "{count} चयनित आइटम को \"{directory}\" में स्थानांतरित करें?",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "बैच ऑपरेशन के परिणाम",
+  "sftpBatchOutcomeSkipped": "छोड़ दिया गया (लक्ष्य पहले से मौजूद है या समर्थित नहीं है)",
+  "sftpBatchTargetRestricted": "वर्तमान या उप-डायरेक्टरी को गंतव्य के रूप में नहीं चुना जा सकता",
+  "sftpSelectCurrentDir": "यह डायरेक्टरी चुनें",
+  "sftpBatchOperationSuccess": "{count} आइटम सफलतापूर्वक संसाधित किए गए",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "बैकअप और कॉन्फ़िगरेशन माइग्रेशन",
+  "configExportTitle": "कॉन्फ़िगरेशन निर्यात करें",
+  "configExportSubtitle": "सर्वर, एजेंट, त्वरित कमांड, बुकमार्क और प्राथमिकताओं को JSON में निर्यात करें",
+  "configExportDialogTitle": "Valhalla कॉन्फ़िगरेशन निर्यात करें",
+  "configExportSuccess": "कॉन्फ़िगरेशन सफलतापूर्वक निर्यात किया गया",
+  "configExportError": "कॉन्फ़िगरेशन निर्यात करने में विफल: {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "कॉन्फ़िगरेशन आयात करें",
+  "configImportSubtitle": "बैकअप JSON फ़ाइल से कॉन्फ़िगरेशन आयात करें",
+  "configBackupTooLarge": "बैकअप फ़ाइल अधिकतम अनुमत आकार (8 MB) से अधिक है",
+  "configImportPreviewTitle": "कॉन्फ़िगरेशन आयात पूर्वावलोकन",
+  "configImportPreviewDesc": "आयात करने से पहले सामग्री की समीक्षा करें। मौजूदा आइटम सुरक्षित रहेंगे और विलय हो जाएंगे।",
+  "configImportServersCount": "सर्वर ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "एजेंट ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "त्वरित कमांड ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "बुकमार्क ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "कस्टम कमांड में संवेदनशील स्क्रिप्ट या एम्बेडेड क्रेडेंशियल हो सकते हैं। कोई पासवर्ड, निजी कुंजी या विश्वसनीय फ़िंगरप्रिंट स्थानांतरित नहीं किए जाते हैं।",
+  "configImportGlobalPreferences": "वैश्विक ऐप प्राथमिकताएं आयात करें",
+  "configImportGlobalPreferencesDesc": "वर्तमान थीम, टर्मिनल और नेविगेशन सेटिंग्स को अधिलेखित करता है",
+  "configImportConfirmAction": "आयात की पुष्टि करें",
+  "configImportSuccess": "कॉन्फ़िगरेशन सफलतापूर्वक आयात किया गया",
+  "configImportErrorTitle": "अमान्य कॉन्फ़िगरेशन बैकअप फ़ाइल",
+  "configImportErrorGeneric": "कॉन्फ़िगरेशन आयात करने में विफल: {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "निदान विवरण कॉपी करें",
+  "configImportErrorCopied": "निदान विवरण क्लिपबोर्ड पर कॉपी किया गया",
+  "configImportErrorUnsupportedVersion": "असमर्थित बैकअप प्रारूप या संस्करण",
+  "configImportErrorMalformed": "दूषित या विकृत कॉन्फ़िगरेशन JSON"
 }

@@ -423,7 +423,13 @@ void main() {
         await tester.pump();
 
         // Since ref.read was used without watching in the card, the tile subtitle was built with ref.read and does not rebuild
-        expect(find.textContaining('Server 1'), findsNothing);
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('settings_auto_connect_mode_tile')),
+            matching: find.textContaining('Server 1'),
+          ),
+          findsNothing,
+        );
       },
     );
   });

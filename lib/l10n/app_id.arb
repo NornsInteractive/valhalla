@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "Lisensi tidak dapat dimuat. Hubungi norns.soft@gmail.com.",
   "aboutLinkFailed": "Tautan tidak dapat dibuka. Buka https://norns.cc.cd di browser Anda.",
   "downloadReveal": "Tampilkan di File Explorer",
-  "downloadRevealFailed": "Folder unduhan tidak dapat dibuka. Folder mungkin telah dipindahkan atau dihapus."
+  "downloadRevealFailed": "Folder unduhan tidak dapat dibuka. Folder mungkin telah dipindahkan atau dihapus.",
+  "settingsKnownHostsSubtitle": "{count} kunci host tepercaya",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "Tidak ada kunci host tepercaya yang ditemukan",
+  "settingsKnownHostsDialogTitle": "Kunci Host yang Dikenal",
+  "settingsHostKeyRevoke": "Cabut",
+  "settingsHostKeyRevokeConfirmTitle": "Cabut Kunci Host",
+  "settingsHostKeyRevokeConfirmMessage": "Cabut kunci host untuk {hostPort}? Koneksi SSH aktif ke host ini akan terputus dan Anda harus memverifikasi kunci pada koneksi berikutnya.",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "Sidik jari kunci host disalin ke papan klip",
+  "settingsHostKeyRevoked": "Kunci host dicabut",
+  "settingsClearStorageSubtitle": "Hapus kata sandi dan kunci privat tersimpan untuk server terpilih",
+  "settingsClearStorageDialogTitle": "Atur Ulang Kredensial Server",
+  "settingsClearStorageDesc": "Pilih server untuk menghapus kata sandi SSH dan kunci privat dari penyimpanan aman. Konfigurasi server dan riwayat obrolan tidak akan dihapus.",
+  "settingsClearStorageNoServers": "Tidak ada server yang tersedia",
+  "settingsClearStorageSelectAll": "Pilih Semua",
+  "settingsClearStorageDeselectAll": "Batalkan Semua",
+  "settingsClearStorageConfirmTitle": "Konfirmasi Penghapusan Kredensial",
+  "settingsClearStorageConfirmMessage": "Yakin ingin menghapus kredensial untuk {count} server terpilih? Koneksi aktif akan segera diputus.",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "Hapus Terpilih ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "Kredensial server terpilih berhasil dihapus",
+  "settingsClearStorageError": "Gagal menghapus kredensial untuk beberapa server. Silakan coba lagi.",
+  "settingsDefaultAcpAgent": "Agen ACP Default",
+  "settingsDefaultAcpAgentSubtitle": "Agen default untuk obrolan ACP di server ini",
+  "settingsDefaultCliAgent": "Agen CLI Default",
+  "settingsDefaultCliAgentSubtitle": "Agen default untuk obrolan CLI di server ini",
+  "settingsDefaultAgentAutomatic": "Otomatis (pertama yang tersedia)",
+  "settingsDefaultAgentSelectTitle": "Pilih Agen Default",
+  "settingsDefaultAgentNoServer": "Tidak ada server yang dipilih",
+  "settingsDefaultAgentNoAgents": "Tidak ada agen yang dikonfigurasi untuk server ini",
+  "settingsDefaultAgentSaveFailed": "Gagal memperbarui pengaturan agen default",
+  "dockerViewGroupContainers": "Kontainer",
+  "dockerViewGroupProjects": "Proyek Compose",
+  "dockerProjectActionStart": "Mulai Proyek",
+  "dockerProjectActionStop": "Hentikan Proyek",
+  "dockerProjectActionRestart": "Mulai Ulang Proyek",
+  "dockerProjectConfirmStopTitle": "Hentikan Proyek Compose",
+  "dockerProjectConfirmRestartTitle": "Mulai Ulang Proyek Compose",
+  "dockerProjectConfirmMessage": "Apakah Anda yakin ingin {action} proyek \"{project}\"? {count} kontainer berikut akan terpengaruh:",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "Proyek \"{project}\" {action} berhasil diselesaikan",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "Proyek \"{project}\" {action} selesai dengan {failedCount} kegagalan",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "Tidak ada proyek Docker Compose yang ditemukan",
+  "dockerMountsTitle": "Titik Mount",
+  "dockerMountReadOnly": "Hanya baca",
+  "dockerMountReadWrite": "Baca/Tulis",
+  "sftpBookmarksTitle": "Bookmark Direktori",
+  "sftpNoBookmarks": "Belum ada bookmark tersimpan",
+  "sftpAddBookmark": "Tambah Bookmark",
+  "sftpRemoveBookmark": "Hapus Bookmark",
+  "sftpCurrentDirectory": "Direktori Saat Ini",
+  "sftpSelectMode": "Mode Pilih Banyak",
+  "sftpSelectedCount": "{count} dipilih",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "Pilih Semua",
+  "sftpDeselectAll": "Batal Pilih Semua",
+  "sftpBatchCopy": "Salin",
+  "sftpBatchMove": "Pindahkan",
+  "sftpBatchDeleteConfirmTitle": "Konfirmasi Penghapusan Massal",
+  "sftpBatchDeleteConfirmMessage": "Yakin ingin menghapus {count} item yang dipilih?",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "Catatan: Direktori yang tidak kosong tidak dapat dihapus secara rekursif dan akan dilewati.",
+  "sftpBatchCopyConfirmTitle": "Konfirmasi Salin Massal",
+  "sftpBatchCopyConfirmMessage": "Salin {count} item yang dipilih ke \"{directory}\"?",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "Konfirmasi Pindah Massal",
+  "sftpBatchMoveConfirmMessage": "Pindahkan {count} item yang dipilih ke \"{directory}\"?",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "Hasil Operasi Massal",
+  "sftpBatchOutcomeSkipped": "Dilewati (target sudah ada atau tidak didukung)",
+  "sftpBatchTargetRestricted": "Tidak dapat memilih direktori ini atau sub-direktorinya sebagai tujuan",
+  "sftpSelectCurrentDir": "Pilih Direktori Ini",
+  "sftpBatchOperationSuccess": "Berhasil memproses {count} item",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "Pencadangan & Migrasi Konfigurasi",
+  "configExportTitle": "Ekspor Konfigurasi",
+  "configExportSubtitle": "Ekspor server, agen, perintah, bookmark, dan preferensi ke JSON",
+  "configExportDialogTitle": "Ekspor Konfigurasi Valhalla",
+  "configExportSuccess": "Konfigurasi berhasil diekspor",
+  "configExportError": "Gagal mengekspor konfigurasi: {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "Impor Konfigurasi",
+  "configImportSubtitle": "Impor konfigurasi dari file JSON cadangan",
+  "configBackupTooLarge": "File cadangan melebihi batas ukuran maksimum (8 MB)",
+  "configImportPreviewTitle": "Pratinjau Impor Konfigurasi",
+  "configImportPreviewDesc": "Tinjau konten sebelum mengimpor. Item yang ada akan dipertahankan dan digabungkan.",
+  "configImportServersCount": "Server ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "Agen ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "Perintah Cepat ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "Bookmark ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "Perintah kustom mungkin berisi skrip sensitif atau kredensial tertanam. Tidak ada kata sandi, kunci privat, atau sidik jari host tepercaya yang ditransfer.",
+  "configImportGlobalPreferences": "Impor preferensi aplikasi global",
+  "configImportGlobalPreferencesDesc": "Menimpa pengaturan tema, terminal, dan navigasi saat ini",
+  "configImportConfirmAction": "Konfirmasi Impor",
+  "configImportSuccess": "Konfigurasi berhasil diimpor",
+  "configImportErrorTitle": "File Cadangan Konfigurasi Tidak Valid",
+  "configImportErrorGeneric": "Gagal mengimpor konfigurasi: {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "Salin Detail Diagnostik",
+  "configImportErrorCopied": "Detail diagnostik disalin ke papan klip",
+  "configImportErrorUnsupportedVersion": "Format atau versi cadangan tidak didukung",
+  "configImportErrorMalformed": "JSON konfigurasi rusak atau tidak sesuai format"
 }

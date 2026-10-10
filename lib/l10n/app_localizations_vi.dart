@@ -3743,4 +3743,340 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get downloadRevealFailed =>
       'Không thể mở thư mục tải xuống. Thư mục có thể đã được di chuyển hoặc xóa.';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count khóa máy chủ đáng tin cậy';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty =>
+      'Không tìm thấy khóa máy chủ đáng tin cậy nào';
+
+  @override
+  String get settingsKnownHostsDialogTitle => 'Khóa máy chủ đã biết';
+
+  @override
+  String get settingsHostKeyRevoke => 'Thu hồi';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle => 'Thu hồi khóa máy chủ';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return 'Thu hồi khóa máy chủ cho $hostPort? Các kết nối SSH đang hoạt động tới máy chủ này sẽ bị ngắt và bạn phải xác minh lại khóa trong lần kết nối tiếp theo.';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied =>
+      'Đã sao chép dấu vân tay khóa máy chủ vào khay nhớ tạm';
+
+  @override
+  String get settingsHostKeyRevoked => 'Đã thu hồi khóa máy chủ';
+
+  @override
+  String get settingsClearStorageSubtitle =>
+      'Xóa mật khẩu và khóa riêng đã lưu cho các máy chủ đã chọn';
+
+  @override
+  String get settingsClearStorageDialogTitle =>
+      'Đặt lại thông tin xác thực máy chủ';
+
+  @override
+  String get settingsClearStorageDesc =>
+      'Chọn máy chủ để xóa mật khẩu SSH và khóa riêng khỏi bộ lưu trữ an toàn. Cấu hình máy chủ và lịch sử trò chuyện sẽ không bị xóa.';
+
+  @override
+  String get settingsClearStorageNoServers => 'Không có máy chủ nào khả dụng';
+
+  @override
+  String get settingsClearStorageSelectAll => 'Chọn tất cả';
+
+  @override
+  String get settingsClearStorageDeselectAll => 'Bỏ chọn tất cả';
+
+  @override
+  String get settingsClearStorageConfirmTitle =>
+      'Xác nhận đặt lại thông tin xác thực';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return 'Bạn có chắc chắn muốn xóa thông tin xác thực cho $count máy chủ đã chọn không? Các kết nối đang hoạt động sẽ bị ngắt ngay lập tức.';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return 'Xóa các mục đã chọn ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess =>
+      'Đã xóa thành công thông tin xác thực của máy chủ đã chọn';
+
+  @override
+  String get settingsClearStorageError =>
+      'Không thể xóa thông tin xác thực cho một số máy chủ. Vui lòng thử lại.';
+
+  @override
+  String get settingsDefaultAcpAgent => 'Agent ACP mặc định';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle =>
+      'Agent mặc định cho trò chuyện ACP trên máy chủ này';
+
+  @override
+  String get settingsDefaultCliAgent => 'Agent CLI mặc định';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle =>
+      'Agent mặc định cho trò chuyện CLI trên máy chủ này';
+
+  @override
+  String get settingsDefaultAgentAutomatic => 'Tự động (mục đầu tiên khả dụng)';
+
+  @override
+  String get settingsDefaultAgentSelectTitle => 'Chọn Agent mặc định';
+
+  @override
+  String get settingsDefaultAgentNoServer => 'Chưa chọn máy chủ';
+
+  @override
+  String get settingsDefaultAgentNoAgents =>
+      'Không có Agent nào được định cấu hình cho máy chủ này';
+
+  @override
+  String get settingsDefaultAgentSaveFailed =>
+      'Không thể cập nhật cài đặt Agent mặc định';
+
+  @override
+  String get dockerViewGroupContainers => 'Container';
+
+  @override
+  String get dockerViewGroupProjects => 'Dự án Compose';
+
+  @override
+  String get dockerProjectActionStart => 'Khởi động dự án';
+
+  @override
+  String get dockerProjectActionStop => 'Dừng dự án';
+
+  @override
+  String get dockerProjectActionRestart => 'Khởi động lại dự án';
+
+  @override
+  String get dockerProjectConfirmStopTitle => 'Dừng dự án Compose';
+
+  @override
+  String get dockerProjectConfirmRestartTitle => 'Khởi động lại dự án Compose';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return 'Bạn có chắc chắn muốn $action dự án \"$project\" không? $count container sau đây sẽ bị ảnh hưởng:';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return 'Dự án \"$project\" $action thành công';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return 'Dự án \"$project\" $action hoàn tất với $failedCount lỗi';
+  }
+
+  @override
+  String get dockerNoProjects => 'Không tìm thấy dự án Docker Compose nào';
+
+  @override
+  String get dockerMountsTitle => 'Gắn kết';
+
+  @override
+  String get dockerMountReadOnly => 'Chỉ đọc';
+
+  @override
+  String get dockerMountReadWrite => 'Đọc/Ghi';
+
+  @override
+  String get sftpBookmarksTitle => 'Dấu trang thư mục';
+
+  @override
+  String get sftpNoBookmarks => 'Chưa có dấu trang nào được lưu';
+
+  @override
+  String get sftpAddBookmark => 'Thêm dấu trang';
+
+  @override
+  String get sftpRemoveBookmark => 'Xóa dấu trang';
+
+  @override
+  String get sftpCurrentDirectory => 'Thư mục hiện tại';
+
+  @override
+  String get sftpSelectMode => 'Chế độ chọn nhiều';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return 'Đã chọn $count';
+  }
+
+  @override
+  String get sftpSelectAll => 'Chọn tất cả';
+
+  @override
+  String get sftpDeselectAll => 'Bỏ chọn tất cả';
+
+  @override
+  String get sftpBatchCopy => 'Sao chép';
+
+  @override
+  String get sftpBatchMove => 'Di chuyển';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => 'Xác nhận xóa hàng loạt';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return 'Bạn có chắc chắn muốn xóa $count mục đã chọn không?';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice =>
+      'Lưu ý: Không thể xóa đệ quy các thư mục không rỗng và chúng sẽ bị bỏ qua.';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => 'Xác nhận sao chép hàng loạt';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return 'Sao chép $count mục đã chọn sang \"$directory\"?';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => 'Xác nhận di chuyển hàng loạt';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return 'Di chuyển $count mục đã chọn sang \"$directory\"?';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => 'Kết quả thao tác hàng loạt';
+
+  @override
+  String get sftpBatchOutcomeSkipped =>
+      'Đã bỏ qua (đích đã tồn tại hoặc không được hỗ trợ)';
+
+  @override
+  String get sftpBatchTargetRestricted =>
+      'Không thể chọn thư mục hiện tại hoặc thư mục con làm đích';
+
+  @override
+  String get sftpSelectCurrentDir => 'Chọn thư mục này';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return 'Đã xử lý thành công $count mục';
+  }
+
+  @override
+  String get configMigrationTitle => 'Sao lưu & Di chuyển cấu hình';
+
+  @override
+  String get configExportTitle => 'Xuất cấu hình';
+
+  @override
+  String get configExportSubtitle =>
+      'Xuất máy chủ, agent, lệnh nhanh, dấu trang và tùy chọn sang JSON';
+
+  @override
+  String get configExportDialogTitle => 'Xuất cấu hình Valhalla';
+
+  @override
+  String get configExportSuccess => 'Đã xuất cấu hình thành công';
+
+  @override
+  String configExportError(String error) {
+    return 'Không thể xuất cấu hình: $error';
+  }
+
+  @override
+  String get configImportTitle => 'Nhập cấu hình';
+
+  @override
+  String get configImportSubtitle => 'Nhập cấu hình từ tệp JSON sao lưu';
+
+  @override
+  String get configBackupTooLarge =>
+      'Tệp sao lưu vượt quá dung lượng tối đa cho phép (8 MB)';
+
+  @override
+  String get configImportPreviewTitle => 'Xem trước nhập cấu hình';
+
+  @override
+  String get configImportPreviewDesc =>
+      'Xem lại nội dung trước khi nhập. Các mục hiện có sẽ được giữ lại và hợp nhất.';
+
+  @override
+  String configImportServersCount(int count) {
+    return 'Máy chủ ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return 'Agent ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return 'Lệnh nhanh ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return 'Dấu trang ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      'Lệnh tùy chỉnh có thể chứa tập lệnh nhạy cảm hoặc thông tin xác thực được nhúng. Không có mật khẩu, khóa riêng tư hoặc dấu vân tay máy chủ đáng tin cậy nào được chuyển giao.';
+
+  @override
+  String get configImportGlobalPreferences => 'Nhập tùy chọn ứng dụng chung';
+
+  @override
+  String get configImportGlobalPreferencesDesc =>
+      'Ghi đè cài đặt giao diện, dòng lệnh và điều hướng hiện tại';
+
+  @override
+  String get configImportConfirmAction => 'Xác nhận nhập';
+
+  @override
+  String get configImportSuccess => 'Đã nhập cấu hình thành công';
+
+  @override
+  String get configImportErrorTitle => 'Tệp sao lưu cấu hình không hợp lệ';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return 'Không thể nhập cấu hình: $error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => 'Sao chép chi tiết chẩn đoán';
+
+  @override
+  String get configImportErrorCopied =>
+      'Đã sao chép chi tiết chẩn đoán vào khay nhớ tạm';
+
+  @override
+  String get configImportErrorUnsupportedVersion =>
+      'Định dạng hoặc phiên bản sao lưu không được hỗ trợ';
+
+  @override
+  String get configImportErrorMalformed =>
+      'JSON cấu hình bị hỏng hoặc không đúng định dạng';
 }

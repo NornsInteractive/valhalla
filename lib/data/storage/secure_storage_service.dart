@@ -73,17 +73,25 @@ class SecureStorageService {
   }
 
   Future<void> deleteCredentials(String serverId) async {
-    final pwdKey = 'valhalla_server_${serverId}_password';
-    final pKey = 'valhalla_server_${serverId}_private_key';
-    final sudoKey = 'valhalla_server_${serverId}_sudo_password';
     try {
-      await _storage.delete(key: pwdKey);
-      await _storage.delete(key: pKey);
-      await _storage.delete(key: sudoKey);
+      await clearCredentialsStrict(serverId);
     } catch (_) {}
-    _memoryFallback.remove(pwdKey);
-    _memoryFallback.remove(pKey);
-    _memoryFallback.remove(sudoKey);
+  }
+
+  /// Explicit user-requested erasure must not report success after a store error.
+  Future<void> clearCredentialsStrict(String serverId) async {
+    var failed = false;
+    for (final suffix in ['password', 'private_key', 'sudo_password']) {
+      final key = 'valhalla_server_${serverId}_$suffix';
+      try {
+        await _storage.delete(key: key);
+      } catch (_) {
+        failed = true;
+      } finally {
+        _memoryFallback.remove(key);
+      }
+    }
+    if (failed) throw StateError('SERVER_CREDENTIALS_CLEAR_FAILED');
   }
 
   Future<void> saveSudoPassword(String serverId, String password) async {

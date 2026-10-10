@@ -24,6 +24,8 @@ class DockerContainer {
   final DockerContainerState state;
   final String ports;
   final DateTime? createdAt;
+  final String? composeProject;
+  final String? composeService;
 
   const DockerContainer({
     required this.id,
@@ -33,6 +35,8 @@ class DockerContainer {
     required this.state,
     required this.ports,
     this.createdAt,
+    this.composeProject,
+    this.composeService,
   });
 
   factory DockerContainer.fromJson(Map<String, dynamic> json) {
@@ -49,6 +53,8 @@ class DockerContainer {
       state: state,
       ports: json['ports'] as String? ?? '',
       createdAt: _parseCreated(json['created'] as String?),
+      composeProject: _nonEmpty(json['composeProject']),
+      composeService: _nonEmpty(json['composeService']),
     );
   }
 
@@ -81,6 +87,23 @@ class DockerContainer {
     if (value == null || value.trim().isEmpty) return null;
     return DateTime.tryParse(value.replaceFirst(' UTC', 'Z'));
   }
+
+  static String? _nonEmpty(Object? value) =>
+      value is String && value.trim().isNotEmpty ? value : null;
+}
+
+class DockerActionResult {
+  final String containerId;
+  final String containerName;
+  final bool success;
+  final String? error;
+
+  const DockerActionResult({
+    required this.containerId,
+    required this.containerName,
+    required this.success,
+    this.error,
+  });
 }
 
 class DockerContainerUser {
@@ -149,7 +172,7 @@ class DockerCliService {
   Future<List<DockerContainer>> listContainers(String serverId) async {
     final result = await _sshManager.executeWithLoginShell(
       serverId,
-      r'''docker ps -a --no-trunc --format '{"id":"{{.ID}}","names":"{{.Names}}","image":"{{.Image}}","status":"{{.Status}}","state":"{{.State}}","ports":"{{.Ports}}","created":"{{.CreatedAt}}"}' ''',
+      r'''docker ps -a --no-trunc --format '{"id":{{json .ID}},"names":{{json .Names}},"image":{{json .Image}},"status":{{json .Status}},"state":{{json .State}},"ports":{{json .Ports}},"created":{{json .CreatedAt}},"composeProject":{{json (.Label "com.docker.compose.project")}},"composeService":{{json (.Label "com.docker.compose.service")}}' ''',
     );
     if (!result.isSuccess) {
       throw DockerExecutionException(

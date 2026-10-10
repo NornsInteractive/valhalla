@@ -3619,4 +3619,324 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get downloadRevealFailed => 'ダウンロードフォルダーを開けません。移動または削除された可能性があります。';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count 件の信頼済みホストキー';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty => '信頼済みホストキーはありません';
+
+  @override
+  String get settingsKnownHostsDialogTitle => '既知のホストキー';
+
+  @override
+  String get settingsHostKeyRevoke => '取り消す';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle => 'ホストキーの取り消し';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return '$hostPort のホストキーを取り消しますか？該当ホストのアクティブなSSH接続は切断され、次回接続時にホストキーの再確認が必要になります。';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied => 'フィンガープリントをクリップボードにコピーしました';
+
+  @override
+  String get settingsHostKeyRevoked => 'ホストキーを取り消しました';
+
+  @override
+  String get settingsClearStorageSubtitle => '選択したサーバーのパスワードと秘密鍵を消去';
+
+  @override
+  String get settingsClearStorageDialogTitle => 'サーバー認証情報の初期化';
+
+  @override
+  String get settingsClearStorageDesc =>
+      '安全なストレージからSSHパスワードと秘密鍵を消去するサーバーを選択します。サーバー設定やチャット履歴は削除されません。';
+
+  @override
+  String get settingsClearStorageNoServers => '登録されているサーバーがありません';
+
+  @override
+  String get settingsClearStorageSelectAll => 'すべて選択';
+
+  @override
+  String get settingsClearStorageDeselectAll => '選択解除';
+
+  @override
+  String get settingsClearStorageConfirmTitle => '認証情報消去の確認';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return '選択した $count 台のサーバーの認証情報を消去しますか？これらのサーバーへのアクティブな接続は直ちに切断されます。';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return '選択項目を消去 ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess => '選択したサーバーの認証情報を消去しました';
+
+  @override
+  String get settingsClearStorageError => '一部のサーバー認証情報の消去に失敗しました。もう一度お試しください。';
+
+  @override
+  String get settingsDefaultAcpAgent => 'デフォルト ACP エージェント';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle => 'このサーバーのACPチャット用デフォルトエージェント';
+
+  @override
+  String get settingsDefaultCliAgent => 'デフォルト CLI エージェント';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle => 'このサーバーのCLIチャット用デフォルトエージェント';
+
+  @override
+  String get settingsDefaultAgentAutomatic => '自動（利用可能な最初の項目）';
+
+  @override
+  String get settingsDefaultAgentSelectTitle => 'デフォルトエージェントの選択';
+
+  @override
+  String get settingsDefaultAgentNoServer => 'サーバーが選択されていません';
+
+  @override
+  String get settingsDefaultAgentNoAgents => 'このサーバーに設定されたエージェントはありません';
+
+  @override
+  String get settingsDefaultAgentSaveFailed => 'デフォルトエージェントの設定更新に失敗しました';
+
+  @override
+  String get dockerViewGroupContainers => 'コンテナ';
+
+  @override
+  String get dockerViewGroupProjects => 'Compose プロジェクト';
+
+  @override
+  String get dockerProjectActionStart => 'プロジェクトを開始';
+
+  @override
+  String get dockerProjectActionStop => 'プロジェクトを停止';
+
+  @override
+  String get dockerProjectActionRestart => 'プロジェクトを再起動';
+
+  @override
+  String get dockerProjectConfirmStopTitle => 'Compose プロジェクトの停止';
+
+  @override
+  String get dockerProjectConfirmRestartTitle => 'Compose プロジェクトの再起動';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return 'プロジェクト「$project」に対して $action を実行しますか？以下の $count 個のコンテナが影響を受けます：';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return 'プロジェクト「$project」の$actionが完了しました';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return 'プロジェクト「$project」の$actionが完了しました（$failedCount 件失敗）';
+  }
+
+  @override
+  String get dockerNoProjects => 'Docker Compose プロジェクトが見つかりません';
+
+  @override
+  String get dockerMountsTitle => 'マウント';
+
+  @override
+  String get dockerMountReadOnly => '読み取り専用';
+
+  @override
+  String get dockerMountReadWrite => '読み書き可能';
+
+  @override
+  String get sftpBookmarksTitle => 'ディレクトリーブックマーク';
+
+  @override
+  String get sftpNoBookmarks => '保存されたブックマークはありません';
+
+  @override
+  String get sftpAddBookmark => 'ブックマークに追加';
+
+  @override
+  String get sftpRemoveBookmark => 'ブックマークを解除';
+
+  @override
+  String get sftpCurrentDirectory => '現在のディレクトリ';
+
+  @override
+  String get sftpSelectMode => '複数選択モード';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return '$count 件選択中';
+  }
+
+  @override
+  String get sftpSelectAll => 'すべて選択';
+
+  @override
+  String get sftpDeselectAll => '選択を解除';
+
+  @override
+  String get sftpBatchCopy => 'コピー';
+
+  @override
+  String get sftpBatchMove => '移動';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => '一括削除の確認';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return '選択した $count 件のアイテムを削除してもよろしいですか？';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice =>
+      '注意：空ではないディレクトリは再帰的に削除できないためスキップされます。';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => '一括コピーの確認';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return '選択した $count 件のアイテムを「$directory」にコピーしますか？';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => '一括移動の確認';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return '選択した $count 件のアイテムを「$directory」に移動しますか？';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => '一括処理の結果';
+
+  @override
+  String get sftpBatchOutcomeSkipped => 'スキップ（既に存在するか非対応）';
+
+  @override
+  String get sftpBatchTargetRestricted =>
+      '自身またはサブディレクトリをコピー・移動先として指定することはできません';
+
+  @override
+  String get sftpSelectCurrentDir => 'このディレクトリを選択';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return '$count 件の処理が完了しました';
+  }
+
+  @override
+  String get configMigrationTitle => 'バックアップと設定移行';
+
+  @override
+  String get configExportTitle => '設定のエクスポート';
+
+  @override
+  String get configExportSubtitle =>
+      'サーバー、エージェント、クイックコマンド、ブックマーク、設定をJSONにエクスポート';
+
+  @override
+  String get configExportDialogTitle => 'Valhalla設定のエクスポート';
+
+  @override
+  String get configExportSuccess => '設定を正常にエクスポートしました';
+
+  @override
+  String configExportError(String error) {
+    return '設定のエクスポートに失敗しました: $error';
+  }
+
+  @override
+  String get configImportTitle => '設定のインポート';
+
+  @override
+  String get configImportSubtitle => 'バックアップJSONファイルから設定をインポート';
+
+  @override
+  String get configBackupTooLarge => 'バックアップファイルが最大サイズ制限（8 MB）を超えています';
+
+  @override
+  String get configImportPreviewTitle => '設定インポートのプレビュー';
+
+  @override
+  String get configImportPreviewDesc => 'インポートする内容を確認してください。既存の項目は保持されマージされます。';
+
+  @override
+  String configImportServersCount(int count) {
+    return 'サーバー ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return 'エージェント ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return 'クイックコマンド ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return 'ブックマーク ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      'カスタムコマンドには機密性の高いスクリプトや埋め込み認証情報が含まれる場合があります。パスワード、秘密鍵、信頼済みフィンガープリントは転送されません。';
+
+  @override
+  String get configImportGlobalPreferences => 'グローバルアプリケーション設定をインポート';
+
+  @override
+  String get configImportGlobalPreferencesDesc =>
+      '現在のテーマ、ターミナル、ナビゲーション設定を上書きします';
+
+  @override
+  String get configImportConfirmAction => 'インポートを確認';
+
+  @override
+  String get configImportSuccess => '設定を正常にインポートしました';
+
+  @override
+  String get configImportErrorTitle => '無効な設定バックアップファイル';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return '設定のインポートに失敗しました: $error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => '診断詳細をコピー';
+
+  @override
+  String get configImportErrorCopied => '診断詳細をクリップボードにコピーしました';
+
+  @override
+  String get configImportErrorUnsupportedVersion =>
+      'サポートされていないバックアップ形式またはバージョンです';
+
+  @override
+  String get configImportErrorMalformed => '設定JSONファイルが破損しているか形式が不正です';
 }

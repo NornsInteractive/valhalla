@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "라이선스를 불러올 수 없습니다. norns.soft@gmail.com으로 문의하세요.",
   "aboutLinkFailed": "링크를 열 수 없습니다. 브라우저에서 https://norns.cc.cd에 접속하세요.",
   "downloadReveal": "파일 탐색기에 표시",
-  "downloadRevealFailed": "다운로드 폴더를 열 수 없습니다. 이동되었거나 삭제되었을 수 있습니다."
+  "downloadRevealFailed": "다운로드 폴더를 열 수 없습니다. 이동되었거나 삭제되었을 수 있습니다.",
+  "settingsKnownHostsSubtitle": "{count}개의 신뢰할 수 있는 호스트 키",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "신뢰할 수 있는 호스트 키가 없습니다",
+  "settingsKnownHostsDialogTitle": "알려진 호스트 키",
+  "settingsHostKeyRevoke": "신뢰 취소",
+  "settingsHostKeyRevokeConfirmTitle": "호스트 키 신뢰 취소",
+  "settingsHostKeyRevokeConfirmMessage": "{hostPort}의 호스트 키를 취소하시겠습니까? 해당 호스트의 활성 SSH 연결이 끊어지며, 다음 연결 시 키를 다시 확인해야 합니다.",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "호스트 키 지문이 클립보드에 복사되었습니다",
+  "settingsHostKeyRevoked": "호스트 키가 취소되었습니다",
+  "settingsClearStorageSubtitle": "선택한 서버의 저장된 비밀번호 및 개인 키 삭제",
+  "settingsClearStorageDialogTitle": "서버 자격 증명 재설정",
+  "settingsClearStorageDesc": "보안 저장소에서 SSH 비밀번호 및 개인 키를 삭제할 서버를 선택하세요. 서버 구성 및 대화 기록은 삭제되지 않습니다.",
+  "settingsClearStorageNoServers": "사용 가능한 서버가 없습니다",
+  "settingsClearStorageSelectAll": "모두 선택",
+  "settingsClearStorageDeselectAll": "모두 선택 해제",
+  "settingsClearStorageConfirmTitle": "자격 증명 재설정 확인",
+  "settingsClearStorageConfirmMessage": "선택한 {count}개 서버의 자격 증명을 삭제하시겠습니까? 해당 서버의 활성 연결이 즉시 끊어집니다.",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "선택 항목 삭제 ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "선택한 서버의 자격 증명이 삭제되었습니다",
+  "settingsClearStorageError": "일부 서버의 자격 증명 삭제에 실패했습니다. 다시 시도해 주세요.",
+  "settingsDefaultAcpAgent": "기본 ACP 에이전트",
+  "settingsDefaultAcpAgentSubtitle": "이 서버의 ACP 대화용 기본 에이전트",
+  "settingsDefaultCliAgent": "기본 CLI 에이전트",
+  "settingsDefaultCliAgentSubtitle": "이 서버의 CLI 대화용 기본 에이전트",
+  "settingsDefaultAgentAutomatic": "자동 (사용 가능한 첫 번째 항목)",
+  "settingsDefaultAgentSelectTitle": "기본 에이전트 선택",
+  "settingsDefaultAgentNoServer": "선택된 서버가 없습니다",
+  "settingsDefaultAgentNoAgents": "이 서버에 구성된 에이전트가 없습니다",
+  "settingsDefaultAgentSaveFailed": "기본 에이전트 설정 업데이트에 실패했습니다",
+  "dockerViewGroupContainers": "컨테이너",
+  "dockerViewGroupProjects": "Compose 프로젝트",
+  "dockerProjectActionStart": "프로젝트 시작",
+  "dockerProjectActionStop": "프로젝트 중지",
+  "dockerProjectActionRestart": "프로젝트 재시작",
+  "dockerProjectConfirmStopTitle": "Compose 프로젝트 중지",
+  "dockerProjectConfirmRestartTitle": "Compose 프로젝트 재시작",
+  "dockerProjectConfirmMessage": "\"{project}\" 프로젝트에 대해 {action} 작업을 수행하시겠습니까? 다음 {count}개 컨테이너에 영향을 줍니다:",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "\"{project}\" 프로젝트 {action} 완료",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "\"{project}\" 프로젝트 {action} 완료 ({failedCount}개 실패)",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "Docker Compose 프로젝트를 찾을 수 없습니다",
+  "dockerMountsTitle": "마운트",
+  "dockerMountReadOnly": "읽기 전용",
+  "dockerMountReadWrite": "읽기/쓰기",
+  "sftpBookmarksTitle": "디렉터리 북마크",
+  "sftpNoBookmarks": "저장된 디렉터리 북마크가 없습니다",
+  "sftpAddBookmark": "북마크 추가",
+  "sftpRemoveBookmark": "북마크 삭제",
+  "sftpCurrentDirectory": "현재 디렉터리",
+  "sftpSelectMode": "다중 선택 모드",
+  "sftpSelectedCount": "{count}개 선택됨",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "전체 선택",
+  "sftpDeselectAll": "선택 해제",
+  "sftpBatchCopy": "복사",
+  "sftpBatchMove": "이동",
+  "sftpBatchDeleteConfirmTitle": "일괄 삭제 확인",
+  "sftpBatchDeleteConfirmMessage": "선택한 {count}개 항목을 삭제하시겠습니까?",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "알림: 비어 있지 않은 디렉터리는 재귀적으로 삭제할 수 없어 건너뜁니다.",
+  "sftpBatchCopyConfirmTitle": "일괄 복사 확인",
+  "sftpBatchCopyConfirmMessage": "선택한 {count}개 항목을 \"{directory}\" 디렉터리로 복사하시겠습니까?",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "일괄 이동 확인",
+  "sftpBatchMoveConfirmMessage": "선택한 {count}개 항목을 \"{directory}\" 디렉터리로 이동하시겠습니까?",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "일괄 작업 결과",
+  "sftpBatchOutcomeSkipped": "건너뜀 (대상 이미 존재 또는 미지원)",
+  "sftpBatchTargetRestricted": "자신 또는 하위 디렉터리를 대상으로 선택할 수 없습니다",
+  "sftpSelectCurrentDir": "현재 디렉터리 선택",
+  "sftpBatchOperationSuccess": "{count}개 항목을 성공적으로 처리했습니다",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "백업 및 설정 마이그레이션",
+  "configExportTitle": "설정 내보내기",
+  "configExportSubtitle": "서버, 에이전트, 빠른 명령, 북마크 및 환경설정을 JSON으로 내보냅니다",
+  "configExportDialogTitle": "Valhalla 설정 내보내기",
+  "configExportSuccess": "설정을 성공적으로 내보냈습니다",
+  "configExportError": "설정 내보내기 실패: {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "설정 가져오기",
+  "configImportSubtitle": "백업 JSON 파일에서 설정을 가져옵니다",
+  "configBackupTooLarge": "백업 파일이 최대 허용 크기(8MB)를 초과합니다",
+  "configImportPreviewTitle": "설정 가져오기 미리보기",
+  "configImportPreviewDesc": "가져오기 전에 내용을 검토하세요. 기존 항목은 유지되며 병합됩니다.",
+  "configImportServersCount": "서버 ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "에이전트 ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "빠른 명령 ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "북마크 ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "사용자 지정 명령에 민감한 스크립트나 포함된 자격 증명이 있을 수 있습니다. 비밀번호, 개인 키 또는 신뢰할 수 있는 호스트 지문은 전송되지 않습니다.",
+  "configImportGlobalPreferences": "전역 앱 환경설정 가져오기",
+  "configImportGlobalPreferencesDesc": "현재 테마, 터미널 및 탐색 설정을 덮어씁니다",
+  "configImportConfirmAction": "가져오기 확인",
+  "configImportSuccess": "설정을 성공적으로 가져왔습니다",
+  "configImportErrorTitle": "유효하지 않은 설정 백업 파일",
+  "configImportErrorGeneric": "설정 가져오기 실패: {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "진단 세부 정보 복사",
+  "configImportErrorCopied": "진단 세부 정보를 클립보드에 복사했습니다",
+  "configImportErrorUnsupportedVersion": "지원되지 않는 백업 형식 또는 버전입니다",
+  "configImportErrorMalformed": "손상되었거나 잘못된 형식의 설정 JSON입니다"
 }

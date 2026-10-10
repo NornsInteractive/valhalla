@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "Unable to load the license. Please contact norns.soft@gmail.com.",
   "aboutLinkFailed": "Unable to open the link. Please open https://norns.cc.cd in your browser.",
   "downloadReveal": "Show in File Explorer",
-  "downloadRevealFailed": "Unable to open the download folder. It may have been moved or deleted."
+  "downloadRevealFailed": "Unable to open the download folder. It may have been moved or deleted.",
+  "settingsKnownHostsSubtitle": "{count} trusted host keys",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "No trusted host keys found",
+  "settingsKnownHostsDialogTitle": "Known Host Keys",
+  "settingsHostKeyRevoke": "Revoke",
+  "settingsHostKeyRevokeConfirmTitle": "Revoke Host Key",
+  "settingsHostKeyRevokeConfirmMessage": "Revoke host key for {hostPort}? Active SSH connections to this host will be disconnected, and you must verify the key on next connection.",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "Host key fingerprint copied to clipboard",
+  "settingsHostKeyRevoked": "Host key revoked",
+  "settingsClearStorageSubtitle": "Clear saved passwords and private keys for selected servers",
+  "settingsClearStorageDialogTitle": "Reset Server Credentials",
+  "settingsClearStorageDesc": "Select servers to clear locally stored SSH passwords, sudo passwords, and private keys from secure storage. Private key users must re-add their key via Edit Server after clearing (source key files are not deleted). Server configurations and chat histories will not be deleted.",
+  "settingsClearStorageNoServers": "No servers available",
+  "settingsClearStorageSelectAll": "Select All",
+  "settingsClearStorageDeselectAll": "Deselect All",
+  "settingsClearStorageConfirmTitle": "Confirm Credential Reset",
+  "settingsClearStorageConfirmMessage": "Are you sure you want to clear credentials for {count} selected server(s)? Active connections to these servers will be disconnected immediately.",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "Clear Selected ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "Selected server credentials cleared successfully",
+  "settingsClearStorageError": "Failed to clear credentials for some servers. Please try again.",
+  "settingsDefaultAcpAgent": "Default ACP Agent",
+  "settingsDefaultAcpAgentSubtitle": "Default agent for ACP chat on this server",
+  "settingsDefaultCliAgent": "Default CLI Agent",
+  "settingsDefaultCliAgentSubtitle": "Default agent for CLI chat on this server",
+  "settingsDefaultAgentAutomatic": "Automatic (first available)",
+  "settingsDefaultAgentSelectTitle": "Select Default Agent",
+  "settingsDefaultAgentNoServer": "No server selected",
+  "settingsDefaultAgentNoAgents": "No agents configured for this server",
+  "settingsDefaultAgentSaveFailed": "Failed to update default agent setting",
+  "dockerViewGroupContainers": "Containers",
+  "dockerViewGroupProjects": "Compose Projects",
+  "dockerProjectActionStart": "Start Project",
+  "dockerProjectActionStop": "Stop Project",
+  "dockerProjectActionRestart": "Restart Project",
+  "dockerProjectConfirmStopTitle": "Stop Compose Project",
+  "dockerProjectConfirmRestartTitle": "Restart Compose Project",
+  "dockerProjectConfirmMessage": "Are you sure you want to {action} project \"{project}\"? The following {count} containers will be affected:",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "Project \"{project}\" {action} completed successfully",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "Project \"{project}\" {action} completed with {failedCount} failure(s)",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "No Docker Compose projects found",
+  "dockerMountsTitle": "Mounts",
+  "dockerMountReadOnly": "Read-only",
+  "dockerMountReadWrite": "Read/Write",
+  "sftpBookmarksTitle": "Directory Bookmarks",
+  "sftpNoBookmarks": "No directory bookmarks saved yet",
+  "sftpAddBookmark": "Bookmark this folder",
+  "sftpRemoveBookmark": "Remove bookmark",
+  "sftpCurrentDirectory": "Current Directory",
+  "sftpSelectMode": "Select Multiple Files",
+  "sftpSelectedCount": "{count} selected",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "Select All",
+  "sftpDeselectAll": "Deselect All",
+  "sftpBatchCopy": "Copy",
+  "sftpBatchMove": "Move",
+  "sftpBatchDeleteConfirmTitle": "Confirm Batch Deletion",
+  "sftpBatchDeleteConfirmMessage": "Are you sure you want to delete {count} selected item(s)?",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "Notice: Non-empty directories cannot be deleted recursively and will be skipped.",
+  "sftpBatchCopyConfirmTitle": "Confirm Batch Copy",
+  "sftpBatchCopyConfirmMessage": "Copy {count} selected item(s) to \"{directory}\"?",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "Confirm Batch Move",
+  "sftpBatchMoveConfirmMessage": "Move {count} selected item(s) to \"{directory}\"?",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "Batch Operation Results",
+  "sftpBatchOutcomeSkipped": "Skipped (Target exists or not supported)",
+  "sftpBatchTargetRestricted": "Cannot select current or descendant directories as target",
+  "sftpSelectCurrentDir": "Choose This Directory",
+  "sftpBatchOperationSuccess": "Successfully processed {count} item(s)",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "Backup & Configuration Migration",
+  "configExportTitle": "Export Configuration",
+  "configExportSubtitle": "Export servers, agents, commands, bookmarks and preferences to JSON",
+  "configExportDialogTitle": "Export Valhalla Configuration",
+  "configExportSuccess": "Configuration exported successfully",
+  "configExportError": "Failed to export configuration: {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "Import Configuration",
+  "configImportSubtitle": "Import configuration from a backup JSON file",
+  "configBackupTooLarge": "Backup file exceeds maximum allowed size (8 MB)",
+  "configImportPreviewTitle": "Preview Configuration Import",
+  "configImportPreviewDesc": "Review contents before importing. Existing items will be preserved and merged.",
+  "configImportServersCount": "Servers ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "Agents ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "Quick Commands ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "Bookmarks ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "Custom commands may contain sensitive scripts or embedded credentials. No passwords, private keys, or trusted fingerprints are transferred.",
+  "configImportGlobalPreferences": "Import global application preferences",
+  "configImportGlobalPreferencesDesc": "Overwrites current theme, terminal, and navigation settings",
+  "configImportConfirmAction": "Confirm Import",
+  "configImportSuccess": "Configuration imported successfully",
+  "configImportErrorTitle": "Invalid Configuration Backup",
+  "configImportErrorGeneric": "Failed to import configuration: {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "Copy Diagnostic Details",
+  "configImportErrorCopied": "Diagnostic details copied to clipboard",
+  "configImportErrorUnsupportedVersion": "Unsupported backup format or version",
+  "configImportErrorMalformed": "Malformed or damaged configuration JSON"
 }

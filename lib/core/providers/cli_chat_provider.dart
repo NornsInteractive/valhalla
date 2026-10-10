@@ -22,6 +22,7 @@ import 'infrastructure_providers.dart';
 import 'server_provider.dart';
 import 'settings_provider.dart';
 import 'storage_providers.dart';
+import 'security_settings_provider.dart';
 import 'app_visibility_provider.dart';
 export '../../data/models/native_cli_session.dart';
 export '../../data/models/session_recovery_status.dart';
@@ -272,6 +273,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
     await ref
         .read(localStorageServiceProvider)
         .setDefaultAgentId(serverId, agentId, cli: true);
+    if (ref.mounted) ref.invalidate(defaultAgentSettingsProvider);
   }
 
   bool _current(int epoch) => ref.mounted && _epoch == epoch;

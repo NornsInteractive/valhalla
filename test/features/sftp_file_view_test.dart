@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
+import 'package:valhalla/core/providers/storage_providers.dart';
+import 'package:valhalla/data/models/server_profile.dart';
+import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/files/sftp_file_view.dart';
 import 'package:valhalla/infrastructure/sftp/sftp_client_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
@@ -211,6 +215,29 @@ class _TestServerConnectionNotifier extends ServerConnectionNotifier {
       const ServerConnectionState(status: ConnectionStateEnum.connected);
 }
 
+/// The SFTP surface reads `fileBookmarksProvider`, which resolves the active
+/// server and the initialized `LocalStorageService`. Pin the same connected
+/// srv-1 metadata the shell would supply; no real SSH is started.
+class _ActiveServerWithProfile extends ActiveServerNotifier {
+  final ServerProfile _server;
+  _ActiveServerWithProfile(this._server);
+
+  @override
+  ServerProfile? build() => _server;
+}
+
+const _kFileViewServer = ServerProfile(
+  id: 'srv-1',
+  name: 'Test Server',
+  host: '10.0.0.1',
+  port: 22,
+  username: 'root',
+  authType: AuthType.password,
+);
+
+/// Initialized once per file; `_buildTestApp` is synchronous and reuses this.
+late final LocalStorageService _storage;
+
 Widget _buildTestApp({
   required SftpState state,
   _FakeOperations? ops,
@@ -220,6 +247,10 @@ Widget _buildTestApp({
   final notif = notifier ?? _TestSftpNotifier(state, operations);
   return ProviderScope(
     overrides: [
+      localStorageServiceProvider.overrideWithValue(_storage),
+      activeServerProvider.overrideWith(
+        () => _ActiveServerWithProfile(_kFileViewServer),
+      ),
       sftpOperationsProvider.overrideWithValue(operations),
       sftpProvider.overrideWith(() => notif),
       serverConnectionProvider.overrideWith(_TestServerConnectionNotifier.new),
@@ -259,6 +290,11 @@ SftpFileItem _makeItem(
 }
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    _storage = await LocalStorageService.init();
+  });
+
   group('SftpFileView', () {
     testWidgets(
       'unsupported files (.zip, .png) hide open menu item and do not read file or open editor on tap',

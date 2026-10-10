@@ -186,6 +186,20 @@ class FakeAcpPair {
   /// Values this agent refuses even though the client offered them.
   final Set<Object?> rejectedConfigValues = {};
 
+  /// Values this agent refuses with a JSON-RPC error on
+  /// `session/set_config_option`.
+  ///
+  /// Unlike [rejectedConfigValues] (answered, yet never applied), these fail
+  /// the request itself, so the client has to roll back what it already sent.
+  final Set<Object?> errorConfigValues = {};
+
+  /// Decides whether a single `session/set_config_option` request fails.
+  ///
+  /// Models an agent that accepts part of a change and rejects the rest, and
+  /// one that later refuses to revert an already-applied value, which is what
+  /// a failed settings rollback looks like on the wire.
+  bool Function(String configId, Object? value)? failConfigOptionWhen;
+
   /// Answers a held `session/prompt` request with `end_turn`.
   void finishHeldPrompt() {
     _respondOk(_promptId, const {'stopReason': 'end_turn'});
@@ -282,7 +296,9 @@ class FakeAcpPair {
               : '';
           final value = params is Map ? params['value'] : null;
           setConfigOptionRequests.add((configId: configId, value: value));
-          if (failSetConfigOption) {
+          if (failSetConfigOption ||
+              errorConfigValues.contains(value) ||
+              failConfigOptionWhen?.call(configId, value) == true) {
             _respondError(
               message.id,
               setConfigOptionErrorCode,
@@ -298,16 +314,19 @@ class FakeAcpPair {
               value,
               configOptions,
             );
-            if (replacement != null) configOptions = replacement;
-          }
-          _respondOk(message.id, {
-            'configOptions': [
-              for (final option in configOptions)
-                if (option['id'] == configId && accepted)
+            // The agent keeps whatever it accepted, and the answer reports it:
+            // later responses must not resurrect the pre-change value, even
+            // when a replacement list is provided.
+            configOptions = [
+              for (final option in replacement ?? configOptions)
+                if (option['id'] == configId)
                   {...option, 'currentValue': value}
                 else
                   option,
-            ],
+            ];
+          }
+          _respondOk(message.id, {
+            'configOptions': [...configOptions],
           });
         case 'session/prompt':
           _promptId = message.id;

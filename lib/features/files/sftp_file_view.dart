@@ -7,11 +7,17 @@ import '../../core/constants/layout_breakpoints.dart';
 import '../../core/design/motion_widgets.dart';
 import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
+import '../../core/providers/file_bookmarks_provider.dart';
 import '../../core/providers/server_provider.dart';
 import '../../core/providers/sftp_provider.dart';
+import '../../infrastructure/sftp/remote_file_actions.dart';
 import '../../infrastructure/sftp/sftp_client_service.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/valhalla_card.dart';
+import 'widgets/batch_confirm_dialog.dart';
+import 'widgets/file_bookmarks_dialog.dart';
+import 'widgets/remote_file_batch_results_dialog.dart';
+import 'widgets/sftp_directory_picker_dialog.dart';
 
 class SftpFileView extends ConsumerStatefulWidget {
   const SftpFileView({super.key, this.openTransfersRequest});
@@ -35,11 +41,19 @@ class SftpFileView extends ConsumerStatefulWidget {
 class _SftpFileViewState extends ConsumerState<SftpFileView>
     with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _breadcrumbScrollController = ScrollController();
   final GlobalKey _transferIconKey = GlobalKey();
   final List<AnimationController> _activeAnimControllers = [];
   final List<OverlayEntry> _activeOverlayEntries = [];
   Timer? _highlightTimer;
   bool _highlightTransferButton = false;
+  bool _isTogglingHiddenFiles = false;
+  bool _isSelectionMode = false;
+  final Set<String> _selectedPaths = {};
+  bool _isBatchRunning = false;
+  int? _batchCompleted;
+  int? _batchTotal;
+  bool _isTogglingBookmark = false;
 
   /// 已经响应过的 `openTransfersRequest` 值，0 表示还没响应过任何一次。
   int _handledOpenTransfersRequest = 0;
@@ -52,6 +66,13 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
       _searchController.text = initialQuery;
     }
     widget.openTransfersRequest?.addListener(_handleOpenTransfersRequest);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _breadcrumbScrollController.hasClients) {
+        _breadcrumbScrollController.jumpTo(
+          _breadcrumbScrollController.position.maxScrollExtent,
+        );
+      }
+    });
   }
 
   @override
@@ -91,6 +112,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     _activeAnimControllers.clear();
     widget.openTransfersRequest?.removeListener(_handleOpenTransfersRequest);
     _searchController.dispose();
+    _breadcrumbScrollController.dispose();
     super.dispose();
   }
 
@@ -541,11 +563,191 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
       ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
       return null;
     }
+    if (item.linkTargetErrorCode != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_mapErrorMessage(item.linkTargetErrorCode!))),
+      );
+      return null;
+    }
     final taskId = await ref.read(sftpProvider.notifier).downloadFile(item);
     if (taskId != null) {
       _animateFlyToTransfer(startOffset);
     }
     return taskId;
+  }
+
+  void _toggleSelectionMode() {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      if (!_isSelectionMode) {
+        _selectedPaths.clear();
+      }
+    });
+  }
+
+  void _toggleSelect(SftpFileItem item) {
+    if (item.name == '..') return;
+    setState(() {
+      if (_selectedPaths.contains(item.path)) {
+        _selectedPaths.remove(item.path);
+      } else {
+        _selectedPaths.add(item.path);
+      }
+    });
+  }
+
+  void _selectAll() {
+    final files = ref.read(sftpProvider).filteredFiles;
+    setState(() {
+      _selectedPaths.clear();
+      for (final f in files) {
+        if (f.name != '..') {
+          _selectedPaths.add(f.path);
+        }
+      }
+    });
+  }
+
+  void _deselectAll() {
+    setState(() {
+      _selectedPaths.clear();
+    });
+  }
+
+  void _showBookmarksDialog() {
+    final currentPath = ref.read(sftpProvider).currentPath;
+    FileBookmarksDialog.show(
+      context,
+      currentPath: currentPath,
+      onSelectPath: (path) {
+        ref.read(sftpProvider.notifier).navigateTo(path);
+      },
+    );
+  }
+
+  Future<void> _handleBatchAction(RemoteFileAction action) async {
+    if (_isBatchRunning) return;
+    final expectedServer = ref.read(activeServerProvider);
+    if (expectedServer == null) return;
+
+    final files = ref.read(sftpProvider).filteredFiles;
+    final selectedItems = files
+        .where((f) => _selectedPaths.contains(f.path))
+        .toList();
+    if (selectedItems.isEmpty) return;
+
+    String? targetDirectory;
+    if (action == RemoteFileAction.copy || action == RemoteFileAction.move) {
+      final selectedPathsSet = selectedItems.map((e) => e.path).toSet();
+      final chosenDir = await SftpDirectoryPickerDialog.show(
+        context,
+        initialPath: ref.read(sftpProvider).currentPath,
+        title: action == RemoteFileAction.copy
+            ? context.l10n.sftpBatchCopy
+            : context.l10n.sftpBatchMove,
+        restrictedPaths: selectedPathsSet,
+      );
+      if (chosenDir == null || !mounted) return;
+      if (!(ref
+              .read(activeServerProvider)
+              ?.hasSameConnectionSettings(expectedServer) ??
+          false)) {
+        return;
+      }
+      targetDirectory = chosenDir;
+    }
+
+    final confirmed = await BatchConfirmDialog.show(
+      context,
+      action: action,
+      items: selectedItems,
+      targetDirectory: targetDirectory,
+    );
+    if (!confirmed || !mounted) return;
+    if (!(ref
+            .read(activeServerProvider)
+            ?.hasSameConnectionSettings(expectedServer) ??
+        false)) {
+      return;
+    }
+
+    final scaffold = ScaffoldMessenger.of(context);
+
+    setState(() {
+      _isBatchRunning = true;
+      _batchCompleted = 0;
+      _batchTotal = selectedItems.length;
+    });
+
+    try {
+      final results = await ref
+          .read(sftpProvider.notifier)
+          .runBatch(
+            action,
+            selectedItems,
+            targetDirectory: targetDirectory,
+            expectedServer: expectedServer,
+            onProgress: (completed, total) {
+              if (mounted) {
+                setState(() {
+                  _batchCompleted = completed;
+                  _batchTotal = total;
+                });
+              }
+            },
+          );
+
+      if (!mounted) return;
+      if (!(ref
+              .read(activeServerProvider)
+              ?.hasSameConnectionSettings(expectedServer) ??
+          false)) {
+        return;
+      }
+
+      setState(() {
+        _isSelectionMode = false;
+        _selectedPaths.clear();
+      });
+
+      final hasFailures = results.any(
+        (r) =>
+            r.outcome == RemoteFileOutcome.failed ||
+            r.outcome == RemoteFileOutcome.skipped,
+      );
+
+      if (hasFailures) {
+        if (mounted) {
+          await RemoteFileBatchResultsDialog.show(context, results: results);
+        }
+      } else {
+        final queuedCount = results
+            .where((r) => r.outcome == RemoteFileOutcome.queued)
+            .length;
+        final successMsg = queuedCount > 0
+            ? '${context.l10n.transferStatusQueued} ($queuedCount)'
+            : context.l10n.sftpBatchOperationSuccess(results.length);
+        scaffold.showSnackBar(
+          SnackBar(
+            content: Text(successMsg),
+            backgroundColor: context.vSuccess,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      scaffold.showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: context.vDanger),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBatchRunning = false;
+          _batchCompleted = null;
+          _batchTotal = null;
+        });
+      }
+    }
   }
 
   void _showTransferListModal(BuildContext context) {
@@ -562,6 +764,18 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   }
 
   String _mapErrorMessage(String code) {
+    if (code == SftpFileItem.linkTargetUnavailableCode ||
+        code == 'SFTP_LINK_TARGET_UNAVAILABLE') {
+      return context.l10n.sftpLinkTargetUnavailable;
+    }
+    if (code == SftpFileItem.linkTargetPermissionDeniedCode ||
+        code == 'SFTP_LINK_TARGET_PERMISSION_DENIED') {
+      return context.l10n.sftpLinkTargetPermissionDenied;
+    }
+    if (code == SftpNotifier.hiddenPreferenceSaveFailedCode ||
+        code == 'SFTP_HIDDEN_PREFERENCE_SAVE_FAILED') {
+      return context.l10n.sftpHiddenPreferenceSaveFailed;
+    }
     if (code == 'SSH_DISCONNECTED' || code == 'SFTP_DOWNLOAD_DISCONNECTED') {
       return context.l10n.sftpDownloadDisconnected;
     }
@@ -755,6 +969,20 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     ) {
       if (previous != null && previous != next) {
         _searchController.clear();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _breadcrumbScrollController.hasClients) {
+            final target = _breadcrumbScrollController.position.maxScrollExtent;
+            if (MediaQuery.disableAnimationsOf(context)) {
+              _breadcrumbScrollController.jumpTo(target);
+            } else {
+              _breadcrumbScrollController.animateTo(
+                target,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+              );
+            }
+          }
+        });
       }
     });
 
@@ -806,81 +1034,160 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     return Entrance(
       index: 0,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         color: context.colorScheme.surface,
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_upward, size: 18),
-              tooltip: 'Up to parent directory',
-              onPressed: (state.isAtRoot || !isConnected)
-                  ? null
-                  : () => notifier.navigateUp(),
-            ),
-            ActionChip(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(VRadius.pill),
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Row(
+            children: [
+              IconButton(
+                key: const Key('sftp_breadcrumb_up'),
+                icon: const Icon(Icons.arrow_upward, size: 18),
+                tooltip: context.l10n.sftpUpDirectory,
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                onPressed: (state.isAtRoot || !isConnected)
+                    ? null
+                    : () => notifier.navigateUp(),
               ),
-              label: Text(
-                '/',
-                style: monoTextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              _buildBreadcrumbSegment(
+                key: const Key('sftp_breadcrumb_root'),
+                label: '/',
+                tooltip: '/',
+                isCurrent: state.isAtRoot,
+                onTap: isConnected ? () => notifier.navigateTo('/') : null,
+                maxWidth: 44,
               ),
-              onPressed: isConnected ? () => notifier.navigateTo('/') : null,
-            ),
-            const SizedBox(width: 4),
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: List.generate(segments.length, (index) {
-                    final seg = segments[index];
-                    final pathUpTo = '/${segments.take(index + 1).join('/')}';
-                    final isLast = index == segments.length - 1;
+              const SizedBox(width: 2),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _breadcrumbScrollController,
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(segments.length, (index) {
+                      final seg = segments[index];
+                      final pathUpTo = '/${segments.take(index + 1).join('/')}';
+                      final isLast = index == segments.length - 1;
 
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.chevron_right,
-                          size: 16,
-                          color: context.colorScheme.outline,
-                        ),
-                        ActionChip(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(VRadius.pill),
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.chevron_right,
+                            size: 14,
+                            color: context.colorScheme.outline,
                           ),
-                          avatar: isLast
-                              ? const Icon(Icons.folder_open, size: 14)
-                              : null,
-                          label: Text(
-                            seg,
-                            style: monoTextStyle(
-                              fontSize: 12,
-                              fontWeight: isLast
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: isLast
-                                  ? context.colorScheme.onSurface
-                                  : context.colorScheme.onSurfaceVariant,
-                            ),
+                          _buildBreadcrumbSegment(
+                            key: Key('sftp_breadcrumb_seg_$index'),
+                            label: seg,
+                            tooltip: seg,
+                            isCurrent: isLast,
+                            onTap: isConnected
+                                ? () => notifier.navigateTo(pathUpTo)
+                                : null,
+                            maxWidth: 120,
                           ),
-                          onPressed: isConnected
-                              ? () => notifier.navigateTo(pathUpTo)
-                              : null,
-                        ),
-                      ],
-                    );
-                  }),
+                        ],
+                      );
+                    }),
+                  ),
                 ),
               ),
+              IconButton(
+                key: const Key('sftp_current_path_bookmark_button'),
+                icon: Icon(
+                  ref.watch(fileBookmarksProvider).contains(state.currentPath)
+                      ? Icons.bookmark
+                      : Icons.bookmark_border,
+                  size: 18,
+                  color:
+                      ref
+                          .watch(fileBookmarksProvider)
+                          .contains(state.currentPath)
+                      ? context.colorScheme.primary
+                      : null,
+                ),
+                tooltip:
+                    ref.watch(fileBookmarksProvider).contains(state.currentPath)
+                    ? context.l10n.sftpRemoveBookmark
+                    : context.l10n.sftpAddBookmark,
+                onPressed: (isConnected && !_isTogglingBookmark)
+                    ? () async {
+                        if (_isTogglingBookmark) return;
+                        setState(() => _isTogglingBookmark = true);
+                        try {
+                          await ref
+                              .read(fileBookmarksProvider.notifier)
+                              .toggle(state.currentPath);
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(e.toString()),
+                                backgroundColor: context.vDanger,
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() => _isTogglingBookmark = false);
+                          }
+                        }
+                      }
+                    : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumbSegment({
+    Key? key,
+    required String label,
+    required String tooltip,
+    required bool isCurrent,
+    required VoidCallback? onTap,
+    double maxWidth = 120,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        key: key,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(VRadius.button),
+        child: Container(
+          constraints: BoxConstraints(
+            minHeight: 44,
+            minWidth: 44,
+            maxWidth: maxWidth,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: monoTextStyle(
+              fontSize: 12,
+              fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
+              color: isCurrent
+                  ? context.colorScheme.onSurface
+                  : (onTap != null
+                        ? context.colorScheme.primary
+                        : context.colorScheme.outline),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildActionBar(SftpState state) {
+    if (_isSelectionMode) {
+      return _buildSelectionActionBar(state);
+    }
     final notifier = ref.read(sftpProvider.notifier);
     final isConnected = ref.watch(
       serverConnectionProvider.select((s) => s.isConnected),
@@ -955,6 +1262,39 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                     tooltip: context.l10n.sftpNewFile,
                     onPressed: isConnected ? _showNewFileDialog : null,
                   ),
+                  IconButton(
+                    key: const Key('sftpToggleHiddenButton'),
+                    isSelected: state.showHiddenFiles,
+                    icon: const Icon(Icons.visibility_off, size: 20),
+                    selectedIcon: const Icon(Icons.visibility, size: 20),
+                    tooltip: state.showHiddenFiles
+                        ? context.l10n.sftpHideHiddenFiles
+                        : context.l10n.sftpShowHiddenFiles,
+                    style: state.showHiddenFiles
+                        ? IconButton.styleFrom(
+                            foregroundColor: context.colorScheme.primary,
+                          )
+                        : null,
+                    onPressed: _isTogglingHiddenFiles
+                        ? null
+                        : () async {
+                            if (_isTogglingHiddenFiles) return;
+                            setState(() {
+                              _isTogglingHiddenFiles = true;
+                            });
+                            try {
+                              await notifier.setShowHiddenFiles(
+                                !state.showHiddenFiles,
+                              );
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  _isTogglingHiddenFiles = false;
+                                });
+                              }
+                            }
+                          },
+                  ),
                   PopupMenuButton<Object>(
                     icon: const Icon(Icons.sort, size: 20),
                     tooltip: context.l10n.sftpSort,
@@ -1008,6 +1348,18 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                     onPressed: isConnected ? () => notifier.refresh() : null,
                   ),
                   IconButton(
+                    key: const Key('sftpBookmarksListButton'),
+                    icon: const Icon(Icons.bookmarks_outlined, size: 20),
+                    tooltip: context.l10n.sftpBookmarksTitle,
+                    onPressed: isConnected ? _showBookmarksDialog : null,
+                  ),
+                  IconButton(
+                    key: const Key('sftpSelectModeButton'),
+                    icon: const Icon(Icons.checklist, size: 20),
+                    tooltip: context.l10n.sftpSelectMode,
+                    onPressed: _toggleSelectionMode,
+                  ),
+                  IconButton(
                     key: const Key('sftpTransferListButton'),
                     style: _highlightTransferButton
                         ? IconButton.styleFrom(
@@ -1034,6 +1386,103 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectionActionBar(SftpState state) {
+    final isConnected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
+    final count = _selectedPaths.length;
+
+    return Entrance(
+      index: 1,
+      child: Container(
+        color: context.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.5,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                tooltip: context.l10n.cancel,
+                onPressed: _toggleSelectionMode,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                context.l10n.sftpSelectedCount(count),
+                style: context.textTheme.titleSmall,
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                key: const Key('sftpSelectAllButton'),
+                onPressed: _selectAll,
+                child: Text(context.l10n.sftpSelectAll),
+              ),
+              TextButton(
+                key: const Key('sftpDeselectAllButton'),
+                onPressed: _selectedPaths.isEmpty ? null : _deselectAll,
+                child: Text(context.l10n.sftpDeselectAll),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                key: const Key('sftpBatchDownloadButton'),
+                icon: const Icon(Icons.download, size: 20),
+                tooltip: context.l10n.sftpDownload,
+                onPressed: (count == 0 || _isBatchRunning || !isConnected)
+                    ? null
+                    : () => _handleBatchAction(RemoteFileAction.download),
+              ),
+              IconButton(
+                key: const Key('sftpBatchCopyButton'),
+                icon: const Icon(Icons.copy, size: 20),
+                tooltip: context.l10n.sftpBatchCopy,
+                onPressed: (count == 0 || _isBatchRunning || !isConnected)
+                    ? null
+                    : () => _handleBatchAction(RemoteFileAction.copy),
+              ),
+              IconButton(
+                key: const Key('sftpBatchMoveButton'),
+                icon: const Icon(Icons.drive_file_move_outlined, size: 20),
+                tooltip: context.l10n.sftpBatchMove,
+                onPressed: (count == 0 || _isBatchRunning || !isConnected)
+                    ? null
+                    : () => _handleBatchAction(RemoteFileAction.move),
+              ),
+              IconButton(
+                key: const Key('sftpBatchDeleteButton'),
+                icon: Icon(Icons.delete, size: 20, color: context.vDanger),
+                tooltip: context.l10n.delete,
+                onPressed: (count == 0 || _isBatchRunning || !isConnected)
+                    ? null
+                    : () => _handleBatchAction(RemoteFileAction.delete),
+              ),
+              if (_isBatchRunning) ...[
+                const SizedBox(width: 8),
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                if (_batchTotal != null) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    '$_batchCompleted/$_batchTotal',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -1092,13 +1541,78 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   ) {
     final isDotDot = item.name == '..';
     final isSpecialNav = isDotDot;
+    final isSelected = _selectedPaths.contains(item.path);
 
-    return ListTile(
-      leading: Icon(
+    final Widget fileIconWidget;
+    if (item.isSymbolicLink) {
+      final isBroken = item.linkTargetErrorCode != null;
+      fileIconWidget = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(
+            item.isDirectory ? Icons.folder : _getFileIcon(item.name),
+            color: isBroken
+                ? context.colorScheme.outline
+                : (item.isDirectory ? context.colorScheme.primary : null),
+            size: 22,
+          ),
+          Positioned(
+            right: -2,
+            bottom: -2,
+            child: Semantics(
+              label: context.l10n.sftpSymlink,
+              child: Tooltip(
+                key: const Key('sftp_symlink_badge'),
+                message: context.l10n.sftpSymlink,
+                child: Container(
+                  padding: const EdgeInsets.all(1),
+                  decoration: BoxDecoration(
+                    color: context.colorScheme.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isBroken ? Icons.link_off : Icons.shortcut,
+                    size: 11,
+                    color: isBroken
+                        ? context.colorScheme.error
+                        : context.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      fileIconWidget = Icon(
         item.isDirectory ? Icons.folder : _getFileIcon(item.name),
         color: item.isDirectory ? context.colorScheme.primary : null,
         size: 22,
-      ),
+      );
+    }
+
+    final Widget leadingWidget;
+    if (_isSelectionMode && !isSpecialNav) {
+      leadingWidget = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Checkbox(
+            value: isSelected,
+            onChanged: (_) => _toggleSelect(item),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+          ),
+          const SizedBox(width: 4),
+          fileIconWidget,
+        ],
+      );
+    } else {
+      leadingWidget = fileIconWidget;
+    }
+
+    return ListTile(
+      selected: _isSelectionMode && isSelected,
+      leading: leadingWidget,
       title: Text(
         item.name,
         style: item.isDirectory
@@ -1144,7 +1658,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                 ),
               ],
             ),
-      trailing: isSpecialNav
+      trailing: (isSpecialNav || _isSelectionMode)
           ? null
           : PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, size: 18),
@@ -1185,7 +1699,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                       ],
                     ),
                   ),
-                if (!item.isDirectory)
+                if (!item.isDirectory && item.linkTargetErrorCode == null)
                   PopupMenuItem(
                     value: 'download',
                     child: Row(
@@ -1221,6 +1735,14 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                 ),
               ],
             ),
+      onLongPress: (!isSpecialNav && !_isSelectionMode)
+          ? () {
+              setState(() {
+                _isSelectionMode = true;
+                _selectedPaths.add(item.path);
+              });
+            }
+          : null,
       onTap: () {
         if (!ref.read(serverConnectionProvider).isConnected) {
           ScaffoldMessenger.of(
@@ -1228,8 +1750,20 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
           ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
           return;
         }
+        if (_isSelectionMode) {
+          if (!isSpecialNav) {
+            _toggleSelect(item);
+            return;
+          }
+        }
         if (isDotDot) {
           notifier.navigateUp();
+        } else if (item.linkTargetErrorCode != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_mapErrorMessage(item.linkTargetErrorCode!)),
+            ),
+          );
         } else if (item.isDirectory) {
           notifier.navigateTo(item.path);
         } else {
@@ -1537,6 +2071,28 @@ class SftpTransferListItem extends ConsumerWidget {
                   tooltip: context.l10n.transferResume,
                   onPressed: isConnected
                       ? () => notifier.resumeTransfer(transfer.id)
+                      : null,
+                ),
+              if (transfer.status == SftpTransferStatus.failed)
+                IconButton(
+                  key: Key('transfer_retry_${transfer.id}'),
+                  icon: const Icon(Icons.refresh, size: 18),
+                  tooltip: context.l10n.stateRetry,
+                  onPressed: isConnected
+                      ? () async {
+                          try {
+                            await notifier.retryTransfer(transfer.id);
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString()),
+                                  backgroundColor: context.vDanger,
+                                ),
+                              );
+                            }
+                          }
+                        }
                       : null,
                 ),
               if (canCancel)

@@ -3710,4 +3710,338 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get downloadRevealFailed =>
       'تعذر فتح مجلد التنزيل. ربما تم نقله أو حذفه.';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count من مفاتيح المضيفين الموثوقين';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty =>
+      'لم يتم العثور على مفاتيح مضيفين موثوقين';
+
+  @override
+  String get settingsKnownHostsDialogTitle => 'مفاتيح المضيفين المعروفين';
+
+  @override
+  String get settingsHostKeyRevoke => 'إلغاء الثقة';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle => 'إلغاء الثقة بمفتاح المضيف';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return 'هل تريد بالتأكيد إلغاء مفتاح المضيف لـ $hostPort؟ سيتم فصل اتصالات SSH النشطة بهذا المضيف وسيلزم التحقق منه عند الاتصال القادم.';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied =>
+      'تم نسخ بصمة مفتاح المضيف إلى الحافظة';
+
+  @override
+  String get settingsHostKeyRevoked => 'تم إلغاء مفتاح المضيف';
+
+  @override
+  String get settingsClearStorageSubtitle =>
+      'مسح كلمات المرور والمفاتيح الخاصة المحفوظة للخوادم المحددة';
+
+  @override
+  String get settingsClearStorageDialogTitle =>
+      'إعادة ضبط بيانات اعتماد الخوادم';
+
+  @override
+  String get settingsClearStorageDesc =>
+      'حدد الخوادم لمسح كلمات مرور SSH والمفاتيح الخاصة من التخزين الآمن المحلي. لن يتم حذف إعدادات الخادم أو سجل المحادثات.';
+
+  @override
+  String get settingsClearStorageNoServers => 'لا توجد خوادم متاحة';
+
+  @override
+  String get settingsClearStorageSelectAll => 'تحديد الكل';
+
+  @override
+  String get settingsClearStorageDeselectAll => 'إلغاء تحديد الكل';
+
+  @override
+  String get settingsClearStorageConfirmTitle =>
+      'تأكيد إعادة ضبط بيانات الاعتماد';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return 'هل أنت متأكد من مسح بيانات الاعتماد لـ $count خادم(خوادم) محدد؟ سيتم قطع الاتصالات النشطة بها على الفور.';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return 'مسح المحدد ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess =>
+      'تم مسح بيانات اعتماد الخوادم المحددة بنجاح';
+
+  @override
+  String get settingsClearStorageError =>
+      'فشل مسح بيانات اعتماد بعض الخوادم. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get settingsDefaultAcpAgent => 'وكيل ACP الافتراضي';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle =>
+      'الوكيل الافتراضي لمحادثة ACP على هذا الخادم';
+
+  @override
+  String get settingsDefaultCliAgent => 'وكيل CLI الافتراضي';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle =>
+      'الوكيل الافتراضي لمحادثة CLI على هذا الخادم';
+
+  @override
+  String get settingsDefaultAgentAutomatic => 'تلقائي (أول وكيل متاح)';
+
+  @override
+  String get settingsDefaultAgentSelectTitle => 'تحديد الوكيل الافتراضي';
+
+  @override
+  String get settingsDefaultAgentNoServer => 'لم يتم تحديد خادم';
+
+  @override
+  String get settingsDefaultAgentNoAgents => 'لا توجد وكلاء مهيأة لهذا الخادم';
+
+  @override
+  String get settingsDefaultAgentSaveFailed =>
+      'فشل تحديث إعداد الوكيل الافتراضي';
+
+  @override
+  String get dockerViewGroupContainers => 'الحاويات';
+
+  @override
+  String get dockerViewGroupProjects => 'مشاريع Compose';
+
+  @override
+  String get dockerProjectActionStart => 'بدء المشروع';
+
+  @override
+  String get dockerProjectActionStop => 'إيقاف المشروع';
+
+  @override
+  String get dockerProjectActionRestart => 'إعادة تشغيل المشروع';
+
+  @override
+  String get dockerProjectConfirmStopTitle => 'إيقاف مشروع Compose';
+
+  @override
+  String get dockerProjectConfirmRestartTitle => 'إعادة تشغيل مشروع Compose';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return 'هل أنت متأكد من رغبتك في $action المشروع \"$project\"؟ ستتأثر الحاويات التالية ($count):';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return 'تم $action المشروع \"$project\" بنجاح';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return 'اكتمل $action المشروع \"$project\" مع فشل $failedCount';
+  }
+
+  @override
+  String get dockerNoProjects => 'لم يتم العثور على أي مشاريع Docker Compose';
+
+  @override
+  String get dockerMountsTitle => 'نقاط التوصيل';
+
+  @override
+  String get dockerMountReadOnly => 'قراءة فقط';
+
+  @override
+  String get dockerMountReadWrite => 'قراءة/كتابة';
+
+  @override
+  String get sftpBookmarksTitle => 'إشارات المجلدات المرجعية';
+
+  @override
+  String get sftpNoBookmarks => 'لا توجد إشارات مرجعية محفوظة بعد';
+
+  @override
+  String get sftpAddBookmark => 'إضافة إشارة مرجعية';
+
+  @override
+  String get sftpRemoveBookmark => 'إزالة الإشارة المرجعية';
+
+  @override
+  String get sftpCurrentDirectory => 'المجلد الحالي';
+
+  @override
+  String get sftpSelectMode => 'وضع التحديد المتعدد';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return 'تم تحديد $count';
+  }
+
+  @override
+  String get sftpSelectAll => 'تحديد الكل';
+
+  @override
+  String get sftpDeselectAll => 'إلغاء تحديد الكل';
+
+  @override
+  String get sftpBatchCopy => 'نسخ';
+
+  @override
+  String get sftpBatchMove => 'نقل';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => 'تأكيد الحذف المجمع';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return 'هل أنت متأكد من حذف $count من العناصر المحددة؟';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice =>
+      'ملاحظة: لا يمكن حذف المجلدات غير الفارغة بشكل متكرر وسيتم تخطيها.';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => 'تأكيد النسخ المجمع';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return 'نسخ $count من العناصر المحددة إلى \"$directory\"؟';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => 'تأكيد النقل المجمع';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return 'نقل $count من العناصر المحددة إلى \"$directory\"؟';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => 'نتائج العملية المجمعة';
+
+  @override
+  String get sftpBatchOutcomeSkipped => 'تم التخطي (الهدف موجود أو غير مدعوم)';
+
+  @override
+  String get sftpBatchTargetRestricted =>
+      'لا يمكن تحديد المجلد الحالي أو أحد مجلداته الفرعية كوجهة';
+
+  @override
+  String get sftpSelectCurrentDir => 'اختيار هذا المجلد';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return 'تمت معالجة $count عنصر بنجاح';
+  }
+
+  @override
+  String get configMigrationTitle => 'النسخ الاحتياطي ونقل الإعدادات';
+
+  @override
+  String get configExportTitle => 'تصدير الإعدادات';
+
+  @override
+  String get configExportSubtitle =>
+      'تصدير الخوادم والوكلاء والأوامر والإشارات والتفضيلات إلى JSON';
+
+  @override
+  String get configExportDialogTitle => 'تصدير إعدادات Valhalla';
+
+  @override
+  String get configExportSuccess => 'تم تصدير الإعدادات بنجاح';
+
+  @override
+  String configExportError(String error) {
+    return 'فشل تصدير الإعدادات: $error';
+  }
+
+  @override
+  String get configImportTitle => 'استيراد الإعدادات';
+
+  @override
+  String get configImportSubtitle =>
+      'استيراد الإعدادات من ملف نسخة احتياطية بتنسيق JSON';
+
+  @override
+  String get configBackupTooLarge =>
+      'يتجاوز ملف النسخة الاحتياطية الحد الأقصى المسموح به للحجم (8 ميغابايت)';
+
+  @override
+  String get configImportPreviewTitle => 'معاينة استيراد الإعدادات';
+
+  @override
+  String get configImportPreviewDesc =>
+      'راجع المحتويات قبل الاستيراد. سيتم الاحتفاظ بالعناصر الحالية ودمجها.';
+
+  @override
+  String configImportServersCount(int count) {
+    return 'الخوادم ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return 'الوكلاء ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return 'الأوامر السريعة ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return 'الإشارات المرجعية ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      'قد تحتوي الأوامر المخصصة على نصوص برمجية حساسة أو بيانات اعتماد مضمنة. لا يتم نقل أي كلمات مرور أو مفاتيح خاصة أو بصمات خوادم موثوقة.';
+
+  @override
+  String get configImportGlobalPreferences => 'استيراد تفضيلات التطبيق العامة';
+
+  @override
+  String get configImportGlobalPreferencesDesc =>
+      'الكتابة فوق إعدادات السمة والطرفية والتنقل الحالية';
+
+  @override
+  String get configImportConfirmAction => 'تأكيد الاستيراد';
+
+  @override
+  String get configImportSuccess => 'تم استيراد الإعدادات بنجاح';
+
+  @override
+  String get configImportErrorTitle => 'ملف نسخة احتياطية غير صالح';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return 'فشل استيراد الإعدادات: $error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => 'نسخ تفاصيل التشخيص';
+
+  @override
+  String get configImportErrorCopied => 'تم نسخ تفاصيل التشخيص إلى الحافظة';
+
+  @override
+  String get configImportErrorUnsupportedVersion =>
+      'تنسيق أو إصدار النسخة الاحتياطية غير مدعوم';
+
+  @override
+  String get configImportErrorMalformed =>
+      'ملف JSON للإعدادات تالف أو غير صالح';
 }

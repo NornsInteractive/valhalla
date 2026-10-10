@@ -3564,6 +3564,321 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get downloadRevealFailed => '无法打开下载文件夹，该文件夹可能已被移动或删除。';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count 个受信任的主机公钥';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty => '未找到受信任的主机公钥';
+
+  @override
+  String get settingsKnownHostsDialogTitle => '已知主机公钥指纹';
+
+  @override
+  String get settingsHostKeyRevoke => '撤销信任';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle => '撤销主机公钥信任';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return '确定撤销 $hostPort 的主机公钥吗？该主机的活跃 SSH 连接将被断开，下次连接时需要重新验证指纹。';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied => '主机指纹已复制到剪贴板';
+
+  @override
+  String get settingsHostKeyRevoked => '已撤销主机公钥信任';
+
+  @override
+  String get settingsClearStorageSubtitle => '清除所选服务器保存的密码与私钥';
+
+  @override
+  String get settingsClearStorageDialogTitle => '清除服务器凭据';
+
+  @override
+  String get settingsClearStorageDesc =>
+      '选择要从平台安全存储中清除 SSH 密码与私钥的服务器。服务器配置与历史会话记录不会被删除。';
+
+  @override
+  String get settingsClearStorageNoServers => '暂无可用服务器';
+
+  @override
+  String get settingsClearStorageSelectAll => '全选';
+
+  @override
+  String get settingsClearStorageDeselectAll => '取消全选';
+
+  @override
+  String get settingsClearStorageConfirmTitle => '确认清除凭据';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return '确定清除所选 $count 台服务器的安全凭据吗？这些服务器的当前连接将立即断开。';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return '清除所选凭据 ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess => '所选服务器凭据已成功清除';
+
+  @override
+  String get settingsClearStorageError => '部分服务器凭据清除失败，请重试。';
+
+  @override
+  String get settingsDefaultAcpAgent => '默认 ACP Agent';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle => '当前服务器 ACP 对话的默认智能体';
+
+  @override
+  String get settingsDefaultCliAgent => '默认 CLI Agent';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle => '当前服务器 CLI 对话的默认智能体';
+
+  @override
+  String get settingsDefaultAgentAutomatic => '自动（首个可用）';
+
+  @override
+  String get settingsDefaultAgentSelectTitle => '选择默认 Agent';
+
+  @override
+  String get settingsDefaultAgentNoServer => '未选择服务器';
+
+  @override
+  String get settingsDefaultAgentNoAgents => '当前服务器未配置可用 Agent';
+
+  @override
+  String get settingsDefaultAgentSaveFailed => '更新默认 Agent 设置失败';
+
+  @override
+  String get dockerViewGroupContainers => '容器列表';
+
+  @override
+  String get dockerViewGroupProjects => 'Compose 项目';
+
+  @override
+  String get dockerProjectActionStart => '启动项目';
+
+  @override
+  String get dockerProjectActionStop => '停止项目';
+
+  @override
+  String get dockerProjectActionRestart => '重启项目';
+
+  @override
+  String get dockerProjectConfirmStopTitle => '停止 Compose 项目';
+
+  @override
+  String get dockerProjectConfirmRestartTitle => '重启 Compose 项目';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return '确定要对项目“$project”执行 $action 操作吗？将影响以下 $count 个容器：';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return '项目“$project”$action成功';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return '项目“$project”$action完成，其中 $failedCount 个容器失败';
+  }
+
+  @override
+  String get dockerNoProjects => '未发现 Docker Compose 项目';
+
+  @override
+  String get dockerMountsTitle => '挂载卷';
+
+  @override
+  String get dockerMountReadOnly => '只读';
+
+  @override
+  String get dockerMountReadWrite => '读写';
+
+  @override
+  String get sftpBookmarksTitle => '目录书签';
+
+  @override
+  String get sftpNoBookmarks => '暂无保存的目录书签';
+
+  @override
+  String get sftpAddBookmark => '添加书签';
+
+  @override
+  String get sftpRemoveBookmark => '移除书签';
+
+  @override
+  String get sftpCurrentDirectory => '当前目录';
+
+  @override
+  String get sftpSelectMode => '多选模式';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return '已选择 $count 项';
+  }
+
+  @override
+  String get sftpSelectAll => '全选';
+
+  @override
+  String get sftpDeselectAll => '取消全选';
+
+  @override
+  String get sftpBatchCopy => '复制';
+
+  @override
+  String get sftpBatchMove => '移动';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => '确认批量删除';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return '确定要删除选中的 $count 个项目吗？';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice => '注意：非空目录不支持递归删除，将被跳过。';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => '确认批量复制';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return '确定将选中的 $count 个项目复制到 \"$directory\" 吗？';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => '确认批量移动';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return '确定将选中的 $count 个项目移动到 \"$directory\" 吗？';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => '批量操作结果';
+
+  @override
+  String get sftpBatchOutcomeSkipped => '已跳过（目标已存在或不支持）';
+
+  @override
+  String get sftpBatchTargetRestricted => '不可选择自身或子目录作为目标路径';
+
+  @override
+  String get sftpSelectCurrentDir => '选择当前目录';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return '成功处理 $count 个项目';
+  }
+
+  @override
+  String get configMigrationTitle => '备份与配置迁移';
+
+  @override
+  String get configExportTitle => '导出配置';
+
+  @override
+  String get configExportSubtitle => '将服务器、Agent、快捷命令、书签及偏好设置导出为 JSON';
+
+  @override
+  String get configExportDialogTitle => '导出 Valhalla 配置';
+
+  @override
+  String get configExportSuccess => '配置导出成功';
+
+  @override
+  String configExportError(String error) {
+    return '配置导出失败：$error';
+  }
+
+  @override
+  String get configImportTitle => '导入配置';
+
+  @override
+  String get configImportSubtitle => '从备份 JSON 文件导入配置';
+
+  @override
+  String get configBackupTooLarge => '备份文件超过最大大小限制（8 MB）';
+
+  @override
+  String get configImportPreviewTitle => '预览配置导入';
+
+  @override
+  String get configImportPreviewDesc => '导入前请仔细检查内容。已有项将被保留并合并。';
+
+  @override
+  String configImportServersCount(int count) {
+    return '服务器 ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return 'Agent ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return '快捷命令 ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return '目录书签 ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      '自定义命令可能包含敏感脚本或嵌入凭据。密码、私钥及已知主机指纹不会被迁移。';
+
+  @override
+  String get configImportGlobalPreferences => '导入全局应用偏好设置';
+
+  @override
+  String get configImportGlobalPreferencesDesc => '覆盖当前主题、终端及导航偏好设置';
+
+  @override
+  String get configImportConfirmAction => '确认导入';
+
+  @override
+  String get configImportSuccess => '配置导入成功';
+
+  @override
+  String get configImportErrorTitle => '无效的配置备份文件';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return '导入配置失败：$error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => '复制诊断详情';
+
+  @override
+  String get configImportErrorCopied => '诊断详情已复制到剪贴板';
+
+  @override
+  String get configImportErrorUnsupportedVersion => '不支持的备份格式或版本';
+
+  @override
+  String get configImportErrorMalformed => '配置文件 JSON 损坏或格式错误';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -7126,4 +7441,319 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get downloadRevealFailed => '無法開啟下載資料夾，該資料夾可能已被移動或刪除。';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count 個受信任的主機公鑰';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty => '未找到受信任的主機公鑰';
+
+  @override
+  String get settingsKnownHostsDialogTitle => '已知主機公鑰指紋';
+
+  @override
+  String get settingsHostKeyRevoke => '撤銷信任';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle => '撤銷主機公鑰信任';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return '確定撤銷 $hostPort 的主機公鑰嗎？該主機的活躍 SSH 連線將被中斷，下次連線時需要重新驗證指紋。';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied => '主機指紋已複製到剪貼簿';
+
+  @override
+  String get settingsHostKeyRevoked => '已撤銷主機公鑰信任';
+
+  @override
+  String get settingsClearStorageSubtitle => '清除所選伺服器儲存的密碼與私鑰';
+
+  @override
+  String get settingsClearStorageDialogTitle => '清除伺服器憑據';
+
+  @override
+  String get settingsClearStorageDesc =>
+      '選擇要從平台安全儲存空間中清除 SSH 密碼與私鑰的伺服器。伺服器設定與歷史對話記錄不會被刪除。';
+
+  @override
+  String get settingsClearStorageNoServers => '暫無可用伺服器';
+
+  @override
+  String get settingsClearStorageSelectAll => '全選';
+
+  @override
+  String get settingsClearStorageDeselectAll => '取消全選';
+
+  @override
+  String get settingsClearStorageConfirmTitle => '確認清除憑據';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return '確定清除所選 $count 台伺服器的安全憑據嗎？這些伺服器的目前連線將立即中斷。';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return '清除所選憑據 ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess => '所選伺服器憑據已成功清除';
+
+  @override
+  String get settingsClearStorageError => '部分伺服器憑據清除失敗，請重試。';
+
+  @override
+  String get settingsDefaultAcpAgent => '預設 ACP Agent';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle => '目前伺服器 ACP 對話的預設代理';
+
+  @override
+  String get settingsDefaultCliAgent => '預設 CLI Agent';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle => '目前伺服器 CLI 對話的預設代理';
+
+  @override
+  String get settingsDefaultAgentAutomatic => '自動（首個可用）';
+
+  @override
+  String get settingsDefaultAgentSelectTitle => '選擇預設 Agent';
+
+  @override
+  String get settingsDefaultAgentNoServer => '未選擇伺服器';
+
+  @override
+  String get settingsDefaultAgentNoAgents => '目前伺服器未設定可用 Agent';
+
+  @override
+  String get settingsDefaultAgentSaveFailed => '更新預設 Agent 設定失敗';
+
+  @override
+  String get dockerViewGroupContainers => '容器列表';
+
+  @override
+  String get dockerViewGroupProjects => 'Compose 專案';
+
+  @override
+  String get dockerProjectActionStart => '啟動專案';
+
+  @override
+  String get dockerProjectActionStop => '停止專案';
+
+  @override
+  String get dockerProjectActionRestart => '重啟專案';
+
+  @override
+  String get dockerProjectConfirmStopTitle => '停止 Compose 專案';
+
+  @override
+  String get dockerProjectConfirmRestartTitle => '重啟 Compose 專案';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return '確定要對專案「$project」執行 $action 操作嗎？將影響以下 $count 個容器：';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return '專案「$project」$action成功';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return '專案「$project」$action完成，其中 $failedCount 個容器失敗';
+  }
+
+  @override
+  String get dockerNoProjects => '未發現 Docker Compose 專案';
+
+  @override
+  String get dockerMountsTitle => '掛載卷';
+
+  @override
+  String get dockerMountReadOnly => '唯讀';
+
+  @override
+  String get dockerMountReadWrite => '讀寫';
+
+  @override
+  String get sftpBookmarksTitle => '目錄書籤';
+
+  @override
+  String get sftpNoBookmarks => '尚無儲存的目錄書籤';
+
+  @override
+  String get sftpAddBookmark => '加入書籤';
+
+  @override
+  String get sftpRemoveBookmark => '移除書籤';
+
+  @override
+  String get sftpCurrentDirectory => '目前目錄';
+
+  @override
+  String get sftpSelectMode => '多選模式';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return '已選取 $count 項';
+  }
+
+  @override
+  String get sftpSelectAll => '全選';
+
+  @override
+  String get sftpDeselectAll => '取消全選';
+
+  @override
+  String get sftpBatchCopy => '複製';
+
+  @override
+  String get sftpBatchMove => '移動';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => '確認批次刪除';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return '確定要刪除選取的 $count 個項目嗎？';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice => '注意：非空目錄不支援遞迴刪除，將會被略過。';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => '確認批次複製';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return '確定將選取的 $count 個項目複製到 \"$directory\" 嗎？';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => '確認批次移動';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return '確定將選取的 $count 個項目移動到 \"$directory\" 嗎？';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => '批次操作結果';
+
+  @override
+  String get sftpBatchOutcomeSkipped => '已略過（目標已存在或不支援）';
+
+  @override
+  String get sftpBatchTargetRestricted => '不可選擇自身或子目錄作為目標路徑';
+
+  @override
+  String get sftpSelectCurrentDir => '選擇目前目錄';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return '成功處理 $count 個項目';
+  }
+
+  @override
+  String get configMigrationTitle => '備份與設定移轉';
+
+  @override
+  String get configExportTitle => '匯出設定';
+
+  @override
+  String get configExportSubtitle => '將伺服器、Agent、快速指令、書籤及偏好設定匯出為 JSON';
+
+  @override
+  String get configExportDialogTitle => '匯出 Valhalla 設定';
+
+  @override
+  String get configExportSuccess => '設定匯出成功';
+
+  @override
+  String configExportError(String error) {
+    return '設定匯出失敗：$error';
+  }
+
+  @override
+  String get configImportTitle => '匯入設定';
+
+  @override
+  String get configImportSubtitle => '從備份 JSON 檔案匯入設定';
+
+  @override
+  String get configBackupTooLarge => '備份檔案超過大小上限（8 MB）';
+
+  @override
+  String get configImportPreviewTitle => '預覽設定匯入';
+
+  @override
+  String get configImportPreviewDesc => '匯入前請檢閱內容。現有項目將會保留並合併。';
+
+  @override
+  String configImportServersCount(int count) {
+    return '伺服器 ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return 'Agent ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return '快速指令 ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return '目錄書籤 ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      '自訂指令可能包含敏感指令碼或內嵌憑證。密碼、私密金鑰及已知主機指紋不會被轉移。';
+
+  @override
+  String get configImportGlobalPreferences => '匯入全域偏好設定';
+
+  @override
+  String get configImportGlobalPreferencesDesc => '覆寫目前佈景主題、終端機與導覽偏好設定';
+
+  @override
+  String get configImportConfirmAction => '確認匯入';
+
+  @override
+  String get configImportSuccess => '設定匯入成功';
+
+  @override
+  String get configImportErrorTitle => '無效的設定備份檔案';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return '匯入設定失敗：$error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => '複製診斷詳細資訊';
+
+  @override
+  String get configImportErrorCopied => '診斷詳細資訊已複製到剪貼簿';
+
+  @override
+  String get configImportErrorUnsupportedVersion => '不支援的備份格式或版本';
+
+  @override
+  String get configImportErrorMalformed => '設定檔 JSON 損毀或格式錯誤';
 }

@@ -3745,4 +3745,343 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get downloadRevealFailed =>
       'Folder unduhan tidak dapat dibuka. Folder mungkin telah dipindahkan atau dihapus.';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count kunci host tepercaya';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty =>
+      'Tidak ada kunci host tepercaya yang ditemukan';
+
+  @override
+  String get settingsKnownHostsDialogTitle => 'Kunci Host yang Dikenal';
+
+  @override
+  String get settingsHostKeyRevoke => 'Cabut';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle => 'Cabut Kunci Host';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return 'Cabut kunci host untuk $hostPort? Koneksi SSH aktif ke host ini akan terputus dan Anda harus memverifikasi kunci pada koneksi berikutnya.';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied =>
+      'Sidik jari kunci host disalin ke papan klip';
+
+  @override
+  String get settingsHostKeyRevoked => 'Kunci host dicabut';
+
+  @override
+  String get settingsClearStorageSubtitle =>
+      'Hapus kata sandi dan kunci privat tersimpan untuk server terpilih';
+
+  @override
+  String get settingsClearStorageDialogTitle => 'Atur Ulang Kredensial Server';
+
+  @override
+  String get settingsClearStorageDesc =>
+      'Pilih server untuk menghapus kata sandi SSH dan kunci privat dari penyimpanan aman. Konfigurasi server dan riwayat obrolan tidak akan dihapus.';
+
+  @override
+  String get settingsClearStorageNoServers => 'Tidak ada server yang tersedia';
+
+  @override
+  String get settingsClearStorageSelectAll => 'Pilih Semua';
+
+  @override
+  String get settingsClearStorageDeselectAll => 'Batalkan Semua';
+
+  @override
+  String get settingsClearStorageConfirmTitle =>
+      'Konfirmasi Penghapusan Kredensial';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return 'Yakin ingin menghapus kredensial untuk $count server terpilih? Koneksi aktif akan segera diputus.';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return 'Hapus Terpilih ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess =>
+      'Kredensial server terpilih berhasil dihapus';
+
+  @override
+  String get settingsClearStorageError =>
+      'Gagal menghapus kredensial untuk beberapa server. Silakan coba lagi.';
+
+  @override
+  String get settingsDefaultAcpAgent => 'Agen ACP Default';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle =>
+      'Agen default untuk obrolan ACP di server ini';
+
+  @override
+  String get settingsDefaultCliAgent => 'Agen CLI Default';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle =>
+      'Agen default untuk obrolan CLI di server ini';
+
+  @override
+  String get settingsDefaultAgentAutomatic =>
+      'Otomatis (pertama yang tersedia)';
+
+  @override
+  String get settingsDefaultAgentSelectTitle => 'Pilih Agen Default';
+
+  @override
+  String get settingsDefaultAgentNoServer => 'Tidak ada server yang dipilih';
+
+  @override
+  String get settingsDefaultAgentNoAgents =>
+      'Tidak ada agen yang dikonfigurasi untuk server ini';
+
+  @override
+  String get settingsDefaultAgentSaveFailed =>
+      'Gagal memperbarui pengaturan agen default';
+
+  @override
+  String get dockerViewGroupContainers => 'Kontainer';
+
+  @override
+  String get dockerViewGroupProjects => 'Proyek Compose';
+
+  @override
+  String get dockerProjectActionStart => 'Mulai Proyek';
+
+  @override
+  String get dockerProjectActionStop => 'Hentikan Proyek';
+
+  @override
+  String get dockerProjectActionRestart => 'Mulai Ulang Proyek';
+
+  @override
+  String get dockerProjectConfirmStopTitle => 'Hentikan Proyek Compose';
+
+  @override
+  String get dockerProjectConfirmRestartTitle => 'Mulai Ulang Proyek Compose';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return 'Apakah Anda yakin ingin $action proyek \"$project\"? $count kontainer berikut akan terpengaruh:';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return 'Proyek \"$project\" $action berhasil diselesaikan';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return 'Proyek \"$project\" $action selesai dengan $failedCount kegagalan';
+  }
+
+  @override
+  String get dockerNoProjects =>
+      'Tidak ada proyek Docker Compose yang ditemukan';
+
+  @override
+  String get dockerMountsTitle => 'Titik Mount';
+
+  @override
+  String get dockerMountReadOnly => 'Hanya baca';
+
+  @override
+  String get dockerMountReadWrite => 'Baca/Tulis';
+
+  @override
+  String get sftpBookmarksTitle => 'Bookmark Direktori';
+
+  @override
+  String get sftpNoBookmarks => 'Belum ada bookmark tersimpan';
+
+  @override
+  String get sftpAddBookmark => 'Tambah Bookmark';
+
+  @override
+  String get sftpRemoveBookmark => 'Hapus Bookmark';
+
+  @override
+  String get sftpCurrentDirectory => 'Direktori Saat Ini';
+
+  @override
+  String get sftpSelectMode => 'Mode Pilih Banyak';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return '$count dipilih';
+  }
+
+  @override
+  String get sftpSelectAll => 'Pilih Semua';
+
+  @override
+  String get sftpDeselectAll => 'Batal Pilih Semua';
+
+  @override
+  String get sftpBatchCopy => 'Salin';
+
+  @override
+  String get sftpBatchMove => 'Pindahkan';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => 'Konfirmasi Penghapusan Massal';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return 'Yakin ingin menghapus $count item yang dipilih?';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice =>
+      'Catatan: Direktori yang tidak kosong tidak dapat dihapus secara rekursif dan akan dilewati.';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => 'Konfirmasi Salin Massal';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return 'Salin $count item yang dipilih ke \"$directory\"?';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => 'Konfirmasi Pindah Massal';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return 'Pindahkan $count item yang dipilih ke \"$directory\"?';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => 'Hasil Operasi Massal';
+
+  @override
+  String get sftpBatchOutcomeSkipped =>
+      'Dilewati (target sudah ada atau tidak didukung)';
+
+  @override
+  String get sftpBatchTargetRestricted =>
+      'Tidak dapat memilih direktori ini atau sub-direktorinya sebagai tujuan';
+
+  @override
+  String get sftpSelectCurrentDir => 'Pilih Direktori Ini';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return 'Berhasil memproses $count item';
+  }
+
+  @override
+  String get configMigrationTitle => 'Pencadangan & Migrasi Konfigurasi';
+
+  @override
+  String get configExportTitle => 'Ekspor Konfigurasi';
+
+  @override
+  String get configExportSubtitle =>
+      'Ekspor server, agen, perintah, bookmark, dan preferensi ke JSON';
+
+  @override
+  String get configExportDialogTitle => 'Ekspor Konfigurasi Valhalla';
+
+  @override
+  String get configExportSuccess => 'Konfigurasi berhasil diekspor';
+
+  @override
+  String configExportError(String error) {
+    return 'Gagal mengekspor konfigurasi: $error';
+  }
+
+  @override
+  String get configImportTitle => 'Impor Konfigurasi';
+
+  @override
+  String get configImportSubtitle =>
+      'Impor konfigurasi dari file JSON cadangan';
+
+  @override
+  String get configBackupTooLarge =>
+      'File cadangan melebihi batas ukuran maksimum (8 MB)';
+
+  @override
+  String get configImportPreviewTitle => 'Pratinjau Impor Konfigurasi';
+
+  @override
+  String get configImportPreviewDesc =>
+      'Tinjau konten sebelum mengimpor. Item yang ada akan dipertahankan dan digabungkan.';
+
+  @override
+  String configImportServersCount(int count) {
+    return 'Server ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return 'Agen ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return 'Perintah Cepat ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return 'Bookmark ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      'Perintah kustom mungkin berisi skrip sensitif atau kredensial tertanam. Tidak ada kata sandi, kunci privat, atau sidik jari host tepercaya yang ditransfer.';
+
+  @override
+  String get configImportGlobalPreferences =>
+      'Impor preferensi aplikasi global';
+
+  @override
+  String get configImportGlobalPreferencesDesc =>
+      'Menimpa pengaturan tema, terminal, dan navigasi saat ini';
+
+  @override
+  String get configImportConfirmAction => 'Konfirmasi Impor';
+
+  @override
+  String get configImportSuccess => 'Konfigurasi berhasil diimpor';
+
+  @override
+  String get configImportErrorTitle => 'File Cadangan Konfigurasi Tidak Valid';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return 'Gagal mengimpor konfigurasi: $error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => 'Salin Detail Diagnostik';
+
+  @override
+  String get configImportErrorCopied =>
+      'Detail diagnostik disalin ke papan klip';
+
+  @override
+  String get configImportErrorUnsupportedVersion =>
+      'Format atau versi cadangan tidak didukung';
+
+  @override
+  String get configImportErrorMalformed =>
+      'JSON konfigurasi rusak atau tidak sesuai format';
 }

@@ -33,6 +33,7 @@ import '../logging/sanitizer.dart';
 import 'agent_registry_provider.dart';
 import 'server_provider.dart';
 import 'storage_providers.dart';
+import 'security_settings_provider.dart';
 import 'app_visibility_provider.dart';
 
 /// 构造 ACP 传输：在生产环境中通过 SSH exec 通道启动 profile 的 `acpCommand`。
@@ -1120,7 +1121,9 @@ class AiChatNotifier extends Notifier<AiChatState> {
             adapter.agentCapabilities.promptCapabilities?.embeddedContext ==
             true,
         capabilities: _acpCapabilities(adapter),
-        runSettings: _confirmedSettings(adapter, state.runSettings),
+        runSettings: state.isApplyingSettings
+            ? state.runSettings
+            : _confirmedSettings(adapter, state.runSettings),
       );
     } else if (event is ACPAccountEvent) {
       state = state.copyWith(account: event.account);
@@ -1575,6 +1578,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
     await ref
         .read(localStorageServiceProvider)
         .setDefaultAgentId(serverId, agentId, cli: false);
+    if (ref.mounted) ref.invalidate(defaultAgentSettingsProvider);
   }
 
   Future<void> selectSession(String sessionId) async {
@@ -2281,15 +2285,24 @@ class AiChatNotifier extends Notifier<AiChatState> {
     final agentId = state.activeAgentProfile?.id;
     if (serverId == null || agentId == null) return;
     final epoch = _requestEpoch;
+    final previousSettings = state.runSettings;
+    final storage = ref.read(localStorageServiceProvider);
+    final previousDefault = storage.getChatRunDefault(serverId, agentId);
+    final previousSession = state.activeSession;
+    var defaultSaved = false;
+    var sessionSaveAttempted = false;
+    ACPClientAdapter? applyingAdapter;
+    ChatRunSettings? rollbackSettings;
     state = state.copyWith(isApplyingSettings: true, clearError: true);
     try {
       final adapter = _currentAdapter;
       if (state.activeSession == null) {
         // Draft preferences are applied only after session/new at first send.
-        state = state.copyWith(runSettings: settings);
         await ref
             .read(localStorageServiceProvider)
             .saveChatRunDefault(serverId, agentId, settings);
+        if (!ref.mounted || epoch != _requestEpoch) return;
+        state = state.copyWith(runSettings: settings);
         return;
       }
       if (adapter == null) {
@@ -2299,31 +2312,74 @@ class AiChatNotifier extends Notifier<AiChatState> {
       // never to discover the list offered in the model selector.
       await adapter.prepareSession();
       if (!ref.mounted || epoch != _requestEpoch) return;
+      applyingAdapter = adapter;
+      rollbackSettings = _confirmedSettings(adapter, previousSettings);
       await _applyAcpSettings(adapter, settings);
       if (!ref.mounted || epoch != _requestEpoch) return;
       settings = _confirmedSettings(adapter, settings);
       await ref
           .read(localStorageServiceProvider)
           .saveChatRunDefault(serverId, agentId, settings);
+      defaultSaved = true;
       if (!ref.mounted || epoch != _requestEpoch) return;
       final session = state.activeSession;
       if (session != null) {
         final updated = session.copyWith(
           agentRunSettings: {...session.agentRunSettings, agentId: settings},
         );
-        _updateSessionInState(updated);
+        sessionSaveAttempted = true;
         await ref.read(chatRepositoryProvider).saveSession(updated);
+        if (!ref.mounted || epoch != _requestEpoch) return;
+        _updateSessionInState(updated);
       }
       if (!ref.mounted || epoch != _requestEpoch) return;
       state = state.copyWith(runSettings: settings);
     } catch (error) {
+      Object reportedError = error;
+      if (ref.mounted && epoch == _requestEpoch && defaultSaved) {
+        try {
+          await storage.saveChatRunDefault(serverId, agentId, previousDefault);
+          if (sessionSaveAttempted && previousSession != null) {
+            await ref.read(chatRepositoryProvider).saveSession(previousSession);
+          }
+        } catch (rollbackError) {
+          reportedError = StateError(
+            'ACP_SETTINGS_STORAGE_ROLLBACK_FAILED: $error; $rollbackError',
+          );
+        }
+      }
+      if (ref.mounted &&
+          epoch == _requestEpoch &&
+          applyingAdapter != null &&
+          rollbackSettings != null) {
+        try {
+          await _applyAcpSettings(applyingAdapter, rollbackSettings);
+          if (ref.mounted && epoch == _requestEpoch) {
+            state = state.copyWith(runSettings: previousSettings);
+          }
+        } catch (rollbackError) {
+          reportedError = StateError(
+            'ACP_SETTINGS_ROLLBACK_FAILED: $reportedError; $rollbackError',
+          );
+          if (ref.mounted && epoch == _requestEpoch) {
+            state = state.copyWith(
+              runSettings: _confirmedSettings(
+                applyingAdapter,
+                previousSettings,
+              ),
+              settingsStale: true,
+            );
+          }
+        }
+      }
       if (ref.mounted && epoch == _requestEpoch) {
         state = state.copyWith(
-          lastErrorCode: LogSanitizer.sanitize(error.toString()),
+          lastErrorCode: LogSanitizer.sanitize(reportedError.toString()),
           diagnostics: _currentAdapter?.diagnostics,
         );
       }
-      rethrow;
+      if (identical(reportedError, error)) rethrow;
+      throw reportedError;
     } finally {
       if (ref.mounted && epoch == _requestEpoch) {
         state = state.copyWith(isApplyingSettings: false);
@@ -2408,6 +2464,8 @@ class AiChatNotifier extends Notifier<AiChatState> {
     final repo = ref.read(chatRepositoryProvider);
     state = state.copyWith(
       isGenerating: false,
+      // The epoch also cancels history loads; their stale finally cannot clear it.
+      isLoadingMessages: false,
       isLoadingSettings: false,
       isApplyingSettings: false,
       clearPermission: true,

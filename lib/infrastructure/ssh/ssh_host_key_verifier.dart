@@ -60,7 +60,7 @@ class SSHHostKeyVerifier {
     }
 
     // 首次连接该主机
-    var approved = true;
+    var approved = false;
     if (onConfirmFirstTime != null) {
       approved = await onConfirmFirstTime(hostPort, keyType, fingerprintSha256);
     }

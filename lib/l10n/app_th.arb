@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "ไม่สามารถโหลดสัญญาอนุญาตได้ โปรดติดต่อ norns.soft@gmail.com",
   "aboutLinkFailed": "ไม่สามารถเปิดลิงก์ได้ โปรดเปิด https://norns.cc.cd ในเบราว์เซอร์",
   "downloadReveal": "แสดงใน File Explorer",
-  "downloadRevealFailed": "ไม่สามารถเปิดโฟลเดอร์ดาวน์โหลดได้ โฟลเดอร์อาจถูกย้ายหรือลบแล้ว"
+  "downloadRevealFailed": "ไม่สามารถเปิดโฟลเดอร์ดาวน์โหลดได้ โฟลเดอร์อาจถูกย้ายหรือลบแล้ว",
+  "settingsKnownHostsSubtitle": "{count} คีย์โฮสต์ที่เชื่อถือได้",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "ไม่พบคีย์โฮสต์ที่เชื่อถือได้",
+  "settingsKnownHostsDialogTitle": "คีย์โฮสต์ที่รู้จัก",
+  "settingsHostKeyRevoke": "เพิกถอน",
+  "settingsHostKeyRevokeConfirmTitle": "เพิกถอนคีย์โฮสต์",
+  "settingsHostKeyRevokeConfirmMessage": "เพิกถอนคีย์โฮสต์สำหรับ {hostPort} หรือไม่? การเชื่อมต่อ SSH ที่ใช้งานอยู่กับโฮสต์นี้จะถูกตัดการเชื่อมต่อ และคุณต้องยืนยันคีย์อีกครั้งในการเชื่อมต่อครั้งถัดไป",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "คัดลอกลายนิ้วมือคีย์โฮสต์ไปยังคลิปบอร์ดแล้ว",
+  "settingsHostKeyRevoked": "เพิกถอนคีย์โฮสต์แล้ว",
+  "settingsClearStorageSubtitle": "ล้างรหัสผ่านและคีย์ส่วนตัวที่บันทึกไว้สำหรับเซิร์ฟเวอร์ที่เลือก",
+  "settingsClearStorageDialogTitle": "รีเซ็ตข้อมูลประจำตัวเซิร์ฟเวอร์",
+  "settingsClearStorageDesc": "เลือกเซิร์ฟเวอร์เพื่อล้างรหัสผ่าน SSH และคีย์ส่วนตัวจากที่จัดเก็บข้อมูลที่ปลอดภัย การกำหนดค่าเซิร์ฟเวอร์และประวัติการสนทนาจะไม่ถูกลบ",
+  "settingsClearStorageNoServers": "ไม่มีเซิร์ฟเวอร์ที่พร้อมใช้งาน",
+  "settingsClearStorageSelectAll": "เลือกทั้งหมด",
+  "settingsClearStorageDeselectAll": "ยกเลิกการเลือกทั้งหมด",
+  "settingsClearStorageConfirmTitle": "ยืนยันการรีเซ็ตข้อมูลประจำตัว",
+  "settingsClearStorageConfirmMessage": "คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลประจำตัวสำหรับ {count} เซิร์ฟเวอร์ที่เลือก? การเชื่อมต่อที่ใช้งานอยู่จะถูกตัดทันที",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "ล้างรายการที่เลือก ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "ล้างข้อมูลประจำตัวเซิร์ฟเวอร์ที่เลือกเรียบร้อยแล้ว",
+  "settingsClearStorageError": "ไม่สามารถล้างข้อมูลประจำตัวของบางเซิร์ฟเวอร์ได้ โปรดลองอีกครั้ง",
+  "settingsDefaultAcpAgent": "เอเจนต์ ACP เริ่มต้น",
+  "settingsDefaultAcpAgentSubtitle": "เอเจนต์เริ่มต้นสำหรับการสนทนา ACP บนเซิร์ฟเวอร์นี้",
+  "settingsDefaultCliAgent": "เอเจนต์ CLI เริ่มต้น",
+  "settingsDefaultCliAgentSubtitle": "เอเจนต์เริ่มต้นสำหรับการสนทนา CLI บนเซิร์ฟเวอร์นี้",
+  "settingsDefaultAgentAutomatic": "อัตโนมัติ (รายการแรกที่ใช้งานได้)",
+  "settingsDefaultAgentSelectTitle": "เลือกเอเจนต์เริ่มต้น",
+  "settingsDefaultAgentNoServer": "ไม่ได้เลือกเซิร์ฟเวอร์",
+  "settingsDefaultAgentNoAgents": "ไม่มีเอเจนต์ที่กำหนดค่าไว้สำหรับเซิร์ฟเวอร์นี้",
+  "settingsDefaultAgentSaveFailed": "ไม่สามารถอัปเดตการตั้งค่าเอเจนต์เริ่มต้นได้",
+  "dockerViewGroupContainers": "คอนเทนเนอร์",
+  "dockerViewGroupProjects": "โปรเจกต์ Compose",
+  "dockerProjectActionStart": "เริ่มโปรเจกต์",
+  "dockerProjectActionStop": "หยุดโปรเจกต์",
+  "dockerProjectActionRestart": "รีสตาร์ทโปรเจกต์",
+  "dockerProjectConfirmStopTitle": "หยุดโปรเจกต์ Compose",
+  "dockerProjectConfirmRestartTitle": "รีสตาร์ทโปรเจกต์ Compose",
+  "dockerProjectConfirmMessage": "คุณแน่ใจหรือไม่ว่าต้องการ {action} โปรเจกต์ \"{project}\"? จะมีผลต่อ {count} คอนเทนเนอร์ต่อไปนี้:",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "โปรเจกต์ \"{project}\" {action} สำเร็จ",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "โปรเจกต์ \"{project}\" {action} เสร็จสมบูรณ์โดยมีข้อผิดพลาด {failedCount} รายการ",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "ไม่พบโปรเจกต์ Docker Compose",
+  "dockerMountsTitle": "จุดเชื่อมต่อ (Mounts)",
+  "dockerMountReadOnly": "อ่านอย่างเดียว",
+  "dockerMountReadWrite": "อ่าน/เขียน",
+  "sftpBookmarksTitle": "บุ๊กมาร์กโฟลเดอร์",
+  "sftpNoBookmarks": "ยังไม่มีบุ๊กมาร์กที่บันทึกไว้",
+  "sftpAddBookmark": "เพิ่มบุ๊กมาร์ก",
+  "sftpRemoveBookmark": "ลบบุ๊กมาร์ก",
+  "sftpCurrentDirectory": "ไดเรกทอรีปัจจุบัน",
+  "sftpSelectMode": "โหมดเลือกหลายรายการ",
+  "sftpSelectedCount": "เลือกแล้ว {count} รายการ",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "เลือกทั้งหมด",
+  "sftpDeselectAll": "ยกเลิกการเลือกทั้งหมด",
+  "sftpBatchCopy": "คัดลอก",
+  "sftpBatchMove": "ย้าย",
+  "sftpBatchDeleteConfirmTitle": "ยืนยันการลบแบบกลุ่ม",
+  "sftpBatchDeleteConfirmMessage": "คุณแน่ใจหรือไม่ว่าต้องการลบ {count} รายการที่เลือก?",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "หมายเหตุ: โฟลเดอร์ที่ไม่ว่างเปล่าจะไม่สามารถลบแบบเรียกซ้ำได้และจะถูกข้าม",
+  "sftpBatchCopyConfirmTitle": "ยืนยันการคัดลอกแบบกลุ่ม",
+  "sftpBatchCopyConfirmMessage": "คัดลอก {count} รายการที่เลือกไปยัง \"{directory}\" หรือไม่?",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "ยืนยันการย้ายแบบกลุ่ม",
+  "sftpBatchMoveConfirmMessage": "ย้าย {count} รายการที่เลือกไปยัง \"{directory}\" หรือไม่?",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "ผลลัพธ์การดำเนินการแบบกลุ่ม",
+  "sftpBatchOutcomeSkipped": "ข้ามแล้ว (มีเป้าหมายอยู่แล้วหรือไม่รองรับ)",
+  "sftpBatchTargetRestricted": "ไม่สามารถเลือกไดเรกทอรีปัจจุบันหรือไดเรกทอรีย่อยเป็นเป้าหมายได้",
+  "sftpSelectCurrentDir": "เลือกไดเรกทอรีนี้",
+  "sftpBatchOperationSuccess": "ประมวลผล {count} รายการเรียบร้อยแล้ว",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "การสำรองข้อมูลและการย้ายการกำหนดค่า",
+  "configExportTitle": "ส่งออกการกำหนดค่า",
+  "configExportSubtitle": "ส่งออกเซิร์ฟเวอร์, เอเจนต์, คำสั่งด่วน, บุ๊กมาร์ก และการตั้งค่าเป็น JSON",
+  "configExportDialogTitle": "ส่งออกการกำหนดค่า Valhalla",
+  "configExportSuccess": "ส่งออกการกำหนดค่าสำเร็จ",
+  "configExportError": "ส่งออกการกำหนดค่าไม่สำเร็จ: {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "นำเข้าการกำหนดค่า",
+  "configImportSubtitle": "นำเข้าการกำหนดค่าจากไฟล์สำรองข้อมูล JSON",
+  "configBackupTooLarge": "ไฟล์สำรองข้อมูลมีขนาดเกินขีดจำกัดสูงสุด (8 MB)",
+  "configImportPreviewTitle": "ดูตัวอย่างการนำเข้าการกำหนดค่า",
+  "configImportPreviewDesc": "ตรวจสอบเนื้อหาก่อนนำเข้า รายการที่มีอยู่จะถูกเก็บไว้และผสานเข้าด้วยกัน",
+  "configImportServersCount": "เซิร์ฟเวอร์ ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "เอเจนต์ ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "คำสั่งด่วน ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "บุ๊กมาร์ก ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "คำสั่งที่กำหนดเองอาจมีสคริปต์ที่ละเอียดอ่อนหรือข้อมูลรับรองที่ฝังอยู่ ไม่มีการถ่ายโอนรหัสผ่าน คีย์ส่วนตัว หรือลายนิ้วมือโฮสต์ที่เชื่อถือได้",
+  "configImportGlobalPreferences": "นำเข้าการตั้งค่าแอปส่วนกลาง",
+  "configImportGlobalPreferencesDesc": "เขียนทับการตั้งค่าธีม เทอร์มินัล และการนำทางปัจจุบัน",
+  "configImportConfirmAction": "ยืนยันการนำเข้า",
+  "configImportSuccess": "นำเข้าการกำหนดค่าสำเร็จ",
+  "configImportErrorTitle": "ไฟล์สำรองข้อมูลการกำหนดค่าไม่ถูกต้อง",
+  "configImportErrorGeneric": "นำเข้าการกำหนดค่าไม่สำเร็จ: {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "คัดลอกรายละเอียดการวินิจฉัย",
+  "configImportErrorCopied": "คัดลอกรายละเอียดการวินิจฉัยไปยังคลิปบอร์ดแล้ว",
+  "configImportErrorUnsupportedVersion": "ไม่รองรับรูปแบบหรือเวอร์ชันของไฟล์สำรองข้อมูล",
+  "configImportErrorMalformed": "ไฟล์ JSON การกำหนดค่าเสียหายหรือไม่ถูกต้อง"
 }

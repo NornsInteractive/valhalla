@@ -6928,6 +6928,556 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to open the download folder. It may have been moved or deleted.'**
   String get downloadRevealFailed;
+
+  /// No description provided for @settingsKnownHostsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} trusted host keys'**
+  String settingsKnownHostsSubtitle(int count);
+
+  /// No description provided for @settingsKnownHostsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No trusted host keys found'**
+  String get settingsKnownHostsEmpty;
+
+  /// No description provided for @settingsKnownHostsDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Known Host Keys'**
+  String get settingsKnownHostsDialogTitle;
+
+  /// No description provided for @settingsHostKeyRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get settingsHostKeyRevoke;
+
+  /// No description provided for @settingsHostKeyRevokeConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke Host Key'**
+  String get settingsHostKeyRevokeConfirmTitle;
+
+  /// No description provided for @settingsHostKeyRevokeConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke host key for {hostPort}? Active SSH connections to this host will be disconnected, and you must verify the key on next connection.'**
+  String settingsHostKeyRevokeConfirmMessage(String hostPort);
+
+  /// No description provided for @settingsHostKeyFingerprintCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Host key fingerprint copied to clipboard'**
+  String get settingsHostKeyFingerprintCopied;
+
+  /// No description provided for @settingsHostKeyRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Host key revoked'**
+  String get settingsHostKeyRevoked;
+
+  /// No description provided for @settingsClearStorageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear saved passwords and private keys for selected servers'**
+  String get settingsClearStorageSubtitle;
+
+  /// No description provided for @settingsClearStorageDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Server Credentials'**
+  String get settingsClearStorageDialogTitle;
+
+  /// No description provided for @settingsClearStorageDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Select servers to clear locally stored SSH passwords, sudo passwords, and private keys from secure storage. Private key users must re-add their key via Edit Server after clearing (source key files are not deleted). Server configurations and chat histories will not be deleted.'**
+  String get settingsClearStorageDesc;
+
+  /// No description provided for @settingsClearStorageNoServers.
+  ///
+  /// In en, this message translates to:
+  /// **'No servers available'**
+  String get settingsClearStorageNoServers;
+
+  /// No description provided for @settingsClearStorageSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get settingsClearStorageSelectAll;
+
+  /// No description provided for @settingsClearStorageDeselectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect All'**
+  String get settingsClearStorageDeselectAll;
+
+  /// No description provided for @settingsClearStorageConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Credential Reset'**
+  String get settingsClearStorageConfirmTitle;
+
+  /// No description provided for @settingsClearStorageConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to clear credentials for {count} selected server(s)? Active connections to these servers will be disconnected immediately.'**
+  String settingsClearStorageConfirmMessage(int count);
+
+  /// No description provided for @settingsClearStorageAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Selected ({count})'**
+  String settingsClearStorageAction(int count);
+
+  /// No description provided for @settingsClearStorageSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected server credentials cleared successfully'**
+  String get settingsClearStorageSuccess;
+
+  /// No description provided for @settingsClearStorageError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to clear credentials for some servers. Please try again.'**
+  String get settingsClearStorageError;
+
+  /// No description provided for @settingsDefaultAcpAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Default ACP Agent'**
+  String get settingsDefaultAcpAgent;
+
+  /// No description provided for @settingsDefaultAcpAgentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Default agent for ACP chat on this server'**
+  String get settingsDefaultAcpAgentSubtitle;
+
+  /// No description provided for @settingsDefaultCliAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Default CLI Agent'**
+  String get settingsDefaultCliAgent;
+
+  /// No description provided for @settingsDefaultCliAgentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Default agent for CLI chat on this server'**
+  String get settingsDefaultCliAgentSubtitle;
+
+  /// No description provided for @settingsDefaultAgentAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic (first available)'**
+  String get settingsDefaultAgentAutomatic;
+
+  /// No description provided for @settingsDefaultAgentSelectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Default Agent'**
+  String get settingsDefaultAgentSelectTitle;
+
+  /// No description provided for @settingsDefaultAgentNoServer.
+  ///
+  /// In en, this message translates to:
+  /// **'No server selected'**
+  String get settingsDefaultAgentNoServer;
+
+  /// No description provided for @settingsDefaultAgentNoAgents.
+  ///
+  /// In en, this message translates to:
+  /// **'No agents configured for this server'**
+  String get settingsDefaultAgentNoAgents;
+
+  /// No description provided for @settingsDefaultAgentSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update default agent setting'**
+  String get settingsDefaultAgentSaveFailed;
+
+  /// No description provided for @dockerViewGroupContainers.
+  ///
+  /// In en, this message translates to:
+  /// **'Containers'**
+  String get dockerViewGroupContainers;
+
+  /// No description provided for @dockerViewGroupProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Compose Projects'**
+  String get dockerViewGroupProjects;
+
+  /// No description provided for @dockerProjectActionStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Project'**
+  String get dockerProjectActionStart;
+
+  /// No description provided for @dockerProjectActionStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Project'**
+  String get dockerProjectActionStop;
+
+  /// No description provided for @dockerProjectActionRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart Project'**
+  String get dockerProjectActionRestart;
+
+  /// No description provided for @dockerProjectConfirmStopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Compose Project'**
+  String get dockerProjectConfirmStopTitle;
+
+  /// No description provided for @dockerProjectConfirmRestartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart Compose Project'**
+  String get dockerProjectConfirmRestartTitle;
+
+  /// No description provided for @dockerProjectConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to {action} project \"{project}\"? The following {count} containers will be affected:'**
+  String dockerProjectConfirmMessage(String action, String project, int count);
+
+  /// No description provided for @dockerProjectActionSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Project \"{project}\" {action} completed successfully'**
+  String dockerProjectActionSuccess(String project, String action);
+
+  /// No description provided for @dockerProjectActionPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Project \"{project}\" {action} completed with {failedCount} failure(s)'**
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  );
+
+  /// No description provided for @dockerNoProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'No Docker Compose projects found'**
+  String get dockerNoProjects;
+
+  /// No description provided for @dockerMountsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mounts'**
+  String get dockerMountsTitle;
+
+  /// No description provided for @dockerMountReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only'**
+  String get dockerMountReadOnly;
+
+  /// No description provided for @dockerMountReadWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Read/Write'**
+  String get dockerMountReadWrite;
+
+  /// No description provided for @sftpBookmarksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory Bookmarks'**
+  String get sftpBookmarksTitle;
+
+  /// No description provided for @sftpNoBookmarks.
+  ///
+  /// In en, this message translates to:
+  /// **'No directory bookmarks saved yet'**
+  String get sftpNoBookmarks;
+
+  /// No description provided for @sftpAddBookmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark this folder'**
+  String get sftpAddBookmark;
+
+  /// No description provided for @sftpRemoveBookmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove bookmark'**
+  String get sftpRemoveBookmark;
+
+  /// No description provided for @sftpCurrentDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Directory'**
+  String get sftpCurrentDirectory;
+
+  /// No description provided for @sftpSelectMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Multiple Files'**
+  String get sftpSelectMode;
+
+  /// No description provided for @sftpSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String sftpSelectedCount(int count);
+
+  /// No description provided for @sftpSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get sftpSelectAll;
+
+  /// No description provided for @sftpDeselectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect All'**
+  String get sftpDeselectAll;
+
+  /// No description provided for @sftpBatchCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get sftpBatchCopy;
+
+  /// No description provided for @sftpBatchMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move'**
+  String get sftpBatchMove;
+
+  /// No description provided for @sftpBatchDeleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Batch Deletion'**
+  String get sftpBatchDeleteConfirmTitle;
+
+  /// No description provided for @sftpBatchDeleteConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {count} selected item(s)?'**
+  String sftpBatchDeleteConfirmMessage(int count);
+
+  /// No description provided for @sftpBatchDeleteNonEmptyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Notice: Non-empty directories cannot be deleted recursively and will be skipped.'**
+  String get sftpBatchDeleteNonEmptyNotice;
+
+  /// No description provided for @sftpBatchCopyConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Batch Copy'**
+  String get sftpBatchCopyConfirmTitle;
+
+  /// No description provided for @sftpBatchCopyConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy {count} selected item(s) to \"{directory}\"?'**
+  String sftpBatchCopyConfirmMessage(int count, String directory);
+
+  /// No description provided for @sftpBatchMoveConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Batch Move'**
+  String get sftpBatchMoveConfirmTitle;
+
+  /// No description provided for @sftpBatchMoveConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Move {count} selected item(s) to \"{directory}\"?'**
+  String sftpBatchMoveConfirmMessage(int count, String directory);
+
+  /// No description provided for @sftpBatchResultsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch Operation Results'**
+  String get sftpBatchResultsTitle;
+
+  /// No description provided for @sftpBatchOutcomeSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped (Target exists or not supported)'**
+  String get sftpBatchOutcomeSkipped;
+
+  /// No description provided for @sftpBatchTargetRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot select current or descendant directories as target'**
+  String get sftpBatchTargetRestricted;
+
+  /// No description provided for @sftpSelectCurrentDir.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose This Directory'**
+  String get sftpSelectCurrentDir;
+
+  /// No description provided for @sftpBatchOperationSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully processed {count} item(s)'**
+  String sftpBatchOperationSuccess(int count);
+
+  /// No description provided for @configMigrationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup & Configuration Migration'**
+  String get configMigrationTitle;
+
+  /// No description provided for @configExportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Configuration'**
+  String get configExportTitle;
+
+  /// No description provided for @configExportSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export servers, agents, commands, bookmarks and preferences to JSON'**
+  String get configExportSubtitle;
+
+  /// No description provided for @configExportDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Valhalla Configuration'**
+  String get configExportDialogTitle;
+
+  /// No description provided for @configExportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration exported successfully'**
+  String get configExportSuccess;
+
+  /// No description provided for @configExportError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to export configuration: {error}'**
+  String configExportError(String error);
+
+  /// No description provided for @configImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Configuration'**
+  String get configImportTitle;
+
+  /// No description provided for @configImportSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import configuration from a backup JSON file'**
+  String get configImportSubtitle;
+
+  /// No description provided for @configBackupTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup file exceeds maximum allowed size (8 MB)'**
+  String get configBackupTooLarge;
+
+  /// No description provided for @configImportPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview Configuration Import'**
+  String get configImportPreviewTitle;
+
+  /// No description provided for @configImportPreviewDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Review contents before importing. Existing items will be preserved and merged.'**
+  String get configImportPreviewDesc;
+
+  /// No description provided for @configImportServersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Servers ({count})'**
+  String configImportServersCount(int count);
+
+  /// No description provided for @configImportAgentsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Agents ({count})'**
+  String configImportAgentsCount(int count);
+
+  /// No description provided for @configImportCommandsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Commands ({count})'**
+  String configImportCommandsCount(int count);
+
+  /// No description provided for @configImportBookmarksCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmarks ({count})'**
+  String configImportBookmarksCount(int count);
+
+  /// No description provided for @configImportSecretWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom commands may contain sensitive scripts or embedded credentials. No passwords, private keys, or trusted fingerprints are transferred.'**
+  String get configImportSecretWarning;
+
+  /// No description provided for @configImportGlobalPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Import global application preferences'**
+  String get configImportGlobalPreferences;
+
+  /// No description provided for @configImportGlobalPreferencesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Overwrites current theme, terminal, and navigation settings'**
+  String get configImportGlobalPreferencesDesc;
+
+  /// No description provided for @configImportConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Import'**
+  String get configImportConfirmAction;
+
+  /// No description provided for @configImportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration imported successfully'**
+  String get configImportSuccess;
+
+  /// No description provided for @configImportErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid Configuration Backup'**
+  String get configImportErrorTitle;
+
+  /// No description provided for @configImportErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to import configuration: {error}'**
+  String configImportErrorGeneric(String error);
+
+  /// No description provided for @configImportErrorCopyDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Diagnostic Details'**
+  String get configImportErrorCopyDetails;
+
+  /// No description provided for @configImportErrorCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostic details copied to clipboard'**
+  String get configImportErrorCopied;
+
+  /// No description provided for @configImportErrorUnsupportedVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported backup format or version'**
+  String get configImportErrorUnsupportedVersion;
+
+  /// No description provided for @configImportErrorMalformed.
+  ///
+  /// In en, this message translates to:
+  /// **'Malformed or damaged configuration JSON'**
+  String get configImportErrorMalformed;
 }
 
 class _AppLocalizationsDelegate

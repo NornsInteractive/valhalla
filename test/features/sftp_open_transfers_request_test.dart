@@ -42,9 +42,24 @@ class _FakeSftpNotifier extends SftpNotifier {
 }
 
 class _TestActiveServerNotifier extends ActiveServerNotifier {
+  final ServerProfile? _server;
+  _TestActiveServerNotifier([this._server]);
+
   @override
-  ServerProfile? build() => null;
+  ServerProfile? build() => _server;
 }
+
+/// Standalone SFTP surface 直接 watch [fileBookmarksProvider]，后者依赖已选中的
+/// 服务器与已初始化的 `LocalStorageService`。固定成一台已连接的服务器，
+/// 保证测试环境与真实 connected srv-1 状态一致（不发起真实 SSH）。
+const _kConnectedServer = ServerProfile(
+  id: 'srv-1',
+  name: 'Test Server',
+  host: '10.0.0.1',
+  port: 22,
+  username: 'root',
+  authType: AuthType.password,
+);
 
 /// The shell and the SFTP surface read the connection state; the real
 /// connection notifier builds the SSH client manager, which needs a live
@@ -66,6 +81,9 @@ class _TestValueNotifier extends ValueNotifier<int> {
 
   void forceNotify() => notifyListeners();
 }
+
+/// SharedPreferences 只初始化一次；后续 `_buildSftpApp` 同步复用该实例。
+late final LocalStorageService _storage;
 
 Future<ProviderContainer> _pumpShell(
   WidgetTester tester, {
@@ -111,6 +129,10 @@ Future<ProviderContainer> _pumpShell(
 Widget _buildSftpApp({ValueListenable<int>? openTransfersRequest}) {
   return ProviderScope(
     overrides: [
+      localStorageServiceProvider.overrideWithValue(_storage),
+      activeServerProvider.overrideWith(
+        () => _TestActiveServerNotifier(_kConnectedServer),
+      ),
       sftpProvider.overrideWith(_FakeSftpNotifier.new),
       serverConnectionProvider.overrideWith(_TestServerConnectionNotifier.new),
     ],
@@ -125,6 +147,11 @@ Widget _buildSftpApp({ValueListenable<int>? openTransfersRequest}) {
 }
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    _storage = await LocalStorageService.init();
+  });
+
   group('openTransfersRequest 链路测试', () {
     testWidgets('1. openTransfers: true 时通过 MainShell 自动切到文件页并弹出传输列表', (
       tester,

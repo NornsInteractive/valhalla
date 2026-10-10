@@ -9,7 +9,14 @@ import '../../core/services/app_diagnostics.dart';
 class SftpFileItem {
   final String name;
   final String path;
+
+  /// For a resolved symlink this describes its target; [path] remains the alias.
   final bool isDirectory;
+  final bool isSymbolicLink;
+  final String? linkTargetErrorCode;
+  static const linkTargetUnavailableCode = 'SFTP_LINK_TARGET_UNAVAILABLE';
+  static const linkTargetPermissionDeniedCode =
+      'SFTP_LINK_TARGET_PERMISSION_DENIED';
   final int sizeBytes;
   final String formattedSize;
   final String permissions;
@@ -31,6 +38,8 @@ class SftpFileItem {
     required this.permissions,
     required this.modified,
     this.modifiedEpoch = 0,
+    this.isSymbolicLink = false,
+    this.linkTargetErrorCode,
   });
 
   static String formatBytes(int bytes) {
@@ -245,35 +254,83 @@ class SftpClientService implements SftpOperations {
               : path);
     final sftp = await _getRealSftp();
     final names = await sftp.listdir(normalizedPath);
+    final items = List<SftpFileItem?>.filled(names.length, null);
+    var nextIndex = 0;
 
-    return names.map((entry) {
-      final isDir = entry.attr.isDirectory;
-      final size = entry.attr.size ?? 0;
-      // 保留原始 epoch 秒：下面的 modStr 是给人看的，排序要用数值。
-      final modEpochSeconds = entry.attr.modifyTime ?? 0;
-      final modEpoch = modEpochSeconds * 1000;
-      final modDate = DateTime.fromMillisecondsSinceEpoch(modEpoch);
-      final modStr =
-          '${modDate.year}-${modDate.month.toString().padLeft(2, '0')}-${modDate.day.toString().padLeft(2, '0')} ${modDate.hour.toString().padLeft(2, '0')}:${modDate.minute.toString().padLeft(2, '0')}';
-
-      return SftpFileItem(
-        name: entry.filename,
-        path: normalizedPath == '/'
+    Future<void> resolveEntries() async {
+      while (nextIndex < names.length) {
+        if (!identical(_sftp, sftp) || !isRealConnected) {
+          throw const SFTPException('SFTP session expired');
+        }
+        final index = nextIndex++;
+        final entry = names[index];
+        final itemPath = normalizedPath == '/'
             ? '/${entry.filename}'
-            : '$normalizedPath/${entry.filename}',
-        isDirectory: isDir,
-        sizeBytes: size,
-        formattedSize: isDir ? '-' : SftpFileItem.formatBytes(size),
-        permissions: _formatPermissions(entry.attr.mode, isDir),
-        modified: modEpoch > 0 ? modStr : '-',
-        modifiedEpoch: modEpochSeconds,
-      );
-    }).toList();
+            : '$normalizedPath/${entry.filename}';
+        final isLink = entry.attr.isSymbolicLink;
+        var attrs = entry.attr;
+        String? linkError;
+        if (isLink) {
+          try {
+            attrs = await sftp.stat(itemPath);
+            if (attrs.isSymbolicLink ||
+                attrs.mode == null ||
+                attrs.type == SftpFileType.unknown) {
+              linkError = SftpFileItem.linkTargetUnavailableCode;
+            }
+          } on SftpStatusError catch (error) {
+            if (error.code == SftpStatusCode.noConnection ||
+                error.code == SftpStatusCode.connectionLost ||
+                error.code == SftpStatusCode.badMessage) {
+              if (identical(_sftp, sftp)) _discardSession(_sessionEpoch);
+              throw const SFTPException('SFTP connection or protocol failure');
+            }
+            linkError = error.code == SftpStatusCode.permissionDenied
+                ? SftpFileItem.linkTargetPermissionDeniedCode
+                : SftpFileItem.linkTargetUnavailableCode;
+          }
+        }
+        final isDir = linkError == null && attrs.isDirectory;
+        final size = attrs.size ?? 0;
+        // 保留原始 epoch 秒：下面的 modStr 是给人看的，排序要用数值。
+        final modEpochSeconds = entry.attr.modifyTime ?? 0;
+        final modEpoch = modEpochSeconds * 1000;
+        final modDate = DateTime.fromMillisecondsSinceEpoch(modEpoch);
+        final modStr =
+            '${modDate.year}-${modDate.month.toString().padLeft(2, '0')}-${modDate.day.toString().padLeft(2, '0')} ${modDate.hour.toString().padLeft(2, '0')}:${modDate.minute.toString().padLeft(2, '0')}';
+
+        items[index] = SftpFileItem(
+          name: entry.filename,
+          path: itemPath,
+          isDirectory: isDir,
+          isSymbolicLink: isLink,
+          linkTargetErrorCode: linkError,
+          sizeBytes: size,
+          formattedSize: isDir ? '-' : SftpFileItem.formatBytes(size),
+          permissions: _formatPermissions(
+            entry.attr.mode,
+            entry.attr.isDirectory,
+          ),
+          modified: modEpoch > 0 ? modStr : '-',
+          modifiedEpoch: modEpochSeconds,
+        );
+      }
+    }
+
+    await Future.wait(
+      List.generate(
+        names.length < 4 ? names.length : 4,
+        (_) => resolveEntries(),
+      ),
+    );
+    return items.cast<SftpFileItem>();
   });
 
   static String _formatPermissions(SftpFileMode? mode, bool isDirectory) {
     if (mode == null) return isDirectory ? 'd?????????' : '-?????????';
-    final type = isDirectory ? 'd' : '-';
+    final type = mode.type == SftpFileType.symbolicLink
+        ? 'l'
+        : (isDirectory ? 'd' : '-');
     String bit(bool value, String symbol) => value ? symbol : '-';
     return type +
         bit(mode.userRead, 'r') +

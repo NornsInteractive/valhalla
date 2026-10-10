@@ -3744,4 +3744,341 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get downloadRevealFailed =>
       'डाउनलोड फ़ोल्डर नहीं खुल सका। संभव है कि उसे स्थानांतरित या हटा दिया गया हो।';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count विश्वसनीय होस्ट कुंजियाँ';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty => 'कोई विश्वसनीय होस्ट कुंजी नहीं मिली';
+
+  @override
+  String get settingsKnownHostsDialogTitle => 'ज्ञात होस्ट कुंजियाँ';
+
+  @override
+  String get settingsHostKeyRevoke => 'रद्द करें';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle => 'होस्ट कुंजी रद्द करें';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return 'क्या आप $hostPort के लिए होस्ट कुंजी रद्द करना चाहते हैं? इस होस्ट के सक्रिय SSH कनेक्शन कट जाएंगे और अगली बार कुंजी की पुष्टि करनी होगी।';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied =>
+      'होस्ट कुंजी फ़िंगरप्रिंट क्लिपबोर्ड पर कॉपी किया गया';
+
+  @override
+  String get settingsHostKeyRevoked => 'होस्ट कुंजी रद्द कर दी गई';
+
+  @override
+  String get settingsClearStorageSubtitle =>
+      'चयनित सर्वरों के सहेजे गए पासवर्ड और निजी कुंजियाँ हटाएं';
+
+  @override
+  String get settingsClearStorageDialogTitle =>
+      'सर्वर क्रेडेंशियल्स रीसेट करें';
+
+  @override
+  String get settingsClearStorageDesc =>
+      'सुरक्षित संग्रहण से SSH पासवर्ड और निजी कुंजियाँ हटाने के लिए सर्वर चुनें। सर्वर कॉन्फ़िगरेशन और चैट इतिहास नहीं हटाया जाएगा।';
+
+  @override
+  String get settingsClearStorageNoServers => 'कोई सर्वर उपलब्ध नहीं है';
+
+  @override
+  String get settingsClearStorageSelectAll => 'सभी चुनें';
+
+  @override
+  String get settingsClearStorageDeselectAll => 'चयन हटाएं';
+
+  @override
+  String get settingsClearStorageConfirmTitle =>
+      'क्रेडेंशियल रीसेट की पुष्टि करें';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return 'क्या आप वाकई $count चयनित सर्वर(ों) के क्रेडेंशियल हटाना चाहते हैं? सक्रिय कनेक्शन तुरंत डिस्कनेक्ट हो जाएंगे।';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return 'चयनित हटाएं ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess =>
+      'चयनित सर्वर क्रेडेंशियल्स सफलतापूर्वक हटा दिए गए';
+
+  @override
+  String get settingsClearStorageError =>
+      'कुछ सर्वरों के क्रेडेंशियल हटाने में विफल। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get settingsDefaultAcpAgent => 'डिफ़ॉल्ट ACP एजेंट';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle =>
+      'इस सर्वर पर ACP चैट के लिए डिफ़ॉल्ट एजेंट';
+
+  @override
+  String get settingsDefaultCliAgent => 'डिफ़ॉल्ट CLI एजेंट';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle =>
+      'इस सर्वर पर CLI चैट के लिए डिफ़ॉल्ट एजेंट';
+
+  @override
+  String get settingsDefaultAgentAutomatic => 'स्वचालित (पहला उपलब्ध)';
+
+  @override
+  String get settingsDefaultAgentSelectTitle => 'डिफ़ॉल्ट एजेंट चुनें';
+
+  @override
+  String get settingsDefaultAgentNoServer => 'कोई सर्वर चयनित नहीं है';
+
+  @override
+  String get settingsDefaultAgentNoAgents =>
+      'इस सर्वर के लिए कोई एजेंट कॉन्फ़िगर नहीं है';
+
+  @override
+  String get settingsDefaultAgentSaveFailed =>
+      'डिफ़ॉल्ट एजेंट सेटिंग अपडेट करने में विफल';
+
+  @override
+  String get dockerViewGroupContainers => 'कंटेनर';
+
+  @override
+  String get dockerViewGroupProjects => 'Compose प्रोजेक्ट';
+
+  @override
+  String get dockerProjectActionStart => 'प्रोजेक्ट प्रारंभ करें';
+
+  @override
+  String get dockerProjectActionStop => 'प्रोजेक्ट रोकें';
+
+  @override
+  String get dockerProjectActionRestart => 'प्रोजेक्ट पुनरारंभ करें';
+
+  @override
+  String get dockerProjectConfirmStopTitle => 'Compose प्रोजेक्ट रोकें';
+
+  @override
+  String get dockerProjectConfirmRestartTitle =>
+      'Compose प्रोजेक्ट पुनरारंभ करें';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return 'क्या आप वाकई प्रोजेक्ट \"$project\" को $action करना चाहते हैं? निम्नलिखित $count कंटेनर प्रभावित होंगे:';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return 'प्रोजेक्ट \"$project\" $action सफलतापूर्वक पूर्ण हुआ';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return 'प्रोजेक्ट \"$project\" $action $failedCount विफलता(ओं) के साथ पूर्ण हुआ';
+  }
+
+  @override
+  String get dockerNoProjects => 'कोई Docker Compose प्रोजेक्ट नहीं मिला';
+
+  @override
+  String get dockerMountsTitle => 'माउंट्स';
+
+  @override
+  String get dockerMountReadOnly => 'केवल पढ़ने योग्य';
+
+  @override
+  String get dockerMountReadWrite => 'पढ़ना/लिखना';
+
+  @override
+  String get sftpBookmarksTitle => 'डायरेक्टरी बुकमार्क';
+
+  @override
+  String get sftpNoBookmarks => 'अभी तक कोई बुकमार्क सहेजा नहीं गया है';
+
+  @override
+  String get sftpAddBookmark => 'बुकमार्क जोड़ें';
+
+  @override
+  String get sftpRemoveBookmark => 'बुकमार्क हटाएं';
+
+  @override
+  String get sftpCurrentDirectory => 'वर्तमान डायरेक्टरी';
+
+  @override
+  String get sftpSelectMode => 'मल्टी-सेलेक्ट मोड';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return '$count चयनित';
+  }
+
+  @override
+  String get sftpSelectAll => 'सभी चुनें';
+
+  @override
+  String get sftpDeselectAll => 'चयन हटाएं';
+
+  @override
+  String get sftpBatchCopy => 'कॉपी करें';
+
+  @override
+  String get sftpBatchMove => 'स्थानांतरित करें';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => 'बैच विलोपन की पुष्टि करें';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return 'क्या आप वाकई $count चयनित आइटम हटाना चाहते हैं?';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice =>
+      'सूचना: गैर-रिक्त डायरेक्टरी को पुनरावर्ती रूप से नहीं हटाया जा सकता है और छोड़ दिया जाएगा।';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => 'बैच कॉपी की पुष्टि करें';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return '$count चयनित आइटम को \"$directory\" में कॉपी करें?';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => 'बैच स्थानांतरण की पुष्टि करें';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return '$count चयनित आइटम को \"$directory\" में स्थानांतरित करें?';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => 'बैच ऑपरेशन के परिणाम';
+
+  @override
+  String get sftpBatchOutcomeSkipped =>
+      'छोड़ दिया गया (लक्ष्य पहले से मौजूद है या समर्थित नहीं है)';
+
+  @override
+  String get sftpBatchTargetRestricted =>
+      'वर्तमान या उप-डायरेक्टरी को गंतव्य के रूप में नहीं चुना जा सकता';
+
+  @override
+  String get sftpSelectCurrentDir => 'यह डायरेक्टरी चुनें';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return '$count आइटम सफलतापूर्वक संसाधित किए गए';
+  }
+
+  @override
+  String get configMigrationTitle => 'बैकअप और कॉन्फ़िगरेशन माइग्रेशन';
+
+  @override
+  String get configExportTitle => 'कॉन्फ़िगरेशन निर्यात करें';
+
+  @override
+  String get configExportSubtitle =>
+      'सर्वर, एजेंट, त्वरित कमांड, बुकमार्क और प्राथमिकताओं को JSON में निर्यात करें';
+
+  @override
+  String get configExportDialogTitle => 'Valhalla कॉन्फ़िगरेशन निर्यात करें';
+
+  @override
+  String get configExportSuccess => 'कॉन्फ़िगरेशन सफलतापूर्वक निर्यात किया गया';
+
+  @override
+  String configExportError(String error) {
+    return 'कॉन्फ़िगरेशन निर्यात करने में विफल: $error';
+  }
+
+  @override
+  String get configImportTitle => 'कॉन्फ़िगरेशन आयात करें';
+
+  @override
+  String get configImportSubtitle =>
+      'बैकअप JSON फ़ाइल से कॉन्फ़िगरेशन आयात करें';
+
+  @override
+  String get configBackupTooLarge =>
+      'बैकअप फ़ाइल अधिकतम अनुमत आकार (8 MB) से अधिक है';
+
+  @override
+  String get configImportPreviewTitle => 'कॉन्फ़िगरेशन आयात पूर्वावलोकन';
+
+  @override
+  String get configImportPreviewDesc =>
+      'आयात करने से पहले सामग्री की समीक्षा करें। मौजूदा आइटम सुरक्षित रहेंगे और विलय हो जाएंगे।';
+
+  @override
+  String configImportServersCount(int count) {
+    return 'सर्वर ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return 'एजेंट ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return 'त्वरित कमांड ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return 'बुकमार्क ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      'कस्टम कमांड में संवेदनशील स्क्रिप्ट या एम्बेडेड क्रेडेंशियल हो सकते हैं। कोई पासवर्ड, निजी कुंजी या विश्वसनीय फ़िंगरप्रिंट स्थानांतरित नहीं किए जाते हैं।';
+
+  @override
+  String get configImportGlobalPreferences =>
+      'वैश्विक ऐप प्राथमिकताएं आयात करें';
+
+  @override
+  String get configImportGlobalPreferencesDesc =>
+      'वर्तमान थीम, टर्मिनल और नेविगेशन सेटिंग्स को अधिलेखित करता है';
+
+  @override
+  String get configImportConfirmAction => 'आयात की पुष्टि करें';
+
+  @override
+  String get configImportSuccess => 'कॉन्फ़िगरेशन सफलतापूर्वक आयात किया गया';
+
+  @override
+  String get configImportErrorTitle => 'अमान्य कॉन्फ़िगरेशन बैकअप फ़ाइल';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return 'कॉन्फ़िगरेशन आयात करने में विफल: $error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => 'निदान विवरण कॉपी करें';
+
+  @override
+  String get configImportErrorCopied =>
+      'निदान विवरण क्लिपबोर्ड पर कॉपी किया गया';
+
+  @override
+  String get configImportErrorUnsupportedVersion =>
+      'असमर्थित बैकअप प्रारूप या संस्करण';
+
+  @override
+  String get configImportErrorMalformed => 'दूषित या विकृत कॉन्फ़िगरेशन JSON';
 }

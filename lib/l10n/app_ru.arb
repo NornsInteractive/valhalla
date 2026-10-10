@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "Не удалось загрузить лицензию. Свяжитесь с norns.soft@gmail.com.",
   "aboutLinkFailed": "Не удалось открыть ссылку. Откройте https://norns.cc.cd в браузере.",
   "downloadReveal": "Показать в Проводнике",
-  "downloadRevealFailed": "Не удалось открыть папку загрузки. Возможно, она перемещена или удалена."
+  "downloadRevealFailed": "Не удалось открыть папку загрузки. Возможно, она перемещена или удалена.",
+  "settingsKnownHostsSubtitle": "{count} доверенных ключей хостов",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "Доверенные ключи хостов не найдены",
+  "settingsKnownHostsDialogTitle": "Известные ключи хостов",
+  "settingsHostKeyRevoke": "Отозвать",
+  "settingsHostKeyRevokeConfirmTitle": "Отозвать ключ хоста",
+  "settingsHostKeyRevokeConfirmMessage": "Отозвать ключ хоста для {hostPort}? Активные SSH-подключения к этому хосту будут разорваны, и при следующем подключении потребуется повторная проверка ключа.",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "Отпечаток ключа хоста скопирован в буфер обмена",
+  "settingsHostKeyRevoked": "Ключ хоста отозван",
+  "settingsClearStorageSubtitle": "Очистить сохраненные пароли и приватные ключи для выбранных серверов",
+  "settingsClearStorageDialogTitle": "Сброс учетных данных серверов",
+  "settingsClearStorageDesc": "Выберите серверы для удаления сохраненных SSH-паролей и приватных ключей из безопасного хранилища. Конфигурация серверов и история чатов не будут удалены.",
+  "settingsClearStorageNoServers": "Нет доступных серверов",
+  "settingsClearStorageSelectAll": "Выбрать все",
+  "settingsClearStorageDeselectAll": "Снять выбор",
+  "settingsClearStorageConfirmTitle": "Подтверждение сброса учетных данных",
+  "settingsClearStorageConfirmMessage": "Вы уверены, что хотите удалить учетные данные для {count} выбранных серверов? Активные подключения к ним будут немедленно завершены.",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "Очистить выбранные ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "Учетные данные выбранных серверов успешно очищены",
+  "settingsClearStorageError": "Не удалось очистить учетные данные некоторых серверов. Повторите попытку.",
+  "settingsDefaultAcpAgent": "ACP-агент по умолчанию",
+  "settingsDefaultAcpAgentSubtitle": "Агент по умолчанию для ACP-чата на этом сервере",
+  "settingsDefaultCliAgent": "CLI-агент по умолчанию",
+  "settingsDefaultCliAgentSubtitle": "Агент по умолчанию для CLI-чата на этом сервере",
+  "settingsDefaultAgentAutomatic": "Автоматически (первый доступный)",
+  "settingsDefaultAgentSelectTitle": "Выбор агента по умолчанию",
+  "settingsDefaultAgentNoServer": "Сервер не выбран",
+  "settingsDefaultAgentNoAgents": "Для этого сервера нет настроенных агентов",
+  "settingsDefaultAgentSaveFailed": "Не удалось обновить настройку агента по умолчанию",
+  "dockerViewGroupContainers": "Контейнеры",
+  "dockerViewGroupProjects": "Проекты Compose",
+  "dockerProjectActionStart": "Запустить проект",
+  "dockerProjectActionStop": "Остановить проект",
+  "dockerProjectActionRestart": "Перезапустить проект",
+  "dockerProjectConfirmStopTitle": "Остановить проект Compose",
+  "dockerProjectConfirmRestartTitle": "Перезапустить проект Compose",
+  "dockerProjectConfirmMessage": "Вы уверены, что хотите выполнить действие \"{action}\" для проекта \"{project}\"? Будет затронуто следующее количество контейнеров: {count}:",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "Проект \"{project}\": действие \"{action}\" успешно выполнено",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "Проект \"{project}\": действие \"{action}\" завершено с ошибками ({failedCount})",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "Проекты Docker Compose не найдены",
+  "dockerMountsTitle": "Точки монтирования",
+  "dockerMountReadOnly": "Только чтение",
+  "dockerMountReadWrite": "Чтение и запись",
+  "sftpBookmarksTitle": "Закладки каталогов",
+  "sftpNoBookmarks": "Нет сохраненных закладок",
+  "sftpAddBookmark": "Добавить в закладки",
+  "sftpRemoveBookmark": "Удалить закладку",
+  "sftpCurrentDirectory": "Текущий каталог",
+  "sftpSelectMode": "Режим выбора",
+  "sftpSelectedCount": "Выбрано: {count}",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "Выбрать все",
+  "sftpDeselectAll": "Снять выбор",
+  "sftpBatchCopy": "Копировать",
+  "sftpBatchMove": "Переместить",
+  "sftpBatchDeleteConfirmTitle": "Подтверждение удаления группы",
+  "sftpBatchDeleteConfirmMessage": "Вы действительно хотите удалить {count} выбранных элементов?",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "Примечание: непустые каталоги не могут быть удалены рекурсивно и будут пропущены.",
+  "sftpBatchCopyConfirmTitle": "Подтверждение копирования группы",
+  "sftpBatchCopyConfirmMessage": "Скопировать {count} выбранных элементов в \"{directory}\"?",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "Подтверждение перемещения группы",
+  "sftpBatchMoveConfirmMessage": "Переместить {count} выбранных элементов в \"{directory}\"?",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "Результаты пакетной операции",
+  "sftpBatchOutcomeSkipped": "Пропущено (файл существует или не поддерживается)",
+  "sftpBatchTargetRestricted": "Нельзя выбрать текущий или дочерний каталог в качестве целевого",
+  "sftpSelectCurrentDir": "Выбрать этот каталог",
+  "sftpBatchOperationSuccess": "Успешно обработано элементов: {count}",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "Резервное копирование и перенос настроек",
+  "configExportTitle": "Экспорт конфигурации",
+  "configExportSubtitle": "Экспорт серверов, агентов, команд, закладок и настроек в JSON",
+  "configExportDialogTitle": "Экспорт конфигурации Valhalla",
+  "configExportSuccess": "Конфигурация успешно экспортирована",
+  "configExportError": "Ошибка экспорта конфигурации: {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "Импорт конфигурации",
+  "configImportSubtitle": "Импорт конфигурации из файла резервной копии JSON",
+  "configBackupTooLarge": "Файл резервной копии превышает максимальный размер (8 МБ)",
+  "configImportPreviewTitle": "Предпросмотр импорта конфигурации",
+  "configImportPreviewDesc": "Проверьте данные перед импортом. Существующие элементы будут сохранены и объединены.",
+  "configImportServersCount": "Серверы ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "Агенты ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "Быстрые команды ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "Закладки ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "Пользовательские команды могут содержать конфиденциальные сценарии. Пароли, приватные ключи и доверенные отпечатки хостов не передаются.",
+  "configImportGlobalPreferences": "Импортировать глобальные настройки приложения",
+  "configImportGlobalPreferencesDesc": "Перезаписывает текущие параметры темы, терминала и навигации",
+  "configImportConfirmAction": "Подтвердить импорт",
+  "configImportSuccess": "Конфигурация успешно импортирована",
+  "configImportErrorTitle": "Недействительный файл резервной копии",
+  "configImportErrorGeneric": "Ошибка импорта конфигурации: {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "Скопировать диагностические данные",
+  "configImportErrorCopied": "Диагностические данные скопированы в буфер обмена",
+  "configImportErrorUnsupportedVersion": "Неподдерживаемый формат или версия резервной копии",
+  "configImportErrorMalformed": "Поврежденный или неверный JSON конфигурации"
 }

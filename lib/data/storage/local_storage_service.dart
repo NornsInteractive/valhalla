@@ -113,6 +113,7 @@ class LocalStorageService {
 
   /// 远端文件列表是否升序。
   static const _keyFileSortAscending = 'valhalla_file_sort_asc_v1';
+  static const _keyFileShowHidden = 'valhalla_file_show_hidden_v1';
 
   /// 桌面窗口尺寸与坐标
   static const _keyWindowWidth = 'valhalla_window_width_v1';
@@ -123,6 +124,137 @@ class LocalStorageService {
   final SharedPreferences _prefs;
 
   LocalStorageService(this._prefs);
+
+  static const configurationPreferenceTypes = <String, String>{
+    _keyThemeMode: 'string',
+    _keyAccentColor: 'string',
+    'valhalla_accent_color_v2::light': 'string',
+    'valhalla_accent_color_v2::dark': 'string',
+    'valhalla_accent_color_v2::amoled': 'string',
+    _keyLocale: 'string',
+    _keyBottomNavigation: 'strings',
+    _keyDashboardQuickSections: 'strings',
+    _keyStartupSection: 'string',
+    _keyExperimentalFeatures: 'strings',
+    _keyTerminalUseTmux: 'bool',
+    _keyTerminalFontSize: 'int',
+    _keyCliHistoryPageSize: 'int',
+    _keyFileSortKey: 'string',
+    _keyFileSortAscending: 'bool',
+    _keyFileShowHidden: 'bool',
+  };
+
+  Map<String, Object> exportConfigurationPreferences() => {
+    for (final key in configurationPreferenceTypes.keys)
+      if (_prefs.get(key) case final Object value) key: value,
+    if (getBottomNavigationSections() case final List<String> sections)
+      _keyBottomNavigation: sections,
+  };
+
+  bool _importingConfiguration = false;
+
+  Future<void> appendConfiguration({
+    required List<ServerProfile> servers,
+    required List<AgentProfile> agents,
+    required List<QuickCommand> commands,
+    required Map<String, List<String>> bookmarks,
+    required Map<String, Map<String, String>> defaultAgents,
+    Map<String, Object> preferences = const {},
+  }) async {
+    if (_importingConfiguration) throw StateError('CONFIG_IMPORT_PENDING');
+    // Tolerant UI readers return [] for damaged JSON; never use that to overwrite it.
+    for (final key in [_keyServers, _keyAgents, _keyCommands]) {
+      final raw = _prefs.getString(key);
+      if (raw == null) continue;
+      try {
+        for (final record in jsonDecode(raw) as List) {
+          final value = Map<String, dynamic>.from(record as Map);
+          switch (key) {
+            case _keyServers:
+              ServerProfile.fromJson(value);
+            case _keyAgents:
+              AgentProfile.fromJson(value);
+            case _keyCommands:
+              QuickCommand.fromJson(value);
+          }
+        }
+      } catch (_) {
+        throw const FormatException('CONFIG_EXISTING_DATA_INVALID');
+      }
+    }
+    for (final entry in preferences.entries) {
+      final type = configurationPreferenceTypes[entry.key];
+      final value = entry.value;
+      final valid = switch (type) {
+        'string' => value is String,
+        'strings' => value is List<String>,
+        'bool' => value is bool,
+        'int' => value is int,
+        _ => false,
+      };
+      if (!valid) throw const FormatException('CONFIG_PREFERENCE_INVALID');
+    }
+    final values = <String, Object>{
+      _keyServers: jsonEncode(
+        [...getServers(), ...servers].map((s) => s.toJson()).toList(),
+      ),
+      _keyAgents: jsonEncode(
+        [...getAgents(), ...agents].map((a) => a.toJson()).toList(),
+      ),
+      _keyCommands: jsonEncode(
+        [...getQuickCommands(), ...commands].map((c) => c.toJson()).toList(),
+      ),
+      for (final entry in bookmarks.entries)
+        'valhalla_file_bookmarks::${entry.key}': entry.value,
+      for (final server in defaultAgents.entries)
+        for (final mode in server.value.entries)
+          'valhalla_default_agent_${mode.key}::${server.key}': mode.value,
+      ...preferences,
+      if (preferences.containsKey(_keyBottomNavigation))
+        'valhalla_navigation_acp_v2': true,
+    };
+    // shortcut: rollback covers write failures, not process death; use a journal if crash-atomic imports are required.
+    final snapshot = <String, Object?>{
+      for (final key in values.keys) key: _prefs.get(key),
+    };
+    _importingConfiguration = true;
+    try {
+      for (final entry in values.entries) {
+        await _writeConfigurationValue(entry.key, entry.value);
+      }
+    } catch (_) {
+      var rollbackFailed = false;
+      for (final entry in snapshot.entries) {
+        try {
+          await _writeConfigurationValue(entry.key, entry.value);
+        } catch (_) {
+          rollbackFailed = true;
+        }
+      }
+      if (rollbackFailed) {
+        // Failed preference writes can leave optimistic values in the cache.
+        try {
+          await _prefs.reload();
+        } catch (_) {}
+        throw StateError('CONFIG_IMPORT_ROLLBACK_FAILED');
+      }
+      rethrow;
+    } finally {
+      _importingConfiguration = false;
+    }
+  }
+
+  Future<void> _writeConfigurationValue(String key, Object? value) async {
+    final saved = switch (value) {
+      null => await _prefs.remove(key),
+      String v => await _prefs.setString(key, v),
+      bool v => await _prefs.setBool(key, v),
+      int v => await _prefs.setInt(key, v),
+      List<String> v => await _prefs.setStringList(key, v),
+      _ => throw const FormatException('CONFIG_VALUE_INVALID'),
+    };
+    if (!saved) throw StateError('CONFIG_WRITE_FAILED');
+  }
 
   static Future<LocalStorageService> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -190,7 +322,14 @@ class LocalStorageService {
     Object value,
   ) async {
     final map = _jsonMap(storageKey)..[entryKey] = value;
-    await _prefs.setString(storageKey, jsonEncode(map));
+    try {
+      if (!await _prefs.setString(storageKey, jsonEncode(map))) {
+        throw StateError('PREFERENCE_SAVE_FAILED');
+      }
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
+    }
   }
 
   NasScanConfig getNasScanConfig(String serverId) {
@@ -337,8 +476,43 @@ class LocalStorageService {
   Future<void> saveHostKey(HostKeyEntry entry) async {
     final keys = getHostKeys();
     keys[entry.hostPort] = entry;
-    final raw = jsonEncode(keys.map((k, v) => MapEntry(k, v.toJson())));
-    await _prefs.setString(_keyHostKeys, raw);
+    await _writeHostKeys(keys);
+  }
+
+  Future<void> removeHostKey(String hostPort) async {
+    final keys = getHostKeys()..remove(hostPort);
+    await _writeHostKeys(keys);
+  }
+
+  Future<void> _writeHostKeys(Map<String, HostKeyEntry> keys) async {
+    try {
+      if (!await _prefs.setString(
+        _keyHostKeys,
+        jsonEncode(keys.map((key, entry) => MapEntry(key, entry.toJson()))),
+      )) {
+        throw StateError('HOST_KEY_SAVE_FAILED');
+      }
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
+    }
+  }
+
+  List<String> getFileBookmarks(String serverId) =>
+      _prefs.getStringList('valhalla_file_bookmarks::$serverId') ?? [];
+
+  Future<void> saveFileBookmarks(String serverId, List<String> paths) async {
+    try {
+      if (!await _prefs.setStringList(
+        'valhalla_file_bookmarks::$serverId',
+        paths,
+      )) {
+        throw StateError('FILE_BOOKMARK_SAVE_FAILED');
+      }
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
+    }
   }
 
   // --- Quick Commands ---
@@ -563,10 +737,14 @@ class LocalStorageService {
     required bool cli,
   }) async {
     final key = 'valhalla_default_agent_${cli ? 'cli' : 'acp'}::$serverId';
-    if (agentId == null) {
-      await _prefs.remove(key);
-    } else {
-      await _prefs.setString(key, agentId);
+    try {
+      final saved = agentId == null
+          ? await _prefs.remove(key)
+          : await _prefs.setString(key, agentId);
+      if (!saved) throw StateError('DEFAULT_AGENT_SAVE_FAILED');
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
     }
   }
 
@@ -697,6 +875,20 @@ class LocalStorageService {
 
   /// 文件列表是否升序；默认 true。
   bool getFileSortAscending() => _prefs.getBool(_keyFileSortAscending) ?? true;
+
+  bool getFileShowHidden() => _prefs.getBool(_keyFileShowHidden) ?? false;
+
+  Future<void> setFileShowHidden(bool value) async {
+    try {
+      if (!await _prefs.setBool(_keyFileShowHidden, value)) {
+        throw StateError('Could not persist hidden-file preference');
+      }
+    } catch (_) {
+      // Legacy SharedPreferences changes its cache even when the write fails.
+      await _prefs.reload();
+      rethrow;
+    }
+  }
 
   Future<void> setFileSortAscending(bool ascending) async {
     await _prefs.setBool(_keyFileSortAscending, ascending);

@@ -18,6 +18,10 @@ import '../../widgets/status_badge.dart';
 import '../../widgets/valhalla_card.dart';
 import '../terminal/widgets/shared_terminal_canvas.dart';
 import 'docker_provider.dart';
+import 'widgets/docker_action_results_dialog.dart';
+import 'widgets/docker_mounts_summary.dart';
+import 'widgets/docker_project_card.dart';
+import 'widgets/docker_project_confirm_dialog.dart';
 
 class DockerView extends ConsumerStatefulWidget {
   final ValueChanged<DockerContainer?>? onSelectContainer;
@@ -30,11 +34,96 @@ class DockerView extends ConsumerStatefulWidget {
 
 class _DockerViewState extends ConsumerState<DockerView> {
   final TextEditingController _searchCtrl = TextEditingController();
+  bool _isComposeGrouped = false;
 
   @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleProjectLifecycle(
+    String project,
+    String action,
+    List<DockerContainer> containers,
+  ) async {
+    final capturedServer = ref.read(activeServerProvider);
+    if (capturedServer == null) return;
+
+    final targetContainers = List<DockerContainer>.from(containers);
+    final targetIds = targetContainers.map((c) => c.id).toList();
+
+    if (action == 'stop' || action == 'restart') {
+      final confirmed = await DockerProjectConfirmDialog.show(
+        context,
+        project: project,
+        action: action,
+        containers: targetContainers,
+      );
+      if (!confirmed || !mounted) return;
+      final currentServer = ref.read(activeServerProvider);
+      if (currentServer == null ||
+          !currentServer.hasSameConnectionSettings(capturedServer)) {
+        return;
+      }
+    }
+
+    final scaffold = ScaffoldMessenger.of(context);
+
+    try {
+      final results = await ref
+          .read(dockerProvider.notifier)
+          .performProjectLifecycle(
+            project,
+            action,
+            targetIds,
+            expectedServer: capturedServer,
+          );
+
+      if (!mounted) return;
+      final currentServer = ref.read(activeServerProvider);
+      if (currentServer == null ||
+          !currentServer.hasSameConnectionSettings(capturedServer)) {
+        return;
+      }
+
+      final failedResults = results.where((r) => !r.success).toList();
+      if (failedResults.isEmpty) {
+        scaffold.showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.dockerProjectActionSuccess(project, action),
+            ),
+            backgroundColor: context.vSuccess,
+          ),
+        );
+      } else {
+        if (mounted) {
+          await DockerActionResultsDialog.show(
+            context,
+            title: context.l10n.dockerProjectActionPartial(
+              project,
+              action,
+              failedResults.length,
+            ),
+            results: results,
+          );
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final currentServer = ref.read(activeServerProvider);
+      if (currentServer == null ||
+          !currentServer.hasSameConnectionSettings(capturedServer)) {
+        return;
+      }
+      scaffold.showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.dockerActionFailed(e.toString())),
+          backgroundColor: context.vDanger,
+        ),
+      );
+    }
   }
 
   Future<void> _handleLifecycleAction(
@@ -48,6 +137,9 @@ class _DockerViewState extends ConsumerState<DockerView> {
       return;
     }
 
+    final capturedServer = ref.read(activeServerProvider);
+    if (capturedServer == null) return;
+
     final cmd = 'docker $action ${container.id}';
     final confirmed = await DangerConfirmDialog.show(
       context,
@@ -58,16 +150,21 @@ class _DockerViewState extends ConsumerState<DockerView> {
     );
 
     if (!confirmed || !mounted) return;
+    final currentServer = ref.read(activeServerProvider);
+    if (currentServer == null ||
+        !currentServer.hasSameConnectionSettings(capturedServer)) {
+      return;
+    }
 
-    final capturedServerId = ref.read(activeServerProvider)?.id;
     final scaffold = ScaffoldMessenger.of(context);
     try {
       final result = await ref
           .read(dockerProvider.notifier)
           .performLifecycle(action, container.id);
       if (!mounted) return;
-      if (capturedServerId != null &&
-          ref.read(activeServerProvider)?.id != capturedServerId) {
+      final serverAfter = ref.read(activeServerProvider);
+      if (serverAfter == null ||
+          !serverAfter.hasSameConnectionSettings(capturedServer)) {
         return;
       }
       if (result.isSuccess) {
@@ -92,8 +189,9 @@ class _DockerViewState extends ConsumerState<DockerView> {
       }
     } catch (e) {
       if (!mounted) return;
-      if (capturedServerId != null &&
-          ref.read(activeServerProvider)?.id != capturedServerId) {
+      final serverAfter = ref.read(activeServerProvider);
+      if (serverAfter == null ||
+          !serverAfter.hasSameConnectionSettings(capturedServer)) {
         return;
       }
       scaffold.showSnackBar(
@@ -187,25 +285,37 @@ class _DockerViewState extends ConsumerState<DockerView> {
                           ? const LoadingStateView()
                           : snapshot.hasError
                           ? ErrorStateView(message: snapshot.error.toString())
-                          : Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0F141C),
-                                borderRadius: BorderRadius.circular(
-                                  VRadius.input,
-                                ),
-                              ),
-                              child: SingleChildScrollView(
-                                child: SelectableText(
-                                  const JsonEncoder.withIndent(
-                                    '  ',
-                                  ).convert(snapshot.data ?? {}),
-                                  style: monoTextStyle(
-                                    fontSize: 11,
-                                    color: context.vSuccess,
+                          : ListView(
+                              children: [
+                                if (snapshot.data?['Mounts'] is List &&
+                                    (snapshot.data!['Mounts'] as List)
+                                        .isNotEmpty) ...[
+                                  DockerMountsSummary(
+                                    mounts:
+                                        snapshot.data!['Mounts']
+                                            as List<dynamic>,
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0F141C),
+                                    borderRadius: BorderRadius.circular(
+                                      VRadius.input,
+                                    ),
+                                  ),
+                                  child: SelectableText(
+                                    const JsonEncoder.withIndent(
+                                      '  ',
+                                    ).convert(snapshot.data ?? {}),
+                                    style: monoTextStyle(
+                                      fontSize: 11,
+                                      color: context.vSuccess,
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
                     ),
                   ],
@@ -452,6 +562,31 @@ class _DockerViewState extends ConsumerState<DockerView> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
+                  SegmentedButton<bool>(
+                    segments: [
+                      ButtonSegment<bool>(
+                        value: false,
+                        label: Text(context.l10n.dockerViewGroupContainers),
+                        icon: const Icon(Icons.view_agenda_outlined, size: 16),
+                      ),
+                      ButtonSegment<bool>(
+                        value: true,
+                        label: Text(context.l10n.dockerViewGroupProjects),
+                        icon: const Icon(Icons.layers_outlined, size: 16),
+                      ),
+                    ],
+                    selected: {_isComposeGrouped},
+                    onSelectionChanged: (val) {
+                      setState(() {
+                        _isComposeGrouped = val.first;
+                      });
+                    },
+                    style: const ButtonStyle(
+                      visualDensity: VisualDensity.compact,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   FilterChip(
                     label: Text(context.l10n.dockerFilterAll),
                     selected: dockerState.filterState == null,
@@ -503,6 +638,10 @@ class _DockerViewState extends ConsumerState<DockerView> {
   }
 
   Widget _buildBody(BuildContext context, DockerState dockerState) {
+    if (_isComposeGrouped) {
+      return _buildProjectsView(context, dockerState);
+    }
+
     if (dockerState.isLoading && dockerState.containers.isEmpty) {
       return const LoadingStateView();
     }
@@ -559,6 +698,90 @@ class _DockerViewState extends ConsumerState<DockerView> {
               );
             },
           );
+        },
+      ),
+    );
+  }
+
+  Widget _buildProjectsView(BuildContext context, DockerState dockerState) {
+    if (dockerState.isLoading && dockerState.containers.isEmpty) {
+      return const LoadingStateView();
+    }
+
+    if (dockerState.errorMessage != null && dockerState.containers.isEmpty) {
+      return ErrorStateView(
+        message: dockerState.errorMessage,
+        exitCode: dockerState.exitCode,
+        onRetry: () => ref.read(dockerProvider.notifier).refresh(),
+      );
+    }
+
+    final projects = dockerState.composeProjects;
+    final standaloneContainers = dockerState.filteredContainers
+        .where((c) => c.composeProject == null)
+        .toList();
+
+    if (projects.isEmpty && standaloneContainers.isEmpty) {
+      return EmptyStateView(
+        icon: Icons.layers_outlined,
+        title: context.l10n.dockerNoProjects,
+        description: dockerState.searchQuery.isNotEmpty
+            ? context.l10n.stateEmpty
+            : null,
+      );
+    }
+
+    final isConnected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
+    final projectEntries = projects.entries.toList();
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(dockerProvider.notifier).refresh(),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount:
+            projectEntries.length +
+            (standaloneContainers.isNotEmpty
+                ? standaloneContainers.length + 1
+                : 0),
+        itemBuilder: (ctx, index) {
+          if (index < projectEntries.length) {
+            final entry = projectEntries[index];
+            return DockerProjectCard(
+              key: Key('docker_project_${entry.key}'),
+              project: entry.key,
+              containers: entry.value,
+              dockerState: dockerState,
+              isConnected: isConnected,
+              onInspect: _showInspectModal,
+              onLogs: _showLogsDialog,
+              onTerminal: _openContainerTerminal,
+              onContainerLifecycle: _handleLifecycleAction,
+              onProjectLifecycle: _handleProjectLifecycle,
+            );
+          }
+          final standaloneIndex = index - projectEntries.length;
+          if (standaloneIndex == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.widgets_outlined, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    context.l10n.dockerViewGroupContainers,
+                    style: context.textTheme.titleSmall?.copyWith(
+                      color: context.colorScheme.outline,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          final container = standaloneContainers[standaloneIndex - 1];
+          return _buildContainerCard(context, dockerState, container);
         },
       ),
     );
@@ -792,6 +1015,31 @@ class _DockerViewState extends ConsumerState<DockerView> {
                     style: monoTextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w400,
+                      color: context.colorScheme.outline,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (container.composeProject != null ||
+              container.composeService != null) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(
+                  Icons.hub_outlined,
+                  size: 14,
+                  color: context.colorScheme.outline,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    '${container.composeProject ?? "-"} • ${container.composeService ?? "-"}',
+                    style: monoTextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
                       color: context.colorScheme.outline,
                     ),
                     overflow: TextOverflow.ellipsis,

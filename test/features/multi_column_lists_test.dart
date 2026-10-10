@@ -245,10 +245,14 @@ void main() {
       final fakeOps = _TestFakeOperations(testFiles);
       final sftpState = SftpState(files: testFiles, currentPath: '/');
 
+      SharedPreferences.setMockInitialValues({});
+      final local = await LocalStorageService.init();
+
       await tester.pumpWidget(
         _wrapWithApp(
           child: const SftpFileView(),
           overrides: [
+            localStorageServiceProvider.overrideWithValue(local),
             sftpOperationsProvider.overrideWithValue(fakeOps),
             sftpProvider.overrideWith(() => _TestSftpNotifier(sftpState)),
             activeServerProvider.overrideWith(
@@ -288,10 +292,14 @@ void main() {
       final fakeOps = _TestFakeOperations(testFiles);
       final sftpState = SftpState(files: testFiles, currentPath: '/');
 
+      SharedPreferences.setMockInitialValues({});
+      final local = await LocalStorageService.init();
+
       await tester.pumpWidget(
         _wrapWithApp(
           child: const SftpFileView(),
           overrides: [
+            localStorageServiceProvider.overrideWithValue(local),
             sftpOperationsProvider.overrideWithValue(fakeOps),
             sftpProvider.overrideWith(() => _TestSftpNotifier(sftpState)),
             activeServerProvider.overrideWith(
@@ -333,10 +341,14 @@ void main() {
         final fakeOps = _TestFakeOperations(testFiles);
         final sftpState = SftpState(files: testFiles, currentPath: '/');
 
+        SharedPreferences.setMockInitialValues({});
+        final local = await LocalStorageService.init();
+
         await tester.pumpWidget(
           _wrapWithApp(
             child: const SftpFileView(),
             overrides: [
+              localStorageServiceProvider.overrideWithValue(local),
               sftpOperationsProvider.overrideWithValue(fakeOps),
               sftpProvider.overrideWith(() => _TestSftpNotifier(sftpState)),
               activeServerProvider.overrideWith(

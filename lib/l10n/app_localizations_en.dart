@@ -3723,4 +3723,339 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get downloadRevealFailed =>
       'Unable to open the download folder. It may have been moved or deleted.';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count trusted host keys';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty => 'No trusted host keys found';
+
+  @override
+  String get settingsKnownHostsDialogTitle => 'Known Host Keys';
+
+  @override
+  String get settingsHostKeyRevoke => 'Revoke';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle => 'Revoke Host Key';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return 'Revoke host key for $hostPort? Active SSH connections to this host will be disconnected, and you must verify the key on next connection.';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied =>
+      'Host key fingerprint copied to clipboard';
+
+  @override
+  String get settingsHostKeyRevoked => 'Host key revoked';
+
+  @override
+  String get settingsClearStorageSubtitle =>
+      'Clear saved passwords and private keys for selected servers';
+
+  @override
+  String get settingsClearStorageDialogTitle => 'Reset Server Credentials';
+
+  @override
+  String get settingsClearStorageDesc =>
+      'Select servers to clear locally stored SSH passwords, sudo passwords, and private keys from secure storage. Private key users must re-add their key via Edit Server after clearing (source key files are not deleted). Server configurations and chat histories will not be deleted.';
+
+  @override
+  String get settingsClearStorageNoServers => 'No servers available';
+
+  @override
+  String get settingsClearStorageSelectAll => 'Select All';
+
+  @override
+  String get settingsClearStorageDeselectAll => 'Deselect All';
+
+  @override
+  String get settingsClearStorageConfirmTitle => 'Confirm Credential Reset';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return 'Are you sure you want to clear credentials for $count selected server(s)? Active connections to these servers will be disconnected immediately.';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return 'Clear Selected ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess =>
+      'Selected server credentials cleared successfully';
+
+  @override
+  String get settingsClearStorageError =>
+      'Failed to clear credentials for some servers. Please try again.';
+
+  @override
+  String get settingsDefaultAcpAgent => 'Default ACP Agent';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle =>
+      'Default agent for ACP chat on this server';
+
+  @override
+  String get settingsDefaultCliAgent => 'Default CLI Agent';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle =>
+      'Default agent for CLI chat on this server';
+
+  @override
+  String get settingsDefaultAgentAutomatic => 'Automatic (first available)';
+
+  @override
+  String get settingsDefaultAgentSelectTitle => 'Select Default Agent';
+
+  @override
+  String get settingsDefaultAgentNoServer => 'No server selected';
+
+  @override
+  String get settingsDefaultAgentNoAgents =>
+      'No agents configured for this server';
+
+  @override
+  String get settingsDefaultAgentSaveFailed =>
+      'Failed to update default agent setting';
+
+  @override
+  String get dockerViewGroupContainers => 'Containers';
+
+  @override
+  String get dockerViewGroupProjects => 'Compose Projects';
+
+  @override
+  String get dockerProjectActionStart => 'Start Project';
+
+  @override
+  String get dockerProjectActionStop => 'Stop Project';
+
+  @override
+  String get dockerProjectActionRestart => 'Restart Project';
+
+  @override
+  String get dockerProjectConfirmStopTitle => 'Stop Compose Project';
+
+  @override
+  String get dockerProjectConfirmRestartTitle => 'Restart Compose Project';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return 'Are you sure you want to $action project \"$project\"? The following $count containers will be affected:';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return 'Project \"$project\" $action completed successfully';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return 'Project \"$project\" $action completed with $failedCount failure(s)';
+  }
+
+  @override
+  String get dockerNoProjects => 'No Docker Compose projects found';
+
+  @override
+  String get dockerMountsTitle => 'Mounts';
+
+  @override
+  String get dockerMountReadOnly => 'Read-only';
+
+  @override
+  String get dockerMountReadWrite => 'Read/Write';
+
+  @override
+  String get sftpBookmarksTitle => 'Directory Bookmarks';
+
+  @override
+  String get sftpNoBookmarks => 'No directory bookmarks saved yet';
+
+  @override
+  String get sftpAddBookmark => 'Bookmark this folder';
+
+  @override
+  String get sftpRemoveBookmark => 'Remove bookmark';
+
+  @override
+  String get sftpCurrentDirectory => 'Current Directory';
+
+  @override
+  String get sftpSelectMode => 'Select Multiple Files';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get sftpSelectAll => 'Select All';
+
+  @override
+  String get sftpDeselectAll => 'Deselect All';
+
+  @override
+  String get sftpBatchCopy => 'Copy';
+
+  @override
+  String get sftpBatchMove => 'Move';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => 'Confirm Batch Deletion';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return 'Are you sure you want to delete $count selected item(s)?';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice =>
+      'Notice: Non-empty directories cannot be deleted recursively and will be skipped.';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => 'Confirm Batch Copy';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return 'Copy $count selected item(s) to \"$directory\"?';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => 'Confirm Batch Move';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return 'Move $count selected item(s) to \"$directory\"?';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => 'Batch Operation Results';
+
+  @override
+  String get sftpBatchOutcomeSkipped =>
+      'Skipped (Target exists or not supported)';
+
+  @override
+  String get sftpBatchTargetRestricted =>
+      'Cannot select current or descendant directories as target';
+
+  @override
+  String get sftpSelectCurrentDir => 'Choose This Directory';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return 'Successfully processed $count item(s)';
+  }
+
+  @override
+  String get configMigrationTitle => 'Backup & Configuration Migration';
+
+  @override
+  String get configExportTitle => 'Export Configuration';
+
+  @override
+  String get configExportSubtitle =>
+      'Export servers, agents, commands, bookmarks and preferences to JSON';
+
+  @override
+  String get configExportDialogTitle => 'Export Valhalla Configuration';
+
+  @override
+  String get configExportSuccess => 'Configuration exported successfully';
+
+  @override
+  String configExportError(String error) {
+    return 'Failed to export configuration: $error';
+  }
+
+  @override
+  String get configImportTitle => 'Import Configuration';
+
+  @override
+  String get configImportSubtitle =>
+      'Import configuration from a backup JSON file';
+
+  @override
+  String get configBackupTooLarge =>
+      'Backup file exceeds maximum allowed size (8 MB)';
+
+  @override
+  String get configImportPreviewTitle => 'Preview Configuration Import';
+
+  @override
+  String get configImportPreviewDesc =>
+      'Review contents before importing. Existing items will be preserved and merged.';
+
+  @override
+  String configImportServersCount(int count) {
+    return 'Servers ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return 'Agents ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return 'Quick Commands ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return 'Bookmarks ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      'Custom commands may contain sensitive scripts or embedded credentials. No passwords, private keys, or trusted fingerprints are transferred.';
+
+  @override
+  String get configImportGlobalPreferences =>
+      'Import global application preferences';
+
+  @override
+  String get configImportGlobalPreferencesDesc =>
+      'Overwrites current theme, terminal, and navigation settings';
+
+  @override
+  String get configImportConfirmAction => 'Confirm Import';
+
+  @override
+  String get configImportSuccess => 'Configuration imported successfully';
+
+  @override
+  String get configImportErrorTitle => 'Invalid Configuration Backup';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return 'Failed to import configuration: $error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => 'Copy Diagnostic Details';
+
+  @override
+  String get configImportErrorCopied =>
+      'Diagnostic details copied to clipboard';
+
+  @override
+  String get configImportErrorUnsupportedVersion =>
+      'Unsupported backup format or version';
+
+  @override
+  String get configImportErrorMalformed =>
+      'Malformed or damaged configuration JSON';
 }

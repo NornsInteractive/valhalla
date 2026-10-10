@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "Impossible de charger la licence. Contactez norns.soft@gmail.com.",
   "aboutLinkFailed": "Impossible d’ouvrir le lien. Ouvrez https://norns.cc.cd dans votre navigateur.",
   "downloadReveal": "Afficher dans l’Explorateur de fichiers",
-  "downloadRevealFailed": "Impossible d’ouvrir le dossier de téléchargement. Il a peut-être été déplacé ou supprimé."
+  "downloadRevealFailed": "Impossible d’ouvrir le dossier de téléchargement. Il a peut-être été déplacé ou supprimé.",
+  "settingsKnownHostsSubtitle": "{count} clés d'hôtes de confiance",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "Aucune clé d'hôte de confiance trouvée",
+  "settingsKnownHostsDialogTitle": "Clés d'hôtes connus",
+  "settingsHostKeyRevoke": "Révoquer",
+  "settingsHostKeyRevokeConfirmTitle": "Révoquer la clé d'hôte",
+  "settingsHostKeyRevokeConfirmMessage": "Révoquer la clé d'hôte pour {hostPort} ? Les connexions SSH actives vers cet hôte seront déconnectées et vous devrez revérifier la clé lors de la prochaine connexion.",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "Empreinte de la clé copiée dans le presse-papiers",
+  "settingsHostKeyRevoked": "Clé d'hôte révoquée",
+  "settingsClearStorageSubtitle": "Effacer les mots de passe et clés privées enregistrés des serveurs sélectionnés",
+  "settingsClearStorageDialogTitle": "Réinitialiser les identifiants",
+  "settingsClearStorageDesc": "Sélectionnez les serveurs pour effacer les mots de passe SSH et clés privées enregistrés dans le stockage sécurisé. Les configurations de serveur et historiques de discussion ne seront pas supprimés.",
+  "settingsClearStorageNoServers": "Aucun serveur disponible",
+  "settingsClearStorageSelectAll": "Tout sélectionner",
+  "settingsClearStorageDeselectAll": "Tout désélectionner",
+  "settingsClearStorageConfirmTitle": "Confirmer la suppression des identifiants",
+  "settingsClearStorageConfirmMessage": "Voulez-vous vraiment effacer les identifiants de {count} serveur(s) sélectionné(s) ? Les connexions actives seront immédiatement coupées.",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "Effacer la sélection ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "Identifiants des serveurs sélectionnés effacés avec succès",
+  "settingsClearStorageError": "Échec de l'effacement des identifiants de certains serveurs. Veuillez réessayer.",
+  "settingsDefaultAcpAgent": "Agent ACP par défaut",
+  "settingsDefaultAcpAgentSubtitle": "Agent par défaut pour le chat ACP sur ce serveur",
+  "settingsDefaultCliAgent": "Agent CLI par défaut",
+  "settingsDefaultCliAgentSubtitle": "Agent par défaut pour le chat CLI sur ce serveur",
+  "settingsDefaultAgentAutomatic": "Automatique (premier disponible)",
+  "settingsDefaultAgentSelectTitle": "Sélectionner l'agent par défaut",
+  "settingsDefaultAgentNoServer": "Aucun serveur sélectionné",
+  "settingsDefaultAgentNoAgents": "Aucun agent configuré pour ce serveur",
+  "settingsDefaultAgentSaveFailed": "Échec de la mise à jour du paramètre d'agent par défaut",
+  "dockerViewGroupContainers": "Conteneurs",
+  "dockerViewGroupProjects": "Projets Compose",
+  "dockerProjectActionStart": "Démarrer le projet",
+  "dockerProjectActionStop": "Arrêter le projet",
+  "dockerProjectActionRestart": "Redémarrer le projet",
+  "dockerProjectConfirmStopTitle": "Arrêter le projet Compose",
+  "dockerProjectConfirmRestartTitle": "Redémarrer le projet Compose",
+  "dockerProjectConfirmMessage": "Voulez-vous vraiment {action} le projet « {project} » ? Les {count} conteneurs suivants seront affectés :",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "Projet « {project} » {action} avec succès",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "Projet « {project} » {action} terminé avec {failedCount} échec(s)",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "Aucun projet Docker Compose trouvé",
+  "dockerMountsTitle": "Montages",
+  "dockerMountReadOnly": "Lecture seule",
+  "dockerMountReadWrite": "Lecture/Écriture",
+  "sftpBookmarksTitle": "Signets de répertoire",
+  "sftpNoBookmarks": "Aucun signet enregistré pour l'instant",
+  "sftpAddBookmark": "Ajouter aux signets",
+  "sftpRemoveBookmark": "Supprimer le signet",
+  "sftpCurrentDirectory": "Répertoire actuel",
+  "sftpSelectMode": "Sélection multiple",
+  "sftpSelectedCount": "{count} sélectionné(s)",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "Tout sélectionner",
+  "sftpDeselectAll": "Tout désélectionner",
+  "sftpBatchCopy": "Copier",
+  "sftpBatchMove": "Déplacer",
+  "sftpBatchDeleteConfirmTitle": "Confirmer la suppression par lot",
+  "sftpBatchDeleteConfirmMessage": "Voulez-vous vraiment supprimer les {count} éléments sélectionnés ?",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "Remarque : Les répertoires non vides ne peuvent pas être supprimés de façon récursive et seront ignorés.",
+  "sftpBatchCopyConfirmTitle": "Confirmer la copie par lot",
+  "sftpBatchCopyConfirmMessage": "Copier {count} éléments sélectionnés vers \"{directory}\" ?",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "Confirmer le déplacement par lot",
+  "sftpBatchMoveConfirmMessage": "Déplacer {count} éléments sélectionnés vers \"{directory}\" ?",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "Résultats des opérations par lot",
+  "sftpBatchOutcomeSkipped": "Ignoré (la cible existe déjà ou n'est pas prise en charge)",
+  "sftpBatchTargetRestricted": "Impossible de choisir le répertoire source ou un sous-répertoire comme destination",
+  "sftpSelectCurrentDir": "Choisir ce répertoire",
+  "sftpBatchOperationSuccess": "{count} éléments traités avec succès",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "Sauvegarde et migration de configuration",
+  "configExportTitle": "Exporter la configuration",
+  "configExportSubtitle": "Exporter serveurs, agents, commandes, signets et préférences en JSON",
+  "configExportDialogTitle": "Exporter la configuration Valhalla",
+  "configExportSuccess": "Configuration exportée avec succès",
+  "configExportError": "Échec de l'exportation de la configuration : {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "Importer la configuration",
+  "configImportSubtitle": "Importer la configuration depuis un fichier JSON de sauvegarde",
+  "configBackupTooLarge": "Le fichier de sauvegarde dépasse la taille maximale autorisée (8 Mo)",
+  "configImportPreviewTitle": "Aperçu de l'importation de configuration",
+  "configImportPreviewDesc": "Examinez le contenu avant d'importer. Les éléments existants seront conservés et fusionnés.",
+  "configImportServersCount": "Serveurs ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "Agents configurés ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "Commandes rapides ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "Signets ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "Les commandes personnalisées peuvent contenir des scripts sensibles ou des identifiants intégrés. Aucun mot de passe, clé privée ou empreinte d'hôte approuvée n'est transféré.",
+  "configImportGlobalPreferences": "Importer les préférences globales de l'application",
+  "configImportGlobalPreferencesDesc": "Écrase les paramètres actuels de thème, terminal et navigation",
+  "configImportConfirmAction": "Confirmer l'importation",
+  "configImportSuccess": "Configuration importée avec succès",
+  "configImportErrorTitle": "Sauvegarde de configuration non valide",
+  "configImportErrorGeneric": "Échec de l'importation de la configuration : {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "Copier les détails de diagnostic",
+  "configImportErrorCopied": "Détails de diagnostic copiés dans le presse-papiers",
+  "configImportErrorUnsupportedVersion": "Format ou version de sauvegarde non pris en charge",
+  "configImportErrorMalformed": "JSON de configuration malformé ou corrompu"
 }

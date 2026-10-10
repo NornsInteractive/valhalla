@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "ライセンスを読み込めません。norns.soft@gmail.com にお問い合わせください。",
   "aboutLinkFailed": "リンクを開けません。ブラウザで https://norns.cc.cd にアクセスしてください。",
   "downloadReveal": "エクスプローラーで表示",
-  "downloadRevealFailed": "ダウンロードフォルダーを開けません。移動または削除された可能性があります。"
+  "downloadRevealFailed": "ダウンロードフォルダーを開けません。移動または削除された可能性があります。",
+  "settingsKnownHostsSubtitle": "{count} 件の信頼済みホストキー",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "信頼済みホストキーはありません",
+  "settingsKnownHostsDialogTitle": "既知のホストキー",
+  "settingsHostKeyRevoke": "取り消す",
+  "settingsHostKeyRevokeConfirmTitle": "ホストキーの取り消し",
+  "settingsHostKeyRevokeConfirmMessage": "{hostPort} のホストキーを取り消しますか？該当ホストのアクティブなSSH接続は切断され、次回接続時にホストキーの再確認が必要になります。",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "フィンガープリントをクリップボードにコピーしました",
+  "settingsHostKeyRevoked": "ホストキーを取り消しました",
+  "settingsClearStorageSubtitle": "選択したサーバーのパスワードと秘密鍵を消去",
+  "settingsClearStorageDialogTitle": "サーバー認証情報の初期化",
+  "settingsClearStorageDesc": "安全なストレージからSSHパスワードと秘密鍵を消去するサーバーを選択します。サーバー設定やチャット履歴は削除されません。",
+  "settingsClearStorageNoServers": "登録されているサーバーがありません",
+  "settingsClearStorageSelectAll": "すべて選択",
+  "settingsClearStorageDeselectAll": "選択解除",
+  "settingsClearStorageConfirmTitle": "認証情報消去の確認",
+  "settingsClearStorageConfirmMessage": "選択した {count} 台のサーバーの認証情報を消去しますか？これらのサーバーへのアクティブな接続は直ちに切断されます。",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "選択項目を消去 ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "選択したサーバーの認証情報を消去しました",
+  "settingsClearStorageError": "一部のサーバー認証情報の消去に失敗しました。もう一度お試しください。",
+  "settingsDefaultAcpAgent": "デフォルト ACP エージェント",
+  "settingsDefaultAcpAgentSubtitle": "このサーバーのACPチャット用デフォルトエージェント",
+  "settingsDefaultCliAgent": "デフォルト CLI エージェント",
+  "settingsDefaultCliAgentSubtitle": "このサーバーのCLIチャット用デフォルトエージェント",
+  "settingsDefaultAgentAutomatic": "自動（利用可能な最初の項目）",
+  "settingsDefaultAgentSelectTitle": "デフォルトエージェントの選択",
+  "settingsDefaultAgentNoServer": "サーバーが選択されていません",
+  "settingsDefaultAgentNoAgents": "このサーバーに設定されたエージェントはありません",
+  "settingsDefaultAgentSaveFailed": "デフォルトエージェントの設定更新に失敗しました",
+  "dockerViewGroupContainers": "コンテナ",
+  "dockerViewGroupProjects": "Compose プロジェクト",
+  "dockerProjectActionStart": "プロジェクトを開始",
+  "dockerProjectActionStop": "プロジェクトを停止",
+  "dockerProjectActionRestart": "プロジェクトを再起動",
+  "dockerProjectConfirmStopTitle": "Compose プロジェクトの停止",
+  "dockerProjectConfirmRestartTitle": "Compose プロジェクトの再起動",
+  "dockerProjectConfirmMessage": "プロジェクト「{project}」に対して {action} を実行しますか？以下の {count} 個のコンテナが影響を受けます：",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "プロジェクト「{project}」の{action}が完了しました",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "プロジェクト「{project}」の{action}が完了しました（{failedCount} 件失敗）",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "Docker Compose プロジェクトが見つかりません",
+  "dockerMountsTitle": "マウント",
+  "dockerMountReadOnly": "読み取り専用",
+  "dockerMountReadWrite": "読み書き可能",
+  "sftpBookmarksTitle": "ディレクトリーブックマーク",
+  "sftpNoBookmarks": "保存されたブックマークはありません",
+  "sftpAddBookmark": "ブックマークに追加",
+  "sftpRemoveBookmark": "ブックマークを解除",
+  "sftpCurrentDirectory": "現在のディレクトリ",
+  "sftpSelectMode": "複数選択モード",
+  "sftpSelectedCount": "{count} 件選択中",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "すべて選択",
+  "sftpDeselectAll": "選択を解除",
+  "sftpBatchCopy": "コピー",
+  "sftpBatchMove": "移動",
+  "sftpBatchDeleteConfirmTitle": "一括削除の確認",
+  "sftpBatchDeleteConfirmMessage": "選択した {count} 件のアイテムを削除してもよろしいですか？",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "注意：空ではないディレクトリは再帰的に削除できないためスキップされます。",
+  "sftpBatchCopyConfirmTitle": "一括コピーの確認",
+  "sftpBatchCopyConfirmMessage": "選択した {count} 件のアイテムを「{directory}」にコピーしますか？",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "一括移動の確認",
+  "sftpBatchMoveConfirmMessage": "選択した {count} 件のアイテムを「{directory}」に移動しますか？",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "一括処理の結果",
+  "sftpBatchOutcomeSkipped": "スキップ（既に存在するか非対応）",
+  "sftpBatchTargetRestricted": "自身またはサブディレクトリをコピー・移動先として指定することはできません",
+  "sftpSelectCurrentDir": "このディレクトリを選択",
+  "sftpBatchOperationSuccess": "{count} 件の処理が完了しました",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "バックアップと設定移行",
+  "configExportTitle": "設定のエクスポート",
+  "configExportSubtitle": "サーバー、エージェント、クイックコマンド、ブックマーク、設定をJSONにエクスポート",
+  "configExportDialogTitle": "Valhalla設定のエクスポート",
+  "configExportSuccess": "設定を正常にエクスポートしました",
+  "configExportError": "設定のエクスポートに失敗しました: {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "設定のインポート",
+  "configImportSubtitle": "バックアップJSONファイルから設定をインポート",
+  "configBackupTooLarge": "バックアップファイルが最大サイズ制限（8 MB）を超えています",
+  "configImportPreviewTitle": "設定インポートのプレビュー",
+  "configImportPreviewDesc": "インポートする内容を確認してください。既存の項目は保持されマージされます。",
+  "configImportServersCount": "サーバー ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "エージェント ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "クイックコマンド ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "ブックマーク ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "カスタムコマンドには機密性の高いスクリプトや埋め込み認証情報が含まれる場合があります。パスワード、秘密鍵、信頼済みフィンガープリントは転送されません。",
+  "configImportGlobalPreferences": "グローバルアプリケーション設定をインポート",
+  "configImportGlobalPreferencesDesc": "現在のテーマ、ターミナル、ナビゲーション設定を上書きします",
+  "configImportConfirmAction": "インポートを確認",
+  "configImportSuccess": "設定を正常にインポートしました",
+  "configImportErrorTitle": "無効な設定バックアップファイル",
+  "configImportErrorGeneric": "設定のインポートに失敗しました: {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "診断詳細をコピー",
+  "configImportErrorCopied": "診断詳細をクリップボードにコピーしました",
+  "configImportErrorUnsupportedVersion": "サポートされていないバックアップ形式またはバージョンです",
+  "configImportErrorMalformed": "設定JSONファイルが破損しているか形式が不正です"
 }

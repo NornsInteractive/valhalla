@@ -6,17 +6,23 @@ import 'package:path/path.dart' as path_util;
 import 'package:uuid/uuid.dart';
 import 'package:dartssh2/dartssh2.dart';
 import '../../infrastructure/sftp/sftp_client_service.dart';
+import '../../infrastructure/sftp/remote_file_actions.dart';
 import '../utils/file_preview.dart';
 import '../errors/app_exceptions.dart';
 import '../services/download_platform_service.dart';
 import '../services/app_diagnostics.dart';
 
 import 'server_provider.dart';
+import 'infrastructure_providers.dart';
 import 'storage_providers.dart';
 import '../../data/models/server_profile.dart';
 
 final downloadPlatformServiceProvider = Provider<DownloadPlatformService>(
   (ref) => DownloadPlatformService(),
+);
+
+final remoteFileActionsProvider = Provider<RemoteFileActions>(
+  (ref) => RemoteFileActions(ref.watch(sshCommandExecutorProvider)),
 );
 
 /// 传输成功后的通知回调。
@@ -184,6 +190,7 @@ class SftpState {
 
   /// 文件列表是否升序。
   final bool sortAscending;
+  final bool showHiddenFiles;
 
   const SftpState({
     this.downloadNotificationsUnavailable = false,
@@ -197,6 +204,7 @@ class SftpState {
     this.transfers = const [],
     this.sortKey = SftpSortKey.name,
     this.sortAscending = true,
+    this.showHiddenFiles = false,
   });
 
   /// 是否已在根目录。作为「返回键是否退出 app」的唯一判据，避免多处内联
@@ -261,7 +269,10 @@ class SftpState {
   List<SftpFileItem> get filteredFiles {
     final q = searchQuery.trim().toLowerCase();
     final visible = files.where(
-      (file) => file.name != '.' && !(isAtRoot && file.name == '..'),
+      (file) =>
+          file.name != '.' &&
+          !(isAtRoot && file.name == '..') &&
+          (showHiddenFiles || file.name == '..' || !file.name.startsWith('.')),
     );
     final result = q.isEmpty
         ? visible.toList()
@@ -310,6 +321,7 @@ class SftpState {
     List<SftpTransfer>? transfers,
     SftpSortKey? sortKey,
     bool? sortAscending,
+    bool? showHiddenFiles,
   }) {
     return SftpState(
       downloadNotificationsUnavailable:
@@ -329,6 +341,7 @@ class SftpState {
       transfers: transfers ?? this.transfers,
       sortKey: sortKey ?? this.sortKey,
       sortAscending: sortAscending ?? this.sortAscending,
+      showHiddenFiles: showHiddenFiles ?? this.showHiddenFiles,
     );
   }
 
@@ -369,6 +382,8 @@ class SftpNotifier extends Notifier<SftpState> {
   /// 读取远端文件内容失败的稳定 reason code，由 UI 映射 ARB 文案。
   static const readFailedCode = 'SFTP_READ_FAILED';
   static const previewTooLargeCode = SftpClientService.previewTooLargeCode;
+  static const hiddenPreferenceSaveFailedCode =
+      'SFTP_HIDDEN_PREFERENCE_SAVE_FAILED';
 
   int _sourceEpoch = 0;
   int _loadEpoch = 0;
@@ -427,6 +442,7 @@ class SftpNotifier extends Notifier<SftpState> {
     final storage = ref.watch(localStorageServiceProvider);
     final sortKey = sftpSortKeyFromStorage(storage.getFileSortKey());
     final sortAscending = storage.getFileSortAscending();
+    final showHiddenFiles = storage.getFileShowHidden();
 
     if (sshClient != null) {
       Future.microtask(() {
@@ -463,6 +479,7 @@ class SftpNotifier extends Notifier<SftpState> {
         currentPath: '/',
         sortKey: sortKey,
         sortAscending: sortAscending,
+        showHiddenFiles: showHiddenFiles,
       );
     } else {
       if (previous != null) {
@@ -494,6 +511,7 @@ class SftpNotifier extends Notifier<SftpState> {
         currentPath: '/',
         sortKey: sortKey,
         sortAscending: sortAscending,
+        showHiddenFiles: showHiddenFiles,
       );
     }
   }
@@ -554,6 +572,22 @@ class SftpNotifier extends Notifier<SftpState> {
     state = state.copyWith(searchQuery: q);
   }
 
+  Future<void> setShowHiddenFiles(bool value) async {
+    try {
+      await ref.read(localStorageServiceProvider).setFileShowHidden(value);
+      if (ref.mounted) {
+        state = state.copyWith(showHiddenFiles: value, clearError: true);
+      }
+    } catch (error, stack) {
+      unawaited(
+        AppDiagnostics.instance.record('sftp.hidden-preference', error, stack),
+      );
+      if (ref.mounted) {
+        state = state.copyWith(errorMessage: hiddenPreferenceSaveFailedCode);
+      }
+    }
+  }
+
   /// 切换排序字段。
   ///
   /// 允许外部传 null 之外的任意值；重复点同一个字段时由 UI 决定是否
@@ -595,7 +629,7 @@ class SftpNotifier extends Notifier<SftpState> {
   /// 目录一律不可预览；其余按扩展名白名单判断（见 [FilePreview]）。图片不在
   /// 本轮范围内，实现层不预留分支——「不支持」是明确结论而不是待办。
   bool canPreview(SftpFileItem item) {
-    if (item.isDirectory) return false;
+    if (item.isDirectory || item.linkTargetErrorCode != null) return false;
     return FilePreview.isTextPreviewable(item.name);
   }
 
@@ -629,6 +663,10 @@ class SftpNotifier extends Notifier<SftpState> {
   ///
   /// 与 [uploadFrom] 相同：Future 完成只表示已入队。
   Future<void> downloadTo(SftpFileItem item, String localPath) async {
+    if (item.linkTargetErrorCode != null) {
+      state = state.copyWith(errorMessage: item.linkTargetErrorCode);
+      return;
+    }
     state = state
         .withAppendedTransfer(
           SftpTransfer(
@@ -654,6 +692,10 @@ class SftpNotifier extends Notifier<SftpState> {
     required bool openWhenComplete,
   }) async {
     final sourceEpoch = _sourceEpoch;
+    if (item.linkTargetErrorCode != null) {
+      state = state.copyWith(errorMessage: item.linkTargetErrorCode);
+      return null;
+    }
     try {
       final path = await ref
           .read(downloadPlatformServiceProvider)
@@ -1112,6 +1154,141 @@ class SftpNotifier extends Notifier<SftpState> {
     if (_currentSource(sourceEpoch)) await refresh();
   }
 
+  bool _batchBusy = false;
+
+  Future<List<RemoteFileResult>> runBatch(
+    RemoteFileAction action,
+    List<SftpFileItem> items, {
+    String? targetDirectory,
+    ServerProfile? expectedServer,
+    void Function(int completed, int total)? onProgress,
+  }) async {
+    if (_batchBusy) throw StateError('FILE_OPERATION_PENDING');
+    final server = ref.read(activeServerProvider);
+    if (expectedServer != null &&
+        !(server?.hasSameConnectionSettings(expectedServer) ?? false)) {
+      throw StateError('FILE_TARGET_CHANGED');
+    }
+    if (server == null || !ref.read(serverConnectionProvider).isConnected) {
+      throw const SSHConnectionException('Server is not connected');
+    }
+    final sourceEpoch = _sourceEpoch;
+    final service = _service;
+    final actions = ref.read(remoteFileActionsProvider);
+    final selected = {
+      for (final item in items) item.path: item,
+    }.values.toList();
+    final results = <RemoteFileResult>[];
+    _batchBusy = true;
+    try {
+      for (final item in selected) {
+        if (!_currentSource(sourceEpoch) ||
+            !ref.read(serverConnectionProvider).isConnected) {
+          results.add(
+            RemoteFileResult(
+              item.path,
+              RemoteFileOutcome.failed,
+              'FILE_OPERATION_INTERRUPTED',
+            ),
+          );
+          continue;
+        }
+        try {
+          if (!path_util.posix.isAbsolute(item.path) ||
+              item.path.contains('\x00') ||
+              path_util.posix.normalize(item.path) == '/' ||
+              item.name == '.' ||
+              item.name == '..') {
+            throw const FormatException('FILE_PATH_INVALID');
+          }
+          switch (action) {
+            case RemoteFileAction.download:
+              if (item.isDirectory || item.isSymbolicLink) {
+                results.add(
+                  RemoteFileResult(
+                    item.path,
+                    RemoteFileOutcome.skipped,
+                    'FILE_REGULAR_ONLY',
+                  ),
+                );
+              } else {
+                final id = await downloadFile(item);
+                results.add(
+                  RemoteFileResult(
+                    item.path,
+                    id == null
+                        ? RemoteFileOutcome.failed
+                        : RemoteFileOutcome.queued,
+                    id == null ? 'FILE_DOWNLOAD_QUEUE_FAILED' : null,
+                  ),
+                );
+              }
+            case RemoteFileAction.delete:
+              if (item.isDirectory && !item.isSymbolicLink) {
+                await service.deleteDirectory(item.path);
+              } else {
+                await service.deleteFile(item.path);
+              }
+              results.add(
+                RemoteFileResult(item.path, RemoteFileOutcome.completed),
+              );
+            case RemoteFileAction.copy:
+            case RemoteFileAction.move:
+              if (targetDirectory == null) {
+                throw const FormatException('FILE_TARGET_REQUIRED');
+              }
+              results.add(
+                await actions.execute(
+                  server.id,
+                  action,
+                  item.path,
+                  targetDirectory,
+                ),
+              );
+          }
+        } catch (error) {
+          results.add(
+            RemoteFileResult(
+              item.path,
+              RemoteFileOutcome.failed,
+              error.toString(),
+            ),
+          );
+        }
+        if (_currentSource(sourceEpoch)) {
+          onProgress?.call(results.length, selected.length);
+        }
+      }
+    } finally {
+      _batchBusy = false;
+      if (_currentSource(sourceEpoch) && action != RemoteFileAction.download) {
+        await refresh();
+      }
+    }
+    return results;
+  }
+
+  Future<void> retryTransfer(String id) async {
+    final task = state.transferById(id);
+    if (task == null || task.status != SftpTransferStatus.failed) return;
+    if (!ref.read(serverConnectionProvider).isConnected) {
+      throw const SSHConnectionException('Server is not connected');
+    }
+    _downloadRetries.remove(id);
+    _connectionPaused.remove(id);
+    state = state
+        .withTransfer(
+          task.copyWith(
+            status: SftpTransferStatus.queued,
+            transferredBytes: 0,
+            clearError: true,
+          ),
+        )
+        .copyWith(clearError: state.errorMessage == task.errorMessage);
+    _notifyDownload(state.transferById(id)!, force: true);
+    _pumpQueue();
+  }
+
   Future<void> createFile(String name, String content) async {
     final sourceEpoch = _sourceEpoch;
     final fullPath = state.currentPath == '/'
@@ -1123,7 +1300,7 @@ class SftpNotifier extends Notifier<SftpState> {
 
   Future<void> deleteItem(SftpFileItem item) async {
     final sourceEpoch = _sourceEpoch;
-    if (item.isDirectory) {
+    if (item.isDirectory && !item.isSymbolicLink) {
       await _service.deleteDirectory(item.path);
     } else {
       await _service.deleteFile(item.path);
@@ -1146,6 +1323,10 @@ class SftpNotifier extends Notifier<SftpState> {
   Future<void> openFileForEditing(SftpFileItem item) async {
     final sourceEpoch = _sourceEpoch;
     final editorEpoch = ++_editorEpoch;
+    if (item.linkTargetErrorCode != null) {
+      state = state.copyWith(errorMessage: item.linkTargetErrorCode);
+      return;
+    }
     if (item.sizeBytes > SftpClientService.maxPreviewBytes) {
       state = state.copyWith(
         errorMessage: previewTooLargeCode,

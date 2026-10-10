@@ -1,5 +1,15 @@
 # Valhalla - 模块详细设计与分层架构说明书
 
+## 2026-10-05 远程文件浏览增量
+
+SftpFileItem 新增兼容默认的 isSymbolicLink 和 linkTargetErrorCode；
+SftpOperations 接口不变，listFiles 仅为链接调用原生 stat，最多四个并发。
+isDirectory 表示目标类型，path 仍是链接入口；权限字符串以 l 表示链接。
+SFTP 状态错误单条隔离，运输错误仍交由既有超时和过期结果保护处理。
+SftpState.showHiddenFiles 与 copyWith 保留本地过滤状态，偏好在保存成功后
+更新，失败使用稳定错误码。下载和预览拒绝已知失效链接，目录链接删除走
+deleteFile/remove。详情及验证进度见[本轮契约](../../agent-workflow/2026-10-05-remote-files.md)。
+
 ## 2026-10-01 模型发现（覆盖下方旧的会话配置发现约定）
 
 `agentModelQueryProvider` 是可注入的独立API查询入口，Codex复用
@@ -236,3 +246,17 @@ class TerminalSessionBridge {
 │ Infrastructure SDKs     │
 └─────────────────────────┘
 ```
+# 2026-10-09 五模块增量设计（已实现）
+
+- 安全：复用本地主机指纹与安全存储，设置动作集中处理断连、删除和失败传播。
+- ACP：草稿保存成功后发布状态；显式运行设置部分失败尝试回滚，失败保留真实诊断。
+- 文件：SFTP 继续承担目录/删除/传输；同服务器复制/移动走现有 SSH 执行器，
+  复制使用目标目录内临时副本再无覆盖移动，链接保留，不经手机中转文件内容。
+- Docker：列表解析 Compose 标签，项目动作逐个执行确认过的 ID，沿用日志与终端。
+- 迁移：版本 1 JSON 保存白名单配置；新增对象重新分配 ID，按服务器+Agent 联合
+  身份重映射默认选择。偏好写入逐项检查结果，失败恢复受影响键，不导出凭据。
+
+UI 与接口责任边界见[实施契约](../../agent-workflow/2026-10-09-completion.md)，
+测试结果及真实环境待验收项见[本轮交接](../handoffs/2026-10-09-five-module-completion.md)。
+复制/移动要求 GNU coreutils；导入回滚不保证进程被杀时多键原子性，不能将
+本地模拟测试当作各平台或真实账号已可用。

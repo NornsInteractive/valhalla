@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +14,7 @@ import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/data/models/agent_profile.dart';
 import 'package:valhalla/data/models/chat_session.dart';
 import 'package:valhalla/data/models/server_profile.dart';
+import 'package:valhalla/data/repositories/chat_repository.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/infrastructure/acp/acp_client_adapter.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
@@ -115,6 +118,30 @@ class _FakeSshManager extends SSHClientManager {
 class _FakeSshClient implements SSHClient {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// 可以把一次本地历史读取挂住的临时库，用来复现「读取途中掉线」。
+///
+/// 只在 [holdNextLoad] 被打开时挂住**接下来那一次** loadSession，其余读写
+/// 全部走真实 SQLite 实现（同样的路径与参数签名）。
+class _HoldingHistoryRepository extends ChatRepository {
+  _HoldingHistoryRepository(super.storage, {required super.databasePath});
+
+  /// 打开后，下一次 `loadSession` 会等待 [heldLoad] 完成。
+  bool holdNextLoad = false;
+  final Completer<ChatSession?> heldLoad = Completer<ChatSession?>();
+
+  int loadCalls = 0;
+
+  @override
+  Future<ChatSession?> loadSession(String id, {int? before, int limit = 50}) {
+    loadCalls++;
+    if (holdNextLoad) {
+      holdNextLoad = false;
+      return heldLoad.future;
+    }
+    return super.loadSession(id, before: before, limit: limit);
+  }
 }
 
 void main() {
@@ -275,6 +302,7 @@ void main() {
     ],
     bool holdPrompt = false,
     bool importHistory = true,
+    ChatRepository? repository,
   }) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -290,7 +318,9 @@ void main() {
     final created = ProviderContainer(
       overrides: [
         localStorageServiceProvider.overrideWithValue(storage),
-        tempChatRepositoryOverride(),
+        repository == null
+            ? tempChatRepositoryOverride()
+            : chatRepositoryProvider.overrideWithValue(repository),
         agentRegistryProvider.overrideWith(() => registry),
         serverConnectionProvider.overrideWith(() => connection),
         activeServerProvider.overrideWith(_StubActiveServer.new),
@@ -714,6 +744,137 @@ void main() {
       ]);
       expect(after.draftText, 'kept draft');
       expect(after.recoveryStatus, SessionRecoveryStatus.idle);
+    });
+  });
+
+  group('本地历史读取中途掉线', () {
+    test('读取中被断开：busy 被清掉，迟到结果被丢弃，重试补上更早的历史', () async {
+      final directory = Directory.systemTemp.createTempSync(
+        'valhalla_chat_gate_',
+      );
+      addTearDown(() {
+        if (directory.existsSync()) {
+          directory.deleteSync(recursive: true);
+        }
+      });
+      SharedPreferences.setMockInitialValues({});
+      final storage = LocalStorageService(
+        await SharedPreferences.getInstance(),
+      );
+      final repository = _HoldingHistoryRepository(
+        storage,
+        databasePath: '${directory.path}/chat.sqlite3',
+      );
+      // 70 条交替的远端回放：导入只带回最后 50 条，因此 offset=20，
+      // 往上翻历史是真实的分页读取，不会被 _loadSelectedMessages 提前返回。
+      final replay = <Map<String, Object?>>[
+        for (var index = 0; index < 70; index++)
+          {
+            'sessionUpdate': index.isEven
+                ? 'user_message_chunk'
+                : 'agent_message_chunk',
+            'messageId': index.isEven ? 'u$index' : 'a$index',
+            'content': {
+              'type': 'text',
+              'text': index.isEven ? 'question $index' : 'answer $index',
+            },
+          },
+      ];
+      final container = await importedContainer(
+        replay: replay,
+        repository: repository,
+      );
+      final notifier = container.read(aiChatProvider.notifier);
+      final beforeId = container.read(aiChatProvider).activeSessionId;
+      final loadCallsBefore = repository.loadCalls;
+      final visible = container.read(aiChatProvider).activeSession!;
+      final beforeMessages = visible.messages.map((m) => m.content).toList();
+      expect(beforeMessages, hasLength(50), reason: '导入只带回最后 50 条');
+      expect(beforeMessages.first, 'question 20');
+      expect(beforeMessages.last, 'answer 69');
+      expect(visible.messageOffset, 20, reason: '更早的 20 条还在本地库里');
+      expect(visible.totalMessageCount, 70);
+
+      // 用户往上翻历史：开始读更早的本地消息。
+      repository.holdNextLoad = true;
+      final loading = notifier.loadOlderMessages();
+      await pumpEventQueue();
+      expect(
+        container.read(aiChatProvider).isLoadingMessages,
+        isTrue,
+        reason: '前提：本地历史读取真的开始了',
+      );
+      expect(repository.loadCalls, loadCallsBefore + 1);
+
+      // 读取还没回来就掉线：_stopGeneration 必须清掉 busy，
+      // 并让迟到的 finally 不再应用结果。
+      connection.setConnected(false);
+      await settle(container);
+      expect(
+        container.read(aiChatProvider).isLoadingMessages,
+        isFalse,
+        reason: '掉线后 isLoadingMessages 必须被清掉，否则永远挡住后续读取',
+      );
+      final disconnected = container.read(aiChatProvider);
+      expect(disconnected.activeSessionId, beforeId, reason: '掉线不得换掉当前会话');
+      expect(
+        disconnected.activeSession!.messages.map((m) => m.content),
+        beforeMessages,
+        reason: '掉线不得替换已经显示的内容',
+      );
+
+      // 旧的那次读取现在才带着一份陈旧结果回来。
+      repository.heldLoad.complete(
+        visible.copyWith(
+          messages: [
+            ChatMessage(
+              id: 'stale-after-disconnect',
+              role: MessageRole.assistant,
+              content: 'stale replay',
+              createdAt: DateTime.utc(2026),
+            ),
+          ],
+        ),
+      );
+      await loading;
+      await settle(container);
+
+      final after = container.read(aiChatProvider);
+      expect(after.isLoadingMessages, isFalse, reason: '迟到的读取不能把 busy 又打开');
+      expect(
+        after.activeSession!.messages.map((m) => m.content),
+        beforeMessages,
+        reason: '掉线后迟到的陈旧结果绝不能被应用',
+      );
+      expect(
+        after.activeSession!.messages.map((m) => m.content),
+        isNot(contains('stale replay')),
+      );
+      expect(after.activeSessionId, beforeId, reason: '会话选择不能被换掉');
+      expect(after.lastErrorCode, isNull, reason: '被丢弃的迟到结果不是加载失败');
+
+      // 重新往上翻：busy 没有被卡住，缺少的更早历史必须被补上。
+      await notifier.loadOlderMessages();
+      await settle(container);
+      expect(repository.loadCalls, loadCallsBefore + 2, reason: '重试必须真的再读一次');
+      expect(
+        container.read(aiChatProvider).isLoadingMessages,
+        isFalse,
+        reason: '重试之后不能留下 pending 状态',
+      );
+      final retried = container.read(aiChatProvider).activeSession!;
+      final retriedContents = retried.messages.map((m) => m.content).toList();
+      expect(retried.messages, hasLength(70), reason: '更早的 20 条必须被补齐');
+      expect(retriedContents, [
+        for (var index = 0; index < 70; index++)
+          index.isEven ? 'question $index' : 'answer $index',
+      ], reason: '补齐后正好是全部 70 条，更早的在前、已显示的在后');
+      expect(
+        retriedContents.skip(retriedContents.length - beforeMessages.length),
+        beforeMessages,
+        reason: '原本显示的 50 条必须原样保留在尾部',
+      );
+      expect(container.read(aiChatProvider).activeSessionId, beforeId);
     });
   });
 }

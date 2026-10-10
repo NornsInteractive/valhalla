@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
+import 'package:valhalla/core/providers/storage_providers.dart';
+import 'package:valhalla/data/models/server_profile.dart';
+import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/files/sftp_file_view.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 
@@ -86,6 +90,30 @@ class _TestServerConnectionNotifier extends ServerConnectionNotifier {
       const ServerConnectionState(status: ConnectionStateEnum.connected);
 }
 
+/// Transfer controls read the connection state, and the SFTP surface also
+/// resolves `fileBookmarksProvider`, which needs the active server plus an
+/// initialized `LocalStorageService`. Pin the same connected srv-1 metadata
+/// the shell supplies; no real SSH is started.
+class _ActiveServerWithProfile extends ActiveServerNotifier {
+  final ServerProfile _server;
+  _ActiveServerWithProfile(this._server);
+
+  @override
+  ServerProfile? build() => _server;
+}
+
+const _kTransferListServer = ServerProfile(
+  id: 'srv-1',
+  name: 'Test Server',
+  host: '10.0.0.1',
+  port: 22,
+  username: 'root',
+  authType: AuthType.password,
+);
+
+/// Initialized once per file; `_buildTestApp` is synchronous and reuses this.
+late final LocalStorageService _storage;
+
 Widget _buildTestApp({
   required _RecordingSftpNotifier notifier,
   Locale locale = const Locale('en'),
@@ -93,6 +121,10 @@ Widget _buildTestApp({
 }) {
   return ProviderScope(
     overrides: [
+      localStorageServiceProvider.overrideWithValue(_storage),
+      activeServerProvider.overrideWith(
+        () => _ActiveServerWithProfile(_kTransferListServer),
+      ),
       sftpProvider.overrideWith(() => notifier),
       serverConnectionProvider.overrideWith(_TestServerConnectionNotifier.new),
     ],
@@ -106,6 +138,11 @@ Widget _buildTestApp({
 }
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    _storage = await LocalStorageService.init();
+  });
+
   testWidgets(
     'Windows completed downloads can be revealed and failures are visible',
     (tester) async {

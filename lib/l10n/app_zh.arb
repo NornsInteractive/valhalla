@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "无法加载许可协议，请联系 norns.soft@gmail.com。",
   "aboutLinkFailed": "无法打开链接，请在浏览器中访问 https://norns.cc.cd。",
   "downloadReveal": "在文件资源管理器中显示",
-  "downloadRevealFailed": "无法打开下载文件夹，该文件夹可能已被移动或删除。"
+  "downloadRevealFailed": "无法打开下载文件夹，该文件夹可能已被移动或删除。",
+  "settingsKnownHostsSubtitle": "{count} 个受信任的主机公钥",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "未找到受信任的主机公钥",
+  "settingsKnownHostsDialogTitle": "已知主机公钥指纹",
+  "settingsHostKeyRevoke": "撤销信任",
+  "settingsHostKeyRevokeConfirmTitle": "撤销主机公钥信任",
+  "settingsHostKeyRevokeConfirmMessage": "确定撤销 {hostPort} 的主机公钥吗？该主机的活跃 SSH 连接将被断开，下次连接时需要重新验证指纹。",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "主机指纹已复制到剪贴板",
+  "settingsHostKeyRevoked": "已撤销主机公钥信任",
+  "settingsClearStorageSubtitle": "清除所选服务器保存的密码与私钥",
+  "settingsClearStorageDialogTitle": "清除服务器凭据",
+  "settingsClearStorageDesc": "选择要从平台安全存储中清除 SSH 密码与私钥的服务器。服务器配置与历史会话记录不会被删除。",
+  "settingsClearStorageNoServers": "暂无可用服务器",
+  "settingsClearStorageSelectAll": "全选",
+  "settingsClearStorageDeselectAll": "取消全选",
+  "settingsClearStorageConfirmTitle": "确认清除凭据",
+  "settingsClearStorageConfirmMessage": "确定清除所选 {count} 台服务器的安全凭据吗？这些服务器的当前连接将立即断开。",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "清除所选凭据 ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "所选服务器凭据已成功清除",
+  "settingsClearStorageError": "部分服务器凭据清除失败，请重试。",
+  "settingsDefaultAcpAgent": "默认 ACP Agent",
+  "settingsDefaultAcpAgentSubtitle": "当前服务器 ACP 对话的默认智能体",
+  "settingsDefaultCliAgent": "默认 CLI Agent",
+  "settingsDefaultCliAgentSubtitle": "当前服务器 CLI 对话的默认智能体",
+  "settingsDefaultAgentAutomatic": "自动（首个可用）",
+  "settingsDefaultAgentSelectTitle": "选择默认 Agent",
+  "settingsDefaultAgentNoServer": "未选择服务器",
+  "settingsDefaultAgentNoAgents": "当前服务器未配置可用 Agent",
+  "settingsDefaultAgentSaveFailed": "更新默认 Agent 设置失败",
+  "dockerViewGroupContainers": "容器列表",
+  "dockerViewGroupProjects": "Compose 项目",
+  "dockerProjectActionStart": "启动项目",
+  "dockerProjectActionStop": "停止项目",
+  "dockerProjectActionRestart": "重启项目",
+  "dockerProjectConfirmStopTitle": "停止 Compose 项目",
+  "dockerProjectConfirmRestartTitle": "重启 Compose 项目",
+  "dockerProjectConfirmMessage": "确定要对项目“{project}”执行 {action} 操作吗？将影响以下 {count} 个容器：",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "项目“{project}”{action}成功",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "项目“{project}”{action}完成，其中 {failedCount} 个容器失败",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "未发现 Docker Compose 项目",
+  "dockerMountsTitle": "挂载卷",
+  "dockerMountReadOnly": "只读",
+  "dockerMountReadWrite": "读写",
+  "sftpBookmarksTitle": "目录书签",
+  "sftpNoBookmarks": "暂无保存的目录书签",
+  "sftpAddBookmark": "添加书签",
+  "sftpRemoveBookmark": "移除书签",
+  "sftpCurrentDirectory": "当前目录",
+  "sftpSelectMode": "多选模式",
+  "sftpSelectedCount": "已选择 {count} 项",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "全选",
+  "sftpDeselectAll": "取消全选",
+  "sftpBatchCopy": "复制",
+  "sftpBatchMove": "移动",
+  "sftpBatchDeleteConfirmTitle": "确认批量删除",
+  "sftpBatchDeleteConfirmMessage": "确定要删除选中的 {count} 个项目吗？",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "注意：非空目录不支持递归删除，将被跳过。",
+  "sftpBatchCopyConfirmTitle": "确认批量复制",
+  "sftpBatchCopyConfirmMessage": "确定将选中的 {count} 个项目复制到 \"{directory}\" 吗？",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "确认批量移动",
+  "sftpBatchMoveConfirmMessage": "确定将选中的 {count} 个项目移动到 \"{directory}\" 吗？",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "批量操作结果",
+  "sftpBatchOutcomeSkipped": "已跳过（目标已存在或不支持）",
+  "sftpBatchTargetRestricted": "不可选择自身或子目录作为目标路径",
+  "sftpSelectCurrentDir": "选择当前目录",
+  "sftpBatchOperationSuccess": "成功处理 {count} 个项目",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "备份与配置迁移",
+  "configExportTitle": "导出配置",
+  "configExportSubtitle": "将服务器、Agent、快捷命令、书签及偏好设置导出为 JSON",
+  "configExportDialogTitle": "导出 Valhalla 配置",
+  "configExportSuccess": "配置导出成功",
+  "configExportError": "配置导出失败：{error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "导入配置",
+  "configImportSubtitle": "从备份 JSON 文件导入配置",
+  "configBackupTooLarge": "备份文件超过最大大小限制（8 MB）",
+  "configImportPreviewTitle": "预览配置导入",
+  "configImportPreviewDesc": "导入前请仔细检查内容。已有项将被保留并合并。",
+  "configImportServersCount": "服务器 ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "Agent ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "快捷命令 ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "目录书签 ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "自定义命令可能包含敏感脚本或嵌入凭据。密码、私钥及已知主机指纹不会被迁移。",
+  "configImportGlobalPreferences": "导入全局应用偏好设置",
+  "configImportGlobalPreferencesDesc": "覆盖当前主题、终端及导航偏好设置",
+  "configImportConfirmAction": "确认导入",
+  "configImportSuccess": "配置导入成功",
+  "configImportErrorTitle": "无效的配置备份文件",
+  "configImportErrorGeneric": "导入配置失败：{error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "复制诊断详情",
+  "configImportErrorCopied": "诊断详情已复制到剪贴板",
+  "configImportErrorUnsupportedVersion": "不支持的备份格式或版本",
+  "configImportErrorMalformed": "配置文件 JSON 损坏或格式错误"
 }

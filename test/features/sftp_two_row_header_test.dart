@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
+import 'package:valhalla/core/providers/storage_providers.dart';
+import 'package:valhalla/data/models/server_profile.dart';
+import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/files/sftp_file_view.dart';
 import 'package:valhalla/infrastructure/sftp/sftp_client_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
@@ -109,6 +113,10 @@ Widget _buildApp({
 }) {
   return ProviderScope(
     overrides: [
+      localStorageServiceProvider.overrideWithValue(_storage),
+      activeServerProvider.overrideWith(
+        () => _ActiveServerWithProfile(_kHeaderServer),
+      ),
       sftpOperationsProvider.overrideWithValue(_FakeOperations()),
       sftpProvider.overrideWith(() => notifier),
       serverConnectionProvider.overrideWith(_TestServerConnectionNotifier.new),
@@ -121,7 +129,35 @@ Widget _buildApp({
   );
 }
 
+/// The SFTP surface reads `fileBookmarksProvider`, which resolves the active
+/// server and the initialized `LocalStorageService`. Pin the same connected
+/// srv-1 metadata the shell would supply; no real SSH is started.
+class _ActiveServerWithProfile extends ActiveServerNotifier {
+  final ServerProfile _server;
+  _ActiveServerWithProfile(this._server);
+
+  @override
+  ServerProfile? build() => _server;
+}
+
+const _kHeaderServer = ServerProfile(
+  id: 'srv-1',
+  name: 'Test Server',
+  host: '10.0.0.1',
+  port: 22,
+  username: 'root',
+  authType: AuthType.password,
+);
+
+/// Initialized once per file; `_buildApp` is synchronous and reuses this.
+late final LocalStorageService _storage;
+
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    _storage = await LocalStorageService.init();
+  });
+
   group('SFTP Two-Row Header and Special Navigation', () {
     testWidgets(
       'renders Row 1 search and Row 2 actions without overflow on 320px screen',

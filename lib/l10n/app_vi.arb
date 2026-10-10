@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "Không thể tải giấy phép. Vui lòng liên hệ norns.soft@gmail.com.",
   "aboutLinkFailed": "Không thể mở liên kết. Hãy mở https://norns.cc.cd trong trình duyệt.",
   "downloadReveal": "Hiển thị trong File Explorer",
-  "downloadRevealFailed": "Không thể mở thư mục tải xuống. Thư mục có thể đã được di chuyển hoặc xóa."
+  "downloadRevealFailed": "Không thể mở thư mục tải xuống. Thư mục có thể đã được di chuyển hoặc xóa.",
+  "settingsKnownHostsSubtitle": "{count} khóa máy chủ đáng tin cậy",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "Không tìm thấy khóa máy chủ đáng tin cậy nào",
+  "settingsKnownHostsDialogTitle": "Khóa máy chủ đã biết",
+  "settingsHostKeyRevoke": "Thu hồi",
+  "settingsHostKeyRevokeConfirmTitle": "Thu hồi khóa máy chủ",
+  "settingsHostKeyRevokeConfirmMessage": "Thu hồi khóa máy chủ cho {hostPort}? Các kết nối SSH đang hoạt động tới máy chủ này sẽ bị ngắt và bạn phải xác minh lại khóa trong lần kết nối tiếp theo.",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "Đã sao chép dấu vân tay khóa máy chủ vào khay nhớ tạm",
+  "settingsHostKeyRevoked": "Đã thu hồi khóa máy chủ",
+  "settingsClearStorageSubtitle": "Xóa mật khẩu và khóa riêng đã lưu cho các máy chủ đã chọn",
+  "settingsClearStorageDialogTitle": "Đặt lại thông tin xác thực máy chủ",
+  "settingsClearStorageDesc": "Chọn máy chủ để xóa mật khẩu SSH và khóa riêng khỏi bộ lưu trữ an toàn. Cấu hình máy chủ và lịch sử trò chuyện sẽ không bị xóa.",
+  "settingsClearStorageNoServers": "Không có máy chủ nào khả dụng",
+  "settingsClearStorageSelectAll": "Chọn tất cả",
+  "settingsClearStorageDeselectAll": "Bỏ chọn tất cả",
+  "settingsClearStorageConfirmTitle": "Xác nhận đặt lại thông tin xác thực",
+  "settingsClearStorageConfirmMessage": "Bạn có chắc chắn muốn xóa thông tin xác thực cho {count} máy chủ đã chọn không? Các kết nối đang hoạt động sẽ bị ngắt ngay lập tức.",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "Xóa các mục đã chọn ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "Đã xóa thành công thông tin xác thực của máy chủ đã chọn",
+  "settingsClearStorageError": "Không thể xóa thông tin xác thực cho một số máy chủ. Vui lòng thử lại.",
+  "settingsDefaultAcpAgent": "Agent ACP mặc định",
+  "settingsDefaultAcpAgentSubtitle": "Agent mặc định cho trò chuyện ACP trên máy chủ này",
+  "settingsDefaultCliAgent": "Agent CLI mặc định",
+  "settingsDefaultCliAgentSubtitle": "Agent mặc định cho trò chuyện CLI trên máy chủ này",
+  "settingsDefaultAgentAutomatic": "Tự động (mục đầu tiên khả dụng)",
+  "settingsDefaultAgentSelectTitle": "Chọn Agent mặc định",
+  "settingsDefaultAgentNoServer": "Chưa chọn máy chủ",
+  "settingsDefaultAgentNoAgents": "Không có Agent nào được định cấu hình cho máy chủ này",
+  "settingsDefaultAgentSaveFailed": "Không thể cập nhật cài đặt Agent mặc định",
+  "dockerViewGroupContainers": "Container",
+  "dockerViewGroupProjects": "Dự án Compose",
+  "dockerProjectActionStart": "Khởi động dự án",
+  "dockerProjectActionStop": "Dừng dự án",
+  "dockerProjectActionRestart": "Khởi động lại dự án",
+  "dockerProjectConfirmStopTitle": "Dừng dự án Compose",
+  "dockerProjectConfirmRestartTitle": "Khởi động lại dự án Compose",
+  "dockerProjectConfirmMessage": "Bạn có chắc chắn muốn {action} dự án \"{project}\" không? {count} container sau đây sẽ bị ảnh hưởng:",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "Dự án \"{project}\" {action} thành công",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "Dự án \"{project}\" {action} hoàn tất với {failedCount} lỗi",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "Không tìm thấy dự án Docker Compose nào",
+  "dockerMountsTitle": "Gắn kết",
+  "dockerMountReadOnly": "Chỉ đọc",
+  "dockerMountReadWrite": "Đọc/Ghi",
+  "sftpBookmarksTitle": "Dấu trang thư mục",
+  "sftpNoBookmarks": "Chưa có dấu trang nào được lưu",
+  "sftpAddBookmark": "Thêm dấu trang",
+  "sftpRemoveBookmark": "Xóa dấu trang",
+  "sftpCurrentDirectory": "Thư mục hiện tại",
+  "sftpSelectMode": "Chế độ chọn nhiều",
+  "sftpSelectedCount": "Đã chọn {count}",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "Chọn tất cả",
+  "sftpDeselectAll": "Bỏ chọn tất cả",
+  "sftpBatchCopy": "Sao chép",
+  "sftpBatchMove": "Di chuyển",
+  "sftpBatchDeleteConfirmTitle": "Xác nhận xóa hàng loạt",
+  "sftpBatchDeleteConfirmMessage": "Bạn có chắc chắn muốn xóa {count} mục đã chọn không?",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "Lưu ý: Không thể xóa đệ quy các thư mục không rỗng và chúng sẽ bị bỏ qua.",
+  "sftpBatchCopyConfirmTitle": "Xác nhận sao chép hàng loạt",
+  "sftpBatchCopyConfirmMessage": "Sao chép {count} mục đã chọn sang \"{directory}\"?",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "Xác nhận di chuyển hàng loạt",
+  "sftpBatchMoveConfirmMessage": "Di chuyển {count} mục đã chọn sang \"{directory}\"?",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "Kết quả thao tác hàng loạt",
+  "sftpBatchOutcomeSkipped": "Đã bỏ qua (đích đã tồn tại hoặc không được hỗ trợ)",
+  "sftpBatchTargetRestricted": "Không thể chọn thư mục hiện tại hoặc thư mục con làm đích",
+  "sftpSelectCurrentDir": "Chọn thư mục này",
+  "sftpBatchOperationSuccess": "Đã xử lý thành công {count} mục",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "Sao lưu & Di chuyển cấu hình",
+  "configExportTitle": "Xuất cấu hình",
+  "configExportSubtitle": "Xuất máy chủ, agent, lệnh nhanh, dấu trang và tùy chọn sang JSON",
+  "configExportDialogTitle": "Xuất cấu hình Valhalla",
+  "configExportSuccess": "Đã xuất cấu hình thành công",
+  "configExportError": "Không thể xuất cấu hình: {error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "Nhập cấu hình",
+  "configImportSubtitle": "Nhập cấu hình từ tệp JSON sao lưu",
+  "configBackupTooLarge": "Tệp sao lưu vượt quá dung lượng tối đa cho phép (8 MB)",
+  "configImportPreviewTitle": "Xem trước nhập cấu hình",
+  "configImportPreviewDesc": "Xem lại nội dung trước khi nhập. Các mục hiện có sẽ được giữ lại và hợp nhất.",
+  "configImportServersCount": "Máy chủ ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "Agent ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "Lệnh nhanh ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "Dấu trang ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "Lệnh tùy chỉnh có thể chứa tập lệnh nhạy cảm hoặc thông tin xác thực được nhúng. Không có mật khẩu, khóa riêng tư hoặc dấu vân tay máy chủ đáng tin cậy nào được chuyển giao.",
+  "configImportGlobalPreferences": "Nhập tùy chọn ứng dụng chung",
+  "configImportGlobalPreferencesDesc": "Ghi đè cài đặt giao diện, dòng lệnh và điều hướng hiện tại",
+  "configImportConfirmAction": "Xác nhận nhập",
+  "configImportSuccess": "Đã nhập cấu hình thành công",
+  "configImportErrorTitle": "Tệp sao lưu cấu hình không hợp lệ",
+  "configImportErrorGeneric": "Không thể nhập cấu hình: {error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "Sao chép chi tiết chẩn đoán",
+  "configImportErrorCopied": "Đã sao chép chi tiết chẩn đoán vào khay nhớ tạm",
+  "configImportErrorUnsupportedVersion": "Định dạng hoặc phiên bản sao lưu không được hỗ trợ",
+  "configImportErrorMalformed": "JSON cấu hình bị hỏng hoặc không đúng định dạng"
 }

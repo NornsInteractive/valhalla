@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/providers/infrastructure_providers.dart';
 import '../../core/providers/server_provider.dart';
+import '../../data/models/server_profile.dart';
 import '../../infrastructure/docker/docker_cli_service.dart';
 import '../../infrastructure/ssh/ssh_client_manager.dart';
 
@@ -43,6 +44,17 @@ class DockerState {
       }).toList();
     }
     return result;
+  }
+
+  Map<String, List<DockerContainer>> get composeProjects {
+    final projects = <String, List<DockerContainer>>{};
+    for (final container in filteredContainers) {
+      final project = container.composeProject;
+      if (project != null) {
+        projects.putIfAbsent(project, () => []).add(container);
+      }
+    }
+    return projects;
   }
 
   DockerState copyWith({
@@ -169,6 +181,9 @@ class DockerNotifier extends Notifier<DockerState> {
     if (activeServer == null) {
       throw const SSHConnectionException('No active server selected');
     }
+    if (!ref.read(serverConnectionProvider).isConnected) {
+      throw const SSHConnectionException('Server is not connected');
+    }
 
     if (state.pendingActions.containsKey(containerId)) {
       throw StateError('DOCKER_ACTION_PENDING');
@@ -226,6 +241,109 @@ class DockerNotifier extends Notifier<DockerState> {
         );
       }
     }
+  }
+
+  /// Execute only the exact existing containers shown in the confirmation.
+  Future<List<DockerActionResult>> performProjectLifecycle(
+    String project,
+    String action,
+    List<String> containerIds, {
+    ServerProfile? expectedServer,
+  }) async {
+    if (!{'start', 'stop', 'restart'}.contains(action)) {
+      throw ArgumentError.value(action, 'action');
+    }
+    final server = ref.read(activeServerProvider);
+    if (expectedServer != null &&
+        !(server?.hasSameConnectionSettings(expectedServer) ?? false)) {
+      throw StateError('DOCKER_PROJECT_TARGET_CHANGED');
+    }
+    if (server == null || !ref.read(serverConnectionProvider).isConnected) {
+      throw const SSHConnectionException('Server is not connected');
+    }
+    final ids = containerIds.toSet();
+    final containers = state.containers
+        .where((c) => ids.contains(c.id))
+        .toList();
+    if (ids.isEmpty ||
+        containers.length != ids.length ||
+        containers.any((c) => c.composeProject != project)) {
+      throw StateError('DOCKER_PROJECT_TARGET_CHANGED');
+    }
+    if (ids.any(state.pendingActions.containsKey)) {
+      throw StateError('DOCKER_ACTION_PENDING');
+    }
+    final epoch = _epoch;
+    final service = ref.read(dockerCliServiceProvider);
+    final results = <DockerActionResult>[];
+    state = state.copyWith(
+      pendingActions: {
+        ...state.pendingActions,
+        for (final id in ids) id: action,
+      },
+    );
+    try {
+      for (final container in containers) {
+        if (!ref.mounted ||
+            epoch != _epoch ||
+            !(ref
+                    .read(activeServerProvider)
+                    ?.hasSameConnectionSettings(server) ??
+                false) ||
+            !ref.read(serverConnectionProvider).isConnected) {
+          results.add(
+            DockerActionResult(
+              containerId: container.id,
+              containerName: container.name,
+              success: false,
+              error: 'DOCKER_OPERATION_INTERRUPTED',
+            ),
+          );
+          continue;
+        }
+        try {
+          final result = await service.lifecycle(
+            server.id,
+            action,
+            container.id,
+          );
+          results.add(
+            DockerActionResult(
+              containerId: container.id,
+              containerName: container.name,
+              success: result.isSuccess,
+              error: result.isSuccess
+                  ? null
+                  : 'exit ${result.exitCode}: ${result.stderr.trim()}',
+            ),
+          );
+        } catch (error) {
+          results.add(
+            DockerActionResult(
+              containerId: container.id,
+              containerName: container.name,
+              success: false,
+              error: error.toString(),
+            ),
+          );
+        } finally {
+          if (ref.mounted && epoch == _epoch) {
+            state = state.copyWith(
+              pendingActions: {...state.pendingActions}..remove(container.id),
+            );
+          }
+        }
+      }
+    } finally {
+      if (ref.mounted && epoch == _epoch) {
+        state = state.copyWith(
+          pendingActions: {...state.pendingActions}
+            ..removeWhere((id, _) => ids.contains(id)),
+        );
+        await refresh(quiet: true);
+      }
+    }
+    return results;
   }
 
   void selectContainer(DockerContainer? container) {

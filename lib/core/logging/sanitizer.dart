@@ -1,17 +1,17 @@
 /// 日志脱敏处理器，确保凭证、密钥与私密数据不在控制台或日志文件中明文泄露
 class LogSanitizer {
   static final RegExp _passwordRegex = RegExp(
-    r'((?:password|passwd|pwd|secret|token|api[_-]?key|authorization|cookie|private[_-]?key))\s*(?:[:=]\s*|\s+)(?:bearer\s+)?([^\s,;"}]+)',
+    r'''(\b(?:password|passwd|pwd|secret|token|(?:access|refresh|id)[_-]?token|api[_-]?key|authorization|cookie|private[_-]?key|code_verifier|code_challenge))\s*(?:[:=]\s*|\s+)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|(?:bearer\s+)?[^\s,;"'}&]+)''',
     caseSensitive: false,
   );
 
   static final RegExp _flagSecretRegex = RegExp(
-    r'(--?(?:password|passwd|pwd|secret|token|api[_-]?key))(?:=|\s+)([^\s]+)',
+    r'''(--?(?:password|passwd|pwd|secret|token|(?:access|refresh|id)[_-]?token|api[_-]?key|code_verifier|code_challenge))(?:=|\s+)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s]+)''',
     caseSensitive: false,
   );
 
   static final RegExp _jsonSecretRegex = RegExp(
-    r'''(["'](?:password|passwd|pwd|secret|token|api[_-]?key|authorization|cookie|private[_-]?key)["']\s*:\s*["'])([^"']*)(["'])''',
+    r'''(["'](?:password|passwd|pwd|secret|token|(?:access|refresh|id)[_-]?token|api[_-]?key|authorization|cookie|private[_-]?key|code_verifier|code_challenge)["']\s*:\s*)("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')''',
     caseSensitive: false,
   );
 
@@ -81,10 +81,10 @@ class LogSanitizer {
       '-----BEGIN PRIVATE KEY-----\n[REDACTED_PRIVATE_KEY]\n-----END PRIVATE KEY-----',
     );
 
-    result = result.replaceAllMapped(
-      _jsonSecretRegex,
-      (match) => '${match.group(1)}******${match.group(3)}',
-    );
+    result = result.replaceAllMapped(_jsonSecretRegex, (match) {
+      final quote = match.group(2)![0];
+      return '${match.group(1)}$quote******$quote';
+    });
 
     // 脱敏密码与 Token
     result = result.replaceAllMapped(_passwordRegex, (match) {
@@ -101,8 +101,28 @@ class LogSanitizer {
 
     // OAuth callbacks and authorization challenges are UI-only transient data.
     result = result.replaceAllMapped(
-      RegExp(r'([?&](?:code|state|code_verifier|code_challenge)=)[^&#\s]+'),
+      RegExp(
+        r'([?&](?:code|state|code_verifier|code_challenge)=)[^&#\s]+',
+        caseSensitive: false,
+      ),
       (match) => '${match.group(1)}[REDACTED]',
+    );
+
+    // A string code/state pair is an OAuth response, not a Docker state or RPC code.
+    if (RegExp(r'''["']code["']\s*:\s*["']''').hasMatch(result) &&
+        RegExp(r'''["']state["']\s*:\s*["']''').hasMatch(result)) {
+      result = result.replaceAllMapped(
+        RegExp(
+          r'''(["'](?:code|state)["']\s*:\s*)("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')''',
+        ),
+        (match) => '${match.group(1)}"[REDACTED]"',
+      );
+    }
+    result = result.replaceAllMapped(
+      RegExp(r'(^|[\r\n])([ \t]*code\s*=\s*)([^\s&]+)', caseSensitive: false),
+      (match) => int.tryParse(match.group(3)!) != null
+          ? match.group(0)!
+          : '${match.group(1)}${match.group(2)}[REDACTED]',
     );
 
     return result;

@@ -1230,5 +1230,243 @@
   "aboutLicenseLoadFailed": "無法載入授權條款，請聯絡 norns.soft@gmail.com。",
   "aboutLinkFailed": "無法開啟連結，請在瀏覽器中造訪 https://norns.cc.cd。",
   "downloadReveal": "在檔案總管中顯示",
-  "downloadRevealFailed": "無法開啟下載資料夾，該資料夾可能已被移動或刪除。"
+  "downloadRevealFailed": "無法開啟下載資料夾，該資料夾可能已被移動或刪除。",
+  "settingsKnownHostsSubtitle": "{count} 個受信任的主機公鑰",
+  "@settingsKnownHostsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsKnownHostsEmpty": "未找到受信任的主機公鑰",
+  "settingsKnownHostsDialogTitle": "已知主機公鑰指紋",
+  "settingsHostKeyRevoke": "撤銷信任",
+  "settingsHostKeyRevokeConfirmTitle": "撤銷主機公鑰信任",
+  "settingsHostKeyRevokeConfirmMessage": "確定撤銷 {hostPort} 的主機公鑰嗎？該主機的活躍 SSH 連線將被中斷，下次連線時需要重新驗證指紋。",
+  "@settingsHostKeyRevokeConfirmMessage": {
+    "placeholders": {
+      "hostPort": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostKeyFingerprintCopied": "主機指紋已複製到剪貼簿",
+  "settingsHostKeyRevoked": "已撤銷主機公鑰信任",
+  "settingsClearStorageSubtitle": "清除所選伺服器儲存的密碼與私鑰",
+  "settingsClearStorageDialogTitle": "清除伺服器憑據",
+  "settingsClearStorageDesc": "選擇要從平台安全儲存空間中清除 SSH 密碼與私鑰的伺服器。伺服器設定與歷史對話記錄不會被刪除。",
+  "settingsClearStorageNoServers": "暫無可用伺服器",
+  "settingsClearStorageSelectAll": "全選",
+  "settingsClearStorageDeselectAll": "取消全選",
+  "settingsClearStorageConfirmTitle": "確認清除憑據",
+  "settingsClearStorageConfirmMessage": "確定清除所選 {count} 台伺服器的安全憑據嗎？這些伺服器的目前連線將立即中斷。",
+  "@settingsClearStorageConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageAction": "清除所選憑據 ({count})",
+  "@settingsClearStorageAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsClearStorageSuccess": "所選伺服器憑據已成功清除",
+  "settingsClearStorageError": "部分伺服器憑據清除失敗，請重試。",
+  "settingsDefaultAcpAgent": "預設 ACP Agent",
+  "settingsDefaultAcpAgentSubtitle": "目前伺服器 ACP 對話的預設代理",
+  "settingsDefaultCliAgent": "預設 CLI Agent",
+  "settingsDefaultCliAgentSubtitle": "目前伺服器 CLI 對話的預設代理",
+  "settingsDefaultAgentAutomatic": "自動（首個可用）",
+  "settingsDefaultAgentSelectTitle": "選擇預設 Agent",
+  "settingsDefaultAgentNoServer": "未選擇伺服器",
+  "settingsDefaultAgentNoAgents": "目前伺服器未設定可用 Agent",
+  "settingsDefaultAgentSaveFailed": "更新預設 Agent 設定失敗",
+  "dockerViewGroupContainers": "容器列表",
+  "dockerViewGroupProjects": "Compose 專案",
+  "dockerProjectActionStart": "啟動專案",
+  "dockerProjectActionStop": "停止專案",
+  "dockerProjectActionRestart": "重啟專案",
+  "dockerProjectConfirmStopTitle": "停止 Compose 專案",
+  "dockerProjectConfirmRestartTitle": "重啟 Compose 專案",
+  "dockerProjectConfirmMessage": "確定要對專案「{project}」執行 {action} 操作嗎？將影響以下 {count} 個容器：",
+  "@dockerProjectConfirmMessage": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerProjectActionSuccess": "專案「{project}」{action}成功",
+  "@dockerProjectActionSuccess": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerProjectActionPartial": "專案「{project}」{action}完成，其中 {failedCount} 個容器失敗",
+  "@dockerProjectActionPartial": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "failedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dockerNoProjects": "未發現 Docker Compose 專案",
+  "dockerMountsTitle": "掛載卷",
+  "dockerMountReadOnly": "唯讀",
+  "dockerMountReadWrite": "讀寫",
+  "sftpBookmarksTitle": "目錄書籤",
+  "sftpNoBookmarks": "尚無儲存的目錄書籤",
+  "sftpAddBookmark": "加入書籤",
+  "sftpRemoveBookmark": "移除書籤",
+  "sftpCurrentDirectory": "目前目錄",
+  "sftpSelectMode": "多選模式",
+  "sftpSelectedCount": "已選取 {count} 項",
+  "@sftpSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpSelectAll": "全選",
+  "sftpDeselectAll": "取消全選",
+  "sftpBatchCopy": "複製",
+  "sftpBatchMove": "移動",
+  "sftpBatchDeleteConfirmTitle": "確認批次刪除",
+  "sftpBatchDeleteConfirmMessage": "確定要刪除選取的 {count} 個項目嗎？",
+  "@sftpBatchDeleteConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sftpBatchDeleteNonEmptyNotice": "注意：非空目錄不支援遞迴刪除，將會被略過。",
+  "sftpBatchCopyConfirmTitle": "確認批次複製",
+  "sftpBatchCopyConfirmMessage": "確定將選取的 {count} 個項目複製到 \"{directory}\" 嗎？",
+  "@sftpBatchCopyConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchMoveConfirmTitle": "確認批次移動",
+  "sftpBatchMoveConfirmMessage": "確定將選取的 {count} 個項目移動到 \"{directory}\" 嗎？",
+  "@sftpBatchMoveConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "directory": {
+        "type": "String"
+      }
+    }
+  },
+  "sftpBatchResultsTitle": "批次操作結果",
+  "sftpBatchOutcomeSkipped": "已略過（目標已存在或不支援）",
+  "sftpBatchTargetRestricted": "不可選擇自身或子目錄作為目標路徑",
+  "sftpSelectCurrentDir": "選擇目前目錄",
+  "sftpBatchOperationSuccess": "成功處理 {count} 個項目",
+  "@sftpBatchOperationSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configMigrationTitle": "備份與設定移轉",
+  "configExportTitle": "匯出設定",
+  "configExportSubtitle": "將伺服器、Agent、快速指令、書籤及偏好設定匯出為 JSON",
+  "configExportDialogTitle": "匯出 Valhalla 設定",
+  "configExportSuccess": "設定匯出成功",
+  "configExportError": "設定匯出失敗：{error}",
+  "@configExportError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportTitle": "匯入設定",
+  "configImportSubtitle": "從備份 JSON 檔案匯入設定",
+  "configBackupTooLarge": "備份檔案超過大小上限（8 MB）",
+  "configImportPreviewTitle": "預覽設定匯入",
+  "configImportPreviewDesc": "匯入前請檢閱內容。現有項目將會保留並合併。",
+  "configImportServersCount": "伺服器 ({count})",
+  "@configImportServersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportAgentsCount": "Agent ({count})",
+  "@configImportAgentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportCommandsCount": "快速指令 ({count})",
+  "@configImportCommandsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportBookmarksCount": "目錄書籤 ({count})",
+  "@configImportBookmarksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "configImportSecretWarning": "自訂指令可能包含敏感指令碼或內嵌憑證。密碼、私密金鑰及已知主機指紋不會被轉移。",
+  "configImportGlobalPreferences": "匯入全域偏好設定",
+  "configImportGlobalPreferencesDesc": "覆寫目前佈景主題、終端機與導覽偏好設定",
+  "configImportConfirmAction": "確認匯入",
+  "configImportSuccess": "設定匯入成功",
+  "configImportErrorTitle": "無效的設定備份檔案",
+  "configImportErrorGeneric": "匯入設定失敗：{error}",
+  "@configImportErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configImportErrorCopyDetails": "複製診斷詳細資訊",
+  "configImportErrorCopied": "診斷詳細資訊已複製到剪貼簿",
+  "configImportErrorUnsupportedVersion": "不支援的備份格式或版本",
+  "configImportErrorMalformed": "設定檔 JSON 損毀或格式錯誤"
 }

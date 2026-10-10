@@ -3793,4 +3793,345 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get downloadRevealFailed =>
       'Impossible d’ouvrir le dossier de téléchargement. Il a peut-être été déplacé ou supprimé.';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count clés d\'hôtes de confiance';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty =>
+      'Aucune clé d\'hôte de confiance trouvée';
+
+  @override
+  String get settingsKnownHostsDialogTitle => 'Clés d\'hôtes connus';
+
+  @override
+  String get settingsHostKeyRevoke => 'Révoquer';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle => 'Révoquer la clé d\'hôte';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return 'Révoquer la clé d\'hôte pour $hostPort ? Les connexions SSH actives vers cet hôte seront déconnectées et vous devrez revérifier la clé lors de la prochaine connexion.';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied =>
+      'Empreinte de la clé copiée dans le presse-papiers';
+
+  @override
+  String get settingsHostKeyRevoked => 'Clé d\'hôte révoquée';
+
+  @override
+  String get settingsClearStorageSubtitle =>
+      'Effacer les mots de passe et clés privées enregistrés des serveurs sélectionnés';
+
+  @override
+  String get settingsClearStorageDialogTitle =>
+      'Réinitialiser les identifiants';
+
+  @override
+  String get settingsClearStorageDesc =>
+      'Sélectionnez les serveurs pour effacer les mots de passe SSH et clés privées enregistrés dans le stockage sécurisé. Les configurations de serveur et historiques de discussion ne seront pas supprimés.';
+
+  @override
+  String get settingsClearStorageNoServers => 'Aucun serveur disponible';
+
+  @override
+  String get settingsClearStorageSelectAll => 'Tout sélectionner';
+
+  @override
+  String get settingsClearStorageDeselectAll => 'Tout désélectionner';
+
+  @override
+  String get settingsClearStorageConfirmTitle =>
+      'Confirmer la suppression des identifiants';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return 'Voulez-vous vraiment effacer les identifiants de $count serveur(s) sélectionné(s) ? Les connexions actives seront immédiatement coupées.';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return 'Effacer la sélection ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess =>
+      'Identifiants des serveurs sélectionnés effacés avec succès';
+
+  @override
+  String get settingsClearStorageError =>
+      'Échec de l\'effacement des identifiants de certains serveurs. Veuillez réessayer.';
+
+  @override
+  String get settingsDefaultAcpAgent => 'Agent ACP par défaut';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle =>
+      'Agent par défaut pour le chat ACP sur ce serveur';
+
+  @override
+  String get settingsDefaultCliAgent => 'Agent CLI par défaut';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle =>
+      'Agent par défaut pour le chat CLI sur ce serveur';
+
+  @override
+  String get settingsDefaultAgentAutomatic =>
+      'Automatique (premier disponible)';
+
+  @override
+  String get settingsDefaultAgentSelectTitle =>
+      'Sélectionner l\'agent par défaut';
+
+  @override
+  String get settingsDefaultAgentNoServer => 'Aucun serveur sélectionné';
+
+  @override
+  String get settingsDefaultAgentNoAgents =>
+      'Aucun agent configuré pour ce serveur';
+
+  @override
+  String get settingsDefaultAgentSaveFailed =>
+      'Échec de la mise à jour du paramètre d\'agent par défaut';
+
+  @override
+  String get dockerViewGroupContainers => 'Conteneurs';
+
+  @override
+  String get dockerViewGroupProjects => 'Projets Compose';
+
+  @override
+  String get dockerProjectActionStart => 'Démarrer le projet';
+
+  @override
+  String get dockerProjectActionStop => 'Arrêter le projet';
+
+  @override
+  String get dockerProjectActionRestart => 'Redémarrer le projet';
+
+  @override
+  String get dockerProjectConfirmStopTitle => 'Arrêter le projet Compose';
+
+  @override
+  String get dockerProjectConfirmRestartTitle => 'Redémarrer le projet Compose';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return 'Voulez-vous vraiment $action le projet « $project » ? Les $count conteneurs suivants seront affectés :';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return 'Projet « $project » $action avec succès';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return 'Projet « $project » $action terminé avec $failedCount échec(s)';
+  }
+
+  @override
+  String get dockerNoProjects => 'Aucun projet Docker Compose trouvé';
+
+  @override
+  String get dockerMountsTitle => 'Montages';
+
+  @override
+  String get dockerMountReadOnly => 'Lecture seule';
+
+  @override
+  String get dockerMountReadWrite => 'Lecture/Écriture';
+
+  @override
+  String get sftpBookmarksTitle => 'Signets de répertoire';
+
+  @override
+  String get sftpNoBookmarks => 'Aucun signet enregistré pour l\'instant';
+
+  @override
+  String get sftpAddBookmark => 'Ajouter aux signets';
+
+  @override
+  String get sftpRemoveBookmark => 'Supprimer le signet';
+
+  @override
+  String get sftpCurrentDirectory => 'Répertoire actuel';
+
+  @override
+  String get sftpSelectMode => 'Sélection multiple';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return '$count sélectionné(s)';
+  }
+
+  @override
+  String get sftpSelectAll => 'Tout sélectionner';
+
+  @override
+  String get sftpDeselectAll => 'Tout désélectionner';
+
+  @override
+  String get sftpBatchCopy => 'Copier';
+
+  @override
+  String get sftpBatchMove => 'Déplacer';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => 'Confirmer la suppression par lot';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return 'Voulez-vous vraiment supprimer les $count éléments sélectionnés ?';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice =>
+      'Remarque : Les répertoires non vides ne peuvent pas être supprimés de façon récursive et seront ignorés.';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => 'Confirmer la copie par lot';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return 'Copier $count éléments sélectionnés vers \"$directory\" ?';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => 'Confirmer le déplacement par lot';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return 'Déplacer $count éléments sélectionnés vers \"$directory\" ?';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => 'Résultats des opérations par lot';
+
+  @override
+  String get sftpBatchOutcomeSkipped =>
+      'Ignoré (la cible existe déjà ou n\'est pas prise en charge)';
+
+  @override
+  String get sftpBatchTargetRestricted =>
+      'Impossible de choisir le répertoire source ou un sous-répertoire comme destination';
+
+  @override
+  String get sftpSelectCurrentDir => 'Choisir ce répertoire';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return '$count éléments traités avec succès';
+  }
+
+  @override
+  String get configMigrationTitle => 'Sauvegarde et migration de configuration';
+
+  @override
+  String get configExportTitle => 'Exporter la configuration';
+
+  @override
+  String get configExportSubtitle =>
+      'Exporter serveurs, agents, commandes, signets et préférences en JSON';
+
+  @override
+  String get configExportDialogTitle => 'Exporter la configuration Valhalla';
+
+  @override
+  String get configExportSuccess => 'Configuration exportée avec succès';
+
+  @override
+  String configExportError(String error) {
+    return 'Échec de l\'exportation de la configuration : $error';
+  }
+
+  @override
+  String get configImportTitle => 'Importer la configuration';
+
+  @override
+  String get configImportSubtitle =>
+      'Importer la configuration depuis un fichier JSON de sauvegarde';
+
+  @override
+  String get configBackupTooLarge =>
+      'Le fichier de sauvegarde dépasse la taille maximale autorisée (8 Mo)';
+
+  @override
+  String get configImportPreviewTitle =>
+      'Aperçu de l\'importation de configuration';
+
+  @override
+  String get configImportPreviewDesc =>
+      'Examinez le contenu avant d\'importer. Les éléments existants seront conservés et fusionnés.';
+
+  @override
+  String configImportServersCount(int count) {
+    return 'Serveurs ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return 'Agents configurés ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return 'Commandes rapides ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return 'Signets ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      'Les commandes personnalisées peuvent contenir des scripts sensibles ou des identifiants intégrés. Aucun mot de passe, clé privée ou empreinte d\'hôte approuvée n\'est transféré.';
+
+  @override
+  String get configImportGlobalPreferences =>
+      'Importer les préférences globales de l\'application';
+
+  @override
+  String get configImportGlobalPreferencesDesc =>
+      'Écrase les paramètres actuels de thème, terminal et navigation';
+
+  @override
+  String get configImportConfirmAction => 'Confirmer l\'importation';
+
+  @override
+  String get configImportSuccess => 'Configuration importée avec succès';
+
+  @override
+  String get configImportErrorTitle => 'Sauvegarde de configuration non valide';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return 'Échec de l\'importation de la configuration : $error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => 'Copier les détails de diagnostic';
+
+  @override
+  String get configImportErrorCopied =>
+      'Détails de diagnostic copiés dans le presse-papiers';
+
+  @override
+  String get configImportErrorUnsupportedVersion =>
+      'Format ou version de sauvegarde non pris en charge';
+
+  @override
+  String get configImportErrorMalformed =>
+      'JSON de configuration malformé ou corrompu';
 }

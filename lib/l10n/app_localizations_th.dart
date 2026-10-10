@@ -3732,4 +3732,340 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get downloadRevealFailed =>
       'ไม่สามารถเปิดโฟลเดอร์ดาวน์โหลดได้ โฟลเดอร์อาจถูกย้ายหรือลบแล้ว';
+
+  @override
+  String settingsKnownHostsSubtitle(int count) {
+    return '$count คีย์โฮสต์ที่เชื่อถือได้';
+  }
+
+  @override
+  String get settingsKnownHostsEmpty => 'ไม่พบคีย์โฮสต์ที่เชื่อถือได้';
+
+  @override
+  String get settingsKnownHostsDialogTitle => 'คีย์โฮสต์ที่รู้จัก';
+
+  @override
+  String get settingsHostKeyRevoke => 'เพิกถอน';
+
+  @override
+  String get settingsHostKeyRevokeConfirmTitle => 'เพิกถอนคีย์โฮสต์';
+
+  @override
+  String settingsHostKeyRevokeConfirmMessage(String hostPort) {
+    return 'เพิกถอนคีย์โฮสต์สำหรับ $hostPort หรือไม่? การเชื่อมต่อ SSH ที่ใช้งานอยู่กับโฮสต์นี้จะถูกตัดการเชื่อมต่อ และคุณต้องยืนยันคีย์อีกครั้งในการเชื่อมต่อครั้งถัดไป';
+  }
+
+  @override
+  String get settingsHostKeyFingerprintCopied =>
+      'คัดลอกลายนิ้วมือคีย์โฮสต์ไปยังคลิปบอร์ดแล้ว';
+
+  @override
+  String get settingsHostKeyRevoked => 'เพิกถอนคีย์โฮสต์แล้ว';
+
+  @override
+  String get settingsClearStorageSubtitle =>
+      'ล้างรหัสผ่านและคีย์ส่วนตัวที่บันทึกไว้สำหรับเซิร์ฟเวอร์ที่เลือก';
+
+  @override
+  String get settingsClearStorageDialogTitle =>
+      'รีเซ็ตข้อมูลประจำตัวเซิร์ฟเวอร์';
+
+  @override
+  String get settingsClearStorageDesc =>
+      'เลือกเซิร์ฟเวอร์เพื่อล้างรหัสผ่าน SSH และคีย์ส่วนตัวจากที่จัดเก็บข้อมูลที่ปลอดภัย การกำหนดค่าเซิร์ฟเวอร์และประวัติการสนทนาจะไม่ถูกลบ';
+
+  @override
+  String get settingsClearStorageNoServers => 'ไม่มีเซิร์ฟเวอร์ที่พร้อมใช้งาน';
+
+  @override
+  String get settingsClearStorageSelectAll => 'เลือกทั้งหมด';
+
+  @override
+  String get settingsClearStorageDeselectAll => 'ยกเลิกการเลือกทั้งหมด';
+
+  @override
+  String get settingsClearStorageConfirmTitle =>
+      'ยืนยันการรีเซ็ตข้อมูลประจำตัว';
+
+  @override
+  String settingsClearStorageConfirmMessage(int count) {
+    return 'คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลประจำตัวสำหรับ $count เซิร์ฟเวอร์ที่เลือก? การเชื่อมต่อที่ใช้งานอยู่จะถูกตัดทันที';
+  }
+
+  @override
+  String settingsClearStorageAction(int count) {
+    return 'ล้างรายการที่เลือก ($count)';
+  }
+
+  @override
+  String get settingsClearStorageSuccess =>
+      'ล้างข้อมูลประจำตัวเซิร์ฟเวอร์ที่เลือกเรียบร้อยแล้ว';
+
+  @override
+  String get settingsClearStorageError =>
+      'ไม่สามารถล้างข้อมูลประจำตัวของบางเซิร์ฟเวอร์ได้ โปรดลองอีกครั้ง';
+
+  @override
+  String get settingsDefaultAcpAgent => 'เอเจนต์ ACP เริ่มต้น';
+
+  @override
+  String get settingsDefaultAcpAgentSubtitle =>
+      'เอเจนต์เริ่มต้นสำหรับการสนทนา ACP บนเซิร์ฟเวอร์นี้';
+
+  @override
+  String get settingsDefaultCliAgent => 'เอเจนต์ CLI เริ่มต้น';
+
+  @override
+  String get settingsDefaultCliAgentSubtitle =>
+      'เอเจนต์เริ่มต้นสำหรับการสนทนา CLI บนเซิร์ฟเวอร์นี้';
+
+  @override
+  String get settingsDefaultAgentAutomatic =>
+      'อัตโนมัติ (รายการแรกที่ใช้งานได้)';
+
+  @override
+  String get settingsDefaultAgentSelectTitle => 'เลือกเอเจนต์เริ่มต้น';
+
+  @override
+  String get settingsDefaultAgentNoServer => 'ไม่ได้เลือกเซิร์ฟเวอร์';
+
+  @override
+  String get settingsDefaultAgentNoAgents =>
+      'ไม่มีเอเจนต์ที่กำหนดค่าไว้สำหรับเซิร์ฟเวอร์นี้';
+
+  @override
+  String get settingsDefaultAgentSaveFailed =>
+      'ไม่สามารถอัปเดตการตั้งค่าเอเจนต์เริ่มต้นได้';
+
+  @override
+  String get dockerViewGroupContainers => 'คอนเทนเนอร์';
+
+  @override
+  String get dockerViewGroupProjects => 'โปรเจกต์ Compose';
+
+  @override
+  String get dockerProjectActionStart => 'เริ่มโปรเจกต์';
+
+  @override
+  String get dockerProjectActionStop => 'หยุดโปรเจกต์';
+
+  @override
+  String get dockerProjectActionRestart => 'รีสตาร์ทโปรเจกต์';
+
+  @override
+  String get dockerProjectConfirmStopTitle => 'หยุดโปรเจกต์ Compose';
+
+  @override
+  String get dockerProjectConfirmRestartTitle => 'รีสตาร์ทโปรเจกต์ Compose';
+
+  @override
+  String dockerProjectConfirmMessage(String action, String project, int count) {
+    return 'คุณแน่ใจหรือไม่ว่าต้องการ $action โปรเจกต์ \"$project\"? จะมีผลต่อ $count คอนเทนเนอร์ต่อไปนี้:';
+  }
+
+  @override
+  String dockerProjectActionSuccess(String project, String action) {
+    return 'โปรเจกต์ \"$project\" $action สำเร็จ';
+  }
+
+  @override
+  String dockerProjectActionPartial(
+    String project,
+    String action,
+    int failedCount,
+  ) {
+    return 'โปรเจกต์ \"$project\" $action เสร็จสมบูรณ์โดยมีข้อผิดพลาด $failedCount รายการ';
+  }
+
+  @override
+  String get dockerNoProjects => 'ไม่พบโปรเจกต์ Docker Compose';
+
+  @override
+  String get dockerMountsTitle => 'จุดเชื่อมต่อ (Mounts)';
+
+  @override
+  String get dockerMountReadOnly => 'อ่านอย่างเดียว';
+
+  @override
+  String get dockerMountReadWrite => 'อ่าน/เขียน';
+
+  @override
+  String get sftpBookmarksTitle => 'บุ๊กมาร์กโฟลเดอร์';
+
+  @override
+  String get sftpNoBookmarks => 'ยังไม่มีบุ๊กมาร์กที่บันทึกไว้';
+
+  @override
+  String get sftpAddBookmark => 'เพิ่มบุ๊กมาร์ก';
+
+  @override
+  String get sftpRemoveBookmark => 'ลบบุ๊กมาร์ก';
+
+  @override
+  String get sftpCurrentDirectory => 'ไดเรกทอรีปัจจุบัน';
+
+  @override
+  String get sftpSelectMode => 'โหมดเลือกหลายรายการ';
+
+  @override
+  String sftpSelectedCount(int count) {
+    return 'เลือกแล้ว $count รายการ';
+  }
+
+  @override
+  String get sftpSelectAll => 'เลือกทั้งหมด';
+
+  @override
+  String get sftpDeselectAll => 'ยกเลิกการเลือกทั้งหมด';
+
+  @override
+  String get sftpBatchCopy => 'คัดลอก';
+
+  @override
+  String get sftpBatchMove => 'ย้าย';
+
+  @override
+  String get sftpBatchDeleteConfirmTitle => 'ยืนยันการลบแบบกลุ่ม';
+
+  @override
+  String sftpBatchDeleteConfirmMessage(int count) {
+    return 'คุณแน่ใจหรือไม่ว่าต้องการลบ $count รายการที่เลือก?';
+  }
+
+  @override
+  String get sftpBatchDeleteNonEmptyNotice =>
+      'หมายเหตุ: โฟลเดอร์ที่ไม่ว่างเปล่าจะไม่สามารถลบแบบเรียกซ้ำได้และจะถูกข้าม';
+
+  @override
+  String get sftpBatchCopyConfirmTitle => 'ยืนยันการคัดลอกแบบกลุ่ม';
+
+  @override
+  String sftpBatchCopyConfirmMessage(int count, String directory) {
+    return 'คัดลอก $count รายการที่เลือกไปยัง \"$directory\" หรือไม่?';
+  }
+
+  @override
+  String get sftpBatchMoveConfirmTitle => 'ยืนยันการย้ายแบบกลุ่ม';
+
+  @override
+  String sftpBatchMoveConfirmMessage(int count, String directory) {
+    return 'ย้าย $count รายการที่เลือกไปยัง \"$directory\" หรือไม่?';
+  }
+
+  @override
+  String get sftpBatchResultsTitle => 'ผลลัพธ์การดำเนินการแบบกลุ่ม';
+
+  @override
+  String get sftpBatchOutcomeSkipped =>
+      'ข้ามแล้ว (มีเป้าหมายอยู่แล้วหรือไม่รองรับ)';
+
+  @override
+  String get sftpBatchTargetRestricted =>
+      'ไม่สามารถเลือกไดเรกทอรีปัจจุบันหรือไดเรกทอรีย่อยเป็นเป้าหมายได้';
+
+  @override
+  String get sftpSelectCurrentDir => 'เลือกไดเรกทอรีนี้';
+
+  @override
+  String sftpBatchOperationSuccess(int count) {
+    return 'ประมวลผล $count รายการเรียบร้อยแล้ว';
+  }
+
+  @override
+  String get configMigrationTitle => 'การสำรองข้อมูลและการย้ายการกำหนดค่า';
+
+  @override
+  String get configExportTitle => 'ส่งออกการกำหนดค่า';
+
+  @override
+  String get configExportSubtitle =>
+      'ส่งออกเซิร์ฟเวอร์, เอเจนต์, คำสั่งด่วน, บุ๊กมาร์ก และการตั้งค่าเป็น JSON';
+
+  @override
+  String get configExportDialogTitle => 'ส่งออกการกำหนดค่า Valhalla';
+
+  @override
+  String get configExportSuccess => 'ส่งออกการกำหนดค่าสำเร็จ';
+
+  @override
+  String configExportError(String error) {
+    return 'ส่งออกการกำหนดค่าไม่สำเร็จ: $error';
+  }
+
+  @override
+  String get configImportTitle => 'นำเข้าการกำหนดค่า';
+
+  @override
+  String get configImportSubtitle => 'นำเข้าการกำหนดค่าจากไฟล์สำรองข้อมูล JSON';
+
+  @override
+  String get configBackupTooLarge =>
+      'ไฟล์สำรองข้อมูลมีขนาดเกินขีดจำกัดสูงสุด (8 MB)';
+
+  @override
+  String get configImportPreviewTitle => 'ดูตัวอย่างการนำเข้าการกำหนดค่า';
+
+  @override
+  String get configImportPreviewDesc =>
+      'ตรวจสอบเนื้อหาก่อนนำเข้า รายการที่มีอยู่จะถูกเก็บไว้และผสานเข้าด้วยกัน';
+
+  @override
+  String configImportServersCount(int count) {
+    return 'เซิร์ฟเวอร์ ($count)';
+  }
+
+  @override
+  String configImportAgentsCount(int count) {
+    return 'เอเจนต์ ($count)';
+  }
+
+  @override
+  String configImportCommandsCount(int count) {
+    return 'คำสั่งด่วน ($count)';
+  }
+
+  @override
+  String configImportBookmarksCount(int count) {
+    return 'บุ๊กมาร์ก ($count)';
+  }
+
+  @override
+  String get configImportSecretWarning =>
+      'คำสั่งที่กำหนดเองอาจมีสคริปต์ที่ละเอียดอ่อนหรือข้อมูลรับรองที่ฝังอยู่ ไม่มีการถ่ายโอนรหัสผ่าน คีย์ส่วนตัว หรือลายนิ้วมือโฮสต์ที่เชื่อถือได้';
+
+  @override
+  String get configImportGlobalPreferences => 'นำเข้าการตั้งค่าแอปส่วนกลาง';
+
+  @override
+  String get configImportGlobalPreferencesDesc =>
+      'เขียนทับการตั้งค่าธีม เทอร์มินัล และการนำทางปัจจุบัน';
+
+  @override
+  String get configImportConfirmAction => 'ยืนยันการนำเข้า';
+
+  @override
+  String get configImportSuccess => 'นำเข้าการกำหนดค่าสำเร็จ';
+
+  @override
+  String get configImportErrorTitle => 'ไฟล์สำรองข้อมูลการกำหนดค่าไม่ถูกต้อง';
+
+  @override
+  String configImportErrorGeneric(String error) {
+    return 'นำเข้าการกำหนดค่าไม่สำเร็จ: $error';
+  }
+
+  @override
+  String get configImportErrorCopyDetails => 'คัดลอกรายละเอียดการวินิจฉัย';
+
+  @override
+  String get configImportErrorCopied =>
+      'คัดลอกรายละเอียดการวินิจฉัยไปยังคลิปบอร์ดแล้ว';
+
+  @override
+  String get configImportErrorUnsupportedVersion =>
+      'ไม่รองรับรูปแบบหรือเวอร์ชันของไฟล์สำรองข้อมูล';
+
+  @override
+  String get configImportErrorMalformed =>
+      'ไฟล์ JSON การกำหนดค่าเสียหายหรือไม่ถูกต้อง';
 }
