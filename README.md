@@ -35,16 +35,17 @@ Windows 版支持单实例启动，重复打开时恢复现有窗口。顶部工
 
 ## 下载与安装
 
-Windows 版可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) 安装。GitHub 当前发布版本为 **v1.0.2**，安装版、便携版和 Android APK 位于 [GitHub Releases](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.2) 的 **Assets** 中。
+Windows 版可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) 安装。GitHub 最新发布为 [**v1.0.3**](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.3)，本次在本地构建 Android 与 Linux，附件位于 **Assets** 中；未构建 Windows/macOS/iOS，也未触发 Actions。Windows 安装版和便携版仍提供 **v1.0.2**，不将旧包标为新版本。
 
 | 平台 | 安装方式 / 架构 | 下载 |
 | --- | --- | --- |
 | Windows | x64 商店版 | [微软商店下载](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) |
-| Windows | x64 安装版 | [EXE 安装程序](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-1.0.2-windows-x64-setup.exe) |
-| Windows | x64 便携版 | [ZIP 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-1.0.2-windows-x64-portable.zip) |
-| Android | ARM64，多数现代手机 | [arm64-v8a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-android-arm64-v8a-v1.0.2-signed.apk) |
-| Android | 32 位 ARM | [armeabi-v7a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-android-armeabi-v7a-v1.0.2-signed.apk) |
-| Android | x86_64 设备 / 模拟器 | [x86_64 APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-android-x86_64-v1.0.2-signed.apk) |
+| Windows | x64 安装版，v1.0.2 | [EXE 安装程序](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-1.0.2-windows-x64-setup.exe) |
+| Windows | x64 便携版，v1.0.2 | [ZIP 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-1.0.2-windows-x64-portable.zip) |
+| Android | ARM64，多数现代手机，v1.0.3 | [arm64-v8a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.3/valhalla-android-arm64-v8a-v1.0.3-signed.apk) |
+| Android | 32 位 ARM，v1.0.3 | [armeabi-v7a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.3/valhalla-android-armeabi-v7a-v1.0.3-signed.apk) |
+| Android | x86_64 设备 / 模拟器，v1.0.3 | [x86_64 APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.3/valhalla-android-x86_64-v1.0.3-signed.apk) |
+| Linux | x64 完整目录包，v1.0.3 | [tar.gz 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.3/valhalla-linux-x64-v1.0.3.tar.gz) |
 
 ### Windows
 
@@ -60,6 +61,14 @@ GitHub 自动生成的 **Source code (zip/tar.gz)** 是源码归档，安装应�
 ### Android
 
 下载与你的设备架构匹配的 APK 后安装。更新时使用相同发布签名的安装包；开发用 debug 签名安装与正式发布包不兼容。
+
+AAB 是分发用文件，不能直接安装。本版 APK 沿用原正式证书；附件提供 SHA256 校验和构建说明。
+
+### Linux
+
+完整解压 tar.gz 后进入 `valhalla` 目录，运行 `./valhalla`，不要只复制可执行文件。保留同目录的 `lib`、`data`、许可声明和 BUILD-INFO。本版在 Debian 12 x64 构建，需要图形会话及 GTK 3、libsecret、`libmpv.so.2` 等系统依赖，并非通用静态包；尚未完成 Linux 桌面运行验收。
+
+本次产物、签名和验收边界见 [v1.0.3 发布记录](docs/04-testing-and-deployment/08-v1.0.3-release.md)。
 
 其他平台的构建方式见 [多平台构建与发布指南](docs/04-testing-and-deployment/04-multi-platform-github-actions.md)，可下载产物以各版本的 Release 附件为准。
 
