@@ -7,7 +7,7 @@ param(
     [string]$PackageName = 'Norns.Valhalla-',
     [string]$Publisher = 'CN=257586C2-E7B0-47F3-BAED-A744A66748A1',
     [string]$PublisherDisplayName = 'Norns',
-    [string]$Version = '1.0.2.0'
+    [string]$Version = '1.0.3.0'
 )
 $ErrorActionPreference = 'Stop'
 if (-not $Project) { $Project = Split-Path -Parent $PSScriptRoot }

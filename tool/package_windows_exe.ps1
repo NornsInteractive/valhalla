@@ -12,7 +12,7 @@ foreach ($required in @('valhalla.exe', 'flutter_windows.dll', 'data\app.so', 'd
 if (-not (Test-Path -LiteralPath $Compiler)) { throw 'Inno Setup compiler is required' }
 & $Compiler (Join-Path $PSScriptRoot 'windows_installer.iss')
 if ($LASTEXITCODE -ne 0) { throw 'EXE installer compilation failed' }
-$installer = Join-Path $project 'build\windows-artifacts\valhalla-1.0.2-windows-x64-setup.exe'
+$installer = Join-Path $project 'build\windows-artifacts\valhalla-1.0.3-windows-x64-setup.exe'
 $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLower()
 "$hash  $([IO.Path]::GetFileName($installer))" | Set-Content -LiteralPath "$installer.sha256" -Encoding ASCII
 Get-Item -LiteralPath $installer | Select-Object FullName, Length, LastWriteTime

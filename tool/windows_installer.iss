@@ -2,13 +2,13 @@
 [Setup]
 AppId={{B13B0A56-4DB8-4C33-9271-621B05A019D5}
 AppName=Valhalla
-AppVersion=1.0.2
-AppVerName=Valhalla 1.0.2
+AppVersion=1.0.3
+AppVerName=Valhalla 1.0.3
 AppPublisher=Norns
 AppPublisherURL=https://norns.cc.cd
 AppSupportURL=https://norns.cc.cd
 AppUpdatesURL=https://norns.cc.cd
-VersionInfoVersion=1.0.2.3
+VersionInfoVersion=1.0.3.4
 SourceDir=..
 DefaultDirName={localappdata}\Programs\Norns\Valhalla
 DefaultGroupName=Valhalla
@@ -18,7 +18,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.19041
 OutputDir=build\windows-artifacts
-OutputBaseFilename=valhalla-1.0.2-windows-x64-setup
+OutputBaseFilename=valhalla-1.0.3-windows-x64-setup
 SetupIconFile=windows\runner\resources\app_icon.ico
 UninstallDisplayIcon={app}\valhalla.exe
 LicenseFile=LICENSE
