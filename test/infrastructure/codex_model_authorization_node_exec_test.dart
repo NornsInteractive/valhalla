@@ -29,7 +29,8 @@ const _runnerSource = r''''use strict';
  * Native crypto stays real (ephemeral RSA keys generated per run). */
 const vm = require('vm');
 const nodeCrypto = require('crypto');
-const nodePath = require('path');
+// The sandbox models the remote Linux filesystem, even on Windows hosts.
+const nodePath = require('path').posix;
 const nodeFs = require('fs');
 
 const scenario = process.argv[2];
