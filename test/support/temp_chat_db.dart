@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -15,19 +16,28 @@ Override tempChatRepositoryOverride() {
   addTearDown(() async {
     // A provider may still be finishing one unawaited write while we delete, so
     // SQLite can recreate a file mid-walk and the recursive delete fails with
-    // ENOTEMPTY. Retry that single case: every attempt is a real async syscall,
-    // so the event loop turns in between and the writer can retire. No timers
-    // here on purpose - `testWidgets` runs in a FakeAsync zone where no clock is
-    // advanced during teardown, so a `Future.delayed` would hang the suite.
-    // Every other IO error, and an ENOTEMPTY that survives the last attempt, is
-    // rethrown, so a real leak stays visible.
+    // ENOTEMPTY on Linux or a sharing violation on Windows. Retry only these
+    // transient errors; unrelated failures and exhausted retries stay visible.
+    // Linux retries use real async syscalls to let the writer retire. Windows
+    // also allows a bounded wait for native handles to close (see below).
     if (!dir.existsSync()) return;
     for (var attempt = 0; ; attempt++) {
       try {
         await dir.delete(recursive: true);
         return;
       } on FileSystemException catch (error) {
-        if (error.osError?.errorCode != 39 || attempt >= 4) rethrow;
+        final code = error.osError?.errorCode;
+        if (Platform.isWindows && (code == 32 || code == 145)) {
+          if (attempt >= 20) rethrow;
+          // SQLite isolates can still be releasing their Windows file handles.
+          // Run the bounded delay outside testWidgets' FakeAsync zone, whose
+          // clock is no longer pumped during teardown.
+          await Zone.root.run(
+            () => Future<void>.delayed(const Duration(milliseconds: 50)),
+          );
+        } else if (code != 39 || attempt >= 4) {
+          rethrow;
+        }
       }
     }
   });

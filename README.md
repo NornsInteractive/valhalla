@@ -35,13 +35,13 @@ Windows 版支持单实例启动，重复打开时恢复现有窗口。顶部工
 
 ## 下载与安装
 
-Windows 版可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) 安装。GitHub 最新发布为 [**v1.0.3**](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.3)，本次在本地构建 Android 与 Linux，附件位于 **Assets** 中；未构建 Windows/macOS/iOS，也未触发 Actions。Windows 安装版和便携版仍提供 **v1.0.2**，不将旧包标为新版本。
+Windows 版可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) 安装。GitHub 最新发布为 [**v1.0.3**](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.3)，提供 Windows、Android 与 Linux 包，附件位于 **Assets** 中。商店版本以 Microsoft Store 页面为准。
 
 | 平台 | 安装方式 / 架构 | 下载 |
 | --- | --- | --- |
 | Windows | x64 商店版 | [微软商店下载](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) |
-| Windows | x64 安装版，v1.0.2 | [EXE 安装程序](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-1.0.2-windows-x64-setup.exe) |
-| Windows | x64 便携版，v1.0.2 | [ZIP 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.2/valhalla-1.0.2-windows-x64-portable.zip) |
+| Windows | x64 安装版，v1.0.3 | [EXE 安装程序](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.3/valhalla-1.0.3-windows-x64-setup.exe) |
+| Windows | x64 便携版，v1.0.3 | [ZIP 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.3/valhalla-1.0.3-windows-x64-portable.zip) |
 | Android | ARM64，多数现代手机，v1.0.3 | [arm64-v8a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.3/valhalla-android-arm64-v8a-v1.0.3-signed.apk) |
 | Android | 32 位 ARM，v1.0.3 | [armeabi-v7a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.3/valhalla-android-armeabi-v7a-v1.0.3-signed.apk) |
 | Android | x86_64 设备 / 模拟器，v1.0.3 | [x86_64 APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.3/valhalla-android-x86_64-v1.0.3-signed.apk) |
@@ -55,6 +55,7 @@ Windows 版可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8
 - **便携版**：完整解压 ZIP，再运行 `valhalla.exe`；保留同目录下的 DLL 和 `data` 文件夹。
 - Windows 包已附带所需的 Visual C++ 运行库 DLL。EXE 和 ZIP 各有对应的 `.sha256` 校验文件。
 - 当前 EXE 安装程序尚未进行代码签名。
+- Release 中的 MSIX 是供 Partner Center 上传的未签名商店包；直接安装请使用商店、EXE 或 ZIP。
 
 GitHub 自动生成的 **Source code (zip/tar.gz)** 是源码归档，安装应用请使用上表中的文件。
 
