@@ -86,11 +86,15 @@ class SystemState {
     return SystemState(
       processes: processes ?? this.processes,
       isProcessesLoading: isProcessesLoading ?? this.isProcessesLoading,
-      processError: clearProcessError ? null : (processError ?? this.processError),
+      processError: clearProcessError
+          ? null
+          : (processError ?? this.processError),
       processSearchQuery: processSearchQuery ?? this.processSearchQuery,
       services: services ?? this.services,
       isServicesLoading: isServicesLoading ?? this.isServicesLoading,
-      serviceError: clearServiceError ? null : (serviceError ?? this.serviceError),
+      serviceError: clearServiceError
+          ? null
+          : (serviceError ?? this.serviceError),
       pendingActions: pendingActions ?? this.pendingActions,
       cachedAt: clearCachedAt ? null : cachedAt ?? this.cachedAt,
       serviceSearchQuery: serviceSearchQuery ?? this.serviceSearchQuery,
@@ -132,13 +136,25 @@ class SystemNotifier extends Notifier<SystemState> {
 
     if (activeServer != null) {
       try {
-        final cached = ref.read(localStorageServiceProvider).getPageCache(activeServer, 'services');
+        final cached = ref
+            .read(localStorageServiceProvider)
+            .getPageCache(activeServer, 'services');
         final rows = cached?['payload']?['services'] as List?;
         if (rows != null) {
-          return SystemState(services: rows.cast<Map<String, dynamic>>().map((s) =>
-            SystemdServiceInfo(name: s['name'] as String, description: s['description'] as String,
-              state: s['state'] as String, startup: s['startup'] as String)).toList(),
-            cachedAt: DateTime.tryParse(cached?['savedAt'] as String? ?? ''));
+          return SystemState(
+            services: rows
+                .cast<Map<String, dynamic>>()
+                .map(
+                  (s) => SystemdServiceInfo(
+                    name: s['name'] as String,
+                    description: s['description'] as String,
+                    state: s['state'] as String,
+                    startup: s['startup'] as String,
+                  ),
+                )
+                .toList(),
+            cachedAt: DateTime.tryParse(cached?['savedAt'] as String? ?? ''),
+          );
         }
       } catch (error, stack) {
         unawaited(AppDiagnostics.instance.record('system.cache', error, stack));
@@ -232,12 +248,28 @@ class SystemNotifier extends Notifier<SystemState> {
         isServicesLoading: false,
         clearServiceError: true,
       );
-      unawaited(ref.read(localStorageServiceProvider).savePageCache(activeServer, 'services', {
-        'services': list.take(200).map((s) => {'name': s.name, 'description': s.description,
-          'state': s.state, 'startup': s.startup}).toList(),
-      }).catchError((Object error, StackTrace stack) {
-        unawaited(AppDiagnostics.instance.record('system.cache', error, stack));
-      }));
+      unawaited(
+        ref
+            .read(localStorageServiceProvider)
+            .savePageCache(activeServer, 'services', {
+              'services': list
+                  .take(200)
+                  .map(
+                    (s) => {
+                      'name': s.name,
+                      'description': s.description,
+                      'state': s.state,
+                      'startup': s.startup,
+                    },
+                  )
+                  .toList(),
+            })
+            .catchError((Object error, StackTrace stack) {
+              unawaited(
+                AppDiagnostics.instance.record('system.cache', error, stack),
+              );
+            }),
+      );
     } catch (e) {
       if (!ref.mounted || epoch != _epoch || sequence != _serviceSequence) {
         return;
@@ -254,15 +286,21 @@ class SystemNotifier extends Notifier<SystemState> {
   Future<SSHExecutionResult> terminateProcess(
     int pid, {
     bool force = false,
-    String? expectedStartedAt,
+    required String? expectedStartedAt,
+    required Object expectedConnectionKey,
   }) async {
     final activeServer = ref.read(activeServerProvider);
-    if (activeServer == null || !ref.read(serverConnectionProvider).isConnected) {
+    if (activeServer == null ||
+        !ref.read(serverConnectionProvider).isConnected) {
       throw const SSHConnectionException('No active server selected');
     }
+    if (activeServer.connectionKey != expectedConnectionKey) {
+      throw const ValidationException('SERVICE_TARGET_CHANGED');
+    }
+    final epoch = _epoch;
 
     final procService = ref.read(processServiceProvider);
-    if (expectedStartedAt == null || expectedStartedAt.isEmpty) {
+    if (expectedStartedAt == null || expectedStartedAt.trim().isEmpty) {
       throw const ValidationException('PROCESS_IDENTITY_UNAVAILABLE');
     }
     final result = await procService.terminate(
@@ -271,17 +309,25 @@ class SystemNotifier extends Notifier<SystemState> {
       force: force,
       expectedStartedAt: expectedStartedAt,
     );
+    if (!ref.mounted || epoch != _epoch) {
+      throw const ValidationException('SERVICE_TARGET_CHANGED');
+    }
     await refreshProcesses();
     return result;
   }
 
   Future<SSHExecutionResult> performServiceAction(
     String service,
-    String action,
-  ) async {
+    String action, {
+    required Object expectedConnectionKey,
+  }) async {
     final activeServer = ref.read(activeServerProvider);
-    if (activeServer == null || !ref.read(serverConnectionProvider).isConnected) {
+    if (activeServer == null ||
+        !ref.read(serverConnectionProvider).isConnected) {
       throw const SSHConnectionException('No active server selected');
+    }
+    if (activeServer.connectionKey != expectedConnectionKey) {
+      throw const ValidationException('SERVICE_TARGET_CHANGED');
     }
 
     final svcManager = ref.read(serviceManagerProvider);
@@ -289,26 +335,44 @@ class SystemNotifier extends Notifier<SystemState> {
       throw const ValidationException('SERVICE_ACTION_IN_PROGRESS');
     }
     final epoch = _epoch;
-    state = state.copyWith(pendingActions: {...state.pendingActions, service: action});
+    state = state.copyWith(
+      pendingActions: {...state.pendingActions, service: action},
+    );
     try {
       final result = await svcManager.action(activeServer.id, service, action);
-      if (ref.mounted && epoch == _epoch) await refreshServices(quiet: true);
+      if (!ref.mounted || epoch != _epoch) {
+        throw const ValidationException('SERVICE_TARGET_CHANGED');
+      }
+      await refreshServices(quiet: true);
       return result;
     } finally {
       if (ref.mounted && epoch == _epoch) {
-        state = state.copyWith(pendingActions: Map.from(state.pendingActions)..remove(service));
+        state = state.copyWith(
+          pendingActions: Map.from(state.pendingActions)..remove(service),
+        );
       }
     }
   }
-  Future<List<Map<String, dynamic>>> serviceLogs(String service, {String? beforeCursor}) async {
+
+  Future<List<Map<String, dynamic>>> serviceLogs(
+    String service, {
+    String? beforeCursor,
+    required Object expectedConnectionKey,
+  }) async {
     final server = ref.read(activeServerProvider);
     final epoch = _epoch;
     if (server == null || !ref.read(serverConnectionProvider).isConnected) {
       throw const SSHConnectionException('SSH_DISCONNECTED');
     }
-    final records = await ref.read(serviceManagerProvider).logs(server.id, service,
-      beforeCursor: beforeCursor);
-    if (!ref.mounted || epoch != _epoch) throw const ValidationException('SERVICE_TARGET_CHANGED');
+    if (server.connectionKey != expectedConnectionKey) {
+      throw const ValidationException('SERVICE_TARGET_CHANGED');
+    }
+    final records = await ref
+        .read(serviceManagerProvider)
+        .logs(server.id, service, beforeCursor: beforeCursor);
+    if (!ref.mounted || epoch != _epoch) {
+      throw const ValidationException('SERVICE_TARGET_CHANGED');
+    }
     return records;
   }
 }

@@ -871,7 +871,7 @@ void main() {
         await tester.pump();
 
         final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-        expect(find.text(l10n.transferFailedUpload), findsOneWidget);
+        expect(find.text(l10n.sftpUploadFailed), findsOneWidget);
         expect(find.text(SftpNotifier.uploadFailedCode), findsNothing);
       });
 

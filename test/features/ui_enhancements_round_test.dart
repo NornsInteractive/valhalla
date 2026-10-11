@@ -6,6 +6,7 @@ import 'package:valhalla/core/providers/agent_registry_provider.dart';
 import 'package:valhalla/core/providers/ai_chat_provider.dart';
 import 'package:valhalla/core/providers/cli_chat_provider.dart';
 import 'package:valhalla/core/providers/commands_provider.dart';
+import 'package:valhalla/core/providers/nas_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/data/models/agent_composer_item.dart';
@@ -77,6 +78,20 @@ class _TestServerConnectionNotifier extends ServerConnectionNotifier {
   @override
   ServerConnectionState build() =>
       const ServerConnectionState(status: ConnectionStateEnum.connected);
+}
+
+class _FakeNasNotifier extends NasNotifier {
+  @override
+  NasState build() => const NasState();
+
+  @override
+  int get thumbnailCacheBudget => 128 * 1024 * 1024;
+
+  @override
+  Future<Map<String, int>> thumbnailCacheUsage() async => {
+    'bytes': 0,
+    'count': 0,
+  };
 }
 
 class _TestActiveServerNotifier extends ActiveServerNotifier {
@@ -581,6 +596,8 @@ void main() {
     ) async {
       NasOpenPolicy? selectedPolicy;
 
+      final local = await LocalStorageService.init();
+
       await tester.pumpWidget(
         _wrapWithApp(
           Builder(
@@ -598,7 +615,10 @@ void main() {
               child: const Text('Open Settings'),
             ),
           ),
-          [],
+          [
+            localStorageServiceProvider.overrideWithValue(local),
+            nasProvider.overrideWith(() => _FakeNasNotifier()),
+          ],
         ),
       );
       await tester.pumpAndSettle();
@@ -626,6 +646,8 @@ void main() {
         NasMediaKind? changedKind;
         NasOpenPolicy? changedPolicy;
 
+        final local = await LocalStorageService.init();
+
         await tester.pumpWidget(
           _wrapWithApp(
             Builder(
@@ -652,7 +674,10 @@ void main() {
                 child: const Text('Open Settings'),
               ),
             ),
-            [],
+            [
+              localStorageServiceProvider.overrideWithValue(local),
+              nasProvider.overrideWith(() => _FakeNasNotifier()),
+            ],
           ),
         );
         await tester.pumpAndSettle();

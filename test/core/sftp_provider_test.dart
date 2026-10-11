@@ -254,16 +254,20 @@ class _FakeEditorOps extends _FakeOps implements SftpEditorOperations {
   Completer<void>? editorGate;
 
   @override
-  Future<SftpTextSnapshot> readTextSnapshot(String path) async => SftpTextSnapshot(
-    path: path,
-    targetPath: path,
-    content: 'content of $path',
-    digest: 'digest-$path',
-    attributes: SftpFileAttrs(size: 12),
-  );
+  Future<SftpTextSnapshot> readTextSnapshot(String path) async =>
+      SftpTextSnapshot(
+        path: path,
+        targetPath: path,
+        content: 'content of $path',
+        digest: 'digest-$path',
+        attributes: SftpFileAttrs(size: 12),
+      );
 
   @override
-  Future<void> saveTextSnapshot(SftpTextSnapshot original, String content) async {
+  Future<void> saveTextSnapshot(
+    SftpTextSnapshot original,
+    String content,
+  ) async {
     await editorGate?.future;
     saves.add((original.path, content));
   }
@@ -511,8 +515,15 @@ void main() {
       final notifier = container.read(sftpProvider.notifier);
       await pumpEventQueue();
       await notifier.openFileForEditing(_item('old.txt'));
+      // 捕获 token 必须紧挨着 openFileForEditing 之后：后面的切源/关编辑器
+      // 都会让它失效，保存用的必须是发起打开时拿到的那一个。
+      final editorToken = notifier.editorToken;
       ops.editorGate = Completer<void>();
-      final saving = notifier.saveFileContent('/root/old.txt', 'contents');
+      final saving = notifier.saveFileContent(
+        '/root/old.txt',
+        'contents',
+        editorToken: editorToken,
+      );
       (container.read(activeServerProvider.notifier) as _StubActiveServer)
           .switchServer();
       container.read(sftpProvider);

@@ -222,6 +222,84 @@ void main() {
     });
   });
 
+  group('bounded notes', () {
+    /// Every utf-16 unit is a well-formed pair: no high surrogate without its
+    /// low surrogate, and no bare low surrogate.
+    bool hasLoneSurrogate(String value) {
+      for (var i = 0; i < value.length; i++) {
+        final unit = value.codeUnitAt(i);
+        if (unit >= 0xd800 && unit <= 0xdbff) {
+          if (i + 1 >= value.length) return true;
+          final next = value.codeUnitAt(i + 1);
+          if (next < 0xdc00 || next > 0xdfff) return true;
+          i++;
+        } else if (unit >= 0xdc00 && unit <= 0xdfff) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    test('oversized notes stay unicode-safe and point at the release page', () {
+      // Mixes astral characters with plain ascii so truncation has to handle
+      // both without splitting a surrogate pair.
+      final body = 'prefix ${'𝐀' * 20000} tail';
+      final release = _parse(_release(body: body));
+
+      expect(body.runes.length, greaterThan(16 * 1024));
+      // Bound is on runes; an astral char costs two utf-16 units.
+      expect(release.notes.runes.length, 16 * 1024 + 2);
+      expect(hasLoneSurrogate(release.notes), isFalse);
+      expect(
+        String.fromCharCodes(release.notes.runes),
+        release.notes,
+        reason: 'the notes must round-trip as valid utf-16',
+      );
+      expect(
+        release.notes.runes.any((r) => r > 0xffff),
+        isTrue,
+        reason: 'astral characters must survive the bound',
+      );
+      expect(release.notes.endsWith('\n…'), isTrue);
+      expect(release.notes, isNot(body));
+      expect(
+        release.page.toString(),
+        'https://github.com/NornsInteractive/valhalla/releases/tag/v1.2.3',
+        reason: 'the full notes remain available at the release page',
+      );
+    });
+
+    test('a body at the limit is not rewritten', () {
+      final body = 'x' * (16 * 1024);
+      expect(_parse(_release(body: body)).notes, body);
+    });
+
+    test('astral characters survive truncation as whole code points', () {
+      final body = '𝐀' * (16 * 1024);
+      final release = _parse(_release(body: body));
+
+      // The bound is on utf-16 length, truncation is applied per rune, so an
+      // all-astral body keeps 16384 code points plus the 2-char tail marker.
+      expect(body.length, greaterThan(16 * 1024));
+      expect(release.notes.runes.length, 16 * 1024 + 2);
+      expect(hasLoneSurrogate(release.notes), isFalse);
+      expect(
+        String.fromCharCodes(release.notes.runes),
+        release.notes,
+        reason: 'the notes must round-trip as valid utf-16',
+      );
+      expect(
+        release.notes.runes.every(
+          (r) => r == 0x1d400 || r == 0x0a || r == 0x2026,
+        ),
+        isTrue,
+        reason: 'the astral code point must be kept whole',
+      );
+      // Truncation discarded content, so the body is not the notes.
+      expect(release.notes, isNot(body));
+    });
+  });
+
   group('platform identity from asset names', () {
     test('android apks expose the ABI encoded in the file name', () {
       for (final arch in ['armeabi-v7a', 'arm64-v8a', 'x86_64']) {

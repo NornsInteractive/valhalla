@@ -3,20 +3,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/providers/ai_chat_provider.dart';
 import 'package:valhalla/core/providers/cli_chat_provider.dart';
 import 'package:valhalla/core/providers/server_power_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
+import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/core/providers/terminal_provider.dart';
 import 'package:valhalla/data/models/chat_session.dart';
 import 'package:valhalla/data/models/server_profile.dart';
+import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/dashboard/dashboard_provider.dart';
 import 'package:valhalla/features/dashboard/dashboard_view.dart';
 import 'package:valhalla/infrastructure/system/system_metrics_sampler.dart';
 import 'package:valhalla/infrastructure/terminal/terminal_session_bridge.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 import 'package:xterm/xterm.dart';
+
+late LocalStorageService _localStorage;
 
 ServerProfile _testServer() => const ServerProfile(
   id: 'srv-test-1',
@@ -192,6 +197,7 @@ Widget _buildTestApp({
 
   return ProviderScope(
     overrides: [
+      localStorageServiceProvider.overrideWithValue(_localStorage),
       activeServerProvider.overrideWith(
         () => _FakeActiveServerNotifier(server),
       ),
@@ -238,6 +244,11 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Dashboard Server Reboot UI', () {
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      _localStorage = await LocalStorageService.init();
+    });
+
     testWidgets('reboot button is hidden when disconnected', (tester) async {
       final server = _testServer();
       final powerNotifier = _FakeServerPowerNotifier();

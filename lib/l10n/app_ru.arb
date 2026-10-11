@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "Путь к пакету или идентификатор недействительны.",
   "updateErrorStoreInstall": "Это приложение установлено из магазина приложений. Обновите его через магазин.",
   "updateErrorPlatform": "Не удалось открыть или запустить установщик.",
-  "updateErrorGeneric": "Сбой операции обновления. Повторите попытку или перейдите к релизам на GitHub."
+  "updateErrorGeneric": "Сбой операции обновления. Повторите попытку или перейдите к релизам на GitHub.",
+  "servicePermissionDenied": "Отказано в доступе для управления службой",
+  "serviceUnsupported": "Действие не поддерживается для этой службы",
+  "serviceQueryFailed": "Не удалось запросить статус службы",
+  "serviceTargetChanged": "Целевой сервер изменился; операция отменена",
+  "serviceActionInProgress": "Для этой службы уже выполняется другое действие",
+  "processIdentityChanged": "Процесс был перезапущен; завершение отменено",
+  "processIdentityUnavailable": "Время запуска процесса недоступно; в завершении отказано",
+  "serviceLogsTitle": "Журналы службы",
+  "serviceLogsLoadOlder": "Загрузить более старые журналы",
+  "serviceLogsEmpty": "Журналы не найдены",
+  "serviceLogsCopied": "Журналы скопированы в буфер обмена",
+  "fileEditorUnsavedTitle": "Несохранённые изменения",
+  "fileEditorUnsavedMessage": "У вас есть несохранённые изменения. Выберите действие перед выходом:",
+  "fileEditorKeepDraft": "Сохранить черновик",
+  "fileEditorDiscard": "Сбросить",
+  "fileEditorDiscardConfirmTitle": "Сбросить черновик?",
+  "fileEditorDiscardConfirmMessage": "Вы действительно хотите сбросить локальный черновик и заново загрузить файл с сервера?",
+  "fileEditorConflictBanner": "Файл был изменён на сервере или конфликтует с локальным черновиком.",
+  "fileEditorCopyDraft": "Копировать черновик",
+  "fileEditorDraftCopied": "Черновик скопирован в буфер обмена",
+  "fileEditorReload": "Перезагрузить",
+  "sftpAtomicSaveUnsupported": "Сервер не поддерживает безопасное атомарное сохранение",
+  "sftpEditorExpired": "Сессия редактора истекла",
+  "sftpDraftSaveFailed": "Не удалось сохранить локальный черновик",
+  "sftpEditConflict": "Файл изменён на сервере; перезагрузите или скопируйте черновик",
+  "sftpEditDraftConflict": "Локальный черновик конфликтует с файлом на сервере",
+  "sftpTransferSourceChanged": "Исходный файл изменился во время передачи",
+  "sftpTransferPartialInvalid": "Файл частичной передачи недействителен или поврежден",
+  "sftpTransferCommitting": "Передача уже фиксируется; невозможно перезапустить",
+  "sftpTransferCleanupFailed": "Не удалось очистить незавершенную передачу",
+  "sftpUploadTargetExists": "Файл назначения уже существует",
+  "sftpUploadCommitFailed": "Не удалось завершить удаленную загрузку",
+  "sftpUploadSourceInvalid": "Локальный исходный файл изменился или недействителен",
+  "cachedDataNotice": "Сохранено в кэше в {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "Лимит: сохранено до 1000 записей",
+  "nasThumbnailCacheUsage": "Кэш миниатюр",
+  "nasThumbnailCacheBudget": "Лимит кэша",
+  "nasThumbnailCacheClear": "Очистить кэш",
+  "nasThumbnailCacheCleared": "Кэш миниатюр очищен",
+  "nasThumbnailCacheOff": "Выкл"
 }

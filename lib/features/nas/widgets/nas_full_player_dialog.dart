@@ -77,6 +77,27 @@ class NasFullPlayerDialog extends ConsumerStatefulWidget {
 class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
   bool _commandInProgress = false;
   bool _favoriteInProgress = false;
+  bool _isRetrying = false;
+
+  Future<void> _handleRetry(NasMediaPlayerService? service) async {
+    if (service == null || _isRetrying) return;
+    setState(() => _isRetrying = true);
+    try {
+      await service.retry();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.nasSanitizedError(e)),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isRetrying = false);
+      }
+    }
+  }
 
   Future<void> _executePlayerAction(FutureOr<void> Function() action) async {
     try {
@@ -418,6 +439,21 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
                     onPressed: () =>
                         NasCastSheet.show(context, item: currentItem),
                   ),
+                  if (playerService != null)
+                    IconButton(
+                      key: const Key('nas_full_player_retry_button'),
+                      icon: _isRetrying
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.refresh_rounded, size: 20),
+                      tooltip: context.l10n.stateRetry,
+                      onPressed: (_isRetrying || snapshot.buffering)
+                          ? null
+                          : () => _handleRetry(playerService),
+                    ),
                   IconButton(
                     icon: const Icon(Icons.open_in_new, size: 20),
                     tooltip: context.l10n.nasOpenPolicyExternal,
@@ -562,6 +598,58 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
                 ),
               ),
             const SizedBox(height: 16),
+            if (snapshot.error != null) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(VRadius.input),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 20,
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        context.nasSanitizedError(snapshot.error!),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onErrorContainer,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      key: const Key('nas_full_player_banner_retry'),
+                      icon: _isRetrying
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.refresh, size: 16),
+                      label: Text(context.l10n.stateRetry),
+                      onPressed:
+                          (_isRetrying ||
+                              snapshot.buffering ||
+                              playerService == null)
+                          ? null
+                          : () => _handleRetry(playerService),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             // Track / Video Title and Subtitle Info
             Text(

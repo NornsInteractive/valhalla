@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "Đường dẫn hoặc danh tính gói không hợp lệ.",
   "updateErrorStoreInstall": "Ứng dụng này đã được cài đặt từ cửa hàng ứng dụng. Vui lòng cập nhật qua cửa hàng.",
   "updateErrorPlatform": "Không thể mở hoặc khởi chạy trình cài đặt.",
-  "updateErrorGeneric": "Thao tác cập nhật không thành công. Vui lòng thử lại hoặc xem các bản phát hành trên GitHub."
+  "updateErrorGeneric": "Thao tác cập nhật không thành công. Vui lòng thử lại hoặc xem các bản phát hành trên GitHub.",
+  "servicePermissionDenied": "Bị từ chối quyền quản lý dịch vụ",
+  "serviceUnsupported": "Hành động không được hỗ trợ cho dịch vụ này",
+  "serviceQueryFailed": "Truy vấn trạng thái dịch vụ thất bại",
+  "serviceTargetChanged": "Máy chủ mục tiêu đã thay đổi; thao tác bị hủy",
+  "serviceActionInProgress": "Một hành động khác đang được thực hiện cho dịch vụ này",
+  "processIdentityChanged": "Tiến trình đã được khởi động lại; hủy chấm dứt",
+  "processIdentityUnavailable": "Không có thời gian bắt đầu tiến trình; từ chối chấm dứt",
+  "serviceLogsTitle": "Nhật ký dịch vụ",
+  "serviceLogsLoadOlder": "Tải nhật ký cũ hơn",
+  "serviceLogsEmpty": "Không tìm thấy nhật ký",
+  "serviceLogsCopied": "Đã sao chép nhật ký vào khay nhớ tạm",
+  "fileEditorUnsavedTitle": "Thay đổi chưa lưu",
+  "fileEditorUnsavedMessage": "Bạn có các thay đổi chưa lưu. Chọn một hành động trước khi rời đi:",
+  "fileEditorKeepDraft": "Giữ bản nháp",
+  "fileEditorDiscard": "Hủy bỏ",
+  "fileEditorDiscardConfirmTitle": "Hủy bản nháp?",
+  "fileEditorDiscardConfirmMessage": "Bạn có chắc chắn muốn hủy bản nháp cục bộ và tải lại tệp mới nhất từ máy chủ không?",
+  "fileEditorConflictBanner": "Tệp đã được sửa đổi trên máy chủ hoặc xung đột với bản nháp cục bộ.",
+  "fileEditorCopyDraft": "Sao chép bản nháp",
+  "fileEditorDraftCopied": "Đã sao chép bản nháp vào khay nhớ tạm",
+  "fileEditorReload": "Tải lại",
+  "sftpAtomicSaveUnsupported": "Máy chủ không hỗ trợ lưu nguyên tử an toàn",
+  "sftpEditorExpired": "Phiên chỉnh sửa đã hết hạn",
+  "sftpDraftSaveFailed": "Không thể lưu bản nháp cục bộ",
+  "sftpEditConflict": "Tệp đã thay đổi trên máy chủ; vui lòng tải lại hoặc sao chép bản nháp",
+  "sftpEditDraftConflict": "Bản nháp cục bộ xung đột với tệp máy chủ",
+  "sftpTransferSourceChanged": "Tệp nguồn đã thay đổi trong quá trình chuyển",
+  "sftpTransferPartialInvalid": "Tệp truyền tải một phần không hợp lệ hoặc bị hỏng",
+  "sftpTransferCommitting": "Quá trình truyền đang được áp dụng; không thể khởi động lại",
+  "sftpTransferCleanupFailed": "Không thể dọn dẹp quá trình truyền chưa hoàn tất",
+  "sftpUploadTargetExists": "Tệp đích đã tồn tại",
+  "sftpUploadCommitFailed": "Không thể hoàn tất tải lên từ xa",
+  "sftpUploadSourceInvalid": "Tệp nguồn cục bộ đã thay đổi hoặc không hợp lệ",
+  "cachedDataNotice": "Đã lưu vào bộ nhớ đệm lúc {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "Giới hạn: Giữ tối đa 1000 bản ghi nhật ký",
+  "nasThumbnailCacheUsage": "Bộ nhớ đệm hình thu nhỏ",
+  "nasThumbnailCacheBudget": "Giới hạn bộ nhớ đệm",
+  "nasThumbnailCacheClear": "Xóa bộ nhớ đệm",
+  "nasThumbnailCacheCleared": "Đã xóa bộ nhớ đệm hình thu nhỏ",
+  "nasThumbnailCacheOff": "Tắt"
 }

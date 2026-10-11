@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "Le chemin ou l'identité du package est invalide.",
   "updateErrorStoreInstall": "Cette application a été installée depuis un magasin d'applications. Veuillez mettre à jour via le magasin.",
   "updateErrorPlatform": "Échec de l'ouverture ou du lancement du programme d'installation.",
-  "updateErrorGeneric": "L'opération de mise à jour a échoué. Veuillez réessayer ou consulter les versions sur GitHub."
+  "updateErrorGeneric": "L'opération de mise à jour a échoué. Veuillez réessayer ou consulter les versions sur GitHub.",
+  "servicePermissionDenied": "Permission refusée pour gérer le service",
+  "serviceUnsupported": "Action non prise en charge pour ce service",
+  "serviceQueryFailed": "Échec de la requête de l'état du service",
+  "serviceTargetChanged": "Serveur cible modifié ; opération annulée",
+  "serviceActionInProgress": "Une autre action est déjà en cours pour ce service",
+  "processIdentityChanged": "Le processus a redémarré ; arrêt annulé",
+  "processIdentityUnavailable": "Heure de démarrage du processus indisponible ; arrêt refusé",
+  "serviceLogsTitle": "Journaux du service",
+  "serviceLogsLoadOlder": "Charger les anciens journaux",
+  "serviceLogsEmpty": "Aucun journal trouvé",
+  "serviceLogsCopied": "Journaux copiés dans le presse-papiers",
+  "fileEditorUnsavedTitle": "Modifications non enregistrées",
+  "fileEditorUnsavedMessage": "Vous avez des modifications non enregistrées. Choisissez une action avant de quitter :",
+  "fileEditorKeepDraft": "Garder le brouillon",
+  "fileEditorDiscard": "Abandonner",
+  "fileEditorDiscardConfirmTitle": "Abandonner le brouillon ?",
+  "fileEditorDiscardConfirmMessage": "Voulez-vous vraiment abandonner le brouillon local et recharger le fichier depuis le serveur ?",
+  "fileEditorConflictBanner": "Le fichier a été modifié sur le serveur ou est en conflit avec le brouillon local.",
+  "fileEditorCopyDraft": "Copier le brouillon",
+  "fileEditorDraftCopied": "Brouillon copié dans le presse-papiers",
+  "fileEditorReload": "Recharger",
+  "sftpAtomicSaveUnsupported": "Le serveur ne prend pas en charge l'enregistrement atomique sécurisé",
+  "sftpEditorExpired": "La session de l'éditeur a expiré",
+  "sftpDraftSaveFailed": "Échec de l'enregistrement du brouillon local",
+  "sftpEditConflict": "Fichier modifié sur le serveur ; veuillez recharger ou copier le brouillon",
+  "sftpEditDraftConflict": "Le brouillon local est en conflit avec le fichier sur le serveur",
+  "sftpTransferSourceChanged": "Le fichier source a été modifié pendant le transfert",
+  "sftpTransferPartialInvalid": "Fichier de transfert partiel invalide ou corrompu",
+  "sftpTransferCommitting": "Transfert en cours de validation ; redémarrage impossible",
+  "sftpTransferCleanupFailed": "Échec du nettoyage du transfert incomplet",
+  "sftpUploadTargetExists": "Le fichier de destination existe déjà",
+  "sftpUploadCommitFailed": "Échec de la finalisation du téléversement distant",
+  "sftpUploadSourceInvalid": "Le fichier source local a été modifié ou est invalide",
+  "cachedDataNotice": "Mis en cache à {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "Limite : 1000 journaux conservés",
+  "nasThumbnailCacheUsage": "Cache des miniatures",
+  "nasThumbnailCacheBudget": "Budget du cache",
+  "nasThumbnailCacheClear": "Vider le cache",
+  "nasThumbnailCacheCleared": "Cache des miniatures vidé",
+  "nasThumbnailCacheOff": "Désactivé"
 }

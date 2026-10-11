@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "مسار الحزمة أو هويتها غير صالحة.",
   "updateErrorStoreInstall": "تم تثبيت هذا التطبيق من متجر تطبيقات. يرجى التحديث عبر المتجر.",
   "updateErrorPlatform": "فشل فتح برنامج التثبيت أو تشغيله.",
-  "updateErrorGeneric": "فشلت عملية التحديث. يرجى المحاولة مرة أخرى أو زيارة إصدارات GitHub."
+  "updateErrorGeneric": "فشلت عملية التحديث. يرجى المحاولة مرة أخرى أو زيارة إصدارات GitHub.",
+  "servicePermissionDenied": "تم رفض إذن إدارة الخدمة",
+  "serviceUnsupported": "الإجراء غير مدعوم لهذه الخدمة",
+  "serviceQueryFailed": "فشل الاستعلام عن حالة الخدمة",
+  "serviceTargetChanged": "تغير الخادم المستهدف؛ تم إلغاء العملية",
+  "serviceActionInProgress": "هناك إجراء آخر قيد التنفيذ لهذه الخدمة",
+  "processIdentityChanged": "تمت إعادة تشغيل العملية؛ تم إلغاء الإنهاء",
+  "processIdentityUnavailable": "وقت بدء العملية غير متاح؛ تم رفض الإنهاء",
+  "serviceLogsTitle": "سجلات الخدمة",
+  "serviceLogsLoadOlder": "تحميل سجلات أقدم",
+  "serviceLogsEmpty": "لم يتم العثور على سجلات",
+  "serviceLogsCopied": "تم نسخ السجلات إلى الحافظة",
+  "fileEditorUnsavedTitle": "تغييرات غير محفوظة",
+  "fileEditorUnsavedMessage": "لديك تغييرات غير محفوظة. اختر إجراءً قبل المغادرة:",
+  "fileEditorKeepDraft": "الاحتفاظ بالمسودة",
+  "fileEditorDiscard": "تجاهل",
+  "fileEditorDiscardConfirmTitle": "تجاهل المسودة؟",
+  "fileEditorDiscardConfirmMessage": "هل أنت متأكد من رغبتك في تجاهل المسودة المحلية وإعادة تحميل أحدث ملف من الخادم؟",
+  "fileEditorConflictBanner": "تم تعديل الملف على الخادم أو يتعارض مع المسودة المحلية.",
+  "fileEditorCopyDraft": "نسخ المسودة",
+  "fileEditorDraftCopied": "تم نسخ المسودة إلى الحافظة",
+  "fileEditorReload": "إعادة تحميل",
+  "sftpAtomicSaveUnsupported": "الخادم لا يدعم الحفظ الذري الآمن",
+  "sftpEditorExpired": "انتهت صلاحية جلسة المحرر",
+  "sftpDraftSaveFailed": "فشل حفظ المسودة المحلية",
+  "sftpEditConflict": "تم تعديل الملف على الخادم؛ يرجى إعادة التحميل أو نسخ المسودة",
+  "sftpEditDraftConflict": "المسودة المحلية تتعارض مع ملف الخادم",
+  "sftpTransferSourceChanged": "تم تغيير الملف المصدر أثناء النقل",
+  "sftpTransferPartialInvalid": "ملف النقل الجزئي غير صالح أو تالف",
+  "sftpTransferCommitting": "النقل قيد التنفيذ بالفعل؛ لا يمكن إعادة التشغيل",
+  "sftpTransferCleanupFailed": "فشل في تنظيف عملية النقل غير المكتملة",
+  "sftpUploadTargetExists": "الملف الهدف موجود بالفعل",
+  "sftpUploadCommitFailed": "فشل في إنهاء الرفع عن بُعد",
+  "sftpUploadSourceInvalid": "تم تغيير ملف المصدر المحلي أو أنه غير صالح",
+  "cachedDataNotice": "تم التخزين المؤقت في {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "الحد الأقصى: الاحتفاظ بـ 1000 سجل",
+  "nasThumbnailCacheUsage": "ذاكرة التخزين المؤقت للصور المصغرة",
+  "nasThumbnailCacheBudget": "السعة المخصصة لذاكرة التخزين المؤقت",
+  "nasThumbnailCacheClear": "مسح ذاكرة التخزين المؤقت",
+  "nasThumbnailCacheCleared": "تم مسح ذاكرة التخزين المؤقت للصور المصغرة",
+  "nasThumbnailCacheOff": "إيقاف"
 }

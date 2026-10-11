@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "Jalur atau identitas paket tidak valid.",
   "updateErrorStoreInstall": "Aplikasi ini diinstal dari toko aplikasi. Silakan perbarui melalui toko.",
   "updateErrorPlatform": "Gagal membuka atau meluncurkan penginstal.",
-  "updateErrorGeneric": "Operasi pembaruan gagal. Silakan coba lagi atau buka rilis di GitHub."
+  "updateErrorGeneric": "Operasi pembaruan gagal. Silakan coba lagi atau buka rilis di GitHub.",
+  "servicePermissionDenied": "Izin ditolak untuk mengelola layanan",
+  "serviceUnsupported": "Tindakan tidak didukung untuk layanan ini",
+  "serviceQueryFailed": "Gagal menanyakan status layanan",
+  "serviceTargetChanged": "Server target berubah; operasi dibatalkan",
+  "serviceActionInProgress": "Tindakan lain sedang berlangsung untuk layanan ini",
+  "processIdentityChanged": "Proses dimulai ulang; penghentian dibatalkan",
+  "processIdentityUnavailable": "Waktu mulai proses tidak tersedia; penghentian ditolak",
+  "serviceLogsTitle": "Log Layanan",
+  "serviceLogsLoadOlder": "Muat Log Lebih Lama",
+  "serviceLogsEmpty": "Tidak ada log ditemukan",
+  "serviceLogsCopied": "Log disalin ke papan klip",
+  "fileEditorUnsavedTitle": "Perubahan Belum Disimpan",
+  "fileEditorUnsavedMessage": "Anda memiliki perubahan yang belum disimpan. Pilih tindakan sebelum keluar:",
+  "fileEditorKeepDraft": "Simpan Draf",
+  "fileEditorDiscard": "Buang",
+  "fileEditorDiscardConfirmTitle": "Buang Draf?",
+  "fileEditorDiscardConfirmMessage": "Apakah Anda yakin ingin membuang draf lokal dan memuat ulang berkas terbaru dari server?",
+  "fileEditorConflictBanner": "Berkas dimodifikasi di server atau berkonflik dengan draf lokal.",
+  "fileEditorCopyDraft": "Salin Draf",
+  "fileEditorDraftCopied": "Draf disalin ke papan klip",
+  "fileEditorReload": "Muat Ulang",
+  "sftpAtomicSaveUnsupported": "Server tidak mendukung penyimpanan atomik yang aman",
+  "sftpEditorExpired": "Sesi editor telah kedaluwarsa",
+  "sftpDraftSaveFailed": "Gagal menyimpan draf lokal",
+  "sftpEditConflict": "Berkas dimodifikasi di server; silakan muat ulang atau salin draf",
+  "sftpEditDraftConflict": "Draf lokal berkonflik dengan berkas server",
+  "sftpTransferSourceChanged": "Berkas sumber berubah selama transfer",
+  "sftpTransferPartialInvalid": "Berkas transfer parsial tidak valid atau rusak",
+  "sftpTransferCommitting": "Transfer sedang dikonfirmasi; tidak dapat memulai ulang",
+  "sftpTransferCleanupFailed": "Gagal membersihkan transfer yang belum selesai",
+  "sftpUploadTargetExists": "Berkas tujuan sudah ada",
+  "sftpUploadCommitFailed": "Gagal menyelesaikan unggahan jarak jauh",
+  "sftpUploadSourceInvalid": "Berkas sumber lokal berubah atau tidak valid",
+  "cachedDataNotice": "Di-cache pada {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "Batas: 1000 log disimpan",
+  "nasThumbnailCacheUsage": "Cache Gambar Mini",
+  "nasThumbnailCacheBudget": "Anggaran Cache",
+  "nasThumbnailCacheClear": "Bersihkan Cache",
+  "nasThumbnailCacheCleared": "Cache gambar mini dibersihkan",
+  "nasThumbnailCacheOff": "Mati"
 }

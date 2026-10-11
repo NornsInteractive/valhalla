@@ -4098,6 +4098,128 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get updateErrorGeneric => '更新操作失败，请重试或前往 GitHub 查看发布页。';
+
+  @override
+  String get servicePermissionDenied => '管理服务权限不足';
+
+  @override
+  String get serviceUnsupported => '此服务不支持该操作';
+
+  @override
+  String get serviceQueryFailed => '查询服务状态失败';
+
+  @override
+  String get serviceTargetChanged => '目标服务器已变更，操作已取消';
+
+  @override
+  String get serviceActionInProgress => '该服务已有操作正在进行中';
+
+  @override
+  String get processIdentityChanged => '进程已重启，终止操作已取消';
+
+  @override
+  String get processIdentityUnavailable => '进程启动时间不可用，拒绝终止';
+
+  @override
+  String get serviceLogsTitle => '服务日志';
+
+  @override
+  String get serviceLogsLoadOlder => '加载更早日志';
+
+  @override
+  String get serviceLogsEmpty => '未找到日志';
+
+  @override
+  String get serviceLogsCopied => '日志已复制到剪贴板';
+
+  @override
+  String get fileEditorUnsavedTitle => '未保存的更改';
+
+  @override
+  String get fileEditorUnsavedMessage => '您有未保存的更改，请在离开前选择操作：';
+
+  @override
+  String get fileEditorKeepDraft => '保留草稿';
+
+  @override
+  String get fileEditorDiscard => '放弃更改';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => '放弃草稿？';
+
+  @override
+  String get fileEditorDiscardConfirmMessage => '确定要放弃本地草稿并从服务器重新加载最新文件吗？';
+
+  @override
+  String get fileEditorConflictBanner => '文件在服务器上已被修改或与本地草稿冲突。';
+
+  @override
+  String get fileEditorCopyDraft => '复制草稿';
+
+  @override
+  String get fileEditorDraftCopied => '草稿已复制到剪贴板';
+
+  @override
+  String get fileEditorReload => '重新加载';
+
+  @override
+  String get sftpAtomicSaveUnsupported => '服务器不支持安全原子保存';
+
+  @override
+  String get sftpEditorExpired => '编辑器会话已过期';
+
+  @override
+  String get sftpDraftSaveFailed => '保存本地草稿失败';
+
+  @override
+  String get sftpEditConflict => '文件在服务器上已修改，请重新加载或复制草稿';
+
+  @override
+  String get sftpEditDraftConflict => '本地草稿与服务器文件冲突';
+
+  @override
+  String get sftpTransferSourceChanged => '传输过程中源文件已被修改';
+
+  @override
+  String get sftpTransferPartialInvalid => '分块传输文件无效或已损坏';
+
+  @override
+  String get sftpTransferCommitting => '传输正在提交，无法重新启动';
+
+  @override
+  String get sftpTransferCleanupFailed => '清理未完成的传输失败';
+
+  @override
+  String get sftpUploadTargetExists => '目标文件已存在';
+
+  @override
+  String get sftpUploadCommitFailed => '确认远程上传失败';
+
+  @override
+  String get sftpUploadSourceInvalid => '本地源文件已更改或无效';
+
+  @override
+  String cachedDataNotice(String time) {
+    return '缓存于 $time';
+  }
+
+  @override
+  String get serviceLogsCapReached => '已达上限：最多保留 1000 条日志';
+
+  @override
+  String get nasThumbnailCacheUsage => '缩略图缓存';
+
+  @override
+  String get nasThumbnailCacheBudget => '缓存上限';
+
+  @override
+  String get nasThumbnailCacheClear => '清除缓存';
+
+  @override
+  String get nasThumbnailCacheCleared => '缩略图缓存已清除';
+
+  @override
+  String get nasThumbnailCacheOff => '关闭';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -8194,4 +8316,126 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get updateErrorGeneric => '更新操作失敗，請重試或前往 GitHub 檢視發布頁。';
+
+  @override
+  String get servicePermissionDenied => '管理服務權限不足';
+
+  @override
+  String get serviceUnsupported => '此服務不支援該操作';
+
+  @override
+  String get serviceQueryFailed => '查詢服務狀態失敗';
+
+  @override
+  String get serviceTargetChanged => '目標伺服器已變更，操作已取消';
+
+  @override
+  String get serviceActionInProgress => '該服務已有操作正在進行中';
+
+  @override
+  String get processIdentityChanged => '處理程序已重啟，終止操作已取消';
+
+  @override
+  String get processIdentityUnavailable => '處理程序啟動時間不可用，拒絕終止';
+
+  @override
+  String get serviceLogsTitle => '服務記錄';
+
+  @override
+  String get serviceLogsLoadOlder => '載入較早記錄';
+
+  @override
+  String get serviceLogsEmpty => '未找到記錄';
+
+  @override
+  String get serviceLogsCopied => '記錄已複製到剪貼簿';
+
+  @override
+  String get fileEditorUnsavedTitle => '未儲存的變更';
+
+  @override
+  String get fileEditorUnsavedMessage => '您有未儲存的變更，請在離開前選擇操作：';
+
+  @override
+  String get fileEditorKeepDraft => '保留草稿';
+
+  @override
+  String get fileEditorDiscard => '放棄變更';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => '放棄草稿？';
+
+  @override
+  String get fileEditorDiscardConfirmMessage => '確定要放棄本機草稿並從伺服器重新載入最新檔案嗎？';
+
+  @override
+  String get fileEditorConflictBanner => '檔案在伺服器上已被修改或與本機草稿衝突。';
+
+  @override
+  String get fileEditorCopyDraft => '複製草稿';
+
+  @override
+  String get fileEditorDraftCopied => '草稿已複製到剪貼簿';
+
+  @override
+  String get fileEditorReload => '重新載入';
+
+  @override
+  String get sftpAtomicSaveUnsupported => '伺服器不支援安全原子儲存';
+
+  @override
+  String get sftpEditorExpired => '編輯器工作階段已過期';
+
+  @override
+  String get sftpDraftSaveFailed => '儲存本機草稿失敗';
+
+  @override
+  String get sftpEditConflict => '檔案在伺服器上已修改，請重新載入或複製草稿';
+
+  @override
+  String get sftpEditDraftConflict => '本地草稿與伺服器檔案衝突';
+
+  @override
+  String get sftpTransferSourceChanged => '傳輸過程中來源檔案已被修改';
+
+  @override
+  String get sftpTransferPartialInvalid => '分塊傳輸檔案無效或已損毀';
+
+  @override
+  String get sftpTransferCommitting => '傳輸正在提交，無法重新啟動';
+
+  @override
+  String get sftpTransferCleanupFailed => '清理未完成的傳輸失敗';
+
+  @override
+  String get sftpUploadTargetExists => '目標檔案已存在';
+
+  @override
+  String get sftpUploadCommitFailed => '確認遠端上傳失敗';
+
+  @override
+  String get sftpUploadSourceInvalid => '本地來源檔案已變更或無效';
+
+  @override
+  String cachedDataNotice(String time) {
+    return '快取於 $time';
+  }
+
+  @override
+  String get serviceLogsCapReached => '已達上限：最多保留 1000 條記錄';
+
+  @override
+  String get nasThumbnailCacheUsage => '縮圖快取';
+
+  @override
+  String get nasThumbnailCacheBudget => '快取上限';
+
+  @override
+  String get nasThumbnailCacheClear => '清除快取';
+
+  @override
+  String get nasThumbnailCacheCleared => '縮圖快取已清除';
+
+  @override
+  String get nasThumbnailCacheOff => '關閉';
 }

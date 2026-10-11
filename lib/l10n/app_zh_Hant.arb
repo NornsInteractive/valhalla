@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "安裝套件路徑或身分資訊無效。",
   "updateErrorStoreInstall": "此應用透過應用程式商店安裝，請透過對應的應用程式商店進行更新。",
   "updateErrorPlatform": "無法開啟或啟動安裝程式。",
-  "updateErrorGeneric": "更新操作失敗，請重試或前往 GitHub 檢視發布頁。"
+  "updateErrorGeneric": "更新操作失敗，請重試或前往 GitHub 檢視發布頁。",
+  "servicePermissionDenied": "管理服務權限不足",
+  "serviceUnsupported": "此服務不支援該操作",
+  "serviceQueryFailed": "查詢服務狀態失敗",
+  "serviceTargetChanged": "目標伺服器已變更，操作已取消",
+  "serviceActionInProgress": "該服務已有操作正在進行中",
+  "processIdentityChanged": "處理程序已重啟，終止操作已取消",
+  "processIdentityUnavailable": "處理程序啟動時間不可用，拒絕終止",
+  "serviceLogsTitle": "服務記錄",
+  "serviceLogsLoadOlder": "載入較早記錄",
+  "serviceLogsEmpty": "未找到記錄",
+  "serviceLogsCopied": "記錄已複製到剪貼簿",
+  "fileEditorUnsavedTitle": "未儲存的變更",
+  "fileEditorUnsavedMessage": "您有未儲存的變更，請在離開前選擇操作：",
+  "fileEditorKeepDraft": "保留草稿",
+  "fileEditorDiscard": "放棄變更",
+  "fileEditorDiscardConfirmTitle": "放棄草稿？",
+  "fileEditorDiscardConfirmMessage": "確定要放棄本機草稿並從伺服器重新載入最新檔案嗎？",
+  "fileEditorConflictBanner": "檔案在伺服器上已被修改或與本機草稿衝突。",
+  "fileEditorCopyDraft": "複製草稿",
+  "fileEditorDraftCopied": "草稿已複製到剪貼簿",
+  "fileEditorReload": "重新載入",
+  "sftpAtomicSaveUnsupported": "伺服器不支援安全原子儲存",
+  "sftpEditorExpired": "編輯器工作階段已過期",
+  "sftpDraftSaveFailed": "儲存本機草稿失敗",
+  "sftpEditConflict": "檔案在伺服器上已修改，請重新載入或複製草稿",
+  "sftpEditDraftConflict": "本地草稿與伺服器檔案衝突",
+  "sftpTransferSourceChanged": "傳輸過程中來源檔案已被修改",
+  "sftpTransferPartialInvalid": "分塊傳輸檔案無效或已損毀",
+  "sftpTransferCommitting": "傳輸正在提交，無法重新啟動",
+  "sftpTransferCleanupFailed": "清理未完成的傳輸失敗",
+  "sftpUploadTargetExists": "目標檔案已存在",
+  "sftpUploadCommitFailed": "確認遠端上傳失敗",
+  "sftpUploadSourceInvalid": "本地來源檔案已變更或無效",
+  "cachedDataNotice": "快取於 {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "已達上限：最多保留 1000 條記錄",
+  "nasThumbnailCacheUsage": "縮圖快取",
+  "nasThumbnailCacheBudget": "快取上限",
+  "nasThumbnailCacheClear": "清除快取",
+  "nasThumbnailCacheCleared": "縮圖快取已清除",
+  "nasThumbnailCacheOff": "關閉"
 }

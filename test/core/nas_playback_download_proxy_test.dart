@@ -828,4 +828,75 @@ void main() {
       }
     },
   );
+
+  test(
+    'player retry re-opens the current item at the current position and keeps the queue',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'nas-player-retry',
+      );
+      final repository = NasIndexRepository('${directory.path}/index.sqlite');
+      await repository.initialize();
+      final native = _Player(),
+          proxy = NasMediaProxyService(_Ssh()),
+          adapter = _Adapter();
+      final service = NasMediaPlayerService(
+        proxy,
+        repository,
+        player: native,
+        adapterFor: (_) async => adapter,
+      );
+      var closed = 0;
+      try {
+        expect(
+          service.retry,
+          throwsStateError,
+          reason: 'retry without a loaded item is refused, not invented',
+        );
+
+        final queue = [_item('one.mp3'), _item('two.mp3'), _item('three.mp3')];
+        await service.open(
+          queue.first,
+          queue: queue,
+          disposeQueue: () => closed++,
+        );
+        await service.jumpTo(2);
+        expect(service.current?.path, 'three.mp3');
+        await service.seek(const Duration(seconds: 42));
+        expect(native.state.position, const Duration(seconds: 42));
+        final beforeRetry = native.opened.length;
+
+        await service.retry();
+
+        expect(
+          service.current?.path,
+          'three.mp3',
+          reason: 'retry stays on the item that was playing',
+        );
+        expect(service.state.index, 2, reason: 'the queue survives the retry');
+        expect(closed, 0, reason: 'retry must not release the queue lease');
+        expect(
+          native.opened.length,
+          beforeRetry + 1,
+          reason: 'retry issues exactly one new open',
+        );
+        expect(
+          native.opened.last,
+          native.opened[native.opened.length - 2],
+          reason: 'the same resource is opened again',
+        );
+        expect(
+          native.starts.last,
+          const Duration(seconds: 42),
+          reason: 'retry resumes at the current position',
+        );
+        expect(native.state.position, const Duration(seconds: 42));
+        expect(service.state.error, isNull);
+      } finally {
+        await service.dispose();
+        await proxy.dispose();
+        await directory.delete(recursive: true);
+      }
+    },
+  );
 }

@@ -4331,4 +4331,143 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'Сбой операции обновления. Повторите попытку или перейдите к релизам на GitHub.';
+
+  @override
+  String get servicePermissionDenied =>
+      'Отказано в доступе для управления службой';
+
+  @override
+  String get serviceUnsupported => 'Действие не поддерживается для этой службы';
+
+  @override
+  String get serviceQueryFailed => 'Не удалось запросить статус службы';
+
+  @override
+  String get serviceTargetChanged =>
+      'Целевой сервер изменился; операция отменена';
+
+  @override
+  String get serviceActionInProgress =>
+      'Для этой службы уже выполняется другое действие';
+
+  @override
+  String get processIdentityChanged =>
+      'Процесс был перезапущен; завершение отменено';
+
+  @override
+  String get processIdentityUnavailable =>
+      'Время запуска процесса недоступно; в завершении отказано';
+
+  @override
+  String get serviceLogsTitle => 'Журналы службы';
+
+  @override
+  String get serviceLogsLoadOlder => 'Загрузить более старые журналы';
+
+  @override
+  String get serviceLogsEmpty => 'Журналы не найдены';
+
+  @override
+  String get serviceLogsCopied => 'Журналы скопированы в буфер обмена';
+
+  @override
+  String get fileEditorUnsavedTitle => 'Несохранённые изменения';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'У вас есть несохранённые изменения. Выберите действие перед выходом:';
+
+  @override
+  String get fileEditorKeepDraft => 'Сохранить черновик';
+
+  @override
+  String get fileEditorDiscard => 'Сбросить';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'Сбросить черновик?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'Вы действительно хотите сбросить локальный черновик и заново загрузить файл с сервера?';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'Файл был изменён на сервере или конфликтует с локальным черновиком.';
+
+  @override
+  String get fileEditorCopyDraft => 'Копировать черновик';
+
+  @override
+  String get fileEditorDraftCopied => 'Черновик скопирован в буфер обмена';
+
+  @override
+  String get fileEditorReload => 'Перезагрузить';
+
+  @override
+  String get sftpAtomicSaveUnsupported =>
+      'Сервер не поддерживает безопасное атомарное сохранение';
+
+  @override
+  String get sftpEditorExpired => 'Сессия редактора истекла';
+
+  @override
+  String get sftpDraftSaveFailed => 'Не удалось сохранить локальный черновик';
+
+  @override
+  String get sftpEditConflict =>
+      'Файл изменён на сервере; перезагрузите или скопируйте черновик';
+
+  @override
+  String get sftpEditDraftConflict =>
+      'Локальный черновик конфликтует с файлом на сервере';
+
+  @override
+  String get sftpTransferSourceChanged =>
+      'Исходный файл изменился во время передачи';
+
+  @override
+  String get sftpTransferPartialInvalid =>
+      'Файл частичной передачи недействителен или поврежден';
+
+  @override
+  String get sftpTransferCommitting =>
+      'Передача уже фиксируется; невозможно перезапустить';
+
+  @override
+  String get sftpTransferCleanupFailed =>
+      'Не удалось очистить незавершенную передачу';
+
+  @override
+  String get sftpUploadTargetExists => 'Файл назначения уже существует';
+
+  @override
+  String get sftpUploadCommitFailed =>
+      'Не удалось завершить удаленную загрузку';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'Локальный исходный файл изменился или недействителен';
+
+  @override
+  String cachedDataNotice(String time) {
+    return 'Сохранено в кэше в $time';
+  }
+
+  @override
+  String get serviceLogsCapReached => 'Лимит: сохранено до 1000 записей';
+
+  @override
+  String get nasThumbnailCacheUsage => 'Кэш миниатюр';
+
+  @override
+  String get nasThumbnailCacheBudget => 'Лимит кэша';
+
+  @override
+  String get nasThumbnailCacheClear => 'Очистить кэш';
+
+  @override
+  String get nasThumbnailCacheCleared => 'Кэш миниатюр очищен';
+
+  @override
+  String get nasThumbnailCacheOff => 'Выкл';
 }

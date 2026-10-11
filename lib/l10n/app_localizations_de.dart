@@ -4348,4 +4348,143 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'Update-Vorgang fehlgeschlagen. Bitte versuchen Sie es erneut oder öffnen Sie die GitHub-Releases.';
+
+  @override
+  String get servicePermissionDenied =>
+      'Keine Berechtigung zur Dienstverwaltung';
+
+  @override
+  String get serviceUnsupported => 'Aktion für diesen Dienst nicht unterstützt';
+
+  @override
+  String get serviceQueryFailed => 'Abfrage des Dienststatus fehlgeschlagen';
+
+  @override
+  String get serviceTargetChanged => 'Zielserver geändert; Vorgang abgebrochen';
+
+  @override
+  String get serviceActionInProgress =>
+      'Eine andere Aktion für diesen Dienst wird bereits ausgeführt';
+
+  @override
+  String get processIdentityChanged =>
+      'Prozess wurde neu gestartet; Beenden abgebrochen';
+
+  @override
+  String get processIdentityUnavailable =>
+      'Prozessstartzeit nicht verfügbar; Beenden verweigert';
+
+  @override
+  String get serviceLogsTitle => 'Dienstprotokolle';
+
+  @override
+  String get serviceLogsLoadOlder => 'Ältere Protokolle laden';
+
+  @override
+  String get serviceLogsEmpty => 'Keine Protokolle gefunden';
+
+  @override
+  String get serviceLogsCopied => 'Protokolle in die Zwischenablage kopiert';
+
+  @override
+  String get fileEditorUnsavedTitle => 'Ungespeicherte Änderungen';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'Sie haben ungespeicherte Änderungen. Wählen Sie eine Aktion vor dem Verlassen:';
+
+  @override
+  String get fileEditorKeepDraft => 'Entwurf behalten';
+
+  @override
+  String get fileEditorDiscard => 'Verwerfen';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'Entwurf verwerfen?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'Möchten Sie den lokalen Entwurf wirklich verwerfen und die neueste Datei vom Server neu laden?';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'Datei wurde auf dem Server geändert oder steht im Konflikt mit dem lokalen Entwurf.';
+
+  @override
+  String get fileEditorCopyDraft => 'Entwurf kopieren';
+
+  @override
+  String get fileEditorDraftCopied => 'Entwurf in die Zwischenablage kopiert';
+
+  @override
+  String get fileEditorReload => 'Neu laden';
+
+  @override
+  String get sftpAtomicSaveUnsupported =>
+      'Server unterstützt kein sicheres atomares Speichern';
+
+  @override
+  String get sftpEditorExpired => 'Editor-Sitzung ist abgelaufen';
+
+  @override
+  String get sftpDraftSaveFailed =>
+      'Lokaler Entwurf konnte nicht gespeichert werden';
+
+  @override
+  String get sftpEditConflict =>
+      'Datei auf Server geändert; bitte neu laden oder Entwurf kopieren';
+
+  @override
+  String get sftpEditDraftConflict =>
+      'Lokaler Entwurf steht im Konflikt mit der Serverdatei';
+
+  @override
+  String get sftpTransferSourceChanged =>
+      'Quelldatei wurde während der Übertragung geändert';
+
+  @override
+  String get sftpTransferPartialInvalid =>
+      'Teilweise übertragene Datei ist ungültig oder beschädigt';
+
+  @override
+  String get sftpTransferCommitting =>
+      'Übertragung wird bereits angewendet; Neustart nicht möglich';
+
+  @override
+  String get sftpTransferCleanupFailed =>
+      'Bereinigen der unvollständigen Übertragung fehlgeschlagen';
+
+  @override
+  String get sftpUploadTargetExists => 'Zieldatei existiert bereits';
+
+  @override
+  String get sftpUploadCommitFailed =>
+      'Abschließen des Remote-Uploads fehlgeschlagen';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'Lokale Quelldatei wurde geändert oder ist ungültig';
+
+  @override
+  String cachedDataNotice(String time) {
+    return 'Zwischengespeichert um $time';
+  }
+
+  @override
+  String get serviceLogsCapReached => 'Obergrenze: 1000 Protokolle beibehalten';
+
+  @override
+  String get nasThumbnailCacheUsage => 'Miniaturbild-Cache';
+
+  @override
+  String get nasThumbnailCacheBudget => 'Cache-Budget';
+
+  @override
+  String get nasThumbnailCacheClear => 'Cache leeren';
+
+  @override
+  String get nasThumbnailCacheCleared => 'Miniaturbild-Cache geleert';
+
+  @override
+  String get nasThumbnailCacheOff => 'Aus';
 }

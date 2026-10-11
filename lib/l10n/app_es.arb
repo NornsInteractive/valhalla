@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "La ruta o la identidad del paquete no son válidas.",
   "updateErrorStoreInstall": "Esta aplicación se instaló desde una tienda de aplicaciones. Actualícela a través de la tienda.",
   "updateErrorPlatform": "No se pudo abrir o iniciar el instalador.",
-  "updateErrorGeneric": "Error en la operación de actualización. Inténtelo de nuevo o consulte los lanzamientos en GitHub."
+  "updateErrorGeneric": "Error en la operación de actualización. Inténtelo de nuevo o consulte los lanzamientos en GitHub.",
+  "servicePermissionDenied": "Permiso denegado para administrar el servicio",
+  "serviceUnsupported": "Acción no admitida para este servicio",
+  "serviceQueryFailed": "Error al consultar el estado del servicio",
+  "serviceTargetChanged": "El servidor de destino cambió; operación cancelada",
+  "serviceActionInProgress": "Ya hay otra acción en curso para este servicio",
+  "processIdentityChanged": "El proceso se reinició; terminación cancelada",
+  "processIdentityUnavailable": "Hora de inicio del proceso no disponible; terminación rechazada",
+  "serviceLogsTitle": "Registros del servicio",
+  "serviceLogsLoadOlder": "Cargar registros anteriores",
+  "serviceLogsEmpty": "No se encontraron registros",
+  "serviceLogsCopied": "Registros copiados al portapapeles",
+  "fileEditorUnsavedTitle": "Cambios no guardados",
+  "fileEditorUnsavedMessage": "Tiene cambios no guardados. Elija una acción antes de salir:",
+  "fileEditorKeepDraft": "Conservar borrador",
+  "fileEditorDiscard": "Descartar",
+  "fileEditorDiscardConfirmTitle": "¿Descartar borrador?",
+  "fileEditorDiscardConfirmMessage": "¿Está seguro de que desea descartar el borrador local y recargar el archivo desde el servidor?",
+  "fileEditorConflictBanner": "El archivo se modificó en el servidor o entra en conflicto con el borrador local.",
+  "fileEditorCopyDraft": "Copiar borrador",
+  "fileEditorDraftCopied": "Borrador copiado al portapapeles",
+  "fileEditorReload": "Recargar",
+  "sftpAtomicSaveUnsupported": "El servidor no admite el guardado atómico seguro",
+  "sftpEditorExpired": "La sesión del editor ha caducado",
+  "sftpDraftSaveFailed": "Error al guardar el borrador local",
+  "sftpEditConflict": "Archivo modificado en el servidor; recargue o copie el borrador",
+  "sftpEditDraftConflict": "El borrador local está en conflicto con el archivo del servidor",
+  "sftpTransferSourceChanged": "El archivo de origen cambió durante la transferencia",
+  "sftpTransferPartialInvalid": "Archivo de transferencia parcial inválido o dañado",
+  "sftpTransferCommitting": "La transferencia ya se está confirmando; no se puede reiniciar",
+  "sftpTransferCleanupFailed": "Error al limpiar la transferencia incompleta",
+  "sftpUploadTargetExists": "El archivo de destino ya existe",
+  "sftpUploadCommitFailed": "Error al finalizar la subida remota",
+  "sftpUploadSourceInvalid": "El archivo de origen local cambió o no es válido",
+  "cachedDataNotice": "En caché a las {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "Límite: 1000 registros conservados",
+  "nasThumbnailCacheUsage": "Caché de miniaturas",
+  "nasThumbnailCacheBudget": "Límite de caché",
+  "nasThumbnailCacheClear": "Limpiar caché",
+  "nasThumbnailCacheCleared": "Caché de miniaturas limpiada",
+  "nasThumbnailCacheOff": "Desactivado"
 }

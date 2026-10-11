@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "Caminho ou identidade do pacote inválidos.",
   "updateErrorStoreInstall": "Este aplicativo foi instalado de uma loja de aplicativos. Atualize pela loja.",
   "updateErrorPlatform": "Falha ao abrir ou iniciar o instalador.",
-  "updateErrorGeneric": "Falha na operação de atualização. Tente novamente ou acesse os lançamentos no GitHub."
+  "updateErrorGeneric": "Falha na operação de atualização. Tente novamente ou acesse os lançamentos no GitHub.",
+  "servicePermissionDenied": "Permissão negada para gerenciar o serviço",
+  "serviceUnsupported": "Ação não suportada para este serviço",
+  "serviceQueryFailed": "Falha ao consultar o status do serviço",
+  "serviceTargetChanged": "Servidor de destino alterado; operação cancelada",
+  "serviceActionInProgress": "Outra ação já está em andamento para este serviço",
+  "processIdentityChanged": "O processo foi reiniciado; encerramento cancelado",
+  "processIdentityUnavailable": "Hora de início do processo indisponível; encerramento recusado",
+  "serviceLogsTitle": "Registros do serviço",
+  "serviceLogsLoadOlder": "Carregar registros mais antigos",
+  "serviceLogsEmpty": "Nenhum registro encontrado",
+  "serviceLogsCopied": "Registros copiados para a área de transferência",
+  "fileEditorUnsavedTitle": "Alterações não salvas",
+  "fileEditorUnsavedMessage": "Você tem alterações não salvas. Escolha uma ação antes de sair:",
+  "fileEditorKeepDraft": "Manter rascunho",
+  "fileEditorDiscard": "Descartar",
+  "fileEditorDiscardConfirmTitle": "Descartar rascunho?",
+  "fileEditorDiscardConfirmMessage": "Tem certeza de que deseja descartar o rascunho local e recarregar o arquivo do servidor?",
+  "fileEditorConflictBanner": "O arquivo foi modificado no servidor ou está em conflito com o rascunho local.",
+  "fileEditorCopyDraft": "Copiar rascunho",
+  "fileEditorDraftCopied": "Rascunho copiado para a área de transferência",
+  "fileEditorReload": "Recarregar",
+  "sftpAtomicSaveUnsupported": "O servidor não suporta salvamento atômico seguro",
+  "sftpEditorExpired": "A sessão do editor expirou",
+  "sftpDraftSaveFailed": "Falha ao salvar o rascunho local",
+  "sftpEditConflict": "Arquivo modificado no servidor; recarregue ou copie o rascunho",
+  "sftpEditDraftConflict": "O rascunho local está em conflito com o arquivo do servidor",
+  "sftpTransferSourceChanged": "O arquivo de origem foi alterado durante a transferência",
+  "sftpTransferPartialInvalid": "Arquivo de transferência parcial inválido ou corrompido",
+  "sftpTransferCommitting": "Transferência já em confirmação; não é possível reiniciar",
+  "sftpTransferCleanupFailed": "Falha ao limpar a transferência incompleta",
+  "sftpUploadTargetExists": "O arquivo de destino já existe",
+  "sftpUploadCommitFailed": "Falha ao finalizar o upload remoto",
+  "sftpUploadSourceInvalid": "O arquivo de origem local foi alterado ou é inválido",
+  "cachedDataNotice": "Em cache às {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "Limite: 1000 registros mantidos",
+  "nasThumbnailCacheUsage": "Cache de miniaturas",
+  "nasThumbnailCacheBudget": "Limite de cache",
+  "nasThumbnailCacheClear": "Limpar cache",
+  "nasThumbnailCacheCleared": "Cache de miniaturas limpo",
+  "nasThumbnailCacheOff": "Desativado"
 }

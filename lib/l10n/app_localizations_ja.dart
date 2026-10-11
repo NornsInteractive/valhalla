@@ -4162,4 +4162,127 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get updateErrorGeneric => 'アップデートに失敗しました。再試行するか GitHub リリースを確認してください。';
+
+  @override
+  String get servicePermissionDenied => 'サービスを管理する権限がありません';
+
+  @override
+  String get serviceUnsupported => 'このサービスではサポートされていない操作です';
+
+  @override
+  String get serviceQueryFailed => 'サービス状態の照会に失敗しました';
+
+  @override
+  String get serviceTargetChanged => '対象サーバーが変更されたため、操作をキャンセルしました';
+
+  @override
+  String get serviceActionInProgress => 'このサービスに対する別のアクションが進行中です';
+
+  @override
+  String get processIdentityChanged => 'プロセスが再起動されたため、終了を中止しました';
+
+  @override
+  String get processIdentityUnavailable => 'プロセスの開始時刻を取得できないため、終了を拒否しました';
+
+  @override
+  String get serviceLogsTitle => 'サービスログ';
+
+  @override
+  String get serviceLogsLoadOlder => '以前のログを読み込む';
+
+  @override
+  String get serviceLogsEmpty => 'ログが見つかりません';
+
+  @override
+  String get serviceLogsCopied => 'ログをクリップボードにコピーしました';
+
+  @override
+  String get fileEditorUnsavedTitle => '未保存の変更';
+
+  @override
+  String get fileEditorUnsavedMessage => '未保存の変更があります。終了する前に操作を選択してください：';
+
+  @override
+  String get fileEditorKeepDraft => '下書きを保持';
+
+  @override
+  String get fileEditorDiscard => '破棄';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => '下書きを破棄しますか？';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'ローカルの下書きを破棄し、サーバーから最新ファイルを再読み込みしますか？';
+
+  @override
+  String get fileEditorConflictBanner => 'サーバー上でファイルが変更されたか、ローカル下書きと競合しています。';
+
+  @override
+  String get fileEditorCopyDraft => '下書きをコピー';
+
+  @override
+  String get fileEditorDraftCopied => '下書きをクリップボードにコピーしました';
+
+  @override
+  String get fileEditorReload => '再読み込み';
+
+  @override
+  String get sftpAtomicSaveUnsupported => 'サーバーが安全なアトミック保存をサポートしていません';
+
+  @override
+  String get sftpEditorExpired => 'エディターセッションの有効期限が切れました';
+
+  @override
+  String get sftpDraftSaveFailed => 'ローカル下書きの保存に失敗しました';
+
+  @override
+  String get sftpEditConflict => 'サーバー上でファイルが変更されました。再読み込みまたは下書きをコピーしてください';
+
+  @override
+  String get sftpEditDraftConflict => 'ローカル下書きがサーバー上のファイルと競合しています';
+
+  @override
+  String get sftpTransferSourceChanged => '転送中にソースファイルが変更されました';
+
+  @override
+  String get sftpTransferPartialInvalid => '一時転送ファイルが無効または破損しています';
+
+  @override
+  String get sftpTransferCommitting => '転送はコミット中のため再開できません';
+
+  @override
+  String get sftpTransferCleanupFailed => '未完了の転送のクリーンアップに失敗しました';
+
+  @override
+  String get sftpUploadTargetExists => '送信先ファイルが既に存在します';
+
+  @override
+  String get sftpUploadCommitFailed => 'リモートアップロードの確定に失敗しました';
+
+  @override
+  String get sftpUploadSourceInvalid => 'ローカルのソースファイルが変更されたか無効です';
+
+  @override
+  String cachedDataNotice(String time) {
+    return '$time にキャッシュ';
+  }
+
+  @override
+  String get serviceLogsCapReached => '上限：保持ログは最大1000件です';
+
+  @override
+  String get nasThumbnailCacheUsage => 'サムネイルキャッシュ';
+
+  @override
+  String get nasThumbnailCacheBudget => 'キャッシュ上限';
+
+  @override
+  String get nasThumbnailCacheClear => 'キャッシュをクリア';
+
+  @override
+  String get nasThumbnailCacheCleared => 'サムネイルキャッシュをクリアしました';
+
+  @override
+  String get nasThumbnailCacheOff => 'オフ';
 }

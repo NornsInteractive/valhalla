@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "Percorso o identità del pacchetto non validi.",
   "updateErrorStoreInstall": "Questa app è stata installata da uno store di app. Aggiornala tramite lo store.",
   "updateErrorPlatform": "Impossibile aprire o avviare il programma di installazione.",
-  "updateErrorGeneric": "Operazione di aggiornamento non riuscita. Riprova o visita i rilasci su GitHub."
+  "updateErrorGeneric": "Operazione di aggiornamento non riuscita. Riprova o visita i rilasci su GitHub.",
+  "servicePermissionDenied": "Autorizzazione negata per gestire il servizio",
+  "serviceUnsupported": "Azione non supportata per questo servizio",
+  "serviceQueryFailed": "Interrogazione dello stato del servizio non riuscita",
+  "serviceTargetChanged": "Server di destinazione modificato; operazione annullata",
+  "serviceActionInProgress": "Un'altra azione è già in corso per questo servizio",
+  "processIdentityChanged": "Il processo è stato riavviato; terminazione annullata",
+  "processIdentityUnavailable": "Ora di avvio del processo non disponibile; terminazione rifiutata",
+  "serviceLogsTitle": "Registri del servizio",
+  "serviceLogsLoadOlder": "Carica registri precedenti",
+  "serviceLogsEmpty": "Nessun registro trovato",
+  "serviceLogsCopied": "Registri copiati negli appunti",
+  "fileEditorUnsavedTitle": "Modifiche non salvate",
+  "fileEditorUnsavedMessage": "Hai modifiche non salvate. Scegli un'azione prima di uscire:",
+  "fileEditorKeepDraft": "Mantieni bozza",
+  "fileEditorDiscard": "Scarta",
+  "fileEditorDiscardConfirmTitle": "Scartare la bozza?",
+  "fileEditorDiscardConfirmMessage": "Vuoi davvero scartare la bozza locale e ricaricare il file più recente dal server?",
+  "fileEditorConflictBanner": "Il file è stato modificato sul server o è in conflitto con la bozza locale.",
+  "fileEditorCopyDraft": "Copia bozza",
+  "fileEditorDraftCopied": "Bozza copiata negli appunti",
+  "fileEditorReload": "Ricarica",
+  "sftpAtomicSaveUnsupported": "Il server non supporta il salvataggio atomico sicuro",
+  "sftpEditorExpired": "La sessione dell'editor è scaduta",
+  "sftpDraftSaveFailed": "Impossibile salvare la bozza locale",
+  "sftpEditConflict": "File modificato sul server; ricaricare o copiare la bozza",
+  "sftpEditDraftConflict": "La bozza locale è in conflitto con il file sul server",
+  "sftpTransferSourceChanged": "Il file di origine è stato modificato durante il trasferimento",
+  "sftpTransferPartialInvalid": "File di trasferimento parziale non valido o danneggiato",
+  "sftpTransferCommitting": "Trasferimento già in fase di commit; impossibile riavviare",
+  "sftpTransferCleanupFailed": "Pulizia del trasferimento incompleto non riuscita",
+  "sftpUploadTargetExists": "Il file di destinazione esiste già",
+  "sftpUploadCommitFailed": "Finalizzazione del caricamento remoto non riuscita",
+  "sftpUploadSourceInvalid": "Il file di origine locale è stato modificato o non è valido",
+  "cachedDataNotice": "Memorizzato nella cache alle {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "Limite: 1000 log conservati",
+  "nasThumbnailCacheUsage": "Cache delle miniature",
+  "nasThumbnailCacheBudget": "Limite della cache",
+  "nasThumbnailCacheClear": "Svuota cache",
+  "nasThumbnailCacheCleared": "Cache delle miniature svuotata",
+  "nasThumbnailCacheOff": "Disattivato"
 }

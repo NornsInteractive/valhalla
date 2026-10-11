@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "パッケージのパスまたはIDが無効です。",
   "updateErrorStoreInstall": "このアプリはアプリストアからインストールされました。ストアからアップデートしてください。",
   "updateErrorPlatform": "インストーラーを開くか起動できませんでした。",
-  "updateErrorGeneric": "アップデートに失敗しました。再試行するか GitHub リリースを確認してください。"
+  "updateErrorGeneric": "アップデートに失敗しました。再試行するか GitHub リリースを確認してください。",
+  "servicePermissionDenied": "サービスを管理する権限がありません",
+  "serviceUnsupported": "このサービスではサポートされていない操作です",
+  "serviceQueryFailed": "サービス状態の照会に失敗しました",
+  "serviceTargetChanged": "対象サーバーが変更されたため、操作をキャンセルしました",
+  "serviceActionInProgress": "このサービスに対する別のアクションが進行中です",
+  "processIdentityChanged": "プロセスが再起動されたため、終了を中止しました",
+  "processIdentityUnavailable": "プロセスの開始時刻を取得できないため、終了を拒否しました",
+  "serviceLogsTitle": "サービスログ",
+  "serviceLogsLoadOlder": "以前のログを読み込む",
+  "serviceLogsEmpty": "ログが見つかりません",
+  "serviceLogsCopied": "ログをクリップボードにコピーしました",
+  "fileEditorUnsavedTitle": "未保存の変更",
+  "fileEditorUnsavedMessage": "未保存の変更があります。終了する前に操作を選択してください：",
+  "fileEditorKeepDraft": "下書きを保持",
+  "fileEditorDiscard": "破棄",
+  "fileEditorDiscardConfirmTitle": "下書きを破棄しますか？",
+  "fileEditorDiscardConfirmMessage": "ローカルの下書きを破棄し、サーバーから最新ファイルを再読み込みしますか？",
+  "fileEditorConflictBanner": "サーバー上でファイルが変更されたか、ローカル下書きと競合しています。",
+  "fileEditorCopyDraft": "下書きをコピー",
+  "fileEditorDraftCopied": "下書きをクリップボードにコピーしました",
+  "fileEditorReload": "再読み込み",
+  "sftpAtomicSaveUnsupported": "サーバーが安全なアトミック保存をサポートしていません",
+  "sftpEditorExpired": "エディターセッションの有効期限が切れました",
+  "sftpDraftSaveFailed": "ローカル下書きの保存に失敗しました",
+  "sftpEditConflict": "サーバー上でファイルが変更されました。再読み込みまたは下書きをコピーしてください",
+  "sftpEditDraftConflict": "ローカル下書きがサーバー上のファイルと競合しています",
+  "sftpTransferSourceChanged": "転送中にソースファイルが変更されました",
+  "sftpTransferPartialInvalid": "一時転送ファイルが無効または破損しています",
+  "sftpTransferCommitting": "転送はコミット中のため再開できません",
+  "sftpTransferCleanupFailed": "未完了の転送のクリーンアップに失敗しました",
+  "sftpUploadTargetExists": "送信先ファイルが既に存在します",
+  "sftpUploadCommitFailed": "リモートアップロードの確定に失敗しました",
+  "sftpUploadSourceInvalid": "ローカルのソースファイルが変更されたか無効です",
+  "cachedDataNotice": "{time} にキャッシュ",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "上限：保持ログは最大1000件です",
+  "nasThumbnailCacheUsage": "サムネイルキャッシュ",
+  "nasThumbnailCacheBudget": "キャッシュ上限",
+  "nasThumbnailCacheClear": "キャッシュをクリア",
+  "nasThumbnailCacheCleared": "サムネイルキャッシュをクリアしました",
+  "nasThumbnailCacheOff": "オフ"
 }

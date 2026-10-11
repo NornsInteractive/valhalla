@@ -50,6 +50,14 @@ class _DockerViewState extends ConsumerState<DockerView> {
     final capturedServer = ref.read(activeServerProvider);
     if (capturedServer == null) return;
 
+    if (ref.read(dockerProvider).cachedAt != null ||
+        !ref.read(serverConnectionProvider).isConnected) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+      return;
+    }
+
     final targetContainers = List<DockerContainer>.from(containers);
     final targetIds = targetContainers.map((c) => c.id).toList();
 
@@ -139,6 +147,14 @@ class _DockerViewState extends ConsumerState<DockerView> {
 
     final capturedServer = ref.read(activeServerProvider);
     if (capturedServer == null) return;
+
+    if (ref.read(dockerProvider).cachedAt != null ||
+        !ref.read(serverConnectionProvider).isConnected) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+      return;
+    }
 
     final cmd = 'docker $action ${container.id}';
     final confirmed = await DangerConfirmDialog.show(
@@ -425,7 +441,11 @@ class _DockerViewState extends ConsumerState<DockerView> {
                   child: SharedTerminalCanvas(
                     terminal: originatingBridge.terminal,
                     onKey: (key, {bool isCtrl = false, bool isAlt = false}) {
-                      originatingBridge.sendKey(key, isCtrl: isCtrl, isAlt: isAlt);
+                      originatingBridge.sendKey(
+                        key,
+                        isCtrl: isCtrl,
+                        isAlt: isAlt,
+                      );
                     },
                     onPaste: () => originatingBridge.pasteClipboard(),
                     onPasteText: (text) => originatingBridge.pasteText(text),
@@ -465,7 +485,8 @@ class _DockerViewState extends ConsumerState<DockerView> {
                               );
                             },
                         onPaste: () => originatingBridge.pasteClipboard(),
-                        onPasteText: (text) => originatingBridge.pasteText(text),
+                        onPasteText: (text) =>
+                            originatingBridge.pasteText(text),
                       ),
                     ),
                   ),
@@ -488,6 +509,34 @@ class _DockerViewState extends ConsumerState<DockerView> {
     }
   }
 
+  Widget _buildCachedBanner(BuildContext context, DateTime cachedAt) {
+    final timeStr =
+        '${cachedAt.hour.toString().padLeft(2, '0')}:${cachedAt.minute.toString().padLeft(2, '0')}:${cachedAt.second.toString().padLeft(2, '0')}';
+    return Container(
+      width: double.infinity,
+      color: context.colorScheme.surfaceContainerHighest,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          Icon(
+            Icons.cloud_off_outlined,
+            size: 16,
+            color: context.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.cachedDataNotice(timeStr),
+              style: context.textTheme.bodySmall?.copyWith(
+                color: context.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeServer = ref.watch(activeServerProvider);
@@ -506,6 +555,8 @@ class _DockerViewState extends ConsumerState<DockerView> {
     return Scaffold(
       body: Column(
         children: [
+          if (dockerState.cachedAt != null)
+            _buildCachedBanner(context, dockerState.cachedAt!),
           Entrance(
             index: 0,
             child: Padding(
@@ -845,7 +896,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
               project: entry.key,
               containers: entry.value,
               dockerState: dockerState,
-              isConnected: isConnected,
+              isConnected: isConnected && dockerState.cachedAt == null,
               onInspect: _showInspectModal,
               onLogs: _showLogsDialog,
               onTerminal: _openContainerTerminal,
@@ -890,7 +941,8 @@ class _DockerViewState extends ConsumerState<DockerView> {
     final isConnected = ref.watch(
       serverConnectionProvider.select((s) => s.isConnected),
     );
-    final isRemoteDisabled = isContainerBusy || !isConnected;
+    final isRemoteDisabled =
+        isContainerBusy || !isConnected || dockerState.cachedAt != null;
     final activeServer = ref.watch(activeServerProvider);
     String containerShell = 'bash';
     if (activeServer != null) {

@@ -10,6 +10,7 @@ import '../../core/providers/server_power_provider.dart';
 import '../../core/providers/server_provider.dart';
 import '../../core/providers/settings_provider.dart';
 import '../../core/providers/sftp_provider.dart';
+import '../../core/providers/storage_providers.dart';
 import '../../core/providers/terminal_provider.dart';
 import '../../data/models/server_profile.dart';
 import '../../infrastructure/system/system_hardware_service.dart';
@@ -62,6 +63,15 @@ class DashboardView extends ConsumerWidget {
     final lastSnapshot = snapshot;
     final isReconnecting = connState.isConnecting;
     final hasExistingData = lastSnapshot != null || history.isNotEmpty;
+    final isOfflineCached = !connState.isConnected && hasExistingData;
+    final cachedRecord = isOfflineCached
+        ? ref
+              .watch(localStorageServiceProvider)
+              .getPageCache(activeServer, 'metrics')
+        : null;
+    final cachedAt = cachedRecord != null
+        ? DateTime.tryParse(cachedRecord['savedAt'] as String? ?? '')?.toLocal()
+        : null;
 
     if (!connState.isConnected && !isReconnecting && !hasExistingData) {
       return Scaffold(
@@ -145,6 +155,14 @@ class DashboardView extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (isOfflineCached) ...[
+                _buildCachedBanner(
+                  context,
+                  cachedAt: cachedAt,
+                  isPartial: true,
+                ),
+                const SizedBox(height: 12),
+              ],
               _buildServerHeaderCard(
                 context,
                 ref,
@@ -208,7 +226,7 @@ class DashboardView extends ConsumerWidget {
                       context.l10n.dashboardTitle,
                       style: context.textTheme.titleMedium,
                     ),
-                    if (!connState.isConnected && hasExistingData) ...[
+                    if (isOfflineCached) ...[
                       Container(
                         key: const Key('dashboardStaleDataIndicator'),
                         padding: const EdgeInsets.symmetric(
@@ -233,7 +251,9 @@ class DashboardView extends ConsumerWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              context.l10n.dashboardUpdatesPaused,
+                              cachedAt != null
+                                  ? '${context.l10n.dashboardUpdatesPaused} (${context.l10n.cachedDataNotice('${cachedAt.hour.toString().padLeft(2, '0')}:${cachedAt.minute.toString().padLeft(2, '0')}:${cachedAt.second.toString().padLeft(2, '0')}')})'
+                                  : context.l10n.dashboardUpdatesPaused,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: context.colorScheme.outline,
@@ -285,6 +305,45 @@ class DashboardView extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCachedBanner(
+    BuildContext context, {
+    DateTime? cachedAt,
+    bool isPartial = false,
+  }) {
+    final timeStr = cachedAt != null
+        ? '${cachedAt.hour.toString().padLeft(2, '0')}:${cachedAt.minute.toString().padLeft(2, '0')}:${cachedAt.second.toString().padLeft(2, '0')}'
+        : null;
+    final message = timeStr != null
+        ? context.l10n.cachedDataNotice(timeStr)
+        : context.l10n.stateOffline;
+    return Container(
+      key: const Key('dashboardCachedDataBanner'),
+      width: double.infinity,
+      color: context.colorScheme.surfaceContainerHighest,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Icon(
+            Icons.cloud_off_outlined,
+            size: 16,
+            color: context.colorScheme.outline,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isPartial
+                  ? '$message · ${context.l10n.dashboardUpdatesPaused}'
+                  : message,
+              style: context.textTheme.labelSmall?.copyWith(
+                color: context.colorScheme.outline,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

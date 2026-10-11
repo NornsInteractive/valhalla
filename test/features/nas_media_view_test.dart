@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:valhalla/core/providers/infrastructure_providers.dart';
 import 'package:valhalla/core/providers/nas_metadata_provider.dart';
 import 'package:valhalla/core/providers/nas_provider.dart';
 import 'package:valhalla/core/providers/nas_sources_provider.dart';
@@ -27,6 +28,7 @@ import 'package:valhalla/features/nas/widgets/nas_localizations.dart';
 import 'package:valhalla/features/nas/widgets/nas_scan_config_dialog.dart';
 import 'package:valhalla/features/nas/widgets/nas_source_dialog.dart';
 import 'package:valhalla/features/shell/main_shell.dart';
+import 'package:valhalla/infrastructure/nas/nas_media_proxy_service.dart';
 import 'package:valhalla/infrastructure/sftp/sftp_client_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 
@@ -114,7 +116,6 @@ class _FakeNasNotifier extends NasNotifier {
   String? removedFromPlaylistId;
   NasMediaItem? movedPlaylistItem;
   int? movedPlaylistIndex;
-  Uri? releasedUri;
   final Uri lastImageUrl = Uri.parse('http://127.0.0.1:8080/relay/sample.jpg');
 
   _FakeNasNotifier(this._initialState);
@@ -281,11 +282,6 @@ class _FakeNasNotifier extends NasNotifier {
   Future<Uri> imageUrl(NasMediaItem item) async => lastImageUrl;
 
   @override
-  void releaseImageUrl(Uri uri) {
-    releasedUri = uri;
-  }
-
-  @override
   Future<void> createPlaylist(String name) async {
     createdPlaylistName = name;
   }
@@ -324,6 +320,21 @@ class _FakeNasNotifier extends NasNotifier {
     movedPlaylistItem = item;
     movedPlaylistIndex = index;
   }
+}
+
+class _RecordingNasMediaProxy implements NasMediaProxyService {
+  final List<Uri> revoked = <Uri>[];
+
+  @override
+  void revoke(Uri uri) {
+    revoked.add(uri);
+  }
+
+  @override
+  void retain(Uri uri) {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _TestNasSourcesNotifier extends NasSourcesNotifier {
@@ -464,6 +475,7 @@ void main() {
     NasMetadataProgress? metadataProgress,
     List<ServerProfile>? servers,
     Widget? home,
+    NasMediaProxyService? proxyService,
   }) {
     final effectiveStorage = storage ?? defaultStorage;
     final effectiveDownloadService = downloadService ?? _FakeDownloadService();
@@ -481,6 +493,9 @@ void main() {
           () => sourcesNotifier ?? _TestNasSourcesNotifier(),
         ),
         nasProvider.overrideWith(() => notifier),
+        nasMediaProxyServiceProvider.overrideWithValue(
+          proxyService ?? _RecordingNasMediaProxy(),
+        ),
         nasPlaybackProvider.overrideWith(
           (ref) => Stream.value(playbackSnapshot ?? const NasPlayerSnapshot()),
         ),
@@ -845,6 +860,7 @@ void main() {
     testWidgets(
       'image viewer dialog loads original relay image and releases URL on exit',
       (tester) async {
+        final proxy = _RecordingNasMediaProxy();
         final notifier = _FakeNasNotifier(
           NasState(
             serverId: 'src-nas',
@@ -854,7 +870,9 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(createNasApp(notifier: notifier));
+        await tester.pumpWidget(
+          createNasApp(notifier: notifier, proxyService: proxy),
+        );
         await tester.pumpAndSettle();
 
         // Switch to Photos tab
@@ -877,7 +895,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(NasImageViewerDialog), findsNothing);
-        expect(notifier.releasedUri, isNotNull);
+        expect(proxy.revoked, contains(notifier.lastImageUrl));
       },
     );
 
@@ -1697,6 +1715,7 @@ void main() {
     testWidgets(
       'gallery image viewer guards loadOriginal with generation and updates favorite immutably',
       (tester) async {
+        final proxy = _RecordingNasMediaProxy();
         const testImage1 = NasMediaItem(
           serverId: 'src-nas',
           path: '/mnt/media/photos/photo_1.jpg',
@@ -1723,6 +1742,7 @@ void main() {
         await tester.pumpWidget(
           createNasApp(
             notifier: notifier,
+            proxyService: proxy,
             home: Builder(
               builder: (ctx) => Scaffold(
                 body: ElevatedButton(
@@ -1766,8 +1786,8 @@ void main() {
         await tester.tap(nextBtn);
         await tester.pumpAndSettle();
 
-        // Stale relay URI was released
-        expect(notifier.releasedUri, equals(notifier.lastImageUrl));
+        // Stale relay URI was released by the proxy service owner
+        expect(proxy.revoked, contains(notifier.lastImageUrl));
       },
     );
 

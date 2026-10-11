@@ -1,5 +1,27 @@
 # Valhalla - 模块详细设计与分层架构说明书
 
+## 2026-10-11 编辑器与系统操作身份契约（本轮验证中）
+
+远程编辑器捕获连接身份、路径和 `editorToken`；启动打开操作后立即捕获
+token，再等待读取。保存必须显式传入 token，并在远端响应后复验，旧弹窗
+不能清理同一路径后来产生的草稿。`editorOriginalContent` 提供远端修订的
+基线，恢复草稿不等同于已保存文件。安全存储写入与删除串行；保留草稿必须
+等待 `flushEditorDraft` 成功，失败保持文本可复制并可重试，不能宣告已保留。
+关闭／丢弃携带原 token，修订冲突不能覆盖远端。草稿仍按连接身份与路径
+隔离并加密，不引入新存储或服务。
+
+进程操作携带 PID 和启动时间，服务操作与日志携带确认前捕获的
+`expectedConnectionKey`。断线、换目标或异步完成后身份不一致时拒绝操作／
+结果回写；用户确认不自动重试。服务目录采用真实的运行和开机启用状态，
+日志每次最多请求 200 条，界面保留有界窗口。非 systemd 环境、权限不足、
+查询失败和目标变化区分为稳定错误码，不能把失败当作空目录。
+旧日志翻页因 cursor 包含边界记录而请求 201 条原始记录，去重后最多返回
+200 条，首次仍请求 200 条；cursor 含义见
+[systemd 官方 journalctl 文档](https://github.com/systemd/systemd/blob/main/man/journalctl.xml)。
+
+具体消费者与新增测试进度见[六组契约](../../agent-workflow/2026-10-11-six-workstreams.md)，
+以上接口已修改但尚不代表全量验收通过。
+
 ## 2026-10-05 远程文件浏览增量
 
 SftpFileItem 新增兼容默认的 isSymbolicLink 和 linkTargetErrorCode；

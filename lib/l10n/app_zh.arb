@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "安装包路径或身份信息无效。",
   "updateErrorStoreInstall": "此应用通过应用商店安装，请通过对应的应用商店进行更新。",
   "updateErrorPlatform": "无法打开或启动安装程序。",
-  "updateErrorGeneric": "更新操作失败，请重试或前往 GitHub 查看发布页。"
+  "updateErrorGeneric": "更新操作失败，请重试或前往 GitHub 查看发布页。",
+  "servicePermissionDenied": "管理服务权限不足",
+  "serviceUnsupported": "此服务不支持该操作",
+  "serviceQueryFailed": "查询服务状态失败",
+  "serviceTargetChanged": "目标服务器已变更，操作已取消",
+  "serviceActionInProgress": "该服务已有操作正在进行中",
+  "processIdentityChanged": "进程已重启，终止操作已取消",
+  "processIdentityUnavailable": "进程启动时间不可用，拒绝终止",
+  "serviceLogsTitle": "服务日志",
+  "serviceLogsLoadOlder": "加载更早日志",
+  "serviceLogsEmpty": "未找到日志",
+  "serviceLogsCopied": "日志已复制到剪贴板",
+  "fileEditorUnsavedTitle": "未保存的更改",
+  "fileEditorUnsavedMessage": "您有未保存的更改，请在离开前选择操作：",
+  "fileEditorKeepDraft": "保留草稿",
+  "fileEditorDiscard": "放弃更改",
+  "fileEditorDiscardConfirmTitle": "放弃草稿？",
+  "fileEditorDiscardConfirmMessage": "确定要放弃本地草稿并从服务器重新加载最新文件吗？",
+  "fileEditorConflictBanner": "文件在服务器上已被修改或与本地草稿冲突。",
+  "fileEditorCopyDraft": "复制草稿",
+  "fileEditorDraftCopied": "草稿已复制到剪贴板",
+  "fileEditorReload": "重新加载",
+  "sftpAtomicSaveUnsupported": "服务器不支持安全原子保存",
+  "sftpEditorExpired": "编辑器会话已过期",
+  "sftpDraftSaveFailed": "保存本地草稿失败",
+  "sftpEditConflict": "文件在服务器上已修改，请重新加载或复制草稿",
+  "sftpEditDraftConflict": "本地草稿与服务器文件冲突",
+  "sftpTransferSourceChanged": "传输过程中源文件已被修改",
+  "sftpTransferPartialInvalid": "分块传输文件无效或已损坏",
+  "sftpTransferCommitting": "传输正在提交，无法重新启动",
+  "sftpTransferCleanupFailed": "清理未完成的传输失败",
+  "sftpUploadTargetExists": "目标文件已存在",
+  "sftpUploadCommitFailed": "确认远程上传失败",
+  "sftpUploadSourceInvalid": "本地源文件已更改或无效",
+  "cachedDataNotice": "缓存于 {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "已达上限：最多保留 1000 条日志",
+  "nasThumbnailCacheUsage": "缩略图缓存",
+  "nasThumbnailCacheBudget": "缓存上限",
+  "nasThumbnailCacheClear": "清除缓存",
+  "nasThumbnailCacheCleared": "缩略图缓存已清除",
+  "nasThumbnailCacheOff": "关闭"
 }

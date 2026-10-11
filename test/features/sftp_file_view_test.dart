@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,6 +67,9 @@ class _FakeOperations implements SftpOperations {
   /// 非空时 [readFileContent] 抛出它，用来测「读失败不要弹空编辑器」。
   Object? readThrows;
 
+  /// 非空时 [readFileContent] 返回它，用来构造「恢复出来的草稿内容」。
+  String? readResult;
+
   /// 非空时 [writeFileContent] 抛出它，用来测保存失败行为。
   Object? writeThrows;
 
@@ -78,7 +83,7 @@ class _FakeOperations implements SftpOperations {
   Future<String> readFileContent(String path) async {
     readPaths.add(path);
     if (readThrows != null) throw readThrows!;
-    return 'hello world from $path';
+    return readResult ?? 'hello world from $path';
   }
 
   @override
@@ -145,8 +150,53 @@ class _TestSftpNotifier extends SftpNotifier {
   final _FakeOperations _ops;
   final List<({SftpSortKey key, bool ascending})> setSortCalls = [];
 
+  /// 远端基线（快照内容）。真实实现由 `_editorSnapshot` 提供，这里没有继承
+  /// 私有的内部状态，所以显式暴露，让用例自己决定「草稿 vs 远端基线」。
+  String? editorBaselineContent;
+
+  /// 按调用顺序记录草稿相关的编排，用来断言「flush 必须先于 close」。
+  final List<String> draftCallOrder = [];
+
+  final List<int?> updateDraftTokens = [];
+  final List<int> flushTokens = [];
+  final List<int?> discardTokens = [];
+  final List<int?> closedTokens = [];
+
+  /// 非空时 flush 会 await 这个闸门，用来测「Keep 必须等 flush 完成才出栈」。
+  Completer<void>? flushGate;
+
+  /// 非空时 flush 抛出它，用来测草稿写盘失败。
+  Object? flushThrows;
+
+  /// 非空时 discard 抛出它，用来测草稿删除失败。
+  Object? discardThrows;
+
   _TestSftpNotifier(this._initial, [_FakeOperations? ops])
     : _ops = ops ?? _FakeOperations.empty();
+
+  @override
+  String? get editorOriginalContent => editorBaselineContent;
+
+  @override
+  void updateEditorDraft(String content, {int? editorToken}) {
+    updateDraftTokens.add(editorToken);
+    draftCallOrder.add('updateEditorDraft');
+  }
+
+  @override
+  Future<void> flushEditorDraft({required int editorToken}) async {
+    flushTokens.add(editorToken);
+    draftCallOrder.add('flush');
+    if (flushThrows != null) throw flushThrows!;
+    if (flushGate != null) await flushGate!.future;
+  }
+
+  @override
+  Future<void> discardEditorDraft({String? draftKey, int? editorToken}) async {
+    discardTokens.add(editorToken);
+    draftCallOrder.add('discard');
+    if (discardThrows != null) throw discardThrows!;
+  }
 
   @override
   Future<void> setSort({
@@ -188,6 +238,8 @@ class _TestSftpNotifier extends SftpNotifier {
 
   @override
   void closeFileEditor({int? editorToken}) {
+    closedTokens.add(editorToken);
+    draftCallOrder.add('close');
     state = state.copyWith(clearEditor: true, clearError: true);
   }
 
@@ -195,7 +247,7 @@ class _TestSftpNotifier extends SftpNotifier {
   Future<void> saveFileContent(
     String path,
     String content, {
-    int? editorToken,
+    required int editorToken,
   }) async {
     await _ops.writeFileContent(path, content);
     closeFileEditor();
@@ -1387,6 +1439,286 @@ void main() {
               matching: find.byType(GridView),
             ),
             findsNothing,
+          );
+        },
+      );
+    });
+
+    /// 编辑器退出确认（Save / Keep / Discard）的生产回归。
+    ///
+    /// 覆盖的合法需求：
+    /// - 恢复出来的草稿与远端基线不同即视为未保存，退出必须给出三种选择；
+    /// - Keep Draft 必须等队列里的加密写盘 flush 完成后才关闭并出栈；
+    /// - flush / discard 失败时保留输入、给出错误与复制入口，不静默出栈、
+    ///   也不 reopen 把没删掉的草稿重新读回来；
+    /// - 连点退出只允许出现一个确认框（守卫在取消后释放）。
+    group('Editor exit confirmation', () {
+      const draftText = 'restored draft body';
+      const baselineText = 'remote baseline body';
+
+      Finder actionInExitDialog(String label) => find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text(label),
+      );
+
+      /// 打开一个「恢复了草稿」的编辑器：编辑框里是草稿，远端基线是快照内容，
+      /// 两者不同，所以初始即为 dirty。
+      Future<_TestSftpNotifier> openRestoredDraftEditor(
+        WidgetTester tester, {
+        Object? flushThrows,
+        Object? discardThrows,
+        Completer<void>? flushGate,
+      }) async {
+        final item = _makeItem('draft.txt');
+        final state = SftpState(currentPath: '/var/www', files: [item]);
+        final notifier = _TestSftpNotifier(
+          state,
+          _FakeOperations()..readResult = draftText,
+        )..editorBaselineContent = baselineText;
+        notifier.flushThrows = flushThrows;
+        notifier.flushGate = flushGate;
+        notifier.discardThrows = discardThrows;
+
+        await tester.pumpWidget(
+          _buildTestApp(state: state, notifier: notifier),
+        );
+        await tester.pump();
+
+        await tester.tap(find.text('draft.txt'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(Dialog), findsOneWidget);
+        return notifier;
+      }
+
+      /// 推进帧与 microtask。
+      ///
+      /// 这里不能用 `pumpAndSettle`：busy 态下 AppBar 的保存按钮是不定进度条，
+      /// 会持续排帧，settle 永远等不到稳定帧；flush 闸门没放开时也一样。
+      Future<void> settleEditorFrames(WidgetTester tester) async {
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      Future<void> requestEditorExit(WidgetTester tester) async {
+        await tester.tap(find.widgetWithIcon(IconButton, Icons.close));
+        await settleEditorFrames(tester);
+      }
+
+      /// 剪贴板替身：返回捕获到的 setData 文本，验证失败路径仍能复制草稿。
+      List<String?> stubClipboard() {
+        final copied = <String?>[];
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+              if (call.method == 'Clipboard.setData') {
+                copied.add((call.arguments as Map)['text'] as String?);
+              }
+              return null;
+            });
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(SystemChannels.platform, null);
+        });
+        return copied;
+      }
+
+      String editorTextFieldText(WidgetTester tester) => tester
+          .widget<TextField>(find.byKey(const Key('sftp_editor_text_field')))
+          .controller!
+          .text;
+
+      testWidgets(
+        'restored draft differing from the remote baseline asks Save / Keep / '
+        'Discard on exit without side effects',
+        (tester) async {
+          final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+          final notifier = await openRestoredDraftEditor(tester);
+
+          await requestEditorExit(tester);
+
+          expect(find.byType(AlertDialog), findsOneWidget);
+          expect(
+            actionInExitDialog(l10n.fileEditorUnsavedTitle),
+            findsOneWidget,
+          );
+          expect(
+            actionInExitDialog(l10n.fileEditorUnsavedMessage),
+            findsOneWidget,
+          );
+          // 三个出口动作必须同时提供，缺一个就是合法需求被削弱。
+          expect(actionInExitDialog(l10n.fileEditorSave), findsOneWidget);
+          expect(actionInExitDialog(l10n.fileEditorKeepDraft), findsOneWidget);
+          expect(actionInExitDialog(l10n.fileEditorDiscard), findsOneWidget);
+
+          // 只是询问：此时不能关闭编辑器、不能 flush、不能删草稿。
+          expect(notifier.draftCallOrder, isEmpty);
+          expect(notifier.closedTokens, isEmpty);
+        },
+      );
+
+      testWidgets(
+        'Keep Draft awaits the queued flush before the editor route pops',
+        (tester) async {
+          final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+          final flushGate = Completer<void>();
+          final notifier = await openRestoredDraftEditor(
+            tester,
+            flushGate: flushGate,
+          );
+          final capturedToken = notifier.editorToken;
+
+          await requestEditorExit(tester);
+          await tester.tap(actionInExitDialog(l10n.fileEditorKeepDraft));
+          await settleEditorFrames(tester);
+
+          // flush 还没完成：编辑器必须留在栈上，也不允许提前 closeFileEditor。
+          expect(find.byType(Dialog), findsOneWidget);
+          expect(notifier.draftCallOrder, ['updateEditorDraft', 'flush']);
+          expect(notifier.updateDraftTokens, [capturedToken]);
+          expect(notifier.flushTokens, [capturedToken]);
+          expect(notifier.closedTokens, isEmpty);
+
+          flushGate.complete();
+          await settleEditorFrames(tester);
+
+          // flush 落地后才关闭编辑器并出栈。
+          expect(notifier.draftCallOrder, [
+            'updateEditorDraft',
+            'flush',
+            'close',
+          ]);
+          expect(notifier.closedTokens, [capturedToken]);
+          expect(find.byType(Dialog), findsNothing);
+        },
+      );
+
+      testWidgets(
+        'flush failure keeps the draft text and offers a copy action instead of '
+        'popping the editor',
+        (tester) async {
+          final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+          final copied = stubClipboard();
+          final notifier = await openRestoredDraftEditor(
+            tester,
+            flushThrows: const SFTPException('SFTP_DRAFT_SAVE_FAILED'),
+          );
+
+          await requestEditorExit(tester);
+          await tester.tap(actionInExitDialog(l10n.fileEditorKeepDraft));
+          await settleEditorFrames(tester);
+
+          // 草稿写盘失败：输入保留、编辑器不关、错误可见。
+          expect(find.byType(Dialog), findsOneWidget);
+          expect(editorTextFieldText(tester), draftText);
+          expect(notifier.closedTokens, isEmpty);
+          expect(
+            find.byKey(const Key('sftp_editor_error_banner')),
+            findsOneWidget,
+          );
+          expect(find.text(l10n.sftpDraftSaveFailed), findsWidgets);
+
+          final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+          expect(snackBar.action, isNotNull);
+          expect(snackBar.action!.label, l10n.fileEditorCopyDraft);
+
+          // 行内错误横幅里也有一个同标签的 Copy Draft，所以必须点到
+          // SnackBar 自己那个 action 上，否则 finder 会同时命中两处。
+          await tester.tap(
+            find.descendant(
+              of: find.byType(SnackBarAction),
+              matching: find.text(l10n.fileEditorCopyDraft),
+            ),
+          );
+          await settleEditorFrames(tester);
+
+          expect(copied, [draftText]);
+          expect(find.text(l10n.fileEditorDraftCopied), findsOneWidget);
+        },
+      );
+
+      testWidgets(
+        'discard failure keeps the draft in the editor with copy/retry instead '
+        'of reopening the undeleted draft',
+        (tester) async {
+          final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+          final copied = stubClipboard();
+          final notifier = await openRestoredDraftEditor(
+            tester,
+            discardThrows: const SFTPException('SFTP_DRAFT_SAVE_FAILED'),
+          );
+          final capturedToken = notifier.editorToken;
+
+          await requestEditorExit(tester);
+          await tester.tap(actionInExitDialog(l10n.fileEditorDiscard));
+          await settleEditorFrames(tester);
+
+          // 草稿删除失败不能顺手出栈/reopen，否则会把没删掉的草稿又读回来。
+          expect(notifier.discardTokens, [capturedToken]);
+          expect(notifier.closedTokens, isEmpty);
+          expect(find.byType(Dialog), findsOneWidget);
+          expect(editorTextFieldText(tester), draftText);
+          expect(
+            find.byKey(const Key('sftp_editor_error_banner')),
+            findsOneWidget,
+          );
+          expect(find.text(l10n.sftpDraftSaveFailed), findsWidgets);
+
+          final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+          expect(snackBar.action, isNotNull);
+          expect(snackBar.action!.label, l10n.fileEditorCopyDraft);
+
+          // 同 test 1：只点 SnackBar 里的 action，不要命中行内横幅的按钮。
+          await tester.tap(
+            find.descendant(
+              of: find.byType(SnackBarAction),
+              matching: find.text(l10n.fileEditorCopyDraft),
+            ),
+          );
+          await settleEditorFrames(tester);
+
+          expect(copied, [draftText]);
+          expect(find.text(l10n.fileEditorDraftCopied), findsOneWidget);
+        },
+      );
+
+      testWidgets(
+        'repeated exits before the confirmation show exactly one dialog and '
+        'release the guard on cancel',
+        (tester) async {
+          final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+          final notifier = await openRestoredDraftEditor(tester);
+
+          final closeButton = find.widgetWithIcon(IconButton, Icons.close);
+          final onExit = tester.widget<IconButton>(closeButton).onPressed!;
+
+          // 在确认框出现之前连点两次退出：只允许一个确认框叠加上来。
+          onExit();
+          onExit();
+          await settleEditorFrames(tester);
+
+          expect(find.byType(AlertDialog), findsOneWidget);
+          expect(
+            actionInExitDialog(l10n.fileEditorUnsavedTitle),
+            findsOneWidget,
+          );
+          expect(notifier.draftCallOrder, isEmpty);
+
+          // 取消（点遮罩）之后守卫必须释放，否则用户再也退不出编辑器。
+          await tester.tapAt(const Offset(4, 4));
+          await settleEditorFrames(tester);
+
+          expect(find.byType(AlertDialog), findsNothing);
+          expect(notifier.draftCallOrder, isEmpty);
+
+          await requestEditorExit(tester);
+
+          expect(find.byType(AlertDialog), findsOneWidget);
+          expect(
+            actionInExitDialog(l10n.fileEditorUnsavedTitle),
+            findsOneWidget,
           );
         },
       );

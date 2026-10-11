@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "Package path or identity is invalid.",
   "updateErrorStoreInstall": "This app was installed from an app store. Please update through the store.",
   "updateErrorPlatform": "Failed to open or launch the installer.",
-  "updateErrorGeneric": "Update operation failed. Please try again or visit GitHub releases."
+  "updateErrorGeneric": "Update operation failed. Please try again or visit GitHub releases.",
+  "servicePermissionDenied": "Permission denied to manage service",
+  "serviceUnsupported": "Action unsupported for this service",
+  "serviceQueryFailed": "Querying service status failed",
+  "serviceTargetChanged": "Target server changed; operation cancelled",
+  "serviceActionInProgress": "Another action is already in progress for this service",
+  "processIdentityChanged": "Process was restarted; termination cancelled",
+  "processIdentityUnavailable": "Process start time unavailable; termination refused",
+  "serviceLogsTitle": "Service Logs",
+  "serviceLogsLoadOlder": "Load Older Logs",
+  "serviceLogsEmpty": "No logs found",
+  "serviceLogsCopied": "Logs copied to clipboard",
+  "fileEditorUnsavedTitle": "Unsaved Changes",
+  "fileEditorUnsavedMessage": "You have unsaved changes. Choose an action before leaving:",
+  "fileEditorKeepDraft": "Keep Draft",
+  "fileEditorDiscard": "Discard",
+  "fileEditorDiscardConfirmTitle": "Discard Draft?",
+  "fileEditorDiscardConfirmMessage": "Are you sure you want to discard your local draft and reload the latest file from the server?",
+  "fileEditorConflictBanner": "File was modified on the server or conflicts with local draft.",
+  "fileEditorCopyDraft": "Copy Draft",
+  "fileEditorDraftCopied": "Draft copied to clipboard",
+  "fileEditorReload": "Reload",
+  "sftpAtomicSaveUnsupported": "Server does not support atomic save",
+  "sftpEditorExpired": "Editor session has expired",
+  "sftpDraftSaveFailed": "Failed to save local draft",
+  "sftpEditConflict": "File modified on server; please reload or copy draft",
+  "sftpEditDraftConflict": "Local draft conflicts with server file",
+  "sftpTransferSourceChanged": "Source file changed during transfer",
+  "sftpTransferPartialInvalid": "Partial transfer file invalid or corrupted",
+  "sftpTransferCommitting": "Transfer already committing; cannot restart",
+  "sftpTransferCleanupFailed": "Failed to clean up incomplete transfer",
+  "sftpUploadTargetExists": "Destination file already exists",
+  "sftpUploadCommitFailed": "Failed to finalize remote upload",
+  "sftpUploadSourceInvalid": "Local source file changed or is invalid",
+  "cachedDataNotice": "Cached at {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "Cap: 1000 logs retained",
+  "nasThumbnailCacheUsage": "Thumbnail Cache",
+  "nasThumbnailCacheBudget": "Cache Budget",
+  "nasThumbnailCacheClear": "Clear Cache",
+  "nasThumbnailCacheCleared": "Thumbnail cache cleared",
+  "nasThumbnailCacheOff": "Off"
 }

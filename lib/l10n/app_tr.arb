@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "Paket yolu veya kimliği geçersiz.",
   "updateErrorStoreInstall": "Bu uygulama bir uygulama mağazasından yüklendi. Lütfen mağaza üzerinden güncelleyin.",
   "updateErrorPlatform": "Yükleyici açılamadı veya başlatılamadı.",
-  "updateErrorGeneric": "Güncelleme işlemi başarısız oldu. Lütfen tekrar deneyin veya GitHub sürümlerini kontrol edin."
+  "updateErrorGeneric": "Güncelleme işlemi başarısız oldu. Lütfen tekrar deneyin veya GitHub sürümlerini kontrol edin.",
+  "servicePermissionDenied": "Hizmeti yönetme izni reddedildi",
+  "serviceUnsupported": "Bu hizmet için eylem desteklenmiyor",
+  "serviceQueryFailed": "Hizmet durumu sorgulanamadı",
+  "serviceTargetChanged": "Hedef sunucu değişti; işlem iptal edildi",
+  "serviceActionInProgress": "Bu hizmet için başka bir eylem zaten devam ediyor",
+  "processIdentityChanged": "İşlem yeniden başlatıldı; sonlandırma iptal edildi",
+  "processIdentityUnavailable": "İşlem başlangıç zamanı mevcut değil; sonlandırma reddedildi",
+  "serviceLogsTitle": "Hizmet Günlükleri",
+  "serviceLogsLoadOlder": "Daha Eski Günlükleri Yükle",
+  "serviceLogsEmpty": "Günlük bulunamadı",
+  "serviceLogsCopied": "Günlükler panoya kopyalandı",
+  "fileEditorUnsavedTitle": "Kaydedilmemiş Değişiklikler",
+  "fileEditorUnsavedMessage": "Kaydedilmemiş değişiklikleriniz var. Ayrılmadan önce bir eylem seçin:",
+  "fileEditorKeepDraft": "Taslağı Koru",
+  "fileEditorDiscard": "Vazgeç",
+  "fileEditorDiscardConfirmTitle": "Taslak Silinsin mi?",
+  "fileEditorDiscardConfirmMessage": "Yerel taslağı silip en son dosyayı sunucudan yeniden yüklemek istediğinizden emin misiniz?",
+  "fileEditorConflictBanner": "Dosya sunucuda değiştirildi veya yerel taslakla çakışıyor.",
+  "fileEditorCopyDraft": "Taslağı Kopyala",
+  "fileEditorDraftCopied": "Taslak panoya kopyalandı",
+  "fileEditorReload": "Yeniden Yükle",
+  "sftpAtomicSaveUnsupported": "Sunucu güvenli atomik kaydetmeyi desteklemiyor",
+  "sftpEditorExpired": "Düzenleyici oturumunun süresi doldu",
+  "sftpDraftSaveFailed": "Yerel taslak kaydedilemedi",
+  "sftpEditConflict": "Dosya sunucuda değiştirildi; lütfen yeniden yükleyin veya taslağı kopyalayın",
+  "sftpEditDraftConflict": "Yerel taslak sunucu dosyasıyla çakışıyor",
+  "sftpTransferSourceChanged": "Aktarım sırasında kaynak dosya değişti",
+  "sftpTransferPartialInvalid": "Kısmi aktarım dosyası geçersiz veya bozuk",
+  "sftpTransferCommitting": "Aktarım zaten işleniyor; yeniden başlatılamaz",
+  "sftpTransferCleanupFailed": "Tamamlanmamış aktarım temizlenemedi",
+  "sftpUploadTargetExists": "Hedef dosya zaten mevcut",
+  "sftpUploadCommitFailed": "Uzak yükleme sonlandırılamadı",
+  "sftpUploadSourceInvalid": "Yerel kaynak dosya değişti veya geçersiz",
+  "cachedDataNotice": "{time} saatinde önbelleğe alındı",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "Sınır: En fazla 1000 günlük tutulur",
+  "nasThumbnailCacheUsage": "Küçük Resim Önbelleği",
+  "nasThumbnailCacheBudget": "Önbellek Boyutu",
+  "nasThumbnailCacheClear": "Önbelleği Temizle",
+  "nasThumbnailCacheCleared": "Küçük resim önbelleği temizlendi",
+  "nasThumbnailCacheOff": "Kapalı"
 }

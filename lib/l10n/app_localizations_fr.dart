@@ -4370,4 +4370,144 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'L\'opération de mise à jour a échoué. Veuillez réessayer ou consulter les versions sur GitHub.';
+
+  @override
+  String get servicePermissionDenied =>
+      'Permission refusée pour gérer le service';
+
+  @override
+  String get serviceUnsupported => 'Action non prise en charge pour ce service';
+
+  @override
+  String get serviceQueryFailed => 'Échec de la requête de l\'état du service';
+
+  @override
+  String get serviceTargetChanged =>
+      'Serveur cible modifié ; opération annulée';
+
+  @override
+  String get serviceActionInProgress =>
+      'Une autre action est déjà en cours pour ce service';
+
+  @override
+  String get processIdentityChanged =>
+      'Le processus a redémarré ; arrêt annulé';
+
+  @override
+  String get processIdentityUnavailable =>
+      'Heure de démarrage du processus indisponible ; arrêt refusé';
+
+  @override
+  String get serviceLogsTitle => 'Journaux du service';
+
+  @override
+  String get serviceLogsLoadOlder => 'Charger les anciens journaux';
+
+  @override
+  String get serviceLogsEmpty => 'Aucun journal trouvé';
+
+  @override
+  String get serviceLogsCopied => 'Journaux copiés dans le presse-papiers';
+
+  @override
+  String get fileEditorUnsavedTitle => 'Modifications non enregistrées';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'Vous avez des modifications non enregistrées. Choisissez une action avant de quitter :';
+
+  @override
+  String get fileEditorKeepDraft => 'Garder le brouillon';
+
+  @override
+  String get fileEditorDiscard => 'Abandonner';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'Abandonner le brouillon ?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'Voulez-vous vraiment abandonner le brouillon local et recharger le fichier depuis le serveur ?';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'Le fichier a été modifié sur le serveur ou est en conflit avec le brouillon local.';
+
+  @override
+  String get fileEditorCopyDraft => 'Copier le brouillon';
+
+  @override
+  String get fileEditorDraftCopied => 'Brouillon copié dans le presse-papiers';
+
+  @override
+  String get fileEditorReload => 'Recharger';
+
+  @override
+  String get sftpAtomicSaveUnsupported =>
+      'Le serveur ne prend pas en charge l\'enregistrement atomique sécurisé';
+
+  @override
+  String get sftpEditorExpired => 'La session de l\'éditeur a expiré';
+
+  @override
+  String get sftpDraftSaveFailed =>
+      'Échec de l\'enregistrement du brouillon local';
+
+  @override
+  String get sftpEditConflict =>
+      'Fichier modifié sur le serveur ; veuillez recharger ou copier le brouillon';
+
+  @override
+  String get sftpEditDraftConflict =>
+      'Le brouillon local est en conflit avec le fichier sur le serveur';
+
+  @override
+  String get sftpTransferSourceChanged =>
+      'Le fichier source a été modifié pendant le transfert';
+
+  @override
+  String get sftpTransferPartialInvalid =>
+      'Fichier de transfert partiel invalide ou corrompu';
+
+  @override
+  String get sftpTransferCommitting =>
+      'Transfert en cours de validation ; redémarrage impossible';
+
+  @override
+  String get sftpTransferCleanupFailed =>
+      'Échec du nettoyage du transfert incomplet';
+
+  @override
+  String get sftpUploadTargetExists => 'Le fichier de destination existe déjà';
+
+  @override
+  String get sftpUploadCommitFailed =>
+      'Échec de la finalisation du téléversement distant';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'Le fichier source local a été modifié ou est invalide';
+
+  @override
+  String cachedDataNotice(String time) {
+    return 'Mis en cache à $time';
+  }
+
+  @override
+  String get serviceLogsCapReached => 'Limite : 1000 journaux conservés';
+
+  @override
+  String get nasThumbnailCacheUsage => 'Cache des miniatures';
+
+  @override
+  String get nasThumbnailCacheBudget => 'Budget du cache';
+
+  @override
+  String get nasThumbnailCacheClear => 'Vider le cache';
+
+  @override
+  String get nasThumbnailCacheCleared => 'Cache des miniatures vidé';
+
+  @override
+  String get nasThumbnailCacheOff => 'Désactivé';
 }

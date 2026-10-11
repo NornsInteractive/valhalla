@@ -4311,4 +4311,142 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'अपडेट ऑपरेशन विफल रहा। कृपया पुनः प्रयास करें या GitHub रिलीज़ देखें।';
+
+  @override
+  String get servicePermissionDenied => 'सेवा प्रबंधित करने की अनुमति अस्वीकृत';
+
+  @override
+  String get serviceUnsupported => 'इस सेवा के लिए कार्रवाई समर्थित नहीं है';
+
+  @override
+  String get serviceQueryFailed => 'सेवा स्थिति क्वेरी विफल रही';
+
+  @override
+  String get serviceTargetChanged =>
+      'लक्षित सर्वर बदल गया; कार्रवाई रद्द कर दी गई';
+
+  @override
+  String get serviceActionInProgress =>
+      'इस सेवा के लिए पहले से एक अन्य कार्रवाई जारी है';
+
+  @override
+  String get processIdentityChanged =>
+      'प्रक्रिया पुनरारंभ हो गई; समाप्ति रद्द कर दी गई';
+
+  @override
+  String get processIdentityUnavailable =>
+      'प्रक्रिया प्रारंभ समय अनुपलब्ध; समाप्ति अस्वीकार';
+
+  @override
+  String get serviceLogsTitle => 'सेवा लॉग';
+
+  @override
+  String get serviceLogsLoadOlder => 'पुराने लॉग लोड करें';
+
+  @override
+  String get serviceLogsEmpty => 'कोई लॉग नहीं मिला';
+
+  @override
+  String get serviceLogsCopied => 'लॉग क्लिपबोर्ड पर कॉपी किए गए';
+
+  @override
+  String get fileEditorUnsavedTitle => 'सहेजे नहीं गए परिवर्तन';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'आपके पास सहेजे नहीं गए परिवर्तन हैं। छोड़ने से पहले एक कार्रवाई चुनें:';
+
+  @override
+  String get fileEditorKeepDraft => 'ड्राफ्ट रखें';
+
+  @override
+  String get fileEditorDiscard => 'खारिज करें';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'ड्राफ्ट खारिज करें?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'क्या आप वाकई स्थानीय ड्राफ्ट को खारिज करना और सर्वर से नवीनतम फ़ाइल पुनः लोड करना चाहते हैं?';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'फ़ाइल सर्वर पर संशोधित की गई थी या स्थानीय ड्राफ्ट से टकराती है।';
+
+  @override
+  String get fileEditorCopyDraft => 'ड्राफ्ट कॉपी करें';
+
+  @override
+  String get fileEditorDraftCopied => 'ड्राफ्ट क्लिपबोर्ड पर कॉपी किया गया';
+
+  @override
+  String get fileEditorReload => 'पुनः लोड करें';
+
+  @override
+  String get sftpAtomicSaveUnsupported =>
+      'सर्वर सुरक्षित परमाणु बचत का समर्थन नहीं करता है';
+
+  @override
+  String get sftpEditorExpired => 'संपादक सत्र समाप्त हो गया है';
+
+  @override
+  String get sftpDraftSaveFailed => 'स्थानीय ड्राफ्ट सहेजने में विफल';
+
+  @override
+  String get sftpEditConflict =>
+      'सर्वर पर फ़ाइल संशोधित; कृपया पुनः लोड करें या ड्राफ्ट कॉपी करें';
+
+  @override
+  String get sftpEditDraftConflict =>
+      'स्थानीय ड्राफ्ट सर्वर फ़ाइल के साथ विरोध करता है';
+
+  @override
+  String get sftpTransferSourceChanged =>
+      'स्थानांतरण के दौरान स्रोत फ़ाइल बदल गई';
+
+  @override
+  String get sftpTransferPartialInvalid =>
+      'आंशिक स्थानांतरण फ़ाइल अमान्य या दूषित है';
+
+  @override
+  String get sftpTransferCommitting =>
+      'स्थानांतरण पहले से ही कमिट हो रहा है; पुनरारंभ नहीं किया जा सकता';
+
+  @override
+  String get sftpTransferCleanupFailed =>
+      'अपूर्ण स्थानांतरण को साफ करने में विफल';
+
+  @override
+  String get sftpUploadTargetExists => 'गंतव्य फ़ाइल पहले से मौजूद है';
+
+  @override
+  String get sftpUploadCommitFailed =>
+      'दूरस्थ अपलोड को अंतिम रूप देने में विफल';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'स्थानीय स्रोत फ़ाइल बदल गई है या अमान्य है';
+
+  @override
+  String cachedDataNotice(String time) {
+    return '$time पर कैश्ड';
+  }
+
+  @override
+  String get serviceLogsCapReached => 'सीमा: 1000 लॉग रखे गए';
+
+  @override
+  String get nasThumbnailCacheUsage => 'थंबनेल कैश';
+
+  @override
+  String get nasThumbnailCacheBudget => 'कैश बजट';
+
+  @override
+  String get nasThumbnailCacheClear => 'कैश साफ़ करें';
+
+  @override
+  String get nasThumbnailCacheCleared => 'थंबनेल कैश साफ़ किया गया';
+
+  @override
+  String get nasThumbnailCacheOff => 'बंद';
 }

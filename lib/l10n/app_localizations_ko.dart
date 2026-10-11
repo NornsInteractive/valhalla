@@ -4153,4 +4153,128 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get updateErrorGeneric => '업데이트에 실패했습니다. 다시 시도하거나 GitHub 릴리스를 확인하십시오.';
+
+  @override
+  String get servicePermissionDenied => '서비스 관리 권한이 없습니다';
+
+  @override
+  String get serviceUnsupported => '이 서비스에서 지원되지 않는 작업입니다';
+
+  @override
+  String get serviceQueryFailed => '서비스 상태 조회에 실패했습니다';
+
+  @override
+  String get serviceTargetChanged => '대상 서버가 변경되어 작업이 취소되었습니다';
+
+  @override
+  String get serviceActionInProgress => '이 서비스에 대해 다른 작업이 진행 중입니다';
+
+  @override
+  String get processIdentityChanged => '프로세스가 다시 시작되어 종료가 취소되었습니다';
+
+  @override
+  String get processIdentityUnavailable => '프로세스 시작 시간을 확인할 수 없어 종료를 거부했습니다';
+
+  @override
+  String get serviceLogsTitle => '서비스 로그';
+
+  @override
+  String get serviceLogsLoadOlder => '이전 로그 불러오기';
+
+  @override
+  String get serviceLogsEmpty => '로그를 찾을 수 없습니다';
+
+  @override
+  String get serviceLogsCopied => '로그가 클립보드에 복사되었습니다';
+
+  @override
+  String get fileEditorUnsavedTitle => '저장되지 않은 변경사항';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      '저장되지 않은 변경사항이 있습니다. 나가기 전에 작업을 선택하세요:';
+
+  @override
+  String get fileEditorKeepDraft => '초안 보관';
+
+  @override
+  String get fileEditorDiscard => '변경사항 취소';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => '초안을 삭제하시겠습니까?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      '로컬 초안을 삭제하고 서버에서 최신 파일을 다시 불러오시겠습니까?';
+
+  @override
+  String get fileEditorConflictBanner => '서버에서 파일이 수정되었거나 로컬 초안과 충돌합니다.';
+
+  @override
+  String get fileEditorCopyDraft => '초안 복사';
+
+  @override
+  String get fileEditorDraftCopied => '초안이 클립보드에 복사되었습니다';
+
+  @override
+  String get fileEditorReload => '다시 불러오기';
+
+  @override
+  String get sftpAtomicSaveUnsupported => '서버가 안전한 원자적 저장을 지원하지 않습니다';
+
+  @override
+  String get sftpEditorExpired => '편집기 세션이 만료되었습니다';
+
+  @override
+  String get sftpDraftSaveFailed => '로컬 초안 저장에 실패했습니다';
+
+  @override
+  String get sftpEditConflict => '서버에서 파일이 변경되었습니다. 다시 불러오거나 초안을 복사하세요';
+
+  @override
+  String get sftpEditDraftConflict => '로컬 임시 저장이 서버 파일과 충돌합니다';
+
+  @override
+  String get sftpTransferSourceChanged => '전송 중에 원본 파일이 변경되었습니다';
+
+  @override
+  String get sftpTransferPartialInvalid => '부분 전송 파일이 유효하지 않거나 손상되었습니다';
+
+  @override
+  String get sftpTransferCommitting => '전송이 이미 커밋 중이어서 다시 시작할 수 없습니다';
+
+  @override
+  String get sftpTransferCleanupFailed => '미완료된 전송 정리 실패';
+
+  @override
+  String get sftpUploadTargetExists => '대상 파일이 이미 존재합니다';
+
+  @override
+  String get sftpUploadCommitFailed => '원격 업로드 완료 실패';
+
+  @override
+  String get sftpUploadSourceInvalid => '로컬 원본 파일이 변경되었거나 유효하지 않습니다';
+
+  @override
+  String cachedDataNotice(String time) {
+    return '$time에 캐시됨';
+  }
+
+  @override
+  String get serviceLogsCapReached => '최대 한도: 로그 1000개 유지';
+
+  @override
+  String get nasThumbnailCacheUsage => '섬네일 캐시';
+
+  @override
+  String get nasThumbnailCacheBudget => '캐시 용량 제한';
+
+  @override
+  String get nasThumbnailCacheClear => '캐시 지우기';
+
+  @override
+  String get nasThumbnailCacheCleared => '섬네일 캐시가 삭제되었습니다';
+
+  @override
+  String get nasThumbnailCacheOff => '꺼짐';
 }

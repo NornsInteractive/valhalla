@@ -4347,4 +4347,144 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'Falha na operação de atualização. Tente novamente ou acesse os lançamentos no GitHub.';
+
+  @override
+  String get servicePermissionDenied =>
+      'Permissão negada para gerenciar o serviço';
+
+  @override
+  String get serviceUnsupported => 'Ação não suportada para este serviço';
+
+  @override
+  String get serviceQueryFailed => 'Falha ao consultar o status do serviço';
+
+  @override
+  String get serviceTargetChanged =>
+      'Servidor de destino alterado; operação cancelada';
+
+  @override
+  String get serviceActionInProgress =>
+      'Outra ação já está em andamento para este serviço';
+
+  @override
+  String get processIdentityChanged =>
+      'O processo foi reiniciado; encerramento cancelado';
+
+  @override
+  String get processIdentityUnavailable =>
+      'Hora de início do processo indisponível; encerramento recusado';
+
+  @override
+  String get serviceLogsTitle => 'Registros do serviço';
+
+  @override
+  String get serviceLogsLoadOlder => 'Carregar registros mais antigos';
+
+  @override
+  String get serviceLogsEmpty => 'Nenhum registro encontrado';
+
+  @override
+  String get serviceLogsCopied =>
+      'Registros copiados para a área de transferência';
+
+  @override
+  String get fileEditorUnsavedTitle => 'Alterações não salvas';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'Você tem alterações não salvas. Escolha uma ação antes de sair:';
+
+  @override
+  String get fileEditorKeepDraft => 'Manter rascunho';
+
+  @override
+  String get fileEditorDiscard => 'Descartar';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'Descartar rascunho?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'Tem certeza de que deseja descartar o rascunho local e recarregar o arquivo do servidor?';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'O arquivo foi modificado no servidor ou está em conflito com o rascunho local.';
+
+  @override
+  String get fileEditorCopyDraft => 'Copiar rascunho';
+
+  @override
+  String get fileEditorDraftCopied =>
+      'Rascunho copiado para a área de transferência';
+
+  @override
+  String get fileEditorReload => 'Recarregar';
+
+  @override
+  String get sftpAtomicSaveUnsupported =>
+      'O servidor não suporta salvamento atômico seguro';
+
+  @override
+  String get sftpEditorExpired => 'A sessão do editor expirou';
+
+  @override
+  String get sftpDraftSaveFailed => 'Falha ao salvar o rascunho local';
+
+  @override
+  String get sftpEditConflict =>
+      'Arquivo modificado no servidor; recarregue ou copie o rascunho';
+
+  @override
+  String get sftpEditDraftConflict =>
+      'O rascunho local está em conflito com o arquivo do servidor';
+
+  @override
+  String get sftpTransferSourceChanged =>
+      'O arquivo de origem foi alterado durante a transferência';
+
+  @override
+  String get sftpTransferPartialInvalid =>
+      'Arquivo de transferência parcial inválido ou corrompido';
+
+  @override
+  String get sftpTransferCommitting =>
+      'Transferência já em confirmação; não é possível reiniciar';
+
+  @override
+  String get sftpTransferCleanupFailed =>
+      'Falha ao limpar a transferência incompleta';
+
+  @override
+  String get sftpUploadTargetExists => 'O arquivo de destino já existe';
+
+  @override
+  String get sftpUploadCommitFailed => 'Falha ao finalizar o upload remoto';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'O arquivo de origem local foi alterado ou é inválido';
+
+  @override
+  String cachedDataNotice(String time) {
+    return 'Em cache às $time';
+  }
+
+  @override
+  String get serviceLogsCapReached => 'Limite: 1000 registros mantidos';
+
+  @override
+  String get nasThumbnailCacheUsage => 'Cache de miniaturas';
+
+  @override
+  String get nasThumbnailCacheBudget => 'Limite de cache';
+
+  @override
+  String get nasThumbnailCacheClear => 'Limpar cache';
+
+  @override
+  String get nasThumbnailCacheCleared => 'Cache de miniaturas limpo';
+
+  @override
+  String get nasThumbnailCacheOff => 'Desativado';
 }

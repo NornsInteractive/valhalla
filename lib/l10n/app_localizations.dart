@@ -7862,6 +7862,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update operation failed. Please try again or visit GitHub releases.'**
   String get updateErrorGeneric;
+
+  /// No description provided for @servicePermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied to manage service'**
+  String get servicePermissionDenied;
+
+  /// No description provided for @serviceUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Action unsupported for this service'**
+  String get serviceUnsupported;
+
+  /// No description provided for @serviceQueryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Querying service status failed'**
+  String get serviceQueryFailed;
+
+  /// No description provided for @serviceTargetChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Target server changed; operation cancelled'**
+  String get serviceTargetChanged;
+
+  /// No description provided for @serviceActionInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Another action is already in progress for this service'**
+  String get serviceActionInProgress;
+
+  /// No description provided for @processIdentityChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Process was restarted; termination cancelled'**
+  String get processIdentityChanged;
+
+  /// No description provided for @processIdentityUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Process start time unavailable; termination refused'**
+  String get processIdentityUnavailable;
+
+  /// No description provided for @serviceLogsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Service Logs'**
+  String get serviceLogsTitle;
+
+  /// No description provided for @serviceLogsLoadOlder.
+  ///
+  /// In en, this message translates to:
+  /// **'Load Older Logs'**
+  String get serviceLogsLoadOlder;
+
+  /// No description provided for @serviceLogsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs found'**
+  String get serviceLogsEmpty;
+
+  /// No description provided for @serviceLogsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs copied to clipboard'**
+  String get serviceLogsCopied;
+
+  /// No description provided for @fileEditorUnsavedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved Changes'**
+  String get fileEditorUnsavedTitle;
+
+  /// No description provided for @fileEditorUnsavedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes. Choose an action before leaving:'**
+  String get fileEditorUnsavedMessage;
+
+  /// No description provided for @fileEditorKeepDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Draft'**
+  String get fileEditorKeepDraft;
+
+  /// No description provided for @fileEditorDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get fileEditorDiscard;
+
+  /// No description provided for @fileEditorDiscardConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard Draft?'**
+  String get fileEditorDiscardConfirmTitle;
+
+  /// No description provided for @fileEditorDiscardConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to discard your local draft and reload the latest file from the server?'**
+  String get fileEditorDiscardConfirmMessage;
+
+  /// No description provided for @fileEditorConflictBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'File was modified on the server or conflicts with local draft.'**
+  String get fileEditorConflictBanner;
+
+  /// No description provided for @fileEditorCopyDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Draft'**
+  String get fileEditorCopyDraft;
+
+  /// No description provided for @fileEditorDraftCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft copied to clipboard'**
+  String get fileEditorDraftCopied;
+
+  /// No description provided for @fileEditorReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get fileEditorReload;
+
+  /// No description provided for @sftpAtomicSaveUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Server does not support atomic save'**
+  String get sftpAtomicSaveUnsupported;
+
+  /// No description provided for @sftpEditorExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Editor session has expired'**
+  String get sftpEditorExpired;
+
+  /// No description provided for @sftpDraftSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save local draft'**
+  String get sftpDraftSaveFailed;
+
+  /// No description provided for @sftpEditConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'File modified on server; please reload or copy draft'**
+  String get sftpEditConflict;
+
+  /// No description provided for @sftpEditDraftConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Local draft conflicts with server file'**
+  String get sftpEditDraftConflict;
+
+  /// No description provided for @sftpTransferSourceChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Source file changed during transfer'**
+  String get sftpTransferSourceChanged;
+
+  /// No description provided for @sftpTransferPartialInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial transfer file invalid or corrupted'**
+  String get sftpTransferPartialInvalid;
+
+  /// No description provided for @sftpTransferCommitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer already committing; cannot restart'**
+  String get sftpTransferCommitting;
+
+  /// No description provided for @sftpTransferCleanupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to clean up incomplete transfer'**
+  String get sftpTransferCleanupFailed;
+
+  /// No description provided for @sftpUploadTargetExists.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination file already exists'**
+  String get sftpUploadTargetExists;
+
+  /// No description provided for @sftpUploadCommitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to finalize remote upload'**
+  String get sftpUploadCommitFailed;
+
+  /// No description provided for @sftpUploadSourceInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Local source file changed or is invalid'**
+  String get sftpUploadSourceInvalid;
+
+  /// No description provided for @cachedDataNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached at {time}'**
+  String cachedDataNotice(String time);
+
+  /// No description provided for @serviceLogsCapReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Cap: 1000 logs retained'**
+  String get serviceLogsCapReached;
+
+  /// No description provided for @nasThumbnailCacheUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Thumbnail Cache'**
+  String get nasThumbnailCacheUsage;
+
+  /// No description provided for @nasThumbnailCacheBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache Budget'**
+  String get nasThumbnailCacheBudget;
+
+  /// No description provided for @nasThumbnailCacheClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Cache'**
+  String get nasThumbnailCacheClear;
+
+  /// No description provided for @nasThumbnailCacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Thumbnail cache cleared'**
+  String get nasThumbnailCacheCleared;
+
+  /// No description provided for @nasThumbnailCacheOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get nasThumbnailCacheOff;
 }
 
 class _AppLocalizationsDelegate

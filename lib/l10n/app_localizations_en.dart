@@ -4289,4 +4289,138 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'Update operation failed. Please try again or visit GitHub releases.';
+
+  @override
+  String get servicePermissionDenied => 'Permission denied to manage service';
+
+  @override
+  String get serviceUnsupported => 'Action unsupported for this service';
+
+  @override
+  String get serviceQueryFailed => 'Querying service status failed';
+
+  @override
+  String get serviceTargetChanged =>
+      'Target server changed; operation cancelled';
+
+  @override
+  String get serviceActionInProgress =>
+      'Another action is already in progress for this service';
+
+  @override
+  String get processIdentityChanged =>
+      'Process was restarted; termination cancelled';
+
+  @override
+  String get processIdentityUnavailable =>
+      'Process start time unavailable; termination refused';
+
+  @override
+  String get serviceLogsTitle => 'Service Logs';
+
+  @override
+  String get serviceLogsLoadOlder => 'Load Older Logs';
+
+  @override
+  String get serviceLogsEmpty => 'No logs found';
+
+  @override
+  String get serviceLogsCopied => 'Logs copied to clipboard';
+
+  @override
+  String get fileEditorUnsavedTitle => 'Unsaved Changes';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'You have unsaved changes. Choose an action before leaving:';
+
+  @override
+  String get fileEditorKeepDraft => 'Keep Draft';
+
+  @override
+  String get fileEditorDiscard => 'Discard';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'Discard Draft?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'Are you sure you want to discard your local draft and reload the latest file from the server?';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'File was modified on the server or conflicts with local draft.';
+
+  @override
+  String get fileEditorCopyDraft => 'Copy Draft';
+
+  @override
+  String get fileEditorDraftCopied => 'Draft copied to clipboard';
+
+  @override
+  String get fileEditorReload => 'Reload';
+
+  @override
+  String get sftpAtomicSaveUnsupported => 'Server does not support atomic save';
+
+  @override
+  String get sftpEditorExpired => 'Editor session has expired';
+
+  @override
+  String get sftpDraftSaveFailed => 'Failed to save local draft';
+
+  @override
+  String get sftpEditConflict =>
+      'File modified on server; please reload or copy draft';
+
+  @override
+  String get sftpEditDraftConflict => 'Local draft conflicts with server file';
+
+  @override
+  String get sftpTransferSourceChanged => 'Source file changed during transfer';
+
+  @override
+  String get sftpTransferPartialInvalid =>
+      'Partial transfer file invalid or corrupted';
+
+  @override
+  String get sftpTransferCommitting =>
+      'Transfer already committing; cannot restart';
+
+  @override
+  String get sftpTransferCleanupFailed =>
+      'Failed to clean up incomplete transfer';
+
+  @override
+  String get sftpUploadTargetExists => 'Destination file already exists';
+
+  @override
+  String get sftpUploadCommitFailed => 'Failed to finalize remote upload';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'Local source file changed or is invalid';
+
+  @override
+  String cachedDataNotice(String time) {
+    return 'Cached at $time';
+  }
+
+  @override
+  String get serviceLogsCapReached => 'Cap: 1000 logs retained';
+
+  @override
+  String get nasThumbnailCacheUsage => 'Thumbnail Cache';
+
+  @override
+  String get nasThumbnailCacheBudget => 'Cache Budget';
+
+  @override
+  String get nasThumbnailCacheClear => 'Clear Cache';
+
+  @override
+  String get nasThumbnailCacheCleared => 'Thumbnail cache cleared';
+
+  @override
+  String get nasThumbnailCacheOff => 'Off';
 }

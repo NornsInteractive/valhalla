@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/providers/ai_chat_provider.dart';
 import 'package:valhalla/core/providers/cli_chat_provider.dart';
 import 'package:valhalla/core/providers/server_power_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
+import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/core/providers/terminal_provider.dart';
 import 'package:valhalla/data/models/server_profile.dart';
+import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/dashboard/dashboard_provider.dart';
 import 'package:valhalla/features/dashboard/dashboard_view.dart';
 import 'package:valhalla/infrastructure/system/system_metrics_sampler.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 import 'package:valhalla/widgets/status_badge.dart';
+
+late LocalStorageService _localStorage;
 
 ServerProfile _testServer({
   String username = 'root',
@@ -84,6 +89,7 @@ Future<void> _pumpDashboardHeader(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        localStorageServiceProvider.overrideWithValue(_localStorage),
         activeServerProvider.overrideWith(
           () => _FakeActiveServerNotifier(targetServer),
         ),
@@ -117,6 +123,11 @@ Future<void> _pumpDashboardHeader(
 
 void main() {
   group('Dashboard Server Header StatusBadge & Layout', () {
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      _localStorage = await LocalStorageService.init();
+    });
+
     testWidgets(
       'StatusBadge is placed on the address row next to username@host:port, not in action buttons',
       (tester) async {

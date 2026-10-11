@@ -4314,4 +4314,139 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'Güncelleme işlemi başarısız oldu. Lütfen tekrar deneyin veya GitHub sürümlerini kontrol edin.';
+
+  @override
+  String get servicePermissionDenied => 'Hizmeti yönetme izni reddedildi';
+
+  @override
+  String get serviceUnsupported => 'Bu hizmet için eylem desteklenmiyor';
+
+  @override
+  String get serviceQueryFailed => 'Hizmet durumu sorgulanamadı';
+
+  @override
+  String get serviceTargetChanged => 'Hedef sunucu değişti; işlem iptal edildi';
+
+  @override
+  String get serviceActionInProgress =>
+      'Bu hizmet için başka bir eylem zaten devam ediyor';
+
+  @override
+  String get processIdentityChanged =>
+      'İşlem yeniden başlatıldı; sonlandırma iptal edildi';
+
+  @override
+  String get processIdentityUnavailable =>
+      'İşlem başlangıç zamanı mevcut değil; sonlandırma reddedildi';
+
+  @override
+  String get serviceLogsTitle => 'Hizmet Günlükleri';
+
+  @override
+  String get serviceLogsLoadOlder => 'Daha Eski Günlükleri Yükle';
+
+  @override
+  String get serviceLogsEmpty => 'Günlük bulunamadı';
+
+  @override
+  String get serviceLogsCopied => 'Günlükler panoya kopyalandı';
+
+  @override
+  String get fileEditorUnsavedTitle => 'Kaydedilmemiş Değişiklikler';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'Kaydedilmemiş değişiklikleriniz var. Ayrılmadan önce bir eylem seçin:';
+
+  @override
+  String get fileEditorKeepDraft => 'Taslağı Koru';
+
+  @override
+  String get fileEditorDiscard => 'Vazgeç';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'Taslak Silinsin mi?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'Yerel taslağı silip en son dosyayı sunucudan yeniden yüklemek istediğinizden emin misiniz?';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'Dosya sunucuda değiştirildi veya yerel taslakla çakışıyor.';
+
+  @override
+  String get fileEditorCopyDraft => 'Taslağı Kopyala';
+
+  @override
+  String get fileEditorDraftCopied => 'Taslak panoya kopyalandı';
+
+  @override
+  String get fileEditorReload => 'Yeniden Yükle';
+
+  @override
+  String get sftpAtomicSaveUnsupported =>
+      'Sunucu güvenli atomik kaydetmeyi desteklemiyor';
+
+  @override
+  String get sftpEditorExpired => 'Düzenleyici oturumunun süresi doldu';
+
+  @override
+  String get sftpDraftSaveFailed => 'Yerel taslak kaydedilemedi';
+
+  @override
+  String get sftpEditConflict =>
+      'Dosya sunucuda değiştirildi; lütfen yeniden yükleyin veya taslağı kopyalayın';
+
+  @override
+  String get sftpEditDraftConflict =>
+      'Yerel taslak sunucu dosyasıyla çakışıyor';
+
+  @override
+  String get sftpTransferSourceChanged =>
+      'Aktarım sırasında kaynak dosya değişti';
+
+  @override
+  String get sftpTransferPartialInvalid =>
+      'Kısmi aktarım dosyası geçersiz veya bozuk';
+
+  @override
+  String get sftpTransferCommitting =>
+      'Aktarım zaten işleniyor; yeniden başlatılamaz';
+
+  @override
+  String get sftpTransferCleanupFailed => 'Tamamlanmamış aktarım temizlenemedi';
+
+  @override
+  String get sftpUploadTargetExists => 'Hedef dosya zaten mevcut';
+
+  @override
+  String get sftpUploadCommitFailed => 'Uzak yükleme sonlandırılamadı';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'Yerel kaynak dosya değişti veya geçersiz';
+
+  @override
+  String cachedDataNotice(String time) {
+    return '$time saatinde önbelleğe alındı';
+  }
+
+  @override
+  String get serviceLogsCapReached => 'Sınır: En fazla 1000 günlük tutulur';
+
+  @override
+  String get nasThumbnailCacheUsage => 'Küçük Resim Önbelleği';
+
+  @override
+  String get nasThumbnailCacheBudget => 'Önbellek Boyutu';
+
+  @override
+  String get nasThumbnailCacheClear => 'Önbelleği Temizle';
+
+  @override
+  String get nasThumbnailCacheCleared => 'Küçük resim önbelleği temizlendi';
+
+  @override
+  String get nasThumbnailCacheOff => 'Kapalı';
 }

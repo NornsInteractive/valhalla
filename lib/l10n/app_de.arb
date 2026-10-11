@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "Paketpfad oder Paketidentität ist ungültig.",
   "updateErrorStoreInstall": "Diese App wurde über einen App Store installiert. Bitte aktualisieren Sie über den Store.",
   "updateErrorPlatform": "Fehler beim Öffnen oder Starten des Installationsprogramms.",
-  "updateErrorGeneric": "Update-Vorgang fehlgeschlagen. Bitte versuchen Sie es erneut oder öffnen Sie die GitHub-Releases."
+  "updateErrorGeneric": "Update-Vorgang fehlgeschlagen. Bitte versuchen Sie es erneut oder öffnen Sie die GitHub-Releases.",
+  "servicePermissionDenied": "Keine Berechtigung zur Dienstverwaltung",
+  "serviceUnsupported": "Aktion für diesen Dienst nicht unterstützt",
+  "serviceQueryFailed": "Abfrage des Dienststatus fehlgeschlagen",
+  "serviceTargetChanged": "Zielserver geändert; Vorgang abgebrochen",
+  "serviceActionInProgress": "Eine andere Aktion für diesen Dienst wird bereits ausgeführt",
+  "processIdentityChanged": "Prozess wurde neu gestartet; Beenden abgebrochen",
+  "processIdentityUnavailable": "Prozessstartzeit nicht verfügbar; Beenden verweigert",
+  "serviceLogsTitle": "Dienstprotokolle",
+  "serviceLogsLoadOlder": "Ältere Protokolle laden",
+  "serviceLogsEmpty": "Keine Protokolle gefunden",
+  "serviceLogsCopied": "Protokolle in die Zwischenablage kopiert",
+  "fileEditorUnsavedTitle": "Ungespeicherte Änderungen",
+  "fileEditorUnsavedMessage": "Sie haben ungespeicherte Änderungen. Wählen Sie eine Aktion vor dem Verlassen:",
+  "fileEditorKeepDraft": "Entwurf behalten",
+  "fileEditorDiscard": "Verwerfen",
+  "fileEditorDiscardConfirmTitle": "Entwurf verwerfen?",
+  "fileEditorDiscardConfirmMessage": "Möchten Sie den lokalen Entwurf wirklich verwerfen und die neueste Datei vom Server neu laden?",
+  "fileEditorConflictBanner": "Datei wurde auf dem Server geändert oder steht im Konflikt mit dem lokalen Entwurf.",
+  "fileEditorCopyDraft": "Entwurf kopieren",
+  "fileEditorDraftCopied": "Entwurf in die Zwischenablage kopiert",
+  "fileEditorReload": "Neu laden",
+  "sftpAtomicSaveUnsupported": "Server unterstützt kein sicheres atomares Speichern",
+  "sftpEditorExpired": "Editor-Sitzung ist abgelaufen",
+  "sftpDraftSaveFailed": "Lokaler Entwurf konnte nicht gespeichert werden",
+  "sftpEditConflict": "Datei auf Server geändert; bitte neu laden oder Entwurf kopieren",
+  "sftpEditDraftConflict": "Lokaler Entwurf steht im Konflikt mit der Serverdatei",
+  "sftpTransferSourceChanged": "Quelldatei wurde während der Übertragung geändert",
+  "sftpTransferPartialInvalid": "Teilweise übertragene Datei ist ungültig oder beschädigt",
+  "sftpTransferCommitting": "Übertragung wird bereits angewendet; Neustart nicht möglich",
+  "sftpTransferCleanupFailed": "Bereinigen der unvollständigen Übertragung fehlgeschlagen",
+  "sftpUploadTargetExists": "Zieldatei existiert bereits",
+  "sftpUploadCommitFailed": "Abschließen des Remote-Uploads fehlgeschlagen",
+  "sftpUploadSourceInvalid": "Lokale Quelldatei wurde geändert oder ist ungültig",
+  "cachedDataNotice": "Zwischengespeichert um {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "Obergrenze: 1000 Protokolle beibehalten",
+  "nasThumbnailCacheUsage": "Miniaturbild-Cache",
+  "nasThumbnailCacheBudget": "Cache-Budget",
+  "nasThumbnailCacheClear": "Cache leeren",
+  "nasThumbnailCacheCleared": "Miniaturbild-Cache geleert",
+  "nasThumbnailCacheOff": "Aus"
 }

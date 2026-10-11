@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design/motion_widgets.dart';
 import '../../core/design/tokens.dart';
@@ -53,6 +54,19 @@ class _SystemViewState extends ConsumerState<SystemView>
       return;
     }
 
+    if (ref.read(systemProvider).cachedAt != null ||
+        !ref.read(serverConnectionProvider).isConnected) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+      return;
+    }
+
+    final server = ref.read(activeServerProvider);
+    if (server == null) return;
+    final connectionKey = server.connectionKey;
+    final expectedStartedAt = proc.startedAt;
+
     final cmd = 'kill ${force ? '-9' : '-15'} ${proc.pid}';
     final confirmed = await DangerConfirmDialog.show(
       context,
@@ -63,13 +77,24 @@ class _SystemViewState extends ConsumerState<SystemView>
     );
 
     if (!confirmed || !mounted) return;
+    if (ref.read(activeServerProvider)?.connectionKey != connectionKey) {
+      return;
+    }
 
     final scaffold = ScaffoldMessenger.of(context);
     try {
       final res = await ref
           .read(systemProvider.notifier)
-          .terminateProcess(proc.pid, force: force);
+          .terminateProcess(
+            proc.pid,
+            force: force,
+            expectedStartedAt: expectedStartedAt,
+            expectedConnectionKey: connectionKey,
+          );
       if (!mounted) return;
+      if (ref.read(activeServerProvider)?.connectionKey != connectionKey) {
+        return;
+      }
       if (res.isSuccess) {
         scaffold.showSnackBar(
           SnackBar(
@@ -78,17 +103,29 @@ class _SystemViewState extends ConsumerState<SystemView>
           ),
         );
       } else {
+        final err = res.stderr.trim();
+        final mapped = _mapSystemError(context, err);
         scaffold.showSnackBar(
           SnackBar(
-            content: Text(res.stderr.trim().isEmpty ? 'Failed' : res.stderr),
+            content: Text(
+              mapped.isNotEmpty && mapped != err
+                  ? mapped
+                  : (err.isEmpty ? context.l10n.cmdExecutionFailed : err),
+            ),
             backgroundColor: context.vDanger,
           ),
         );
       }
     } catch (e) {
       if (!mounted) return;
+      if (ref.read(activeServerProvider)?.connectionKey != connectionKey) {
+        return;
+      }
       scaffold.showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: context.vDanger),
+        SnackBar(
+          content: Text(_mapSystemError(context, e)),
+          backgroundColor: context.vDanger,
+        ),
       );
     }
   }
@@ -97,6 +134,18 @@ class _SystemViewState extends ConsumerState<SystemView>
     SystemdServiceInfo svc,
     String action,
   ) async {
+    if (ref.read(systemProvider).cachedAt != null ||
+        !ref.read(serverConnectionProvider).isConnected) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+      return;
+    }
+
+    final server = ref.read(activeServerProvider);
+    if (server == null) return;
+    final connectionKey = server.connectionKey;
+
     final cmd = 'systemctl $action ${svc.name}';
     final confirmed = await DangerConfirmDialog.show(
       context,
@@ -107,13 +156,23 @@ class _SystemViewState extends ConsumerState<SystemView>
     );
 
     if (!confirmed || !mounted) return;
+    if (ref.read(activeServerProvider)?.connectionKey != connectionKey) {
+      return;
+    }
 
     final scaffold = ScaffoldMessenger.of(context);
     try {
       final res = await ref
           .read(systemProvider.notifier)
-          .performServiceAction(svc.name, action);
+          .performServiceAction(
+            svc.name,
+            action,
+            expectedConnectionKey: connectionKey,
+          );
       if (!mounted) return;
+      if (ref.read(activeServerProvider)?.connectionKey != connectionKey) {
+        return;
+      }
       if (res.isSuccess) {
         scaffold.showSnackBar(
           SnackBar(
@@ -122,10 +181,14 @@ class _SystemViewState extends ConsumerState<SystemView>
           ),
         );
       } else {
+        final err = res.stderr.trim();
+        final mapped = _mapSystemError(context, err);
         scaffold.showSnackBar(
           SnackBar(
             content: Text(
-              res.stderr.trim().isEmpty ? 'Action failed' : res.stderr,
+              mapped.isNotEmpty && mapped != err
+                  ? mapped
+                  : (err.isEmpty ? context.l10n.cmdExecutionFailed : err),
             ),
             backgroundColor: context.vDanger,
           ),
@@ -133,10 +196,44 @@ class _SystemViewState extends ConsumerState<SystemView>
       }
     } catch (e) {
       if (!mounted) return;
+      if (ref.read(activeServerProvider)?.connectionKey != connectionKey) {
+        return;
+      }
       scaffold.showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: context.vDanger),
+        SnackBar(
+          content: Text(_mapSystemError(context, e)),
+          backgroundColor: context.vDanger,
+        ),
       );
     }
+  }
+
+  Widget _buildCachedBanner(BuildContext context, DateTime cachedAt) {
+    final timeStr =
+        '${cachedAt.hour.toString().padLeft(2, '0')}:${cachedAt.minute.toString().padLeft(2, '0')}:${cachedAt.second.toString().padLeft(2, '0')}';
+    return Container(
+      width: double.infinity,
+      color: context.colorScheme.surfaceContainerHighest,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          Icon(
+            Icons.cloud_off_outlined,
+            size: 16,
+            color: context.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.cachedDataNotice(timeStr),
+              style: context.textTheme.bodySmall?.copyWith(
+                color: context.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -157,6 +254,8 @@ class _SystemViewState extends ConsumerState<SystemView>
     return Scaffold(
       body: Column(
         children: [
+          if (sysState.cachedAt != null)
+            _buildCachedBanner(context, sysState.cachedAt!),
           Container(
             color: context.colorScheme.surface,
             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -165,6 +264,10 @@ class _SystemViewState extends ConsumerState<SystemView>
                 Expanded(
                   child: TabBar(
                     controller: _tabController,
+                    isScrollable: !context.isDesktop,
+                    tabAlignment: !context.isDesktop
+                        ? TabAlignment.start
+                        : TabAlignment.fill,
                     tabs: [
                       Tab(
                         icon: const Icon(Icons.memory, size: 20),
@@ -371,9 +474,11 @@ class _SystemViewState extends ConsumerState<SystemView>
                   ),
                 ),
                 PopupMenuButton<String>(
-                  enabled: ref.watch(
-                    serverConnectionProvider.select((s) => s.isConnected),
-                  ),
+                  enabled:
+                      ref.watch(
+                        serverConnectionProvider.select((s) => s.isConnected),
+                      ) &&
+                      sysState.cachedAt == null,
                   icon: const Icon(Icons.more_vert, size: 20),
                   onSelected: (action) {
                     if (action == 'term') {
@@ -528,6 +633,10 @@ class _SystemViewState extends ConsumerState<SystemView>
           final isConnected = ref.watch(
             serverConnectionProvider.select((s) => s.isConnected),
           );
+          final isPending = sysState.pendingActions.containsKey(svc.name);
+          final pendingAction = sysState.pendingActions[svc.name];
+          final canMutate =
+              isConnected && !isPending && sysState.cachedAt == null;
           StatusType statusType;
           if (svc.isRunning) {
             statusType = StatusType.online;
@@ -543,23 +652,71 @@ class _SystemViewState extends ConsumerState<SystemView>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        svc.name,
-                        style: monoTextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final badgeGroup = Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (svc.startup.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  context.colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: context.colorScheme.outlineVariant
+                                    .withValues(alpha: 0.5),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Text(
+                              svc.startup.toUpperCase(),
+                              style: monoTextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: context.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        StatusBadge(
+                          label: svc.state.toUpperCase(),
+                          type: statusType,
                         ),
-                        overflow: TextOverflow.ellipsis,
+                      ],
+                    );
+
+                    return SizedBox(
+                      width: double.infinity,
+                      child: Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: constraints.maxWidth,
+                            ),
+                            child: Text(
+                              svc.name,
+                              style: monoTextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          badgeGroup,
+                        ],
                       ),
-                    ),
-                    StatusBadge(
-                      label: svc.state.toUpperCase(),
-                      type: statusType,
-                    ),
-                  ],
+                    );
+                  },
                 ),
                 if (svc.description.isNotEmpty &&
                     svc.description != svc.name) ...[
@@ -573,9 +730,41 @@ class _SystemViewState extends ConsumerState<SystemView>
                   ),
                 ],
                 const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  runSpacing: 4,
                   children: [
+                    if (isPending) ...[
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            pendingAction?.toUpperCase() ?? '',
+                            style: monoTextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: context.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    IconButton(
+                      icon: const Icon(Icons.article_outlined, size: 18),
+                      tooltip: context.l10n.serviceLogsTitle,
+                      onPressed:
+                          isConnected && !isPending && sysState.cachedAt == null
+                          ? () => _showServiceLogsDialog(context, svc)
+                          : null,
+                    ),
                     if (!svc.isRunning)
                       IconButton(
                         icon: Icon(
@@ -584,7 +773,7 @@ class _SystemViewState extends ConsumerState<SystemView>
                           color: context.vSuccess,
                         ),
                         tooltip: context.l10n.serviceActionStart,
-                        onPressed: isConnected
+                        onPressed: canMutate
                             ? () => _handleServiceAction(svc, 'start')
                             : null,
                       )
@@ -596,7 +785,7 @@ class _SystemViewState extends ConsumerState<SystemView>
                           color: context.vWarning,
                         ),
                         tooltip: context.l10n.serviceActionStop,
-                        onPressed: isConnected
+                        onPressed: canMutate
                             ? () => _handleServiceAction(svc, 'stop')
                             : null,
                       ),
@@ -607,7 +796,7 @@ class _SystemViewState extends ConsumerState<SystemView>
                           color: context.vInfo,
                         ),
                         tooltip: context.l10n.serviceActionRestart,
-                        onPressed: isConnected
+                        onPressed: canMutate
                             ? () => _handleServiceAction(svc, 'restart')
                             : null,
                       ),
@@ -615,7 +804,7 @@ class _SystemViewState extends ConsumerState<SystemView>
                     IconButton(
                       icon: const Icon(Icons.refresh_rounded, size: 18),
                       tooltip: context.l10n.serviceActionReload,
-                      onPressed: isConnected
+                      onPressed: canMutate
                           ? () => _handleServiceAction(svc, 'reload')
                           : null,
                     ),
@@ -628,4 +817,386 @@ class _SystemViewState extends ConsumerState<SystemView>
       ),
     );
   }
+
+  void _showServiceLogsDialog(BuildContext context, SystemdServiceInfo svc) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _ServiceLogsDialog(service: svc),
+    );
+  }
+}
+
+class _ServiceLogsDialog extends ConsumerStatefulWidget {
+  final SystemdServiceInfo service;
+
+  const _ServiceLogsDialog({required this.service});
+
+  @override
+  ConsumerState<_ServiceLogsDialog> createState() => _ServiceLogsDialogState();
+}
+
+class _ServiceLogsDialogState extends ConsumerState<_ServiceLogsDialog> {
+  Object? _capturedConnectionKey;
+  final List<Map<String, dynamic>> _logs = [];
+  bool _isLoading = false;
+  bool _isLoadingOlder = false;
+  bool _hasMoreOlderLogs = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _capturedConnectionKey = ref.read(activeServerProvider)?.connectionKey;
+    _fetchLogs(refresh: true);
+  }
+
+  Future<void> _fetchLogs({bool refresh = false}) async {
+    if (_isLoading || _isLoadingOlder) return;
+    if (!refresh && (!_hasMoreOlderLogs || _logs.length >= 1000)) return;
+    final connKey = _capturedConnectionKey;
+    if (connKey == null) return;
+    if (ref.read(activeServerProvider)?.connectionKey != connKey) {
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+
+    setState(() {
+      if (refresh) {
+        _isLoading = true;
+        _errorMessage = null;
+        _hasMoreOlderLogs = true;
+      } else {
+        _isLoadingOlder = true;
+        _errorMessage = null;
+      }
+    });
+
+    try {
+      final beforeCursor = refresh
+          ? null
+          : (_logs.isNotEmpty ? _logs.last['__CURSOR'] as String? : null);
+      final newRecords = await ref
+          .read(systemProvider.notifier)
+          .serviceLogs(
+            widget.service.name,
+            beforeCursor: beforeCursor,
+            expectedConnectionKey: connKey,
+          );
+
+      if (!mounted) return;
+      if (ref.read(activeServerProvider)?.connectionKey != connKey) {
+        Navigator.of(context).pop();
+        return;
+      }
+
+      setState(() {
+        _isLoading = false;
+        _isLoadingOlder = false;
+        if (newRecords.length < 200) {
+          _hasMoreOlderLogs = false;
+        }
+        if (refresh) {
+          _logs.clear();
+          _logs.addAll(newRecords);
+        } else {
+          _logs.addAll(newRecords);
+        }
+        if (_logs.length >= 1000) {
+          if (_logs.length > 1000) {
+            _logs.removeRange(1000, _logs.length);
+          }
+          _hasMoreOlderLogs = false;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      if (ref.read(activeServerProvider)?.connectionKey != connKey) {
+        Navigator.of(context).pop();
+        return;
+      }
+      setState(() {
+        _isLoading = false;
+        _isLoadingOlder = false;
+        _errorMessage = _mapSystemError(context, e);
+      });
+    }
+  }
+
+  void _copyLogs() {
+    if (_logs.isEmpty) return;
+    final text = _logs
+        .map((row) {
+          final ts = _formatTimestamp(row);
+          final prio = row['PRIORITY']?.toString() ?? '';
+          final msg = row['MESSAGE']?.toString() ?? '';
+          return '$ts [$prio] $msg';
+        })
+        .join('\n');
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.serviceLogsCopied)));
+  }
+
+  String _formatTimestamp(Map<String, dynamic> row) {
+    final raw =
+        row['__REALTIME_TIMESTAMP'] ?? row['_SOURCE_REALTIME_TIMESTAMP'];
+    if (raw != null) {
+      final micros = int.tryParse(raw.toString());
+      if (micros != null) {
+        final dt = DateTime.fromMicrosecondsSinceEpoch(micros);
+        return '${dt.year}-${_twoDigits(dt.month)}-${_twoDigits(dt.day)} '
+            '${_twoDigits(dt.hour)}:${_twoDigits(dt.minute)}:${_twoDigits(dt.second)}';
+      }
+    }
+    return '';
+  }
+
+  String _twoDigits(int n) => n.toString().padLeft(2, '0');
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '${widget.service.name} ${context.l10n.serviceLogsTitle}',
+              style: theme.textTheme.titleMedium,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.copy, size: 20),
+            tooltip: context.l10n.serviceLogsCopied,
+            onPressed: _logs.isEmpty ? null : _copyLogs,
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, size: 20),
+            tooltip: context.l10n.sftpRefresh,
+            onPressed: (_isLoading || _isLoadingOlder)
+                ? null
+                : () => _fetchLogs(refresh: true),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 400,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: _buildContent(context),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(context.l10n.cmdClose),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    if (_isLoading && _logs.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null && _logs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _errorMessage!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            FilledButton.tonal(
+              onPressed: () => _fetchLogs(refresh: true),
+              child: Text(context.l10n.sftpRefresh),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_logs.isEmpty) {
+      return Center(child: Text(context.l10n.serviceLogsEmpty));
+    }
+
+    Widget? errorBanner;
+    if (_errorMessage != null && _logs.isNotEmpty) {
+      errorBanner = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 16,
+              color: Theme.of(context).colorScheme.onErrorContainer,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _errorMessage!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: (_isLoading || _isLoadingOlder)
+                  ? null
+                  : () => _fetchLogs(refresh: true),
+              child: Text(context.l10n.sftpRefresh),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, size: 16),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: () => setState(() => _errorMessage = null),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final listView = ListView.builder(
+      itemCount: _logs.length + 1,
+      itemBuilder: (ctx, index) {
+        if (index == _logs.length) {
+          if (_logs.length >= 1000) {
+            return Padding(
+              padding: const EdgeInsets.all(8),
+              child: Center(
+                child: Text(
+                  context.l10n.serviceLogsCapReached,
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ),
+            );
+          }
+          if (!_hasMoreOlderLogs) {
+            return const SizedBox.shrink();
+          }
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Center(
+              child: _isLoadingOlder
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : TextButton.icon(
+                      icon: const Icon(Icons.history, size: 16),
+                      label: Text(context.l10n.serviceLogsLoadOlder),
+                      onPressed: () => _fetchLogs(refresh: false),
+                    ),
+            ),
+          );
+        }
+
+        final row = _logs[index];
+        final ts = _formatTimestamp(row);
+        final prio = row['PRIORITY']?.toString();
+        final msg = row['MESSAGE']?.toString() ?? '';
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 2,
+                children: [
+                  if (ts.isNotEmpty)
+                    Text(
+                      ts,
+                      style: monoTextStyle(
+                        fontSize: 11,
+                        color: Theme.of(ctx).colorScheme.outline,
+                      ),
+                    ),
+                  if (prio != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          ctx,
+                        ).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Text(
+                        prio,
+                        style: monoTextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              SelectableText(msg, style: monoTextStyle(fontSize: 12)),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (errorBanner != null || (_isLoading && _logs.isNotEmpty)) {
+      return Column(
+        children: [
+          if (_isLoading && _logs.isNotEmpty)
+            const LinearProgressIndicator(minHeight: 2),
+          ?errorBanner,
+          Expanded(child: listView),
+        ],
+      );
+    }
+
+    return listView;
+  }
+}
+
+String _mapSystemError(BuildContext context, Object e) {
+  final str = e.toString();
+  if (str.contains('SERVICE_PERMISSION_DENIED')) {
+    return context.l10n.servicePermissionDenied;
+  }
+  if (str.contains('SERVICE_UNSUPPORTED')) {
+    return context.l10n.serviceUnsupported;
+  }
+  if (str.contains('SERVICE_QUERY_FAILED')) {
+    return context.l10n.serviceQueryFailed;
+  }
+  if (str.contains('SERVICE_TARGET_CHANGED')) {
+    return context.l10n.serviceTargetChanged;
+  }
+  if (str.contains('SERVICE_ACTION_IN_PROGRESS')) {
+    return context.l10n.serviceActionInProgress;
+  }
+  if (str.contains('PROCESS_IDENTITY_CHANGED')) {
+    return context.l10n.processIdentityChanged;
+  }
+  if (str.contains('PROCESS_IDENTITY_UNAVAILABLE')) {
+    return context.l10n.processIdentityUnavailable;
+  }
+  return str;
 }

@@ -50,8 +50,10 @@ class ServiceManager {
       'LC_ALL=C systemctl list-units --type=service --all --plain --no-legend --no-pager',
     );
     _requireSuccess(result);
-    final files = await _sshManager.executeWithLoginShell(serverId,
-      'LC_ALL=C systemctl list-unit-files --type=service --no-legend --no-pager');
+    final files = await _sshManager.executeWithLoginShell(
+      serverId,
+      'LC_ALL=C systemctl list-unit-files --type=service --no-legend --no-pager',
+    );
     _requireSuccess(files);
     return parseCatalog(result.stdout, files.stdout);
   }
@@ -66,16 +68,28 @@ class ServiceManager {
     }
     final catalog = <String, SystemdServiceInfo>{};
     for (final row in units.split('\n')) {
-      final match = RegExp(r'^\s*(\S+\.service)\s+\S+\s+\S+\s+(\S+)\s*(.*)$')
-          .firstMatch(row);
+      final match = RegExp(
+        r'^\s*(\S+\.service)\s+\S+\s+\S+\s+(\S+)\s*(.*)$',
+      ).firstMatch(row);
       if (match == null) continue;
       final name = match[1]!;
-      catalog[name] = SystemdServiceInfo(name: name, description: match[3]!,
-        state: match[2]!, startup: startup[name] ?? 'unknown');
+      catalog[name] = SystemdServiceInfo(
+        name: name,
+        description: match[3]!,
+        state: match[2]!,
+        startup: startup[name] ?? 'unknown',
+      );
     }
     for (final entry in startup.entries) {
-      catalog.putIfAbsent(entry.key, () => SystemdServiceInfo(name: entry.key,
-        description: entry.key, state: 'not-loaded', startup: entry.value));
+      catalog.putIfAbsent(
+        entry.key,
+        () => SystemdServiceInfo(
+          name: entry.key,
+          description: entry.key,
+          state: 'not-loaded',
+          startup: entry.value,
+        ),
+      );
     }
     return catalog.values.toList()..sort((a, b) => a.name.compareTo(b.name));
   }
@@ -83,31 +97,52 @@ class ServiceManager {
   static void _requireSuccess(SSHExecutionResult result) {
     if (result.isSuccess) return;
     final detail = LogSanitizer.sanitize(result.stderr.trim());
-    final code = result.exitCode == 127 ? 'SERVICE_UNSUPPORTED'
-        : detail.toLowerCase().contains('permission') ||
-          detail.toLowerCase().contains('access denied')
-          ? 'SERVICE_PERMISSION_DENIED' : 'SERVICE_QUERY_FAILED';
-    throw SystemExecutionException(code, exitCode: result.exitCode, details: detail);
+    final lower = detail.toLowerCase();
+    final code =
+        result.exitCode == 127 ||
+            lower.contains('not been booted with systemd') ||
+            lower.contains('failed to connect to bus: no such file')
+        ? 'SERVICE_UNSUPPORTED'
+        : lower.contains('permission') ||
+              lower.contains('access denied') ||
+              lower.contains('authentication is required') ||
+              lower.contains('interactive authentication required')
+        ? 'SERVICE_PERMISSION_DENIED'
+        : 'SERVICE_QUERY_FAILED';
+    throw SystemExecutionException(
+      code,
+      exitCode: result.exitCode,
+      details: detail,
+    );
   }
 
   static String validateService(String service) {
-    if (service.length > 255 || !RegExp(r'^[a-zA-Z0-9_][a-zA-Z0-9_.@:\\-]*\.service$')
-        .hasMatch(service)) {
+    if (service.length > 255 ||
+        !RegExp(
+          r'^[a-zA-Z0-9_][a-zA-Z0-9_.@:\\-]*\.service$',
+        ).hasMatch(service)) {
       throw ArgumentError.value(service, 'service', 'Invalid exact unit name');
     }
     return service;
   }
 
-  Future<List<Map<String, dynamic>>> logs(String serverId, String service,
-      {String? beforeCursor}) async {
+  Future<List<Map<String, dynamic>>> logs(
+    String serverId,
+    String service, {
+    String? beforeCursor,
+  }) async {
     validateService(service);
-    if (beforeCursor != null && (beforeCursor.length > 1024 ||
-        beforeCursor.contains(RegExp(r'[\x00-\x1f]')))) {
+    if (beforeCursor != null &&
+        (beforeCursor.length > 1024 ||
+            beforeCursor.contains(RegExp(r'[\x00-\x1f]')))) {
       throw ArgumentError.value(beforeCursor, 'beforeCursor');
     }
-    final result = await _sshManager.executeWithLoginShell(serverId,
+    final result = await _sshManager.executeWithLoginShell(
+      serverId,
       'LC_ALL=C journalctl --unit=${cliShellQuote(service)} --no-pager '
-      '--output=json --lines=200 --reverse${beforeCursor == null ? '' : ' --cursor=${cliShellQuote(beforeCursor)}'}');
+      '--output=json --lines=${beforeCursor == null ? 200 : 201} '
+      '--reverse${beforeCursor == null ? '' : ' --cursor=${cliShellQuote(beforeCursor)}'}',
+    );
     _requireSuccess(result);
     final rows = <Map<String, dynamic>>[];
     for (final line in result.stdout.split('\n')) {
@@ -115,6 +150,7 @@ class ServiceManager {
       final record = jsonDecode(line) as Map<String, dynamic>;
       if (record['__CURSOR'] == beforeCursor) continue;
       rows.add(record);
+      if (rows.length == 200) break;
     }
     return rows;
   }
@@ -129,9 +165,14 @@ class ServiceManager {
       throw ArgumentError.value(action, 'action', 'Unsupported systemd action');
     }
     validateService(service);
-    return _sshManager.executeWithLoginShell(
-      serverId,
-      'systemctl $action -- ${cliShellQuote(service)}',
-    );
+    return _sshManager
+        .executeWithLoginShell(
+          serverId,
+          'systemctl $action -- ${cliShellQuote(service)}',
+        )
+        .then((result) {
+          _requireSuccess(result);
+          return result;
+        });
   }
 }

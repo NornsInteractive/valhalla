@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +27,7 @@ import 'widgets/nas_localizations.dart';
 import 'widgets/nas_mini_player.dart';
 import 'widgets/nas_scan_config_dialog.dart';
 import 'widgets/nas_source_dialog.dart';
+import 'widgets/nas_thumbnail_image.dart';
 
 enum NasMediaTab {
   home,
@@ -1920,34 +1920,10 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                     children: [
                       Container(
                         color: theme.colorScheme.surfaceContainerHighest,
-                        child: FutureBuilder<String?>(
-                          future: ref
-                              .read(nasProvider.notifier)
-                              .thumbnailPath(item),
-                          builder: (context, snapshot) {
-                            final path = snapshot.data;
-                            if (path != null && path.isNotEmpty) {
-                              return Image.file(
-                                File(path),
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Center(
-                                      child: Icon(
-                                        Icons.movie_outlined,
-                                        size: 32,
-                                        color: theme.colorScheme.outline,
-                                      ),
-                                    ),
-                              );
-                            }
-                            return Center(
-                              child: Icon(
-                                Icons.movie_outlined,
-                                size: 32,
-                                color: theme.colorScheme.outline,
-                              ),
-                            );
-                          },
+                        child: NasThumbnailImage(
+                          item: item,
+                          fit: BoxFit.cover,
+                          fallbackIcon: Icons.movie_outlined,
                         ),
                       ),
                       Positioned(
@@ -2060,27 +2036,10 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                FutureBuilder<String?>(
-                  future: ref.read(nasProvider.notifier).thumbnailPath(item),
-                  builder: (context, snapshot) {
-                    final path = snapshot.data;
-                    if (path != null && path.isNotEmpty) {
-                      return Image.file(
-                        File(path),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Icon(
-                          Icons.image_outlined,
-                          size: 28,
-                          color: theme.colorScheme.outline,
-                        ),
-                      );
-                    }
-                    return Icon(
-                      Icons.image_outlined,
-                      size: 28,
-                      color: theme.colorScheme.outline,
-                    );
-                  },
+                NasThumbnailImage(
+                  item: item,
+                  fit: BoxFit.cover,
+                  fallbackIcon: Icons.image_outlined,
                 ),
                 Positioned(
                   top: 3,
@@ -2321,22 +2280,11 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              FutureBuilder<String?>(
-                future: ref.read(nasProvider.notifier).thumbnailPath(item),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Shimmer(child: const SkeletonBox());
-                  }
-                  final localPath = snapshot.data;
-                  if (localPath != null && File(localPath).existsSync()) {
-                    return Image.file(File(localPath), fit: BoxFit.cover);
-                  }
-                  return Icon(
-                    Icons.image_outlined,
-                    size: 40,
-                    color: theme.colorScheme.outline,
-                  );
-                },
+              NasThumbnailImage(
+                item: item,
+                fit: BoxFit.cover,
+                placeholder: Shimmer(child: const SkeletonBox()),
+                fallbackIcon: Icons.image_outlined,
               ),
               Positioned(
                 bottom: 0,

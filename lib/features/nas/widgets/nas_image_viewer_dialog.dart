@@ -1,22 +1,24 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
+import '../../../core/providers/infrastructure_providers.dart';
 import '../../../core/providers/nas_provider.dart';
 import '../../../data/models/nas_media.dart';
+import '../../../infrastructure/nas/nas_media_proxy_service.dart';
 import '../../../infrastructure/sftp/sftp_client_service.dart';
 import 'nas_cast_sheet.dart';
 import 'nas_localizations.dart';
+import 'nas_thumbnail_image.dart';
 
 class NasImageViewerDialog extends ConsumerStatefulWidget {
   final NasMediaItem item;
   final List<NasMediaItem> items;
   final int initialIndex;
-  final Future<String?> thumbnailFuture;
+  final Future<String?>? thumbnailFuture;
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
   final VoidCallback onOpenExternal;
@@ -26,7 +28,7 @@ class NasImageViewerDialog extends ConsumerStatefulWidget {
     required this.item,
     this.items = const [],
     this.initialIndex = 0,
-    required this.thumbnailFuture,
+    this.thumbnailFuture,
     required this.isFavorite,
     required this.onToggleFavorite,
     required this.onOpenExternal,
@@ -37,7 +39,7 @@ class NasImageViewerDialog extends ConsumerStatefulWidget {
     required NasMediaItem item,
     List<NasMediaItem> items = const [],
     int initialIndex = 0,
-    required Future<String?> thumbnailFuture,
+    Future<String?>? thumbnailFuture,
     required bool isFavorite,
     required VoidCallback onToggleFavorite,
     required VoidCallback onOpenExternal,
@@ -70,7 +72,7 @@ class _NasImageViewerDialogState extends ConsumerState<NasImageViewerDialog> {
   String? _originalError;
   bool _isSlideshow = false;
   Timer? _slideshowTimer;
-  late NasNotifier _nasNotifier;
+  NasMediaProxyService? _capturedProxyService;
   int _loadGeneration = 0;
   bool _favoriteInProgress = false;
 
@@ -84,7 +86,6 @@ class _NasImageViewerDialogState extends ConsumerState<NasImageViewerDialog> {
     super.initState();
     _items = widget.items.isEmpty ? [widget.item] : widget.items;
     _currentIndex = widget.initialIndex.clamp(0, _items.length - 1);
-    _nasNotifier = ref.read(nasProvider.notifier);
     _loadOriginal();
   }
 
@@ -93,13 +94,14 @@ class _NasImageViewerDialogState extends ConsumerState<NasImageViewerDialog> {
     _loadGeneration++;
     _slideshowTimer?.cancel();
     _releaseCurrentUri();
+    _capturedProxyService = null;
     super.dispose();
   }
 
   void _releaseCurrentUri() {
     if (_currentRelayUri != null) {
       try {
-        _nasNotifier.releaseImageUrl(_currentRelayUri!);
+        _capturedProxyService?.revoke(_currentRelayUri!);
       } catch (_) {}
       _currentRelayUri = null;
     }
@@ -114,9 +116,13 @@ class _NasImageViewerDialogState extends ConsumerState<NasImageViewerDialog> {
     });
 
     try {
-      final uri = await _nasNotifier.imageUrl(_currentItem);
+      if (!mounted) return;
+      final notifier = ref.read(nasProvider.notifier);
+      final proxyService = ref.read(nasMediaProxyServiceProvider);
+      _capturedProxyService = proxyService;
+      final uri = await notifier.imageUrl(_currentItem);
       if (!mounted || gen != _loadGeneration) {
-        _nasNotifier.releaseImageUrl(uri);
+        proxyService.revoke(uri);
         return;
       }
       setState(() {
@@ -486,46 +492,37 @@ class _NasImageViewerDialogState extends ConsumerState<NasImageViewerDialog> {
   }
 
   Widget _buildThumbnailFallback(NasMediaItem item, [String? error]) {
-    return FutureBuilder<String?>(
-      future: ref.read(nasProvider.notifier).thumbnailPath(item),
-      builder: (context, snapshot) {
-        final localPath = snapshot.data;
-        if (localPath != null && File(localPath).existsSync()) {
-          return InteractiveViewer(
-            minScale: 0.5,
-            maxScale: 4.0,
-            child: Image.file(File(localPath), fit: BoxFit.contain),
-          );
-        }
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.image_outlined,
-              size: 80,
-              color: Colors.white.withValues(alpha: 0.4),
+    return NasThumbnailImage(
+      item: item,
+      fit: BoxFit.contain,
+      placeholder: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.image_outlined,
+            size: 80,
+            color: Colors.white.withValues(alpha: 0.4),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            item.name,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 14,
             ),
-            const SizedBox(height: 12),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 8),
             Text(
-              item.name,
+              error,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.8),
-                fontSize: 14,
+                color: VColors.danger(Brightness.dark),
+                fontSize: 12,
               ),
             ),
-            if (error != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                error,
-                style: TextStyle(
-                  color: VColors.danger(Brightness.dark),
-                  fontSize: 12,
-                ),
-              ),
-            ],
           ],
-        );
-      },
+        ],
+      ),
     );
   }
 }

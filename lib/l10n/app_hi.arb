@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "पैकेज पथ या पहचान अमान्य है।",
   "updateErrorStoreInstall": "यह ऐप एक ऐप स्टोर से इंस्टॉल किया गया था। कृपया स्टोर के माध्यम से अपडेट करें।",
   "updateErrorPlatform": "इंस्टॉलर को खोलने या लॉन्च करने में विफल।",
-  "updateErrorGeneric": "अपडेट ऑपरेशन विफल रहा। कृपया पुनः प्रयास करें या GitHub रिलीज़ देखें।"
+  "updateErrorGeneric": "अपडेट ऑपरेशन विफल रहा। कृपया पुनः प्रयास करें या GitHub रिलीज़ देखें।",
+  "servicePermissionDenied": "सेवा प्रबंधित करने की अनुमति अस्वीकृत",
+  "serviceUnsupported": "इस सेवा के लिए कार्रवाई समर्थित नहीं है",
+  "serviceQueryFailed": "सेवा स्थिति क्वेरी विफल रही",
+  "serviceTargetChanged": "लक्षित सर्वर बदल गया; कार्रवाई रद्द कर दी गई",
+  "serviceActionInProgress": "इस सेवा के लिए पहले से एक अन्य कार्रवाई जारी है",
+  "processIdentityChanged": "प्रक्रिया पुनरारंभ हो गई; समाप्ति रद्द कर दी गई",
+  "processIdentityUnavailable": "प्रक्रिया प्रारंभ समय अनुपलब्ध; समाप्ति अस्वीकार",
+  "serviceLogsTitle": "सेवा लॉग",
+  "serviceLogsLoadOlder": "पुराने लॉग लोड करें",
+  "serviceLogsEmpty": "कोई लॉग नहीं मिला",
+  "serviceLogsCopied": "लॉग क्लिपबोर्ड पर कॉपी किए गए",
+  "fileEditorUnsavedTitle": "सहेजे नहीं गए परिवर्तन",
+  "fileEditorUnsavedMessage": "आपके पास सहेजे नहीं गए परिवर्तन हैं। छोड़ने से पहले एक कार्रवाई चुनें:",
+  "fileEditorKeepDraft": "ड्राफ्ट रखें",
+  "fileEditorDiscard": "खारिज करें",
+  "fileEditorDiscardConfirmTitle": "ड्राफ्ट खारिज करें?",
+  "fileEditorDiscardConfirmMessage": "क्या आप वाकई स्थानीय ड्राफ्ट को खारिज करना और सर्वर से नवीनतम फ़ाइल पुनः लोड करना चाहते हैं?",
+  "fileEditorConflictBanner": "फ़ाइल सर्वर पर संशोधित की गई थी या स्थानीय ड्राफ्ट से टकराती है।",
+  "fileEditorCopyDraft": "ड्राफ्ट कॉपी करें",
+  "fileEditorDraftCopied": "ड्राफ्ट क्लिपबोर्ड पर कॉपी किया गया",
+  "fileEditorReload": "पुनः लोड करें",
+  "sftpAtomicSaveUnsupported": "सर्वर सुरक्षित परमाणु बचत का समर्थन नहीं करता है",
+  "sftpEditorExpired": "संपादक सत्र समाप्त हो गया है",
+  "sftpDraftSaveFailed": "स्थानीय ड्राफ्ट सहेजने में विफल",
+  "sftpEditConflict": "सर्वर पर फ़ाइल संशोधित; कृपया पुनः लोड करें या ड्राफ्ट कॉपी करें",
+  "sftpEditDraftConflict": "स्थानीय ड्राफ्ट सर्वर फ़ाइल के साथ विरोध करता है",
+  "sftpTransferSourceChanged": "स्थानांतरण के दौरान स्रोत फ़ाइल बदल गई",
+  "sftpTransferPartialInvalid": "आंशिक स्थानांतरण फ़ाइल अमान्य या दूषित है",
+  "sftpTransferCommitting": "स्थानांतरण पहले से ही कमिट हो रहा है; पुनरारंभ नहीं किया जा सकता",
+  "sftpTransferCleanupFailed": "अपूर्ण स्थानांतरण को साफ करने में विफल",
+  "sftpUploadTargetExists": "गंतव्य फ़ाइल पहले से मौजूद है",
+  "sftpUploadCommitFailed": "दूरस्थ अपलोड को अंतिम रूप देने में विफल",
+  "sftpUploadSourceInvalid": "स्थानीय स्रोत फ़ाइल बदल गई है या अमान्य है",
+  "cachedDataNotice": "{time} पर कैश्ड",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "सीमा: 1000 लॉग रखे गए",
+  "nasThumbnailCacheUsage": "थंबनेल कैश",
+  "nasThumbnailCacheBudget": "कैश बजट",
+  "nasThumbnailCacheClear": "कैश साफ़ करें",
+  "nasThumbnailCacheCleared": "थंबनेल कैश साफ़ किया गया",
+  "nasThumbnailCacheOff": "बंद"
 }

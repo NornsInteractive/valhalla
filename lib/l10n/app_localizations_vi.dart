@@ -4312,4 +4312,143 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'Thao tác cập nhật không thành công. Vui lòng thử lại hoặc xem các bản phát hành trên GitHub.';
+
+  @override
+  String get servicePermissionDenied => 'Bị từ chối quyền quản lý dịch vụ';
+
+  @override
+  String get serviceUnsupported =>
+      'Hành động không được hỗ trợ cho dịch vụ này';
+
+  @override
+  String get serviceQueryFailed => 'Truy vấn trạng thái dịch vụ thất bại';
+
+  @override
+  String get serviceTargetChanged =>
+      'Máy chủ mục tiêu đã thay đổi; thao tác bị hủy';
+
+  @override
+  String get serviceActionInProgress =>
+      'Một hành động khác đang được thực hiện cho dịch vụ này';
+
+  @override
+  String get processIdentityChanged =>
+      'Tiến trình đã được khởi động lại; hủy chấm dứt';
+
+  @override
+  String get processIdentityUnavailable =>
+      'Không có thời gian bắt đầu tiến trình; từ chối chấm dứt';
+
+  @override
+  String get serviceLogsTitle => 'Nhật ký dịch vụ';
+
+  @override
+  String get serviceLogsLoadOlder => 'Tải nhật ký cũ hơn';
+
+  @override
+  String get serviceLogsEmpty => 'Không tìm thấy nhật ký';
+
+  @override
+  String get serviceLogsCopied => 'Đã sao chép nhật ký vào khay nhớ tạm';
+
+  @override
+  String get fileEditorUnsavedTitle => 'Thay đổi chưa lưu';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'Bạn có các thay đổi chưa lưu. Chọn một hành động trước khi rời đi:';
+
+  @override
+  String get fileEditorKeepDraft => 'Giữ bản nháp';
+
+  @override
+  String get fileEditorDiscard => 'Hủy bỏ';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'Hủy bản nháp?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'Bạn có chắc chắn muốn hủy bản nháp cục bộ và tải lại tệp mới nhất từ máy chủ không?';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'Tệp đã được sửa đổi trên máy chủ hoặc xung đột với bản nháp cục bộ.';
+
+  @override
+  String get fileEditorCopyDraft => 'Sao chép bản nháp';
+
+  @override
+  String get fileEditorDraftCopied => 'Đã sao chép bản nháp vào khay nhớ tạm';
+
+  @override
+  String get fileEditorReload => 'Tải lại';
+
+  @override
+  String get sftpAtomicSaveUnsupported =>
+      'Máy chủ không hỗ trợ lưu nguyên tử an toàn';
+
+  @override
+  String get sftpEditorExpired => 'Phiên chỉnh sửa đã hết hạn';
+
+  @override
+  String get sftpDraftSaveFailed => 'Không thể lưu bản nháp cục bộ';
+
+  @override
+  String get sftpEditConflict =>
+      'Tệp đã thay đổi trên máy chủ; vui lòng tải lại hoặc sao chép bản nháp';
+
+  @override
+  String get sftpEditDraftConflict =>
+      'Bản nháp cục bộ xung đột với tệp máy chủ';
+
+  @override
+  String get sftpTransferSourceChanged =>
+      'Tệp nguồn đã thay đổi trong quá trình chuyển';
+
+  @override
+  String get sftpTransferPartialInvalid =>
+      'Tệp truyền tải một phần không hợp lệ hoặc bị hỏng';
+
+  @override
+  String get sftpTransferCommitting =>
+      'Quá trình truyền đang được áp dụng; không thể khởi động lại';
+
+  @override
+  String get sftpTransferCleanupFailed =>
+      'Không thể dọn dẹp quá trình truyền chưa hoàn tất';
+
+  @override
+  String get sftpUploadTargetExists => 'Tệp đích đã tồn tại';
+
+  @override
+  String get sftpUploadCommitFailed => 'Không thể hoàn tất tải lên từ xa';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'Tệp nguồn cục bộ đã thay đổi hoặc không hợp lệ';
+
+  @override
+  String cachedDataNotice(String time) {
+    return 'Đã lưu vào bộ nhớ đệm lúc $time';
+  }
+
+  @override
+  String get serviceLogsCapReached =>
+      'Giới hạn: Giữ tối đa 1000 bản ghi nhật ký';
+
+  @override
+  String get nasThumbnailCacheUsage => 'Bộ nhớ đệm hình thu nhỏ';
+
+  @override
+  String get nasThumbnailCacheBudget => 'Giới hạn bộ nhớ đệm';
+
+  @override
+  String get nasThumbnailCacheClear => 'Xóa bộ nhớ đệm';
+
+  @override
+  String get nasThumbnailCacheCleared => 'Đã xóa bộ nhớ đệm hình thu nhỏ';
+
+  @override
+  String get nasThumbnailCacheOff => 'Tắt';
 }

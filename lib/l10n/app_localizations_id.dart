@@ -4316,4 +4316,142 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'Operasi pembaruan gagal. Silakan coba lagi atau buka rilis di GitHub.';
+
+  @override
+  String get servicePermissionDenied => 'Izin ditolak untuk mengelola layanan';
+
+  @override
+  String get serviceUnsupported => 'Tindakan tidak didukung untuk layanan ini';
+
+  @override
+  String get serviceQueryFailed => 'Gagal menanyakan status layanan';
+
+  @override
+  String get serviceTargetChanged =>
+      'Server target berubah; operasi dibatalkan';
+
+  @override
+  String get serviceActionInProgress =>
+      'Tindakan lain sedang berlangsung untuk layanan ini';
+
+  @override
+  String get processIdentityChanged =>
+      'Proses dimulai ulang; penghentian dibatalkan';
+
+  @override
+  String get processIdentityUnavailable =>
+      'Waktu mulai proses tidak tersedia; penghentian ditolak';
+
+  @override
+  String get serviceLogsTitle => 'Log Layanan';
+
+  @override
+  String get serviceLogsLoadOlder => 'Muat Log Lebih Lama';
+
+  @override
+  String get serviceLogsEmpty => 'Tidak ada log ditemukan';
+
+  @override
+  String get serviceLogsCopied => 'Log disalin ke papan klip';
+
+  @override
+  String get fileEditorUnsavedTitle => 'Perubahan Belum Disimpan';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'Anda memiliki perubahan yang belum disimpan. Pilih tindakan sebelum keluar:';
+
+  @override
+  String get fileEditorKeepDraft => 'Simpan Draf';
+
+  @override
+  String get fileEditorDiscard => 'Buang';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'Buang Draf?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'Apakah Anda yakin ingin membuang draf lokal dan memuat ulang berkas terbaru dari server?';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'Berkas dimodifikasi di server atau berkonflik dengan draf lokal.';
+
+  @override
+  String get fileEditorCopyDraft => 'Salin Draf';
+
+  @override
+  String get fileEditorDraftCopied => 'Draf disalin ke papan klip';
+
+  @override
+  String get fileEditorReload => 'Muat Ulang';
+
+  @override
+  String get sftpAtomicSaveUnsupported =>
+      'Server tidak mendukung penyimpanan atomik yang aman';
+
+  @override
+  String get sftpEditorExpired => 'Sesi editor telah kedaluwarsa';
+
+  @override
+  String get sftpDraftSaveFailed => 'Gagal menyimpan draf lokal';
+
+  @override
+  String get sftpEditConflict =>
+      'Berkas dimodifikasi di server; silakan muat ulang atau salin draf';
+
+  @override
+  String get sftpEditDraftConflict =>
+      'Draf lokal berkonflik dengan berkas server';
+
+  @override
+  String get sftpTransferSourceChanged =>
+      'Berkas sumber berubah selama transfer';
+
+  @override
+  String get sftpTransferPartialInvalid =>
+      'Berkas transfer parsial tidak valid atau rusak';
+
+  @override
+  String get sftpTransferCommitting =>
+      'Transfer sedang dikonfirmasi; tidak dapat memulai ulang';
+
+  @override
+  String get sftpTransferCleanupFailed =>
+      'Gagal membersihkan transfer yang belum selesai';
+
+  @override
+  String get sftpUploadTargetExists => 'Berkas tujuan sudah ada';
+
+  @override
+  String get sftpUploadCommitFailed =>
+      'Gagal menyelesaikan unggahan jarak jauh';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'Berkas sumber lokal berubah atau tidak valid';
+
+  @override
+  String cachedDataNotice(String time) {
+    return 'Di-cache pada $time';
+  }
+
+  @override
+  String get serviceLogsCapReached => 'Batas: 1000 log disimpan';
+
+  @override
+  String get nasThumbnailCacheUsage => 'Cache Gambar Mini';
+
+  @override
+  String get nasThumbnailCacheBudget => 'Anggaran Cache';
+
+  @override
+  String get nasThumbnailCacheClear => 'Bersihkan Cache';
+
+  @override
+  String get nasThumbnailCacheCleared => 'Cache gambar mini dibersihkan';
+
+  @override
+  String get nasThumbnailCacheOff => 'Mati';
 }

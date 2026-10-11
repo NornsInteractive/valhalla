@@ -1616,5 +1616,52 @@
   "updateErrorPackageInvalid": "เส้นทางหรือข้อมูลประจำตัวของแพ็กเกจไม่ถูกต้อง",
   "updateErrorStoreInstall": "แอปนี้ได้รับการติดตั้งจากร้านค้าแอป โปรดอัปเดตผ่านร้านค้า",
   "updateErrorPlatform": "ไม่สามารถเปิดหรือเปิดใช้งานโปรแกรมติดตั้งได้",
-  "updateErrorGeneric": "การดำเนินการอัปเดตล้มเหลว โปรดลองอีกครั้งหรือดูการเผยแพร่บน GitHub"
+  "updateErrorGeneric": "การดำเนินการอัปเดตล้มเหลว โปรดลองอีกครั้งหรือดูการเผยแพร่บน GitHub",
+  "servicePermissionDenied": "การอนุญาตถูกปฏิเสธในการจัดการบริการ",
+  "serviceUnsupported": "การดำเนินการไม่ได้รับการสนับสนุนสำหรับบริการนี้",
+  "serviceQueryFailed": "การสอบถามสถานะบริการล้มเหลว",
+  "serviceTargetChanged": "เซิร์ฟเวอร์เป้าหมายเปลี่ยนไป การดำเนินการถูกยกเลิก",
+  "serviceActionInProgress": "มีการดำเนินการอื่นกำลังดำเนินอยู่สำหรับบริการนี้",
+  "processIdentityChanged": "กระบวนการถูกเริ่มใหม่แล้ว ยกเลิกการยุติ",
+  "processIdentityUnavailable": "ไม่มีเวลาเริ่มต้นของกระบวนการ ปฏิเสธการยุติ",
+  "serviceLogsTitle": "บันทึกการทำงานของบริการ",
+  "serviceLogsLoadOlder": "โหลดบันทึกที่เก่ากว่า",
+  "serviceLogsEmpty": "ไม่พบบันทึกการทำงาน",
+  "serviceLogsCopied": "คัดลอกบันทึกไปยังคลิปบอร์ดแล้ว",
+  "fileEditorUnsavedTitle": "การเปลี่ยนแปลงที่ยังไม่ได้บันทึก",
+  "fileEditorUnsavedMessage": "คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก เลือกการดำเนินการก่อนออก:",
+  "fileEditorKeepDraft": "เก็บแบบร่าง",
+  "fileEditorDiscard": "ละทิ้ง",
+  "fileEditorDiscardConfirmTitle": "ละทิ้งแบบร่างหรือไม่?",
+  "fileEditorDiscardConfirmMessage": "คุณแน่ใจหรือไม่ว่าต้องการละทิ้งแบบร่างในเครื่องและโหลดไฟล์ล่าสุดจากเซิร์ฟเวอร์ใหม่?",
+  "fileEditorConflictBanner": "ไฟล์ถูกแก้ไขบนเซิร์ฟเวอร์หรือขัดแย้งกับแบบร่างในเครื่อง",
+  "fileEditorCopyDraft": "คัดลอกแบบร่าง",
+  "fileEditorDraftCopied": "คัดลอกแบบร่างไปยังคลิปบอร์ดแล้ว",
+  "fileEditorReload": "โหลดใหม่",
+  "sftpAtomicSaveUnsupported": "เซิร์ฟเวอร์ไม่รองรับการบันทึกแบบอะตอมิกที่ปลอดภัย",
+  "sftpEditorExpired": "เซสชันของโปรแกรมแก้ไขหมดอายุแล้ว",
+  "sftpDraftSaveFailed": "ไม่สามารถบันทึกแบบร่างในเครื่องได้",
+  "sftpEditConflict": "ไฟล์ถูกแก้ไขบนเซิร์ฟเวอร์ โปรดโหลดใหม่หรือคัดลอกแบบร่าง",
+  "sftpEditDraftConflict": "แบบร่างในเครื่องขัดแย้งกับไฟล์บนเซิร์ฟเวอร์",
+  "sftpTransferSourceChanged": "ไฟล์ต้นทางเปลี่ยนไประหว่างการถ่ายโอน",
+  "sftpTransferPartialInvalid": "ไฟล์ถ่ายโอนบางส่วนไม่ถูกต้องหรือเสียหาย",
+  "sftpTransferCommitting": "กำลังคอมมิตการถ่ายโอน ไม่สามารถเริ่มใหม่ได้",
+  "sftpTransferCleanupFailed": "ล้างข้อมูลการถ่ายโอนที่ไม่สมบูรณ์ไม่สำเร็จ",
+  "sftpUploadTargetExists": "ไฟล์ปลายทางมีอยู่แล้ว",
+  "sftpUploadCommitFailed": "เสร็จสิ้นการอัปโหลดระยะไกลไม่สำเร็จ",
+  "sftpUploadSourceInvalid": "ไฟล์ต้นทางในเครื่องเปลี่ยนไปหรือไม่ถูกต้อง",
+  "cachedDataNotice": "แคชเมื่อ {time}",
+  "@cachedDataNotice": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLogsCapReached": "ขีดจำกัด: เก็บบันทึกไว้ 1,000 รายการ",
+  "nasThumbnailCacheUsage": "แคชรูปขนาดย่อ",
+  "nasThumbnailCacheBudget": "ขีดจำกัดแคช",
+  "nasThumbnailCacheClear": "ล้างแคช",
+  "nasThumbnailCacheCleared": "ล้างแคชรูปขนาดย่อแล้ว",
+  "nasThumbnailCacheOff": "ปิด"
 }

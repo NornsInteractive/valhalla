@@ -4350,4 +4350,144 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'Operazione di aggiornamento non riuscita. Riprova o visita i rilasci su GitHub.';
+
+  @override
+  String get servicePermissionDenied =>
+      'Autorizzazione negata per gestire il servizio';
+
+  @override
+  String get serviceUnsupported => 'Azione non supportata per questo servizio';
+
+  @override
+  String get serviceQueryFailed =>
+      'Interrogazione dello stato del servizio non riuscita';
+
+  @override
+  String get serviceTargetChanged =>
+      'Server di destinazione modificato; operazione annullata';
+
+  @override
+  String get serviceActionInProgress =>
+      'Un\'altra azione è già in corso per questo servizio';
+
+  @override
+  String get processIdentityChanged =>
+      'Il processo è stato riavviato; terminazione annullata';
+
+  @override
+  String get processIdentityUnavailable =>
+      'Ora di avvio del processo non disponibile; terminazione rifiutata';
+
+  @override
+  String get serviceLogsTitle => 'Registri del servizio';
+
+  @override
+  String get serviceLogsLoadOlder => 'Carica registri precedenti';
+
+  @override
+  String get serviceLogsEmpty => 'Nessun registro trovato';
+
+  @override
+  String get serviceLogsCopied => 'Registri copiati negli appunti';
+
+  @override
+  String get fileEditorUnsavedTitle => 'Modifiche non salvate';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'Hai modifiche non salvate. Scegli un\'azione prima di uscire:';
+
+  @override
+  String get fileEditorKeepDraft => 'Mantieni bozza';
+
+  @override
+  String get fileEditorDiscard => 'Scarta';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'Scartare la bozza?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'Vuoi davvero scartare la bozza locale e ricaricare il file più recente dal server?';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'Il file è stato modificato sul server o è in conflitto con la bozza locale.';
+
+  @override
+  String get fileEditorCopyDraft => 'Copia bozza';
+
+  @override
+  String get fileEditorDraftCopied => 'Bozza copiata negli appunti';
+
+  @override
+  String get fileEditorReload => 'Ricarica';
+
+  @override
+  String get sftpAtomicSaveUnsupported =>
+      'Il server non supporta il salvataggio atomico sicuro';
+
+  @override
+  String get sftpEditorExpired => 'La sessione dell\'editor è scaduta';
+
+  @override
+  String get sftpDraftSaveFailed => 'Impossibile salvare la bozza locale';
+
+  @override
+  String get sftpEditConflict =>
+      'File modificato sul server; ricaricare o copiare la bozza';
+
+  @override
+  String get sftpEditDraftConflict =>
+      'La bozza locale è in conflitto con il file sul server';
+
+  @override
+  String get sftpTransferSourceChanged =>
+      'Il file di origine è stato modificato durante il trasferimento';
+
+  @override
+  String get sftpTransferPartialInvalid =>
+      'File di trasferimento parziale non valido o danneggiato';
+
+  @override
+  String get sftpTransferCommitting =>
+      'Trasferimento già in fase di commit; impossibile riavviare';
+
+  @override
+  String get sftpTransferCleanupFailed =>
+      'Pulizia del trasferimento incompleto non riuscita';
+
+  @override
+  String get sftpUploadTargetExists => 'Il file di destinazione esiste già';
+
+  @override
+  String get sftpUploadCommitFailed =>
+      'Finalizzazione del caricamento remoto non riuscita';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'Il file di origine locale è stato modificato o non è valido';
+
+  @override
+  String cachedDataNotice(String time) {
+    return 'Memorizzato nella cache alle $time';
+  }
+
+  @override
+  String get serviceLogsCapReached => 'Limite: 1000 log conservati';
+
+  @override
+  String get nasThumbnailCacheUsage => 'Cache delle miniature';
+
+  @override
+  String get nasThumbnailCacheBudget => 'Limite della cache';
+
+  @override
+  String get nasThumbnailCacheClear => 'Svuota cache';
+
+  @override
+  String get nasThumbnailCacheCleared => 'Cache delle miniature svuotata';
+
+  @override
+  String get nasThumbnailCacheOff => 'Disattivato';
 }

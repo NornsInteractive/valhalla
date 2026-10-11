@@ -4302,4 +4302,142 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'การดำเนินการอัปเดตล้มเหลว โปรดลองอีกครั้งหรือดูการเผยแพร่บน GitHub';
+
+  @override
+  String get servicePermissionDenied => 'การอนุญาตถูกปฏิเสธในการจัดการบริการ';
+
+  @override
+  String get serviceUnsupported =>
+      'การดำเนินการไม่ได้รับการสนับสนุนสำหรับบริการนี้';
+
+  @override
+  String get serviceQueryFailed => 'การสอบถามสถานะบริการล้มเหลว';
+
+  @override
+  String get serviceTargetChanged =>
+      'เซิร์ฟเวอร์เป้าหมายเปลี่ยนไป การดำเนินการถูกยกเลิก';
+
+  @override
+  String get serviceActionInProgress =>
+      'มีการดำเนินการอื่นกำลังดำเนินอยู่สำหรับบริการนี้';
+
+  @override
+  String get processIdentityChanged =>
+      'กระบวนการถูกเริ่มใหม่แล้ว ยกเลิกการยุติ';
+
+  @override
+  String get processIdentityUnavailable =>
+      'ไม่มีเวลาเริ่มต้นของกระบวนการ ปฏิเสธการยุติ';
+
+  @override
+  String get serviceLogsTitle => 'บันทึกการทำงานของบริการ';
+
+  @override
+  String get serviceLogsLoadOlder => 'โหลดบันทึกที่เก่ากว่า';
+
+  @override
+  String get serviceLogsEmpty => 'ไม่พบบันทึกการทำงาน';
+
+  @override
+  String get serviceLogsCopied => 'คัดลอกบันทึกไปยังคลิปบอร์ดแล้ว';
+
+  @override
+  String get fileEditorUnsavedTitle => 'การเปลี่ยนแปลงที่ยังไม่ได้บันทึก';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก เลือกการดำเนินการก่อนออก:';
+
+  @override
+  String get fileEditorKeepDraft => 'เก็บแบบร่าง';
+
+  @override
+  String get fileEditorDiscard => 'ละทิ้ง';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'ละทิ้งแบบร่างหรือไม่?';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'คุณแน่ใจหรือไม่ว่าต้องการละทิ้งแบบร่างในเครื่องและโหลดไฟล์ล่าสุดจากเซิร์ฟเวอร์ใหม่?';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'ไฟล์ถูกแก้ไขบนเซิร์ฟเวอร์หรือขัดแย้งกับแบบร่างในเครื่อง';
+
+  @override
+  String get fileEditorCopyDraft => 'คัดลอกแบบร่าง';
+
+  @override
+  String get fileEditorDraftCopied => 'คัดลอกแบบร่างไปยังคลิปบอร์ดแล้ว';
+
+  @override
+  String get fileEditorReload => 'โหลดใหม่';
+
+  @override
+  String get sftpAtomicSaveUnsupported =>
+      'เซิร์ฟเวอร์ไม่รองรับการบันทึกแบบอะตอมิกที่ปลอดภัย';
+
+  @override
+  String get sftpEditorExpired => 'เซสชันของโปรแกรมแก้ไขหมดอายุแล้ว';
+
+  @override
+  String get sftpDraftSaveFailed => 'ไม่สามารถบันทึกแบบร่างในเครื่องได้';
+
+  @override
+  String get sftpEditConflict =>
+      'ไฟล์ถูกแก้ไขบนเซิร์ฟเวอร์ โปรดโหลดใหม่หรือคัดลอกแบบร่าง';
+
+  @override
+  String get sftpEditDraftConflict =>
+      'แบบร่างในเครื่องขัดแย้งกับไฟล์บนเซิร์ฟเวอร์';
+
+  @override
+  String get sftpTransferSourceChanged =>
+      'ไฟล์ต้นทางเปลี่ยนไประหว่างการถ่ายโอน';
+
+  @override
+  String get sftpTransferPartialInvalid =>
+      'ไฟล์ถ่ายโอนบางส่วนไม่ถูกต้องหรือเสียหาย';
+
+  @override
+  String get sftpTransferCommitting =>
+      'กำลังคอมมิตการถ่ายโอน ไม่สามารถเริ่มใหม่ได้';
+
+  @override
+  String get sftpTransferCleanupFailed =>
+      'ล้างข้อมูลการถ่ายโอนที่ไม่สมบูรณ์ไม่สำเร็จ';
+
+  @override
+  String get sftpUploadTargetExists => 'ไฟล์ปลายทางมีอยู่แล้ว';
+
+  @override
+  String get sftpUploadCommitFailed => 'เสร็จสิ้นการอัปโหลดระยะไกลไม่สำเร็จ';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'ไฟล์ต้นทางในเครื่องเปลี่ยนไปหรือไม่ถูกต้อง';
+
+  @override
+  String cachedDataNotice(String time) {
+    return 'แคชเมื่อ $time';
+  }
+
+  @override
+  String get serviceLogsCapReached => 'ขีดจำกัด: เก็บบันทึกไว้ 1,000 รายการ';
+
+  @override
+  String get nasThumbnailCacheUsage => 'แคชรูปขนาดย่อ';
+
+  @override
+  String get nasThumbnailCacheBudget => 'ขีดจำกัดแคช';
+
+  @override
+  String get nasThumbnailCacheClear => 'ล้างแคช';
+
+  @override
+  String get nasThumbnailCacheCleared => 'ล้างแคชรูปขนาดย่อแล้ว';
+
+  @override
+  String get nasThumbnailCacheOff => 'ปิด';
 }

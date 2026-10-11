@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/layout_breakpoints.dart';
+import '../../core/errors/app_exceptions.dart';
 import '../../core/design/motion_widgets.dart';
 import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
@@ -372,12 +374,23 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
       return;
     }
 
-    await notifier.openFileForEditing(item);
+    final capturedServer = ref.read(activeServerProvider);
+    if (capturedServer == null) return;
+    final capturedConnectionKey = capturedServer.connectionKey;
+
+    final openFuture = notifier.openFileForEditing(item);
+    final capturedToken = notifier.editorToken;
+
+    await openFuture;
     if (!mounted) return;
 
+    final currentServer = ref.read(activeServerProvider);
     final sftpState = ref.read(sftpProvider);
-    if (sftpState.editingFilePath != item.path) {
-      if (sftpState.errorMessage != null) {
+    if (currentServer?.connectionKey != capturedConnectionKey ||
+        notifier.editorToken != capturedToken ||
+        sftpState.editingFilePath != item.path) {
+      if (sftpState.errorMessage != null &&
+          currentServer?.connectionKey == capturedConnectionKey) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(_mapErrorMessage(sftpState.errorMessage!))),
         );
@@ -385,158 +398,18 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
       return;
     }
 
-    final content = sftpState.editingFileContent ?? '';
-    final editorController = TextEditingController(text: content);
-    var isSaving = false;
-    String? saveError;
-
-    showDialog(
+    await showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) {
-          final theme = Theme.of(ctx);
-
-          Future<void> handleSave() async {
-            if (isSaving || !ref.read(serverConnectionProvider).isConnected) {
-              return;
-            }
-            setDialogState(() {
-              isSaving = true;
-              saveError = null;
-            });
-
-            try {
-              await notifier.saveFileContent(item.path, editorController.text);
-              if (ctx.mounted) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  SnackBar(content: Text(ctx.l10n.fileSavedSuccess)),
-                );
-                Navigator.pop(ctx);
-              }
-            } catch (e) {
-              if (ctx.mounted) {
-                setDialogState(() {
-                  isSaving = false;
-                  saveError = ctx.l10n.sftpSaveFailed;
-                });
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  SnackBar(
-                    content: Text(ctx.l10n.sftpSaveFailed),
-                    backgroundColor: theme.colorScheme.error,
-                  ),
-                );
-              }
-            }
-          }
-
-          return Dialog.fullscreen(
-            child: Scaffold(
-              appBar: AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () {
-                    notifier.closeFileEditor();
-                    Navigator.pop(ctx);
-                  },
-                ),
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.name, style: theme.textTheme.titleMedium),
-                    Text(
-                      item.path,
-                      style: monoTextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w400,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-                actions: [
-                  FilledButton.icon(
-                    key: const Key('sftp_editor_save_button'),
-                    icon: isSaving
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          )
-                        : const Icon(Icons.save, size: 16),
-                    label: Text(
-                      isSaving ? ctx.l10n.sftpSaving : ctx.l10n.fileEditorSave,
-                    ),
-                    onPressed:
-                        (isSaving ||
-                            !ref.read(serverConnectionProvider).isConnected)
-                        ? null
-                        : handleSave,
-                  ),
-                  const SizedBox(width: 12),
-                ],
-              ),
-              body: Column(
-                children: [
-                  if (saveError != null)
-                    Container(
-                      key: const Key('sftp_editor_error_banner'),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      color: theme.colorScheme.errorContainer,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 18,
-                            color: theme.colorScheme.onErrorContainer,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              saveError!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: theme.colorScheme.onErrorContainer,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: TextField(
-                        key: const Key('sftp_editor_text_field'),
-                        controller: editorController,
-                        maxLines: null,
-                        expands: true,
-                        style: monoTextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
+      barrierDismissible: false,
+      builder: (ctx) => _SftpFileEditorDialog(
+        item: item,
+        capturedToken: capturedToken,
+        capturedConnectionKey: capturedConnectionKey,
+        onReopen: () {
+          if (mounted) _openFileEditor(item);
         },
       ),
-    ).then((_) {
-      if (mounted) {
-        notifier.closeFileEditor();
-      }
-    });
+    );
   }
 
   Future<void> _handleUpload() async {
@@ -783,65 +656,40 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     );
   }
 
-  String _mapErrorMessage(String code) {
-    if (code == SftpFileItem.linkTargetUnavailableCode ||
-        code == 'SFTP_LINK_TARGET_UNAVAILABLE') {
-      return context.l10n.sftpLinkTargetUnavailable;
-    }
-    if (code == SftpFileItem.linkTargetPermissionDeniedCode ||
-        code == 'SFTP_LINK_TARGET_PERMISSION_DENIED') {
-      return context.l10n.sftpLinkTargetPermissionDenied;
-    }
-    if (code == SftpNotifier.hiddenPreferenceSaveFailedCode ||
-        code == 'SFTP_HIDDEN_PREFERENCE_SAVE_FAILED') {
-      return context.l10n.sftpHiddenPreferenceSaveFailed;
-    }
-    if (code == 'SFTP_VIEW_PREFERENCE_SAVE_FAILED') {
-      return context.l10n.sftpViewPreferenceSaveFailed;
-    }
-    if (code == 'SSH_DISCONNECTED' || code == 'SFTP_DOWNLOAD_DISCONNECTED') {
-      return context.l10n.sftpDownloadDisconnected;
-    }
-    if (code == 'SFTP_DOWNLOAD_PERMISSION_DENIED') {
-      return context.l10n.sftpDownloadPermissionDenied;
-    }
-    if (code == 'SFTP_DOWNLOAD_NOT_FOUND') {
-      return context.l10n.sftpDownloadNotFound;
-    }
-    if (code == 'SFTP_DOWNLOAD_TIMEOUT') {
-      return context.l10n.sftpDownloadTimeout;
-    }
-    if (code == 'SFTP_DOWNLOAD_LOCAL_SPACE') {
-      return context.l10n.sftpDownloadLocalSpace;
-    }
-    if (code == 'SFTP_DOWNLOAD_LOCAL_IO') {
-      return context.l10n.sftpDownloadLocalIo;
-    }
-    if (code == 'SFTP_DOWNLOAD_INCOMPLETE') {
-      return context.l10n.sftpDownloadIncomplete;
-    }
-    if (code == 'SFTP_DOWNLOAD_FAILED' ||
-        code == SftpNotifier.downloadFailedCode) {
-      return context.l10n.sftpDownloadFailed;
-    }
-    if (code == SftpNotifier.uploadFailedCode) {
-      return context.l10n.sftpUploadFailed;
-    }
-    if (code == SftpNotifier.previewUnsupportedCode) {
-      return context.l10n.sftpOpenUnsupported;
-    }
-    if (code == 'SFTP_PREVIEW_TOO_LARGE' ||
-        code == SftpClientService.previewTooLargeCode) {
-      return context.l10n.sftpPreviewTooLarge;
-    }
-    if (code == SftpNotifier.readFailedCode) {
-      return context.l10n.sftpReadFailed;
-    }
-    if (code == 'DOWNLOAD_OPEN_FAILED') {
-      return context.l10n.downloadOpenFailed;
-    }
-    return context.l10n.sftpTransferFailed;
+  String _mapErrorMessage(String code) => _mapSftpErrorMessage(context, code);
+
+  Widget _buildCachedBanner(DateTime cachedAt) {
+    final timeStr =
+        '${cachedAt.year}-${_twoDigits(cachedAt.month)}-${_twoDigits(cachedAt.day)} '
+        '${_twoDigits(cachedAt.hour)}:${_twoDigits(cachedAt.minute)}:${_twoDigits(cachedAt.second)}';
+    return Container(
+      key: const Key('sftpCachedDataBanner'),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: context.colorScheme.surfaceContainerHighest,
+      child: Row(
+        children: [
+          Icon(
+            Icons.cloud_off_outlined,
+            size: 16,
+            color: context.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.cachedDataNotice(timeStr),
+              style: TextStyle(
+                fontSize: 12,
+                color: context.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
+
+  String _twoDigits(int n) => n.toString().padLeft(2, '0');
 
   Widget _buildNotificationUnavailableNotice() {
     return Container(
@@ -1028,6 +876,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
           _buildTransferBanner(sftpState.activeTransfer!),
           const Divider(height: 1),
         ],
+        if (sftpState.cachedAt != null) _buildCachedBanner(sftpState.cachedAt!),
         if (sftpState.errorMessage != null)
           _buildErrorBanner(sftpState.errorMessage!),
         if (sftpState.downloadNotificationsUnavailable)
@@ -1277,7 +1126,10 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                   IconButton(
                     icon: const Icon(Icons.upload_file, size: 20),
                     tooltip: context.l10n.sftpUpload,
-                    onPressed: (state.activeTransfer != null || !isConnected)
+                    onPressed:
+                        (state.activeTransfer != null ||
+                            !isConnected ||
+                            state.cachedAt != null)
                         ? null
                         : _handleUpload,
                   ),
@@ -1287,12 +1139,16 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                       size: 20,
                     ),
                     tooltip: context.l10n.sftpNewFolder,
-                    onPressed: isConnected ? _showNewFolderDialog : null,
+                    onPressed: (isConnected && state.cachedAt == null)
+                        ? _showNewFolderDialog
+                        : null,
                   ),
                   IconButton(
                     icon: const Icon(Icons.note_add_outlined, size: 20),
                     tooltip: context.l10n.sftpNewFile,
-                    onPressed: isConnected ? _showNewFileDialog : null,
+                    onPressed: (isConnected && state.cachedAt == null)
+                        ? _showNewFileDialog
+                        : null,
                   ),
                   IconButton(
                     key: const Key('sftpToggleHiddenButton'),
@@ -1490,7 +1346,11 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                 key: const Key('sftpBatchCopyButton'),
                 icon: const Icon(Icons.copy, size: 20),
                 tooltip: context.l10n.sftpBatchCopy,
-                onPressed: (count == 0 || _isBatchRunning || !isConnected)
+                onPressed:
+                    (count == 0 ||
+                        _isBatchRunning ||
+                        !isConnected ||
+                        state.cachedAt != null)
                     ? null
                     : () => _handleBatchAction(RemoteFileAction.copy),
               ),
@@ -1498,7 +1358,11 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                 key: const Key('sftpBatchMoveButton'),
                 icon: const Icon(Icons.drive_file_move_outlined, size: 20),
                 tooltip: context.l10n.sftpBatchMove,
-                onPressed: (count == 0 || _isBatchRunning || !isConnected)
+                onPressed:
+                    (count == 0 ||
+                        _isBatchRunning ||
+                        !isConnected ||
+                        state.cachedAt != null)
                     ? null
                     : () => _handleBatchAction(RemoteFileAction.move),
               ),
@@ -1506,7 +1370,11 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                 key: const Key('sftpBatchDeleteButton'),
                 icon: Icon(Icons.delete, size: 20, color: context.vDanger),
                 tooltip: context.l10n.delete,
-                onPressed: (count == 0 || _isBatchRunning || !isConnected)
+                onPressed:
+                    (count == 0 ||
+                        _isBatchRunning ||
+                        !isConnected ||
+                        state.cachedAt != null)
                     ? null
                     : () => _handleBatchAction(RemoteFileAction.delete),
               ),
@@ -1770,54 +1638,61 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                   _handleDownload(item, offset);
                 }
               },
-              itemBuilder: (context) => [
-                // 仅纯文本 / 代码可预览编辑（目录与二进制不出现 Open）
-                if (notifier.canPreview(item))
-                  PopupMenuItem(
-                    value: 'open',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.edit_note, size: 18),
-                        const SizedBox(width: 8),
-                        Text(context.l10n.sftpOpen),
-                      ],
-                    ),
-                  ),
-                if (!item.isDirectory && item.linkTargetErrorCode == null)
-                  PopupMenuItem(
-                    value: 'download',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.download, size: 18),
-                        const SizedBox(width: 8),
-                        Text(context.l10n.sftpDownload),
-                      ],
-                    ),
-                  ),
-                const PopupMenuItem(
-                  value: 'rename',
-                  child: Row(
-                    children: [
-                      Icon(Icons.drive_file_rename_outline, size: 18),
-                      SizedBox(width: 8),
-                      Text('Rename'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, color: context.vDanger, size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        context.l10n.delete,
-                        style: TextStyle(color: context.vDanger),
+              itemBuilder: (context) {
+                final isConnected = ref
+                    .read(serverConnectionProvider)
+                    .isConnected;
+                return [
+                  // 仅纯文本 / 代码可预览编辑（目录与二进制不出现 Open）
+                  if (notifier.canPreview(item))
+                    PopupMenuItem(
+                      value: 'open',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.edit_note, size: 18),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.sftpOpen),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                  if (!item.isDirectory && item.linkTargetErrorCode == null)
+                    PopupMenuItem(
+                      value: 'download',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.download, size: 18),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.sftpDownload),
+                        ],
+                      ),
+                    ),
+                  if (state.cachedAt == null && isConnected) ...[
+                    PopupMenuItem(
+                      value: 'rename',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.drive_file_rename_outline, size: 18),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.rename),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, color: context.vDanger, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            context.l10n.delete,
+                            style: TextStyle(color: context.vDanger),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ];
+              },
             ),
       onLongPress: (!isSpecialNav && !_isSelectionMode)
           ? () {
@@ -1828,10 +1703,17 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
             }
           : null,
       onTap: () {
-        if (!ref.read(serverConnectionProvider).isConnected) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+        if (!ref.read(serverConnectionProvider).isConnected ||
+            state.cachedAt != null) {
+          if (isDotDot) {
+            notifier.navigateUp();
+          } else if (item.isDirectory) {
+            notifier.navigateTo(item.path);
+          } else {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+          }
           return;
         }
         if (_isSelectionMode) {
@@ -1875,6 +1757,729 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
       return Icons.terminal;
     }
     return Icons.insert_drive_file;
+  }
+}
+
+String _mapSftpErrorMessage(
+  BuildContext context,
+  String code, {
+  String? fallback,
+}) {
+  if (code == SftpFileItem.linkTargetUnavailableCode ||
+      code == 'SFTP_LINK_TARGET_UNAVAILABLE') {
+    return context.l10n.sftpLinkTargetUnavailable;
+  }
+  if (code == SftpFileItem.linkTargetPermissionDeniedCode ||
+      code == 'SFTP_LINK_TARGET_PERMISSION_DENIED') {
+    return context.l10n.sftpLinkTargetPermissionDenied;
+  }
+  if (code == SftpNotifier.hiddenPreferenceSaveFailedCode ||
+      code == 'SFTP_HIDDEN_PREFERENCE_SAVE_FAILED') {
+    return context.l10n.sftpHiddenPreferenceSaveFailed;
+  }
+  if (code == 'SFTP_VIEW_PREFERENCE_SAVE_FAILED') {
+    return context.l10n.sftpViewPreferenceSaveFailed;
+  }
+  if (code == 'SSH_DISCONNECTED' || code == 'SFTP_DOWNLOAD_DISCONNECTED') {
+    return context.l10n.sftpDownloadDisconnected;
+  }
+  if (code == 'SFTP_DOWNLOAD_PERMISSION_DENIED') {
+    return context.l10n.sftpDownloadPermissionDenied;
+  }
+  if (code == 'SFTP_DOWNLOAD_NOT_FOUND') {
+    return context.l10n.sftpDownloadNotFound;
+  }
+  if (code == 'SFTP_DOWNLOAD_TIMEOUT') {
+    return context.l10n.sftpDownloadTimeout;
+  }
+  if (code == 'SFTP_DOWNLOAD_LOCAL_SPACE') {
+    return context.l10n.sftpDownloadLocalSpace;
+  }
+  if (code == 'SFTP_DOWNLOAD_LOCAL_IO') {
+    return context.l10n.sftpDownloadLocalIo;
+  }
+  if (code == 'SFTP_DOWNLOAD_INCOMPLETE') {
+    return context.l10n.sftpDownloadIncomplete;
+  }
+  if (code == 'SFTP_DOWNLOAD_FAILED' ||
+      code == SftpNotifier.downloadFailedCode) {
+    return context.l10n.sftpDownloadFailed;
+  }
+  if (code == SftpNotifier.uploadFailedCode) {
+    return context.l10n.sftpUploadFailed;
+  }
+  if (code == SftpNotifier.previewUnsupportedCode) {
+    return context.l10n.sftpOpenUnsupported;
+  }
+  if (code == 'SFTP_PREVIEW_TOO_LARGE' ||
+      code == SftpClientService.previewTooLargeCode) {
+    return context.l10n.sftpPreviewTooLarge;
+  }
+  if (code == SftpNotifier.readFailedCode) {
+    return context.l10n.sftpReadFailed;
+  }
+  if (code == 'DOWNLOAD_OPEN_FAILED') {
+    return context.l10n.downloadOpenFailed;
+  }
+  if (code == 'SFTP_EDIT_CONFLICT') {
+    return context.l10n.sftpEditConflict;
+  }
+  if (code == 'SFTP_EDIT_DRAFT_CONFLICT') {
+    return context.l10n.fileEditorConflictBanner;
+  }
+  if (code == 'SFTP_ATOMIC_SAVE_UNSUPPORTED') {
+    return context.l10n.sftpAtomicSaveUnsupported;
+  }
+  if (code == 'SFTP_EDITOR_EXPIRED') {
+    return context.l10n.sftpEditorExpired;
+  }
+  if (code == 'SFTP_DRAFT_SAVE_FAILED') {
+    return context.l10n.sftpDraftSaveFailed;
+  }
+  if (code == 'SFTP_TRANSFER_SOURCE_CHANGED') {
+    return context.l10n.sftpTransferSourceChanged;
+  }
+  if (code == 'SFTP_TRANSFER_PARTIAL_INVALID') {
+    return context.l10n.sftpTransferPartialInvalid;
+  }
+  if (code == 'SFTP_TRANSFER_COMMITTING') {
+    return context.l10n.sftpTransferCommitting;
+  }
+  if (code == 'SFTP_TRANSFER_CLEANUP_FAILED') {
+    return context.l10n.sftpTransferCleanupFailed;
+  }
+  if (code == 'SFTP_UPLOAD_TARGET_EXISTS') {
+    return context.l10n.sftpUploadTargetExists;
+  }
+  if (code == 'SFTP_UPLOAD_COMMIT_FAILED') {
+    return context.l10n.sftpUploadCommitFailed;
+  }
+  if (code == 'SFTP_UPLOAD_SOURCE_INVALID') {
+    return context.l10n.sftpUploadSourceInvalid;
+  }
+  return fallback ?? context.l10n.sftpTransferFailed;
+}
+
+class _SftpFileEditorDialog extends ConsumerStatefulWidget {
+  final SftpFileItem item;
+  final int capturedToken;
+  final Object capturedConnectionKey;
+  final VoidCallback onReopen;
+
+  const _SftpFileEditorDialog({
+    required this.item,
+    required this.capturedToken,
+    required this.capturedConnectionKey,
+    required this.onReopen,
+  });
+
+  @override
+  ConsumerState<_SftpFileEditorDialog> createState() =>
+      _SftpFileEditorDialogState();
+}
+
+class _SftpFileEditorDialogState extends ConsumerState<_SftpFileEditorDialog> {
+  final GlobalKey<ScaffoldMessengerState> _dialogMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+  late final TextEditingController _controller;
+  late final String _baselineContent;
+  bool _isBusy = false;
+  bool _isConfirmingExit = false;
+  bool _isConfirmingReload = false;
+  String? _saveError;
+  late bool _hasConflict;
+  late bool _isDirty;
+
+  @override
+  void initState() {
+    super.initState();
+    final sftpState = ref.read(sftpProvider);
+    final notifier = ref.read(sftpProvider.notifier);
+    _baselineContent =
+        notifier.editorOriginalContent ?? sftpState.editingFileContent ?? '';
+    final currentContent = sftpState.editingFileContent ?? '';
+    _hasConflict =
+        sftpState.errorMessage == 'SFTP_EDIT_DRAFT_CONFLICT' ||
+        sftpState.errorMessage == 'SFTP_EDIT_CONFLICT';
+    _isDirty = _hasConflict || (currentContent != _baselineContent);
+    _controller = TextEditingController(text: currentContent);
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    final text = _controller.text;
+    final computedDirty = _hasConflict || (text != _baselineContent);
+    if (computedDirty != _isDirty) {
+      setState(() => _isDirty = computedDirty);
+    }
+    ref
+        .read(sftpProvider.notifier)
+        .updateEditorDraft(text, editorToken: widget.capturedToken);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onTextChanged);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSave() async {
+    if (_isBusy ||
+        _isConfirmingExit ||
+        _isConfirmingReload ||
+        !ref.read(serverConnectionProvider).isConnected) {
+      return;
+    }
+    final server = ref.read(activeServerProvider);
+    if (server?.connectionKey != widget.capturedConnectionKey ||
+        ref.read(sftpProvider.notifier).editorToken != widget.capturedToken) {
+      if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+        Navigator.pop(context);
+      }
+      return;
+    }
+    final textToSave = _controller.text;
+    final messenger = ScaffoldMessenger.of(context);
+    final savedMsg = context.l10n.fileSavedSuccess;
+    setState(() {
+      _isBusy = true;
+      _saveError = null;
+    });
+    try {
+      await ref
+          .read(sftpProvider.notifier)
+          .saveFileContent(
+            widget.item.path,
+            textToSave,
+            editorToken: widget.capturedToken,
+          );
+      if (!mounted) return;
+      final serverAfter = ref.read(activeServerProvider);
+      final sftpState = ref.read(sftpProvider);
+      final currentToken = ref.read(sftpProvider.notifier).editorToken;
+      final isSameConnection =
+          serverAfter?.connectionKey == widget.capturedConnectionKey;
+      final isExpectedClosed =
+          (currentToken == widget.capturedToken + 1 ||
+              currentToken == widget.capturedToken) &&
+          sftpState.editingFilePath == null;
+      final isRouteCurrent = ModalRoute.of(context)?.isCurrent == true;
+
+      if (isSameConnection && isExpectedClosed && isRouteCurrent) {
+        _isDirty = false;
+        messenger.showSnackBar(SnackBar(content: Text(savedMsg)));
+        Navigator.pop(context);
+      } else if (!isSameConnection && isRouteCurrent) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      if (ModalRoute.of(context)?.isCurrent != true) return;
+      final code = e is SFTPException ? e.message : e.toString();
+      final err = _mapSftpErrorMessage(
+        context,
+        code,
+        fallback: context.l10n.sftpSaveFailed,
+      );
+      setState(() {
+        _isBusy = false;
+        if (code == 'SFTP_EDIT_CONFLICT' ||
+            code == 'SFTP_EDIT_DRAFT_CONFLICT') {
+          _hasConflict = true;
+          _isDirty = true;
+        }
+        _saveError = err;
+      });
+      _dialogMessengerKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleExit() async {
+    if (_isBusy || _isConfirmingExit || _isConfirmingReload) return;
+    if (!_isDirty) {
+      final curServer = ref.read(activeServerProvider);
+      if (curServer?.connectionKey == widget.capturedConnectionKey &&
+          ref.read(sftpProvider.notifier).editorToken == widget.capturedToken) {
+        ref
+            .read(sftpProvider.notifier)
+            .closeFileEditor(editorToken: widget.capturedToken);
+      }
+      if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+        Navigator.pop(context);
+      }
+      return;
+    }
+
+    _isConfirmingExit = true;
+    final String? choice;
+    try {
+      choice = await showDialog<String>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          title: Text(dialogCtx.l10n.fileEditorUnsavedTitle),
+          content: Text(dialogCtx.l10n.fileEditorUnsavedMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx, 'discard'),
+              child: Text(
+                dialogCtx.l10n.fileEditorDiscard,
+                style: TextStyle(color: dialogCtx.vDanger),
+              ),
+            ),
+            OutlinedButton(
+              onPressed: () => Navigator.pop(dialogCtx, 'keep'),
+              child: Text(dialogCtx.l10n.fileEditorKeepDraft),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogCtx, 'save'),
+              child: Text(dialogCtx.l10n.fileEditorSave),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      _isConfirmingExit = false;
+    }
+
+    if (!mounted || choice == null) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+
+    if (choice == 'discard') {
+      final messenger = _dialogMessengerKey.currentState;
+      final textToCopy = _controller.text;
+      final copyDraftLabel = context.l10n.fileEditorCopyDraft;
+      final copiedMsg = context.l10n.fileEditorDraftCopied;
+      setState(() {
+        _isBusy = true;
+        _saveError = null;
+      });
+      try {
+        await ref
+            .read(sftpProvider.notifier)
+            .discardEditorDraft(editorToken: widget.capturedToken);
+        if (!mounted) return;
+        final curServer = ref.read(activeServerProvider);
+        if (curServer?.connectionKey == widget.capturedConnectionKey &&
+            ref.read(sftpProvider.notifier).editorToken ==
+                widget.capturedToken) {
+          ref
+              .read(sftpProvider.notifier)
+              .closeFileEditor(editorToken: widget.capturedToken);
+        }
+        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (!mounted) return;
+        if (ModalRoute.of(context)?.isCurrent != true) return;
+        final code = e is SFTPException ? e.message : e.toString();
+        setState(() {
+          _isBusy = false;
+          _saveError = _mapSftpErrorMessage(context, code);
+        });
+        messenger?.showSnackBar(
+          SnackBar(
+            content: Text(_mapSftpErrorMessage(context, code)),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            action: SnackBarAction(
+              label: copyDraftLabel,
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: textToCopy));
+                messenger.showSnackBar(SnackBar(content: Text(copiedMsg)));
+              },
+            ),
+          ),
+        );
+      }
+    } else if (choice == 'keep') {
+      final messenger = _dialogMessengerKey.currentState;
+      final textToCopy = _controller.text;
+      final copyDraftLabel = context.l10n.fileEditorCopyDraft;
+      final copiedMsg = context.l10n.fileEditorDraftCopied;
+      setState(() {
+        _isBusy = true;
+        _saveError = null;
+      });
+      ref
+          .read(sftpProvider.notifier)
+          .updateEditorDraft(textToCopy, editorToken: widget.capturedToken);
+      try {
+        await ref
+            .read(sftpProvider.notifier)
+            .flushEditorDraft(editorToken: widget.capturedToken);
+        if (!mounted) return;
+        final curServer = ref.read(activeServerProvider);
+        if (curServer?.connectionKey == widget.capturedConnectionKey &&
+            ref.read(sftpProvider.notifier).editorToken ==
+                widget.capturedToken) {
+          ref
+              .read(sftpProvider.notifier)
+              .closeFileEditor(editorToken: widget.capturedToken);
+        }
+        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (!mounted) return;
+        if (ModalRoute.of(context)?.isCurrent != true) return;
+        setState(() {
+          _isBusy = false;
+          _saveError = context.l10n.sftpDraftSaveFailed;
+        });
+        messenger?.showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.sftpDraftSaveFailed),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            action: SnackBarAction(
+              label: copyDraftLabel,
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: textToCopy));
+                messenger.showSnackBar(SnackBar(content: Text(copiedMsg)));
+              },
+            ),
+          ),
+        );
+      }
+    } else if (choice == 'save') {
+      await _handleSave();
+    }
+  }
+
+  Future<void> _handleReload() async {
+    if (_isBusy || _isConfirmingExit || _isConfirmingReload) return;
+    _isConfirmingReload = true;
+    final bool? confirmed;
+    try {
+      confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          title: Text(dialogCtx.l10n.fileEditorDiscardConfirmTitle),
+          content: Text(dialogCtx.l10n.fileEditorDiscardConfirmMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx, false),
+              child: Text(dialogCtx.l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogCtx, true),
+              child: Text(dialogCtx.l10n.fileEditorReload),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      _isConfirmingReload = false;
+    }
+
+    if (confirmed != true || !mounted) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+
+    final curServer = ref.read(activeServerProvider);
+    if (curServer?.connectionKey != widget.capturedConnectionKey ||
+        ref.read(sftpProvider.notifier).editorToken != widget.capturedToken) {
+      if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+        Navigator.pop(context);
+      }
+      return;
+    }
+
+    final messenger = _dialogMessengerKey.currentState;
+    final textToCopy = _controller.text;
+    final copyDraftLabel = context.l10n.fileEditorCopyDraft;
+    final copiedMsg = context.l10n.fileEditorDraftCopied;
+
+    setState(() {
+      _isBusy = true;
+      _saveError = null;
+    });
+
+    try {
+      await ref
+          .read(sftpProvider.notifier)
+          .discardEditorDraft(editorToken: widget.capturedToken);
+      if (!mounted) return;
+      final serverAfter = ref.read(activeServerProvider);
+      if (serverAfter?.connectionKey != widget.capturedConnectionKey ||
+          ref.read(sftpProvider.notifier).editorToken != widget.capturedToken) {
+        if (ModalRoute.of(context)?.isCurrent == true) {
+          Navigator.pop(context);
+        }
+        return;
+      }
+      ref
+          .read(sftpProvider.notifier)
+          .closeFileEditor(editorToken: widget.capturedToken);
+      if (ModalRoute.of(context)?.isCurrent == true) {
+        Navigator.pop(context);
+        widget.onReopen();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      if (ModalRoute.of(context)?.isCurrent != true) return;
+      final code = e is SFTPException ? e.message : e.toString();
+      setState(() {
+        _isBusy = false;
+        _saveError = _mapSftpErrorMessage(context, code);
+      });
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text(_mapSftpErrorMessage(context, code)),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          action: SnackBarAction(
+            label: copyDraftLabel,
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: textToCopy));
+              messenger.showSnackBar(SnackBar(content: Text(copiedMsg)));
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isConnected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleExit();
+      },
+      child: Dialog.fullscreen(
+        child: ScaffoldMessenger(
+          key: _dialogMessengerKey,
+          child: Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: (_isBusy || _isConfirmingExit || _isConfirmingReload)
+                    ? null
+                    : _handleExit,
+              ),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          widget.item.name,
+                          style: theme.textTheme.titleMedium,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (_isDirty) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  Text(
+                    widget.item.path,
+                    style: monoTextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                FilledButton.icon(
+                  key: const Key('sftp_editor_save_button'),
+                  icon: _isBusy
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        )
+                      : const Icon(Icons.save, size: 16),
+                  label: Text(
+                    _isBusy
+                        ? context.l10n.sftpSaving
+                        : context.l10n.fileEditorSave,
+                  ),
+                  onPressed:
+                      (_isBusy ||
+                          _isConfirmingExit ||
+                          _isConfirmingReload ||
+                          !isConnected)
+                      ? null
+                      : _handleSave,
+                ),
+                const SizedBox(width: 12),
+              ],
+            ),
+            body: Column(
+              children: [
+                if (_hasConflict)
+                  Container(
+                    key: const Key('sftp_editor_conflict_banner'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    color: theme.colorScheme.errorContainer,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              size: 20,
+                              color: theme.colorScheme.onErrorContainer,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                context.l10n.fileEditorConflictBanner,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.onErrorContainer,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            TextButton.icon(
+                              icon: const Icon(Icons.copy, size: 16),
+                              label: Text(context.l10n.fileEditorCopyDraft),
+                              onPressed: () {
+                                final textToCopy = _controller.text;
+                                final messenger =
+                                    _dialogMessengerKey.currentState;
+                                final copiedMsg =
+                                    context.l10n.fileEditorDraftCopied;
+                                Clipboard.setData(
+                                  ClipboardData(text: textToCopy),
+                                );
+                                messenger?.showSnackBar(
+                                  SnackBar(content: Text(copiedMsg)),
+                                );
+                              },
+                            ),
+                            FilledButton.tonal(
+                              onPressed:
+                                  (_isBusy ||
+                                      _isConfirmingExit ||
+                                      _isConfirmingReload)
+                                  ? null
+                                  : _handleReload,
+                              child: Text(context.l10n.fileEditorReload),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )
+                else if (_saveError != null)
+                  Container(
+                    key: const Key('sftp_editor_error_banner'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    color: theme.colorScheme.errorContainer,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 18,
+                              color: theme.colorScheme.onErrorContainer,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _saveError!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.onErrorContainer,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            TextButton.icon(
+                              icon: const Icon(Icons.copy, size: 16),
+                              label: Text(context.l10n.fileEditorCopyDraft),
+                              onPressed: () {
+                                final textToCopy = _controller.text;
+                                final messenger =
+                                    _dialogMessengerKey.currentState;
+                                final copiedMsg =
+                                    context.l10n.fileEditorDraftCopied;
+                                Clipboard.setData(
+                                  ClipboardData(text: textToCopy),
+                                );
+                                messenger?.showSnackBar(
+                                  SnackBar(content: Text(copiedMsg)),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: TextField(
+                      key: const Key('sftp_editor_text_field'),
+                      controller: _controller,
+                      maxLines: null,
+                      expands: true,
+                      style: monoTextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1923,7 +2528,38 @@ class SftpTransferListSheet extends ConsumerWidget {
                 ),
               ),
             ),
-            const Divider(height: 1),
+            if (sftpState.errorMessage != null) ...[
+              Container(
+                key: const Key('transferSheetErrorBanner'),
+                color: context.colorScheme.errorContainer.withValues(
+                  alpha: 0.8,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 16,
+                      color: context.colorScheme.onErrorContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _mapSftpErrorMessage(context, sftpState.errorMessage!),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.colorScheme.onErrorContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+            ],
             if (sftpState.downloadNotificationsUnavailable) ...[
               Container(
                 key: const Key('downloadNotificationsUnavailableSheetBanner'),
@@ -1987,35 +2623,7 @@ class SftpTransferListItem extends ConsumerWidget {
 
   String _mapTransferError(BuildContext context, String? code) {
     if (code == null) return context.l10n.transferStatusFailed;
-    if (code == 'SSH_DISCONNECTED' || code == 'SFTP_DOWNLOAD_DISCONNECTED') {
-      return context.l10n.sftpDownloadDisconnected;
-    }
-    if (code == 'SFTP_DOWNLOAD_PERMISSION_DENIED') {
-      return context.l10n.sftpDownloadPermissionDenied;
-    }
-    if (code == 'SFTP_DOWNLOAD_NOT_FOUND') {
-      return context.l10n.sftpDownloadNotFound;
-    }
-    if (code == 'SFTP_DOWNLOAD_TIMEOUT') {
-      return context.l10n.sftpDownloadTimeout;
-    }
-    if (code == 'SFTP_DOWNLOAD_LOCAL_SPACE') {
-      return context.l10n.sftpDownloadLocalSpace;
-    }
-    if (code == 'SFTP_DOWNLOAD_LOCAL_IO') {
-      return context.l10n.sftpDownloadLocalIo;
-    }
-    if (code == 'SFTP_DOWNLOAD_INCOMPLETE') {
-      return context.l10n.sftpDownloadIncomplete;
-    }
-    if (code == 'SFTP_DOWNLOAD_FAILED' ||
-        code == SftpNotifier.downloadFailedCode) {
-      return context.l10n.sftpDownloadFailed;
-    }
-    if (code == SftpNotifier.uploadFailedCode) {
-      return context.l10n.transferFailedUpload;
-    }
-    return context.l10n.transferStatusFailed;
+    return _mapSftpErrorMessage(context, code);
   }
 
   @override
@@ -2081,7 +2689,9 @@ class SftpTransferListItem extends ConsumerWidget {
         transfer.kind == SftpTransferKind.download &&
         transfer.status == SftpTransferStatus.completed;
 
-    final hasError = transfer.status == SftpTransferStatus.failed;
+    final hasError =
+        transfer.status == SftpTransferStatus.failed ||
+        transfer.errorMessage == 'SFTP_TRANSFER_CLEANUP_FAILED';
     final errorText = hasError && transfer.errorMessage != null
         ? _mapTransferError(context, transfer.errorMessage)
         : null;
@@ -2157,7 +2767,8 @@ class SftpTransferListItem extends ConsumerWidget {
                       ? () => notifier.resumeTransfer(transfer.id)
                       : null,
                 ),
-              if (transfer.status == SftpTransferStatus.failed)
+              if (transfer.status == SftpTransferStatus.failed ||
+                  transfer.errorMessage == 'SFTP_TRANSFER_CLEANUP_FAILED')
                 IconButton(
                   key: Key('transfer_retry_${transfer.id}'),
                   icon: const Icon(Icons.refresh, size: 18),

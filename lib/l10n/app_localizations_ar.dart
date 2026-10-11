@@ -4273,4 +4273,137 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get updateErrorGeneric =>
       'فشلت عملية التحديث. يرجى المحاولة مرة أخرى أو زيارة إصدارات GitHub.';
+
+  @override
+  String get servicePermissionDenied => 'تم رفض إذن إدارة الخدمة';
+
+  @override
+  String get serviceUnsupported => 'الإجراء غير مدعوم لهذه الخدمة';
+
+  @override
+  String get serviceQueryFailed => 'فشل الاستعلام عن حالة الخدمة';
+
+  @override
+  String get serviceTargetChanged => 'تغير الخادم المستهدف؛ تم إلغاء العملية';
+
+  @override
+  String get serviceActionInProgress =>
+      'هناك إجراء آخر قيد التنفيذ لهذه الخدمة';
+
+  @override
+  String get processIdentityChanged =>
+      'تمت إعادة تشغيل العملية؛ تم إلغاء الإنهاء';
+
+  @override
+  String get processIdentityUnavailable =>
+      'وقت بدء العملية غير متاح؛ تم رفض الإنهاء';
+
+  @override
+  String get serviceLogsTitle => 'سجلات الخدمة';
+
+  @override
+  String get serviceLogsLoadOlder => 'تحميل سجلات أقدم';
+
+  @override
+  String get serviceLogsEmpty => 'لم يتم العثور على سجلات';
+
+  @override
+  String get serviceLogsCopied => 'تم نسخ السجلات إلى الحافظة';
+
+  @override
+  String get fileEditorUnsavedTitle => 'تغييرات غير محفوظة';
+
+  @override
+  String get fileEditorUnsavedMessage =>
+      'لديك تغييرات غير محفوظة. اختر إجراءً قبل المغادرة:';
+
+  @override
+  String get fileEditorKeepDraft => 'الاحتفاظ بالمسودة';
+
+  @override
+  String get fileEditorDiscard => 'تجاهل';
+
+  @override
+  String get fileEditorDiscardConfirmTitle => 'تجاهل المسودة؟';
+
+  @override
+  String get fileEditorDiscardConfirmMessage =>
+      'هل أنت متأكد من رغبتك في تجاهل المسودة المحلية وإعادة تحميل أحدث ملف من الخادم؟';
+
+  @override
+  String get fileEditorConflictBanner =>
+      'تم تعديل الملف على الخادم أو يتعارض مع المسودة المحلية.';
+
+  @override
+  String get fileEditorCopyDraft => 'نسخ المسودة';
+
+  @override
+  String get fileEditorDraftCopied => 'تم نسخ المسودة إلى الحافظة';
+
+  @override
+  String get fileEditorReload => 'إعادة تحميل';
+
+  @override
+  String get sftpAtomicSaveUnsupported => 'الخادم لا يدعم الحفظ الذري الآمن';
+
+  @override
+  String get sftpEditorExpired => 'انتهت صلاحية جلسة المحرر';
+
+  @override
+  String get sftpDraftSaveFailed => 'فشل حفظ المسودة المحلية';
+
+  @override
+  String get sftpEditConflict =>
+      'تم تعديل الملف على الخادم؛ يرجى إعادة التحميل أو نسخ المسودة';
+
+  @override
+  String get sftpEditDraftConflict => 'المسودة المحلية تتعارض مع ملف الخادم';
+
+  @override
+  String get sftpTransferSourceChanged => 'تم تغيير الملف المصدر أثناء النقل';
+
+  @override
+  String get sftpTransferPartialInvalid => 'ملف النقل الجزئي غير صالح أو تالف';
+
+  @override
+  String get sftpTransferCommitting =>
+      'النقل قيد التنفيذ بالفعل؛ لا يمكن إعادة التشغيل';
+
+  @override
+  String get sftpTransferCleanupFailed =>
+      'فشل في تنظيف عملية النقل غير المكتملة';
+
+  @override
+  String get sftpUploadTargetExists => 'الملف الهدف موجود بالفعل';
+
+  @override
+  String get sftpUploadCommitFailed => 'فشل في إنهاء الرفع عن بُعد';
+
+  @override
+  String get sftpUploadSourceInvalid =>
+      'تم تغيير ملف المصدر المحلي أو أنه غير صالح';
+
+  @override
+  String cachedDataNotice(String time) {
+    return 'تم التخزين المؤقت في $time';
+  }
+
+  @override
+  String get serviceLogsCapReached => 'الحد الأقصى: الاحتفاظ بـ 1000 سجل';
+
+  @override
+  String get nasThumbnailCacheUsage => 'ذاكرة التخزين المؤقت للصور المصغرة';
+
+  @override
+  String get nasThumbnailCacheBudget => 'السعة المخصصة لذاكرة التخزين المؤقت';
+
+  @override
+  String get nasThumbnailCacheClear => 'مسح ذاكرة التخزين المؤقت';
+
+  @override
+  String get nasThumbnailCacheCleared =>
+      'تم مسح ذاكرة التخزين المؤقت للصور المصغرة';
+
+  @override
+  String get nasThumbnailCacheOff => 'إيقاف';
 }
