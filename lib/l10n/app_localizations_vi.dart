@@ -4223,7 +4223,7 @@ class AppLocalizationsVi extends AppLocalizations {
       'Không có gói cài đặt trực tiếp cho nền tảng/kiến trúc thiết bị này.';
 
   @override
-  String get updateOpenReleasePage => 'Mở trang phát hành trên GitHub';
+  String get updateOpenReleasePage => 'Mở trang phát hành';
 
   @override
   String get updateDownload => 'Tải xuống bản cập nhật';
@@ -4272,7 +4272,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get updateErrorRateLimited =>
-      'Đã vượt quá giới hạn tần suất của GitHub API. Vui lòng thử lại sau.';
+      'Đã vượt quá giới hạn tần suất của dịch vụ cập nhật. Vui lòng thử lại sau.';
 
   @override
   String get updateErrorNetwork =>
@@ -4311,7 +4311,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get updateErrorGeneric =>
-      'Thao tác cập nhật không thành công. Vui lòng thử lại hoặc xem các bản phát hành trên GitHub.';
+      'Thao tác cập nhật không thành công. Vui lòng thử lại hoặc xem trang phát hành.';
 
   @override
   String get servicePermissionDenied => 'Bị từ chối quyền quản lý dịch vụ';

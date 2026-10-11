@@ -4079,7 +4079,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'このデバイスのプラットフォーム/アーキテクチャ用の直接インストールパッケージはありません。';
 
   @override
-  String get updateOpenReleasePage => 'GitHub でリリースページを開く';
+  String get updateOpenReleasePage => 'リリースページを開く';
 
   @override
   String get updateDownload => 'アップデートをダウンロード';
@@ -4128,7 +4128,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get updateErrorRateLimited =>
-      'GitHub API のレート制限を超過しました。しばらくしてから再試行してください。';
+      'アップデートサービスのレート制限を超過しました。しばらくしてから再試行してください。';
 
   @override
   String get updateErrorNetwork => 'ネットワーク接続に失敗しました。インターネット接続を確認してください。';
@@ -4161,7 +4161,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get updateErrorPlatform => 'インストーラーを開くか起動できませんでした。';
 
   @override
-  String get updateErrorGeneric => 'アップデートに失敗しました。再試行するか GitHub リリースを確認してください。';
+  String get updateErrorGeneric => 'アップデートに失敗しました。再試行するかリリースページを確認してください。';
 
   @override
   String get servicePermissionDenied => 'サービスを管理する権限がありません';

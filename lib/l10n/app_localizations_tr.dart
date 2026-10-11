@@ -4227,7 +4227,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu cihaz platformu/mimarisi için doğrudan yükleme paketi bulunmuyor.';
 
   @override
-  String get updateOpenReleasePage => 'GitHub\'da Sürümleri Aç';
+  String get updateOpenReleasePage => 'Sürüm Sayfasını Aç';
 
   @override
   String get updateDownload => 'Güncellemeyi İndir';
@@ -4276,7 +4276,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get updateErrorRateLimited =>
-      'GitHub API istek sınırı aşıldı. Lütfen daha sonra tekrar deneyin.';
+      'Güncelleme hizmeti istek sınırı aşıldı. Lütfen daha sonra tekrar deneyin.';
 
   @override
   String get updateErrorNetwork =>
@@ -4313,7 +4313,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get updateErrorGeneric =>
-      'Güncelleme işlemi başarısız oldu. Lütfen tekrar deneyin veya GitHub sürümlerini kontrol edin.';
+      'Güncelleme işlemi başarısız oldu. Lütfen tekrar deneyin veya sürüm sayfasını kontrol edin.';
 
   @override
   String get servicePermissionDenied => 'Hizmeti yönetme izni reddedildi';

@@ -5,6 +5,7 @@
 // device, no real server and no production code is touched.
 
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,12 +23,12 @@ import 'package:valhalla/core/services/app_update_service.dart';
 import 'package:valhalla/data/models/app_update.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 
+import 'fixtures/app_update_payload.dart';
+
 const _updatesChannel = 'valhalla/updates';
 const _downloadsChannel = 'valhalla/downloads';
 const _packageInfoChannel = 'dev.fluttercommunity.plus/package_info';
 
-const _hexA =
-    'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const _hexB =
     'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 
@@ -42,6 +43,7 @@ class _FakeUpdateService implements AppUpdateService {
   /// fixed number of event-loop turns is not an I/O acknowledgment.
   final List<Completer<void>> downloadEntries = [];
   final List<Completer<void>> _openRequests = [];
+  final List<Map<String, Object>> checkContexts = [];
   int checkCalls = 0;
   int downloadCalls = 0;
   int cancelCalls = 0;
@@ -67,7 +69,17 @@ class _FakeUpdateService implements AppUpdateService {
   Future<AppUpdateCheck> check({
     String? etag,
     Map<String, dynamic>? cached,
+    int currentVersionCode = 0,
+    String channel = 'default',
+    String platform = 'android',
+    String architecture = 'arm64-v8a',
   }) async {
+    checkContexts.add({
+      'version_code': currentVersionCode,
+      'platform': platform,
+      'arch': architecture,
+      'channel': channel,
+    });
     checkCalls++;
     final gate = Completer<AppUpdateCheck>();
     checkGates.add(gate);
@@ -109,43 +121,24 @@ class _FakeUpdateService implements AppUpdateService {
 Map<String, dynamic> _releaseJson({
   required String tag,
   String body = 'notes',
-}) => {
-  'tag_name': tag,
-  'html_url': 'https://github.com/NornsInteractive/valhalla/releases/tag/$tag',
-  'body': body,
-  'draft': false,
-  'prerelease': false,
-  'assets': [
-    {
-      'name': 'Valhalla-$tag-linux-x64.tar.gz',
-      'size': 4096,
-      'digest': 'sha256:$_hexA',
-      'browser_download_url':
-          'https://github.com/NornsInteractive/valhalla/releases/download/$tag/Valhalla-$tag-linux-x64.tar.gz',
-    },
-    {
-      'name': 'Valhalla-$tag-linux-arm64.tar.gz',
-      'size': 4096,
-      'digest': 'sha256:$_hexB',
-      'browser_download_url':
-          'https://github.com/NornsInteractive/valhalla/releases/download/$tag/Valhalla-$tag-linux-arm64.tar.gz',
-    },
-    {
-      'name': 'Valhalla-$tag-macos-universal.zip',
-      'size': 8192,
-      'digest': 'sha256:$_hexA',
-      'browser_download_url':
-          'https://github.com/NornsInteractive/valhalla/releases/download/$tag/Valhalla-$tag-macos-universal.zip',
-    },
-    {
-      'name': 'Valhalla-$tag-windows-x64.zip',
-      'size': 4096,
-      'digest': 'sha256:$_hexB',
-      'browser_download_url':
-          'https://github.com/NornsInteractive/valhalla/releases/download/$tag/Valhalla-$tag-windows-x64.zip',
-    },
-  ],
-};
+}) {
+  final version = tag.startsWith('v') ? tag.substring(1) : tag;
+  return updatePayload(
+    versionName: '$version+42',
+    notes: body,
+    packages: [
+      updatePackage(version: version),
+      updatePackage(version: version, arch: 'arm64-v8a', hash: _hexB),
+      updatePackage(
+        version: version,
+        platform: 'macos',
+        arch: 'universal',
+        size: 8192,
+      ),
+      updatePackage(version: version, platform: 'windows', hash: _hexB),
+    ],
+  );
+}
 
 /// Owned path-provider fake: replaces the default `MethodChannelPathProvider`,
 /// whose `getDownloadsPath` throws on non-macOS hosts before touching any
@@ -314,15 +307,18 @@ void main() {
       await pump();
 
       expect(service.checkCalls, 1);
+      expect(service.checkContexts.single, {
+        'version_code': 1,
+        'platform': Platform.operatingSystem,
+        'arch': Abi.current().toString().split('_').last,
+        'channel': 'default',
+      });
       expect(service.checkGates, hasLength(1));
       expect(identical(first, second), isTrue);
 
       service.nextCheckGate.complete(
         AppUpdateCheck(
-          release: AppUpdateService.parseRelease(
-            _releaseJson(tag: 'v9.9.9'),
-            null,
-          ),
+          release: AppUpdateService.parseRelease(_releaseJson(tag: 'v9.9.9')),
         ),
       );
       await pump();
@@ -359,10 +355,7 @@ void main() {
 
       service.nextCheckGate.complete(
         AppUpdateCheck(
-          release: AppUpdateService.parseRelease(
-            _releaseJson(tag: 'v9.9.9'),
-            null,
-          ),
+          release: AppUpdateService.parseRelease(_releaseJson(tag: 'v9.9.9')),
         ),
       );
       await pump();
@@ -402,7 +395,7 @@ void main() {
     );
     service.nextCheckGate.complete(
       AppUpdateCheck(
-        release: AppUpdateService.parseRelease(_releaseJson(tag: tag), null),
+        release: AppUpdateService.parseRelease(_releaseJson(tag: tag)),
       ),
     );
     await pump();
@@ -651,10 +644,7 @@ void main() {
       expect(first, same(notifier.check()));
       service.nextCheckGate.complete(
         AppUpdateCheck(
-          release: AppUpdateService.parseRelease(
-            _releaseJson(tag: 'v9.9.9'),
-            null,
-          ),
+          release: AppUpdateService.parseRelease(_releaseJson(tag: 'v9.9.9')),
         ),
       );
       await pump();

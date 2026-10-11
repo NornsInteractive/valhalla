@@ -43,7 +43,6 @@ object UpdateChannel {
                     val storeInstall = installer == "com.android.vending"
                     when (call.method) {
                         "runtimeInfo" -> result.success(mapOf(
-                            "abis" to Build.SUPPORTED_ABIS.toList(),
                             "baseBuildNumber" to (version(installed) % 1000).toInt(),
                             "storeInstall" to storeInstall,
                         ))

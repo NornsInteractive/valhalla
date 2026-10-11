@@ -4227,7 +4227,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Tidak ada paket instalasi langsung yang tersedia untuk platform/arsitektur perangkat ini.';
 
   @override
-  String get updateOpenReleasePage => 'Buka Rilis di GitHub';
+  String get updateOpenReleasePage => 'Buka Halaman Rilis';
 
   @override
   String get updateDownload => 'Unduh Pembaruan';
@@ -4276,7 +4276,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get updateErrorRateLimited =>
-      'Batas frekuensi API GitHub terlampaui. Silakan coba lagi nanti.';
+      'Batas frekuensi layanan pembaruan terlampaui. Silakan coba lagi nanti.';
 
   @override
   String get updateErrorNetwork =>
@@ -4315,7 +4315,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get updateErrorGeneric =>
-      'Operasi pembaruan gagal. Silakan coba lagi atau buka rilis di GitHub.';
+      'Operasi pembaruan gagal. Silakan coba lagi atau buka halaman rilis.';
 
   @override
   String get servicePermissionDenied => 'Izin ditolak untuk mengelola layanan';

@@ -4070,7 +4070,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '이 기기 플랫폼/아키텍처용 직접 설치 패키지를 사용할 수 없습니다.';
 
   @override
-  String get updateOpenReleasePage => 'GitHub에서 릴리스 페이지 열기';
+  String get updateOpenReleasePage => '릴리스 페이지 열기';
 
   @override
   String get updateDownload => '업데이트 다운로드';
@@ -4118,8 +4118,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get updateErrorCopied => '오류 세부 정보가 클립보드에 복사되었습니다';
 
   @override
-  String get updateErrorRateLimited =>
-      'GitHub API 요청 한도를 초과했습니다. 나중에 다시 시도하십시오.';
+  String get updateErrorRateLimited => '업데이트 서비스 요청 한도를 초과했습니다. 나중에 다시 시도하십시오.';
 
   @override
   String get updateErrorNetwork => '네트워크 연결에 실패했습니다. 인터넷 연결을 확인하십시오.';
@@ -4152,7 +4151,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get updateErrorPlatform => '설치 프로그램을 열거나 실행하지 못했습니다.';
 
   @override
-  String get updateErrorGeneric => '업데이트에 실패했습니다. 다시 시도하거나 GitHub 릴리스를 확인하십시오.';
+  String get updateErrorGeneric => '업데이트에 실패했습니다. 다시 시도하거나 릴리스 페이지를 확인하십시오.';
 
   @override
   String get servicePermissionDenied => '서비스 관리 권한이 없습니다';

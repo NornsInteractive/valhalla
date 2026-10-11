@@ -14,30 +14,69 @@ class AppUpdateCheck {
 
 class AppUpdateService {
   static final latestEndpoint = Uri.parse(
-    'https://api.github.com/repos/NornsInteractive/valhalla/releases/latest');
+    '$valhallaDistributionUrl/api/v1/app/latest',
+  );
+  static const cacheSource = 'yggdrasil-v2';
   final HttpClient Function() clientFactory;
   HttpClient? _downloadClient;
   bool _canceled = false;
   AppUpdateService({HttpClient Function()? clientFactory})
-      : clientFactory = clientFactory ?? HttpClient.new;
+    : clientFactory = clientFactory ?? HttpClient.new;
 
-  static bool _allowedDownload(Uri uri) => uri.scheme == 'https' &&
-    uri.userInfo.isEmpty && (uri.port == 443) &&
-    (uri.host == 'github.com' || uri.host == 'api.github.com' ||
-      uri.host.endsWith('.githubusercontent.com'));
+  static bool _allowedDownload(Uri uri, {required bool download}) =>
+      uri.scheme == 'https' &&
+      uri.userInfo.isEmpty &&
+      (uri.port == 443) &&
+      !uri.hasFragment &&
+      (uri.host == latestEndpoint.host &&
+              (download
+                  ? _distributionDownload(uri)
+                  : uri.path == latestEndpoint.path &&
+                        uri.queryParametersAll['app_id']?.singleOrNull ==
+                            valhallaDistributionAppId) ||
+          download &&
+              (uri.host == 'github.com' ||
+                  uri.host == 'api.github.com' ||
+                  uri.host.endsWith('.githubusercontent.com')));
 
-  Future<HttpClientResponse> _get(HttpClient client, Uri uri,
-      {Map<String, String> headers = const {}}) async {
+  static String distributionArchitecture(
+    String platform,
+    String architecture,
+  ) => platform == 'android' && architecture == 'arm'
+      ? 'armeabi-v7a'
+      : architecture == 'x64'
+      ? 'x86_64'
+      : architecture == 'arm64'
+      ? (platform == 'macos' ? 'apple-silicon' : 'arm64-v8a')
+      : architecture;
+
+  static bool isCurrentCache(Map<String, dynamic>? cache) =>
+      cache?['source'] == cacheSource;
+
+  Future<HttpClientResponse> _get(
+    HttpClient client,
+    Uri uri, {
+    Map<String, String> headers = const {},
+    bool download = false,
+  }) async {
     for (var redirects = 0; redirects <= 5; redirects++) {
-      if (!_allowedDownload(uri)) throw const FormatException('UPDATE_URL_INVALID');
-      final request = await client.getUrl(uri).timeout(const Duration(seconds: 20));
+      if (!_allowedDownload(uri, download: download)) {
+        throw const FormatException('UPDATE_URL_INVALID');
+      }
+      final request = await client
+          .getUrl(uri)
+          .timeout(const Duration(seconds: 20));
       request.followRedirects = false;
       request.headers.set(HttpHeaders.userAgentHeader, 'Valhalla-App-Updater');
       headers.forEach(request.headers.set);
-      final response = await request.close().timeout(const Duration(seconds: 20));
+      final response = await request.close().timeout(
+        const Duration(seconds: 20),
+      );
       if ({301, 302, 303, 307, 308}.contains(response.statusCode)) {
         final location = response.headers.value(HttpHeaders.locationHeader);
-        if (location == null) throw const FormatException('UPDATE_REDIRECT_INVALID');
+        if (location == null) {
+          throw const FormatException('UPDATE_REDIRECT_INVALID');
+        }
         uri = uri.resolve(location);
         await response.drain<void>().timeout(const Duration(seconds: 30));
         continue;
@@ -52,140 +91,331 @@ class AppUpdateService {
     final bytes = <int>[];
     await for (final chunk in response.timeout(const Duration(seconds: 30))) {
       size += chunk.length;
-      if (size > maxBytes) throw const FormatException('UPDATE_RESPONSE_TOO_LARGE');
+      if (size > maxBytes) {
+        throw const FormatException('UPDATE_RESPONSE_TOO_LARGE');
+      }
       bytes.addAll(chunk);
     }
     return utf8.decode(bytes);
   }
 
-  Future<AppUpdateCheck> check({String? etag, Map<String, dynamic>? cached}) async {
+  Future<AppUpdateCheck> check({
+    String? etag,
+    Map<String, dynamic>? cached,
+    int currentVersionCode = 0,
+    String channel = 'default',
+    String platform = 'android',
+    String architecture = 'arm64-v8a',
+  }) async {
+    final arch = distributionArchitecture(platform, architecture);
+    if (currentVersionCode < 0 ||
+        !_validChannel(channel) ||
+        !_validChannel(platform) ||
+        !_validChannel(arch)) {
+      throw const FormatException('UPDATE_RELEASE_INVALID');
+    }
+    final endpoint = latestEndpoint.replace(
+      queryParameters: {
+        'app_id': valhallaDistributionAppId,
+        'version_code': '$currentVersionCode',
+        'channel': channel,
+        'platform': platform,
+        'arch': arch,
+      },
+    );
+    final reusable =
+        cached?['_source'] == cacheSource &&
+        cached?['_channel'] == channel &&
+        cached?['_platform'] == platform &&
+        cached?['_arch'] == arch &&
+        cached?['_version_code'] == currentVersionCode;
     final client = clientFactory();
     try {
-      final response = await _get(client, latestEndpoint, headers: {
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2026-03-10',
-        if (etag != null && cached != null) 'If-None-Match': etag,
-      });
-      if (response.statusCode == 404) return const AppUpdateCheck(release: null);
-      if (response.statusCode == 403 || response.statusCode == 429) {
+      final response = await _get(
+        client,
+        endpoint,
+        headers: {
+          'Accept': 'application/json',
+          if (etag != null && reusable) 'If-None-Match': etag,
+        },
+      );
+      if (response.statusCode == 404) {
+        return const AppUpdateCheck(release: null);
+      }
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        throw StateError('UPDATE_CHECK_AUTH_FAILED: ${response.statusCode}');
+      }
+      if (response.statusCode == 429) {
         throw StateError('UPDATE_RATE_LIMITED');
       }
       final Map<String, dynamic> release;
-      if (response.statusCode == 304 && cached != null) {
-        release = cached;
+      if (response.statusCode == 304 && reusable) {
+        release = cached!;
       } else if (response.statusCode == 200) {
-        release = jsonDecode(await _body(response, 2 * 1024 * 1024)) as Map<String, dynamic>;
+        final body = jsonDecode(await _body(response, 2 * 1024 * 1024));
+        if (body is! Map<String, dynamic>) {
+          throw const FormatException('UPDATE_RELEASE_INVALID');
+        }
+        release = body;
       } else {
         throw HttpException('UPDATE_CHECK_FAILED: ${response.statusCode}');
       }
-      if (release['draft'] != false || release['prerelease'] != false) {
+      final parsed = parseRelease(release);
+      final data = release['data'] as Map<String, dynamic>;
+      if (data['channel'] != channel && data['channel'] != 'default' ||
+          currentVersionCode > 0 &&
+              data['current_version_code'] != currentVersionCode) {
         throw const FormatException('UPDATE_RELEASE_INVALID');
       }
-      final assets = (release['assets'] as List).cast<Map<String, dynamic>>();
-      final manifest = assets.where((a) => a['name'] == 'update.json').firstOrNull;
-      Map<String, dynamic>? metadata;
-      if (manifest != null) {
-        final result = await _get(client, _assetUrl(manifest, release['tag_name'] as String));
-        if (result.statusCode != 200) throw StateError('UPDATE_MANIFEST_FAILED');
-        metadata = jsonDecode(await _body(result, 256 * 1024)) as Map<String, dynamic>;
-      }
-      return AppUpdateCheck(release: parseRelease(release, metadata),
-        etag: response.headers.value(HttpHeaders.etagHeader) ?? etag,
-        response: {...release, '_valhalla_manifest': ?metadata});
+      return AppUpdateCheck(
+        release: parsed,
+        etag:
+            response.headers.value(HttpHeaders.etagHeader) ??
+            (reusable && response.statusCode == 304 ? etag : null),
+        response: {
+          ...release,
+          '_source': cacheSource,
+          '_channel': channel,
+          '_version_code': currentVersionCode,
+          '_platform': platform,
+          '_arch': arch,
+        },
+      );
     } finally {
       client.close(force: true);
     }
   }
 
-  static Uri _assetUrl(Map<String, dynamic> asset, String tag) {
-    final uri = Uri.parse(asset['browser_download_url'] as String);
-    if (!_allowedDownload(uri) || uri.host != 'github.com' || uri.hasQuery ||
-        uri.pathSegments.length != 6 ||
-        uri.pathSegments.take(4).join('/') != 'NornsInteractive/valhalla/releases/download' ||
-        uri.pathSegments[4] != tag || uri.pathSegments.last != asset['name']) {
-      throw const FormatException('UPDATE_ASSET_URL_INVALID');
-    }
-    return uri;
+  static bool _validChannel(String channel) =>
+      RegExp(r'^[a-z0-9_-]{1,64}$').hasMatch(channel);
+
+  static bool _distributionDownload(Uri uri) {
+    final query = uri.queryParametersAll;
+    final code = query['version_code']?.singleOrNull;
+    return uri.scheme == 'https' &&
+        uri.host == latestEndpoint.host &&
+        uri.port == 443 &&
+        uri.userInfo.isEmpty &&
+        !uri.hasFragment &&
+        uri.path == '/api/v1/app/download' &&
+        query.keys.every(
+          {
+            'app_id',
+            'version_code',
+            'channel',
+            'platform',
+            'arch',
+            'package_id',
+          }.contains,
+        ) &&
+        query.values.every((values) => values.length == 1) &&
+        query['app_id']?.singleOrNull == valhallaDistributionAppId &&
+        RegExp(r'^[1-9]\d*$').hasMatch(code ?? '') &&
+        _validChannel(query['channel']?.singleOrNull ?? '') &&
+        ['platform', 'arch', 'package_id'].every(
+          (key) => !query.containsKey(key) || _validChannel(query[key]!.single),
+        );
   }
 
-  static AppUpdateRelease parseRelease(Map<String, dynamic> release,
-      Map<String, dynamic>? metadata) {
-    final tag = release['tag_name'] as String;
-    final version = tag.startsWith('v') ? tag.substring(1) : tag;
-    AppUpdateRelease.compareVersions(version, version);
-    final page = Uri.parse(release['html_url'] as String);
-    if (page.toString() != '$valhallaRepositoryUrl/releases/tag/${Uri.encodeComponent(tag)}') {
-      throw const FormatException('UPDATE_RELEASE_URL_INVALID');
+  static AppUpdateRelease parseRelease(Map<String, dynamic> response) {
+    final data = response['data'];
+    if (response['code'] != 0 ||
+        data is! Map<String, dynamic> ||
+        data['app_id'] != valhallaDistributionAppId ||
+        data['latest_version_code'] is! int ||
+        (data['latest_version_code'] as int) <= 0 ||
+        data['latest_version_name'] is! String ||
+        data['download_url'] is! String ||
+        data['file_name'] is! String ||
+        data['changelog'] != null && data['changelog'] is! String ||
+        data['has_update'] is! bool ||
+        data['is_force'] is! bool ||
+        data['channel'] is! String ||
+        !_validChannel(data['channel'] as String)) {
+      throw const FormatException('UPDATE_RELEASE_INVALID');
     }
-    if (metadata != null && (metadata['schemaVersion'] != 1 ||
-        metadata['version'] != version || metadata['buildNumber'] is! int ||
-        (metadata['buildNumber'] as int) <= 0 ||
-        !RegExp(r'^[0-9a-f]{40}$').hasMatch(metadata['sourceCommit'] as String? ?? ''))) {
-      throw const FormatException('UPDATE_MANIFEST_INVALID');
+    final versionName = data['latest_version_name'] as String;
+    final identity = RegExp(
+      r'^v?(\d+\.\d+\.\d+)(?:\+(\d+))?$',
+    ).firstMatch(versionName);
+    if (identity == null) throw const FormatException('UPDATE_VERSION_INVALID');
+    final version = identity[1]!;
+    int? build = identity[2] == null ? null : int.tryParse(identity[2]!);
+    if (identity[2] != null && build == null) {
+      throw const FormatException('UPDATE_VERSION_INVALID');
     }
+    final code = data['latest_version_code'] as int;
+    final channel = data['channel'] as String;
+    final notes = data['changelog'] as String? ?? '';
+    final packages = data['packages'];
+    if (packages != null && (packages is! List || packages.length > 64)) {
+      throw const FormatException('UPDATE_RELEASE_INVALID');
+    }
+    final entries = packages is List && packages.isNotEmpty ? packages : [data];
     final artifacts = <AppUpdateArtifact>[];
-    final assets = (release['assets'] as List).cast<Map<String, dynamic>>();
-    final entries = metadata?['artifacts'] as List?;
-    for (final asset in assets) {
-      final name = asset['name'] as String;
-      Map<String, dynamic>? entry;
-      if (entries != null) {
-        entry = entries.cast<Map<String, dynamic>>().where((e) => e['name'] == name).firstOrNull;
-        if (entry == null) continue;
+    final ids = <String>{};
+    final targets = <String>{};
+    if (entries.length > 1 && build == null) {
+      throw const FormatException('UPDATE_VERSION_INVALID');
+    }
+    for (final entry in entries) {
+      if (entry is! Map<String, dynamic> ||
+          entry['app_id'] != null &&
+              entry['app_id'] != valhallaDistributionAppId) {
+        throw const FormatException('UPDATE_RELEASE_INVALID');
       }
-      String? platform = entry?['platform'] as String?;
-      String? arch = entry?['architecture'] as String?;
-      if (entry == null) {
-        final match = RegExp(r'^Valhalla-v?\d+\.\d+\.\d+-android-(armeabi-v7a|arm64-v8a|x86_64)\.apk$').firstMatch(name);
-        if (match != null) { platform = 'android'; arch = match[1]; }
-        else if (name.endsWith('-windows-x64.zip')) { platform = 'windows'; arch = 'x64'; }
-        else if (name.endsWith('-linux-x64.tar.gz')) { platform = 'linux'; arch = 'x64'; }
-        else if (name.endsWith('-macos-universal.zip')) { platform = 'macos'; arch = 'universal'; }
-        else { continue; }
-      }
-      final hash = entry?['sha256'] as String? ??
-        (asset['digest'] as String? ?? '').replaceFirst('sha256:', '');
-      if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(hash)) continue;
-      final size = asset['size'] as int;
-      if (size <= 0 || size > 4 * 1024 * 1024 * 1024 ||
-          entry != null && entry['size'] != size) {
-        throw const FormatException('UPDATE_ASSET_SIZE_INVALID');
-      }
-      const supported = {'android': {'armeabi-v7a', 'arm64-v8a', 'x86_64'},
-        'windows': {'x64', 'arm64'}, 'linux': {'x64', 'arm64'},
-        'macos': {'universal', 'x64', 'arm64'}};
-      if (supported[platform]?.contains(arch) != true ||
-          artifacts.any((a) => a.platform == platform && a.architecture == arch)) {
+      final id = entry['id'];
+      final legacy =
+          identical(entry, data) || id is String && id.startsWith('pkg_def_');
+      if (legacy && entries.length != 1) {
         throw const FormatException('UPDATE_ASSET_IDENTITY_INVALID');
       }
-      final assetDigest = asset['digest'] as String?;
-      if (assetDigest != null && assetDigest != 'sha256:$hash') {
-        throw const FormatException('UPDATE_ASSET_DIGEST_MISMATCH');
+      if (!legacy && (id is! String || !_validChannel(id) || !ids.add(id))) {
+        throw const FormatException('UPDATE_ASSET_IDENTITY_INVALID');
       }
-      if (platform == 'android' && entry != null &&
-          (entry['androidVersionCode'] is! int ||
-          (entry['androidVersionCode'] as int) <= 0 ||
-          !RegExp(r'^[0-9a-f]{64}$').hasMatch(entry['androidCertificateSha256'] as String? ?? ''))) {
-        throw const FormatException('UPDATE_ANDROID_IDENTITY_INVALID');
+      final uri = Uri.tryParse(
+        entry['download_url'] is String ? entry['download_url'] as String : '',
+      );
+      if (uri == null ||
+          !_distributionDownload(uri) ||
+          uri.queryParameters['version_code'] != '$code' ||
+          uri.queryParameters['channel'] != channel ||
+          !legacy && uri.queryParameters['package_id'] != id) {
+        throw const FormatException('UPDATE_ASSET_URL_INVALID');
       }
-      artifacts.add(AppUpdateArtifact(name: name, platform: platform!,
-        architecture: arch!, size: size, sha256: hash, url: _assetUrl(asset, tag),
-        androidVersionCode: entry?['androidVersionCode'] as int?,
-        androidCertificateSha256: entry?['androidCertificateSha256'] as String?));
+      final name = entry['file_name'] is String
+          ? entry['file_name'] as String
+          : '';
+      if (name.isEmpty ||
+          name.length > 255 ||
+          name.contains('/') ||
+          name.contains('\\') ||
+          name.contains('..') ||
+          name.runes.any((r) => r < 32 || r == 127)) {
+        throw const FormatException('UPDATE_ASSET_IDENTITY_INVALID');
+      }
+      final apk = RegExp(
+        r'^valhalla-v?(\d+\.\d+\.\d+)-android-(armeabi-v7a|arm64-v8a|x86_64)(?:-signed-(\d+))?\.apk$',
+        caseSensitive: false,
+      ).firstMatch(name);
+      final desktop = RegExp(
+        r'^valhalla-v?(\d+\.\d+\.\d+)-(windows|linux|macos)-(x64|arm64|universal)\.(zip|tar\.gz)$',
+        caseSensitive: false,
+      ).firstMatch(name);
+      if (apk != null || desktop != null) {
+        final platform = apk != null ? 'android' : desktop![2]!.toLowerCase();
+        final arch = (apk?[2] ?? desktop![3]!).toLowerCase();
+        if (!targets.add('$platform/$arch')) {
+          throw const FormatException('UPDATE_ASSET_IDENTITY_INVALID');
+        }
+        if (!legacy &&
+                (entry['platform'] != platform ||
+                    entry['arch'] !=
+                        distributionArchitecture(platform, arch)) ||
+            uri.queryParameters['platform'] != null &&
+                uri.queryParameters['platform'] != platform ||
+            uri.queryParameters['arch'] != null &&
+                uri.queryParameters['arch'] !=
+                    distributionArchitecture(platform, arch)) {
+          throw const FormatException('UPDATE_ASSET_IDENTITY_INVALID');
+        }
+        if (AppUpdateRelease.compareVersions(
+                  apk?[1] ?? desktop![1]!,
+                  version,
+                ) !=
+                0 ||
+            platform == 'linux' && desktop![4] != 'tar.gz' ||
+            {'windows', 'macos'}.contains(platform) && desktop![4] != 'zip' ||
+            arch == 'universal' && platform != 'macos') {
+          throw const FormatException('UPDATE_ASSET_IDENTITY_INVALID');
+        }
+        build ??= apk != null ? code % 1000 : code;
+        if (apk != null &&
+            (build <= 0 ||
+                build >= 1000 ||
+                apk[3] != null && int.tryParse(apk[3]!) != build ||
+                legacy &&
+                    code !=
+                        const {
+                                  'armeabi-v7a': 1,
+                                  'arm64-v8a': 2,
+                                  'x86_64': 4,
+                                }[arch]! *
+                                1000 +
+                            build)) {
+          throw const FormatException('UPDATE_ANDROID_IDENTITY_INVALID');
+        }
+        final size = entry['file_size'];
+        if (size is! int || size <= 0 || size > 4 * 1024 * 1024 * 1024) {
+          throw const FormatException('UPDATE_ASSET_SIZE_INVALID');
+        }
+        final hashNotes = legacy ? notes : '';
+        final markers = RegExp(r'\bSHA256:').allMatches(hashNotes).length;
+        final matches = RegExp(
+          r'\bSHA256:\s*([0-9a-fA-F]{64})(?![0-9a-zA-Z])',
+        ).allMatches(hashNotes).toList();
+        final hashes = matches.map((m) => m[1]!.toLowerCase()).toSet();
+        final structured = entry['file_sha256'];
+        // shortcut: legacy MCP records put SHA256 in changelog; remove when all publishers supply the structured field.
+        final hash = structured ?? (hashes.length == 1 ? hashes.single : null);
+        if (hash is! String ||
+            !RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(hash) ||
+            markers != matches.length ||
+            hashes.length > 1 ||
+            hashes.isNotEmpty && !hashes.contains(hash.toLowerCase())) {
+          throw const FormatException('UPDATE_MANIFEST_INVALID');
+        }
+        artifacts.add(
+          AppUpdateArtifact(
+            name: name,
+            platform: platform,
+            architecture: arch,
+            size: size,
+            sha256: hash.toLowerCase(),
+            url: uri.replace(
+              queryParameters: {
+                ...uri.queryParameters,
+                'platform': platform,
+                'arch': distributionArchitecture(platform, arch),
+              },
+            ),
+            androidVersionCode: apk != null
+                ? const {'armeabi-v7a': 1, 'arm64-v8a': 2, 'x86_64': 4}[arch]! *
+                          1000 +
+                      build
+                : null,
+            androidCertificateSha256: apk != null
+                ? valhallaReleaseCertificateSha256
+                : null,
+          ),
+        );
+      }
     }
-    return AppUpdateRelease(version: version, buildNumber: metadata?['buildNumber'] as int?,
-      sourceCommit: metadata?['sourceCommit'] as String?,
-      notes: _boundedNotes(release['body'] as String? ?? ''),
-      page: page, artifacts: List.unmodifiable(artifacts));
+    return AppUpdateRelease(
+      version: version,
+      buildNumber: build,
+      notes: _boundedNotes(notes),
+      page: Uri.parse(valhallaReleasesUrl),
+      artifacts: List.unmodifiable(artifacts),
+    );
   }
 
-  // Full notes remain available on the release page; bound selectable-text layout.
+  // Bound selectable-text layout for platform-provided release notes.
   static String _boundedNotes(String notes) => notes.length <= 16 * 1024
-      ? notes : '${String.fromCharCodes(notes.runes.take(16 * 1024))}\n…';
+      ? notes
+      : '${String.fromCharCodes(notes.runes.take(16 * 1024))}\n…';
 
-  Future<void> download(AppUpdateArtifact artifact, String destination,
-      {required void Function(int) onProgress}) async {
-    if (_downloadClient != null) throw StateError('UPDATE_DOWNLOAD_IN_PROGRESS');
+  Future<void> download(
+    AppUpdateArtifact artifact,
+    String destination, {
+    required void Function(int) onProgress,
+  }) async {
+    if (!_distributionDownload(artifact.url)) {
+      throw const FormatException('UPDATE_ASSET_URL_INVALID');
+    }
+    if (_downloadClient != null) {
+      throw StateError('UPDATE_DOWNLOAD_IN_PROGRESS');
+    }
     _canceled = false;
     final client = clientFactory();
     _downloadClient = client;
@@ -193,29 +423,47 @@ class AppUpdateService {
     final metadata = File('$destination.part.json');
     IOSink? sink;
     try {
-      final identity = jsonEncode({'url': artifact.url.toString(), 'size': artifact.size,
-        'sha256': artifact.sha256});
-      if (await partial.exists() && (!await metadata.exists() ||
-          await metadata.readAsString() != identity || await partial.length() > artifact.size)) {
+      final identity = jsonEncode({
+        'url': artifact.url.toString(),
+        'size': artifact.size,
+        'sha256': artifact.sha256,
+      });
+      if (await partial.exists() &&
+          (!await metadata.exists() ||
+              await metadata.readAsString() != identity ||
+              await partial.length() > artifact.size)) {
         await partial.delete();
       }
       var offset = await partial.exists() ? await partial.length() : 0;
       await metadata.writeAsString(identity, flush: true);
       if (offset < artifact.size) {
-        final response = await _get(client, artifact.url,
-          headers: {if (offset > 0) 'Range': 'bytes=$offset-'});
-        if (response.statusCode == 200) { offset = 0; }
-        else if (response.statusCode != 206 || offset == 0 ||
-            response.headers.value('content-range') != 'bytes $offset-${artifact.size - 1}/${artifact.size}') {
+        final response = await _get(
+          client,
+          artifact.url,
+          headers: {if (offset > 0) 'Range': 'bytes=$offset-'},
+          download: true,
+        );
+        if (response.statusCode == 200) {
+          offset = 0;
+        } else if (response.statusCode != 206 ||
+            offset == 0 ||
+            response.headers.value('content-range') !=
+                'bytes $offset-${artifact.size - 1}/${artifact.size}') {
           throw HttpException('UPDATE_DOWNLOAD_FAILED: ${response.statusCode}');
         }
-        sink = partial.openWrite(mode: offset > 0 ? FileMode.append : FileMode.write);
+        sink = partial.openWrite(
+          mode: offset > 0 ? FileMode.append : FileMode.write,
+        );
         onProgress(offset);
         var unflushed = 0;
-        await for (final chunk in response.timeout(const Duration(seconds: 30))) {
+        await for (final chunk in response.timeout(
+          const Duration(seconds: 30),
+        )) {
           if (_canceled) throw StateError('UPDATE_DOWNLOAD_CANCELED');
           offset += chunk.length;
-          if (offset > artifact.size) throw StateError('UPDATE_DOWNLOAD_SIZE_MISMATCH');
+          if (offset > artifact.size) {
+            throw StateError('UPDATE_DOWNLOAD_SIZE_MISMATCH');
+          }
           sink.add(chunk);
           unflushed += chunk.length;
           if (unflushed >= 256 * 1024) {
@@ -229,15 +477,22 @@ class AppUpdateService {
       }
       if (_canceled) throw StateError('UPDATE_DOWNLOAD_CANCELED');
       if (await partial.length() != artifact.size ||
-          (await sha256.bind(partial.openRead()).first).toString() != artifact.sha256) {
+          (await sha256.bind(partial.openRead()).first).toString() !=
+              artifact.sha256) {
         await partial.delete();
         throw StateError('UPDATE_DOWNLOAD_INTEGRITY_FAILED');
       }
       if (_canceled) throw StateError('UPDATE_DOWNLOAD_CANCELED');
-      if (await File(destination).exists()) throw StateError('UPDATE_DESTINATION_EXISTS');
+      if (await File(destination).exists()) {
+        throw StateError('UPDATE_DESTINATION_EXISTS');
+      }
       if (_canceled) throw StateError('UPDATE_DOWNLOAD_CANCELED');
       await partial.rename(destination);
-      try { await metadata.delete(); } on FileSystemException { /* Completed file is already verified. */ }
+      try {
+        await metadata.delete();
+      } on FileSystemException {
+        /* Completed file is already verified. */
+      }
     } finally {
       await sink?.close();
       client.close(force: true);
@@ -245,6 +500,10 @@ class AppUpdateService {
     }
   }
 
-  void cancelDownload() { _canceled = true; _downloadClient?.close(force: true); }
+  void cancelDownload() {
+    _canceled = true;
+    _downloadClient?.close(force: true);
+  }
+
   void dispose() => cancelDownload();
 }

@@ -4257,7 +4257,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Kein direktes Installationspaket für diese Plattform/Architektur verfügbar.';
 
   @override
-  String get updateOpenReleasePage => 'Releases auf GitHub öffnen';
+  String get updateOpenReleasePage => 'Release-Seite öffnen';
 
   @override
   String get updateDownload => 'Update herunterladen';
@@ -4307,7 +4307,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get updateErrorRateLimited =>
-      'GitHub-API-Ratenlimit überschritten. Bitte versuchen Sie es später erneut.';
+      'Update-Dienst-Ratenlimit überschritten. Bitte versuchen Sie es später erneut.';
 
   @override
   String get updateErrorNetwork =>
@@ -4347,7 +4347,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get updateErrorGeneric =>
-      'Update-Vorgang fehlgeschlagen. Bitte versuchen Sie es erneut oder öffnen Sie die GitHub-Releases.';
+      'Update-Vorgang fehlgeschlagen. Bitte versuchen Sie es erneut oder öffnen Sie die Release-Seite.';
 
   @override
   String get servicePermissionDenied =>

@@ -1,76 +1,14 @@
-// Isolated transport-level checks for AppUpdateService.
-//
-// Scope: HTTP behavior only (status handling, redirect policy, response
-// limits, manifest validation, resumable download integrity). No UI, no
-// widgets, no real network, no platform channels -- every response is served
-// by an in-test fake.
-//
-// The fake response extends Stream<List<int>> and implements
-// HttpClientResponse, overriding only listen(). Everything else
-// (timeout, drain, await-for) is inherited from Stream, so the production
-// timeouts are exercised for real instead of being stubbed out.
-
+// Isolated HTTP exchanges: no real network, UI or platform channels.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valhalla/core/services/app_update_service.dart';
 import 'package:valhalla/data/models/app_update.dart';
+import 'fixtures/app_update_payload.dart';
 
 const _repo = 'NornsInteractive/valhalla';
-const _commitA = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-const _digestE =
-    'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
-    'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
-const _digestB =
-    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
-    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-
-String _assetUrl(String tag, String name) =>
-    'https://github.com/$_repo/releases/download/$tag/$name';
-
-Map<String, dynamic> _releaseJson({
-  String tag = 'v1.2.3',
-  bool draft = false,
-  bool prerelease = false,
-  List<Map<String, dynamic>> assets = const [],
-  String? body = 'notes',
-}) => {
-  'tag_name': tag,
-  'html_url': 'https://github.com/$_repo/releases/tag/$tag',
-  'draft': draft,
-  'prerelease': prerelease,
-  'body': body,
-  'assets': assets,
-};
-
-Map<String, dynamic> _asset(
-  String tag,
-  String name, {
-  required int size,
-  String? digest,
-}) => {
-  'name': name,
-  'size': size,
-  'digest': digest,
-  'browser_download_url': _assetUrl(tag, name),
-};
-
-Map<String, dynamic> _manifestJson({
-  String version = '1.2.3',
-  int buildNumber = 42,
-  String sourceCommit = _commitA,
-  int schemaVersion = 1,
-  List<Map<String, dynamic>> artifacts = const [],
-}) => {
-  'schemaVersion': schemaVersion,
-  'version': version,
-  'buildNumber': buildNumber,
-  'sourceCommit': sourceCommit,
-  'artifacts': artifacts,
-};
 
 // --- Fakes -----------------------------------------------------------------
 
@@ -214,8 +152,9 @@ String _identity(AppUpdateArtifact artifact) => jsonEncode({
 });
 
 void main() {
+  AppUpdateService serviceWith(List<_Exchange> script) =>
+      AppUpdateService(clientFactory: () => _FakeClient(script));
   late Directory temp;
-
   setUp(
     () => temp = Directory.systemTemp.createTempSync('valhalla_update_http'),
   );
@@ -223,591 +162,274 @@ void main() {
     if (temp.existsSync()) temp.deleteSync(recursive: true);
   });
 
-  AppUpdateService serviceWith(List<_Exchange> script) =>
-      AppUpdateService(clientFactory: () => _FakeClient(script));
-
-  group('check: GitHub 200 and 304 with ETag', () {
-    test(
-      '200 parses release, exposes ETag and sends auth-less GitHub headers',
-      () async {
-        final client = _FakeClient([
-          (_, _) => _jsonResponse(
-            _releaseJson(
-              assets: [
-                _asset(
-                  'v1.2.3',
-                  'Valhalla-v1.2.3-windows-x64.zip',
-                  size: 1024,
-                  digest: 'sha256:$_digestB',
-                ),
-              ],
-            ),
-            headers: {'etag': '"release-etag"'},
-          ),
-        ]);
-        final service = AppUpdateService(clientFactory: () => client);
-
-        final check = await service.check();
-
-        expect(check.release!.version, '1.2.3');
-        expect(check.release!.notes, 'notes');
-        expect(
-          check.release!.page.toString(),
-          'https://github.com/$_repo/releases/tag/v1.2.3',
-        );
-        expect(check.release!.artifacts, hasLength(1));
-        expect(check.release!.artifacts.single.platform, 'windows');
-        expect(check.release!.artifacts.single.architecture, 'x64');
-        expect(check.release!.artifacts.single.size, 1024);
-        expect(
-          check.release!.artifacts.single.url.toString(),
-          _assetUrl('v1.2.3', 'Valhalla-v1.2.3-windows-x64.zip'),
-        );
-        expect(check.etag, '"release-etag"');
-        expect(check.response!['tag_name'], 'v1.2.3');
-
-        final request = client.requests.single;
-        expect(request.uri, AppUpdateService.latestEndpoint);
-        expect(
-          request.header(HttpHeaders.acceptHeader),
-          'application/vnd.github+json',
-        );
-        expect(request.header('x-github-api-version'), '2026-03-10');
-        expect(
-          request.header(HttpHeaders.userAgentHeader),
-          'Valhalla-App-Updater',
-        );
-        expect(request.header('if-none-match'), isNull);
-        expect(
-          client.closed,
-          isTrue,
-          reason: 'client must be closed after check',
-        );
-      },
-    );
-
-    test(
-      '304 with a cached release reuses the cache and re-emits the ETag',
-      () async {
-        final cached = _releaseJson(
-          assets: [
-            _asset(
-              'v1.2.3',
-              'Valhalla-v1.2.3-linux-x64.tar.gz',
-              size: 2048,
-              digest: 'sha256:${'c' * 64}',
-            ),
-          ],
-        );
-        final client = _FakeClient([
-          (_, _) => _FakeResponse(
-            304,
-            const Stream<List<int>>.empty(),
-            headers: {'etag': '"new-etag"'},
-          ),
-        ]);
-        final service = AppUpdateService(clientFactory: () => client);
-
-        final check = await service.check(etag: '"old-etag"', cached: cached);
-
-        expect(client.requests.single.header('if-none-match'), '"old-etag"');
-        expect(check.release!.version, '1.2.3');
-        expect(check.release!.artifacts.single.platform, 'linux');
-        expect(check.etag, '"new-etag"');
-        expect(client.closed, isTrue);
-      },
-    );
-
-    test(
-      '304 without a cache is a check failure, not a silent success',
-      () async {
-        final service = serviceWith([
-          (_, _) => _FakeResponse(304, const Stream<List<int>>.empty()),
-        ]);
-
-        await expectLater(
-          service.check(),
-          throwsA(
-            isA<HttpException>().having(
-              (e) => e.message,
-              'message',
-              contains('304'),
-            ),
-          ),
-        );
-      },
-    );
-  });
-
-  group('check: GitHub error statuses', () {
-    test('404 yields no release without throwing', () async {
+  test(
+    'check sends installed platform/ABI/version without authorization',
+    () async {
       final client = _FakeClient([
-        (_, _) => _FakeResponse(404, const Stream<List<int>>.empty()),
+        (_, _) => _jsonResponse(
+          updatePayload(currentCode: 4005),
+          headers: {'etag': '"catalog-etag"'},
+        ),
       ]);
       final service = AppUpdateService(clientFactory: () => client);
+      final check = await service.check(
+        currentVersionCode: 4005,
+        platform: 'android',
+        architecture: 'x64',
+      );
+      final request = client.requests.single;
+      expect(request.uri.queryParameters, {
+        'app_id': valhallaDistributionAppId,
+        'version_code': '4005',
+        'channel': 'default',
+        'platform': 'android',
+        'arch': 'x86_64',
+      });
+      expect(request.header('authorization'), isNull);
+      expect(request.header('accept'), 'application/json');
+      expect(request.header('user-agent'), 'Valhalla-App-Updater');
+      expect(request.header('if-none-match'), isNull);
+      expect(check.release!.version, '1.2.3');
+      expect(check.etag, '"catalog-etag"');
+      expect(check.response!['_platform'], 'android');
+      expect(check.response!['_arch'], 'x86_64');
+      expect(client.closed, isTrue);
+    },
+  );
 
-      final check = await service.check();
+  Map<String, dynamic> cachedPayload() => {
+    ...updatePayload(currentCode: 7),
+    '_source': AppUpdateService.cacheSource,
+    '_channel': 'default',
+    '_platform': 'linux',
+    '_arch': 'x86_64',
+    '_version_code': 7,
+  };
 
-      expect(check.release, isNull);
-      expect(check.etag, isNull);
+  test(
+    '304 reuses only exact platform/arch/channel/version source context',
+    () async {
+      final client = _FakeClient([
+        (_, _) => _FakeResponse(
+          304,
+          const Stream.empty(),
+          headers: {'etag': '"new"'},
+        ),
+        (_, _) => _FakeResponse(304, const Stream.empty()),
+      ]);
+      final service = AppUpdateService(clientFactory: () => client);
+      final check = await service.check(
+        etag: '"old"',
+        cached: cachedPayload(),
+        currentVersionCode: 7,
+        platform: 'linux',
+        architecture: 'x64',
+      );
+      expect(client.requests.single.header('if-none-match'), '"old"');
+      expect(check.etag, '"new"');
+      expect(check.release!.artifacts.single.platform, 'linux');
+      final again = await service.check(
+        etag: check.etag,
+        cached: check.response,
+        currentVersionCode: 7,
+        platform: 'linux',
+        architecture: 'x64',
+      );
+      expect(again.etag, '"new"');
+    },
+  );
+
+  for (final field in [
+    '_source',
+    '_channel',
+    '_platform',
+    '_arch',
+    '_version_code',
+  ]) {
+    test('stale $field cache cannot send ETag or accept bare 304', () async {
+      final client = _FakeClient([
+        (_, _) => _FakeResponse(304, const Stream.empty()),
+      ]);
+      final service = AppUpdateService(clientFactory: () => client);
+      await expectLater(
+        service.check(
+          etag: '"old"',
+          cached: cachedPayload()..[field] = 'wrong',
+          currentVersionCode: 7,
+          platform: 'linux',
+          architecture: 'x64',
+        ),
+        throwsA(isA<HttpException>()),
+      );
+      expect(client.requests.single.header('if-none-match'), isNull);
       expect(client.closed, isTrue);
     });
+  }
 
-    for (final status in [403, 429]) {
-      test('$status is reported as UPDATE_RATE_LIMITED', () async {
-        final client = _FakeClient([
-          (_, _) => _FakeResponse(status, const Stream<List<int>>.empty()),
-        ]);
-        final service = AppUpdateService(clientFactory: () => client);
-
-        await expectLater(
-          service.check(),
-          throwsA(
-            isA<StateError>().having(
-              (e) => e.message,
-              'message',
-              'UPDATE_RATE_LIMITED',
-            ),
-          ),
-        );
-        expect(client.closed, isTrue);
-      });
-    }
-
-    test('draft or prerelease releases are rejected', () async {
-      for (final release in [
-        _releaseJson(draft: true),
-        _releaseJson(prerelease: true),
-      ]) {
-        final service = serviceWith([(_, _) => _jsonResponse(release)]);
-        await expectLater(
-          service.check(),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              'UPDATE_RELEASE_INVALID',
-            ),
-          ),
-        );
-      }
-    });
-  });
-
-  group('check: response size limits', () {
-    test('release body beyond 2 MiB is refused mid-stream', () async {
-      final filler = 'x' * (64 * 1024);
-      final service = serviceWith([
-        (_, _) => _FakeResponse(
-          200,
-          Stream.fromIterable(
-            List.generate(40, (i) => utf8.encode('{"pad":"$filler","i":$i}')),
-          ),
-        ),
-      ]);
-
-      await expectLater(
-        service.check(),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            'UPDATE_RESPONSE_TOO_LARGE',
-          ),
-        ),
-      );
-    });
-
-    test('release body just under the limit is accepted', () async {
-      final filler = 'x' * (1024 * 1024);
-      final service = serviceWith([
-        (_, _) => _jsonResponse(_releaseJson(assets: [], body: filler)),
-      ]);
-
-      expect((await service.check()).release!.version, '1.2.3');
-    });
-
-    test('manifest body beyond 256 KiB is refused', () async {
-      final service = serviceWith([
-        (_, _) => _jsonResponse(
-          _releaseJson(assets: [_asset('v1.2.3', 'update.json', size: 512)]),
-        ),
-        (_, _) => _FakeResponse(
-          200,
-          Stream.value(
-            utf8.encode(
-              _manifestJson()['sourceCommit'].toString().padRight(
-                300 * 1024,
-                'a',
-              ),
-            ),
-          ),
-        ),
-      ]);
-
-      await expectLater(
-        service.check(),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            'UPDATE_RESPONSE_TOO_LARGE',
-          ),
-        ),
-      );
-    });
-  });
-
-  group('redirects: only trusted https hosts', () {
-    test('non-https redirect target is blocked', () async {
-      final service = serviceWith([
-        (_, _) => _FakeResponse(
-          302,
-          const Stream<List<int>>.empty(),
-          headers: {'location': 'http://evil.example.com/update.json'},
-        ),
-      ]);
-
-      await expectLater(
-        service.check(),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            'UPDATE_URL_INVALID',
-          ),
-        ),
-      );
-    });
-
-    test('untrusted https host redirect is blocked', () async {
-      final service = serviceWith([
-        (_, _) => _FakeResponse(
-          302,
-          const Stream<List<int>>.empty(),
-          headers: {'location': 'https://evil.example.com/update.json'},
-        ),
-      ]);
-
-      await expectLater(
-        service.check(),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            'UPDATE_URL_INVALID',
-          ),
-        ),
-      );
-    });
-
-    test('githubusercontent redirect is followed', () async {
+  for (final status in [401, 403, 429, 500]) {
+    test('check failure $status is reported and closes client', () async {
       final client = _FakeClient([
-        (_, _) => _jsonResponse(
-          _releaseJson(
-            assets: [
-              _asset('v1.2.3', 'update.json', size: 256),
-              _asset(
-                'v1.2.3',
-                'Valhalla-v1.2.3-linux-x64.tar.gz',
-                size: 8,
-                digest: 'sha256:${'d' * 64}',
+        (_, _) => _FakeResponse(status, const Stream.empty()),
+      ]);
+      final service = AppUpdateService(clientFactory: () => client);
+      await expectLater(
+        service.check(),
+        status == 500
+            ? throwsA(isA<HttpException>())
+            : throwsA(
+                isA<StateError>().having(
+                  (e) => e.message,
+                  'message',
+                  contains(
+                    status == 429
+                        ? 'UPDATE_RATE_LIMITED'
+                        : 'UPDATE_CHECK_AUTH_FAILED',
+                  ),
+                ),
               ),
-            ],
+      );
+      expect(client.closed, isTrue);
+    });
+  }
+
+  test(
+    '404 has no release; errors never attempt old GitHub check fallback',
+    () async {
+      final client = _FakeClient([
+        (_, _) => _FakeResponse(404, const Stream.empty()),
+      ]);
+      final result = await AppUpdateService(
+        clientFactory: () => client,
+      ).check();
+      expect(result.release, isNull);
+      expect(client.requests, hasLength(1));
+    },
+  );
+
+  test('reject response belonging to another current version', () async {
+    final client = _FakeClient([
+      (_, _) => _jsonResponse(updatePayload(currentCode: 9)),
+    ]);
+    await expectLater(
+      AppUpdateService(
+        clientFactory: () => client,
+      ).check(currentVersionCode: 8),
+      throwsFormatException,
+    );
+  });
+
+  test('malformed and oversized response fail boundedly', () async {
+    for (final body in [
+      [],
+      {'code': 1},
+      updatePayload(notes: 'x' * (2 * 1024 * 1024)),
+    ]) {
+      final client = _FakeClient([(_, _) => _jsonResponse(body)]);
+      await expectLater(
+        AppUpdateService(clientFactory: () => client).check(),
+        throwsFormatException,
+      );
+      expect(client.closed, isTrue);
+    }
+  });
+
+  for (final location in [
+    'http://ygg.norns.cc.cd/api/v1/app/latest?app_id=com.norns.valhalla',
+    'https://evil.example/latest',
+    'https://github.com/NornsInteractive/valhalla/releases/latest',
+    'https://ygg.norns.cc.cd/api/v1/app/latest?app_id=wrong.app',
+  ]) {
+    test(
+      'metadata redirect outside exact source is rejected: $location',
+      () async {
+        final client = _FakeClient([
+          (_, _) => _FakeResponse(
+            302,
+            const Stream.empty(),
+            headers: {'location': location},
           ),
+        ]);
+        await expectLater(
+          AppUpdateService(clientFactory: () => client).check(),
+          throwsFormatException,
+        );
+        expect(client.requests, hasLength(1));
+      },
+    );
+  }
+
+  test('missing redirect location and redirect loop are rejected', () async {
+    for (final headers in [
+      <String, String>{},
+      {
+        'location': AppUpdateService.latestEndpoint
+            .replace(queryParameters: {'app_id': valhallaDistributionAppId})
+            .toString(),
+      },
+    ]) {
+      final client = _FakeClient(
+        List.generate(
+          6,
+          (_) =>
+              (_, _) =>
+                  _FakeResponse(302, const Stream.empty(), headers: headers),
         ),
+      );
+      await expectLater(
+        AppUpdateService(clientFactory: () => client).check(),
+        throwsFormatException,
+      );
+      expect(client.requests.length, headers.isEmpty ? 1 : 6);
+    }
+  });
+
+  test(
+    'download follows approved GitHub upstream with explicit initial target',
+    () async {
+      final payload = [1, 2, 3];
+      final package = updatePackage(
+        size: payload.length,
+        hash: sha256.convert(payload).toString(),
+      );
+      final artifact = AppUpdateService.parseRelease(
+        updatePayload(packages: [package]),
+      ).artifacts.single;
+      final client = _FakeClient([
         (_, _) => _FakeResponse(
           302,
-          const Stream<List<int>>.empty(),
+          const Stream.empty(),
           headers: {
             'location':
-                'https://objects.githubusercontent.com/github-production-release-asset/update.json',
+                'https://github.com/$_repo/releases/download/v1.2.3/test.tar.gz',
           },
         ),
-        (_, _) => _jsonResponse(
-          _manifestJson(
-            artifacts: [
-              {
-                'name': 'Valhalla-v1.2.3-linux-x64.tar.gz',
-                'platform': 'linux',
-                'architecture': 'x64',
-                'size': 8,
-                'sha256': 'd' * 64,
-              },
-            ],
-          ),
-        ),
-      ]);
-      final service = AppUpdateService(clientFactory: () => client);
-
-      final check = await service.check();
-
-      expect(client.requests.last.uri.host, 'objects.githubusercontent.com');
-      expect(check.release!.buildNumber, 42);
-      expect(check.release!.sourceCommit, 'a' * 40);
-      expect(check.release!.artifacts.single.platform, 'linux');
-    });
-
-    test('redirect without a location header is refused', () async {
-      final service = serviceWith([
-        (_, _) => _FakeResponse(301, const Stream<List<int>>.empty()),
-      ]);
-
-      await expectLater(
-        service.check(),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            'UPDATE_REDIRECT_INVALID',
-          ),
-        ),
-      );
-    });
-
-    test('redirect loops past the limit are refused', () async {
-      _Exchange hop() {
-        final response = _FakeResponse(
+        (_, _) => _FakeResponse(
           302,
-          const Stream<List<int>>.empty(),
+          const Stream.empty(),
           headers: {
-            'location': 'https://api.github.com/repos/$_repo/releases/latest',
+            'location':
+                'https://release-assets.githubusercontent.com/test.tar.gz',
           },
-        );
-        _FakeResponse exchange(Uri uri, HttpHeaders headers) => response;
-        return exchange;
-      }
-
-      final client = _FakeClient(List<_Exchange>.generate(8, (_) => hop()));
-      final service = AppUpdateService(clientFactory: () => client);
-
-      await expectLater(
-        service.check(),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            'UPDATE_REDIRECT_LIMIT',
-          ),
         ),
-      );
-      expect(client.requests, hasLength(6));
-    });
-  });
-
-  group('update.json validation', () {
-    /// Serves a release carrying both update.json and an Android asset, so
-    /// manifest entries actually bind to a released artifact (unmatched entries
-    /// are silently skipped by parseRelease).
-    Future<void> checkWithManifest(
-      Map<String, dynamic> manifest, {
-      int assetSize = 10,
-      String assetDigest = 'sha256:$_digestE',
-    }) async {
-      final service = serviceWith([
-        (_, _) => _jsonResponse(
-          _releaseJson(
-            assets: [
-              _asset('v1.2.3', 'update.json', size: 256),
-              _asset(
-                'v1.2.3',
-                'Valhalla-v1.2.3-android-arm64-v8a.apk',
-                size: assetSize,
-                digest: assetDigest,
-              ),
-            ],
-          ),
-        ),
-        (_, _) => _jsonResponse(manifest),
+        (_, _) => _bytesResponse(payload),
       ]);
-      await service.check();
-    }
-
-    test(
-      'valid manifest populates build number, commit and artifacts',
-      () async {
-        final service = serviceWith([
-          (_, _) => _jsonResponse(
-            _releaseJson(
-              assets: [
-                _asset('v1.2.3', 'update.json', size: 256),
-                _asset(
-                  'v1.2.3',
-                  'Valhalla-v1.2.3-android-arm64-v8a.apk',
-                  size: 10,
-                  digest: 'sha256:$_digestE',
-                ),
-              ],
-            ),
-          ),
-          (_, _) => _jsonResponse(
-            _manifestJson(
-              artifacts: [
-                {
-                  'name': 'Valhalla-v1.2.3-android-arm64-v8a.apk',
-                  'platform': 'android',
-                  'architecture': 'arm64-v8a',
-                  'size': 10,
-                  'sha256': 'e' * 64,
-                  'androidVersionCode': 42042,
-                  'androidCertificateSha256': 'f' * 64,
-                },
-              ],
-            ),
-          ),
-        ]);
-
-        final check = await service.check();
-
-        expect(check.release!.version, '1.2.3');
-        expect(check.release!.buildNumber, 42);
-        expect(check.release!.sourceCommit, _commitA);
-        expect(check.release!.artifacts, hasLength(1));
-        final artifact = check.release!.artifacts.single;
-        expect(artifact.platform, 'android');
-        expect(artifact.architecture, 'arm64-v8a');
-        expect(artifact.size, 10);
-        expect(artifact.sha256, 'e' * 64);
-        expect(artifact.androidVersionCode, 42042);
-        expect(artifact.androidCertificateSha256, 'f' * 64);
-        expect(
-          check.response!['_valhalla_manifest'],
-          isA<Map<String, dynamic>>(),
-        );
-      },
-    );
-
-    test(
-      'manifest entry size disagreeing with the release asset is rejected',
-      () async {
-        await expectLater(
-          checkWithManifest(
-            _manifestJson(
-              artifacts: [
-                {
-                  'name': 'Valhalla-v1.2.3-android-arm64-v8a.apk',
-                  'platform': 'android',
-                  'architecture': 'arm64-v8a',
-                  'size': 11,
-                  'sha256': 'e' * 64,
-                  'androidVersionCode': 42042,
-                  'androidCertificateSha256': 'f' * 64,
-                },
-              ],
-            ),
-          ),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              'UPDATE_ASSET_SIZE_INVALID',
-            ),
-          ),
-        );
-      },
-    );
-
-    test(
-      'manifest digest disagreeing with the release asset digest is rejected',
-      () async {
-        await expectLater(
-          checkWithManifest(
-            _manifestJson(
-              artifacts: [
-                {
-                  'name': 'Valhalla-v1.2.3-android-arm64-v8a.apk',
-                  'platform': 'android',
-                  'architecture': 'arm64-v8a',
-                  'size': 10,
-                  'sha256': 'a' * 64,
-                  'androidVersionCode': 42042,
-                  'androidCertificateSha256': 'f' * 64,
-                },
-              ],
-            ),
-            assetDigest: 'sha256:_digestB',
-          ),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              'UPDATE_ASSET_DIGEST_MISMATCH',
-            ),
-          ),
-        );
-      },
-    );
-
-    test('manifest http failure is surfaced', () async {
-      final service = serviceWith([
-        (_, _) => _jsonResponse(
-          _releaseJson(assets: [_asset('v1.2.3', 'update.json', size: 256)]),
-        ),
-        (_, _) => _FakeResponse(500, const Stream<List<int>>.empty()),
-      ]);
-
-      await expectLater(
-        service.check(),
-        throwsA(
-          isA<StateError>().having(
-            (e) => e.message,
-            'message',
-            'UPDATE_MANIFEST_FAILED',
-          ),
-        ),
+      final destination = '${temp.path}/upstream.bin';
+      await AppUpdateService(
+        clientFactory: () => client,
+      ).download(artifact, destination, onProgress: (_) {});
+      expect(client.requests.first.uri.queryParameters['platform'], 'linux');
+      expect(client.requests.first.uri.queryParameters['arch'], 'x86_64');
+      expect(
+        client.requests.first.uri.queryParameters['package_id'],
+        package['id'],
       );
-    });
-
-    for (final entry in <String, Map<String, dynamic> Function()>{
-      'wrong schema version': () => _manifestJson(schemaVersion: 2),
-      'version drift vs tag': () => _manifestJson(version: '9.9.9'),
-      'missing build number': () => _manifestJson(buildNumber: 0),
-      'non-int build number': () => {'buildNumber': '42'},
-      'short commit': () => _manifestJson(sourceCommit: 'abc123'),
-      'missing commit': () => {'sourceCommit': null},
-    }.entries) {
-      test('${entry.key} is rejected', () async {
-        await expectLater(
-          checkWithManifest(entry.value()),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              'UPDATE_MANIFEST_INVALID',
-            ),
-          ),
-        );
-      });
-    }
-
-    test(
-      'android entry without version code or certificate is rejected',
-      () async {
-        final manifest = _manifestJson(
-          artifacts: [
-            {
-              'name': 'Valhalla-v1.2.3-android-arm64-v8a.apk',
-              'platform': 'android',
-              'architecture': 'arm64-v8a',
-              'size': 10,
-              'sha256': 'e' * 64,
-            },
-          ],
-        );
-
-        await expectLater(
-          checkWithManifest(manifest),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              'UPDATE_ANDROID_IDENTITY_INVALID',
-            ),
-          ),
-        );
-      },
-    );
-  });
+      expect(
+        client.requests.every((r) => r.header('authorization') == null),
+        isTrue,
+      );
+      expect(await File(destination).readAsBytes(), payload);
+    },
+  );
 
   group('download: resume and integrity', () {
     const size = 10;
@@ -822,7 +444,13 @@ void main() {
         architecture: 'x64',
         size: size,
         sha256: digest,
-        url: Uri.parse(_assetUrl('v1.2.3', 'Valhalla-v1.2.3-linux-x64.tar.gz')),
+        url: updateDownloadUrl().replace(
+          queryParameters: {
+            ...updateDownloadUrl().queryParameters,
+            'platform': 'linux',
+            'arch': 'x86_64',
+          },
+        ),
       ),
     );
 
@@ -1194,7 +822,7 @@ void main() {
             isA<FormatException>().having(
               (e) => e.message,
               'message',
-              'UPDATE_URL_INVALID',
+              'UPDATE_ASSET_URL_INVALID',
             ),
           ),
         );

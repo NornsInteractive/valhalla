@@ -7710,7 +7710,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateOpenReleasePage.
   ///
   /// In en, this message translates to:
-  /// **'Open Releases on GitHub'**
+  /// **'Open Release Page'**
   String get updateOpenReleasePage;
 
   /// No description provided for @updateDownload.
@@ -7800,7 +7800,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateErrorRateLimited.
   ///
   /// In en, this message translates to:
-  /// **'GitHub API rate limit exceeded. Please try again later.'**
+  /// **'Update service rate limit exceeded. Please try again later.'**
   String get updateErrorRateLimited;
 
   /// No description provided for @updateErrorNetwork.
@@ -7860,7 +7860,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateErrorGeneric.
   ///
   /// In en, this message translates to:
-  /// **'Update operation failed. Please try again or visit GitHub releases.'**
+  /// **'Update operation failed. Please try again or visit the release page.'**
   String get updateErrorGeneric;
 
   /// No description provided for @servicePermissionDenied.

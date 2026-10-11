@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -109,6 +110,8 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     final storage = ref.read(localStorageServiceProvider);
     try {
       _cache = storage.getUpdateCheckCache();
+      // Keep legacy preferences on disk for rollback, but never act on GitHub cache.
+      if (!AppUpdateService.isCurrentCache(_cache)) _cache = null;
     } catch (error, stack) {
       unawaited(AppDiagnostics.instance.record('updates.cache', error, stack));
     }
@@ -130,10 +133,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
       final cached = _cache?['release'] as Map<String, dynamic>?;
       if (cached != null) {
         await _applyRelease(
-          AppUpdateService.parseRelease(
-            cached,
-            cached['_valhalla_manifest'] as Map<String, dynamic>?,
-          ),
+          AppUpdateService.parseRelease(cached),
           state.checkedAt,
         );
       }
@@ -152,26 +152,10 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     final epoch = ++_releaseEpoch;
     final info = await PackageInfo.fromPlatform();
     if (!ref.mounted || epoch != _releaseEpoch) return;
-    Map<String, dynamic>? runtime = _runtime;
-    if (Platform.isAndroid) {
-      runtime = await platformChannel.invokeMapMethod<String, dynamic>(
-        'runtimeInfo',
-      );
-    } else if (Platform.isWindows) {
-      runtime = await DownloadPlatformService.channel
-          .invokeMapMethod<String, dynamic>('runtimeInfo');
-    }
+    final runtime = await _loadRuntime();
     if (!ref.mounted || epoch != _releaseEpoch) return;
     _runtime = runtime;
-    final arch = Platform.isAndroid
-        ? (_runtime?['abis'] as List? ?? []).cast<String>()
-        : [
-            if (Platform.version.toLowerCase().contains('arm64'))
-              'arm64'
-            else
-              'x64',
-            'universal',
-          ];
+    final arch = _architectures();
     final artifact = release?.artifactFor(Platform.operatingSystem, arch);
     final baseBuild =
         (_runtime?['baseBuildNumber'] as int?) ??
@@ -242,18 +226,48 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
   Future<void> check() =>
       _check ??= _performCheck().whenComplete(() => _check = null);
 
+  Future<Map<String, dynamic>?> _loadRuntime() async {
+    if (Platform.isAndroid) {
+      return platformChannel.invokeMapMethod<String, dynamic>('runtimeInfo');
+    }
+    if (Platform.isWindows) {
+      return DownloadPlatformService.channel.invokeMapMethod<String, dynamic>(
+        'runtimeInfo',
+      );
+    }
+    return _runtime;
+  }
+
+  List<String> _architectures() {
+    final architecture = Abi.current().toString().split('_').last;
+    return [
+      Platform.isAndroid
+          ? AppUpdateService.distributionArchitecture('android', architecture)
+          : architecture,
+      if (Platform.isMacOS) 'universal',
+    ];
+  }
+
   Future<void> _performCheck() async {
     state = state.copyWith(checking: true, clearError: true);
     try {
+      final info = await PackageInfo.fromPlatform();
+      if (!ref.mounted) return;
+      final versionCode = int.tryParse(info.buildNumber) ?? 0;
+      final architecture = _architectures().first;
       final result = await ref
           .read(appUpdateServiceProvider)
           .check(
             etag: _cache?['etag'] as String?,
             cached: _cache?['release'] as Map<String, dynamic>?,
+            currentVersionCode: versionCode,
+            platform: Platform.operatingSystem,
+            architecture: architecture,
           );
       if (!ref.mounted) return;
       final checked = DateTime.now().toUtc();
       _cache = {
+        'source': AppUpdateService.cacheSource,
         'checkedAt': checked.toIso8601String(),
         'etag': result.etag,
         if (result.response != null) 'release': result.response,

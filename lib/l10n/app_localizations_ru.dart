@@ -4241,7 +4241,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Нет пакета прямой установки для этой платформы/архитектуры.';
 
   @override
-  String get updateOpenReleasePage => 'Открыть страницу выпусков на GitHub';
+  String get updateOpenReleasePage => 'Открыть страницу выпусков';
 
   @override
   String get updateDownload => 'Скачать обновление';
@@ -4290,7 +4290,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get updateErrorRateLimited =>
-      'Превышен лимит запросов к API GitHub. Пожалуйста, повторите попытку позже.';
+      'Превышен лимит запросов к службе обновлений. Пожалуйста, повторите попытку позже.';
 
   @override
   String get updateErrorNetwork =>
@@ -4330,7 +4330,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get updateErrorGeneric =>
-      'Сбой операции обновления. Повторите попытку или перейдите к релизам на GitHub.';
+      'Сбой операции обновления. Повторите попытку или перейдите на страницу выпусков.';
 
   @override
   String get servicePermissionDenied =>

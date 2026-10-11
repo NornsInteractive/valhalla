@@ -4186,7 +4186,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا توجد حزمة تثبيت مباشرة متاحة لمنصة/معمارية هذا الجهاز.';
 
   @override
-  String get updateOpenReleasePage => 'فتح الإصدارات على GitHub';
+  String get updateOpenReleasePage => 'فتح صفحة الإصدارات';
 
   @override
   String get updateDownload => 'تنزيل التحديث';
@@ -4235,7 +4235,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get updateErrorRateLimited =>
-      'تم تجاوز حد معدل واجهة برمجة تطبيقات GitHub. يرجى المحاولة مرة أخرى لاحقًا.';
+      'تم تجاوز حد معدل خدمة التحديث. يرجى المحاولة مرة أخرى لاحقًا.';
 
   @override
   String get updateErrorNetwork =>
@@ -4272,7 +4272,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get updateErrorGeneric =>
-      'فشلت عملية التحديث. يرجى المحاولة مرة أخرى أو زيارة إصدارات GitHub.';
+      'فشلت عملية التحديث. يرجى المحاولة مرة أخرى أو زيارة صفحة الإصدارات.';
 
   @override
   String get servicePermissionDenied => 'تم رفض إذن إدارة الخدمة';

@@ -4201,7 +4201,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'No direct install package available for this device platform/architecture.';
 
   @override
-  String get updateOpenReleasePage => 'Open Releases on GitHub';
+  String get updateOpenReleasePage => 'Open Release Page';
 
   @override
   String get updateDownload => 'Download Update';
@@ -4250,7 +4250,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateErrorRateLimited =>
-      'GitHub API rate limit exceeded. Please try again later.';
+      'Update service rate limit exceeded. Please try again later.';
 
   @override
   String get updateErrorNetwork =>
@@ -4288,7 +4288,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateErrorGeneric =>
-      'Update operation failed. Please try again or visit GitHub releases.';
+      'Update operation failed. Please try again or visit the release page.';
 
   @override
   String get servicePermissionDenied => 'Permission denied to manage service';

@@ -88,22 +88,22 @@ class LocalStorageService {
     }
   }
   Map<String, dynamic>? getUpdateCheckCache() {
-    final value = _prefs.getString('valhalla_update_check_v1');
+    final value = _prefs.getString('valhalla_update_check_ygg_v2');
     return value == null ? null : jsonDecode(value) as Map<String, dynamic>;
   }
   Future<void> saveUpdateCheckCache(Map<String, dynamic> value) async {
-    if (!await _prefs.setString('valhalla_update_check_v1', jsonEncode(value))) {
+    if (!await _prefs.setString('valhalla_update_check_ygg_v2', jsonEncode(value))) {
       throw const FormatException('SETTINGS_SAVE_FAILED');
     }
   }
 
   Map<String, dynamic>? getUpdateDownloadRecord() {
-    final raw = _prefs.getString('valhalla_update_download_v1');
+    final raw = _prefs.getString('valhalla_update_download_ygg_v2');
     return raw == null ? null : jsonDecode(raw) as Map<String, dynamic>;
   }
 
   Future<void> saveUpdateDownloadRecord(Map<String, dynamic> value) async {
-    if (!await _prefs.setString('valhalla_update_download_v1', jsonEncode(value))) {
+    if (!await _prefs.setString('valhalla_update_download_ygg_v2', jsonEncode(value))) {
       throw const StorageException('UPDATE_RECORD_SAVE_FAILED');
     }
   }

@@ -4017,7 +4017,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get updateNoArtifactForPlatform => '此设备平台/架构暂无直接安装包。';
 
   @override
-  String get updateOpenReleasePage => '在 GitHub 查看发布页';
+  String get updateOpenReleasePage => '查看发布页';
 
   @override
   String get updateDownload => '下载更新';
@@ -4065,7 +4065,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get updateErrorCopied => '错误详情已复制到剪贴板';
 
   @override
-  String get updateErrorRateLimited => 'GitHub API 请求频率超限，请稍后重试。';
+  String get updateErrorRateLimited => '更新服务请求频率超限，请稍后重试。';
 
   @override
   String get updateErrorNetwork => '网络连接失败，请检查您的网络设置。';
@@ -4097,7 +4097,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get updateErrorPlatform => '无法打开或启动安装程序。';
 
   @override
-  String get updateErrorGeneric => '更新操作失败，请重试或前往 GitHub 查看发布页。';
+  String get updateErrorGeneric => '更新操作失败，请重试或前往发布页查看。';
 
   @override
   String get servicePermissionDenied => '管理服务权限不足';
@@ -8235,7 +8235,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get updateNoArtifactForPlatform => '此裝置平台/架構暫無直接安裝套件。';
 
   @override
-  String get updateOpenReleasePage => '在 GitHub 檢視發布頁';
+  String get updateOpenReleasePage => '檢視發布頁';
 
   @override
   String get updateDownload => '下載更新';
@@ -8283,7 +8283,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get updateErrorCopied => '錯誤詳情已複製到剪貼簿';
 
   @override
-  String get updateErrorRateLimited => 'GitHub API 請求頻率超限，請稍後重試。';
+  String get updateErrorRateLimited => '更新服務請求頻率超限，請稍後重試。';
 
   @override
   String get updateErrorNetwork => '網路連線失敗，請檢查您的網路設定。';
@@ -8315,7 +8315,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get updateErrorPlatform => '無法開啟或啟動安裝程式。';
 
   @override
-  String get updateErrorGeneric => '更新操作失敗，請重試或前往 GitHub 檢視發布頁。';
+  String get updateErrorGeneric => '更新操作失敗，請重試或前往發布頁檢視。';
 
   @override
   String get servicePermissionDenied => '管理服務權限不足';

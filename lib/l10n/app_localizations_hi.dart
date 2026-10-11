@@ -4224,7 +4224,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'इस डिवाइस प्लेटफ़ॉर्म/आर्किटेक्चर के लिए कोई सीधा इंस्टॉलेशन पैकेज उपलब्ध नहीं है।';
 
   @override
-  String get updateOpenReleasePage => 'GitHub पर रिलीज़ खोलें';
+  String get updateOpenReleasePage => 'रिलीज़ पेज खोलें';
 
   @override
   String get updateDownload => 'अपडेट डाउनलोड करें';
@@ -4273,7 +4273,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get updateErrorRateLimited =>
-      'GitHub API दर सीमा पार हो गई। कृपया बाद में पुनः प्रयास करें।';
+      'अपडेट सेवा दर सीमा पार हो गई। कृपया बाद में पुनः प्रयास करें।';
 
   @override
   String get updateErrorNetwork =>
@@ -4310,7 +4310,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get updateErrorGeneric =>
-      'अपडेट ऑपरेशन विफल रहा। कृपया पुनः प्रयास करें या GitHub रिलीज़ देखें।';
+      'अपडेट ऑपरेशन विफल रहा। कृपया पुनः प्रयास करें या रिलीज़ पेज देखें।';
 
   @override
   String get servicePermissionDenied => 'सेवा प्रबंधित करने की अनुमति अस्वीकृत';

@@ -27,11 +27,23 @@
 - NAS 保留现有协议／服务适配器和实验性默认关闭。缩略图可视项优先、
   队列上限 64、原始缩略图输入上限 32MiB，显式清理仅缩略图缓存。
   播放恢复由用户触发并保持队列／位置，不在生命周期恢复时自动播放。
-- 更新独立于 SSH：固定仓库稳定 Releases API，ETag、默认 24 小时可关闭
-  自动检查，不自动下载或安装。update.json 绑定版本／build／commit／
-  平台／架构／大小／SHA-256，Android 额外校验 package/versionCode/
-  安装证书。下载流式、可暂停续传、完整性检查后提交；显式启动系统安装器，
-  桌面展示下载位置，Store 构建走 Store，iOS 不尝试安装未签名应用。
+- 更新独立于 SSH：用户随后指定迁移到 Yggdrasil 分发平台公开
+  `/api/v1/app/latest` 与 `/api/v1/app/download`，复用目录标识
+  `com.norns.valhalla`；本机包名不变。统一 default 渠道、显式 platform/arch
+  查询和下载；架构读取 Dart Abi.current()，不扫描系统支持的 ABI。
+  解析 packages 并以 package_id 绑定具体包；ETag 按来源、渠道、
+  平台、架构及客户端版本绑定；默认 24 小时可关闭检查，不自动下载或安装。
+  校验语义版本、ABI 编码、文件名、大小、SHA-256 和版本绑定下载 URL；
+  新 packages 必须提供每包结构化 hash；历史单包记录才允许严格读取平台
+  说明中的单一 `SHA256:` 标记。目录版本码不作为所有 ABI 的 APK 版本码；
+  通过完整版本名获取 base build，并分别构造实际 APK 版本码。Android
+  额外校验实际包名／版本和固定正式证书。
+  旧 GitHub 缓存不参与新源更新，但保留磁盘数据以便回滚；应用不再通过
+  GitHub API 发现更新，GitHub 仅保留开源入口及分发平台选择的下载上游。
+  下载仍流式、可暂停续传、校验后提交；显式启动安装器，桌面展示下载
+  位置，Store 构建走 Store，iOS 不尝试安装未签名应用。平台尚未发布
+  对应架构时不能使用默认 ARM64 包代替。契约和实际验证状态见
+  [多平台分发](../../agent-workflow/2026-10-11-ygg-multiplatform.md)。
 
 兼容边界：文件修订校验与原子替换之间不能代替服务端 CAS 锁；PID 校验与
 kill 间不能代替 pidfd。无覆盖上传发布需要宿主 POSIX ln；不支持时保留

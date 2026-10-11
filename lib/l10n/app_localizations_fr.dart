@@ -4279,7 +4279,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucun package d\'installation directe disponible pour cette plate-forme/architecture.';
 
   @override
-  String get updateOpenReleasePage => 'Ouvrir les versions sur GitHub';
+  String get updateOpenReleasePage => 'Ouvrir la page des versions';
 
   @override
   String get updateDownload => 'Télécharger la mise à jour';
@@ -4329,7 +4329,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get updateErrorRateLimited =>
-      'Limite de requêtes de l\'API GitHub dépassée. Veuillez réessayer plus tard.';
+      'Limite de requêtes du service de mise à jour dépassée. Veuillez réessayer plus tard.';
 
   @override
   String get updateErrorNetwork =>
@@ -4369,7 +4369,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get updateErrorGeneric =>
-      'L\'opération de mise à jour a échoué. Veuillez réessayer ou consulter les versions sur GitHub.';
+      'L\'opération de mise à jour a échoué. Veuillez réessayer ou consulter la page des versions.';
 
   @override
   String get servicePermissionDenied =>

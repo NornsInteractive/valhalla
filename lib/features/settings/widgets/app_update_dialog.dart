@@ -27,6 +27,9 @@ String localizeUpdateError(BuildContext context, String rawError) {
   if (rawError.contains('UPDATE_INSTALL_PERMISSION_REQUIRED')) {
     return l10n.updateErrorPermissionRequired;
   }
+  if (rawError.contains('UPDATE_CHECK_AUTH_FAILED')) {
+    return l10n.updateErrorGeneric;
+  }
   if (rawError.contains('UPDATE_RATE_LIMITED') ||
       rawError.contains('403') ||
       rawError.contains('429')) {

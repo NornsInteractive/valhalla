@@ -4211,7 +4211,7 @@ class AppLocalizationsTh extends AppLocalizations {
       'ไม่มีแพ็กเกจติดตั้งโดยตรงสำหรับแพลตฟอร์ม/สถาปัตยกรรมของอุปกรณ์นี้';
 
   @override
-  String get updateOpenReleasePage => 'เปิดหน้าเผยแพร่บน GitHub';
+  String get updateOpenReleasePage => 'เปิดหน้าเผยแพร่';
 
   @override
   String get updateDownload => 'ดาวน์โหลดการอัปเดต';
@@ -4261,7 +4261,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get updateErrorRateLimited =>
-      'เกินขีดจำกัดอัตราคำขอของ GitHub API โปรดลองอีกครั้งในภายหลัง';
+      'เกินขีดจำกัดอัตราคำขอของบริการอัปเดต โปรดลองอีกครั้งในภายหลัง';
 
   @override
   String get updateErrorNetwork =>
@@ -4301,7 +4301,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get updateErrorGeneric =>
-      'การดำเนินการอัปเดตล้มเหลว โปรดลองอีกครั้งหรือดูการเผยแพร่บน GitHub';
+      'การดำเนินการอัปเดตล้มเหลว โปรดลองอีกครั้งหรือดูหน้าเผยแพร่';
 
   @override
   String get servicePermissionDenied => 'การอนุญาตถูกปฏิเสธในการจัดการบริการ';
