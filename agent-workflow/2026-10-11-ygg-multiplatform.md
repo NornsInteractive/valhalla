@@ -1,5 +1,12 @@
 # Ygg multi-platform distribution
 
+**Latest: published 2026-10-11 14:15:51 UTC.** Fresh signed Android three-ABI
+APKs/AAB and Linux x64 replaced the existing 17 GitHub assets; four external-only
+distribution records now carry new bytes/hashes. All four actual public downloads
+and the production client's check/Linux download passed. Source f1cf8c9, same
+1.0.4+5/tag/certificate, zero Actions/ADB. Historical IDs and failed validation
+below are retained, not current status. See [release proof](2026-10-11-ygg-release.md).
+
 ## Authorized release follow-up
 
 User subsequently requested application ABI detection and explicitly asked the
@@ -18,7 +25,7 @@ and GitHub assets; do not delete versions, R2 objects or signing material.
 Current prerequisite result: 140 focused updater/localization/privacy/storage
 tests passed, whole suite 2484 passed / 18 explicit environment skips / 0 failed,
 manifest generator 27 passed and whole-project analysis has no issues. Fresh
-build/publication are in progress; earlier blocked results below are historical.
+build/publication subsequently passed; earlier blocked results below are historical.
 
 Scope: finish the previous unverified update-source migration against the newly
 deployed public API. Reuse catalog `com.norns.valhalla`, existing published
@@ -69,7 +76,7 @@ privacy tests, whole-project analyze and diff-check. Do not format the whole
 large storage file. Report production defects, never patch production to mask
 failures. Keep logs/actual exits; no old test gate reused as current proof.
 
-Status: business implementation and package registration complete; OpenCode
+Historical status before the main-agent exception: business implementation and package registration complete; OpenCode
 validation pending. Previous migration is not yet gated. MiMo2.6 console exited
 124 without output/writes; confirmed-free MiMo2.5 console exited 1 with upstream
 `UnknownError` (`err_3ecbf798`), also without writes. Confirmed-free Step5 with
