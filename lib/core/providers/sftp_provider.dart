@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path_util;
@@ -61,6 +63,8 @@ enum SftpTransferKind { upload, download }
 /// 文件列表的排序字段。
 enum SftpSortKey { name, size, date }
 
+enum SftpViewMode { list, grid }
+
 /// 把存储里的字符串还原成 [SftpSortKey]。
 ///
 /// 无法识别的值回落到 [fallback]（默认按名称），这样降级安装
@@ -119,6 +123,9 @@ class SftpTransfer {
 
   /// 失败时的 reason code（由 UI 映射 ARB 文案）。其余状态为 null。
   final String? errorMessage;
+  final Map<String, dynamic>? sourceIdentity;
+  final bool managedDownload;
+  final String? localSha256;
 
   const SftpTransfer({
     required this.id,
@@ -129,6 +136,9 @@ class SftpTransfer {
     this.totalBytes = 0,
     this.status = SftpTransferStatus.queued,
     this.errorMessage,
+    this.sourceIdentity,
+    this.managedDownload = false,
+    this.localSha256,
   });
 
   /// 进度 0.0~1.0；总大小未知时返回 null，避免 UI 显示假进度。
@@ -154,6 +164,8 @@ class SftpTransfer {
     SftpTransferStatus? status,
     String? errorMessage,
     bool clearError = false,
+    Map<String, dynamic>? sourceIdentity,
+    String? localSha256,
   }) {
     return SftpTransfer(
       id: id,
@@ -164,7 +176,31 @@ class SftpTransfer {
       totalBytes: totalBytes ?? this.totalBytes,
       status: status ?? this.status,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      sourceIdentity: sourceIdentity ?? this.sourceIdentity,
+      managedDownload: managedDownload,
+      localSha256: localSha256 ?? this.localSha256,
     );
+  }
+
+  Map<String, dynamic> toJson() => {'id': id, 'kind': kind.name,
+    'remotePath': remotePath, 'localPath': localPath, 'transferredBytes': transferredBytes,
+    'totalBytes': totalBytes, 'status': status.name, 'errorMessage': errorMessage,
+    'sourceIdentity': sourceIdentity, 'managedDownload': managedDownload,
+    'localSha256': localSha256};
+
+  factory SftpTransfer.fromJson(Map<String, dynamic> json) {
+    final status = SftpTransferStatus.values.byName(json['status'] as String);
+    return SftpTransfer(id: json['id'] as String,
+      kind: SftpTransferKind.values.byName(json['kind'] as String),
+      remotePath: json['remotePath'] as String, localPath: json['localPath'] as String,
+      transferredBytes: json['transferredBytes'] as int? ?? 0,
+      totalBytes: json['totalBytes'] as int? ?? 0,
+      status: status == SftpTransferStatus.running || status == SftpTransferStatus.queued
+        ? SftpTransferStatus.paused : status,
+      errorMessage: json['errorMessage'] as String?,
+      sourceIdentity: json['sourceIdentity'] as Map<String, dynamic>?,
+      managedDownload: json['managedDownload'] as bool? ?? false,
+      localSha256: json['localSha256'] as String?);
   }
 }
 
@@ -191,6 +227,9 @@ class SftpState {
   /// 文件列表是否升序。
   final bool sortAscending;
   final bool showHiddenFiles;
+  /// Null retains the existing width-adaptive layout until explicitly selected.
+  final SftpViewMode? viewMode;
+  final DateTime? cachedAt;
 
   const SftpState({
     this.downloadNotificationsUnavailable = false,
@@ -205,6 +244,8 @@ class SftpState {
     this.sortKey = SftpSortKey.name,
     this.sortAscending = true,
     this.showHiddenFiles = false,
+    this.viewMode,
+    this.cachedAt,
   });
 
   /// 是否已在根目录。作为「返回键是否退出 app」的唯一判据，避免多处内联
@@ -322,6 +363,9 @@ class SftpState {
     SftpSortKey? sortKey,
     bool? sortAscending,
     bool? showHiddenFiles,
+    SftpViewMode? viewMode,
+    DateTime? cachedAt,
+    bool clearCachedAt = false,
   }) {
     return SftpState(
       downloadNotificationsUnavailable:
@@ -342,6 +386,8 @@ class SftpState {
       sortKey: sortKey ?? this.sortKey,
       sortAscending: sortAscending ?? this.sortAscending,
       showHiddenFiles: showHiddenFiles ?? this.showHiddenFiles,
+      viewMode: viewMode ?? this.viewMode,
+      cachedAt: clearCachedAt ? null : cachedAt ?? this.cachedAt,
     );
   }
 
@@ -393,6 +439,16 @@ class SftpNotifier extends Notifier<SftpState> {
   bool _currentSource(int epoch) => ref.mounted && epoch == _sourceEpoch;
 
   late SftpOperations _service;
+  SftpTextSnapshot? _editorSnapshot;
+  Timer? _editorDraftTimer;
+  Future<void> Function()? _pendingEditorDraft;
+  Future<void> _editorDraftWrites = Future<void>.value();
+  String? _editorDraftKey;
+  bool _editorDraftConflict = false;
+  int get editorToken => _editorEpoch;
+
+  String _fileDraftKey(ServerProfile server, String path) => sha256.convert(
+    utf8.encode('${server.connectionKey}\u0000$path')).toString();
 
   /// 正在执行的传输句柄，按任务 id 索引。
   ///
@@ -402,20 +458,74 @@ class SftpNotifier extends Notifier<SftpState> {
   /// 断开连接会重建 notifier，旧的句柄会随旧实例一起被丢弃。
   /// 这没问题：断开时底层的 SFTP 通道已经没了，句柄本就不可用。
   final Map<String, SftpTransferHandle> _handles = {};
+  final Set<String> _finalizingTransfers = {};
   final Map<String, int> _downloadRetries = {};
   final Set<String> _connectionPaused = {};
+  Future<void> _transferWrites = Future<void>.value();
+  DateTime _lastTransferWrite = DateTime.fromMillisecondsSinceEpoch(0);
+
+  void _persistTransfers({bool progress = false}) {
+    final server = _boundServer;
+    if (server == null) return;
+    final now = DateTime.now();
+    if (progress && now.difference(_lastTransferWrite).inMilliseconds < 1000) return;
+    _lastTransferWrite = now;
+    final records = state.transfers.map((transfer) => transfer.toJson()).toList();
+    final storage = ref.read(localStorageServiceProvider);
+    _transferWrites = _transferWrites.then((_) => storage.saveTransferRecords(server, records))
+      .catchError((Object error, StackTrace stack) {
+        unawaited(AppDiagnostics.instance.record('sftp.transfer.records', error, stack));
+        if (ref.mounted && (_boundServer?.hasSameConnectionSettings(server) ?? false)) {
+          state = state.copyWith(errorMessage: 'SFTP_TRANSFER_RECORD_SAVE_FAILED');
+        }
+      });
+  }
 
   @override
   SftpState build() {
     final sourceEpoch = ++_sourceEpoch;
     ref.watch(activeServerProvider.select((server) => server?.connectionKey));
     final activeServer = ref.read(activeServerProvider);
-    final previous =
-        activeServer != null &&
-            (_boundServer?.hasSameConnectionSettings(activeServer) ?? false)
-        ? stateOrNull
-        : null;
+    final sameTarget = activeServer != null &&
+        (_boundServer?.hasSameConnectionSettings(activeServer) ?? false);
+    var previous = sameTarget ? stateOrNull : null;
+    if (previous == null && activeServer != null) {
+      try {
+        final cached = ref.read(localStorageServiceProvider).getPageCache(activeServer, 'files');
+        final data = cached?['payload'] as Map<String, dynamic>?;
+        if (data != null) {
+          previous = SftpState(currentPath: data['path'] as String,
+            cachedAt: DateTime.tryParse(cached?['savedAt'] as String? ?? ''),
+            files: (data['files'] as List).cast<Map<String, dynamic>>()
+              .map(SftpFileItem.fromJson).toList());
+        }
+      } catch (error, stack) {
+        unawaited(AppDiagnostics.instance.record('sftp.cache', error, stack));
+      }
+    }
     _boundServer = activeServer;
+    if (!sameTarget) {
+      _editorEpoch++;
+      _editorSnapshot = null;
+      _editorDraftKey = null;
+      _editorDraftConflict = false;
+      _managedDownloads.clear();
+      _autoOpenDownloads.clear();
+      _downloadRetries.clear();
+      _connectionPaused.clear();
+      if (activeServer != null) {
+        try {
+          final records = ref.read(localStorageServiceProvider).getTransferRecords(activeServer)
+            .map(SftpTransfer.fromJson).toList();
+          if (records.isNotEmpty) {
+            previous = (previous ?? const SftpState(currentPath: '/')).copyWith(transfers: records);
+          }
+          _managedDownloads.addAll(records.where((task) => task.managedDownload).map((task) => task.id));
+        } catch (error, stack) {
+          unawaited(AppDiagnostics.instance.record('sftp.transfer.restore', error, stack));
+        }
+      }
+    }
     final connected = ref.watch(
       serverConnectionProvider.select((s) => s.isConnected),
     );
@@ -431,8 +541,14 @@ class SftpNotifier extends Notifier<SftpState> {
     // 用 ref.onDispose 而不是重写 dispose()：Notifier 没有可重写的 dispose。
     ref.onDispose(() {
       _sourceEpoch++;
+      _editorDraftTimer?.cancel();
+      final pending = _pendingEditorDraft;
+      _pendingEditorDraft = null;
+      if (pending != null) unawaited(pending());
       for (final handle in _handles.values) {
-        unawaited(handle.abort());
+        unawaited(handle.abort().catchError((Object error, StackTrace stack) {
+          unawaited(AppDiagnostics.instance.record('sftp.transfer.dispose', error, stack));
+        }));
       }
       _handles.clear();
     });
@@ -443,6 +559,13 @@ class SftpNotifier extends Notifier<SftpState> {
     final sortKey = sftpSortKeyFromStorage(storage.getFileSortKey());
     final sortAscending = storage.getFileSortAscending();
     final showHiddenFiles = storage.getFileShowHidden();
+    final rawViewMode = storage.getFileViewMode();
+    final viewMode = rawViewMode == null ? null :
+        SftpViewMode.values.firstWhere((mode) => mode.name == rawViewMode);
+    if (previous != null) {
+      previous = previous.copyWith(viewMode: viewMode, sortKey: sortKey,
+        sortAscending: sortAscending, showHiddenFiles: showHiddenFiles);
+    }
 
     if (sshClient != null) {
       Future.microtask(() {
@@ -480,6 +603,7 @@ class SftpNotifier extends Notifier<SftpState> {
         sortKey: sortKey,
         sortAscending: sortAscending,
         showHiddenFiles: showHiddenFiles,
+        viewMode: viewMode,
       );
     } else {
       if (previous != null) {
@@ -512,6 +636,7 @@ class SftpNotifier extends Notifier<SftpState> {
         sortKey: sortKey,
         sortAscending: sortAscending,
         showHiddenFiles: showHiddenFiles,
+        viewMode: viewMode,
       );
     }
   }
@@ -531,9 +656,18 @@ class SftpNotifier extends Notifier<SftpState> {
       state = state.copyWith(
         currentPath: normalized,
         files: items,
+        clearCachedAt: true,
         isLoading: false,
         searchQuery: clearSearch ? '' : state.searchQuery,
       );
+      final server = _boundServer;
+      if (server != null) {
+        unawaited(ref.read(localStorageServiceProvider).savePageCache(server, 'files', {
+          'path': normalized, 'files': items.take(200).map((f) => f.toJson()).toList(),
+        }).catchError((Object error, StackTrace stack) {
+          unawaited(AppDiagnostics.instance.record('sftp.cache', error, stack));
+        }));
+      }
       return true;
     } catch (e) {
       if (!_currentSource(sourceEpoch) || loadEpoch != _loadEpoch) return false;
@@ -570,6 +704,18 @@ class SftpNotifier extends Notifier<SftpState> {
 
   void setSearchQuery(String q) {
     state = state.copyWith(searchQuery: q);
+  }
+
+  Future<void> setViewMode(SftpViewMode mode) async {
+    try {
+      await ref.read(localStorageServiceProvider).setFileViewMode(mode.name);
+      if (ref.mounted) state = state.copyWith(viewMode: mode, clearError: true);
+    } catch (error, stack) {
+      unawaited(AppDiagnostics.instance.record('sftp.view-preference', error, stack));
+      if (ref.mounted) {
+        state = state.copyWith(errorMessage: 'SFTP_VIEW_PREFERENCE_SAVE_FAILED');
+      }
+    }
   }
 
   Future<void> setShowHiddenFiles(bool value) async {
@@ -642,6 +788,8 @@ class SftpNotifier extends Notifier<SftpState> {
   /// 「传输完成」）。
   Future<void> uploadFrom(String localPath, {String? remoteName}) async {
     final name = remoteName ?? _basename(localPath);
+    _validateTransferName(name);
+    _requireTransferCapacity();
     final remotePath = state.currentPath == '/'
         ? '/$name'
         : '${state.currentPath}/$name';
@@ -656,6 +804,7 @@ class SftpNotifier extends Notifier<SftpState> {
           ),
         )
         .copyWith(clearError: true);
+    _persistTransfers();
     _pumpQueue();
   }
 
@@ -663,6 +812,7 @@ class SftpNotifier extends Notifier<SftpState> {
   ///
   /// 与 [uploadFrom] 相同：Future 完成只表示已入队。
   Future<void> downloadTo(SftpFileItem item, String localPath) async {
+    _requireTransferCapacity();
     if (item.linkTargetErrorCode != null) {
       state = state.copyWith(errorMessage: item.linkTargetErrorCode);
       return;
@@ -678,6 +828,7 @@ class SftpNotifier extends Notifier<SftpState> {
           ),
         )
         .copyWith(clearError: true);
+    _persistTransfers();
     _pumpQueue();
   }
 
@@ -697,6 +848,7 @@ class SftpNotifier extends Notifier<SftpState> {
       return null;
     }
     try {
+      _requireTransferCapacity();
       final path = await ref
           .read(downloadPlatformServiceProvider)
           .reservePath(item.name);
@@ -707,10 +859,12 @@ class SftpNotifier extends Notifier<SftpState> {
         remotePath: item.path,
         localPath: path,
         totalBytes: item.sizeBytes,
+        managedDownload: true,
       );
       _managedDownloads.add(task.id);
       if (openWhenComplete) _autoOpenDownloads.add(task.id);
       state = state.withAppendedTransfer(task).copyWith(clearError: true);
+      _persistTransfers();
       _notifyDownload(task);
       _pumpQueue();
       return task.id;
@@ -768,10 +922,14 @@ class SftpNotifier extends Notifier<SftpState> {
         task.status != SftpTransferStatus.completed) {
       return;
     }
+    final epoch = _sourceEpoch;
+    final platform = ref.read(downloadPlatformServiceProvider);
     try {
-      await ref.read(downloadPlatformServiceProvider).openFile(task.localPath);
+      await _verifyCompletedDownload(task);
+      if (!_currentSource(epoch)) return;
+      await platform.openFile(task.localPath);
     } catch (_) {
-      if (ref.mounted) {
+      if (_currentSource(epoch)) {
         state = state.copyWith(errorMessage: 'DOWNLOAD_OPEN_FAILED');
       }
     }
@@ -784,7 +942,25 @@ class SftpNotifier extends Notifier<SftpState> {
         task.status != SftpTransferStatus.completed) {
       return;
     }
-    await ref.read(downloadPlatformServiceProvider).revealFile(task.localPath);
+    final epoch = _sourceEpoch;
+    final platform = ref.read(downloadPlatformServiceProvider);
+    try {
+      await _verifyCompletedDownload(task);
+      if (_currentSource(epoch)) await platform.revealFile(task.localPath);
+    } catch (_) {
+      if (_currentSource(epoch)) {
+        state = state.copyWith(errorMessage: 'DOWNLOAD_OPEN_FAILED');
+      }
+    }
+  }
+
+  Future<void> _verifyCompletedDownload(SftpTransfer task) async {
+    final file = File(task.localPath);
+    if (task.localSha256 == null || !await file.exists() ||
+        await file.length() != task.transferredBytes ||
+        (await sha256.bind(file.openRead()).first).toString() != task.localSha256) {
+      throw const FileSystemException('SFTP_TRANSFER_PARTIAL_INVALID');
+    }
   }
 
   /// 队列调度：没有正在跑的任务时，取队首的 queued 任务开始执行。
@@ -808,6 +984,7 @@ class SftpNotifier extends Notifier<SftpState> {
     state = state.withTransfer(
       next.copyWith(status: SftpTransferStatus.running, clearError: true),
     );
+    _persistTransfers();
     // 不 await：调用方（UI 回调、状态变更）不该等整个传输跑完。
     unawaited(_runTransfer(next.id));
   }
@@ -829,6 +1006,25 @@ class SftpNotifier extends Notifier<SftpState> {
 
     SftpTransferHandle? handle;
     try {
+      final service = _service;
+      if (service is SftpResumableOperations) {
+        void onSource(Map<String, dynamic> source) {
+          if (disposed || !ref.mounted) return;
+          final current = state.transferById(id);
+          if (current == null) return;
+          state = state.withTransfer(current.copyWith(sourceIdentity: source));
+          _persistTransfers();
+        }
+        handle = task.kind == SftpTransferKind.download
+          ? await (service as SftpResumableOperations).startResumableDownload(
+            task.remotePath, _managedDownloads.contains(id) ? '${task.localPath}.part' : task.localPath,
+            expectedSource: task.sourceIdentity, onSource: onSource,
+            onProgress: (bytes) => _reportProgress(id, bytes))
+          : await (service as SftpResumableOperations).startResumableUpload(
+            task.localPath, task.remotePath, transferId: id,
+            expectedSource: task.sourceIdentity, onSource: onSource,
+            onProgress: (bytes) => _reportProgress(id, bytes));
+      } else {
       switch (task.kind) {
         case SftpTransferKind.download:
           handle = await _service.startDownload(
@@ -844,6 +1040,7 @@ class SftpNotifier extends Notifier<SftpState> {
             task.remotePath,
             onProgress: (written) => _reportProgress(id, written),
           );
+      }
       }
       if (disposed) {
         // 建连期间就被销毁了：通道已经没了，只能尽力关掉刚拿到的句柄。
@@ -882,6 +1079,7 @@ class SftpNotifier extends Notifier<SftpState> {
       if (finished == null || finished.status != SftpTransferStatus.running) {
         return;
       }
+      _finalizingTransfers.add(id);
       if (_managedDownloads.contains(id)) {
         if (await File(task.localPath).exists()) {
           throw const FileSystemException('DOWNLOAD_TARGET_EXISTS');
@@ -889,6 +1087,16 @@ class SftpNotifier extends Notifier<SftpState> {
         await File('${task.localPath}.part').rename(task.localPath);
       }
       if (disposed) return;
+      if (task.kind == SftpTransferKind.download && await File(task.localPath).exists()) {
+        final file = File(task.localPath);
+        final digest = (await sha256.bind(file.openRead()).first).toString();
+        final length = await file.length();
+        if (disposed) return;
+        final latest = state.transferById(id);
+        if (latest == null || latest.status != SftpTransferStatus.running) return;
+        state = state.withTransfer(latest.copyWith(localSha256: digest,
+          transferredBytes: length));
+      }
       _completeTransfer(id, SftpTransferStatus.completed);
     } on SftpTransferAborted {
       // 用户主动取消：不是错误，不要写 errorMessage。
@@ -900,6 +1108,8 @@ class SftpNotifier extends Notifier<SftpState> {
       if (disposed) return;
       unawaited(AppDiagnostics.instance.record('sftp.transfer', error, stack));
       _failTransfer(id, task.kind, error);
+    } finally {
+      _finalizingTransfers.remove(id);
     }
   }
 
@@ -910,6 +1120,7 @@ class SftpNotifier extends Notifier<SftpState> {
     // 上面的 null 检查就是防这个。
     final finished = task.copyWith(status: status);
     state = state.withTransfer(finished);
+    _persistTransfers();
     _notifyDownload(finished);
     if (status == SftpTransferStatus.completed) {
       // 传的是**终态**的任务，不是进来的那个快照。
@@ -917,9 +1128,7 @@ class SftpNotifier extends Notifier<SftpState> {
       _onTransferCompleted(finished);
       if (_autoOpenDownloads.remove(id)) {
         unawaited(
-          ref
-              .read(downloadPlatformServiceProvider)
-              .openFile(finished.localPath)
+          openCompletedTransfer(id)
               .catchError((_) {
                 if (ref.mounted) {
                   state = state.copyWith(errorMessage: 'DOWNLOAD_OPEN_FAILED');
@@ -933,6 +1142,11 @@ class SftpNotifier extends Notifier<SftpState> {
   }
 
   static String downloadErrorCode(Object error) {
+    if (error is SFTPException && {
+      'SFTP_TRANSFER_SOURCE_CHANGED', 'SFTP_TRANSFER_PARTIAL_INVALID',
+    }.contains(error.message)) {
+      return error.message;
+    }
     if (error is TimeoutException ||
         error is SFTPException && error.message.contains('timed out')) {
       return 'SFTP_DOWNLOAD_TIMEOUT';
@@ -970,9 +1184,14 @@ class SftpNotifier extends Notifier<SftpState> {
   void _failTransfer(String id, SftpTransferKind kind, Object error) {
     final task = state.transferById(id);
     if (task == null || task.status.isTerminal) return;
-    final code = kind == SftpTransferKind.upload
+    final detailed = error is SFTPException && {
+      'SFTP_TRANSFER_SOURCE_CHANGED', 'SFTP_TRANSFER_PARTIAL_INVALID',
+      'SFTP_UPLOAD_TARGET_EXISTS', 'SFTP_UPLOAD_COMMIT_FAILED',
+      'SFTP_UPLOAD_SOURCE_INVALID',
+    }.contains(error.message) ? error.message : null;
+    final code = detailed ?? (kind == SftpTransferKind.upload
         ? uploadFailedCode
-        : downloadErrorCode(error);
+        : downloadErrorCode(error));
     if (kind == SftpTransferKind.download &&
         {
           'SFTP_DOWNLOAD_TIMEOUT',
@@ -996,6 +1215,7 @@ class SftpNotifier extends Notifier<SftpState> {
           clearError: connected,
         ),
       );
+      _persistTransfers();
       _notifyDownload(state.transferById(id)!, force: true);
       _pumpQueue();
       return;
@@ -1009,6 +1229,7 @@ class SftpNotifier extends Notifier<SftpState> {
           task.copyWith(status: SftpTransferStatus.failed, errorMessage: code),
         )
         .copyWith(errorMessage: code);
+    _persistTransfers();
     _notifyDownload(state.transferById(id)!);
     _pumpQueue();
   }
@@ -1032,11 +1253,16 @@ class SftpNotifier extends Notifier<SftpState> {
   Future<void> pauseTransfer(String id) async {
     final task = state.transferById(id);
     if (task == null) return;
+    if (_isPublishing(id)) {
+      state = state.copyWith(errorMessage: 'SFTP_TRANSFER_COMMITTING');
+      return;
+    }
 
     if (task.status == SftpTransferStatus.queued) {
       state = state.withTransfer(
         task.copyWith(status: SftpTransferStatus.paused),
       );
+      _persistTransfers();
       return;
     }
     if (task.status != SftpTransferStatus.running) return;
@@ -1044,6 +1270,7 @@ class SftpNotifier extends Notifier<SftpState> {
     state = state.withTransfer(
       task.copyWith(status: SftpTransferStatus.paused),
     );
+    _persistTransfers();
     _notifyDownload(state.transferById(id)!, force: true);
     await _handles[id]?.pause();
     // 让出执行权，好让队列里排在后面的任务开始跑。
@@ -1059,10 +1286,15 @@ class SftpNotifier extends Notifier<SftpState> {
 
     final handle = _handles[id];
     if (handle != null) {
+      if (state.activeTransfer != null) {
+        state = state.copyWith(errorMessage: 'SFTP_TRANSFER_BUSY');
+        return;
+      }
       // 句柄还在：原地恢复，不需要重新排队。这是暂停/继续的常见路径。
       state = state.withTransfer(
         task.copyWith(status: SftpTransferStatus.running),
       );
+      _persistTransfers();
       _notifyDownload(state.transferById(id)!, force: true);
       await handle.resume();
       return;
@@ -1075,8 +1307,35 @@ class SftpNotifier extends Notifier<SftpState> {
         clearError: true,
       ),
     );
+    _persistTransfers();
     _notifyDownload(state.transferById(id)!, force: true);
     _pumpQueue();
+  }
+
+  void _requireTransferCapacity() {
+    if (state.pendingTransferCount >= 100) {
+      throw const SFTPException('SFTP_TRANSFER_QUEUE_FULL');
+    }
+    if (state.transfers.length >= 100) {
+      state = state.copyWith(transfers: [
+        ...state.transfers.where((task) => !task.status.isTerminal),
+        ...state.transfers.where((task) => task.status.isTerminal).toList().reversed.take(49),
+      ]);
+    }
+  }
+
+  void _validateTransferName(String name) {
+    if (name.isEmpty || name == '.' || name == '..' ||
+        name.contains(RegExp(r'[/\\\x00-\x1f]'))) {
+      throw const ValidationException('SFTP_FILENAME_INVALID');
+    }
+  }
+
+  bool _isPublishing(String id) {
+    final handle = _handles[id];
+    return _finalizingTransfers.contains(id) ||
+      handle is SftpCommittingTransfer &&
+        (handle as SftpCommittingTransfer).isCommitting;
   }
 
   /// 取消某个任务。
@@ -1087,16 +1346,44 @@ class SftpNotifier extends Notifier<SftpState> {
   Future<void> cancelTransfer(String id) async {
     final task = state.transferById(id);
     if (task == null || task.status.isTerminal) return;
-
+    final sourceEpoch = _sourceEpoch;
+    final service = _service;
+    if (_isPublishing(id)) {
+      state = state.copyWith(errorMessage: 'SFTP_TRANSFER_COMMITTING');
+      return;
+    }
     final handle = _handles.remove(id);
     state = state.withTransfer(
       task.copyWith(status: SftpTransferStatus.canceled),
     );
+    _persistTransfers();
     _notifyDownload(state.transferById(id)!, force: true);
     if (handle != null) {
       await handle.abort();
     }
+    await _discardTransferPartial(task, service);
+    if (!_currentSource(sourceEpoch)) return;
     _pumpQueue();
+  }
+
+  Future<bool> _discardTransferPartial(SftpTransfer task, SftpOperations service) async {
+    try {
+      if (task.kind == SftpTransferKind.upload && service is SftpResumableOperations) {
+        await (service as SftpResumableOperations).discardUploadPartial(task.remotePath, task.id);
+      } else if (task.managedDownload) {
+        final partial = File('${task.localPath}.part');
+        if (await partial.exists()) await partial.delete();
+      }
+      return true;
+    } catch (error, stack) {
+      unawaited(AppDiagnostics.instance.record('sftp.partial.cleanup', error, stack));
+      if (ref.mounted && state.transferById(task.id) != null) {
+        state = state.withTransfer(task.copyWith(status: SftpTransferStatus.canceled,
+          errorMessage: 'SFTP_TRANSFER_CLEANUP_FAILED'));
+      }
+      _persistTransfers();
+      return false;
+    }
   }
 
   /// 从列表里移除某个任务（不改变传输本身）。
@@ -1106,6 +1393,12 @@ class SftpNotifier extends Notifier<SftpState> {
   Future<void> removeTransfer(String id) async {
     final task = state.transferById(id);
     if (task == null) return;
+    final sourceEpoch = _sourceEpoch;
+    final service = _service;
+    if (_isPublishing(id)) {
+      state = state.copyWith(errorMessage: 'SFTP_TRANSFER_COMMITTING');
+      return;
+    }
     if (!task.status.isTerminal) {
       _notifyDownload(
         task.copyWith(status: SftpTransferStatus.canceled),
@@ -1114,15 +1407,22 @@ class SftpNotifier extends Notifier<SftpState> {
       final handle = _handles.remove(id);
       if (handle != null) await handle.abort();
     }
+    if (task.status != SftpTransferStatus.completed) {
+      if (!await _discardTransferPartial(task, service)) return;
+    }
+    if (!_currentSource(sourceEpoch)) return;
     state = state.withoutTransfer(id);
+    _persistTransfers();
     _pumpQueue();
   }
 
   /// 清除所有已结束的任务。
   void clearFinishedTransfers() {
     state = state.copyWith(
-      transfers: state.transfers.where((t) => !t.status.isTerminal).toList(),
+      transfers: state.transfers.where((t) => !t.status.isTerminal ||
+        t.errorMessage == 'SFTP_TRANSFER_CLEANUP_FAILED').toList(),
     );
+    _persistTransfers();
   }
 
   /// 进度回调只更新字节数，不触碰其它字段。
@@ -1134,6 +1434,7 @@ class SftpNotifier extends Notifier<SftpState> {
     final task = state.transferById(id);
     if (task == null || task.status != SftpTransferStatus.running) return;
     state = state.withTransfer(task.copyWith(transferredBytes: transferred));
+    _persistTransfers(progress: true);
     _notifyDownload(state.transferById(id)!);
   }
 
@@ -1340,12 +1641,31 @@ class SftpNotifier extends Notifier<SftpState> {
     }
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final content = await _service.readFileContent(item.path);
+      final service = _service;
+      final snapshot = service is SftpEditorOperations
+          ? await (service as SftpEditorOperations).readTextSnapshot(item.path)
+          : null;
+      final content = snapshot?.content ?? await service.readFileContent(item.path);
       if (!_currentSource(sourceEpoch) || editorEpoch != _editorEpoch) return;
+      final server = _boundServer;
+      Map<String, dynamic>? draft;
+      final draftKey = server == null ? null : _fileDraftKey(server, item.path);
+      if (draftKey != null) {
+        try {
+          draft = await ref.read(secureStorageServiceProvider).getFileEditorDraft(draftKey);
+        } catch (error, stack) {
+          unawaited(AppDiagnostics.instance.record('sftp.draft.restore', error, stack));
+        }
+      }
+      if (!_currentSource(sourceEpoch) || editorEpoch != _editorEpoch) return;
+      _editorSnapshot = snapshot;
+      _editorDraftKey = draftKey;
+      _editorDraftConflict = draft != null && draft['digest'] != snapshot?.digest;
       state = state.copyWith(
         isLoading: false,
         editingFilePath: item.path,
-        editingFileContent: content,
+        editingFileContent: draft?['content'] as String? ?? content,
+        errorMessage: _editorDraftConflict ? 'SFTP_EDIT_DRAFT_CONFLICT' : null,
       );
     } catch (e) {
       if (!_currentSource(sourceEpoch) || editorEpoch != _editorEpoch) return;
@@ -1358,8 +1678,14 @@ class SftpNotifier extends Notifier<SftpState> {
     }
   }
 
-  void closeFileEditor() {
+  void closeFileEditor({int? editorToken}) {
+    if (editorToken != null && editorToken != _editorEpoch) return;
+    _editorDraftTimer?.cancel();
+    final pending = _pendingEditorDraft;
+    _pendingEditorDraft = null;
+    if (pending != null) unawaited(pending());
     _editorEpoch++;
+    _editorSnapshot = null;
     state = state.copyWith(
       clearEditor: true,
       clearError: true,
@@ -1367,11 +1693,73 @@ class SftpNotifier extends Notifier<SftpState> {
     );
   }
 
-  Future<void> saveFileContent(String path, String content) async {
+  void updateEditorDraft(String content, {int? editorToken}) {
+    if (editorToken != null && editorToken != _editorEpoch) return;
+    final original = _editorSnapshot;
+    final key = _editorDraftKey;
+    if (original == null || key == null) return;
+    if (utf8.encode(content).length > SftpClientService.maxPreviewBytes) {
+      state = state.copyWith(errorMessage: 'SFTP_PREVIEW_TOO_LARGE');
+      return;
+    }
+    final storage = ref.read(secureStorageServiceProvider);
+    _editorDraftTimer?.cancel();
+    _pendingEditorDraft = () => _editorDraftWrites = _editorDraftWrites.then((_) async {
+      try {
+        await storage.saveFileEditorDraft(key, {'content': content, 'digest': original.digest});
+      } catch (error, stack) {
+        unawaited(AppDiagnostics.instance.record('sftp.draft.save', error, stack));
+        if (ref.mounted && key == _editorDraftKey) {
+          state = state.copyWith(errorMessage: 'SFTP_DRAFT_SAVE_FAILED');
+        }
+      }
+    });
+    _editorDraftTimer = Timer(const Duration(milliseconds: 500), () {
+      final pending = _pendingEditorDraft;
+      _pendingEditorDraft = null;
+      if (pending != null) unawaited(pending());
+    });
+  }
+
+  Future<void> discardEditorDraft({String? draftKey, int? editorToken}) async {
+    if (editorToken != null && editorToken != _editorEpoch) {
+      throw const SFTPException('SFTP_EDITOR_EXPIRED');
+    }
+    final key = draftKey ?? _editorDraftKey;
+    final storage = ref.read(secureStorageServiceProvider);
+    if (key == _editorDraftKey) {
+      _editorDraftTimer?.cancel();
+      _pendingEditorDraft = null;
+    }
+    await _editorDraftWrites;
+    if (key != null) await storage.deleteFileEditorDraft(key);
+    if (key == _editorDraftKey) _editorDraftConflict = false;
+  }
+
+  Future<void> saveFileContent(String path, String content, {int? editorToken}) async {
     final sourceEpoch = _sourceEpoch;
     final editorEpoch = _editorEpoch;
-    await _service.writeFileContent(path, content);
-    if (!_currentSource(sourceEpoch)) return;
+    final service = _service;
+    final snapshot = _editorSnapshot;
+    final draftKey = _editorDraftKey;
+    if (path != state.editingFilePath || editorToken != null && editorToken != _editorEpoch) {
+      throw const SFTPException('SFTP_EDITOR_EXPIRED');
+    }
+    if (_editorDraftConflict) throw const SFTPException('SFTP_EDIT_DRAFT_CONFLICT');
+    if (service is SftpEditorOperations && snapshot != null) {
+      await (service as SftpEditorOperations).saveTextSnapshot(snapshot, content);
+    } else {
+      // Legacy implementations cannot provide revision-safe replacement.
+      throw const SFTPException('SFTP_ATOMIC_SAVE_UNSUPPORTED');
+    }
+    if (!_currentSource(sourceEpoch)) {
+      throw const SFTPException('SFTP_EDITOR_EXPIRED');
+    }
+    try {
+      await discardEditorDraft(draftKey: draftKey);
+    } catch (error, stack) {
+      unawaited(AppDiagnostics.instance.record('sftp.draft.cleanup', error, stack));
+    }
     if (editorEpoch == _editorEpoch) closeFileEditor();
     await refresh();
   }

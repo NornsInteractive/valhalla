@@ -22,6 +22,7 @@ import 'widgets/clear_credentials_dialog.dart';
 import 'widgets/configuration_migration_dialog.dart';
 import 'widgets/default_agent_dialog.dart';
 import 'widgets/trusted_hosts_dialog.dart';
+import '../terminal/widgets/customize_pinned_keys_dialog.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -848,6 +849,22 @@ class SettingsView extends ConsumerWidget {
               ),
             ),
             onTap: () => _showTerminalFontSizeDialog(context),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            key: const Key('settingsTerminalPinnedKeysRow'),
+            dense: true,
+            leading: const Icon(Icons.tune),
+            title: Text(
+              context.l10n.settingsTerminalPinnedKeys,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              context.l10n.settingsTerminalPinnedKeysSubtitle,
+              style: const TextStyle(fontSize: 11),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => CustomizePinnedKeysDialog.show(context),
           ),
           const Divider(height: 1),
           ListTile(

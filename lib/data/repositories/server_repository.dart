@@ -58,6 +58,8 @@ class ServerRepository {
       rethrow;
     }
     await _secureStorage.deleteCredentials(serverId);
+    await _localStorage.clearServerPageCache(serverId);
+    await _localStorage.clearServerTransferRecords(serverId);
   }
 
   String? getActiveServerId() => _localStorage.getActiveServerId();

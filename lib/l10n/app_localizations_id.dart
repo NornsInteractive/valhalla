@@ -143,6 +143,27 @@ class AppLocalizationsId extends AppLocalizations {
   String get terminalPaste => 'Tempel';
 
   @override
+  String get terminalConfirmPasteTitle => 'Konfirmasi Tempel';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return 'Menempelkan $count baris teks ke terminal. Lanjutkan?';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => 'Tombol Bilah Terminal';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle =>
+      'Sesuaikan dan urutkan ulang tombol pintasan bilah alat';
+
+  @override
+  String get terminalResetPinnedKeys => 'Atur Ulang ke Default';
+
+  @override
+  String get terminalToggleKeyboard => 'Alihkan Papan Ketik';
+
+  @override
   String get sftpCurrentPath => 'Jalur Saat Ini';
 
   @override
@@ -1175,6 +1196,16 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get sftpHiddenPreferenceSaveFailed =>
       'Gagal menyimpan preferensi berkas tersembunyi';
+
+  @override
+  String get sftpViewModeList => 'Tampilan daftar';
+
+  @override
+  String get sftpViewModeGrid => 'Tampilan kisi';
+
+  @override
+  String get sftpViewPreferenceSaveFailed =>
+      'Gagal menyimpan preferensi mode tampilan';
 
   @override
   String get sftpSymlink => 'Tautan simbolik';
@@ -4084,4 +4115,205 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get configImportErrorMalformed =>
       'JSON konfigurasi rusak atau tidak sesuai format';
+
+  @override
+  String get aboutRepository => 'Repositori GitHub';
+
+  @override
+  String get updateCheckTitle => 'Periksa pembaruan';
+
+  @override
+  String get updateChecking => 'Memeriksa pembaruan...';
+
+  @override
+  String get updateCheckNow => 'Periksa sekarang';
+
+  @override
+  String get updateUpToDate => 'Valhalla sudah versi terbaru';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'Terpasang: v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return 'Versi baru tersedia: v$version';
+  }
+
+  @override
+  String get updateViewUpdate => 'Lihat pembaruan';
+
+  @override
+  String updateLastChecked(String time) {
+    return 'Terakhir diperiksa: $time';
+  }
+
+  @override
+  String get updateNeverChecked => 'Belum pernah diperiksa';
+
+  @override
+  String get updateAutoCheckTitle => 'Pemeriksaan pembaruan otomatis';
+
+  @override
+  String get updateAutoCheckSubtitle =>
+      'Periksa pembaruan setiap hari saat aplikasi aktif';
+
+  @override
+  String get updateAutoCheckSaveFailed =>
+      'Gagal menyimpan setelan pemeriksaan pembaruan otomatis';
+
+  @override
+  String get updateDialogTitle => 'Pembaruan Perangkat Lunak';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return 'Saat ini: $version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return 'Terbaru: v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return 'Nomor build: $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return 'Komit: $commit';
+  }
+
+  @override
+  String get updateArtifactDetails => 'Paket instalasi';
+
+  @override
+  String updateArtifactName(String name) {
+    return 'Berkas: $name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return 'Ukuran: $size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'Hash SHA-256: $hash';
+  }
+
+  @override
+  String get updateCopyHash => 'Salin hash SHA-256';
+
+  @override
+  String get updateHashCopied => 'Hash SHA-256 disalin ke papan klip';
+
+  @override
+  String get updateCopyCommit => 'Salin hash komit';
+
+  @override
+  String get updateCommitCopied => 'Hash komit disalin ke papan klip';
+
+  @override
+  String get updateReleaseNotes => 'Catatan Rilis';
+
+  @override
+  String get updateNoReleaseNotes => 'Tidak ada catatan rilis yang disediakan.';
+
+  @override
+  String get updateNoArtifactForPlatform =>
+      'Tidak ada paket instalasi langsung yang tersedia untuk platform/arsitektur perangkat ini.';
+
+  @override
+  String get updateOpenReleasePage => 'Buka Rilis di GitHub';
+
+  @override
+  String get updateDownload => 'Unduh Pembaruan';
+
+  @override
+  String updateDownloading(String progress) {
+    return 'Mengunduh... $progress%';
+  }
+
+  @override
+  String get updatePause => 'Jeda';
+
+  @override
+  String get updateResume => 'Lanjutkan';
+
+  @override
+  String get updateRetry => 'Coba lagi';
+
+  @override
+  String get updateDownloadPaused => 'Unduhan dijeda';
+
+  @override
+  String get updateDownloadCompleted => 'Unduhan selesai dan diverifikasi';
+
+  @override
+  String get updateInstall => 'Instal Pembaruan';
+
+  @override
+  String get updateRevealInFolder => 'Tampilkan di Folder';
+
+  @override
+  String get updateOpenFolder => 'Buka Lokasi Unduhan';
+
+  @override
+  String get updateRetryInstall => 'Coba Lagi Menginstal';
+
+  @override
+  String get updateDesktopInstructions =>
+      'Ekstrak arsip yang diunduh dan ganti aplikasi saat ditutup. Jangan pernah menimpa program yang sedang berjalan.';
+
+  @override
+  String get updateCopyErrorDetails => 'Salin detail kesalahan';
+
+  @override
+  String get updateErrorCopied => 'Detail kesalahan disalin ke papan klip';
+
+  @override
+  String get updateErrorRateLimited =>
+      'Batas frekuensi API GitHub terlampaui. Silakan coba lagi nanti.';
+
+  @override
+  String get updateErrorNetwork =>
+      'Koneksi jaringan gagal. Silakan periksa koneksi internet Anda.';
+
+  @override
+  String get updateErrorManifest =>
+      'Manifest pembaruan tidak valid atau metadata yang diperlukan tidak ada.';
+
+  @override
+  String get updateErrorIntegrity =>
+      'Pemeriksaan integritas unduhan gagal. Checksum berkas tidak cocok.';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      'Ketidakcocokan tanda tangan instalasi: paket pembaruan ditandatangani dengan kunci yang berbeda. Tidak dapat menimpa tanda tangan yang berbeda. Untuk mencegah kehilangan data, jangan pernah mencopot pemasangan atau menghapus data aplikasi.';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      'Izin instalasi diperlukan. Harap izinkan penginstalan aplikasi yang tidak dikenal di pengaturan sistem, lalu ketuk Coba Lagi Menginstal.';
+
+  @override
+  String get updateErrorPermission => 'Izin penyimpanan atau sistem ditolak.';
+
+  @override
+  String get updateErrorPackageInvalid =>
+      'Jalur atau identitas paket tidak valid.';
+
+  @override
+  String get updateErrorStoreInstall =>
+      'Aplikasi ini diinstal dari toko aplikasi. Silakan perbarui melalui toko.';
+
+  @override
+  String get updateErrorPlatform =>
+      'Gagal membuka atau meluncurkan penginstal.';
+
+  @override
+  String get updateErrorGeneric =>
+      'Operasi pembaruan gagal. Silakan coba lagi atau buka rilis di GitHub.';
 }

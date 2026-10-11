@@ -3,8 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:dartssh2/dartssh2.dart';
+import 'package:crypto/crypto.dart';
+import 'package:path/path.dart' as path_util;
+import 'package:uuid/uuid.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/services/app_diagnostics.dart';
+import '../../core/utils/shell_quote.dart';
 
 class SftpFileItem {
   final String name;
@@ -41,6 +45,21 @@ class SftpFileItem {
     this.isSymbolicLink = false,
     this.linkTargetErrorCode,
   });
+
+  Map<String, dynamic> toJson() => {'name': name, 'path': path,
+    'isDirectory': isDirectory, 'isSymbolicLink': isSymbolicLink,
+    'linkTargetErrorCode': linkTargetErrorCode, 'sizeBytes': sizeBytes,
+    'formattedSize': formattedSize, 'permissions': permissions,
+    'modified': modified, 'modifiedEpoch': modifiedEpoch};
+
+  factory SftpFileItem.fromJson(Map<String, dynamic> json) => SftpFileItem(
+    name: json['name'] as String, path: json['path'] as String,
+    isDirectory: json['isDirectory'] as bool,
+    isSymbolicLink: json['isSymbolicLink'] as bool? ?? false,
+    linkTargetErrorCode: json['linkTargetErrorCode'] as String?,
+    sizeBytes: json['sizeBytes'] as int, formattedSize: json['formattedSize'] as String,
+    permissions: json['permissions'] as String, modified: json['modified'] as String,
+    modifiedEpoch: json['modifiedEpoch'] as int? ?? 0);
 
   static String formatBytes(int bytes) {
     if (bytes <= 0) return '-';
@@ -84,6 +103,11 @@ abstract interface class SftpTransferHandle {
   Future<void> abort();
 }
 
+/// Atomic upload publication cannot truthfully be canceled once it has started.
+abstract interface class SftpCommittingTransfer {
+  bool get isCommitting;
+}
+
 /// 传输被 [SftpTransferHandle.abort] 主动中止时抛出。
 ///
 /// 单独成一个类型而不是复用 [SftpTransferAborted] 之外的异常，
@@ -107,7 +131,7 @@ abstract interface class SftpOperations {
   /// 读取文本内容（UTF-8，允许非法字节以便仍能预览）。
   Future<String> readFileContent(String path);
 
-  /// 覆盖写入文本内容。
+  /// 新建文本文件；已有同名入口时拒绝覆盖。
   Future<void> writeFileContent(String path, String content);
 
   /// 新建目录。
@@ -156,7 +180,38 @@ abstract interface class SftpOperations {
   });
 }
 
-class SftpClientService implements SftpOperations {
+class SftpTextSnapshot {
+  final String path;
+  final String targetPath;
+  final String content;
+  final String digest;
+  final SftpFileAttrs attributes;
+
+  const SftpTextSnapshot({required this.path, required this.targetPath,
+    required this.content, required this.digest, required this.attributes});
+}
+
+abstract interface class SftpEditorOperations {
+  Future<SftpTextSnapshot> readTextSnapshot(String path);
+  Future<void> saveTextSnapshot(SftpTextSnapshot original, String content);
+}
+
+abstract interface class SftpResumableOperations {
+  Future<void> discardUploadPartial(String remotePath, String transferId);
+  Future<SftpTransferHandle> startResumableDownload(String remotePath, String localPath, {
+    Map<String, dynamic>? expectedSource,
+    required void Function(Map<String, dynamic>) onSource,
+    void Function(int)? onProgress,
+  });
+  Future<SftpTransferHandle> startResumableUpload(String localPath, String remotePath, {
+    required String transferId,
+    Map<String, dynamic>? expectedSource,
+    required void Function(Map<String, dynamic>) onSource,
+    void Function(int)? onProgress,
+  });
+}
+
+class SftpClientService implements SftpOperations, SftpEditorOperations, SftpResumableOperations {
   static const maxPreviewBytes = 1024 * 1024;
   static const previewTooLargeCode = 'SFTP_PREVIEW_TOO_LARGE';
   final SSHClient? _sshClient;
@@ -369,12 +424,13 @@ class SftpClientService implements SftpOperations {
   Future<void> writeFileContent(String path, String content) =>
       _bounded(() async {
         final sftp = await _getRealSftp();
+        // New-file creation must never truncate a colliding existing entry.
         final file = await sftp.open(
           path,
           mode:
               SftpFileOpenMode.write |
               SftpFileOpenMode.create |
-              SftpFileOpenMode.truncate,
+              SftpFileOpenMode.exclusive,
         );
         try {
           if (!identical(_sftp, sftp)) {
@@ -385,6 +441,96 @@ class SftpClientService implements SftpOperations {
           await file.close().timeout(_cleanupTimeout);
         }
       });
+
+  Future<SftpTextSnapshot> _snapshot(SftpClient sftp, String path) async {
+    final target = await sftp.absolute(path);
+    final before = await sftp.stat(target);
+    if (!before.isFile || before.size == null || before.size! > maxPreviewBytes) {
+      throw const SFTPException(previewTooLargeCode);
+    }
+    final file = await sftp.open(target);
+    final bytes = BytesBuilder(copy: false);
+    try {
+      await for (final chunk in file.read(length: maxPreviewBytes + 1)) {
+        if (bytes.length + chunk.length > maxPreviewBytes) {
+          throw const SFTPException(previewTooLargeCode);
+        }
+        bytes.add(chunk);
+      }
+    } finally {
+      await file.close().timeout(_cleanupTimeout);
+    }
+    final after = await sftp.stat(target);
+    if (before.size != after.size || before.modifyTime != after.modifyTime ||
+        bytes.length != after.size || target != await sftp.absolute(path)) {
+      throw const SFTPException('SFTP_EDIT_CONFLICT');
+    }
+    final data = bytes.takeBytes();
+    // Editing invalid UTF-8 would silently replace original bytes on save.
+    final content = utf8.decode(data);
+    return SftpTextSnapshot(path: path, targetPath: target, content: content,
+      digest: sha256.convert(data).toString(), attributes: after);
+  }
+
+  @override
+  Future<SftpTextSnapshot> readTextSnapshot(String path) => _bounded(() async {
+    return _snapshot(await _getRealSftp(), path);
+  });
+
+  @override
+  Future<void> saveTextSnapshot(SftpTextSnapshot original, String content) =>
+      _bounded(() async {
+    final sftp = await _getRealSftp();
+    if ((await sftp.handshake).extensions['posix-rename@openssh.com'] != '1') {
+      throw const SFTPException('SFTP_ATOMIC_SAVE_UNSUPPORTED');
+    }
+    final data = Uint8List.fromList(utf8.encode(content));
+    if (data.length > maxPreviewBytes) {
+      throw const SFTPException(previewTooLargeCode);
+    }
+    final temporary = path_util.posix.join(
+      path_util.posix.dirname(original.targetPath),
+      '.valhalla-edit-${const Uuid().v4()}.part',
+    );
+    var created = false;
+    var committed = false;
+    try {
+      final file = await sftp.open(temporary, mode: SftpFileOpenMode.write |
+        SftpFileOpenMode.create | SftpFileOpenMode.exclusive);
+      created = true;
+      try {
+        await file.writeBytes(data);
+        await file.setStat(SftpFileAttrs(mode: original.attributes.mode,
+          userID: original.attributes.userID, groupID: original.attributes.groupID));
+      } finally {
+        await file.close().timeout(_cleanupTimeout);
+      }
+      final current = await _snapshot(sftp, original.path);
+      if (current.targetPath != original.targetPath ||
+          current.digest != original.digest ||
+          current.attributes.modifyTime != original.attributes.modifyTime ||
+          current.attributes.mode?.value != original.attributes.mode?.value ||
+          current.attributes.userID != original.attributes.userID ||
+          current.attributes.groupID != original.attributes.groupID) {
+        throw const SFTPException('SFTP_EDIT_CONFLICT');
+      }
+      if (!identical(sftp, _sftp) || !isRealConnected) {
+        throw const SFTPException('SFTP session expired');
+      }
+      // shortcut: SFTP has no compare-and-swap rename; concurrent writers in
+      // the final check/rename window require server-side locking to exclude.
+      await sftp.rename(temporary, original.targetPath);
+      committed = true;
+    } finally {
+      if (created && !committed) {
+        try {
+          await sftp.remove(temporary).timeout(_cleanupTimeout);
+        } catch (error, stack) {
+          unawaited(AppDiagnostics.instance.record('sftp.edit.cleanup', error, stack));
+        }
+      }
+    }
+  });
 
   @override
   Future<void> createDirectory(String path) => _bounded(() async {
@@ -416,6 +562,22 @@ class SftpClientService implements SftpOperations {
     String localPath, {
     void Function(int bytesRead)? onProgress,
   }) async {
+    return _startDownload(remotePath, localPath, onProgress: onProgress);
+  }
+
+  @override
+  Future<SftpTransferHandle> startResumableDownload(String remotePath, String localPath, {
+    Map<String, dynamic>? expectedSource,
+    required void Function(Map<String, dynamic>) onSource,
+    void Function(int)? onProgress,
+  }) => _startDownload(remotePath, localPath, expectedSource: expectedSource,
+    onSource: onSource, onProgress: onProgress);
+
+  Future<SftpTransferHandle> _startDownload(String remotePath, String localPath, {
+    Map<String, dynamic>? expectedSource,
+    void Function(Map<String, dynamic>)? onSource,
+    void Function(int)? onProgress,
+  }) async {
     if (!isRealConnected) {
       throw const SSHConnectionException('SSH_DISCONNECTED');
     }
@@ -445,12 +607,27 @@ class SftpClientService implements SftpOperations {
     try {
       final attrs = await sftp.stat(remotePath).timeout(operationTimeout);
       final total = attrs.size ?? 0;
+      final identity = {'target': await sftp.absolute(remotePath).timeout(operationTimeout),
+        'size': attrs.size, 'modified': attrs.modifyTime};
+      if (expectedSource != null && !_sameSource(identity, expectedSource)) {
+        throw const SFTPException('SFTP_TRANSFER_SOURCE_CHANGED');
+      }
       final remote = await sftp
           .open(remotePath, mode: SftpFileOpenMode.read)
           .timeout(operationTimeout);
       final RandomAccessFile local;
+      var offset = 0;
       try {
-        local = await File(localPath).open(mode: FileMode.write);
+        if (onSource != null && await File(localPath).exists()) {
+          offset = await File(localPath).length();
+          if (expectedSource == null && offset > 0 || offset > total ||
+              offset > 0 && attrs.size == null) {
+            throw const SFTPException('SFTP_TRANSFER_PARTIAL_INVALID');
+          }
+          await _verifyPartial(remote, File(localPath), offset);
+        }
+        onSource?.call(identity);
+        local = await File(localPath).open(mode: offset == 0 ? FileMode.write : FileMode.append);
       } catch (_) {
         await remote.close().timeout(_cleanupTimeout).catchError((Object _) {});
         rethrow;
@@ -461,6 +638,14 @@ class SftpClientService implements SftpOperations {
         totalBytes: total,
         onProgress: onProgress,
         onClose: closeChannel,
+        initialOffset: offset,
+        validateComplete: onSource == null ? null : () async {
+          final after = await sftp.stat(remotePath).timeout(operationTimeout);
+          if (after.size != attrs.size || after.modifyTime != attrs.modifyTime ||
+              await sftp.absolute(remotePath).timeout(operationTimeout) != identity['target']) {
+            throw const SFTPException('SFTP_TRANSFER_SOURCE_CHANGED');
+          }
+        },
       );
       handle.start();
       return handle;
@@ -469,6 +654,125 @@ class SftpClientService implements SftpOperations {
       rethrow;
     }
   }
+
+  Future<void> _verifyPartial(SftpFile remote, File local, int length) async {
+    if (length == 0) return;
+    final reader = await local.open();
+    try {
+      var offset = 0;
+      while (offset < length) {
+        final count = (length - offset).clamp(0, 64 * 1024);
+        final left = await reader.read(count);
+        final right = await remote.readBytes(offset: offset, length: count).timeout(operationTimeout);
+        if (left.length != right.length || !_sameBytes(left, right)) {
+          throw const SFTPException('SFTP_TRANSFER_PARTIAL_INVALID');
+        }
+        offset += count;
+      }
+    } finally { await reader.close(); }
+  }
+
+  bool _sameBytes(List<int> left, List<int> right) {
+    for (var index = 0; index < left.length; index++) {
+      if (left[index] != right[index]) return false;
+    }
+    return true;
+  }
+
+  bool _sameSource(Map<String, dynamic> actual, Map<String, dynamic> expected) =>
+      actual.length == expected.length &&
+      actual.entries.every((entry) => expected.containsKey(entry.key) &&
+          expected[entry.key] == entry.value);
+
+  @override
+  Future<SftpTransferHandle> startResumableUpload(String localPath, String remotePath, {
+    required String transferId,
+    Map<String, dynamic>? expectedSource,
+    required void Function(Map<String, dynamic>) onSource,
+    void Function(int)? onProgress,
+  }) async {
+    if (!RegExp(r'^[a-zA-Z0-9-]{1,80}$').hasMatch(transferId)) {
+      throw ArgumentError.value(transferId, 'transferId');
+    }
+    final sftp = await _getRealSftp();
+    final local = File(localPath);
+    final attrs = await local.stat();
+    if (attrs.type != FileSystemEntityType.file) throw const SFTPException('SFTP_UPLOAD_SOURCE_INVALID');
+    final identity = {'size': attrs.size, 'modified': attrs.modified.microsecondsSinceEpoch,
+      'digest': (await sha256.bind(local.openRead()).first).toString()};
+    if (expectedSource != null && !_sameSource(identity, expectedSource)) {
+      throw const SFTPException('SFTP_TRANSFER_SOURCE_CHANGED');
+    }
+    try {
+      await sftp.stat(remotePath, followLink: false);
+      throw const SFTPException('SFTP_UPLOAD_TARGET_EXISTS');
+    } on SftpStatusError catch (error) {
+      if (error.code != SftpStatusCode.noSuchFile) rethrow;
+    }
+    final temporary = path_util.posix.join(path_util.posix.dirname(remotePath),
+      '.valhalla-upload-$transferId.part');
+    var offset = 0;
+    var partialExists = false;
+    try {
+      final partial = await sftp.stat(temporary, followLink: false);
+      partialExists = true;
+      if (expectedSource == null || partial.mode?.type != SftpFileType.regularFile ||
+          partial.size == null || partial.size! > attrs.size) {
+        throw const SFTPException('SFTP_TRANSFER_PARTIAL_INVALID');
+      }
+      offset = partial.size!;
+      final reader = await sftp.open(temporary, mode: SftpFileOpenMode.read);
+      try { await _verifyPartial(reader, local, offset); }
+      finally { await reader.close(); }
+    } on SftpStatusError catch (error) {
+      if (error.code != SftpStatusCode.noSuchFile) rethrow;
+    }
+    onSource(identity);
+    final remote = await sftp.open(temporary, mode: !partialExists
+      ? SftpFileOpenMode.write | SftpFileOpenMode.create | SftpFileOpenMode.exclusive
+      : SftpFileOpenMode.write);
+    return _UploadHandle(remote: remote, source: local.openRead(offset).map(Uint8List.fromList),
+      totalBytes: attrs.size, initialOffset: offset, onProgress: onProgress,
+      commit: () async {
+        final after = await local.stat();
+        if (after.size != attrs.size || after.modified != attrs.modified ||
+            (await sha256.bind(local.openRead()).first).toString() != identity['digest']) {
+          throw const SFTPException('SFTP_TRANSFER_SOURCE_CHANGED');
+        }
+        // shortcut: this client exposes only replacing rename; safe upload
+        // commit requires POSIX ln on the host, otherwise retain the partial.
+        final session = await _sshClient!.execute(
+          'LC_ALL=C ln -- ${cliShellQuote(temporary)} ${cliShellQuote(remotePath)}');
+        try {
+          await Future.wait([session.stdout.drain<void>(), session.stderr.drain<void>(),
+            session.done]).timeout(operationTimeout);
+          if (session.exitCode != 0) throw const SFTPException('SFTP_UPLOAD_COMMIT_FAILED');
+        } finally { session.close(); }
+        try { await sftp.remove(temporary).timeout(_cleanupTimeout); }
+        catch (error, stack) {
+          unawaited(AppDiagnostics.instance.record('sftp.upload.cleanup', error, stack));
+        }
+      });
+  }
+
+  @override
+  Future<void> discardUploadPartial(String remotePath, String transferId) => _bounded(() async {
+    if (!RegExp(r'^[a-zA-Z0-9-]{1,80}$').hasMatch(transferId)) {
+      throw ArgumentError.value(transferId, 'transferId');
+    }
+    final sftp = await _getRealSftp();
+    final temporary = path_util.posix.join(path_util.posix.dirname(remotePath),
+      '.valhalla-upload-$transferId.part');
+    try {
+      final attrs = await sftp.stat(temporary, followLink: false);
+      if (attrs.mode?.type != SftpFileType.regularFile) {
+        throw const SFTPException('SFTP_TRANSFER_PARTIAL_INVALID');
+      }
+      await sftp.remove(temporary);
+    } on SftpStatusError catch (error) {
+      if (error.code != SftpStatusCode.noSuchFile) rethrow;
+    }
+  });
 
   @override
   Future<SftpTransferHandle> startUpload(
@@ -553,6 +857,7 @@ class _DownloadHandle implements SftpTransferHandle {
   final RandomAccessFile _local;
   final void Function(int bytesRead)? _onProgress;
   final void Function()? _onClose;
+  final Future<void> Function()? _validateComplete;
 
   @override
   final int totalBytes;
@@ -572,9 +877,13 @@ class _DownloadHandle implements SftpTransferHandle {
     required this.totalBytes,
     void Function(int bytesRead)? onProgress,
     void Function()? onClose,
+    int initialOffset = 0,
+    Future<void> Function()? validateComplete,
   }) : _remote = remote,
        _local = local,
        _onClose = onClose,
+       _transferred = initialOffset,
+       _validateComplete = validateComplete,
        _onProgress = onProgress;
 
   @override
@@ -593,7 +902,7 @@ class _DownloadHandle implements SftpTransferHandle {
       // 大小为 0 时按「未知」处理，一直读到服务器返回 EOF。
       // 这与 dartssh2 内部对 /proc 这类文件的处理一致：SFTP 用 EOF 状态码
       // 表示结束，而不是靠 stat 出来的大小。
-      var remaining = totalBytes > 0 ? totalBytes : -1;
+      var remaining = totalBytes > 0 ? totalBytes - _transferred : -1;
       while (remaining != 0) {
         await _waitIfPaused();
         if (_aborted) return;
@@ -617,6 +926,7 @@ class _DownloadHandle implements SftpTransferHandle {
         if (remaining > 0) remaining -= chunk.length;
       }
       await _local.flush();
+      await _validateComplete?.call();
       await _close();
       if (!_aborted) _done.complete();
     } catch (error, stackTrace) {
@@ -680,9 +990,11 @@ class _DownloadHandle implements SftpTransferHandle {
 /// 上传方向不需要手写循环——`SftpFileWriter` 本身就带
 /// `pause()` / `resume()` / `abort()`，只是以前 `SftpClientService`
 /// 只 `await writer.done` 把句柄丢掉了。这里把它接出来。
-class _UploadHandle implements SftpTransferHandle {
+class _UploadHandle implements SftpTransferHandle, SftpCommittingTransfer {
   final SftpFile _remote;
   final SftpFileWriter _writer;
+  final int _initialOffset;
+  final Future<void> Function()? _commit;
 
   @override
   final int totalBytes;
@@ -690,23 +1002,32 @@ class _UploadHandle implements SftpTransferHandle {
   final _done = Completer<void>();
   var _aborted = false;
   var _closed = false;
+  var _committing = false;
+
+  @override
+  bool get isCommitting => _committing && !_done.isCompleted;
 
   _UploadHandle({
     required SftpFile remote,
     required Stream<Uint8List> source,
     required this.totalBytes,
     void Function(int bytesWritten)? onProgress,
+    int initialOffset = 0,
+    Future<void> Function()? commit,
   }) : _remote = remote,
+       _initialOffset = initialOffset,
+       _commit = commit,
        _writer = remote.write(
          source,
+         offset: initialOffset,
          chunkSize: 64 * 1024,
-         onProgress: onProgress,
+         onProgress: onProgress == null ? null : (bytes) => onProgress(bytes + initialOffset),
        ) {
     unawaited(_finish());
   }
 
   @override
-  int get transferredBytes => _writer.progress;
+  int get transferredBytes => _writer.progress + _initialOffset;
 
   @override
   Future<void> get done => _done.future;
@@ -718,6 +1039,9 @@ class _UploadHandle implements SftpTransferHandle {
       // 「传完了」和「被中止了」——否则取消会被上层当成成功。
       if (_aborted) return;
       await _close();
+      if (_aborted) return;
+      _committing = true;
+      await _commit?.call();
       if (!_done.isCompleted) _done.complete();
     } catch (error, stackTrace) {
       await _close();
@@ -740,6 +1064,10 @@ class _UploadHandle implements SftpTransferHandle {
   @override
   Future<void> abort() async {
     if (_aborted || _done.isCompleted) return;
+    if (isCommitting) {
+      await done;
+      return;
+    }
     _aborted = true;
     await _writer.abort();
     await _close();

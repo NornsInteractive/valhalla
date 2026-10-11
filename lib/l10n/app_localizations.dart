@@ -391,6 +391,42 @@ abstract class AppLocalizations {
   /// **'Paste'**
   String get terminalPaste;
 
+  /// No description provided for @terminalConfirmPasteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Paste'**
+  String get terminalConfirmPasteTitle;
+
+  /// No description provided for @terminalConfirmPasteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pasting {count} lines into the terminal. Continue?'**
+  String terminalConfirmPasteMessage(int count);
+
+  /// No description provided for @settingsTerminalPinnedKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Accessory Bar Keys'**
+  String get settingsTerminalPinnedKeys;
+
+  /// No description provided for @settingsTerminalPinnedKeysSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize and reorder toolbar shortcut keys'**
+  String get settingsTerminalPinnedKeysSubtitle;
+
+  /// No description provided for @terminalResetPinnedKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to Default'**
+  String get terminalResetPinnedKeys;
+
+  /// No description provided for @terminalToggleKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle Keyboard'**
+  String get terminalToggleKeyboard;
+
   /// No description provided for @sftpCurrentPath.
   ///
   /// In en, this message translates to:
@@ -2346,6 +2382,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to save hidden files preference'**
   String get sftpHiddenPreferenceSaveFailed;
+
+  /// No description provided for @sftpViewModeList.
+  ///
+  /// In en, this message translates to:
+  /// **'List view'**
+  String get sftpViewModeList;
+
+  /// No description provided for @sftpViewModeGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid view'**
+  String get sftpViewModeGrid;
+
+  /// No description provided for @sftpViewPreferenceSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save view mode preference'**
+  String get sftpViewPreferenceSaveFailed;
 
   /// No description provided for @sftpSymlink.
   ///
@@ -7478,6 +7532,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Malformed or damaged configuration JSON'**
   String get configImportErrorMalformed;
+
+  /// No description provided for @aboutRepository.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub repository'**
+  String get aboutRepository;
+
+  /// No description provided for @updateCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get updateCheckTitle;
+
+  /// No description provided for @updateChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking for updates...'**
+  String get updateChecking;
+
+  /// No description provided for @updateCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check now'**
+  String get updateCheckNow;
+
+  /// No description provided for @updateUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Valhalla is up to date'**
+  String get updateUpToDate;
+
+  /// No description provided for @updateInstalledVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed: v{version}'**
+  String updateInstalledVersion(String version);
+
+  /// No description provided for @updateAvailableBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'New version available: v{version}'**
+  String updateAvailableBadge(String version);
+
+  /// No description provided for @updateViewUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'View update'**
+  String get updateViewUpdate;
+
+  /// No description provided for @updateLastChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Last checked: {time}'**
+  String updateLastChecked(String time);
+
+  /// No description provided for @updateNeverChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Never checked'**
+  String get updateNeverChecked;
+
+  /// No description provided for @updateAutoCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic update check'**
+  String get updateAutoCheckTitle;
+
+  /// No description provided for @updateAutoCheckSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check daily for updates when the app is active'**
+  String get updateAutoCheckSubtitle;
+
+  /// No description provided for @updateAutoCheckSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save automatic update check setting'**
+  String get updateAutoCheckSaveFailed;
+
+  /// No description provided for @updateDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Software Update'**
+  String get updateDialogTitle;
+
+  /// No description provided for @updateCurrentVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Current: {version}'**
+  String updateCurrentVersion(String version);
+
+  /// No description provided for @updateTargetVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest: v{version}'**
+  String updateTargetVersion(String version);
+
+  /// No description provided for @updateBuildNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Build {build}'**
+  String updateBuildNumber(String build);
+
+  /// No description provided for @updateCommit.
+  ///
+  /// In en, this message translates to:
+  /// **'Commit: {commit}'**
+  String updateCommit(String commit);
+
+  /// No description provided for @updateArtifactDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Installation package'**
+  String get updateArtifactDetails;
+
+  /// No description provided for @updateArtifactName.
+  ///
+  /// In en, this message translates to:
+  /// **'File: {name}'**
+  String updateArtifactName(String name);
+
+  /// No description provided for @updateArtifactSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size: {size}'**
+  String updateArtifactSize(String size);
+
+  /// No description provided for @updateArtifactHash.
+  ///
+  /// In en, this message translates to:
+  /// **'SHA-256: {hash}'**
+  String updateArtifactHash(String hash);
+
+  /// No description provided for @updateCopyHash.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy SHA-256 hash'**
+  String get updateCopyHash;
+
+  /// No description provided for @updateHashCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'SHA-256 hash copied to clipboard'**
+  String get updateHashCopied;
+
+  /// No description provided for @updateCopyCommit.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy commit hash'**
+  String get updateCopyCommit;
+
+  /// No description provided for @updateCommitCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Commit hash copied to clipboard'**
+  String get updateCommitCopied;
+
+  /// No description provided for @updateReleaseNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Release Notes'**
+  String get updateReleaseNotes;
+
+  /// No description provided for @updateNoReleaseNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'No release notes provided.'**
+  String get updateNoReleaseNotes;
+
+  /// No description provided for @updateNoArtifactForPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'No direct install package available for this device platform/architecture.'**
+  String get updateNoArtifactForPlatform;
+
+  /// No description provided for @updateOpenReleasePage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Releases on GitHub'**
+  String get updateOpenReleasePage;
+
+  /// No description provided for @updateDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Update'**
+  String get updateDownload;
+
+  /// No description provided for @updateDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading... {progress}%'**
+  String updateDownloading(String progress);
+
+  /// No description provided for @updatePause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get updatePause;
+
+  /// No description provided for @updateResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get updateResume;
+
+  /// No description provided for @updateRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get updateRetry;
+
+  /// No description provided for @updateDownloadPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Download paused'**
+  String get updateDownloadPaused;
+
+  /// No description provided for @updateDownloadCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Download completed and verified'**
+  String get updateDownloadCompleted;
+
+  /// No description provided for @updateInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install Update'**
+  String get updateInstall;
+
+  /// No description provided for @updateRevealInFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reveal in Folder'**
+  String get updateRevealInFolder;
+
+  /// No description provided for @updateOpenFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Folder'**
+  String get updateOpenFolder;
+
+  /// No description provided for @updateRetryInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Install'**
+  String get updateRetryInstall;
+
+  /// No description provided for @updateDesktopInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Extract the downloaded archive and replace the application when closed. Never overwrite the currently running executable.'**
+  String get updateDesktopInstructions;
+
+  /// No description provided for @updateCopyErrorDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy error details'**
+  String get updateCopyErrorDetails;
+
+  /// No description provided for @updateErrorCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Error details copied to clipboard'**
+  String get updateErrorCopied;
+
+  /// No description provided for @updateErrorRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub API rate limit exceeded. Please try again later.'**
+  String get updateErrorRateLimited;
+
+  /// No description provided for @updateErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network connection failed. Please check your internet connection.'**
+  String get updateErrorNetwork;
+
+  /// No description provided for @updateErrorManifest.
+  ///
+  /// In en, this message translates to:
+  /// **'Update manifest is invalid or missing required metadata.'**
+  String get updateErrorManifest;
+
+  /// No description provided for @updateErrorIntegrity.
+  ///
+  /// In en, this message translates to:
+  /// **'Download integrity check failed. The file checksum did not match.'**
+  String get updateErrorIntegrity;
+
+  /// No description provided for @updateErrorSignatureMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Installation signature mismatch: the update package is signed with a different key than this app. Cannot overwrite different signatures. To prevent data loss, never uninstall or clear app data.'**
+  String get updateErrorSignatureMismatch;
+
+  /// No description provided for @updateErrorPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Install permission required. Please allow installing unknown apps for Valhalla in system settings, then tap Retry Install.'**
+  String get updateErrorPermissionRequired;
+
+  /// No description provided for @updateErrorPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage or system permission denied.'**
+  String get updateErrorPermission;
+
+  /// No description provided for @updateErrorPackageInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Package path or identity is invalid.'**
+  String get updateErrorPackageInvalid;
+
+  /// No description provided for @updateErrorStoreInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'This app was installed from an app store. Please update through the store.'**
+  String get updateErrorStoreInstall;
+
+  /// No description provided for @updateErrorPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to open or launch the installer.'**
+  String get updateErrorPlatform;
+
+  /// No description provided for @updateErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Update operation failed. Please try again or visit GitHub releases.'**
+  String get updateErrorGeneric;
 }
 
 class _AppLocalizationsDelegate

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../terminal/terminal_session_bridge.dart';
+import '../../core/utils/terminal_keys.dart';
 import 'mosh_terminal_bridge.dart';
 
 /// 把 [MoshTerminalBridge] 适配成 [TerminalSessionBridge] 的形状。
@@ -56,33 +57,11 @@ class MoshBridgeAdapter extends TerminalSessionBridge {
   @override
   void sendKey(String key, {bool isCtrl = false, bool isAlt = false}) {
     HapticFeedback.lightImpact();
-
-    if (key == 'ESC') {
-      _sendRaw('\x1b');
-    } else if (key == 'TAB') {
-      _sendRaw('\t');
-    } else if (key == '↑') {
-      _sendRaw('\x1b[A');
-    } else if (key == '↓') {
-      _sendRaw('\x1b[B');
-    } else if (key == '←') {
-      _sendRaw('\x1b[D');
-    } else if (key == '→') {
-      _sendRaw('\x1b[C');
-    } else {
-      if (isCtrl) {
-        final upper = key.toUpperCase();
-        if (upper.length == 1) {
-          final code = upper.codeUnitAt(0) - 64;
-          if (code >= 1 && code <= 26) {
-            _sendRaw(String.fromCharCode(code));
-            return;
-          }
-        }
-      }
-      _sendRaw(key);
-    }
+    sendTerminalAccessoryKey(terminal, key, isCtrl: isCtrl, isAlt: isAlt);
   }
+
+  @override
+  void pasteText(String text) => terminal.paste(text);
 
   @override
   void sendCommand(String cmd) => _sendRaw('$cmd\n');
@@ -92,7 +71,7 @@ class MoshBridgeAdapter extends TerminalSessionBridge {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final text = data?.text;
     if (text != null && text.isNotEmpty) {
-      _sendRaw(text);
+      pasteText(text);
     }
   }
 

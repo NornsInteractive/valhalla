@@ -152,6 +152,14 @@ class _MainShellState extends ConsumerState<MainShell> {
       const SizedBox.shrink(key: Key('nas_disabled_placeholder')),
   ];
 
+  void _unfocusContentScopeOnMobile() {
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
+      _contentFocusScopeNode.unfocus(disposition: UnfocusDisposition.scope);
+    }
+  }
+
   void _navigateToSectionIndex(int idx) {
     if (!mounted) return;
     final targetSection = viewIndexToAppSection(idx);
@@ -159,7 +167,10 @@ class _MainShellState extends ConsumerState<MainShell> {
     final safeIndex = settings.isSectionEnabled(targetSection)
         ? idx
         : appSectionToViewIndex(AppSection.dashboard);
-    setState(() => _currentIndex = safeIndex);
+    if (_currentIndex != safeIndex) {
+      _unfocusContentScopeOnMobile();
+      setState(() => _currentIndex = safeIndex);
+    }
   }
 
   @override
@@ -175,6 +186,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   Future<dynamic> _handleDownloadsMethodCall(MethodCall call) async {
     if (call.method == 'openTransfers') {
       if (!mounted) return null;
+      _unfocusContentScopeOnMobile();
       setState(() => _currentIndex = _sftpTabIndex);
       _openTransfersRequest.value++;
       return null;
@@ -190,6 +202,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final service = ref.read(keepAliveServiceProvider);
     final shouldOpen = await service.consumeOpenTransfersAction();
     if (!mounted || !shouldOpen) return;
+    _unfocusContentScopeOnMobile();
     setState(() => _currentIndex = _sftpTabIndex);
     _openTransfersRequest.value++;
   }
@@ -732,8 +745,11 @@ class _MainShellState extends ConsumerState<MainShell> {
                   title: Text(localizedAppSectionName(context, section)),
                   selected: _currentIndex == idx,
                   onTap: () {
+                    _unfocusContentScopeOnMobile();
                     Navigator.pop(context);
-                    setState(() => _currentIndex = idx);
+                    if (_currentIndex != idx) {
+                      setState(() => _currentIndex = idx);
+                    }
                   },
                 ),
               );
@@ -940,7 +956,11 @@ class _MainShellState extends ConsumerState<MainShell> {
       onDestinationSelected: (index) {
         if (index >= 0 && index < visibleSections.length) {
           final targetSection = visibleSections[index];
-          setState(() => _currentIndex = appSectionToViewIndex(targetSection));
+          final newIndex = appSectionToViewIndex(targetSection);
+          if (_currentIndex != newIndex) {
+            _unfocusContentScopeOnMobile();
+            setState(() => _currentIndex = newIndex);
+          }
         }
       },
       leading: Padding(
@@ -1404,7 +1424,10 @@ class _MainShellState extends ConsumerState<MainShell> {
               sections: bottomSections,
               currentIndex: _currentIndex,
               onDestinationSelected: (index) {
-                setState(() => _currentIndex = index);
+                if (_currentIndex != index) {
+                  _unfocusContentScopeOnMobile();
+                  setState(() => _currentIndex = index);
+                }
               },
             ),
     );

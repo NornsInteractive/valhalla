@@ -44,6 +44,19 @@
   "terminalClear": "Limpar",
   "terminalQuickCmds": "Paleta de comandos",
   "terminalPaste": "Colar",
+  "terminalConfirmPasteTitle": "Confirmar colagem",
+  "terminalConfirmPasteMessage": "Colando {count} linhas de texto no terminal. Continuar?",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "Teclas da barra do terminal",
+  "settingsTerminalPinnedKeysSubtitle": "Personalizar e reordenar as teclas da barra",
+  "terminalResetPinnedKeys": "Restaurar padrão",
+  "terminalToggleKeyboard": "Alternar teclado",
   "sftpCurrentPath": "Caminho atual",
   "sftpUpload": "Enviar",
   "sftpNewFolder": "Nova pasta",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "Mostrar arquivos ocultos",
   "sftpHideHiddenFiles": "Ocultar arquivos ocultos",
   "sftpHiddenPreferenceSaveFailed": "Falha ao salvar preferência de arquivos ocultos",
+  "sftpViewModeList": "Visualização em lista",
+  "sftpViewModeGrid": "Visualização em grade",
+  "sftpViewPreferenceSaveFailed": "Falha ao salvar a preferência do modo de exibição",
   "sftpSymlink": "Link simbólico",
   "sftpLinkTargetUnavailable": "Destino do link simbólico corrompido ou indisponível",
   "sftpLinkTargetPermissionDenied": "Permissão negada para acessar o destino do link simbólico",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "Copiar detalhes de diagnóstico",
   "configImportErrorCopied": "Detalhes de diagnóstico copiados para a área de transferência",
   "configImportErrorUnsupportedVersion": "Formato ou versão de backup não suportado",
-  "configImportErrorMalformed": "JSON de configuração corrompido ou malformado"
+  "configImportErrorMalformed": "JSON de configuração corrompido ou malformado",
+  "aboutRepository": "Repositório do GitHub",
+  "updateCheckTitle": "Verificar atualizações",
+  "updateChecking": "Verificando atualizações...",
+  "updateCheckNow": "Verificar agora",
+  "updateUpToDate": "O Valhalla está atualizado",
+  "updateInstalledVersion": "Instalado: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "Nova versão disponível: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "Ver atualização",
+  "updateLastChecked": "Última verificação: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "Nunca verificado",
+  "updateAutoCheckTitle": "Verificação automática de atualizações",
+  "updateAutoCheckSubtitle": "Verificar atualizações diariamente quando o app estiver ativo",
+  "updateAutoCheckSaveFailed": "Falha ao salvar a configuração de atualização automática",
+  "updateDialogTitle": "Atualização de software",
+  "updateCurrentVersion": "Atual: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "Mais recente: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "Compilação {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "Hash do commit: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "Pacote de instalação",
+  "updateArtifactName": "Arquivo: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "Tamanho: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "Hash SHA-256: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "Copiar hash SHA-256",
+  "updateHashCopied": "Hash SHA-256 copiado para a área de transferência",
+  "updateCopyCommit": "Copiar hash do commit",
+  "updateCommitCopied": "Hash do commit copiado para a área de transferência",
+  "updateReleaseNotes": "Notas de lançamento",
+  "updateNoReleaseNotes": "Nenhuma nota de lançamento fornecida.",
+  "updateNoArtifactForPlatform": "Nenhum pacote de instalação direta disponível para esta plataforma/arquitetura.",
+  "updateOpenReleasePage": "Abrir lançamentos no GitHub",
+  "updateDownload": "Baixar atualização",
+  "updateDownloading": "Baixando... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "Pausar",
+  "updateResume": "Retomar",
+  "updateRetry": "Tentar novamente",
+  "updateDownloadPaused": "Download pausado",
+  "updateDownloadCompleted": "Download concluído e verificado",
+  "updateInstall": "Instalar atualização",
+  "updateRevealInFolder": "Mostrar na pasta",
+  "updateOpenFolder": "Abrir local de download",
+  "updateRetryInstall": "Tentar instalar novamente",
+  "updateDesktopInstructions": "Extraia o arquivo baixado e substitua o aplicativo quando fechado. Nunca sobrescreva o programa em execução.",
+  "updateCopyErrorDetails": "Copiar detalhes do erro",
+  "updateErrorCopied": "Detalhes do erro copiados para a área de transferência",
+  "updateErrorRateLimited": "Limite de requisições da API do GitHub excedido. Tente novamente mais tarde.",
+  "updateErrorNetwork": "Falha na conexão de rede. Verifique sua conexão com a internet.",
+  "updateErrorManifest": "O manifesto de atualização é inválido ou faltam metadados necessários.",
+  "updateErrorIntegrity": "Falha na verificação de integridade do download. O checksum do arquivo não corresponde.",
+  "updateErrorSignatureMismatch": "Incompatibilidade de assinatura de instalação: o pacote é assinado com uma chave diferente. Não é possível sobrescrever assinaturas diferentes. Para evitar perda de dados, nunca desinstale ou limpe os dados do aplicativo.",
+  "updateErrorPermissionRequired": "Permissão de instalação necessária. Permita a instalação de fontes desconhecidas nas configurações do sistema e toque em Tentar instalar novamente.",
+  "updateErrorPermission": "Permissão de armazenamento ou do sistema negada.",
+  "updateErrorPackageInvalid": "Caminho ou identidade do pacote inválidos.",
+  "updateErrorStoreInstall": "Este aplicativo foi instalado de uma loja de aplicativos. Atualize pela loja.",
+  "updateErrorPlatform": "Falha ao abrir ou iniciar o instalador.",
+  "updateErrorGeneric": "Falha na operação de atualização. Tente novamente ou acesse os lançamentos no GitHub."
 }

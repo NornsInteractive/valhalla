@@ -242,6 +242,33 @@ class _FakeOps implements SftpOperations {
   }
 }
 
+/// 实现了 [SftpEditorOperations] 的替身。
+///
+/// 独立于 [_FakeOps]：只有「保存」这一个用例需要它，而让 [_FakeOps]
+/// 整体实现编辑接口会顺带改变 openFileForEditing 的读法，
+/// 把其它用例的断点一起挪走。
+class _FakeEditorOps extends _FakeOps implements SftpEditorOperations {
+  final saves = <(String, String)>[];
+
+  /// 非空时 [saveTextSnapshot] 等它完成，用来制造「保存还没落定」的窗口。
+  Completer<void>? editorGate;
+
+  @override
+  Future<SftpTextSnapshot> readTextSnapshot(String path) async => SftpTextSnapshot(
+    path: path,
+    targetPath: path,
+    content: 'content of $path',
+    digest: 'digest-$path',
+    attributes: SftpFileAttrs(size: 12),
+  );
+
+  @override
+  Future<void> saveTextSnapshot(SftpTextSnapshot original, String content) async {
+    await editorGate?.future;
+    saves.add((original.path, content));
+  }
+}
+
 class _FakeSshClient implements SSHClient {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -475,20 +502,26 @@ void main() {
   test(
     'write completing after a source switch does not refresh the new server',
     () async {
-      final ops = _FakeOps();
+      // 替身必须实现 SftpEditorOperations：保存走的是「快照 + 原子替换」，
+      // 少了这个接口生产代码会 fail-closed 抛 SFTP_ATOMIC_SAVE_UNSUPPORTED，
+      // 那条分支由 sftp_transfer_records_test.dart 单独守着。
+      final ops = _FakeEditorOps();
       final container = await _container(ops);
       addTearDown(container.dispose);
       final notifier = container.read(sftpProvider.notifier);
       await pumpEventQueue();
-      ops.writeGate = Completer<void>();
-      final saving = notifier.saveFileContent('/old.txt', 'contents');
+      await notifier.openFileForEditing(_item('old.txt'));
+      ops.editorGate = Completer<void>();
+      final saving = notifier.saveFileContent('/root/old.txt', 'contents');
       (container.read(activeServerProvider.notifier) as _StubActiveServer)
           .switchServer();
       container.read(sftpProvider);
       await pumpEventQueue();
       ops.listedPaths.clear();
-      ops.writeGate!.complete();
-      await saving;
+      ops.editorGate!.complete();
+      // 源已经换掉了，落盘成功也必须以 SFTP_EDITOR_EXPIRED 收场。
+      await expectLater(saving, throwsA(isA<SFTPException>()));
+      expect(ops.saves.single.$1, '/root/old.txt');
       expect(ops.listedPaths, isEmpty);
     },
   );

@@ -274,7 +274,8 @@ class _FakeNasNotifier extends NasNotifier {
   }
 
   @override
-  Future<String?> thumbnailPath(NasMediaItem item) async => null;
+  Future<String?> thumbnailPath(NasMediaItem item, {Object? owner}) async =>
+      null;
 
   @override
   Future<Uri> imageUrl(NasMediaItem item) async => lastImageUrl;

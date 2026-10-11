@@ -4,6 +4,9 @@ import '../../core/logging/sanitizer.dart';
 import '../../core/providers/infrastructure_providers.dart';
 import '../../core/providers/server_provider.dart';
 import '../../core/providers/app_visibility_provider.dart';
+import '../../core/providers/storage_providers.dart';
+import '../../core/services/app_diagnostics.dart';
+import 'dart:async';
 import '../../infrastructure/system/system_metrics_sampler.dart';
 import '../../infrastructure/system/process_service.dart';
 import '../../infrastructure/system/disk_usage_service.dart';
@@ -124,13 +127,27 @@ class SystemMetricsHistoryNotifier
     extends Notifier<List<SystemMetricsSnapshot>> {
   @override
   List<SystemMetricsSnapshot> build() {
+    _lastSaved = null;
     // 服务器变化时重建并清空，避免把不同主机的数据画在同一条曲线上。
     ref.watch(activeServerProvider.select((server) => server?.connectionKey));
     ref.listen(systemMetricsStreamProvider, (_, next) {
       next.whenData(_append);
     });
+    final server = ref.read(activeServerProvider);
+    if (server != null) {
+      try {
+        final record = ref.read(localStorageServiceProvider).getPageCache(server, 'metrics');
+        if (record != null) {
+          return [SystemMetricsSnapshot.fromJson(record['payload'] as Map<String, dynamic>)];
+        }
+      } catch (error, stack) {
+        unawaited(AppDiagnostics.instance.record('dashboard.cache', error, stack));
+      }
+    }
     return const [];
   }
+
+  DateTime? _lastSaved;
 
   void _append(SystemMetricsSnapshot snapshot) {
     if (!ref.mounted || (state.isNotEmpty && identical(state.last, snapshot))) {
@@ -140,6 +157,15 @@ class SystemMetricsHistoryNotifier
     state = next.length <= systemMetricsHistoryLimit
         ? next
         : next.sublist(next.length - systemMetricsHistoryLimit);
+    final server = ref.read(activeServerProvider);
+    if (server != null && (_lastSaved == null ||
+        DateTime.now().difference(_lastSaved!) >= const Duration(seconds: 30))) {
+      _lastSaved = DateTime.now();
+      unawaited(ref.read(localStorageServiceProvider).savePageCache(server, 'metrics',
+        snapshot.toJson()).catchError((Object error, StackTrace stack) {
+          unawaited(AppDiagnostics.instance.record('dashboard.cache', error, stack));
+        }));
+    }
   }
 }
 

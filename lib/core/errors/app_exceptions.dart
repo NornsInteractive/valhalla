@@ -54,6 +54,13 @@ class DockerExecutionException extends AppException {
   }) : super(message, details);
 }
 
+class SystemExecutionException extends AppException {
+  final int exitCode;
+  const SystemExecutionException(String message, {
+    required this.exitCode, Object? details,
+  }) : super(message, details);
+}
+
 /// 本地安全存储异常
 class StorageException extends AppException {
   const StorageException(super.message, [super.details]);

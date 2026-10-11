@@ -44,6 +44,19 @@
   "terminalClear": "清屏",
   "terminalQuickCmds": "常用命令庫",
   "terminalPaste": "貼上",
+  "terminalConfirmPasteTitle": "確認貼上",
+  "terminalConfirmPasteMessage": "即將向終端貼上 {count} 行文字。是否繼續？",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "終端快捷按鍵",
+  "settingsTerminalPinnedKeysSubtitle": "自訂與重排終端按鍵欄的快捷按鍵",
+  "terminalResetPinnedKeys": "恢復預設",
+  "terminalToggleKeyboard": "切換鍵盤",
   "sftpCurrentPath": "當前工作路徑",
   "sftpUpload": "上傳檔案",
   "sftpNewFolder": "新建目錄",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "顯示隱藏檔案",
   "sftpHideHiddenFiles": "隱藏點檔案",
   "sftpHiddenPreferenceSaveFailed": "儲存隱藏檔案偏好失敗",
+  "sftpViewModeList": "列表檢視",
+  "sftpViewModeGrid": "網格檢視",
+  "sftpViewPreferenceSaveFailed": "儲存檢視模式偏好失敗",
   "sftpSymlink": "符號連結",
   "sftpLinkTargetUnavailable": "符號連結目標失效或不存在",
   "sftpLinkTargetPermissionDenied": "無權限存取符號連結目標",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "複製診斷詳細資訊",
   "configImportErrorCopied": "診斷詳細資訊已複製到剪貼簿",
   "configImportErrorUnsupportedVersion": "不支援的備份格式或版本",
-  "configImportErrorMalformed": "設定檔 JSON 損毀或格式錯誤"
+  "configImportErrorMalformed": "設定檔 JSON 損毀或格式錯誤",
+  "aboutRepository": "GitHub 倉庫",
+  "updateCheckTitle": "檢查更新",
+  "updateChecking": "正在檢查更新...",
+  "updateCheckNow": "立即檢查",
+  "updateUpToDate": "目前已是最新版本",
+  "updateInstalledVersion": "已安裝：v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "發現新版本：v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "檢視更新",
+  "updateLastChecked": "上次檢查：{time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "從未檢查",
+  "updateAutoCheckTitle": "自動檢查更新",
+  "updateAutoCheckSubtitle": "在應用活躍時每天檢查一次新版本",
+  "updateAutoCheckSaveFailed": "儲存自動更新檢查設定失敗",
+  "updateDialogTitle": "軟體更新",
+  "updateCurrentVersion": "目前版本：{version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "最新版本：v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "組建號 {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "提交：{commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "安裝套件資訊",
+  "updateArtifactName": "檔案：{name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "大小：{size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "SHA-256 雜湊值：{hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "複製 SHA-256 雜湊值",
+  "updateHashCopied": "已複製 SHA-256 雜湊值到剪貼簿",
+  "updateCopyCommit": "複製提交雜湊",
+  "updateCommitCopied": "已複製提交雜湊到剪貼簿",
+  "updateReleaseNotes": "更新說明",
+  "updateNoReleaseNotes": "暫無更新說明。",
+  "updateNoArtifactForPlatform": "此裝置平台/架構暫無直接安裝套件。",
+  "updateOpenReleasePage": "在 GitHub 檢視發布頁",
+  "updateDownload": "下載更新",
+  "updateDownloading": "正在下載... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "暫停",
+  "updateResume": "繼續",
+  "updateRetry": "重試",
+  "updateDownloadPaused": "下載已暫停",
+  "updateDownloadCompleted": "下載完成且校驗通過",
+  "updateInstall": "安裝更新",
+  "updateRevealInFolder": "在資料夾中顯示",
+  "updateOpenFolder": "開啟下載目錄",
+  "updateRetryInstall": "重試安裝",
+  "updateDesktopInstructions": "請解壓縮下載的壓縮檔，並在關閉目前應用程式後進行取代。切勿覆寫正在執行的程式。",
+  "updateCopyErrorDetails": "複製錯誤詳情",
+  "updateErrorCopied": "錯誤詳情已複製到剪貼簿",
+  "updateErrorRateLimited": "GitHub API 請求頻率超限，請稍後重試。",
+  "updateErrorNetwork": "網路連線失敗，請檢查您的網路設定。",
+  "updateErrorManifest": "更新資訊清單無效或缺少必要的元資料。",
+  "updateErrorIntegrity": "下載完整性校驗失敗，檔案總和檢查碼不符。",
+  "updateErrorSignatureMismatch": "安裝簽章不符：更新套件的簽章與目前已安裝應用不同。無法直接覆寫不同簽章的安裝。為防止憑證與設定遺失，切勿解除安裝或清除資料。",
+  "updateErrorPermissionRequired": "需要安裝權限。請在系統設定中允許 Valhalla 安裝未知應用，然後點擊重試安裝。",
+  "updateErrorPermission": "儲存或系統權限被拒絕。",
+  "updateErrorPackageInvalid": "安裝套件路徑或身分資訊無效。",
+  "updateErrorStoreInstall": "此應用透過應用程式商店安裝，請透過對應的應用程式商店進行更新。",
+  "updateErrorPlatform": "無法開啟或啟動安裝程式。",
+  "updateErrorGeneric": "更新操作失敗，請重試或前往 GitHub 檢視發布頁。"
 }

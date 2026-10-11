@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dartssh2/dartssh2.dart';
+import 'package:valhalla/core/errors/app_exceptions.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
 import 'package:valhalla/core/providers/storage_providers.dart';
@@ -9,7 +11,34 @@ import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/files/sftp_file_view.dart';
 import 'package:valhalla/infrastructure/sftp/sftp_client_service.dart';
+import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
+import 'package:valhalla/infrastructure/ssh/ssh_host_key_verifier.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+
+/// 视图模式持久化用例要让真实的 `SftpNotifier.build()` 跑起来，它会向
+/// `sshClientManagerProvider` 要客户端；这里给一个永远不连接的空壳。
+class _FakeSshClient implements SSHClient {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeSshManager extends SSHClientManager {
+  _FakeSshManager(LocalStorageService storage)
+    : super(SSHHostKeyVerifier(storage));
+
+  @override
+  SSHClient? getClient(String serverId) => _FakeSshClient();
+}
+
+/// 视图模式写盘失败的存储替身：磁盘满 / 偏好后端异常时的稳定复现方式。
+class _FailingViewModeStorage extends LocalStorageService {
+  _FailingViewModeStorage(super.prefs);
+
+  @override
+  Future<void> setFileViewMode(String value) async {
+    throw const StorageException('SFTP_VIEW_PREFERENCE_SAVE_FAILED');
+  }
+}
 
 class _FakeTransferHandle implements SftpTransferHandle {
   @override
@@ -158,12 +187,16 @@ class _TestSftpNotifier extends SftpNotifier {
   }
 
   @override
-  void closeFileEditor() {
+  void closeFileEditor({int? editorToken}) {
     state = state.copyWith(clearEditor: true, clearError: true);
   }
 
   @override
-  Future<void> saveFileContent(String path, String content) async {
+  Future<void> saveFileContent(
+    String path,
+    String content, {
+    int? editorToken,
+  }) async {
     await _ops.writeFileContent(path, content);
     closeFileEditor();
   }
@@ -242,12 +275,13 @@ Widget _buildTestApp({
   required SftpState state,
   _FakeOperations? ops,
   _TestSftpNotifier? notifier,
+  LocalStorageService? storage,
 }) {
   final operations = ops ?? _FakeOperations();
   final notif = notifier ?? _TestSftpNotifier(state, operations);
   return ProviderScope(
     overrides: [
-      localStorageServiceProvider.overrideWithValue(_storage),
+      localStorageServiceProvider.overrideWithValue(storage ?? _storage),
       activeServerProvider.overrideWith(
         () => _ActiveServerWithProfile(_kFileViewServer),
       ),
@@ -1012,6 +1046,350 @@ void main() {
         expect(find.text('html'), findsOneWidget);
         expect(find.text('index.html'), findsOneWidget);
       });
+    });
+
+    group('View mode (list / grid)', () {
+      /// 移动端宽度（< [LayoutBreakpoints.compactMax]）：没有持久化偏好时
+      /// 列表优先。
+      void useMobileSurface(WidgetTester tester) {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+      }
+
+      testWidgets('mobile defaults to list and toggles to grid and back', (
+        tester,
+      ) async {
+        useMobileSurface(tester);
+
+        final storage = LocalStorageService(
+          await SharedPreferences.getInstance(),
+        );
+        final state = SftpState(
+          currentPath: '/var/www',
+          files: [_makeItem('notes.txt')],
+        );
+
+        await tester.pumpWidget(_buildTestApp(state: state, storage: storage));
+        await tester.pumpAndSettle();
+
+        Finder fileListGrid = find.descendant(
+          of: find.byType(SftpFileView),
+          matching: find.byType(GridView),
+        );
+        Finder fileList = find.descendant(
+          of: find.byType(SftpFileView),
+          matching: find.byType(ListView),
+        );
+
+        // 没有偏好时：窄屏 = 列表。
+        expect(state.viewMode, isNull);
+        expect(fileListGrid, findsNothing);
+        expect(fileList, findsWidgets);
+
+        await tester.tap(find.byKey(const Key('sftpToggleViewModeButton')));
+        await tester.pumpAndSettle();
+
+        expect(fileListGrid, findsOneWidget);
+        expect(storage.getFileViewMode(), 'grid');
+
+        await tester.tap(find.byKey(const Key('sftpToggleViewModeButton')));
+        await tester.pumpAndSettle();
+
+        expect(fileListGrid, findsNothing);
+        expect(fileList, findsWidgets);
+        expect(storage.getFileViewMode(), 'list');
+      });
+
+      testWidgets('toggle button tooltip reflects the next action', (
+        tester,
+      ) async {
+        useMobileSurface(tester);
+
+        final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+        final state = SftpState(
+          currentPath: '/var/www',
+          files: [_makeItem('notes.txt')],
+          viewMode: SftpViewMode.list,
+        );
+
+        await tester.pumpWidget(_buildTestApp(state: state));
+        await tester.pumpAndSettle();
+
+        final toggle = find.byKey(const Key('sftpToggleViewModeButton'));
+        // 当前是列表 → 按钮提示「切到网格」。
+        expect(
+          tester.widget<IconButton>(toggle).tooltip,
+          l10n.sftpViewModeGrid,
+        );
+        expect(
+          find.descendant(of: toggle, matching: find.byIcon(Icons.grid_view)),
+          findsOneWidget,
+        );
+
+        await tester.tap(toggle);
+        await tester.pumpAndSettle();
+
+        expect(
+          tester.widget<IconButton>(toggle).tooltip,
+          l10n.sftpViewModeList,
+        );
+        expect(
+          find.descendant(of: toggle, matching: find.byIcon(Icons.view_list)),
+          findsOneWidget,
+        );
+      });
+    });
+
+    group('Hidden file de-emphasis', () {
+      ListTile tileOf(WidgetTester tester, String name) =>
+          tester.widget<ListTile>(
+            find
+                .ancestor(of: find.text(name), matching: find.byType(ListTile))
+                .first,
+          );
+
+      testWidgets('hidden title and icon are subdued, menu icon stays normal', (
+        tester,
+      ) async {
+        final state = SftpState(
+          currentPath: '/var/www',
+          showHiddenFiles: true,
+          files: [_makeItem('.env'), _makeItem('notes.txt')],
+        );
+
+        await tester.pumpWidget(_buildTestApp(state: state));
+        await tester.pumpAndSettle();
+
+        final scheme = Theme.of(
+          tester.element(find.byType(SftpFileView)),
+        ).colorScheme;
+
+        final hiddenTile = tileOf(tester, '.env');
+        final hiddenIconColor = (hiddenTile.leading! as Icon).color;
+        final normalTile = tileOf(tester, 'notes.txt');
+
+        expect(
+          tester.widget<Text>(find.text('.env')).style?.color,
+          scheme.onSurface.withValues(alpha: 0.62),
+        );
+        final hiddenTitleColor = tester
+            .widget<Text>(find.text('.env'))
+            .style
+            ?.color;
+        expect(
+          hiddenIconColor,
+          scheme.onSurface.withValues(alpha: 0.55),
+          reason: '隐藏文件的图标应当被压暗',
+        );
+
+        // 可见文件保持默认（不压暗）。
+        final normalTitleColor = tester
+            .widget<Text>(find.text('notes.txt'))
+            .style
+            ?.color;
+        expect(normalTitleColor, isNotNull);
+        expect(
+          normalTitleColor!.a,
+          greaterThan(hiddenTitleColor!.a),
+          reason: '可见文件标题不应被压暗',
+        );
+        expect(normalTitleColor, isNot(hiddenTitleColor));
+        // 可见文件图标不指定颜色（走主题默认），隐藏文件才显式压暗。
+        expect((normalTile.leading! as Icon).color, isNull);
+        expect(hiddenIconColor!.a, lessThan(1.0));
+
+        // 溢出菜单不受隐藏态影响。
+        final hiddenMenu = tester.widget<Icon>(
+          find.descendant(
+            of: find.ancestor(
+              of: find.text('.env'),
+              matching: find.byType(ListTile),
+            ),
+            matching: find.byIcon(Icons.more_vert),
+          ),
+        );
+        final normalMenu = tester.widget<Icon>(
+          find.descendant(
+            of: find.ancestor(
+              of: find.text('notes.txt'),
+              matching: find.byType(ListTile),
+            ),
+            matching: find.byIcon(Icons.more_vert),
+          ),
+        );
+        expect(hiddenMenu.color, normalMenu.color);
+        expect(hiddenMenu.color, isNull);
+      });
+
+      testWidgets(
+        'hidden directory icon uses subdued primary and checkbox styling matches visible rows',
+        (tester) async {
+          final state = SftpState(
+            currentPath: '/var/www',
+            showHiddenFiles: true,
+            files: [
+              _makeItem('.git', isDirectory: true),
+              _makeItem('html', isDirectory: true),
+            ],
+          );
+
+          await tester.pumpWidget(_buildTestApp(state: state));
+          await tester.pumpAndSettle();
+
+          final scheme = Theme.of(
+            tester.element(find.byType(SftpFileView)),
+          ).colorScheme;
+
+          expect(
+            (tileOf(tester, '.git').leading! as Icon).color,
+            scheme.primary.withValues(alpha: 0.6),
+          );
+          expect(
+            (tileOf(tester, 'html').leading! as Icon).color,
+            scheme.primary,
+          );
+
+          // 进入多选：勾选框是交互控件，不应该跟着隐藏态一起变灰。
+          await tester.longPress(find.text('.git'));
+          await tester.pumpAndSettle();
+
+          final checkboxes = tester.widgetList<Checkbox>(find.byType(Checkbox));
+          expect(checkboxes, hasLength(2));
+          expect(checkboxes.first.activeColor, checkboxes.last.activeColor);
+          expect(checkboxes.first.checkColor, checkboxes.last.checkColor);
+          expect(checkboxes.first.fillColor, checkboxes.last.fillColor);
+          expect(checkboxes.first.side, checkboxes.last.side);
+        },
+      );
+    });
+
+    group('View mode persistence', () {
+      late SharedPreferences prefs;
+
+      setUp(() async {
+        // 每个用例一套全新的偏好存储：视图模式是全局偏好，共享 mock
+        // 会让上一个用例写入的值漏进下一个用例。
+        SharedPreferences.setMockInitialValues({});
+        prefs = await SharedPreferences.getInstance();
+      });
+
+      ProviderContainer containerFor(
+        LocalStorageService storage, {
+        _FakeOperations? ops,
+      }) => ProviderContainer(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(storage),
+          sshClientManagerProvider.overrideWithValue(_FakeSshManager(storage)),
+          activeServerProvider.overrideWith(
+            () => _ActiveServerWithProfile(_kFileViewServer),
+          ),
+          serverConnectionProvider.overrideWith(
+            _TestServerConnectionNotifier.new,
+          ),
+          sftpOperationsProvider.overrideWithValue(
+            ops ?? _FakeOperations.empty(),
+          ),
+        ],
+      );
+
+      test('setViewMode writes the pref and updates state', () async {
+        final storage = LocalStorageService(prefs);
+        final container = containerFor(storage);
+        addTearDown(container.dispose);
+
+        expect(container.read(sftpProvider).viewMode, isNull);
+
+        await container
+            .read(sftpProvider.notifier)
+            .setViewMode(SftpViewMode.grid);
+
+        expect(storage.getFileViewMode(), 'grid');
+        expect(container.read(sftpProvider).viewMode, SftpViewMode.grid);
+      });
+
+      test(
+        'build restores the persisted mode when the notifier rebuilds',
+        () async {
+          // 先写一个 grid 偏好，模拟上一次退出时留下的选择。
+          await prefs.setString('valhalla_file_view_mode_v1', 'grid');
+          final storage = LocalStorageService(prefs);
+          final container = containerFor(storage);
+          addTearDown(container.dispose);
+
+          expect(container.read(sftpProvider).viewMode, SftpViewMode.grid);
+
+          // 重建（切服务器 / 断线重连）后仍然读回同一个值。
+          container.invalidate(sftpProvider);
+
+          expect(container.read(sftpProvider).viewMode, SftpViewMode.grid);
+        },
+      );
+
+      test(
+        'unknown persisted value falls back to null (layout decides)',
+        () async {
+          await prefs.setString('valhalla_file_view_mode_v1', 'table');
+          final storage = LocalStorageService(prefs);
+          final container = containerFor(storage);
+          addTearDown(container.dispose);
+
+          expect(storage.getFileViewMode(), isNull);
+          expect(container.read(sftpProvider).viewMode, isNull);
+        },
+      );
+
+      test(
+        'failed write keeps the current mode and surfaces an error code',
+        () async {
+          final storage = _FailingViewModeStorage(prefs);
+          final container = containerFor(storage);
+          addTearDown(container.dispose);
+
+          await container
+              .read(sftpProvider.notifier)
+              .setViewMode(SftpViewMode.grid);
+
+          final state = container.read(sftpProvider);
+          expect(state.viewMode, isNull, reason: '写失败不应该假装切换成功');
+          expect(state.errorMessage, 'SFTP_VIEW_PREFERENCE_SAVE_FAILED');
+        },
+      );
+
+      testWidgets(
+        'failed write shows the localized snackbar and keeps the list',
+        (tester) async {
+          tester.view.physicalSize = const Size(400, 800);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.reset);
+
+          final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+          final state = SftpState(
+            currentPath: '/var/www',
+            files: [_makeItem('notes.txt')],
+          );
+
+          await tester.pumpWidget(
+            _buildTestApp(
+              state: state,
+              storage: _FailingViewModeStorage(prefs),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.byKey(const Key('sftpToggleViewModeButton')));
+          await tester.pumpAndSettle();
+
+          expect(find.text(l10n.sftpViewPreferenceSaveFailed), findsWidgets);
+          expect(
+            find.descendant(
+              of: find.byType(SftpFileView),
+              matching: find.byType(GridView),
+            ),
+            findsNothing,
+          );
+        },
+      );
     });
   });
 }

@@ -10,6 +10,7 @@ import '../../core/services/app_diagnostics.dart';
 import '../../core/utils/tmux_session_planner.dart';
 import '../../core/security/agent_command_validator.dart';
 import '../../core/utils/shell_quote.dart';
+import '../../core/utils/terminal_keys.dart';
 
 enum TerminalConnectionState { connecting, connected, disconnected, error }
 
@@ -365,7 +366,12 @@ class TerminalSessionBridge {
 
       _stderrSub = const Utf8Decoder(
         allowMalformed: true,
-      ).bind(_sshSession!.stderr).listen(terminal.write);
+      ).bind(_sshSession!.stderr).listen(terminal.write, onError: (Object error, StackTrace stack) {
+        if (!current()) return;
+        unawaited(AppDiagnostics.instance.record('terminal.stderr', error, stack));
+        _isSessionOpen = false;
+        _setState(TerminalConnectionState.error);
+      });
 
       terminal.onOutput = (String data) {
         if (_sshSession != null && _isSessionOpen) {
@@ -441,44 +447,21 @@ class TerminalSessionBridge {
   /// 处理移动端按键栏按键映射
   void sendKey(String key, {bool isCtrl = false, bool isAlt = false}) {
     HapticFeedback.lightImpact();
-
-    if (key == 'ESC') {
-      _sendRaw('\x1b');
-    } else if (key == 'TAB') {
-      _sendRaw('\t');
-    } else if (key == '↑') {
-      _sendRaw('\x1b[A');
-    } else if (key == '↓') {
-      _sendRaw('\x1b[B');
-    } else if (key == '←') {
-      _sendRaw('\x1b[D');
-    } else if (key == '→') {
-      _sendRaw('\x1b[C');
-    } else {
-      if (isCtrl) {
-        final upper = key.toUpperCase();
-        if (upper.length == 1) {
-          final code = upper.codeUnitAt(0) - 64;
-          if (code >= 1 && code <= 26) {
-            _sendRaw(String.fromCharCode(code));
-            return;
-          }
-        }
-      }
-      _sendRaw(key);
+    if (_sshSession != null && _isSessionOpen) {
+      sendTerminalAccessoryKey(terminal, key, isCtrl: isCtrl, isAlt: isAlt);
     }
   }
 
-  void _sendRaw(String data) {
+  void pasteText(String text) {
     if (_sshSession != null && _isSessionOpen) {
-      _sshSession!.stdin.add(utf8.encode(data));
+      terminal.paste(text);
     }
   }
 
   Future<void> pasteClipboard() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (data != null && data.text != null && data.text!.isNotEmpty) {
-      _sendRaw(data.text!);
+      pasteText(data.text!);
     }
   }
 

@@ -143,6 +143,27 @@ class AppLocalizationsDe extends AppLocalizations {
   String get terminalPaste => 'Einfügen';
 
   @override
+  String get terminalConfirmPasteTitle => 'Einfügen bestätigen';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return '$count Zeilen Text in das Terminal einfügen. Fortfahren?';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => 'Terminal-Zusatztasten';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle =>
+      'Tastaturleisten-Tasten anpassen und neu anordnen';
+
+  @override
+  String get terminalResetPinnedKeys => 'Auf Standard zurücksetzen';
+
+  @override
+  String get terminalToggleKeyboard => 'Tastatur umschalten';
+
+  @override
   String get sftpCurrentPath => 'Aktueller Pfad';
 
   @override
@@ -1183,6 +1204,16 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get sftpHiddenPreferenceSaveFailed =>
       'Einstellung für versteckte Dateien konnte nicht gespeichert werden';
+
+  @override
+  String get sftpViewModeList => 'Listenansicht';
+
+  @override
+  String get sftpViewModeGrid => 'Rasteransicht';
+
+  @override
+  String get sftpViewPreferenceSaveFailed =>
+      'Einstellung für den Ansichtsmodus konnte nicht gespeichert werden';
 
   @override
   String get sftpSymlink => 'Symlink';
@@ -4114,4 +4145,207 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get configImportErrorMalformed =>
       'Fehlerhafte oder beschädigte Konfigurations-JSON';
+
+  @override
+  String get aboutRepository => 'GitHub-Repository';
+
+  @override
+  String get updateCheckTitle => 'Nach Updates suchen';
+
+  @override
+  String get updateChecking => 'Suche nach Updates...';
+
+  @override
+  String get updateCheckNow => 'Jetzt prüfen';
+
+  @override
+  String get updateUpToDate => 'Valhalla ist auf dem neuesten Stand';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'Installiert: v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return 'Neue Version verfügbar: v$version';
+  }
+
+  @override
+  String get updateViewUpdate => 'Update anzeigen';
+
+  @override
+  String updateLastChecked(String time) {
+    return 'Zuletzt geprüft: $time';
+  }
+
+  @override
+  String get updateNeverChecked => 'Nie geprüft';
+
+  @override
+  String get updateAutoCheckTitle => 'Automatische Update-Prüfung';
+
+  @override
+  String get updateAutoCheckSubtitle =>
+      'Täglich nach Updates suchen, wenn die App aktiv ist';
+
+  @override
+  String get updateAutoCheckSaveFailed =>
+      'Fehler beim Speichern der automatischen Update-Einstellung';
+
+  @override
+  String get updateDialogTitle => 'Software-Update';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return 'Aktuell: $version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return 'Neueste: v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return 'Build-Nummer: $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return 'Commit-Hash: $commit';
+  }
+
+  @override
+  String get updateArtifactDetails => 'Installationspaket';
+
+  @override
+  String updateArtifactName(String name) {
+    return 'Datei: $name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return 'Größe: $size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'SHA-256-Hash: $hash';
+  }
+
+  @override
+  String get updateCopyHash => 'SHA-256-Hash kopieren';
+
+  @override
+  String get updateHashCopied => 'SHA-256-Hash in die Zwischenablage kopiert';
+
+  @override
+  String get updateCopyCommit => 'Commit-Hash kopieren';
+
+  @override
+  String get updateCommitCopied => 'Commit-Hash in die Zwischenablage kopiert';
+
+  @override
+  String get updateReleaseNotes => 'Versionshinweise';
+
+  @override
+  String get updateNoReleaseNotes => 'Keine Versionshinweise vorhanden.';
+
+  @override
+  String get updateNoArtifactForPlatform =>
+      'Kein direktes Installationspaket für diese Plattform/Architektur verfügbar.';
+
+  @override
+  String get updateOpenReleasePage => 'Releases auf GitHub öffnen';
+
+  @override
+  String get updateDownload => 'Update herunterladen';
+
+  @override
+  String updateDownloading(String progress) {
+    return 'Wird heruntergeladen... $progress%';
+  }
+
+  @override
+  String get updatePause => 'Pausieren';
+
+  @override
+  String get updateResume => 'Fortsetzen';
+
+  @override
+  String get updateRetry => 'Wiederholen';
+
+  @override
+  String get updateDownloadPaused => 'Download pausiert';
+
+  @override
+  String get updateDownloadCompleted =>
+      'Download abgeschlossen und verifiziert';
+
+  @override
+  String get updateInstall => 'Update installieren';
+
+  @override
+  String get updateRevealInFolder => 'Im Ordner anzeigen';
+
+  @override
+  String get updateOpenFolder => 'Download-Ordner öffnen';
+
+  @override
+  String get updateRetryInstall => 'Installation wiederholen';
+
+  @override
+  String get updateDesktopInstructions =>
+      'Extrahieren Sie das heruntergeladene Archiv und ersetzen Sie die Anwendung im geschlossenen Zustand. Überschreiben Sie niemals das laufende Programm.';
+
+  @override
+  String get updateCopyErrorDetails => 'Fehlerdetails kopieren';
+
+  @override
+  String get updateErrorCopied => 'Fehlerdetails in die Zwischenablage kopiert';
+
+  @override
+  String get updateErrorRateLimited =>
+      'GitHub-API-Ratenlimit überschritten. Bitte versuchen Sie es später erneut.';
+
+  @override
+  String get updateErrorNetwork =>
+      'Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung.';
+
+  @override
+  String get updateErrorManifest =>
+      'Update-Manifest ist ungültig oder erforderliche Metadaten fehlen.';
+
+  @override
+  String get updateErrorIntegrity =>
+      'Integritätsprüfung des Downloads fehlgeschlagen. Prüfsumme stimmt nicht überein.';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      'Signaturkonflikt bei der Installation: Das Update-Paket ist mit einem anderen Schlüssel signiert. Unterschiedliche Signaturen können nicht überschrieben werden. Deinstallieren oder löschen Sie niemals App-Daten, um Datenverlust zu vermeiden.';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      'Installationsberechtigung erforderlich. Bitte erlauben Sie die Installation unbekannter Apps in den Systemeinstellungen und tippen Sie auf Wiederholen.';
+
+  @override
+  String get updateErrorPermission =>
+      'Speicher- oder Systemberechtigung verweigert.';
+
+  @override
+  String get updateErrorPackageInvalid =>
+      'Paketpfad oder Paketidentität ist ungültig.';
+
+  @override
+  String get updateErrorStoreInstall =>
+      'Diese App wurde über einen App Store installiert. Bitte aktualisieren Sie über den Store.';
+
+  @override
+  String get updateErrorPlatform =>
+      'Fehler beim Öffnen oder Starten des Installationsprogramms.';
+
+  @override
+  String get updateErrorGeneric =>
+      'Update-Vorgang fehlgeschlagen. Bitte versuchen Sie es erneut oder öffnen Sie die GitHub-Releases.';
 }

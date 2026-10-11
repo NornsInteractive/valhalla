@@ -44,6 +44,23 @@ class SystemMetricsSnapshot {
     this.networkRates = const {},
   });
 
+  Map<String, dynamic> toJson() => {'cpuUsedRatio': cpuUsedRatio,
+    'memoryUsedRatio': memoryUsedRatio, 'memoryTotalBytes': memoryTotalBytes,
+    'memoryUsedBytes': memoryUsedBytes, 'load1': load1, 'load5': load5,
+    'load15': load15, 'uptimeSeconds': uptimeSeconds,
+    'rootDiskUsedPercent': rootDiskUsedPercent,
+    'primaryNetworkInterface': primaryNetworkInterface};
+
+  factory SystemMetricsSnapshot.fromJson(Map<String, dynamic> json) => SystemMetricsSnapshot(
+    cpuUsedRatio: (json['cpuUsedRatio'] as num).toDouble(),
+    memoryUsedRatio: (json['memoryUsedRatio'] as num).toDouble(),
+    memoryTotalBytes: json['memoryTotalBytes'] as int,
+    memoryUsedBytes: json['memoryUsedBytes'] as int,
+    load1: (json['load1'] as num).toDouble(), load5: (json['load5'] as num).toDouble(),
+    load15: (json['load15'] as num).toDouble(), uptimeSeconds: json['uptimeSeconds'] as int,
+    rootDiskUsedPercent: (json['rootDiskUsedPercent'] as num).toDouble(),
+    primaryNetworkInterface: json['primaryNetworkInterface'] as String?);
+
   factory SystemMetricsSnapshot.parse(String raw) {
     var memoryTotal = 0.0;
     var memoryAvailable = 0.0;

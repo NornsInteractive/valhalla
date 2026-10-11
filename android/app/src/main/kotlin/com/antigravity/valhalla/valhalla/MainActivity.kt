@@ -32,6 +32,7 @@ class MainActivity : AudioServiceActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         DownloadChannel.register(this, flutterEngine)
+        UpdateChannel.register(this, flutterEngine)
         NasNetworkChannel.register(this, flutterEngine)
         DiagnosticsChannel.register(this, flutterEngine)
 

@@ -143,6 +143,27 @@ class AppLocalizationsTh extends AppLocalizations {
   String get terminalPaste => 'วาง';
 
   @override
+  String get terminalConfirmPasteTitle => 'ยืนยันการวาง';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return 'กำลังวางข้อความ $count บรรทัดลงในเทอร์มินัล ดำเนินการต่อหรือไม่?';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => 'ปุ่มลัดแถบเทอร์มินัล';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle =>
+      'ปรับแต่งและจัดเรียงปุ่มลัดบนแถบเครื่องมือใหม่';
+
+  @override
+  String get terminalResetPinnedKeys => 'รีเซ็ตเป็นค่าเริ่มต้น';
+
+  @override
+  String get terminalToggleKeyboard => 'สลับแป้นพิมพ์';
+
+  @override
   String get sftpCurrentPath => 'เส้นทางปัจจุบัน';
 
   @override
@@ -1177,6 +1198,16 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get sftpHiddenPreferenceSaveFailed =>
       'บันทึกการตั้งค่าไฟล์ที่ซ่อนไม่สำเร็จ';
+
+  @override
+  String get sftpViewModeList => 'มุมมองรายการ';
+
+  @override
+  String get sftpViewModeGrid => 'มุมมองตาราง';
+
+  @override
+  String get sftpViewPreferenceSaveFailed =>
+      'บันทึกการตั้งค่าโหมดมุมมองไม่สำเร็จ';
 
   @override
   String get sftpSymlink => 'ลิงก์สัญลักษณ์';
@@ -4068,4 +4099,207 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get configImportErrorMalformed =>
       'ไฟล์ JSON การกำหนดค่าเสียหายหรือไม่ถูกต้อง';
+
+  @override
+  String get aboutRepository => 'ที่เก็บ GitHub';
+
+  @override
+  String get updateCheckTitle => 'ตรวจสอบการอัปเดต';
+
+  @override
+  String get updateChecking => 'กำลังตรวจสอบการอัปเดต...';
+
+  @override
+  String get updateCheckNow => 'ตรวจสอบเลย';
+
+  @override
+  String get updateUpToDate => 'Valhalla เป็นเวอร์ชันล่าสุดแล้ว';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'ติดตั้งแล้ว: v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return 'มีเวอร์ชันใหม่: v$version';
+  }
+
+  @override
+  String get updateViewUpdate => 'ดูการอัปเดต';
+
+  @override
+  String updateLastChecked(String time) {
+    return 'ตรวจสอบล่าสุด: $time';
+  }
+
+  @override
+  String get updateNeverChecked => 'ไม่เคยตรวจสอบ';
+
+  @override
+  String get updateAutoCheckTitle => 'ตรวจสอบการอัปเดตอัตโนมัติ';
+
+  @override
+  String get updateAutoCheckSubtitle =>
+      'ตรวจสอบการอัปเดตทุกวันเมื่อแอปทำงานอยู่';
+
+  @override
+  String get updateAutoCheckSaveFailed =>
+      'บันทึกการตั้งค่าตรวจสอบการอัปเดตอัตโนมัติไม่สำเร็จ';
+
+  @override
+  String get updateDialogTitle => 'การอัปเดตซอฟต์แวร์';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return 'ปัจจุบัน: $version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return 'ล่าสุด: v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return 'บิลด์ $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return 'คอมมิต: $commit';
+  }
+
+  @override
+  String get updateArtifactDetails => 'แพ็กเกจการติดตั้ง';
+
+  @override
+  String updateArtifactName(String name) {
+    return 'ไฟล์: $name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return 'ขนาด: $size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'แฮช SHA-256: $hash';
+  }
+
+  @override
+  String get updateCopyHash => 'คัดลอกแฮช SHA-256';
+
+  @override
+  String get updateHashCopied => 'คัดลอกแฮช SHA-256 ไปยังคลิปบอร์ดแล้ว';
+
+  @override
+  String get updateCopyCommit => 'คัดลอกแฮชของคอมมิต';
+
+  @override
+  String get updateCommitCopied => 'คัดลอกแฮชของคอมมิตไปยังคลิปบอร์ดแล้ว';
+
+  @override
+  String get updateReleaseNotes => 'บันทึกประจำรุ่น';
+
+  @override
+  String get updateNoReleaseNotes => 'ไม่มีบันทึกประจำรุ่น';
+
+  @override
+  String get updateNoArtifactForPlatform =>
+      'ไม่มีแพ็กเกจติดตั้งโดยตรงสำหรับแพลตฟอร์ม/สถาปัตยกรรมของอุปกรณ์นี้';
+
+  @override
+  String get updateOpenReleasePage => 'เปิดหน้าเผยแพร่บน GitHub';
+
+  @override
+  String get updateDownload => 'ดาวน์โหลดการอัปเดต';
+
+  @override
+  String updateDownloading(String progress) {
+    return 'กำลังดาวน์โหลด... $progress%';
+  }
+
+  @override
+  String get updatePause => 'หยุดชั่วคราว';
+
+  @override
+  String get updateResume => 'ดำเนินการต่อ';
+
+  @override
+  String get updateRetry => 'ลองใหม่';
+
+  @override
+  String get updateDownloadPaused => 'หยุดการดาวน์โหลดชั่วคราว';
+
+  @override
+  String get updateDownloadCompleted => 'ดาวน์โหลดเสร็จสมบูรณ์และตรวจสอบแล้ว';
+
+  @override
+  String get updateInstall => 'ติดตั้งการอัปเดต';
+
+  @override
+  String get updateRevealInFolder => 'แสดงในโฟลเดอร์';
+
+  @override
+  String get updateOpenFolder => 'เปิดตำแหน่งดาวน์โหลด';
+
+  @override
+  String get updateRetryInstall => 'ลองติดตั้งใหม่';
+
+  @override
+  String get updateDesktopInstructions =>
+      'แตกไฟล์เก็บถาวรที่ดาวน์โหลดและแทนที่แอปพลิเคชันเมื่อปิดอยู่ อย่าเขียนทับโปรแกรมที่กำลังทำงานอยู่';
+
+  @override
+  String get updateCopyErrorDetails => 'คัดลอกรายละเอียดข้อผิดพลาด';
+
+  @override
+  String get updateErrorCopied =>
+      'คัดลอกรายละเอียดข้อผิดพลาดไปยังคลิปบอร์ดแล้ว';
+
+  @override
+  String get updateErrorRateLimited =>
+      'เกินขีดจำกัดอัตราคำขอของ GitHub API โปรดลองอีกครั้งในภายหลัง';
+
+  @override
+  String get updateErrorNetwork =>
+      'การเชื่อมต่อเครือข่ายล้มเหลว โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ';
+
+  @override
+  String get updateErrorManifest =>
+      'ไฟล์กำกับการอัปเดตไม่ถูกต้องหรือไม่มีข้อมูลเมตาที่จำเป็น';
+
+  @override
+  String get updateErrorIntegrity =>
+      'การตรวจสอบความสมบูรณ์ของการดาวน์โหลดล้มเหลว ค่าตรวจสอบไม่ตรงกัน';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      'ลายเซ็นการติดตั้งไม่ตรงกัน: แพ็กเกจอัปเดตได้รับการลงนามด้วยคีย์ที่แตกต่างจากแอปนี้ ไม่สามารถเขียนทับลายเซ็นที่แตกต่างกันได้ เพื่อป้องกันข้อมูลสูญหาย อย่าถอนการติดตั้งหรือล้างข้อมูลแอป';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      'ต้องได้รับสิทธิ์ในการติดตั้ง โปรดอนุญาตการติดตั้งแอปที่ไม่รู้จักสำหรับ Valhalla ในการตั้งค่าระบบ จากนั้นแตะลองติดตั้งใหม่';
+
+  @override
+  String get updateErrorPermission =>
+      'การอนุญาตพื้นที่จัดเก็บหรือระบบถูกปฏิเสธ';
+
+  @override
+  String get updateErrorPackageInvalid =>
+      'เส้นทางหรือข้อมูลประจำตัวของแพ็กเกจไม่ถูกต้อง';
+
+  @override
+  String get updateErrorStoreInstall =>
+      'แอปนี้ได้รับการติดตั้งจากร้านค้าแอป โปรดอัปเดตผ่านร้านค้า';
+
+  @override
+  String get updateErrorPlatform =>
+      'ไม่สามารถเปิดหรือเปิดใช้งานโปรแกรมติดตั้งได้';
+
+  @override
+  String get updateErrorGeneric =>
+      'การดำเนินการอัปเดตล้มเหลว โปรดลองอีกครั้งหรือดูการเผยแพร่บน GitHub';
 }

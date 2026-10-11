@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -14,6 +15,7 @@ import 'package:xterm/src/ui/input_map.dart';
 import 'package:xterm/src/ui/keyboard_listener.dart';
 import 'package:xterm/src/ui/keyboard_visibility.dart';
 import 'package:xterm/src/ui/render.dart';
+export 'package:xterm/src/ui/render.dart' show clearTerminalScrollState;
 import 'package:xterm/src/ui/scroll_handler.dart';
 import 'package:xterm/src/ui/shortcut/actions.dart';
 import 'package:xterm/src/ui/shortcut/shortcuts.dart';
@@ -49,6 +51,9 @@ class TerminalView extends StatefulWidget {
     this.readOnly = false,
     this.hardwareKeyboardOnly = false,
     this.simulateScroll = true,
+    this.requestKeyboardOnTap = true,
+    this.onPasteText,
+    this.onTextInput,
   });
 
   /// The underlying terminal that this widget renders.
@@ -141,6 +146,20 @@ class TerminalView extends StatefulWidget {
   /// keys to the application. This is standard behavior for most terminal
   /// emulators. True by default.
   final bool simulateScroll;
+
+  /// Optional callback invoked when a paste action occurs, receiving the text from clipboard.
+  final FutureOr<void> Function(String text)? onPasteText;
+
+  /// Optional callback for text input (e.g. from mobile virtual keyboard/IME).
+  /// Return true if the input was handled, preventing default terminal insertion.
+  final bool Function(String text)? onTextInput;
+
+  /// Whether tapping on the terminal view should automatically request the
+  /// on-screen software keyboard (IME). True by default.
+  ///
+  /// When false, tapping focuses the terminal for hardware keyboard input and
+  /// clears selection, but does not call [CustomTextEditState.requestKeyboard].
+  final bool requestKeyboardOnTap;
 
   @override
   State<TerminalView> createState() => TerminalViewState();
@@ -288,6 +307,7 @@ class TerminalViewState extends State<TerminalView> {
     child = TerminalActions(
       terminal: widget.terminal,
       controller: _controller,
+      onPasteText: widget.onPasteText,
       child: child,
     );
 
@@ -349,7 +369,7 @@ class TerminalViewState extends State<TerminalView> {
     if (_controller.selection != null) {
       _controller.clearSelection();
     } else {
-      if (!widget.hardwareKeyboardOnly) {
+      if (!widget.hardwareKeyboardOnly && widget.requestKeyboardOnTap) {
         _customTextEditKey.currentState?.requestKeyboard();
       } else {
         _focusNode.requestFocus();
@@ -372,6 +392,11 @@ class TerminalViewState extends State<TerminalView> {
   }
 
   void _onInsert(String text) {
+    if (widget.onTextInput != null && widget.onTextInput!(text)) {
+      _scrollToBottom();
+      return;
+    }
+
     final key = charToTerminalKey(text.trim());
 
     // On mobile platforms there is no guarantee that virtual keyboard will

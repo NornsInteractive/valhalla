@@ -44,6 +44,19 @@
   "terminalClear": "Bersihkan",
   "terminalQuickCmds": "Palet Perintah",
   "terminalPaste": "Tempel",
+  "terminalConfirmPasteTitle": "Konfirmasi Tempel",
+  "terminalConfirmPasteMessage": "Menempelkan {count} baris teks ke terminal. Lanjutkan?",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "Tombol Bilah Terminal",
+  "settingsTerminalPinnedKeysSubtitle": "Sesuaikan dan urutkan ulang tombol pintasan bilah alat",
+  "terminalResetPinnedKeys": "Atur Ulang ke Default",
+  "terminalToggleKeyboard": "Alihkan Papan Ketik",
   "sftpCurrentPath": "Jalur Saat Ini",
   "sftpUpload": "Unggah",
   "sftpNewFolder": "Folder Baru",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "Tampilkan berkas tersembunyi",
   "sftpHideHiddenFiles": "Sembunyikan berkas tersembunyi",
   "sftpHiddenPreferenceSaveFailed": "Gagal menyimpan preferensi berkas tersembunyi",
+  "sftpViewModeList": "Tampilan daftar",
+  "sftpViewModeGrid": "Tampilan kisi",
+  "sftpViewPreferenceSaveFailed": "Gagal menyimpan preferensi mode tampilan",
   "sftpSymlink": "Tautan simbolik",
   "sftpLinkTargetUnavailable": "Target tautan simbolik rusak atau tidak tersedia",
   "sftpLinkTargetPermissionDenied": "Izin ditolak untuk mengakses target tautan simbolik",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "Salin Detail Diagnostik",
   "configImportErrorCopied": "Detail diagnostik disalin ke papan klip",
   "configImportErrorUnsupportedVersion": "Format atau versi cadangan tidak didukung",
-  "configImportErrorMalformed": "JSON konfigurasi rusak atau tidak sesuai format"
+  "configImportErrorMalformed": "JSON konfigurasi rusak atau tidak sesuai format",
+  "aboutRepository": "Repositori GitHub",
+  "updateCheckTitle": "Periksa pembaruan",
+  "updateChecking": "Memeriksa pembaruan...",
+  "updateCheckNow": "Periksa sekarang",
+  "updateUpToDate": "Valhalla sudah versi terbaru",
+  "updateInstalledVersion": "Terpasang: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "Versi baru tersedia: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "Lihat pembaruan",
+  "updateLastChecked": "Terakhir diperiksa: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "Belum pernah diperiksa",
+  "updateAutoCheckTitle": "Pemeriksaan pembaruan otomatis",
+  "updateAutoCheckSubtitle": "Periksa pembaruan setiap hari saat aplikasi aktif",
+  "updateAutoCheckSaveFailed": "Gagal menyimpan setelan pemeriksaan pembaruan otomatis",
+  "updateDialogTitle": "Pembaruan Perangkat Lunak",
+  "updateCurrentVersion": "Saat ini: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "Terbaru: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "Nomor build: {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "Komit: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "Paket instalasi",
+  "updateArtifactName": "Berkas: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "Ukuran: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "Hash SHA-256: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "Salin hash SHA-256",
+  "updateHashCopied": "Hash SHA-256 disalin ke papan klip",
+  "updateCopyCommit": "Salin hash komit",
+  "updateCommitCopied": "Hash komit disalin ke papan klip",
+  "updateReleaseNotes": "Catatan Rilis",
+  "updateNoReleaseNotes": "Tidak ada catatan rilis yang disediakan.",
+  "updateNoArtifactForPlatform": "Tidak ada paket instalasi langsung yang tersedia untuk platform/arsitektur perangkat ini.",
+  "updateOpenReleasePage": "Buka Rilis di GitHub",
+  "updateDownload": "Unduh Pembaruan",
+  "updateDownloading": "Mengunduh... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "Jeda",
+  "updateResume": "Lanjutkan",
+  "updateRetry": "Coba lagi",
+  "updateDownloadPaused": "Unduhan dijeda",
+  "updateDownloadCompleted": "Unduhan selesai dan diverifikasi",
+  "updateInstall": "Instal Pembaruan",
+  "updateRevealInFolder": "Tampilkan di Folder",
+  "updateOpenFolder": "Buka Lokasi Unduhan",
+  "updateRetryInstall": "Coba Lagi Menginstal",
+  "updateDesktopInstructions": "Ekstrak arsip yang diunduh dan ganti aplikasi saat ditutup. Jangan pernah menimpa program yang sedang berjalan.",
+  "updateCopyErrorDetails": "Salin detail kesalahan",
+  "updateErrorCopied": "Detail kesalahan disalin ke papan klip",
+  "updateErrorRateLimited": "Batas frekuensi API GitHub terlampaui. Silakan coba lagi nanti.",
+  "updateErrorNetwork": "Koneksi jaringan gagal. Silakan periksa koneksi internet Anda.",
+  "updateErrorManifest": "Manifest pembaruan tidak valid atau metadata yang diperlukan tidak ada.",
+  "updateErrorIntegrity": "Pemeriksaan integritas unduhan gagal. Checksum berkas tidak cocok.",
+  "updateErrorSignatureMismatch": "Ketidakcocokan tanda tangan instalasi: paket pembaruan ditandatangani dengan kunci yang berbeda. Tidak dapat menimpa tanda tangan yang berbeda. Untuk mencegah kehilangan data, jangan pernah mencopot pemasangan atau menghapus data aplikasi.",
+  "updateErrorPermissionRequired": "Izin instalasi diperlukan. Harap izinkan penginstalan aplikasi yang tidak dikenal di pengaturan sistem, lalu ketuk Coba Lagi Menginstal.",
+  "updateErrorPermission": "Izin penyimpanan atau sistem ditolak.",
+  "updateErrorPackageInvalid": "Jalur atau identitas paket tidak valid.",
+  "updateErrorStoreInstall": "Aplikasi ini diinstal dari toko aplikasi. Silakan perbarui melalui toko.",
+  "updateErrorPlatform": "Gagal membuka atau meluncurkan penginstal.",
+  "updateErrorGeneric": "Operasi pembaruan gagal. Silakan coba lagi atau buka rilis di GitHub."
 }

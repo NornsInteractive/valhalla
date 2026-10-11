@@ -143,6 +143,27 @@ class AppLocalizationsAr extends AppLocalizations {
   String get terminalPaste => 'لصق';
 
   @override
+  String get terminalConfirmPasteTitle => 'تأكيد اللصق';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return 'لصق $count من أسطر النص في الطرفية. هل تريد المتابعة؟';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => 'مفاتيح شريط الطرفية';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle =>
+      'تخصيص وإعادة ترتيب مفاتيح شريط الأدوات';
+
+  @override
+  String get terminalResetPinnedKeys => 'إعادة الضبط إلى الافتراضي';
+
+  @override
+  String get terminalToggleKeyboard => 'تبديل لوحة المفاتيح';
+
+  @override
   String get sftpCurrentPath => 'المسار الحالي';
 
   @override
@@ -1171,6 +1192,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sftpHiddenPreferenceSaveFailed => 'فشل حفظ تفضيل الملفات المخفية';
+
+  @override
+  String get sftpViewModeList => 'عرض القائمة';
+
+  @override
+  String get sftpViewModeGrid => 'عرض الشبكة';
+
+  @override
+  String get sftpViewPreferenceSaveFailed => 'فشل حفظ تفضيل وضع العرض';
 
   @override
   String get sftpSymlink => 'رابط رمزي';
@@ -4044,4 +4074,203 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get configImportErrorMalformed =>
       'ملف JSON للإعدادات تالف أو غير صالح';
+
+  @override
+  String get aboutRepository => 'مستودع GitHub';
+
+  @override
+  String get updateCheckTitle => 'التحقق من وجود تحديثات';
+
+  @override
+  String get updateChecking => 'جارٍ التحقق من وجود تحديثات...';
+
+  @override
+  String get updateCheckNow => 'تحقق الآن';
+
+  @override
+  String get updateUpToDate => 'Valhalla محدث إلى آخر إصدار';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'المثبت: v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return 'يتوفر إصدار جديد: v$version';
+  }
+
+  @override
+  String get updateViewUpdate => 'عرض التحديث';
+
+  @override
+  String updateLastChecked(String time) {
+    return 'آخر فحص: $time';
+  }
+
+  @override
+  String get updateNeverChecked => 'لم يتم الفحص من قبل';
+
+  @override
+  String get updateAutoCheckTitle => 'التحقق التلقائي من التحديثات';
+
+  @override
+  String get updateAutoCheckSubtitle =>
+      'التحقق يوميًا من التحديثات عندما يكون التطبيق نشطًا';
+
+  @override
+  String get updateAutoCheckSaveFailed =>
+      'فشل حفظ إعداد التحقق التلقائي من التحديثات';
+
+  @override
+  String get updateDialogTitle => 'تحديث البرنامج';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return 'الحالي: $version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return 'الأحدث: v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return 'البناء $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return 'الالتزام: $commit';
+  }
+
+  @override
+  String get updateArtifactDetails => 'حزمة التثبيت';
+
+  @override
+  String updateArtifactName(String name) {
+    return 'الملف: $name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return 'الحجم: $size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'تجزئة SHA-256: $hash';
+  }
+
+  @override
+  String get updateCopyHash => 'نسخ تجزئة SHA-256';
+
+  @override
+  String get updateHashCopied => 'تم نسخ تجزئة SHA-256 إلى الحافظة';
+
+  @override
+  String get updateCopyCommit => 'نسخ تجزئة الالتزام';
+
+  @override
+  String get updateCommitCopied => 'تم نسخ تجزئة الالتزام إلى الحافظة';
+
+  @override
+  String get updateReleaseNotes => 'ملاحظات الإصدار';
+
+  @override
+  String get updateNoReleaseNotes => 'لا توجد ملاحظات إصدار مقدمة.';
+
+  @override
+  String get updateNoArtifactForPlatform =>
+      'لا توجد حزمة تثبيت مباشرة متاحة لمنصة/معمارية هذا الجهاز.';
+
+  @override
+  String get updateOpenReleasePage => 'فتح الإصدارات على GitHub';
+
+  @override
+  String get updateDownload => 'تنزيل التحديث';
+
+  @override
+  String updateDownloading(String progress) {
+    return 'جارٍ التنزيل... $progress%';
+  }
+
+  @override
+  String get updatePause => 'إيقاف مؤقت';
+
+  @override
+  String get updateResume => 'استئناف';
+
+  @override
+  String get updateRetry => 'إعادة المحاولة';
+
+  @override
+  String get updateDownloadPaused => 'تم إيقاف التنزيل مؤقتًا';
+
+  @override
+  String get updateDownloadCompleted => 'اكتمل التنزيل وتم التحقق منه';
+
+  @override
+  String get updateInstall => 'تثبيت التحديث';
+
+  @override
+  String get updateRevealInFolder => 'إظهار في المجلد';
+
+  @override
+  String get updateOpenFolder => 'فتح موقع التنزيل';
+
+  @override
+  String get updateRetryInstall => 'إعادة محاولة التثبيت';
+
+  @override
+  String get updateDesktopInstructions =>
+      'استخرج الأرشيف الذي تم تنزيله واستبدل التطبيق بعد إغلاقه. لا تقم أبدًا بالكتابة فوق البرنامج قيد التشغيل.';
+
+  @override
+  String get updateCopyErrorDetails => 'نسخ تفاصيل الخطأ';
+
+  @override
+  String get updateErrorCopied => 'تم نسخ تفاصيل الخطأ إلى الحافظة';
+
+  @override
+  String get updateErrorRateLimited =>
+      'تم تجاوز حد معدل واجهة برمجة تطبيقات GitHub. يرجى المحاولة مرة أخرى لاحقًا.';
+
+  @override
+  String get updateErrorNetwork =>
+      'فشل الاتصال بالشبكة. يرجى التحقق من اتصالك بالإنترنت.';
+
+  @override
+  String get updateErrorManifest =>
+      'بيان التحديث غير صالح أو تنقصه بيانات وصفية مطلوبة.';
+
+  @override
+  String get updateErrorIntegrity =>
+      'فشل التحقق من سلامة التنزيل. المجموع التحققي للملف غير متطابق.';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      'عدم تطابق توقيع التثبيت: تم توقيع حزمة التحديث بمفتاح مختلف عن هذا التطبيق. لا يمكن الكتابة فوق توقيعات مختلفة. لتجنب فقدان البيانات، لا تقم مطلقًا بإلغاء التثبيت أو مسح بيانات التطبيق.';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      'إذن التثبيت مطلوب. يرجى السماح بتثبيت التطبيقات غير المعروفة لـ Valhalla في إعدادات النظام، ثم النقر فوق إعادة محاولة التثبيت.';
+
+  @override
+  String get updateErrorPermission => 'تم رفض إذن التخزين أو النظام.';
+
+  @override
+  String get updateErrorPackageInvalid => 'مسار الحزمة أو هويتها غير صالحة.';
+
+  @override
+  String get updateErrorStoreInstall =>
+      'تم تثبيت هذا التطبيق من متجر تطبيقات. يرجى التحديث عبر المتجر.';
+
+  @override
+  String get updateErrorPlatform => 'فشل فتح برنامج التثبيت أو تشغيله.';
+
+  @override
+  String get updateErrorGeneric =>
+      'فشلت عملية التحديث. يرجى المحاولة مرة أخرى أو زيارة إصدارات GitHub.';
 }

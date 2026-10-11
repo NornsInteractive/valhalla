@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/providers/infrastructure_providers.dart';
 import '../../core/providers/server_provider.dart';
+import '../../core/providers/storage_providers.dart';
+import '../../core/services/app_diagnostics.dart';
 import '../../infrastructure/ssh/ssh_client_manager.dart';
 import '../../infrastructure/system/process_service.dart';
 import '../../infrastructure/system/service_manager.dart';
@@ -19,6 +21,8 @@ class SystemState {
   final String? serviceError;
   final String serviceSearchQuery;
   final String? serviceFilterState;
+  final Map<String, String> pendingActions;
+  final DateTime? cachedAt;
 
   const SystemState({
     this.processes = const [],
@@ -30,6 +34,8 @@ class SystemState {
     this.serviceError,
     this.serviceSearchQuery = '',
     this.serviceFilterState,
+    this.pendingActions = const {},
+    this.cachedAt,
   });
 
   List<ProcessInfo> get filteredProcesses {
@@ -71,15 +77,22 @@ class SystemState {
     String? serviceSearchQuery,
     String? serviceFilterState,
     bool clearServiceFilter = false,
+    bool clearProcessError = false,
+    bool clearServiceError = false,
+    Map<String, String>? pendingActions,
+    DateTime? cachedAt,
+    bool clearCachedAt = false,
   }) {
     return SystemState(
       processes: processes ?? this.processes,
       isProcessesLoading: isProcessesLoading ?? this.isProcessesLoading,
-      processError: processError,
+      processError: clearProcessError ? null : (processError ?? this.processError),
       processSearchQuery: processSearchQuery ?? this.processSearchQuery,
       services: services ?? this.services,
       isServicesLoading: isServicesLoading ?? this.isServicesLoading,
-      serviceError: serviceError,
+      serviceError: clearServiceError ? null : (serviceError ?? this.serviceError),
+      pendingActions: pendingActions ?? this.pendingActions,
+      cachedAt: clearCachedAt ? null : cachedAt ?? this.cachedAt,
       serviceSearchQuery: serviceSearchQuery ?? this.serviceSearchQuery,
       serviceFilterState: clearServiceFilter
           ? null
@@ -117,6 +130,20 @@ class SystemNotifier extends Notifier<SystemState> {
       });
     }
 
+    if (activeServer != null) {
+      try {
+        final cached = ref.read(localStorageServiceProvider).getPageCache(activeServer, 'services');
+        final rows = cached?['payload']?['services'] as List?;
+        if (rows != null) {
+          return SystemState(services: rows.cast<Map<String, dynamic>>().map((s) =>
+            SystemdServiceInfo(name: s['name'] as String, description: s['description'] as String,
+              state: s['state'] as String, startup: s['startup'] as String)).toList(),
+            cachedAt: DateTime.tryParse(cached?['savedAt'] as String? ?? ''));
+        }
+      } catch (error, stack) {
+        unawaited(AppDiagnostics.instance.record('system.cache', error, stack));
+      }
+    }
     return const SystemState();
   }
 
@@ -154,7 +181,7 @@ class SystemNotifier extends Notifier<SystemState> {
       return;
     }
 
-    state = state.copyWith(isProcessesLoading: !quiet, processError: null);
+    state = state.copyWith(isProcessesLoading: !quiet, clearProcessError: true);
 
     try {
       final procService = ref.read(processServiceProvider);
@@ -165,7 +192,7 @@ class SystemNotifier extends Notifier<SystemState> {
       state = state.copyWith(
         processes: list,
         isProcessesLoading: false,
-        processError: null,
+        clearProcessError: true,
       );
     } catch (e) {
       if (!ref.mounted || epoch != _epoch || sequence != _processSequence) {
@@ -191,7 +218,7 @@ class SystemNotifier extends Notifier<SystemState> {
       return;
     }
 
-    state = state.copyWith(isServicesLoading: !quiet, serviceError: null);
+    state = state.copyWith(isServicesLoading: !quiet, clearServiceError: true);
 
     try {
       final svcManager = ref.read(serviceManagerProvider);
@@ -201,9 +228,16 @@ class SystemNotifier extends Notifier<SystemState> {
       }
       state = state.copyWith(
         services: list,
+        clearCachedAt: true,
         isServicesLoading: false,
-        serviceError: null,
+        clearServiceError: true,
       );
+      unawaited(ref.read(localStorageServiceProvider).savePageCache(activeServer, 'services', {
+        'services': list.take(200).map((s) => {'name': s.name, 'description': s.description,
+          'state': s.state, 'startup': s.startup}).toList(),
+      }).catchError((Object error, StackTrace stack) {
+        unawaited(AppDiagnostics.instance.record('system.cache', error, stack));
+      }));
     } catch (e) {
       if (!ref.mounted || epoch != _epoch || sequence != _serviceSequence) {
         return;
@@ -220,17 +254,22 @@ class SystemNotifier extends Notifier<SystemState> {
   Future<SSHExecutionResult> terminateProcess(
     int pid, {
     bool force = false,
+    String? expectedStartedAt,
   }) async {
     final activeServer = ref.read(activeServerProvider);
-    if (activeServer == null) {
+    if (activeServer == null || !ref.read(serverConnectionProvider).isConnected) {
       throw const SSHConnectionException('No active server selected');
     }
 
     final procService = ref.read(processServiceProvider);
+    if (expectedStartedAt == null || expectedStartedAt.isEmpty) {
+      throw const ValidationException('PROCESS_IDENTITY_UNAVAILABLE');
+    }
     final result = await procService.terminate(
       activeServer.id,
       pid,
       force: force,
+      expectedStartedAt: expectedStartedAt,
     );
     await refreshProcesses();
     return result;
@@ -241,14 +280,36 @@ class SystemNotifier extends Notifier<SystemState> {
     String action,
   ) async {
     final activeServer = ref.read(activeServerProvider);
-    if (activeServer == null) {
+    if (activeServer == null || !ref.read(serverConnectionProvider).isConnected) {
       throw const SSHConnectionException('No active server selected');
     }
 
     final svcManager = ref.read(serviceManagerProvider);
-    final result = await svcManager.action(activeServer.id, service, action);
-    await refreshServices();
-    return result;
+    if (state.pendingActions.containsKey(service)) {
+      throw const ValidationException('SERVICE_ACTION_IN_PROGRESS');
+    }
+    final epoch = _epoch;
+    state = state.copyWith(pendingActions: {...state.pendingActions, service: action});
+    try {
+      final result = await svcManager.action(activeServer.id, service, action);
+      if (ref.mounted && epoch == _epoch) await refreshServices(quiet: true);
+      return result;
+    } finally {
+      if (ref.mounted && epoch == _epoch) {
+        state = state.copyWith(pendingActions: Map.from(state.pendingActions)..remove(service));
+      }
+    }
+  }
+  Future<List<Map<String, dynamic>>> serviceLogs(String service, {String? beforeCursor}) async {
+    final server = ref.read(activeServerProvider);
+    final epoch = _epoch;
+    if (server == null || !ref.read(serverConnectionProvider).isConnected) {
+      throw const SSHConnectionException('SSH_DISCONNECTED');
+    }
+    final records = await ref.read(serviceManagerProvider).logs(server.id, service,
+      beforeCursor: beforeCursor);
+    if (!ref.mounted || epoch != _epoch) throw const ValidationException('SERVICE_TARGET_CHANGED');
+    return records;
   }
 }
 

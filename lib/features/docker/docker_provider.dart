@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/providers/infrastructure_providers.dart';
 import '../../core/providers/server_provider.dart';
+import '../../core/providers/storage_providers.dart';
+import '../../core/services/app_diagnostics.dart';
 import '../../data/models/server_profile.dart';
 import '../../infrastructure/docker/docker_cli_service.dart';
 import '../../infrastructure/ssh/ssh_client_manager.dart';
@@ -17,6 +19,7 @@ class DockerState {
   final DockerContainer? selectedContainer;
   final Map<String, dynamic>? inspectData;
   final Map<String, String> pendingActions;
+  final DateTime? cachedAt;
 
   const DockerState({
     this.containers = const [],
@@ -28,6 +31,7 @@ class DockerState {
     this.selectedContainer,
     this.inspectData,
     this.pendingActions = const {},
+    this.cachedAt,
   });
 
   List<DockerContainer> get filteredContainers {
@@ -71,6 +75,8 @@ class DockerState {
     Map<String, dynamic>? inspectData,
     bool clearInspectData = false,
     Map<String, String>? pendingActions,
+    DateTime? cachedAt,
+    bool clearCachedAt = false,
   }) {
     return DockerState(
       containers: containers ?? this.containers,
@@ -86,6 +92,7 @@ class DockerState {
           : (selectedContainer ?? this.selectedContainer),
       inspectData: clearInspectData ? null : (inspectData ?? this.inspectData),
       pendingActions: pendingActions ?? this.pendingActions,
+      cachedAt: clearCachedAt ? null : cachedAt ?? this.cachedAt,
     );
   }
 }
@@ -115,6 +122,19 @@ class DockerNotifier extends Notifier<DockerState> {
       });
     }
 
+    if (activeServer != null) {
+      try {
+        final cached = ref.read(localStorageServiceProvider).getPageCache(activeServer, 'docker');
+        final rows = cached?['payload']?['containers'] as List?;
+        if (rows != null) {
+          return DockerState(containers: rows.cast<Map<String, dynamic>>()
+            .map(DockerContainer.fromJson).toList(),
+            cachedAt: DateTime.tryParse(cached?['savedAt'] as String? ?? ''));
+        }
+      } catch (error, stack) {
+        unawaited(AppDiagnostics.instance.record('docker.cache', error, stack));
+      }
+    }
     return const DockerState();
   }
 
@@ -154,9 +174,18 @@ class DockerNotifier extends Notifier<DockerState> {
       }
       state = state.copyWith(
         containers: list,
+        clearCachedAt: true,
         isLoading: false,
         clearError: true,
       );
+      unawaited(ref.read(localStorageServiceProvider).savePageCache(activeServer, 'docker', {
+        'containers': list.take(200).map((c) => {'id': c.id, 'name': c.name,
+          'image': c.image, 'status': c.status, 'state': c.state.name, 'ports': c.ports,
+          'created': c.createdAt?.toIso8601String(), 'composeProject': c.composeProject,
+          'composeService': c.composeService}).toList(),
+      }).catchError((Object error, StackTrace stack) {
+        unawaited(AppDiagnostics.instance.record('docker.cache', error, stack));
+      }));
     } catch (e) {
       if (!ref.mounted || epoch != _epoch || sequence != _refreshSequence) {
         return;

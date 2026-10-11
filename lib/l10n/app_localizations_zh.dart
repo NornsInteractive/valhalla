@@ -141,6 +141,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String get terminalPaste => '粘贴';
 
   @override
+  String get terminalConfirmPasteTitle => '确认粘贴';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return '即将向终端粘贴 $count 行文本。是否继续？';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => '终端快捷按键';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle => '自定义与重排终端按键栏的快捷按键';
+
+  @override
+  String get terminalResetPinnedKeys => '恢复默认';
+
+  @override
+  String get terminalToggleKeyboard => '切换键盘';
+
+  @override
   String get sftpCurrentPath => '当前工作路径';
 
   @override
@@ -1129,6 +1149,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sftpHiddenPreferenceSaveFailed => '保存隐藏文件设置失败';
+
+  @override
+  String get sftpViewModeList => '列表视图';
+
+  @override
+  String get sftpViewModeGrid => '网格视图';
+
+  @override
+  String get sftpViewPreferenceSaveFailed => '保存视图模式设置失败';
 
   @override
   String get sftpSymlink => '软链接';
@@ -3879,6 +3908,196 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get configImportErrorMalformed => '配置文件 JSON 损坏或格式错误';
+
+  @override
+  String get aboutRepository => 'GitHub 仓库';
+
+  @override
+  String get updateCheckTitle => '检查更新';
+
+  @override
+  String get updateChecking => '正在检查更新...';
+
+  @override
+  String get updateCheckNow => '立即检查';
+
+  @override
+  String get updateUpToDate => '当前已是最新版本';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return '已安装：v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return '发现新版本：v$version';
+  }
+
+  @override
+  String get updateViewUpdate => '查看更新';
+
+  @override
+  String updateLastChecked(String time) {
+    return '上次检查：$time';
+  }
+
+  @override
+  String get updateNeverChecked => '从未检查';
+
+  @override
+  String get updateAutoCheckTitle => '自动检查更新';
+
+  @override
+  String get updateAutoCheckSubtitle => '在应用活跃时每天检查一次新版本';
+
+  @override
+  String get updateAutoCheckSaveFailed => '保存自动更新检查设置失败';
+
+  @override
+  String get updateDialogTitle => '软件更新';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return '当前版本：$version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return '最新版本：v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return '构建号 $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return '提交：$commit';
+  }
+
+  @override
+  String get updateArtifactDetails => '安装包信息';
+
+  @override
+  String updateArtifactName(String name) {
+    return '文件：$name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return '大小：$size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'SHA-256 哈希值：$hash';
+  }
+
+  @override
+  String get updateCopyHash => '复制 SHA-256 哈希值';
+
+  @override
+  String get updateHashCopied => '已复制 SHA-256 哈希值到剪贴板';
+
+  @override
+  String get updateCopyCommit => '复制提交哈希';
+
+  @override
+  String get updateCommitCopied => '已复制提交哈希到剪贴板';
+
+  @override
+  String get updateReleaseNotes => '更新说明';
+
+  @override
+  String get updateNoReleaseNotes => '暂无更新说明。';
+
+  @override
+  String get updateNoArtifactForPlatform => '此设备平台/架构暂无直接安装包。';
+
+  @override
+  String get updateOpenReleasePage => '在 GitHub 查看发布页';
+
+  @override
+  String get updateDownload => '下载更新';
+
+  @override
+  String updateDownloading(String progress) {
+    return '正在下载... $progress%';
+  }
+
+  @override
+  String get updatePause => '暂停';
+
+  @override
+  String get updateResume => '继续';
+
+  @override
+  String get updateRetry => '重试';
+
+  @override
+  String get updateDownloadPaused => '下载已暂停';
+
+  @override
+  String get updateDownloadCompleted => '下载完成且校验通过';
+
+  @override
+  String get updateInstall => '安装更新';
+
+  @override
+  String get updateRevealInFolder => '在文件夹中显示';
+
+  @override
+  String get updateOpenFolder => '打开下载目录';
+
+  @override
+  String get updateRetryInstall => '重试安装';
+
+  @override
+  String get updateDesktopInstructions =>
+      '请解压下载的压缩包，并在退出当前应用后进行替换。切勿覆盖正在运行的程序。';
+
+  @override
+  String get updateCopyErrorDetails => '复制错误详情';
+
+  @override
+  String get updateErrorCopied => '错误详情已复制到剪贴板';
+
+  @override
+  String get updateErrorRateLimited => 'GitHub API 请求频率超限，请稍后重试。';
+
+  @override
+  String get updateErrorNetwork => '网络连接失败，请检查您的网络设置。';
+
+  @override
+  String get updateErrorManifest => '更新清单无效或缺失必要的元数据。';
+
+  @override
+  String get updateErrorIntegrity => '下载完整性校验失败，文件校验和不匹配。';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      '安装签名不匹配：更新包的签名与当前已安装应用不同。无法直接覆盖不同签名的安装。为防止凭据和配置丢失，切勿卸载应用或清除数据。';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      '需要安装权限。请在系统设置中允许 Valhalla 安装未知应用，然后点击重试安装。';
+
+  @override
+  String get updateErrorPermission => '存储或系统权限被拒绝。';
+
+  @override
+  String get updateErrorPackageInvalid => '安装包路径或身份信息无效。';
+
+  @override
+  String get updateErrorStoreInstall => '此应用通过应用商店安装，请通过对应的应用商店进行更新。';
+
+  @override
+  String get updateErrorPlatform => '无法打开或启动安装程序。';
+
+  @override
+  String get updateErrorGeneric => '更新操作失败，请重试或前往 GitHub 查看发布页。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -4016,6 +4235,26 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get terminalPaste => '貼上';
+
+  @override
+  String get terminalConfirmPasteTitle => '確認貼上';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return '即將向終端貼上 $count 行文字。是否繼續？';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => '終端快捷按鍵';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle => '自訂與重排終端按鍵欄的快捷按鍵';
+
+  @override
+  String get terminalResetPinnedKeys => '恢復預設';
+
+  @override
+  String get terminalToggleKeyboard => '切換鍵盤';
 
   @override
   String get sftpCurrentPath => '當前工作路徑';
@@ -5006,6 +5245,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get sftpHiddenPreferenceSaveFailed => '儲存隱藏檔案偏好失敗';
+
+  @override
+  String get sftpViewModeList => '列表檢視';
+
+  @override
+  String get sftpViewModeGrid => '網格檢視';
+
+  @override
+  String get sftpViewPreferenceSaveFailed => '儲存檢視模式偏好失敗';
 
   @override
   String get sftpSymlink => '符號連結';
@@ -7756,4 +8004,194 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get configImportErrorMalformed => '設定檔 JSON 損毀或格式錯誤';
+
+  @override
+  String get aboutRepository => 'GitHub 倉庫';
+
+  @override
+  String get updateCheckTitle => '檢查更新';
+
+  @override
+  String get updateChecking => '正在檢查更新...';
+
+  @override
+  String get updateCheckNow => '立即檢查';
+
+  @override
+  String get updateUpToDate => '目前已是最新版本';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return '已安裝：v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return '發現新版本：v$version';
+  }
+
+  @override
+  String get updateViewUpdate => '檢視更新';
+
+  @override
+  String updateLastChecked(String time) {
+    return '上次檢查：$time';
+  }
+
+  @override
+  String get updateNeverChecked => '從未檢查';
+
+  @override
+  String get updateAutoCheckTitle => '自動檢查更新';
+
+  @override
+  String get updateAutoCheckSubtitle => '在應用活躍時每天檢查一次新版本';
+
+  @override
+  String get updateAutoCheckSaveFailed => '儲存自動更新檢查設定失敗';
+
+  @override
+  String get updateDialogTitle => '軟體更新';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return '目前版本：$version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return '最新版本：v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return '組建號 $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return '提交：$commit';
+  }
+
+  @override
+  String get updateArtifactDetails => '安裝套件資訊';
+
+  @override
+  String updateArtifactName(String name) {
+    return '檔案：$name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return '大小：$size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'SHA-256 雜湊值：$hash';
+  }
+
+  @override
+  String get updateCopyHash => '複製 SHA-256 雜湊值';
+
+  @override
+  String get updateHashCopied => '已複製 SHA-256 雜湊值到剪貼簿';
+
+  @override
+  String get updateCopyCommit => '複製提交雜湊';
+
+  @override
+  String get updateCommitCopied => '已複製提交雜湊到剪貼簿';
+
+  @override
+  String get updateReleaseNotes => '更新說明';
+
+  @override
+  String get updateNoReleaseNotes => '暫無更新說明。';
+
+  @override
+  String get updateNoArtifactForPlatform => '此裝置平台/架構暫無直接安裝套件。';
+
+  @override
+  String get updateOpenReleasePage => '在 GitHub 檢視發布頁';
+
+  @override
+  String get updateDownload => '下載更新';
+
+  @override
+  String updateDownloading(String progress) {
+    return '正在下載... $progress%';
+  }
+
+  @override
+  String get updatePause => '暫停';
+
+  @override
+  String get updateResume => '繼續';
+
+  @override
+  String get updateRetry => '重試';
+
+  @override
+  String get updateDownloadPaused => '下載已暫停';
+
+  @override
+  String get updateDownloadCompleted => '下載完成且校驗通過';
+
+  @override
+  String get updateInstall => '安裝更新';
+
+  @override
+  String get updateRevealInFolder => '在資料夾中顯示';
+
+  @override
+  String get updateOpenFolder => '開啟下載目錄';
+
+  @override
+  String get updateRetryInstall => '重試安裝';
+
+  @override
+  String get updateDesktopInstructions =>
+      '請解壓縮下載的壓縮檔，並在關閉目前應用程式後進行取代。切勿覆寫正在執行的程式。';
+
+  @override
+  String get updateCopyErrorDetails => '複製錯誤詳情';
+
+  @override
+  String get updateErrorCopied => '錯誤詳情已複製到剪貼簿';
+
+  @override
+  String get updateErrorRateLimited => 'GitHub API 請求頻率超限，請稍後重試。';
+
+  @override
+  String get updateErrorNetwork => '網路連線失敗，請檢查您的網路設定。';
+
+  @override
+  String get updateErrorManifest => '更新資訊清單無效或缺少必要的元資料。';
+
+  @override
+  String get updateErrorIntegrity => '下載完整性校驗失敗，檔案總和檢查碼不符。';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      '安裝簽章不符：更新套件的簽章與目前已安裝應用不同。無法直接覆寫不同簽章的安裝。為防止憑證與設定遺失，切勿解除安裝或清除資料。';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      '需要安裝權限。請在系統設定中允許 Valhalla 安裝未知應用，然後點擊重試安裝。';
+
+  @override
+  String get updateErrorPermission => '儲存或系統權限被拒絕。';
+
+  @override
+  String get updateErrorPackageInvalid => '安裝套件路徑或身分資訊無效。';
+
+  @override
+  String get updateErrorStoreInstall => '此應用透過應用程式商店安裝，請透過對應的應用程式商店進行更新。';
+
+  @override
+  String get updateErrorPlatform => '無法開啟或啟動安裝程式。';
+
+  @override
+  String get updateErrorGeneric => '更新操作失敗，請重試或前往 GitHub 檢視發布頁。';
 }

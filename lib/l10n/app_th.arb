@@ -44,6 +44,19 @@
   "terminalClear": "ล้างหน้าจอ",
   "terminalQuickCmds": "ชุดคำสั่งด่วน",
   "terminalPaste": "วาง",
+  "terminalConfirmPasteTitle": "ยืนยันการวาง",
+  "terminalConfirmPasteMessage": "กำลังวางข้อความ {count} บรรทัดลงในเทอร์มินัล ดำเนินการต่อหรือไม่?",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "ปุ่มลัดแถบเทอร์มินัล",
+  "settingsTerminalPinnedKeysSubtitle": "ปรับแต่งและจัดเรียงปุ่มลัดบนแถบเครื่องมือใหม่",
+  "terminalResetPinnedKeys": "รีเซ็ตเป็นค่าเริ่มต้น",
+  "terminalToggleKeyboard": "สลับแป้นพิมพ์",
   "sftpCurrentPath": "เส้นทางปัจจุบัน",
   "sftpUpload": "อัปโหลด",
   "sftpNewFolder": "โฟลเดอร์ใหม่",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "แสดงไฟล์ที่ซ่อนอยู่",
   "sftpHideHiddenFiles": "ซ่อนไฟล์ที่ซ่อนอยู่",
   "sftpHiddenPreferenceSaveFailed": "บันทึกการตั้งค่าไฟล์ที่ซ่อนไม่สำเร็จ",
+  "sftpViewModeList": "มุมมองรายการ",
+  "sftpViewModeGrid": "มุมมองตาราง",
+  "sftpViewPreferenceSaveFailed": "บันทึกการตั้งค่าโหมดมุมมองไม่สำเร็จ",
   "sftpSymlink": "ลิงก์สัญลักษณ์",
   "sftpLinkTargetUnavailable": "ปลายทางของลิงก์สัญลักษณ์เสียหายหรือใช้งานไม่ได้",
   "sftpLinkTargetPermissionDenied": "ปฏิเสธการอนุญาตให้อ่านปลายทางของลิงก์สัญลักษณ์",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "คัดลอกรายละเอียดการวินิจฉัย",
   "configImportErrorCopied": "คัดลอกรายละเอียดการวินิจฉัยไปยังคลิปบอร์ดแล้ว",
   "configImportErrorUnsupportedVersion": "ไม่รองรับรูปแบบหรือเวอร์ชันของไฟล์สำรองข้อมูล",
-  "configImportErrorMalformed": "ไฟล์ JSON การกำหนดค่าเสียหายหรือไม่ถูกต้อง"
+  "configImportErrorMalformed": "ไฟล์ JSON การกำหนดค่าเสียหายหรือไม่ถูกต้อง",
+  "aboutRepository": "ที่เก็บ GitHub",
+  "updateCheckTitle": "ตรวจสอบการอัปเดต",
+  "updateChecking": "กำลังตรวจสอบการอัปเดต...",
+  "updateCheckNow": "ตรวจสอบเลย",
+  "updateUpToDate": "Valhalla เป็นเวอร์ชันล่าสุดแล้ว",
+  "updateInstalledVersion": "ติดตั้งแล้ว: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "มีเวอร์ชันใหม่: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "ดูการอัปเดต",
+  "updateLastChecked": "ตรวจสอบล่าสุด: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "ไม่เคยตรวจสอบ",
+  "updateAutoCheckTitle": "ตรวจสอบการอัปเดตอัตโนมัติ",
+  "updateAutoCheckSubtitle": "ตรวจสอบการอัปเดตทุกวันเมื่อแอปทำงานอยู่",
+  "updateAutoCheckSaveFailed": "บันทึกการตั้งค่าตรวจสอบการอัปเดตอัตโนมัติไม่สำเร็จ",
+  "updateDialogTitle": "การอัปเดตซอฟต์แวร์",
+  "updateCurrentVersion": "ปัจจุบัน: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "ล่าสุด: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "บิลด์ {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "คอมมิต: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "แพ็กเกจการติดตั้ง",
+  "updateArtifactName": "ไฟล์: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "ขนาด: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "แฮช SHA-256: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "คัดลอกแฮช SHA-256",
+  "updateHashCopied": "คัดลอกแฮช SHA-256 ไปยังคลิปบอร์ดแล้ว",
+  "updateCopyCommit": "คัดลอกแฮชของคอมมิต",
+  "updateCommitCopied": "คัดลอกแฮชของคอมมิตไปยังคลิปบอร์ดแล้ว",
+  "updateReleaseNotes": "บันทึกประจำรุ่น",
+  "updateNoReleaseNotes": "ไม่มีบันทึกประจำรุ่น",
+  "updateNoArtifactForPlatform": "ไม่มีแพ็กเกจติดตั้งโดยตรงสำหรับแพลตฟอร์ม/สถาปัตยกรรมของอุปกรณ์นี้",
+  "updateOpenReleasePage": "เปิดหน้าเผยแพร่บน GitHub",
+  "updateDownload": "ดาวน์โหลดการอัปเดต",
+  "updateDownloading": "กำลังดาวน์โหลด... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "หยุดชั่วคราว",
+  "updateResume": "ดำเนินการต่อ",
+  "updateRetry": "ลองใหม่",
+  "updateDownloadPaused": "หยุดการดาวน์โหลดชั่วคราว",
+  "updateDownloadCompleted": "ดาวน์โหลดเสร็จสมบูรณ์และตรวจสอบแล้ว",
+  "updateInstall": "ติดตั้งการอัปเดต",
+  "updateRevealInFolder": "แสดงในโฟลเดอร์",
+  "updateOpenFolder": "เปิดตำแหน่งดาวน์โหลด",
+  "updateRetryInstall": "ลองติดตั้งใหม่",
+  "updateDesktopInstructions": "แตกไฟล์เก็บถาวรที่ดาวน์โหลดและแทนที่แอปพลิเคชันเมื่อปิดอยู่ อย่าเขียนทับโปรแกรมที่กำลังทำงานอยู่",
+  "updateCopyErrorDetails": "คัดลอกรายละเอียดข้อผิดพลาด",
+  "updateErrorCopied": "คัดลอกรายละเอียดข้อผิดพลาดไปยังคลิปบอร์ดแล้ว",
+  "updateErrorRateLimited": "เกินขีดจำกัดอัตราคำขอของ GitHub API โปรดลองอีกครั้งในภายหลัง",
+  "updateErrorNetwork": "การเชื่อมต่อเครือข่ายล้มเหลว โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ",
+  "updateErrorManifest": "ไฟล์กำกับการอัปเดตไม่ถูกต้องหรือไม่มีข้อมูลเมตาที่จำเป็น",
+  "updateErrorIntegrity": "การตรวจสอบความสมบูรณ์ของการดาวน์โหลดล้มเหลว ค่าตรวจสอบไม่ตรงกัน",
+  "updateErrorSignatureMismatch": "ลายเซ็นการติดตั้งไม่ตรงกัน: แพ็กเกจอัปเดตได้รับการลงนามด้วยคีย์ที่แตกต่างจากแอปนี้ ไม่สามารถเขียนทับลายเซ็นที่แตกต่างกันได้ เพื่อป้องกันข้อมูลสูญหาย อย่าถอนการติดตั้งหรือล้างข้อมูลแอป",
+  "updateErrorPermissionRequired": "ต้องได้รับสิทธิ์ในการติดตั้ง โปรดอนุญาตการติดตั้งแอปที่ไม่รู้จักสำหรับ Valhalla ในการตั้งค่าระบบ จากนั้นแตะลองติดตั้งใหม่",
+  "updateErrorPermission": "การอนุญาตพื้นที่จัดเก็บหรือระบบถูกปฏิเสธ",
+  "updateErrorPackageInvalid": "เส้นทางหรือข้อมูลประจำตัวของแพ็กเกจไม่ถูกต้อง",
+  "updateErrorStoreInstall": "แอปนี้ได้รับการติดตั้งจากร้านค้าแอป โปรดอัปเดตผ่านร้านค้า",
+  "updateErrorPlatform": "ไม่สามารถเปิดหรือเปิดใช้งานโปรแกรมติดตั้งได้",
+  "updateErrorGeneric": "การดำเนินการอัปเดตล้มเหลว โปรดลองอีกครั้งหรือดูการเผยแพร่บน GitHub"
 }

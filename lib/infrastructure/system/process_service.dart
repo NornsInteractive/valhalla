@@ -1,4 +1,6 @@
 import '../ssh/ssh_client_manager.dart';
+import '../../core/errors/app_exceptions.dart';
+import '../../core/utils/shell_quote.dart';
 
 class ProcessInfo {
   final int pid;
@@ -7,6 +9,7 @@ class ProcessInfo {
   final int rssKiB;
   final String state;
   final String command;
+  final String? startedAt;
 
   const ProcessInfo({
     required this.pid,
@@ -15,16 +18,22 @@ class ProcessInfo {
     this.rssKiB = 0,
     required this.state,
     required this.command,
+    this.startedAt,
   });
 
   static List<ProcessInfo> parseLines(Iterable<String> lines) {
+    final rows = lines.toList();
+    if (rows.isEmpty) return const [];
+    final header = rows.first.split('|');
+    final hasRss = header.contains('RSS');
+    final hasStarted = header.contains('STARTED');
     final result = <ProcessInfo>[];
-    for (final line in lines.skip(1)) {
+    for (final line in rows.skip(1)) {
       final parts = line.split('|');
-      if (parts.length < 5) continue;
+      final commandIndex = hasStarted ? 6 : hasRss ? 5 : 4;
+      if (parts.length <= commandIndex) continue;
       final pid = int.tryParse(parts[0].trim());
       if (pid == null) continue;
-      final hasRss = parts.length >= 6;
       result.add(
         ProcessInfo(
           pid: pid,
@@ -32,7 +41,8 @@ class ProcessInfo {
           memoryPercent: double.tryParse(parts[2].trim()) ?? 0,
           rssKiB: hasRss ? int.tryParse(parts[3].trim()) ?? 0 : 0,
           state: parts[hasRss ? 4 : 3].trim(),
-          command: parts.sublist(hasRss ? 5 : 4).join('|').trim(),
+          startedAt: hasStarted ? parts[5].trim() : null,
+          command: parts.sublist(commandIndex).join('|').trim(),
         ),
       );
     }
@@ -48,7 +58,7 @@ class ProcessService {
   Future<List<ProcessInfo>> list(String serverId) async {
     final result = await _sshManager.executeWithLoginShell(
       serverId,
-      r'''ps -eo pid=,pcpu=,pmem=,rss=,stat=,comm= --sort=-pcpu | awk 'BEGIN { print "PID|CPU|MEM|RSS|STAT|COMMAND" } { gsub(/^ +| +$/, "", $0); print $1 "|" $2 "|" $3 "|" $4 "|" $5 "|" $6 }' ''',
+      r'''rows=$(LC_ALL=C ps -eo pid=,pcpu=,pmem=,rss=,stat=,lstart=,comm= --sort=-pcpu) || exit $?; printf '%s\n' "$rows" | awk 'BEGIN { print "PID|CPU|MEM|RSS|STAT|STARTED|COMMAND" } { print $1 "|" $2 "|" $3 "|" $4 "|" $5 "|" $6 " " $7 " " $8 " " $9 " " $10 "|" $11 }' ''',
     );
     if (!result.isSuccess) throw StateError('PROCESS_QUERY_FAILED');
     return ProcessInfo.parseLines(result.stdout.split('\n'));
@@ -58,6 +68,7 @@ class ProcessService {
     String serverId,
     int pid, {
     bool force = false,
+    String? expectedStartedAt,
   }) {
     if (pid <= 1) {
       throw ArgumentError.value(
@@ -66,9 +77,18 @@ class ProcessService {
         'Refusing to terminate system init',
       );
     }
+    if (expectedStartedAt == null || expectedStartedAt.trim().isEmpty) {
+      throw const ValidationException('PROCESS_IDENTITY_UNAVAILABLE');
+    }
+    // shortcut: ps/kill retains a small PID-reuse window; strict exclusion
+    // requires a server-side pidfd helper rather than portable shell commands.
     return _sshManager.executeWithLoginShell(
       serverId,
-      'kill ${force ? '-9' : '-15'} $pid',
+      'started=\$(LC_ALL=C ps -p $pid -o lstart=) || exit 1; '
+      'started=\$(printf "%s" "\$started" | awk \'{\$1=\$1;print}\'); '
+      '[ "\$started" = ${cliShellQuote(expectedStartedAt)} ] || '
+      '{ printf "%s\\n" PROCESS_IDENTITY_CHANGED >&2; exit 75; }; '
+      'kill ${force ? '-9' : '-15'} -- $pid',
     );
   }
 }

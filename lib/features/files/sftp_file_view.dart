@@ -48,6 +48,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   Timer? _highlightTimer;
   bool _highlightTransferButton = false;
   bool _isTogglingHiddenFiles = false;
+  bool _isSettingViewMode = false;
   bool _isSelectionMode = false;
   final Set<String> _selectedPaths = {};
   bool _isBatchRunning = false;
@@ -576,6 +577,25 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     return taskId;
   }
 
+  Future<void> _handleSetViewMode(SftpViewMode mode) async {
+    if (_isSettingViewMode) return;
+    setState(() => _isSettingViewMode = true);
+    try {
+      await ref.read(sftpProvider.notifier).setViewMode(mode);
+      if (!mounted) return;
+      final errorMessage = ref.read(sftpProvider).errorMessage;
+      if (errorMessage == 'SFTP_VIEW_PREFERENCE_SAVE_FAILED') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_mapErrorMessage(errorMessage!))),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSettingViewMode = false);
+      }
+    }
+  }
+
   void _toggleSelectionMode() {
     setState(() {
       _isSelectionMode = !_isSelectionMode;
@@ -775,6 +795,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     if (code == SftpNotifier.hiddenPreferenceSaveFailedCode ||
         code == 'SFTP_HIDDEN_PREFERENCE_SAVE_FAILED') {
       return context.l10n.sftpHiddenPreferenceSaveFailed;
+    }
+    if (code == 'SFTP_VIEW_PREFERENCE_SAVE_FAILED') {
+      return context.l10n.sftpViewPreferenceSaveFailed;
     }
     if (code == 'SSH_DISCONNECTED' || code == 'SFTP_DOWNLOAD_DISCONNECTED') {
       return context.l10n.sftpDownloadDisconnected;
@@ -1194,6 +1217,13 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     final isConnected = ref.watch(
       serverConnectionProvider.select((s) => s.isConnected),
     );
+    final isCompact =
+        MediaQuery.sizeOf(context).width < LayoutBreakpoints.compactMax;
+    final isGrid = switch (state.viewMode) {
+      SftpViewMode.grid => true,
+      SftpViewMode.list => false,
+      null => !isCompact,
+    };
 
     return Entrance(
       index: 1,
@@ -1296,6 +1326,21 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                               }
                             }
                           },
+                  ),
+                  IconButton(
+                    key: const Key('sftpToggleViewModeButton'),
+                    icon: Icon(
+                      isGrid ? Icons.view_list : Icons.grid_view,
+                      size: 20,
+                    ),
+                    tooltip: isGrid
+                        ? context.l10n.sftpViewModeList
+                        : context.l10n.sftpViewModeGrid,
+                    onPressed: _isSettingViewMode
+                        ? null
+                        : () => _handleSetViewMode(
+                            isGrid ? SftpViewMode.list : SftpViewMode.grid,
+                          ),
                   ),
                   PopupMenuButton<Object>(
                     icon: const Icon(Icons.sort, size: 20),
@@ -1504,7 +1549,12 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < LayoutBreakpoints.compactMax;
-        if (isCompact) {
+        final useGrid = switch (state.viewMode) {
+          SftpViewMode.grid => true,
+          SftpViewMode.list => false,
+          null => !isCompact,
+        };
+        if (!useGrid) {
           return ListView.separated(
             itemCount: files.length,
             separatorBuilder: (context, index) => const Divider(height: 1),
@@ -1544,18 +1594,32 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     final isDotDot = item.name == '..';
     final isSpecialNav = isDotDot;
     final isSelected = _selectedPaths.contains(item.path);
+    final isHidden = !isSpecialNav && item.name.startsWith('.');
 
     final Widget fileIconWidget;
     if (item.isSymbolicLink) {
       final isBroken = item.linkTargetErrorCode != null;
+      final Color? symlinkBaseColor;
+      if (isBroken) {
+        symlinkBaseColor = isHidden
+            ? context.colorScheme.outline.withValues(alpha: 0.6)
+            : context.colorScheme.outline;
+      } else if (item.isDirectory) {
+        symlinkBaseColor = isHidden
+            ? context.colorScheme.primary.withValues(alpha: 0.6)
+            : context.colorScheme.primary;
+      } else {
+        symlinkBaseColor = isHidden
+            ? context.colorScheme.onSurface.withValues(alpha: 0.55)
+            : null;
+      }
+
       fileIconWidget = Stack(
         clipBehavior: Clip.none,
         children: [
           Icon(
             item.isDirectory ? Icons.folder : _getFileIcon(item.name),
-            color: isBroken
-                ? context.colorScheme.outline
-                : (item.isDirectory ? context.colorScheme.primary : null),
+            color: symlinkBaseColor,
             size: 22,
           ),
           Positioned(
@@ -1586,9 +1650,20 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
         ],
       );
     } else {
+      final Color? regularIconColor;
+      if (item.isDirectory) {
+        regularIconColor = isHidden
+            ? context.colorScheme.primary.withValues(alpha: 0.6)
+            : context.colorScheme.primary;
+      } else {
+        regularIconColor = isHidden
+            ? context.colorScheme.onSurface.withValues(alpha: 0.55)
+            : null;
+      }
+
       fileIconWidget = Icon(
         item.isDirectory ? Icons.folder : _getFileIcon(item.name),
-        color: item.isDirectory ? context.colorScheme.primary : null,
+        color: regularIconColor,
         size: 22,
       );
     }
@@ -1612,14 +1687,21 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
       leadingWidget = fileIconWidget;
     }
 
+    final baseTitleStyle = item.isDirectory
+        ? context.textTheme.titleSmall
+        : context.textTheme.bodyMedium;
+    final titleStyle = isHidden
+        ? baseTitleStyle?.copyWith(
+            color: context.colorScheme.onSurface.withValues(alpha: 0.62),
+          )
+        : baseTitleStyle;
+
     return ListTile(
       selected: _isSelectionMode && isSelected,
       leading: leadingWidget,
       title: Text(
         item.name,
-        style: item.isDirectory
-            ? context.textTheme.titleSmall
-            : context.textTheme.bodyMedium,
+        style: titleStyle,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),

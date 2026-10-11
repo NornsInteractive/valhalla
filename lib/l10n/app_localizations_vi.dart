@@ -143,6 +143,27 @@ class AppLocalizationsVi extends AppLocalizations {
   String get terminalPaste => 'Dán';
 
   @override
+  String get terminalConfirmPasteTitle => 'Xác nhận dán';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return 'Đang dán $count dòng văn bản vào terminal. Tiếp tục?';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => 'Phím thanh công cụ terminal';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle =>
+      'Tùy chỉnh và sắp xếp lại các phím tắt thanh công cụ';
+
+  @override
+  String get terminalResetPinnedKeys => 'Đặt lại về mặc định';
+
+  @override
+  String get terminalToggleKeyboard => 'Bật/tắt bàn phím';
+
+  @override
   String get sftpCurrentPath => 'Đường dẫn hiện tại';
 
   @override
@@ -1177,6 +1198,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get sftpHiddenPreferenceSaveFailed => 'Không thể lưu tùy chọn tệp ẩn';
+
+  @override
+  String get sftpViewModeList => 'Chế độ xem danh sách';
+
+  @override
+  String get sftpViewModeGrid => 'Chế độ xem lưới';
+
+  @override
+  String get sftpViewPreferenceSaveFailed =>
+      'Không thể lưu tùy chọn chế độ xem';
 
   @override
   String get sftpSymlink => 'Liên kết tượng trưng';
@@ -4079,4 +4110,206 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get configImportErrorMalformed =>
       'JSON cấu hình bị hỏng hoặc không đúng định dạng';
+
+  @override
+  String get aboutRepository => 'Kho lưu trữ GitHub';
+
+  @override
+  String get updateCheckTitle => 'Kiểm tra bản cập nhật';
+
+  @override
+  String get updateChecking => 'Đang kiểm tra bản cập nhật...';
+
+  @override
+  String get updateCheckNow => 'Kiểm tra ngay';
+
+  @override
+  String get updateUpToDate => 'Valhalla đã là bản mới nhất';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'Đã cài đặt: v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return 'Có phiên bản mới: v$version';
+  }
+
+  @override
+  String get updateViewUpdate => 'Xem bản cập nhật';
+
+  @override
+  String updateLastChecked(String time) {
+    return 'Kiểm tra lần cuối: $time';
+  }
+
+  @override
+  String get updateNeverChecked => 'Chưa từng kiểm tra';
+
+  @override
+  String get updateAutoCheckTitle => 'Tự động kiểm tra bản cập nhật';
+
+  @override
+  String get updateAutoCheckSubtitle =>
+      'Kiểm tra bản cập nhật hàng ngày khi ứng dụng đang hoạt động';
+
+  @override
+  String get updateAutoCheckSaveFailed =>
+      'Không thể lưu cài đặt tự động kiểm tra bản cập nhật';
+
+  @override
+  String get updateDialogTitle => 'Cập nhật phần mềm';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return 'Hiện tại: $version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return 'Mới nhất: v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return 'Bản dựng $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return 'Cam kết: $commit';
+  }
+
+  @override
+  String get updateArtifactDetails => 'Gói cài đặt';
+
+  @override
+  String updateArtifactName(String name) {
+    return 'Tệp: $name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return 'Kích thước: $size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'Mã băm SHA-256: $hash';
+  }
+
+  @override
+  String get updateCopyHash => 'Sao chép mã băm SHA-256';
+
+  @override
+  String get updateHashCopied => 'Đã sao chép mã băm SHA-256 vào khay nhớ tạm';
+
+  @override
+  String get updateCopyCommit => 'Sao chép mã băm cam kết';
+
+  @override
+  String get updateCommitCopied =>
+      'Đã sao chép mã băm cam kết vào khay nhớ tạm';
+
+  @override
+  String get updateReleaseNotes => 'Ghi chú phát hành';
+
+  @override
+  String get updateNoReleaseNotes => 'Không có ghi chú phát hành.';
+
+  @override
+  String get updateNoArtifactForPlatform =>
+      'Không có gói cài đặt trực tiếp cho nền tảng/kiến trúc thiết bị này.';
+
+  @override
+  String get updateOpenReleasePage => 'Mở trang phát hành trên GitHub';
+
+  @override
+  String get updateDownload => 'Tải xuống bản cập nhật';
+
+  @override
+  String updateDownloading(String progress) {
+    return 'Đang tải xuống... $progress%';
+  }
+
+  @override
+  String get updatePause => 'Tạm dừng';
+
+  @override
+  String get updateResume => 'Tiếp tục';
+
+  @override
+  String get updateRetry => 'Thử lại';
+
+  @override
+  String get updateDownloadPaused => 'Tải xuống đã tạm dừng';
+
+  @override
+  String get updateDownloadCompleted => 'Tải xuống hoàn tất và đã xác minh';
+
+  @override
+  String get updateInstall => 'Cài đặt bản cập nhật';
+
+  @override
+  String get updateRevealInFolder => 'Hiển thị trong thư mục';
+
+  @override
+  String get updateOpenFolder => 'Mở vị trí tải xuống';
+
+  @override
+  String get updateRetryInstall => 'Thử lại cài đặt';
+
+  @override
+  String get updateDesktopInstructions =>
+      'Giải nén tệp lưu trữ đã tải xuống và thay thế ứng dụng khi đã đóng. Không ghi đè lên chương trình đang chạy.';
+
+  @override
+  String get updateCopyErrorDetails => 'Sao chép chi tiết lỗi';
+
+  @override
+  String get updateErrorCopied => 'Đã sao chép chi tiết lỗi vào khay nhớ tạm';
+
+  @override
+  String get updateErrorRateLimited =>
+      'Đã vượt quá giới hạn tần suất của GitHub API. Vui lòng thử lại sau.';
+
+  @override
+  String get updateErrorNetwork =>
+      'Kết nối mạng không thành công. Vui lòng kiểm tra kết nối internet của bạn.';
+
+  @override
+  String get updateErrorManifest =>
+      'Tệp kê khai cập nhật không hợp lệ hoặc thiếu siêu dữ liệu cần thiết.';
+
+  @override
+  String get updateErrorIntegrity =>
+      'Kiểm tra tính toàn vẹn của tệp tải xuống không thành công. Tổng kiểm tra không khớp.';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      'Không khớp chữ ký cài đặt: gói cập nhật được ký bằng một khóa khác với ứng dụng này. Không thể ghi đè các chữ ký khác nhau. Để tránh mất dữ liệu, không bao giờ gỡ cài đặt hoặc xóa dữ liệu ứng dụng.';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      'Yêu cầu quyền cài đặt. Vui lòng cho phép cài đặt ứng dụng không xác định cho Valhalla trong cài đặt hệ thống, sau đó nhấn Thử lại cài đặt.';
+
+  @override
+  String get updateErrorPermission => 'Quyền lưu trữ hoặc hệ thống bị từ chối.';
+
+  @override
+  String get updateErrorPackageInvalid =>
+      'Đường dẫn hoặc danh tính gói không hợp lệ.';
+
+  @override
+  String get updateErrorStoreInstall =>
+      'Ứng dụng này đã được cài đặt từ cửa hàng ứng dụng. Vui lòng cập nhật qua cửa hàng.';
+
+  @override
+  String get updateErrorPlatform =>
+      'Không thể mở hoặc khởi chạy trình cài đặt.';
+
+  @override
+  String get updateErrorGeneric =>
+      'Thao tác cập nhật không thành công. Vui lòng thử lại hoặc xem các bản phát hành trên GitHub.';
 }

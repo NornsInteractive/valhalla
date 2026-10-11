@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
+import 'package:valhalla/core/providers/storage_providers.dart';
+import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/settings/widgets/about_privacy_card.dart';
 import 'package:valhalla/features/settings/widgets/privacy_policy_view.dart';
 import 'package:valhalla/features/settings/widgets/license_view.dart';
@@ -26,17 +30,29 @@ class _WebsiteLauncher extends UrlLauncherPlatform {
   }
 }
 
+/// `AboutPrivacyCard` is a `ConsumerStatefulWidget` that watches
+/// `appUpdateProvider`, whose notifier reads `localStorageServiceProvider` on
+/// build. Without a `ProviderScope` the card throws `No ProviderScope found`
+/// and every assertion about version / policy / license / website / narrow
+/// window collapses with it. The scope is provided here with the same
+/// mocked-`SharedPreferences` local storage the shell fixtures use, so the real
+/// update notifier runs (no HTTP: automatic checks stay off in tests).
 Future<void> pumpPrivacy(
   WidgetTester tester,
   Locale locale,
   Widget child,
 ) async {
+  SharedPreferences.setMockInitialValues({});
+  final local = await LocalStorageService.init();
   await tester.pumpWidget(
-    MaterialApp(
-      locale: locale,
-      supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: Scaffold(body: child),
+    ProviderScope(
+      overrides: [localStorageServiceProvider.overrideWithValue(local)],
+      child: MaterialApp(
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: Scaffold(body: child),
+      ),
     ),
   );
   await settlePolicy(tester);

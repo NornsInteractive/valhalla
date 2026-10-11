@@ -143,6 +143,27 @@ class AppLocalizationsRu extends AppLocalizations {
   String get terminalPaste => 'Вставить';
 
   @override
+  String get terminalConfirmPasteTitle => 'Подтвердить вставку';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return 'Вставка $count строк текста в терминал. Продолжить?';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => 'Клавиши панели терминала';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle =>
+      'Настройка и изменение порядка клавиш панели инструментов';
+
+  @override
+  String get terminalResetPinnedKeys => 'Сбросить по умолчанию';
+
+  @override
+  String get terminalToggleKeyboard => 'Переключить клавиатуру';
+
+  @override
   String get sftpCurrentPath => 'Текущий путь';
 
   @override
@@ -1180,6 +1201,16 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get sftpHiddenPreferenceSaveFailed =>
       'Не удалось сохранить настройки скрытых файлов';
+
+  @override
+  String get sftpViewModeList => 'Список';
+
+  @override
+  String get sftpViewModeGrid => 'Сетка';
+
+  @override
+  String get sftpViewPreferenceSaveFailed =>
+      'Не удалось сохранить настройки режима отображения';
 
   @override
   String get sftpSymlink => 'Символическая ссылка';
@@ -4098,4 +4129,206 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get configImportErrorMalformed =>
       'Поврежденный или неверный JSON конфигурации';
+
+  @override
+  String get aboutRepository => 'Репозиторий GitHub';
+
+  @override
+  String get updateCheckTitle => 'Проверить обновления';
+
+  @override
+  String get updateChecking => 'Проверка обновлений...';
+
+  @override
+  String get updateCheckNow => 'Проверить сейчас';
+
+  @override
+  String get updateUpToDate => 'Установлена последняя версия';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'Установлено: v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return 'Доступна новая версия: v$version';
+  }
+
+  @override
+  String get updateViewUpdate => 'Посмотреть обновление';
+
+  @override
+  String updateLastChecked(String time) {
+    return 'Последняя проверка: $time';
+  }
+
+  @override
+  String get updateNeverChecked => 'Никогда не проверялось';
+
+  @override
+  String get updateAutoCheckTitle => 'Автоматическая проверка обновлений';
+
+  @override
+  String get updateAutoCheckSubtitle =>
+      'Ежедневно проверять обновления при активном приложении';
+
+  @override
+  String get updateAutoCheckSaveFailed =>
+      'Не удалось сохранить настройки автоматической проверки';
+
+  @override
+  String get updateDialogTitle => 'Обновление ПО';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return 'Текущая: $version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return 'Новейшая: v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return 'Сборка $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return 'Коммит: $commit';
+  }
+
+  @override
+  String get updateArtifactDetails => 'Установочный пакет';
+
+  @override
+  String updateArtifactName(String name) {
+    return 'Файл: $name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return 'Размер: $size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'Хеш SHA-256: $hash';
+  }
+
+  @override
+  String get updateCopyHash => 'Скопировать хеш SHA-256';
+
+  @override
+  String get updateHashCopied => 'Хеш SHA-256 скопирован в буфер обмена';
+
+  @override
+  String get updateCopyCommit => 'Скопировать хеш коммита';
+
+  @override
+  String get updateCommitCopied => 'Хеш коммита скопирован в буфер обмена';
+
+  @override
+  String get updateReleaseNotes => 'Примечания к выпуску';
+
+  @override
+  String get updateNoReleaseNotes => 'Примечания к выпуску отсутствуют.';
+
+  @override
+  String get updateNoArtifactForPlatform =>
+      'Нет пакета прямой установки для этой платформы/архитектуры.';
+
+  @override
+  String get updateOpenReleasePage => 'Открыть страницу выпусков на GitHub';
+
+  @override
+  String get updateDownload => 'Скачать обновление';
+
+  @override
+  String updateDownloading(String progress) {
+    return 'Загрузка... $progress%';
+  }
+
+  @override
+  String get updatePause => 'Пауза';
+
+  @override
+  String get updateResume => 'Продолжить';
+
+  @override
+  String get updateRetry => 'Повторить';
+
+  @override
+  String get updateDownloadPaused => 'Загрузка приостановлена';
+
+  @override
+  String get updateDownloadCompleted => 'Загрузка завершена и проверена';
+
+  @override
+  String get updateInstall => 'Установить обновление';
+
+  @override
+  String get updateRevealInFolder => 'Показать в папке';
+
+  @override
+  String get updateOpenFolder => 'Открыть папку с загрузками';
+
+  @override
+  String get updateRetryInstall => 'Повторить установку';
+
+  @override
+  String get updateDesktopInstructions =>
+      'Распакуйте загруженный архив и замените файлы приложения после его закрытия. Никогда не перезаписывайте работающую программу.';
+
+  @override
+  String get updateCopyErrorDetails => 'Скопировать детали ошибки';
+
+  @override
+  String get updateErrorCopied => 'Детали ошибки скопированы в буфер обмена';
+
+  @override
+  String get updateErrorRateLimited =>
+      'Превышен лимит запросов к API GitHub. Пожалуйста, повторите попытку позже.';
+
+  @override
+  String get updateErrorNetwork =>
+      'Сетевое соединение не удалось. Проверьте подключение к интернету.';
+
+  @override
+  String get updateErrorManifest =>
+      'Манифест обновления недействителен или отсутствуют метаданные.';
+
+  @override
+  String get updateErrorIntegrity =>
+      'Проверка целостности загрузки не удалась. Контрольная сумма не совпадает.';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      'Несоответствие подписи установки: пакет подписан другим ключом. Невозможно перезаписать приложение с другой подписью. Во избежание потери данных никогда не удаляйте приложение и не очищайте данные.';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      'Требуется разрешение на установку. Разрешите установку неизвестных приложений в системных настройках и нажмите «Повторить установку».';
+
+  @override
+  String get updateErrorPermission =>
+      'Отказано в доступе к хранилищу или системе.';
+
+  @override
+  String get updateErrorPackageInvalid =>
+      'Путь к пакету или идентификатор недействительны.';
+
+  @override
+  String get updateErrorStoreInstall =>
+      'Это приложение установлено из магазина приложений. Обновите его через магазин.';
+
+  @override
+  String get updateErrorPlatform =>
+      'Не удалось открыть или запустить установщик.';
+
+  @override
+  String get updateErrorGeneric =>
+      'Сбой операции обновления. Повторите попытку или перейдите к релизам на GitHub.';
 }

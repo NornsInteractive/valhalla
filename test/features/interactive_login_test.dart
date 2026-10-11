@@ -103,17 +103,21 @@ void main() {
       var ctrlToggled = false;
       var altToggled = false;
       var pasted = false;
+      var pasteDeliveries = 0;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
+        createTestApp(
+          child: Scaffold(
             body: TerminalAccessoryBar(
               onKey: (key, {bool isCtrl = false, bool isAlt = false}) {
                 pressedKeys.add('${isCtrl ? 'Ctrl+' : ''}$key');
               },
               onToggleCtrl: () => ctrlToggled = true,
               onToggleAlt: () => altToggled = true,
-              onPaste: () => pasted = true,
+              onPaste: () {
+                pasted = true;
+                pasteDeliveries++;
+              },
               isCtrlActive: false,
               isAltActive: false,
             ),
@@ -122,13 +126,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // Pinned row (default pinned keys): ESC/TAB/CTRL/ALT/Ctrl+C/PASTE stay
+      // inline without opening any panel.
       expect(find.text('ESC'), findsOneWidget);
       expect(find.text('TAB'), findsOneWidget);
       expect(find.text('CTRL'), findsOneWidget);
       expect(find.text('ALT'), findsOneWidget);
       expect(find.text('Ctrl+C'), findsOneWidget);
-      expect(find.text('Ctrl+D'), findsOneWidget);
-      expect(find.text('↑'), findsOneWidget);
       expect(find.byIcon(Icons.content_paste), findsOneWidget);
 
       await tester.tap(find.text('ESC'));
@@ -144,7 +148,34 @@ void main() {
       expect(pressedKeys, contains('Ctrl+C'));
 
       await tester.tap(find.byIcon(Icons.content_paste));
+      await tester.pumpAndSettle();
       expect(pasted, isTrue);
+      expect(
+        pasteDeliveries,
+        1,
+        reason: 'paste callback must be delivered exactly once',
+      );
+
+      // Unpinned keys are only reachable through the More panel: arrows live
+      // in the Nav category, Ctrl+D in the Edit category.
+      await tester.tap(find.byKey(const Key('terminal_accessory_more_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('↑'), findsOneWidget);
+      await tester.tap(find.text('↑'));
+      expect(pressedKeys, contains('↑'));
+      expect(
+        pressedKeys.where((key) => key == '↑').length,
+        1,
+        reason: 'arrow key must be delivered exactly once',
+      );
+
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ctrl+D'), findsOneWidget);
+      await tester.tap(find.text('Ctrl+D'));
+      expect(pressedKeys, contains('Ctrl+D'));
     });
   });
 

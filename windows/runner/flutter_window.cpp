@@ -5,6 +5,7 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <shlobj.h>
+#include <appmodel.h>
 
 #include "flutter/generated_plugin_registrant.h"
 
@@ -38,7 +39,24 @@ bool FlutterWindow::OnCreate() {
   download_channel_->SetMethodCallHandler(
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
-        if (call.method_name().compare("revealFile") == 0) {
+        if (call.method_name().compare("runtimeInfo") == 0) {
+          UINT32 length = 0;
+          bool from_store = false;
+          if (GetCurrentPackageFullName(&length, nullptr) == ERROR_INSUFFICIENT_BUFFER && length > 0) {
+            std::wstring full_name(length, L'\0');
+            if (GetCurrentPackageFullName(&length, full_name.data()) == ERROR_SUCCESS) {
+              using OriginQuery = LONG(WINAPI*)(PCWSTR, PackageOrigin*);
+              const auto query = reinterpret_cast<OriginQuery>(GetProcAddress(
+                  GetModuleHandleW(L"kernelbase.dll"), "GetStagedPackageOrigin"));
+              PackageOrigin origin = PackageOrigin_Unknown;
+              from_store = query && query(full_name.c_str(), &origin) == ERROR_SUCCESS &&
+                           origin == PackageOrigin_Store;
+            }
+          }
+          result->Success(flutter::EncodableValue(flutter::EncodableMap{
+              {flutter::EncodableValue("storeInstall"), flutter::EncodableValue(from_store)},
+          }));
+        } else if (call.method_name().compare("revealFile") == 0) {
           const auto* args = std::get_if<flutter::EncodableMap>(call.arguments());
           if (!args) { result->Error("INVALID_ARGUMENT", "args must be map"); return; }
           const auto it = args->find(flutter::EncodableValue("path"));

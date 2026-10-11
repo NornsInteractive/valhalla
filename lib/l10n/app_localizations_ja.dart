@@ -141,6 +141,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get terminalPaste => '貼り付け';
 
   @override
+  String get terminalConfirmPasteTitle => '貼り付けの確認';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return 'ターミナルに $count 行のテキストを貼り付けます。続行しますか？';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => 'ターミナルショートカットキー';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle =>
+      'ツールバーのショートカットキーをカスタマイズおよび並べ替え';
+
+  @override
+  String get terminalResetPinnedKeys => 'デフォルトに戻す';
+
+  @override
+  String get terminalToggleKeyboard => 'キーボードの切り替え';
+
+  @override
   String get sftpCurrentPath => '現在のパス';
 
   @override
@@ -1144,6 +1165,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sftpHiddenPreferenceSaveFailed => '隠しファイル設定の保存に失敗しました';
+
+  @override
+  String get sftpViewModeList => 'リスト表示';
+
+  @override
+  String get sftpViewModeGrid => 'グリッド表示';
+
+  @override
+  String get sftpViewPreferenceSaveFailed => '表示モード設定の保存に失敗しました';
 
   @override
   String get sftpSymlink => 'シンボリックリンク';
@@ -3939,4 +3969,197 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get configImportErrorMalformed => '設定JSONファイルが破損しているか形式が不正です';
+
+  @override
+  String get aboutRepository => 'GitHub リポジトリ';
+
+  @override
+  String get updateCheckTitle => 'アップデートを確認';
+
+  @override
+  String get updateChecking => 'アップデートを確認中...';
+
+  @override
+  String get updateCheckNow => '今すぐ確認';
+
+  @override
+  String get updateUpToDate => '最新バージョンです';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'インストール済み: v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return '新しいバージョンが利用可能: v$version';
+  }
+
+  @override
+  String get updateViewUpdate => '更新を表示';
+
+  @override
+  String updateLastChecked(String time) {
+    return '最終確認: $time';
+  }
+
+  @override
+  String get updateNeverChecked => '未確認';
+
+  @override
+  String get updateAutoCheckTitle => '自動アップデート確認';
+
+  @override
+  String get updateAutoCheckSubtitle => 'アプリ起動時に毎日アップデートを確認します';
+
+  @override
+  String get updateAutoCheckSaveFailed => '自動更新設定の保存に失敗しました';
+
+  @override
+  String get updateDialogTitle => 'ソフトウェアアップデート';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return '現在のバージョン: $version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return '最新: v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return 'ビルド $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return 'コミット: $commit';
+  }
+
+  @override
+  String get updateArtifactDetails => 'インストールパッケージ';
+
+  @override
+  String updateArtifactName(String name) {
+    return 'ファイル: $name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return 'サイズ: $size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'SHA-256 ハッシュ: $hash';
+  }
+
+  @override
+  String get updateCopyHash => 'SHA-256 ハッシュをコピー';
+
+  @override
+  String get updateHashCopied => 'SHA-256 ハッシュをクリップボードにコピーしました';
+
+  @override
+  String get updateCopyCommit => 'コミットハッシュをコピー';
+
+  @override
+  String get updateCommitCopied => 'コミットハッシュをクリップボードにコピーしました';
+
+  @override
+  String get updateReleaseNotes => 'リリースノート';
+
+  @override
+  String get updateNoReleaseNotes => 'リリースノートはありません。';
+
+  @override
+  String get updateNoArtifactForPlatform =>
+      'このデバイスのプラットフォーム/アーキテクチャ用の直接インストールパッケージはありません。';
+
+  @override
+  String get updateOpenReleasePage => 'GitHub でリリースページを開く';
+
+  @override
+  String get updateDownload => 'アップデートをダウンロード';
+
+  @override
+  String updateDownloading(String progress) {
+    return 'ダウンロード中... $progress%';
+  }
+
+  @override
+  String get updatePause => '一時停止';
+
+  @override
+  String get updateResume => '再開';
+
+  @override
+  String get updateRetry => '再試行';
+
+  @override
+  String get updateDownloadPaused => 'ダウンロード一時停止中';
+
+  @override
+  String get updateDownloadCompleted => 'ダウンロードが完了し検証されました';
+
+  @override
+  String get updateInstall => 'アップデートをインストール';
+
+  @override
+  String get updateRevealInFolder => 'フォルダーで表示';
+
+  @override
+  String get updateOpenFolder => 'ダウンロード先を開く';
+
+  @override
+  String get updateRetryInstall => 'インストールを再試行';
+
+  @override
+  String get updateDesktopInstructions =>
+      'ダウンロードしたアーカイブを展開し、アプリを終了してから置き換えてください。実行中のプログラムを上書きしないでください。';
+
+  @override
+  String get updateCopyErrorDetails => 'エラー詳細をコピー';
+
+  @override
+  String get updateErrorCopied => 'エラー詳細をクリップボードにコピーしました';
+
+  @override
+  String get updateErrorRateLimited =>
+      'GitHub API のレート制限を超過しました。しばらくしてから再試行してください。';
+
+  @override
+  String get updateErrorNetwork => 'ネットワーク接続に失敗しました。インターネット接続を確認してください。';
+
+  @override
+  String get updateErrorManifest => '更新マニフェストが無効であるか、必要なメタデータがありません。';
+
+  @override
+  String get updateErrorIntegrity => 'ダウンロードの整合性チェックに失敗しました。チェックサムが一致しません。';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      'インストールの署名が一致しません: アップデートパッケージの署名が現在インストールされているアプリと異なります。データ損失を防ぐため、アプリをアンインストールしたりデータを消去したりしないでください。';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      'インストール権限が必要です。システム設定で Valhalla による不明なアプリのインストールを許可し、「インストールを再試行」をタップしてください。';
+
+  @override
+  String get updateErrorPermission => 'ストレージまたはシステムの権限が拒否されました。';
+
+  @override
+  String get updateErrorPackageInvalid => 'パッケージのパスまたはIDが無効です。';
+
+  @override
+  String get updateErrorStoreInstall =>
+      'このアプリはアプリストアからインストールされました。ストアからアップデートしてください。';
+
+  @override
+  String get updateErrorPlatform => 'インストーラーを開くか起動できませんでした。';
+
+  @override
+  String get updateErrorGeneric => 'アップデートに失敗しました。再試行するか GitHub リリースを確認してください。';
 }

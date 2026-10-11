@@ -44,6 +44,19 @@
   "terminalClear": "クリア",
   "terminalQuickCmds": "コマンドパレット",
   "terminalPaste": "貼り付け",
+  "terminalConfirmPasteTitle": "貼り付けの確認",
+  "terminalConfirmPasteMessage": "ターミナルに {count} 行のテキストを貼り付けます。続行しますか？",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "ターミナルショートカットキー",
+  "settingsTerminalPinnedKeysSubtitle": "ツールバーのショートカットキーをカスタマイズおよび並べ替え",
+  "terminalResetPinnedKeys": "デフォルトに戻す",
+  "terminalToggleKeyboard": "キーボードの切り替え",
   "sftpCurrentPath": "現在のパス",
   "sftpUpload": "アップロード",
   "sftpNewFolder": "新規フォルダー",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "隠しファイルを表示",
   "sftpHideHiddenFiles": "隠しファイルを非表示",
   "sftpHiddenPreferenceSaveFailed": "隠しファイル設定の保存に失敗しました",
+  "sftpViewModeList": "リスト表示",
+  "sftpViewModeGrid": "グリッド表示",
+  "sftpViewPreferenceSaveFailed": "表示モード設定の保存に失敗しました",
   "sftpSymlink": "シンボリックリンク",
   "sftpLinkTargetUnavailable": "リンク先が無効または見つかりません",
   "sftpLinkTargetPermissionDenied": "リンク先へのアクセス権限がありません",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "診断詳細をコピー",
   "configImportErrorCopied": "診断詳細をクリップボードにコピーしました",
   "configImportErrorUnsupportedVersion": "サポートされていないバックアップ形式またはバージョンです",
-  "configImportErrorMalformed": "設定JSONファイルが破損しているか形式が不正です"
+  "configImportErrorMalformed": "設定JSONファイルが破損しているか形式が不正です",
+  "aboutRepository": "GitHub リポジトリ",
+  "updateCheckTitle": "アップデートを確認",
+  "updateChecking": "アップデートを確認中...",
+  "updateCheckNow": "今すぐ確認",
+  "updateUpToDate": "最新バージョンです",
+  "updateInstalledVersion": "インストール済み: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "新しいバージョンが利用可能: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "更新を表示",
+  "updateLastChecked": "最終確認: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "未確認",
+  "updateAutoCheckTitle": "自動アップデート確認",
+  "updateAutoCheckSubtitle": "アプリ起動時に毎日アップデートを確認します",
+  "updateAutoCheckSaveFailed": "自動更新設定の保存に失敗しました",
+  "updateDialogTitle": "ソフトウェアアップデート",
+  "updateCurrentVersion": "現在のバージョン: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "最新: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "ビルド {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "コミット: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "インストールパッケージ",
+  "updateArtifactName": "ファイル: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "サイズ: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "SHA-256 ハッシュ: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "SHA-256 ハッシュをコピー",
+  "updateHashCopied": "SHA-256 ハッシュをクリップボードにコピーしました",
+  "updateCopyCommit": "コミットハッシュをコピー",
+  "updateCommitCopied": "コミットハッシュをクリップボードにコピーしました",
+  "updateReleaseNotes": "リリースノート",
+  "updateNoReleaseNotes": "リリースノートはありません。",
+  "updateNoArtifactForPlatform": "このデバイスのプラットフォーム/アーキテクチャ用の直接インストールパッケージはありません。",
+  "updateOpenReleasePage": "GitHub でリリースページを開く",
+  "updateDownload": "アップデートをダウンロード",
+  "updateDownloading": "ダウンロード中... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "一時停止",
+  "updateResume": "再開",
+  "updateRetry": "再試行",
+  "updateDownloadPaused": "ダウンロード一時停止中",
+  "updateDownloadCompleted": "ダウンロードが完了し検証されました",
+  "updateInstall": "アップデートをインストール",
+  "updateRevealInFolder": "フォルダーで表示",
+  "updateOpenFolder": "ダウンロード先を開く",
+  "updateRetryInstall": "インストールを再試行",
+  "updateDesktopInstructions": "ダウンロードしたアーカイブを展開し、アプリを終了してから置き換えてください。実行中のプログラムを上書きしないでください。",
+  "updateCopyErrorDetails": "エラー詳細をコピー",
+  "updateErrorCopied": "エラー詳細をクリップボードにコピーしました",
+  "updateErrorRateLimited": "GitHub API のレート制限を超過しました。しばらくしてから再試行してください。",
+  "updateErrorNetwork": "ネットワーク接続に失敗しました。インターネット接続を確認してください。",
+  "updateErrorManifest": "更新マニフェストが無効であるか、必要なメタデータがありません。",
+  "updateErrorIntegrity": "ダウンロードの整合性チェックに失敗しました。チェックサムが一致しません。",
+  "updateErrorSignatureMismatch": "インストールの署名が一致しません: アップデートパッケージの署名が現在インストールされているアプリと異なります。データ損失を防ぐため、アプリをアンインストールしたりデータを消去したりしないでください。",
+  "updateErrorPermissionRequired": "インストール権限が必要です。システム設定で Valhalla による不明なアプリのインストールを許可し、「インストールを再試行」をタップしてください。",
+  "updateErrorPermission": "ストレージまたはシステムの権限が拒否されました。",
+  "updateErrorPackageInvalid": "パッケージのパスまたはIDが無効です。",
+  "updateErrorStoreInstall": "このアプリはアプリストアからインストールされました。ストアからアップデートしてください。",
+  "updateErrorPlatform": "インストーラーを開くか起動できませんでした。",
+  "updateErrorGeneric": "アップデートに失敗しました。再試行するか GitHub リリースを確認してください。"
 }

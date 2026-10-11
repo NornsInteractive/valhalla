@@ -44,6 +44,19 @@
   "terminalClear": "Очистить",
   "terminalQuickCmds": "Палитра команд",
   "terminalPaste": "Вставить",
+  "terminalConfirmPasteTitle": "Подтвердить вставку",
+  "terminalConfirmPasteMessage": "Вставка {count} строк текста в терминал. Продолжить?",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "Клавиши панели терминала",
+  "settingsTerminalPinnedKeysSubtitle": "Настройка и изменение порядка клавиш панели инструментов",
+  "terminalResetPinnedKeys": "Сбросить по умолчанию",
+  "terminalToggleKeyboard": "Переключить клавиатуру",
   "sftpCurrentPath": "Текущий путь",
   "sftpUpload": "Загрузить",
   "sftpNewFolder": "Новая папка",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "Показать скрытые файлы",
   "sftpHideHiddenFiles": "Скрыть скрытые файлы",
   "sftpHiddenPreferenceSaveFailed": "Не удалось сохранить настройки скрытых файлов",
+  "sftpViewModeList": "Список",
+  "sftpViewModeGrid": "Сетка",
+  "sftpViewPreferenceSaveFailed": "Не удалось сохранить настройки режима отображения",
   "sftpSymlink": "Символическая ссылка",
   "sftpLinkTargetUnavailable": "Цель символической ссылки повреждена или недоступна",
   "sftpLinkTargetPermissionDenied": "Отказано в доступе к цели символической ссылки",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "Скопировать диагностические данные",
   "configImportErrorCopied": "Диагностические данные скопированы в буфер обмена",
   "configImportErrorUnsupportedVersion": "Неподдерживаемый формат или версия резервной копии",
-  "configImportErrorMalformed": "Поврежденный или неверный JSON конфигурации"
+  "configImportErrorMalformed": "Поврежденный или неверный JSON конфигурации",
+  "aboutRepository": "Репозиторий GitHub",
+  "updateCheckTitle": "Проверить обновления",
+  "updateChecking": "Проверка обновлений...",
+  "updateCheckNow": "Проверить сейчас",
+  "updateUpToDate": "Установлена последняя версия",
+  "updateInstalledVersion": "Установлено: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "Доступна новая версия: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "Посмотреть обновление",
+  "updateLastChecked": "Последняя проверка: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "Никогда не проверялось",
+  "updateAutoCheckTitle": "Автоматическая проверка обновлений",
+  "updateAutoCheckSubtitle": "Ежедневно проверять обновления при активном приложении",
+  "updateAutoCheckSaveFailed": "Не удалось сохранить настройки автоматической проверки",
+  "updateDialogTitle": "Обновление ПО",
+  "updateCurrentVersion": "Текущая: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "Новейшая: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "Сборка {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "Коммит: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "Установочный пакет",
+  "updateArtifactName": "Файл: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "Размер: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "Хеш SHA-256: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "Скопировать хеш SHA-256",
+  "updateHashCopied": "Хеш SHA-256 скопирован в буфер обмена",
+  "updateCopyCommit": "Скопировать хеш коммита",
+  "updateCommitCopied": "Хеш коммита скопирован в буфер обмена",
+  "updateReleaseNotes": "Примечания к выпуску",
+  "updateNoReleaseNotes": "Примечания к выпуску отсутствуют.",
+  "updateNoArtifactForPlatform": "Нет пакета прямой установки для этой платформы/архитектуры.",
+  "updateOpenReleasePage": "Открыть страницу выпусков на GitHub",
+  "updateDownload": "Скачать обновление",
+  "updateDownloading": "Загрузка... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "Пауза",
+  "updateResume": "Продолжить",
+  "updateRetry": "Повторить",
+  "updateDownloadPaused": "Загрузка приостановлена",
+  "updateDownloadCompleted": "Загрузка завершена и проверена",
+  "updateInstall": "Установить обновление",
+  "updateRevealInFolder": "Показать в папке",
+  "updateOpenFolder": "Открыть папку с загрузками",
+  "updateRetryInstall": "Повторить установку",
+  "updateDesktopInstructions": "Распакуйте загруженный архив и замените файлы приложения после его закрытия. Никогда не перезаписывайте работающую программу.",
+  "updateCopyErrorDetails": "Скопировать детали ошибки",
+  "updateErrorCopied": "Детали ошибки скопированы в буфер обмена",
+  "updateErrorRateLimited": "Превышен лимит запросов к API GitHub. Пожалуйста, повторите попытку позже.",
+  "updateErrorNetwork": "Сетевое соединение не удалось. Проверьте подключение к интернету.",
+  "updateErrorManifest": "Манифест обновления недействителен или отсутствуют метаданные.",
+  "updateErrorIntegrity": "Проверка целостности загрузки не удалась. Контрольная сумма не совпадает.",
+  "updateErrorSignatureMismatch": "Несоответствие подписи установки: пакет подписан другим ключом. Невозможно перезаписать приложение с другой подписью. Во избежание потери данных никогда не удаляйте приложение и не очищайте данные.",
+  "updateErrorPermissionRequired": "Требуется разрешение на установку. Разрешите установку неизвестных приложений в системных настройках и нажмите «Повторить установку».",
+  "updateErrorPermission": "Отказано в доступе к хранилищу или системе.",
+  "updateErrorPackageInvalid": "Путь к пакету или идентификатор недействительны.",
+  "updateErrorStoreInstall": "Это приложение установлено из магазина приложений. Обновите его через магазин.",
+  "updateErrorPlatform": "Не удалось открыть или запустить установщик.",
+  "updateErrorGeneric": "Сбой операции обновления. Повторите попытку или перейдите к релизам на GitHub."
 }

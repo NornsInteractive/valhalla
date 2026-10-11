@@ -143,6 +143,27 @@ class AppLocalizationsHi extends AppLocalizations {
   String get terminalPaste => 'पेस्ट करें';
 
   @override
+  String get terminalConfirmPasteTitle => 'पेस्ट करने की पुष्टि करें';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return 'टर्मिनल में $count पंक्तियों का टेक्स्ट पेस्ट किया जा रहा है। क्या जारी रखें?';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => 'टर्मिनल शॉर्टकट कुंजियाँ';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle =>
+      'टूलबार शॉर्टकट कुंजियों को अनुकूलित और पुनर्व्यवस्थित करें';
+
+  @override
+  String get terminalResetPinnedKeys => 'डिफ़ॉल्ट पर रीसेट करें';
+
+  @override
+  String get terminalToggleKeyboard => 'कीबोर्ड टॉगल करें';
+
+  @override
   String get sftpCurrentPath => 'वर्तमान पथ';
 
   @override
@@ -1182,6 +1203,16 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get sftpHiddenPreferenceSaveFailed =>
       'छिपी हुई फ़ाइलों की प्राथमिकता सहेजने में विफल';
+
+  @override
+  String get sftpViewModeList => 'सूची दृश्य';
+
+  @override
+  String get sftpViewModeGrid => 'ग्रिड दृश्य';
+
+  @override
+  String get sftpViewPreferenceSaveFailed =>
+      'दृश्य मोड प्राथमिकता सहेजने में विफल';
 
   @override
   String get sftpSymlink => 'सिम्बोलिक लिंक';
@@ -4081,4 +4112,203 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get configImportErrorMalformed => 'दूषित या विकृत कॉन्फ़िगरेशन JSON';
+
+  @override
+  String get aboutRepository => 'GitHub रिपॉजिटरी';
+
+  @override
+  String get updateCheckTitle => 'अपडेट की जाँच करें';
+
+  @override
+  String get updateChecking => 'अपडेट की जाँच की जा रही है...';
+
+  @override
+  String get updateCheckNow => 'अभी जाँचें';
+
+  @override
+  String get updateUpToDate => 'Valhalla अप टू डेट है';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'इंस्टॉल किया गया: v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return 'नया संस्करण उपलब्ध: v$version';
+  }
+
+  @override
+  String get updateViewUpdate => 'अपडेट देखें';
+
+  @override
+  String updateLastChecked(String time) {
+    return 'अंतिम जाँच: $time';
+  }
+
+  @override
+  String get updateNeverChecked => 'कभी जाँच नहीं की गई';
+
+  @override
+  String get updateAutoCheckTitle => 'स्वचालित अपडेट जाँच';
+
+  @override
+  String get updateAutoCheckSubtitle =>
+      'ऐप सक्रिय होने पर प्रतिदिन अपडेट की जाँच करें';
+
+  @override
+  String get updateAutoCheckSaveFailed =>
+      'स्वचालित अपडेट जाँच सेटिंग सहेजने में विफल';
+
+  @override
+  String get updateDialogTitle => 'सॉफ्टवेयर अपडेट';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return 'वर्तमान: $version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return 'नवीनतम: v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return 'बिल्ड $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return 'कमिट: $commit';
+  }
+
+  @override
+  String get updateArtifactDetails => 'इंस्टॉलेशन पैकेज';
+
+  @override
+  String updateArtifactName(String name) {
+    return 'फ़ाइल: $name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return 'आकार: $size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'SHA-256 हैश: $hash';
+  }
+
+  @override
+  String get updateCopyHash => 'SHA-256 हैश कॉपी करें';
+
+  @override
+  String get updateHashCopied => 'SHA-256 हैश क्लिपबोर्ड पर कॉपी किया गया';
+
+  @override
+  String get updateCopyCommit => 'कमिट हैश कॉपी करें';
+
+  @override
+  String get updateCommitCopied => 'कमिट हैश क्लिपबोर्ड पर कॉपी किया गया';
+
+  @override
+  String get updateReleaseNotes => 'रिलीज़ नोट्स';
+
+  @override
+  String get updateNoReleaseNotes => 'कोई रिलीज़ नोट्स प्रदान नहीं किए गए हैं।';
+
+  @override
+  String get updateNoArtifactForPlatform =>
+      'इस डिवाइस प्लेटफ़ॉर्म/आर्किटेक्चर के लिए कोई सीधा इंस्टॉलेशन पैकेज उपलब्ध नहीं है।';
+
+  @override
+  String get updateOpenReleasePage => 'GitHub पर रिलीज़ खोलें';
+
+  @override
+  String get updateDownload => 'अपडेट डाउनलोड करें';
+
+  @override
+  String updateDownloading(String progress) {
+    return 'डाउनलोड हो रहा है... $progress%';
+  }
+
+  @override
+  String get updatePause => 'रोकें';
+
+  @override
+  String get updateResume => 'फिर शुरू करें';
+
+  @override
+  String get updateRetry => 'पुनः प्रयास करें';
+
+  @override
+  String get updateDownloadPaused => 'डाउनलोड रोका गया';
+
+  @override
+  String get updateDownloadCompleted => 'डाउनलोड पूरा हुआ और सत्यापित किया गया';
+
+  @override
+  String get updateInstall => 'अपडेट इंस्टॉल करें';
+
+  @override
+  String get updateRevealInFolder => 'फ़ोल्डर में दिखाएं';
+
+  @override
+  String get updateOpenFolder => 'डाउनलोड स्थान खोलें';
+
+  @override
+  String get updateRetryInstall => 'स्थापना पुनः प्रयास करें';
+
+  @override
+  String get updateDesktopInstructions =>
+      'डाउनलोड किए गए संग्रह को निकालें और बंद होने पर एप्लिकेशन को बदलें। वर्तमान में चल रहे प्रोग्राम को कभी ओवरराइट न करें।';
+
+  @override
+  String get updateCopyErrorDetails => 'त्रुटि विवरण कॉपी करें';
+
+  @override
+  String get updateErrorCopied => 'त्रुटि विवरण क्लिपबोर्ड पर कॉपी किया गया';
+
+  @override
+  String get updateErrorRateLimited =>
+      'GitHub API दर सीमा पार हो गई। कृपया बाद में पुनः प्रयास करें।';
+
+  @override
+  String get updateErrorNetwork =>
+      'नेटवर्क कनेक्शन विफल रहा। कृपया अपना इंटरनेट कनेक्शन जाँचें।';
+
+  @override
+  String get updateErrorManifest =>
+      'अपडेट मैनिफ़ेस्ट अमान्य है या आवश्यक मेटाडेटा गायब है।';
+
+  @override
+  String get updateErrorIntegrity =>
+      'डाउनलोड अखंडता जाँच विफल रही। फ़ाइल चेकसम मेल नहीं खाता।';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      'इंस्टॉलेशन हस्ताक्षर बेमेल: अपडेट पैकेज इस ऐप की तुलना में एक अलग कुंजी के साथ हस्ताक्षरित है। विभिन्न हस्ताक्षरों को ओवरराइट नहीं किया जा सकता। डेटा हानि को रोकने के लिए, कभी भी ऐप को अनइंस्टॉल न करें या डेटा साफ़ न करें।';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      'इंस्टॉल अनुमति आवश्यक है। कृपया सिस्टम सेटिंग्स में Valhalla के लिए अज्ञात ऐप्स इंस्टॉल करने की अनुमति दें, फिर पुनः प्रयास करें पर टैप करें।';
+
+  @override
+  String get updateErrorPermission => 'संग्रहण या सिस्टम अनुमति अस्वीकृत।';
+
+  @override
+  String get updateErrorPackageInvalid => 'पैकेज पथ या पहचान अमान्य है।';
+
+  @override
+  String get updateErrorStoreInstall =>
+      'यह ऐप एक ऐप स्टोर से इंस्टॉल किया गया था। कृपया स्टोर के माध्यम से अपडेट करें।';
+
+  @override
+  String get updateErrorPlatform => 'इंस्टॉलर को खोलने या लॉन्च करने में विफल।';
+
+  @override
+  String get updateErrorGeneric =>
+      'अपडेट ऑपरेशन विफल रहा। कृपया पुनः प्रयास करें या GitHub रिलीज़ देखें।';
 }

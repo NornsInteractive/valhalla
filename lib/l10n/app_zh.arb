@@ -44,6 +44,19 @@
   "terminalClear": "清屏",
   "terminalQuickCmds": "常用命令库",
   "terminalPaste": "粘贴",
+  "terminalConfirmPasteTitle": "确认粘贴",
+  "terminalConfirmPasteMessage": "即将向终端粘贴 {count} 行文本。是否继续？",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "终端快捷按键",
+  "settingsTerminalPinnedKeysSubtitle": "自定义与重排终端按键栏的快捷按键",
+  "terminalResetPinnedKeys": "恢复默认",
+  "terminalToggleKeyboard": "切换键盘",
   "sftpCurrentPath": "当前工作路径",
   "sftpUpload": "上传文件",
   "sftpNewFolder": "新建目录",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "显示隐藏文件",
   "sftpHideHiddenFiles": "隐藏点文件",
   "sftpHiddenPreferenceSaveFailed": "保存隐藏文件设置失败",
+  "sftpViewModeList": "列表视图",
+  "sftpViewModeGrid": "网格视图",
+  "sftpViewPreferenceSaveFailed": "保存视图模式设置失败",
   "sftpSymlink": "软链接",
   "sftpLinkTargetUnavailable": "符号链接目标失效或不存在",
   "sftpLinkTargetPermissionDenied": "无权限访问符号链接目标",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "复制诊断详情",
   "configImportErrorCopied": "诊断详情已复制到剪贴板",
   "configImportErrorUnsupportedVersion": "不支持的备份格式或版本",
-  "configImportErrorMalformed": "配置文件 JSON 损坏或格式错误"
+  "configImportErrorMalformed": "配置文件 JSON 损坏或格式错误",
+  "aboutRepository": "GitHub 仓库",
+  "updateCheckTitle": "检查更新",
+  "updateChecking": "正在检查更新...",
+  "updateCheckNow": "立即检查",
+  "updateUpToDate": "当前已是最新版本",
+  "updateInstalledVersion": "已安装：v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "发现新版本：v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "查看更新",
+  "updateLastChecked": "上次检查：{time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "从未检查",
+  "updateAutoCheckTitle": "自动检查更新",
+  "updateAutoCheckSubtitle": "在应用活跃时每天检查一次新版本",
+  "updateAutoCheckSaveFailed": "保存自动更新检查设置失败",
+  "updateDialogTitle": "软件更新",
+  "updateCurrentVersion": "当前版本：{version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "最新版本：v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "构建号 {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "提交：{commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "安装包信息",
+  "updateArtifactName": "文件：{name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "大小：{size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "SHA-256 哈希值：{hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "复制 SHA-256 哈希值",
+  "updateHashCopied": "已复制 SHA-256 哈希值到剪贴板",
+  "updateCopyCommit": "复制提交哈希",
+  "updateCommitCopied": "已复制提交哈希到剪贴板",
+  "updateReleaseNotes": "更新说明",
+  "updateNoReleaseNotes": "暂无更新说明。",
+  "updateNoArtifactForPlatform": "此设备平台/架构暂无直接安装包。",
+  "updateOpenReleasePage": "在 GitHub 查看发布页",
+  "updateDownload": "下载更新",
+  "updateDownloading": "正在下载... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "暂停",
+  "updateResume": "继续",
+  "updateRetry": "重试",
+  "updateDownloadPaused": "下载已暂停",
+  "updateDownloadCompleted": "下载完成且校验通过",
+  "updateInstall": "安装更新",
+  "updateRevealInFolder": "在文件夹中显示",
+  "updateOpenFolder": "打开下载目录",
+  "updateRetryInstall": "重试安装",
+  "updateDesktopInstructions": "请解压下载的压缩包，并在退出当前应用后进行替换。切勿覆盖正在运行的程序。",
+  "updateCopyErrorDetails": "复制错误详情",
+  "updateErrorCopied": "错误详情已复制到剪贴板",
+  "updateErrorRateLimited": "GitHub API 请求频率超限，请稍后重试。",
+  "updateErrorNetwork": "网络连接失败，请检查您的网络设置。",
+  "updateErrorManifest": "更新清单无效或缺失必要的元数据。",
+  "updateErrorIntegrity": "下载完整性校验失败，文件校验和不匹配。",
+  "updateErrorSignatureMismatch": "安装签名不匹配：更新包的签名与当前已安装应用不同。无法直接覆盖不同签名的安装。为防止凭据和配置丢失，切勿卸载应用或清除数据。",
+  "updateErrorPermissionRequired": "需要安装权限。请在系统设置中允许 Valhalla 安装未知应用，然后点击重试安装。",
+  "updateErrorPermission": "存储或系统权限被拒绝。",
+  "updateErrorPackageInvalid": "安装包路径或身份信息无效。",
+  "updateErrorStoreInstall": "此应用通过应用商店安装，请通过对应的应用商店进行更新。",
+  "updateErrorPlatform": "无法打开或启动安装程序。",
+  "updateErrorGeneric": "更新操作失败，请重试或前往 GitHub 查看发布页。"
 }

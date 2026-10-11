@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/errors/app_exceptions.dart';
 import '../models/server_profile.dart';
 import '../models/host_key_entry.dart';
 import '../models/quick_command.dart';
@@ -12,6 +14,100 @@ import '../models/nas_source.dart';
 
 /// 本地持久化服务 (SharedPreferences 快速存取)
 class LocalStorageService {
+  String _pageCacheKey(ServerProfile server, String page) =>
+      'valhalla_page_cache_v1::${server.id}::${sha256.convert(utf8.encode(server.connectionKey.toString()))}::$page';
+
+  Map<String, dynamic>? getPageCache(ServerProfile server, String page) {
+    final raw = _prefs.getString(_pageCacheKey(server, page));
+    if (raw == null || raw.length > 256 * 1024) return null;
+    final record = jsonDecode(raw) as Map<String, dynamic>;
+    final savedAt = DateTime.tryParse(record['savedAt'] as String? ?? '');
+    if (savedAt == null || DateTime.now().difference(savedAt) > const Duration(days: 7)) return null;
+    return record;
+  }
+
+  Future<void> savePageCache(ServerProfile server, String page,
+      Map<String, dynamic> value) async {
+    final key = _pageCacheKey(server, page);
+    final encoded = jsonEncode({'savedAt': DateTime.now().toUtc().toIso8601String(),
+      'payload': value});
+    if (utf8.encode(encoded).length > 256 * 1024) return;
+    if (!await _prefs.setString(key, encoded)) throw const StorageException('CACHE_SAVE_FAILED');
+    final keys = _prefs.getKeys().where((k) => k.startsWith('valhalla_page_cache_v1::')).toList();
+    keys.sort((a, b) => (_prefs.getString(a) ?? '').compareTo(_prefs.getString(b) ?? ''));
+    for (final expired in keys.take(keys.length > 12 ? keys.length - 12 : 0)) {
+      await _prefs.remove(expired);
+    }
+  }
+
+  Future<void> clearServerPageCache(String serverId) async {
+    final prefix = 'valhalla_page_cache_v1::$serverId::';
+    for (final key in _prefs.getKeys().where((k) => k.startsWith(prefix)).toList()) {
+      await _prefs.remove(key);
+    }
+  }
+
+  String _transferKey(ServerProfile server) =>
+      'valhalla_transfers_v1::${server.id}::${sha256.convert(utf8.encode(server.connectionKey.toString()))}';
+
+  List<Map<String, dynamic>> getTransferRecords(ServerProfile server) {
+    final raw = _prefs.getString(_transferKey(server));
+    if (raw == null || raw.length > 256 * 1024) return const [];
+    return (jsonDecode(raw) as List).take(100).cast<Map<String, dynamic>>().toList();
+  }
+
+  Future<void> saveTransferRecords(ServerProfile server, List<Map<String, dynamic>> records) async {
+    final encoded = jsonEncode(records.take(100).toList());
+    if (utf8.encode(encoded).length > 256 * 1024 ||
+        !await _prefs.setString(_transferKey(server), encoded)) {
+      throw const StorageException('SFTP_TRANSFER_RECORD_SAVE_FAILED');
+    }
+  }
+
+  Future<void> clearServerTransferRecords(String serverId) async {
+    final prefix = 'valhalla_transfers_v1::$serverId::';
+    for (final key in _prefs.getKeys().where((key) => key.startsWith(prefix)).toList()) {
+      await _prefs.remove(key);
+    }
+  }
+  List<String>? getTerminalPinnedKeys() =>
+      _prefs.getStringList('valhalla_terminal_pinned_keys_v1');
+
+  Future<void> setTerminalPinnedKeys(List<String> keys) async {
+    if (!await _prefs.setStringList('valhalla_terminal_pinned_keys_v1', keys)) {
+      await _prefs.reload();
+      throw StateError('SETTINGS_SAVE_FAILED');
+    }
+  }
+
+  bool getAutomaticUpdateCheck() => _prefs.getBool('valhalla_update_auto_v1') ?? true;
+  Future<void> setAutomaticUpdateCheck(bool value) async {
+    if (!await _prefs.setBool('valhalla_update_auto_v1', value)) {
+      await _prefs.reload();
+      throw const FormatException('SETTINGS_SAVE_FAILED');
+    }
+  }
+  Map<String, dynamic>? getUpdateCheckCache() {
+    final value = _prefs.getString('valhalla_update_check_v1');
+    return value == null ? null : jsonDecode(value) as Map<String, dynamic>;
+  }
+  Future<void> saveUpdateCheckCache(Map<String, dynamic> value) async {
+    if (!await _prefs.setString('valhalla_update_check_v1', jsonEncode(value))) {
+      throw const FormatException('SETTINGS_SAVE_FAILED');
+    }
+  }
+
+  Map<String, dynamic>? getUpdateDownloadRecord() {
+    final raw = _prefs.getString('valhalla_update_download_v1');
+    return raw == null ? null : jsonDecode(raw) as Map<String, dynamic>;
+  }
+
+  Future<void> saveUpdateDownloadRecord(Map<String, dynamic> value) async {
+    if (!await _prefs.setString('valhalla_update_download_v1', jsonEncode(value))) {
+      throw const StorageException('UPDATE_RECORD_SAVE_FAILED');
+    }
+  }
+
   Map<String, dynamic>? getChatDraft(String key) {
     final raw = _prefs.getString('valhalla_chat_draft_v1::$key');
     if (raw == null) return null;
@@ -19,7 +115,9 @@ class LocalStorageService {
   }
 
   Future<void> saveChatDraft(String key, Map<String, dynamic> value) async {
-    await _prefs.setString('valhalla_chat_draft_v1::$key', jsonEncode(value));
+    if (!await _prefs.setString('valhalla_chat_draft_v1::$key', jsonEncode(value))) {
+      throw const StorageException('CHAT_DRAFT_SAVE_FAILED');
+    }
   }
 
   Future<void> clearChatDraft(String key) async {
@@ -138,10 +236,13 @@ class LocalStorageService {
     _keyExperimentalFeatures: 'strings',
     _keyTerminalUseTmux: 'bool',
     _keyTerminalFontSize: 'int',
+    'valhalla_terminal_pinned_keys_v1': 'strings',
+    'valhalla_update_auto_v1': 'bool',
     _keyCliHistoryPageSize: 'int',
     _keyFileSortKey: 'string',
     _keyFileSortAscending: 'bool',
     _keyFileShowHidden: 'bool',
+    'valhalla_file_view_mode_v1': 'string',
   };
 
   Map<String, Object> exportConfigurationPreferences() => {
@@ -424,10 +525,12 @@ class LocalStorageService {
   int getNasThumbnailCacheBytes() =>
       _prefs.getInt(_keyNasThumbnailCacheBytes) ?? 256 * 1024 * 1024;
 
-  Future<void> saveNasThumbnailCacheBytes(int value) => _prefs.setInt(
-    _keyNasThumbnailCacheBytes,
-    value.clamp(0, 2 * 1024 * 1024 * 1024),
-  );
+  Future<void> saveNasThumbnailCacheBytes(int value) async {
+    if (!await _prefs.setInt(_keyNasThumbnailCacheBytes,
+        value.clamp(0, 2 * 1024 * 1024 * 1024))) {
+      throw const StorageException('NAS_CACHE_SETTINGS_SAVE_FAILED');
+    }
+  }
 
   // --- Servers ---
   List<ServerProfile> getServers() {
@@ -877,6 +980,25 @@ class LocalStorageService {
   bool getFileSortAscending() => _prefs.getBool(_keyFileSortAscending) ?? true;
 
   bool getFileShowHidden() => _prefs.getBool(_keyFileShowHidden) ?? false;
+
+  String? getFileViewMode() {
+    final value = _prefs.getString('valhalla_file_view_mode_v1');
+    return value == 'list' || value == 'grid' ? value : null;
+  }
+
+  Future<void> setFileViewMode(String value) async {
+    if (value != 'list' && value != 'grid') {
+      throw ArgumentError.value(value, 'value');
+    }
+    try {
+      if (!await _prefs.setString('valhalla_file_view_mode_v1', value)) {
+        throw const StorageException('SFTP_VIEW_PREFERENCE_SAVE_FAILED');
+      }
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
+    }
+  }
 
   Future<void> setFileShowHidden(bool value) async {
     try {

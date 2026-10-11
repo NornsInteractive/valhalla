@@ -44,6 +44,19 @@
   "terminalClear": "Xóa",
   "terminalQuickCmds": "Bảng lệnh",
   "terminalPaste": "Dán",
+  "terminalConfirmPasteTitle": "Xác nhận dán",
+  "terminalConfirmPasteMessage": "Đang dán {count} dòng văn bản vào terminal. Tiếp tục?",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "Phím thanh công cụ terminal",
+  "settingsTerminalPinnedKeysSubtitle": "Tùy chỉnh và sắp xếp lại các phím tắt thanh công cụ",
+  "terminalResetPinnedKeys": "Đặt lại về mặc định",
+  "terminalToggleKeyboard": "Bật/tắt bàn phím",
   "sftpCurrentPath": "Đường dẫn hiện tại",
   "sftpUpload": "Tải lên",
   "sftpNewFolder": "Thư mục mới",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "Hiện tệp ẩn",
   "sftpHideHiddenFiles": "Ẩn tệp ẩn",
   "sftpHiddenPreferenceSaveFailed": "Không thể lưu tùy chọn tệp ẩn",
+  "sftpViewModeList": "Chế độ xem danh sách",
+  "sftpViewModeGrid": "Chế độ xem lưới",
+  "sftpViewPreferenceSaveFailed": "Không thể lưu tùy chọn chế độ xem",
   "sftpSymlink": "Liên kết tượng trưng",
   "sftpLinkTargetUnavailable": "Đích liên kết tượng trưng bị hỏng hoặc không khả dụng",
   "sftpLinkTargetPermissionDenied": "Bị từ chối quyền truy cập đích liên kết tượng trưng",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "Sao chép chi tiết chẩn đoán",
   "configImportErrorCopied": "Đã sao chép chi tiết chẩn đoán vào khay nhớ tạm",
   "configImportErrorUnsupportedVersion": "Định dạng hoặc phiên bản sao lưu không được hỗ trợ",
-  "configImportErrorMalformed": "JSON cấu hình bị hỏng hoặc không đúng định dạng"
+  "configImportErrorMalformed": "JSON cấu hình bị hỏng hoặc không đúng định dạng",
+  "aboutRepository": "Kho lưu trữ GitHub",
+  "updateCheckTitle": "Kiểm tra bản cập nhật",
+  "updateChecking": "Đang kiểm tra bản cập nhật...",
+  "updateCheckNow": "Kiểm tra ngay",
+  "updateUpToDate": "Valhalla đã là bản mới nhất",
+  "updateInstalledVersion": "Đã cài đặt: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "Có phiên bản mới: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "Xem bản cập nhật",
+  "updateLastChecked": "Kiểm tra lần cuối: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "Chưa từng kiểm tra",
+  "updateAutoCheckTitle": "Tự động kiểm tra bản cập nhật",
+  "updateAutoCheckSubtitle": "Kiểm tra bản cập nhật hàng ngày khi ứng dụng đang hoạt động",
+  "updateAutoCheckSaveFailed": "Không thể lưu cài đặt tự động kiểm tra bản cập nhật",
+  "updateDialogTitle": "Cập nhật phần mềm",
+  "updateCurrentVersion": "Hiện tại: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "Mới nhất: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "Bản dựng {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "Cam kết: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "Gói cài đặt",
+  "updateArtifactName": "Tệp: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "Kích thước: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "Mã băm SHA-256: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "Sao chép mã băm SHA-256",
+  "updateHashCopied": "Đã sao chép mã băm SHA-256 vào khay nhớ tạm",
+  "updateCopyCommit": "Sao chép mã băm cam kết",
+  "updateCommitCopied": "Đã sao chép mã băm cam kết vào khay nhớ tạm",
+  "updateReleaseNotes": "Ghi chú phát hành",
+  "updateNoReleaseNotes": "Không có ghi chú phát hành.",
+  "updateNoArtifactForPlatform": "Không có gói cài đặt trực tiếp cho nền tảng/kiến trúc thiết bị này.",
+  "updateOpenReleasePage": "Mở trang phát hành trên GitHub",
+  "updateDownload": "Tải xuống bản cập nhật",
+  "updateDownloading": "Đang tải xuống... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "Tạm dừng",
+  "updateResume": "Tiếp tục",
+  "updateRetry": "Thử lại",
+  "updateDownloadPaused": "Tải xuống đã tạm dừng",
+  "updateDownloadCompleted": "Tải xuống hoàn tất và đã xác minh",
+  "updateInstall": "Cài đặt bản cập nhật",
+  "updateRevealInFolder": "Hiển thị trong thư mục",
+  "updateOpenFolder": "Mở vị trí tải xuống",
+  "updateRetryInstall": "Thử lại cài đặt",
+  "updateDesktopInstructions": "Giải nén tệp lưu trữ đã tải xuống và thay thế ứng dụng khi đã đóng. Không ghi đè lên chương trình đang chạy.",
+  "updateCopyErrorDetails": "Sao chép chi tiết lỗi",
+  "updateErrorCopied": "Đã sao chép chi tiết lỗi vào khay nhớ tạm",
+  "updateErrorRateLimited": "Đã vượt quá giới hạn tần suất của GitHub API. Vui lòng thử lại sau.",
+  "updateErrorNetwork": "Kết nối mạng không thành công. Vui lòng kiểm tra kết nối internet của bạn.",
+  "updateErrorManifest": "Tệp kê khai cập nhật không hợp lệ hoặc thiếu siêu dữ liệu cần thiết.",
+  "updateErrorIntegrity": "Kiểm tra tính toàn vẹn của tệp tải xuống không thành công. Tổng kiểm tra không khớp.",
+  "updateErrorSignatureMismatch": "Không khớp chữ ký cài đặt: gói cập nhật được ký bằng một khóa khác với ứng dụng này. Không thể ghi đè các chữ ký khác nhau. Để tránh mất dữ liệu, không bao giờ gỡ cài đặt hoặc xóa dữ liệu ứng dụng.",
+  "updateErrorPermissionRequired": "Yêu cầu quyền cài đặt. Vui lòng cho phép cài đặt ứng dụng không xác định cho Valhalla trong cài đặt hệ thống, sau đó nhấn Thử lại cài đặt.",
+  "updateErrorPermission": "Quyền lưu trữ hoặc hệ thống bị từ chối.",
+  "updateErrorPackageInvalid": "Đường dẫn hoặc danh tính gói không hợp lệ.",
+  "updateErrorStoreInstall": "Ứng dụng này đã được cài đặt từ cửa hàng ứng dụng. Vui lòng cập nhật qua cửa hàng.",
+  "updateErrorPlatform": "Không thể mở hoặc khởi chạy trình cài đặt.",
+  "updateErrorGeneric": "Thao tác cập nhật không thành công. Vui lòng thử lại hoặc xem các bản phát hành trên GitHub."
 }

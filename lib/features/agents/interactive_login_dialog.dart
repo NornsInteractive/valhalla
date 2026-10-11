@@ -157,6 +157,8 @@ class _InteractiveLoginDialogState
 
   @override
   Widget build(BuildContext context) {
+    final originatingBridge = _bridge;
+    final originatingTerminal = _terminal;
     final isDisconnected =
         _bridge.state == TerminalConnectionState.disconnected ||
         _bridge.state == TerminalConnectionState.error;
@@ -275,11 +277,16 @@ class _InteractiveLoginDialogState
           // Real Terminal View & Accessory Bar
           Expanded(
             child: SharedTerminalCanvas(
-              terminal: _terminal,
+              terminal: originatingTerminal,
               onKey: (key, {bool isCtrl = false, bool isAlt = false}) {
-                _bridge.sendKey(key, isCtrl: isCtrl, isAlt: isAlt);
+                originatingBridge.sendKey(key, isCtrl: isCtrl, isAlt: isAlt);
               },
-              onPaste: () => _bridge.pasteClipboard(),
+              onPaste: () => originatingBridge.pasteClipboard(),
+              onPasteText: (text) {
+                if (mounted && _terminal == originatingTerminal) {
+                  originatingBridge.pasteText(text);
+                }
+              },
               footer: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

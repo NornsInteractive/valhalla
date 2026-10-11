@@ -19,6 +19,19 @@ import 'package:xterm/src/ui/terminal_theme.dart';
 
 typedef EditableRectCallback = void Function(Rect rect, Rect caretRect);
 
+final _terminalScrollStates =
+    Expando<_TerminalScrollState>('terminalScrollState');
+
+class _TerminalScrollState {
+  double pixels = 0.0;
+  bool stickToBottom = true;
+}
+
+/// Clears the retained scroll position and follow-bottom state for [terminal].
+void clearTerminalScrollState(Terminal terminal) {
+  _terminalScrollStates[terminal] = null;
+}
+
 class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
   RenderTerminal({
     required Terminal terminal,
@@ -50,11 +63,25 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
           textScaler: textScaler,
         );
 
+  var _isSwitchingTerminal = true;
+  var _isUpdatingScrollOffset = false;
+
+  _TerminalScrollState get _scrollState =>
+      _terminalScrollStates[_terminal] ??= _TerminalScrollState();
+
+  bool get _stickToBottom => _scrollState.stickToBottom;
+  set _stickToBottom(bool value) => _scrollState.stickToBottom = value;
+
   Terminal _terminal;
   set terminal(Terminal terminal) {
     if (_terminal == terminal) return;
-    if (attached) _terminal.removeListener(_onTerminalChange);
+    if (attached) {
+      _scrollState.pixels = _scrollOffset;
+      _scrollState.stickToBottom = _stickToBottom;
+      _terminal.removeListener(_onTerminalChange);
+    }
     _terminal = terminal;
+    _isSwitchingTerminal = true;
     if (attached) _terminal.addListener(_onTerminalChange);
     _resizeTerminalIfNeeded();
     markNeedsLayout();
@@ -151,10 +178,12 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
 
   final TerminalPainter _painter;
 
-  var _stickToBottom = true;
-
   void _onScroll() {
-    _stickToBottom = _scrollOffset >= _maxScrollExtent;
+    if (_isSwitchingTerminal || _isUpdatingScrollOffset) return;
+    _stickToBottom = (_maxScrollExtent - _scrollOffset).abs() < 0.5 ||
+        _scrollOffset >= _maxScrollExtent;
+    _scrollState.pixels = _scrollOffset;
+    _scrollState.stickToBottom = _stickToBottom;
     markNeedsLayout();
     _notifyEditableRect();
   }
@@ -178,6 +207,7 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
+    _isSwitchingTerminal = true;
     _offset.addListener(_onScroll);
     _terminal.addListener(_onTerminalChange);
     _controller.addListener(_onControllerUpdate);
@@ -186,6 +216,8 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
 
   @override
   void detach() {
+    _scrollState.pixels = _scrollOffset;
+    _scrollState.stickToBottom = _stickToBottom;
     super.detach();
     _offset.removeListener(_onScroll);
     _terminal.removeListener(_onTerminalChange);
@@ -210,11 +242,20 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
 
     _updateViewportSize();
 
+    _isUpdatingScrollOffset = true;
     _updateScrollOffset();
+    _isUpdatingScrollOffset = false;
 
     if (_stickToBottom) {
       _offset.correctBy(_maxScrollExtent - _scrollOffset);
+      _scrollState.pixels = _maxScrollExtent;
+    } else {
+      final target = _scrollState.pixels.clamp(0.0, _maxScrollExtent);
+      if ((_scrollOffset - target).abs() > 0.001) {
+        _offset.correctBy(target - _scrollOffset);
+      }
     }
+    _isSwitchingTerminal = false;
   }
 
   /// Total height of the terminal in pixels. Includes scrollback buffer.

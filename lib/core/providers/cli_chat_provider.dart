@@ -1431,4 +1431,6 @@ class CliChatNotifier extends Notifier<CliChatState> {
     if (state.terminal == null) return;
     await _bridge?.pasteClipboard();
   }
+
+  void pasteTerminalText(String text) => _bridge?.pasteText(text);
 }

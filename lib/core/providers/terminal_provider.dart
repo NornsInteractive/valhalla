@@ -407,6 +407,8 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     }
   }
 
+  void pasteText(String text) => state.activeTab?.bridge.pasteText(text);
+
   /// 重连成功后把每个标签页重新挂到新的 SSH 客户端上。
   ///
   /// 不重新挂的话，标签页会一直握着那个已经死掉的 `SSHClient`：

@@ -44,6 +44,19 @@
   "terminalClear": "Cancella",
   "terminalQuickCmds": "Tavolozza dei comandi",
   "terminalPaste": "Incolla",
+  "terminalConfirmPasteTitle": "Conferma incolla",
+  "terminalConfirmPasteMessage": "Incollare {count} righe di testo nel terminale. Continuare?",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "Tasti barra terminale",
+  "settingsTerminalPinnedKeysSubtitle": "Personalizza e riordina i tasti della barra",
+  "terminalResetPinnedKeys": "Ripristina impostazioni predefinite",
+  "terminalToggleKeyboard": "Attiva/disattiva tastiera",
   "sftpCurrentPath": "Percorso corrente",
   "sftpUpload": "Carica",
   "sftpNewFolder": "Nuova cartella",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "Mostra file nascosti",
   "sftpHideHiddenFiles": "Nascondi file nascosti",
   "sftpHiddenPreferenceSaveFailed": "Impossibile salvare la preferenza per i file nascosti",
+  "sftpViewModeList": "Visualizzazione elenco",
+  "sftpViewModeGrid": "Visualizzazione griglia",
+  "sftpViewPreferenceSaveFailed": "Impossibile salvare la preferenza della modalità di visualizzazione",
   "sftpSymlink": "Collegamento simbolico",
   "sftpLinkTargetUnavailable": "La destinazione del collegamento simbolico non è valida o non è disponibile",
   "sftpLinkTargetPermissionDenied": "Permesso negato per la destinazione del collegamento simbolico",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "Copia dettagli diagnostici",
   "configImportErrorCopied": "Dettagli diagnostici copiati negli appunti",
   "configImportErrorUnsupportedVersion": "Formato o versione di backup non supportati",
-  "configImportErrorMalformed": "JSON di configurazione malformato o danneggiato"
+  "configImportErrorMalformed": "JSON di configurazione malformato o danneggiato",
+  "aboutRepository": "Repository GitHub",
+  "updateCheckTitle": "Verifica aggiornamenti",
+  "updateChecking": "Verifica aggiornamenti in corso...",
+  "updateCheckNow": "Controlla ora",
+  "updateUpToDate": "Valhalla è aggiornato",
+  "updateInstalledVersion": "Installato: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "Nuova versione disponibile: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "Visualizza aggiornamento",
+  "updateLastChecked": "Ultimo controllo: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "Mai verificato",
+  "updateAutoCheckTitle": "Controllo automatico aggiornamenti",
+  "updateAutoCheckSubtitle": "Controlla giornalmente gli aggiornamenti quando l'app è attiva",
+  "updateAutoCheckSaveFailed": "Impossibile salvare l'impostazione di aggiornamento automatico",
+  "updateDialogTitle": "Aggiornamento software",
+  "updateCurrentVersion": "Attuale: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "Più recente: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "Numero build: {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "Hash del commit: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "Pacchetto di installazione",
+  "updateArtifactName": "Nome file: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "Dimensione: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "Hash SHA-256: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "Copia hash SHA-256",
+  "updateHashCopied": "Hash SHA-256 copiato negli appunti",
+  "updateCopyCommit": "Copia hash del commit",
+  "updateCommitCopied": "Hash del commit copiato negli appunti",
+  "updateReleaseNotes": "Note di rilascio",
+  "updateNoReleaseNotes": "Nessuna nota di rilascio fornita.",
+  "updateNoArtifactForPlatform": "Nessun pacchetto di installazione diretta disponibile per questa piattaforma/architettura.",
+  "updateOpenReleasePage": "Apri le versioni su GitHub",
+  "updateDownload": "Scarica aggiornamento",
+  "updateDownloading": "Download in corso... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "Pausa",
+  "updateResume": "Riprendi",
+  "updateRetry": "Riprova",
+  "updateDownloadPaused": "Download in pausa",
+  "updateDownloadCompleted": "Download completato e verificato",
+  "updateInstall": "Installa aggiornamento",
+  "updateRevealInFolder": "Mostra nella cartella",
+  "updateOpenFolder": "Apri percorso di download",
+  "updateRetryInstall": "Riprova installazione",
+  "updateDesktopInstructions": "Estrai l'archivio scaricato e sostituisci l'applicazione una volta chiusa. Non sovrascrivere mai il programma in esecuzione.",
+  "updateCopyErrorDetails": "Copia dettagli errore",
+  "updateErrorCopied": "Dettagli errore copiati negli appunti",
+  "updateErrorRateLimited": "Limite di richieste dell'API GitHub superato. Riprova più tardi.",
+  "updateErrorNetwork": "Connessione di rete non riuscita. Controlla la tua connessione Internet.",
+  "updateErrorManifest": "Il manifesto di aggiornamento non è valido o mancano metadati richiesti.",
+  "updateErrorIntegrity": "Controllo integrità del download non riuscito. Il checksum del file non corrisponde.",
+  "updateErrorSignatureMismatch": "Mancata corrispondenza della firma di installazione: il pacchetto è firmato con una chiave diversa. Impossibile sovrascrivere firme diverse. Per prevenire la perdita di dati, non disinstallare mai l'app né cancellare i dati.",
+  "updateErrorPermissionRequired": "Autorizzazione di installazione richiesta. Consenti l'installazione di app sconosciute nelle impostazioni di sistema, quindi tocca Riprova installazione.",
+  "updateErrorPermission": "Autorizzazione di archiviazione o di sistema negata.",
+  "updateErrorPackageInvalid": "Percorso o identità del pacchetto non validi.",
+  "updateErrorStoreInstall": "Questa app è stata installata da uno store di app. Aggiornala tramite lo store.",
+  "updateErrorPlatform": "Impossibile aprire o avviare il programma di installazione.",
+  "updateErrorGeneric": "Operazione di aggiornamento non riuscita. Riprova o visita i rilasci su GitHub."
 }

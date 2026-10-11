@@ -142,6 +142,26 @@ class AppLocalizationsKo extends AppLocalizations {
   String get terminalPaste => '붙여넣기';
 
   @override
+  String get terminalConfirmPasteTitle => '붙여넣기 확인';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return '터미널에 $count줄의 텍스트를 붙여넣으려고 합니다. 계속하시겠습니까?';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => '터미널 단축키';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle => '툴바 단축키 사용자 지정 및 순서 변경';
+
+  @override
+  String get terminalResetPinnedKeys => '기본값으로 초기화';
+
+  @override
+  String get terminalToggleKeyboard => '키보드 전환';
+
+  @override
   String get sftpCurrentPath => '현재 경로';
 
   @override
@@ -1142,6 +1162,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get sftpHiddenPreferenceSaveFailed => '숨김 파일 설정 저장 실패';
+
+  @override
+  String get sftpViewModeList => '목록 보기';
+
+  @override
+  String get sftpViewModeGrid => '그리드 보기';
+
+  @override
+  String get sftpViewPreferenceSaveFailed => '보기 모드 설정 저장 실패';
 
   @override
   String get sftpSymlink => '심볼릭 링크';
@@ -3931,4 +3960,197 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get configImportErrorMalformed => '손상되었거나 잘못된 형식의 설정 JSON입니다';
+
+  @override
+  String get aboutRepository => 'GitHub 저장소';
+
+  @override
+  String get updateCheckTitle => '업데이트 확인';
+
+  @override
+  String get updateChecking => '업데이트 확인 중...';
+
+  @override
+  String get updateCheckNow => '지금 확인';
+
+  @override
+  String get updateUpToDate => '최신 버전입니다';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return '설치됨: v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return '새 버전 사용 가능: v$version';
+  }
+
+  @override
+  String get updateViewUpdate => '업데이트 보기';
+
+  @override
+  String updateLastChecked(String time) {
+    return '마지막 확인: $time';
+  }
+
+  @override
+  String get updateNeverChecked => '확인한 적 없음';
+
+  @override
+  String get updateAutoCheckTitle => '자동 업데이트 확인';
+
+  @override
+  String get updateAutoCheckSubtitle => '앱이 활성화되어 있을 때 매일 업데이트를 확인합니다';
+
+  @override
+  String get updateAutoCheckSaveFailed => '자동 업데이트 설정 저장에 실패했습니다';
+
+  @override
+  String get updateDialogTitle => '소프트웨어 업데이트';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return '현재 버전: $version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return '최신: v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return '빌드 $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return '커밋: $commit';
+  }
+
+  @override
+  String get updateArtifactDetails => '설치 패키지';
+
+  @override
+  String updateArtifactName(String name) {
+    return '파일: $name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return '크기: $size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'SHA-256 해시: $hash';
+  }
+
+  @override
+  String get updateCopyHash => 'SHA-256 해시 복사';
+
+  @override
+  String get updateHashCopied => 'SHA-256 해시가 클립보드에 복사되었습니다';
+
+  @override
+  String get updateCopyCommit => '커밋 해시 복사';
+
+  @override
+  String get updateCommitCopied => '커밋 해시가 클립보드에 복사되었습니다';
+
+  @override
+  String get updateReleaseNotes => '릴리스 노트';
+
+  @override
+  String get updateNoReleaseNotes => '제공된 릴리스 노트가 없습니다.';
+
+  @override
+  String get updateNoArtifactForPlatform =>
+      '이 기기 플랫폼/아키텍처용 직접 설치 패키지를 사용할 수 없습니다.';
+
+  @override
+  String get updateOpenReleasePage => 'GitHub에서 릴리스 페이지 열기';
+
+  @override
+  String get updateDownload => '업데이트 다운로드';
+
+  @override
+  String updateDownloading(String progress) {
+    return '다운로드 중... $progress%';
+  }
+
+  @override
+  String get updatePause => '일시 중지';
+
+  @override
+  String get updateResume => '재개';
+
+  @override
+  String get updateRetry => '다시 시도';
+
+  @override
+  String get updateDownloadPaused => '다운로드 일시 중지됨';
+
+  @override
+  String get updateDownloadCompleted => '다운로드가 완료되고 검증되었습니다';
+
+  @override
+  String get updateInstall => '업데이트 설치';
+
+  @override
+  String get updateRevealInFolder => '폴더에서 보기';
+
+  @override
+  String get updateOpenFolder => '다운로드 위치 열기';
+
+  @override
+  String get updateRetryInstall => '설치 다시 시도';
+
+  @override
+  String get updateDesktopInstructions =>
+      '다운로드한 아카이브의 압축을 풀고 앱을 종료한 후 교체하십시오. 실행 중인 프로그램을 덮어쓰지 마십시오.';
+
+  @override
+  String get updateCopyErrorDetails => '오류 세부 정보 복사';
+
+  @override
+  String get updateErrorCopied => '오류 세부 정보가 클립보드에 복사되었습니다';
+
+  @override
+  String get updateErrorRateLimited =>
+      'GitHub API 요청 한도를 초과했습니다. 나중에 다시 시도하십시오.';
+
+  @override
+  String get updateErrorNetwork => '네트워크 연결에 실패했습니다. 인터넷 연결을 확인하십시오.';
+
+  @override
+  String get updateErrorManifest => '업데이트 매니페스트가 잘못되었거나 필요한 메타데이터가 누락되었습니다.';
+
+  @override
+  String get updateErrorIntegrity => '다운로드 무결성 검사에 실패했습니다. 파일 체크섬이 일치하지 않습니다.';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      '설치 서명 불일치: 업데이트 패키지가 현재 설치된 앱과 다른 키로 서명되었습니다. 다른 서명을 덮어쓸 수 없습니다. 데이터 손실을 방지하려면 앱을 삭제하거나 데이터를 지우지 마십시오.';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      '설치 권한이 필요합니다. 시스템 설정에서 Valhalla의 알 수 없는 앱 설치를 허용한 후 \'설치 다시 시도\'를 누르십시오.';
+
+  @override
+  String get updateErrorPermission => '저장소 또는 시스템 권한이 거부되었습니다.';
+
+  @override
+  String get updateErrorPackageInvalid => '패키지 경로 또는 ID가 잘못되었습니다.';
+
+  @override
+  String get updateErrorStoreInstall =>
+      '이 앱은 앱 스토어에서 설치되었습니다. 스토어를 통해 업데이트하십시오.';
+
+  @override
+  String get updateErrorPlatform => '설치 프로그램을 열거나 실행하지 못했습니다.';
+
+  @override
+  String get updateErrorGeneric => '업데이트에 실패했습니다. 다시 시도하거나 GitHub 릴리스를 확인하십시오.';
 }

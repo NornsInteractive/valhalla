@@ -30,6 +30,7 @@ import '../../infrastructure/cli/codex_account_models.dart';
 import '../../infrastructure/cli/codex_model_authorization.dart';
 import '../utils/shell_quote.dart';
 import '../logging/sanitizer.dart';
+import '../services/app_diagnostics.dart';
 import 'agent_registry_provider.dart';
 import 'server_provider.dart';
 import 'storage_providers.dart';
@@ -666,6 +667,10 @@ class AiChatNotifier extends Notifier<AiChatState> {
   bool _isPreparingPrompt = false;
   Timer? _streamTimer;
   Timer? _checkpointTimer;
+  Timer? _draftSaveTimer;
+  String? _pendingDraftKey;
+  Future<void> Function()? _pendingDraftSave;
+  Future<void> _draftSaveChain = Future<void>.value();
   void Function()? _flushStream;
   String? _draftWorkingDirectory;
   final List<ACPPermissionRequestEvent> _permissionQueue = [];
@@ -712,12 +717,48 @@ class AiChatNotifier extends Notifier<AiChatState> {
     _rememberDraft();
   }
 
-  void _rememberDraft() {
+  void _rememberDraft({bool persist = true}) {
     _drafts[_draftKey] = (
       text: state.draftText,
       attachments: state.attachments,
       directory: _draftWorkingDirectory,
     );
+    if (!persist) return;
+    final key = _draftKey;
+    if (_pendingDraftKey != null && _pendingDraftKey != key) {
+      final pending = _pendingDraftSave;
+      if (pending != null) unawaited(pending());
+    }
+    _draftSaveTimer?.cancel();
+    final text = state.draftText;
+    final directory = _draftWorkingDirectory;
+    final attachments = state.attachments;
+    final storage = ref.read(localStorageServiceProvider);
+    final store = ref.read(acpAttachmentStoreProvider);
+    _pendingDraftKey = key;
+    _pendingDraftSave = () {
+      return _draftSaveChain = _draftSaveChain.then((_) async {
+      try {
+        final saved = <ChatAttachment>[];
+        for (final item in attachments) {
+          saved.add(await store.save(item.name, item.mimeType, item.bytes, uri: item.uri));
+        }
+        await storage.saveChatDraft(key, {'text': text, 'directory': directory,
+          'attachments': saved.map((a) => a.toJson()).toList()});
+      } catch (error, stack) {
+        unawaited(AppDiagnostics.instance.record('acp.draft', error, stack));
+        if (ref.mounted && key == _draftKey) {
+          state = state.copyWith(lastErrorCode: 'CHAT_SAVE_FAILED');
+        }
+      }
+      });
+    };
+    _draftSaveTimer = Timer(const Duration(milliseconds: 400), () {
+      final pending = _pendingDraftSave;
+      _pendingDraftSave = null;
+      _pendingDraftKey = null;
+      if (pending != null) unawaited(pending());
+    });
   }
 
   void _restoreDraft() {
@@ -1363,6 +1404,10 @@ class AiChatNotifier extends Notifier<AiChatState> {
       _requestEpoch++;
       _streamTimer?.cancel();
       _checkpointTimer?.cancel();
+      _draftSaveTimer?.cancel();
+      final pendingDraft = _pendingDraftSave;
+      _pendingDraftSave = null;
+      if (pendingDraft != null) unawaited(pendingDraft());
       _flushStream = null;
       unawaited(_acpSub?.cancel());
       _currentAdapter?.dispose();
@@ -2486,7 +2531,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
 
   Future<void> _checkpoint() async {
     _flushStream?.call();
-    _rememberDraft();
+    _rememberDraft(persist: false);
     final current = state.activeSession;
     final key = _draftKey;
     final text = state.draftText;
@@ -2511,11 +2556,19 @@ class AiChatNotifier extends Notifier<AiChatState> {
           !identical(pending, state.attachments)) {
         return;
       }
-      await storage.saveChatDraft(key, {
-        'text': text,
-        'directory': directory,
-        'attachments': saved.map((a) => a.toJson()).toList(),
+      final save = _draftSaveChain.then((_) async {
+        if (!ref.mounted || key != _draftKey || text != state.draftText ||
+            directory != _draftWorkingDirectory || !identical(pending, state.attachments)) {
+          return;
+        }
+        await storage.saveChatDraft(key, {
+          'text': text, 'directory': directory,
+          'attachments': saved.map((a) => a.toJson()).toList(),
+        });
       });
+      // A failed checkpoint must not poison every later debounced draft save.
+      _draftSaveChain = save.catchError((Object _) {});
+      await save;
     } catch (error) {
       if (ref.mounted) {
         state = state.copyWith(lastErrorCode: 'CHAT_SAVE_FAILED: $error');

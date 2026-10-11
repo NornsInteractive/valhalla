@@ -71,11 +71,13 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(
-          _buildSettingsApp(overrides: [
-            localStorageServiceProvider.overrideWithValue(
-              await _freshStorage(),
-            ),
-          ]),
+          _buildSettingsApp(
+            overrides: [
+              localStorageServiceProvider.overrideWithValue(
+                await _freshStorage(),
+              ),
+            ],
+          ),
         );
         await tester.pumpAndSettle();
 
@@ -202,9 +204,7 @@ void main() {
       final spyContainer = ProviderContainer(
         overrides: [
           terminalSettingsProvider.overrideWith(() => spy),
-          localStorageServiceProvider.overrideWithValue(
-            await _freshStorage(),
-          ),
+          localStorageServiceProvider.overrideWithValue(await _freshStorage()),
         ],
       );
       addTearDown(spyContainer.dispose);
@@ -228,10 +228,7 @@ void main() {
       // Tap the far-right end of the slider -> max 24.
       final sliderRect = tester.getRect(find.byKey(_sliderKey));
       await tester.tapAt(
-        Offset(
-          sliderRect.left + sliderRect.width - 1,
-          sliderRect.center.dy,
-        ),
+        Offset(sliderRect.left + sliderRect.width - 1, sliderRect.center.dy),
       );
       await tester.pumpAndSettle();
 

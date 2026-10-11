@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:xterm/xterm.dart';
 import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/terminal_provider.dart';
@@ -378,6 +379,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
   Widget build(BuildContext context) {
     final terminalState = ref.watch(terminalProvider);
     final activeTab = terminalState.activeTab;
+    final originatingTab = activeTab;
     _syncBridgeListener(activeTab?.bridge);
 
     return Column(
@@ -388,9 +390,11 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
           _buildMoshNotice(context, activeTab?.bridge),
         ],
         Expanded(
-          child: activeTab != null
+          child: originatingTab != null
               ? SharedTerminalCanvas(
-                  terminal: activeTab.terminal,
+                  terminal: originatingTab.terminal,
+                  requestKeyboardOnTap: false,
+                  pinKeyboardButtonTrailing: true,
                   onKey: (key, {bool isCtrl = false, bool isAlt = false}) {
                     ref
                         .read(terminalProvider.notifier)
@@ -398,12 +402,12 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
                   },
                   onPaste: () =>
                       ref.read(terminalProvider.notifier).pasteClipboard(),
-                  onToggleCtrl: () =>
-                      ref.read(terminalProvider.notifier).toggleCtrl(),
-                  onToggleAlt: () =>
-                      ref.read(terminalProvider.notifier).toggleAlt(),
-                  isCtrlActive: terminalState.isCtrlActive,
-                  isAltActive: terminalState.isAltActive,
+                  onPasteText: (text) {
+                    final currentTabs = ref.read(terminalProvider).tabs;
+                    if (currentTabs.contains(originatingTab)) {
+                      originatingTab.bridge.pasteText(text);
+                    }
+                  },
                   overlay: terminalState.tmuxInstallOffer != null
                       ? Positioned(
                           bottom: 8,
@@ -416,7 +420,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
                               child: _buildTmuxInstallOfferDialog(
                                 context,
                                 terminalState.tmuxInstallOffer!,
-                                activeTab.bridge,
+                                originatingTab.bridge,
                               ),
                             ),
                           ),
@@ -489,9 +493,12 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
             tooltip: context.l10n.terminalClear,
             onPressed: () {
               final terminal = state.activeTab?.terminal;
-              // Parse locally so xterm clears screen/history and repaints.
-              // This is display data, not a command sent to the SSH shell.
-              terminal?.write('\x1b[2J\x1b[3J\x1b[H');
+              if (terminal != null) {
+                clearTerminalScrollState(terminal);
+                // Parse locally so xterm clears screen/history and repaints.
+                // This is display data, not a command sent to the SSH shell.
+                terminal.write('\x1b[2J\x1b[3J\x1b[H');
+              }
             },
           ),
         ],

@@ -44,6 +44,19 @@
   "terminalClear": "Effacer",
   "terminalQuickCmds": "Palette de commandes",
   "terminalPaste": "Coller",
+  "terminalConfirmPasteTitle": "Confirmer le collage",
+  "terminalConfirmPasteMessage": "Collage de {count} lignes de texte dans le terminal. Continuer ?",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "Touches de raccourci terminal",
+  "settingsTerminalPinnedKeysSubtitle": "Personnaliser et réorganiser les touches de la barre d'outils",
+  "terminalResetPinnedKeys": "Rétablir les valeurs par défaut",
+  "terminalToggleKeyboard": "Basculer le clavier",
   "sftpCurrentPath": "Chemin actuel",
   "sftpUpload": "Téléverser",
   "sftpNewFolder": "Nouveau dossier",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "Afficher les fichiers masqués",
   "sftpHideHiddenFiles": "Masquer les fichiers cachés",
   "sftpHiddenPreferenceSaveFailed": "Échec de l'enregistrement des préférences de fichiers masqués",
+  "sftpViewModeList": "Vue en liste",
+  "sftpViewModeGrid": "Vue en grille",
+  "sftpViewPreferenceSaveFailed": "Échec de l'enregistrement de la préférence du mode d'affichage",
   "sftpSymlink": "Lien symbolique",
   "sftpLinkTargetUnavailable": "La cible du lien symbolique est indisponible ou cassée",
   "sftpLinkTargetPermissionDenied": "Permission refusée pour la cible du lien symbolique",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "Copier les détails de diagnostic",
   "configImportErrorCopied": "Détails de diagnostic copiés dans le presse-papiers",
   "configImportErrorUnsupportedVersion": "Format ou version de sauvegarde non pris en charge",
-  "configImportErrorMalformed": "JSON de configuration malformé ou corrompu"
+  "configImportErrorMalformed": "JSON de configuration malformé ou corrompu",
+  "aboutRepository": "Dépôt GitHub",
+  "updateCheckTitle": "Vérifier les mises à jour",
+  "updateChecking": "Vérification des mises à jour...",
+  "updateCheckNow": "Vérifier maintenant",
+  "updateUpToDate": "Valhalla est à jour",
+  "updateInstalledVersion": "Installé : v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "Nouvelle version disponible : v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "Voir la mise à jour",
+  "updateLastChecked": "Dernière vérification : {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "Jamais vérifié",
+  "updateAutoCheckTitle": "Vérification automatique des mises à jour",
+  "updateAutoCheckSubtitle": "Vérifier quotidiennement les mises à jour lorsque l'application est active",
+  "updateAutoCheckSaveFailed": "Échec de l'enregistrement du paramètre de mise à jour automatique",
+  "updateDialogTitle": "Mise à jour logicielle",
+  "updateCurrentVersion": "Actuelle : {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "Dernière : v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "Numéro de build : {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "Commit : {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "Package d'installation",
+  "updateArtifactName": "Fichier : {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "Taille : {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "Hachage SHA-256 : {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "Copier le hachage SHA-256",
+  "updateHashCopied": "Hachage SHA-256 copié dans le presse-papiers",
+  "updateCopyCommit": "Copier le hachage du commit",
+  "updateCommitCopied": "Hachage du commit copié dans le presse-papiers",
+  "updateReleaseNotes": "Notes de version",
+  "updateNoReleaseNotes": "Aucune note de version fournie.",
+  "updateNoArtifactForPlatform": "Aucun package d'installation directe disponible pour cette plate-forme/architecture.",
+  "updateOpenReleasePage": "Ouvrir les versions sur GitHub",
+  "updateDownload": "Télécharger la mise à jour",
+  "updateDownloading": "Téléchargement en cours... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "Pause",
+  "updateResume": "Reprendre",
+  "updateRetry": "Réessayer",
+  "updateDownloadPaused": "Téléchargement en pause",
+  "updateDownloadCompleted": "Téléchargement terminé et vérifié",
+  "updateInstall": "Installer la mise à jour",
+  "updateRevealInFolder": "Afficher dans le dossier",
+  "updateOpenFolder": "Ouvrir l'emplacement de téléchargement",
+  "updateRetryInstall": "Réessayer l'installation",
+  "updateDesktopInstructions": "Extrayez l'archive téléchargée et remplacez l'application une fois fermée. N'écrasez jamais le programme en cours d'exécution.",
+  "updateCopyErrorDetails": "Copier les détails de l'erreur",
+  "updateErrorCopied": "Détails de l'erreur copiés dans le presse-papiers",
+  "updateErrorRateLimited": "Limite de requêtes de l'API GitHub dépassée. Veuillez réessayer plus tard.",
+  "updateErrorNetwork": "Échec de la connexion réseau. Veuillez vérifier votre connexion Internet.",
+  "updateErrorManifest": "Le manifeste de mise à jour est invalide ou des métadonnées requises sont manquantes.",
+  "updateErrorIntegrity": "Échec de la vérification de l'intégrité du téléchargement. La somme de contrôle ne correspond pas.",
+  "updateErrorSignatureMismatch": "Incompatibilité de signature d'installation : le package est signé avec une clé différente. Impossible d'écraser des signatures différentes. Pour éviter toute perte de données, ne désinstallez jamais l'application et n'effacez pas les données.",
+  "updateErrorPermissionRequired": "Autorisation d'installation requise. Veuillez autoriser l'installation d'applications inconnues dans les paramètres système, puis appuyez sur Réessayer.",
+  "updateErrorPermission": "Autorisation de stockage ou système refusée.",
+  "updateErrorPackageInvalid": "Le chemin ou l'identité du package est invalide.",
+  "updateErrorStoreInstall": "Cette application a été installée depuis un magasin d'applications. Veuillez mettre à jour via le magasin.",
+  "updateErrorPlatform": "Échec de l'ouverture ou du lancement du programme d'installation.",
+  "updateErrorGeneric": "L'opération de mise à jour a échoué. Veuillez réessayer ou consulter les versions sur GitHub."
 }

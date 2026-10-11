@@ -7,6 +7,15 @@ class SecureStorageService {
   final FlutterSecureStorage _storage;
   final Map<String, String> _memoryFallback = {};
 
+  Future<Map<String, dynamic>?> getFileEditorDraft(String key) async {
+    final value = await _storage.read(key: 'valhalla_file_draft_v1::$key');
+    return value == null ? null : jsonDecode(value) as Map<String, dynamic>;
+  }
+  Future<void> saveFileEditorDraft(String key, Map<String, dynamic> value) =>
+    _storage.write(key: 'valhalla_file_draft_v1::$key', value: jsonEncode(value));
+  Future<void> deleteFileEditorDraft(String key) =>
+    _storage.delete(key: 'valhalla_file_draft_v1::$key');
+
   Future<void> saveNasCredentials(String sourceId, NasCredentials value) async {
     // NAS secrets must not silently disappear into an in-memory fallback.
     await _storage.write(

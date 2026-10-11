@@ -143,6 +143,27 @@ class AppLocalizationsTr extends AppLocalizations {
   String get terminalPaste => 'Yapıştır';
 
   @override
+  String get terminalConfirmPasteTitle => 'Yapıştırmayı Onayla';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return 'Uçbirime $count satır metin yapıştırılıyor. Devam edilsin mi?';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => 'Uçbirim Çubuğu Tuşları';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle =>
+      'Araç çubuğu kısayol tuşlarını özelleştirin ve yeniden sıralayın';
+
+  @override
+  String get terminalResetPinnedKeys => 'Varsayılana Sıfırla';
+
+  @override
+  String get terminalToggleKeyboard => 'Klavyeyi Aç/Kapat';
+
+  @override
   String get sftpCurrentPath => 'Mevcut Yol';
 
   @override
@@ -1177,6 +1198,16 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get sftpHiddenPreferenceSaveFailed =>
       'Gizli dosya tercihi kaydedilemedi';
+
+  @override
+  String get sftpViewModeList => 'Liste görünümü';
+
+  @override
+  String get sftpViewModeGrid => 'Izgara görünümü';
+
+  @override
+  String get sftpViewPreferenceSaveFailed =>
+      'Görünüm modu tercihi kaydedilemedi';
 
   @override
   String get sftpSymlink => 'Sembolik bağlantı';
@@ -4084,4 +4115,203 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get configImportErrorMalformed =>
       'Hatalı veya bozuk yapılandırma JSON\'u';
+
+  @override
+  String get aboutRepository => 'GitHub Deposu';
+
+  @override
+  String get updateCheckTitle => 'Güncellemeleri denetle';
+
+  @override
+  String get updateChecking => 'Güncellemeler denetleniyor...';
+
+  @override
+  String get updateCheckNow => 'Şimdi denetle';
+
+  @override
+  String get updateUpToDate => 'Valhalla güncel';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'Yüklü: v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return 'Yeni sürüm mevcut: v$version';
+  }
+
+  @override
+  String get updateViewUpdate => 'Güncellemeyi görüntüle';
+
+  @override
+  String updateLastChecked(String time) {
+    return 'Son denetleme: $time';
+  }
+
+  @override
+  String get updateNeverChecked => 'Hiç denetlenmedi';
+
+  @override
+  String get updateAutoCheckTitle => 'Otomatik güncelleme denetimi';
+
+  @override
+  String get updateAutoCheckSubtitle =>
+      'Uygulama etkinken güncellemeleri her gün denetle';
+
+  @override
+  String get updateAutoCheckSaveFailed =>
+      'Otomatik güncelleme denetimi ayarı kaydedilemedi';
+
+  @override
+  String get updateDialogTitle => 'Yazılım Güncellemesi';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return 'Mevcut: $version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return 'En son: v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return 'Derleme $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return 'İşleme: $commit';
+  }
+
+  @override
+  String get updateArtifactDetails => 'Yükleme paketi';
+
+  @override
+  String updateArtifactName(String name) {
+    return 'Dosya: $name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return 'Boyut: $size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'SHA-256 karması: $hash';
+  }
+
+  @override
+  String get updateCopyHash => 'SHA-256 karmasını kopyala';
+
+  @override
+  String get updateHashCopied => 'SHA-256 karması panoya kopyalandı';
+
+  @override
+  String get updateCopyCommit => 'İşleme karmasını kopyala';
+
+  @override
+  String get updateCommitCopied => 'İşleme karması panoya kopyalandı';
+
+  @override
+  String get updateReleaseNotes => 'Sürüm Notları';
+
+  @override
+  String get updateNoReleaseNotes => 'Sürüm notu sağlanmadı.';
+
+  @override
+  String get updateNoArtifactForPlatform =>
+      'Bu cihaz platformu/mimarisi için doğrudan yükleme paketi bulunmuyor.';
+
+  @override
+  String get updateOpenReleasePage => 'GitHub\'da Sürümleri Aç';
+
+  @override
+  String get updateDownload => 'Güncellemeyi İndir';
+
+  @override
+  String updateDownloading(String progress) {
+    return 'İndiriliyor... %$progress';
+  }
+
+  @override
+  String get updatePause => 'Duraklat';
+
+  @override
+  String get updateResume => 'Devam et';
+
+  @override
+  String get updateRetry => 'Yeniden dene';
+
+  @override
+  String get updateDownloadPaused => 'İndirme duraklatıldı';
+
+  @override
+  String get updateDownloadCompleted => 'İndirme tamamlandı ve doğrulandı';
+
+  @override
+  String get updateInstall => 'Güncellemeyi Yükle';
+
+  @override
+  String get updateRevealInFolder => 'Klasörde Göster';
+
+  @override
+  String get updateOpenFolder => 'İndirme Konumunu Aç';
+
+  @override
+  String get updateRetryInstall => 'Yüklemeyi Yeniden Dene';
+
+  @override
+  String get updateDesktopInstructions =>
+      'İndirilen arşivi çıkartın ve uygulama kapalıyken değiştirin. Çalışan programın üzerine asla yazmayın.';
+
+  @override
+  String get updateCopyErrorDetails => 'Hata ayrıntılarını kopyala';
+
+  @override
+  String get updateErrorCopied => 'Hata ayrıntıları panoya kopyalandı';
+
+  @override
+  String get updateErrorRateLimited =>
+      'GitHub API istek sınırı aşıldı. Lütfen daha sonra tekrar deneyin.';
+
+  @override
+  String get updateErrorNetwork =>
+      'Ağ bağlantısı başarısız oldu. Lütfen internet bağlantınızı kontrol edin.';
+
+  @override
+  String get updateErrorManifest =>
+      'Güncelleme bildirimi geçersiz veya gerekli meta veriler eksik.';
+
+  @override
+  String get updateErrorIntegrity =>
+      'İndirme bütünlüğü denetimi başarısız oldu. Dosya sağlama toplamı eşleşmedi.';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      'Yükleme imzası uyuşmazlığı: Güncelleme paketi bu uygulamadan farklı bir anahtarla imzalanmış. Farklı imzalar üzerine yazılamaz. Veri kaybını önlemek için uygulamayı asla kaldırmayın veya verileri temizlemeyin.';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      'Yükleme izni gerekli. Lütfen sistem ayarlarında Valhalla için bilinmeyen uygulamaların yüklenmesine izin verin ve ardından Yeniden Yükle\'ye dokunun.';
+
+  @override
+  String get updateErrorPermission => 'Depolama veya sistem izni reddedildi.';
+
+  @override
+  String get updateErrorPackageInvalid => 'Paket yolu veya kimliği geçersiz.';
+
+  @override
+  String get updateErrorStoreInstall =>
+      'Bu uygulama bir uygulama mağazasından yüklendi. Lütfen mağaza üzerinden güncelleyin.';
+
+  @override
+  String get updateErrorPlatform => 'Yükleyici açılamadı veya başlatılamadı.';
+
+  @override
+  String get updateErrorGeneric =>
+      'Güncelleme işlemi başarısız oldu. Lütfen tekrar deneyin veya GitHub sürümlerini kontrol edin.';
 }

@@ -1060,6 +1060,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
   Widget _buildMainContent(BuildContext context, CliChatState state) {
     // 1. Terminal is active -> Render xterm TerminalView
     if (state.terminal != null) {
+      final originatingTerminal = state.terminal!;
       return Column(
         children: [
           Container(
@@ -1089,7 +1090,7 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
           ),
           Expanded(
             child: SharedTerminalCanvas(
-              terminal: state.terminal!,
+              terminal: originatingTerminal,
               backgroundColor: const Color(0xFF1E1E1E),
               onKey: (key, {bool isCtrl = false, bool isAlt = false}) {
                 ref
@@ -1098,6 +1099,11 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
               },
               onPaste: () =>
                   ref.read(cliChatProvider.notifier).pasteTerminalClipboard(),
+              onPasteText: (text) {
+                if (ref.read(cliChatProvider).terminal == originatingTerminal) {
+                  ref.read(cliChatProvider.notifier).pasteTerminalText(text);
+                }
+              },
             ),
           ),
         ],

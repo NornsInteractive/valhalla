@@ -16,6 +16,7 @@ import 'core/providers/settings_provider.dart';
 import 'core/providers/sftp_provider.dart';
 import 'core/providers/storage_providers.dart';
 import 'core/providers/nas_metadata_provider.dart';
+import 'core/providers/app_update_provider.dart';
 import 'core/services/keep_alive_service.dart';
 import 'core/services/app_diagnostics.dart';
 import 'core/logging/sanitizer.dart';
@@ -199,6 +200,8 @@ Future<void> main() async {
           reconnectEnabledProvider.overrideWithValue(true),
           // 同上：启动自动连接也只在生产环境开启。
           autoConnectEnabledProvider.overrideWithValue(true),
+          // 生产环境启用自动检查更新。默认值是 false，避免测试环境意外发起网络请求。
+          automaticUpdateChecksEnabledProvider.overrideWithValue(true),
           // 传输完成通知。默认是 null（测试环境不该碰 MethodChannel），
           // 这里接上真实的 Android 通知。
           transferNotificationCallbackProvider.overrideWithValue(
@@ -281,21 +284,41 @@ class _LifecycleHostState extends ConsumerState<_LifecycleHost>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final lifecycle = ref.read(connectionLifecycleProvider);
+    final isMobile =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+
     switch (state) {
       case AppLifecycleState.resumed:
         unawaited(lifecycle.onResumed());
         break;
       case AppLifecycleState.inactive:
-        // 过渡态（来电、通知栏下拉等）：属于短暂的生命周期状态，自身绝不能触发断连。
+        // 过渡态（来电、通知栏下拉等）：自身绝不能触发断连，但在移动端清除焦点避免软键盘残留。
+        if (isMobile) {
+          FocusManager.instance.primaryFocus?.unfocus(
+            disposition: UnfocusDisposition.scope,
+          );
+        }
         break;
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
+        if (isMobile) {
+          FocusManager.instance.primaryFocus?.unfocus(
+            disposition: UnfocusDisposition.scope,
+          );
+        }
         if (ref.exists(aiChatProvider)) {
           unawaited(ref.read(aiChatProvider.notifier).checkpoint());
         }
         unawaited(lifecycle.onPaused());
         break;
       case AppLifecycleState.detached:
+        if (isMobile) {
+          FocusManager.instance.primaryFocus?.unfocus(
+            disposition: UnfocusDisposition.scope,
+          );
+        }
         if (ref.exists(aiChatProvider)) {
           unawaited(ref.read(aiChatProvider.notifier).checkpoint());
         }
@@ -305,7 +328,54 @@ class _LifecycleHostState extends ConsumerState<_LifecycleHost>
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    ref.watch(appUpdateProvider);
+    return widget.child;
+  }
+}
+
+final _mobileInputFocusObserver = _MobileInputFocusNavigatorObserver();
+
+/// 移动端根路由导航观察者：
+/// 当弹出 Modal 路由（对话框、底部抽屉、新页面）前，清理前序路由的焦点与焦点历史
+/// （[UnfocusDisposition.scope]），使得返回/关闭时 Flutter 不会自动重新聚焦前序文本框
+/// 并弹出输入法软键盘；同时保留新弹窗内部显式声明的 [autofocus] 与用户显式再次点击聚焦的行为。
+/// 仅在移动端平台生效，桌面端实体键盘与 CJK 输入法行为完全保持原生。
+class _MobileInputFocusNavigatorObserver extends NavigatorObserver {
+  bool get _isMobile =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    if (_isMobile && previousRoute != null) {
+      _clearUnderlyingFocus();
+    }
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    if (_isMobile && oldRoute != null) {
+      _clearUnderlyingFocus();
+    }
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPop(route, previousRoute);
+    if (_isMobile) {
+      _clearUnderlyingFocus();
+    }
+  }
+
+  void _clearUnderlyingFocus() {
+    FocusManager.instance.primaryFocus?.unfocus(
+      disposition: UnfocusDisposition.scope,
+    );
+  }
 }
 
 class ValhallaApp extends ConsumerWidget {
@@ -335,6 +405,7 @@ class ValhallaApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Valhalla',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [_mobileInputFocusObserver],
       locale: settings.locale.languageCode == 'system' ? null : settings.locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

@@ -368,22 +368,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('tapping the terminal reopens the keyboard after the drawer '
-      'dismissed it', (tester) async {
+  testWidgets('tapping the terminal never reopens the IME; the explicit '
+      'keyboard button does', (tester) async {
     await _pumpShell(tester);
     await tester.tap(_terminalSection());
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(TerminalView).first);
     await tester.pumpAndSettle();
+    // Tap still moves focus to the terminal so hardware / physical input keeps
+    // working, but it must never attach a text input client (no soft IME).
     expect(FocusManager.instance.primaryFocus, isNot(isA<FocusScopeNode>()));
     expect(
       tester.testTextInput.log.any(
         (call) => call.method == 'TextInput.setClient',
       ),
-      isTrue,
+      isFalse,
     );
-    final logLengthAfterFirstTap = tester.testTextInput.log.length;
+    expect(
+      tester.testTextInput.log.any((call) => call.method == 'TextInput.show'),
+      isFalse,
+    );
+    expect(tester.testTextInput.isVisible, isFalse);
+    expect(_keyboardHidden(tester), isTrue);
 
     await _openDrawer(tester);
     await tester.tapAt(const Offset(450, 700));
@@ -392,17 +399,66 @@ void main() {
     expect(FocusManager.instance.primaryFocus, isA<FocusScopeNode>());
     expect(_keyboardHidden(tester), isTrue);
 
-    // The user taps the terminal again: the keyboard must come back.
+    // The user taps the terminal again: the IME must still stay closed.
     await tester.tap(find.byType(TerminalView).first);
     await tester.pumpAndSettle();
     expect(FocusManager.instance.primaryFocus, isNot(isA<FocusScopeNode>()));
     expect(
+      tester.testTextInput.log.any(
+        (call) => call.method == 'TextInput.setClient',
+      ),
+      isFalse,
+    );
+    expect(tester.testTextInput.isVisible, isFalse);
+
+    // The only way in is the explicit keyboard button on the terminal toolbar.
+    final keyboardLogLength = tester.testTextInput.log.length;
+    await tester.tap(
+      find.byKey(const Key('terminal_accessory_keyboard_button')),
+    );
+    await tester.pumpAndSettle();
+    expect(
       tester.testTextInput.log
-          .skip(logLengthAfterFirstTap)
+          .skip(keyboardLogLength)
           .any((call) => call.method == 'TextInput.setClient'),
       isTrue,
-      reason: 'tapping the terminal must attach a new text input client',
+      reason: 'the explicit keyboard button must attach a text input client',
     );
+    expect(
+      tester.testTextInput.log
+          .skip(keyboardLogLength)
+          .any((call) => call.method == 'TextInput.show'),
+      isTrue,
+      reason: 'the explicit keyboard button must ask for the IME',
+    );
+    expect(tester.testTextInput.isVisible, isTrue);
+
+    // With the IME attached, typed input still reaches the terminal output,
+    // so the SSH shell remains usable.
+    final output = <String>[];
+    _terminalNotifier!.state.activeTab!.terminal.onOutput = output.add;
+    await tester.pump();
+    tester.testTextInput.enterText('x');
+    await tester.pump();
+    expect(output.join(), contains('x'));
+
+    // While the IME is open, the drawer must be the thing that dismisses it.
+    await _openDrawer(tester);
+    await tester.pumpAndSettle();
+    expect(_keyboardHidden(tester), isTrue);
+    await tester.tapAt(const Offset(450, 700));
+    await tester.pumpAndSettle();
+    expect(_keyboardHidden(tester), isTrue);
+
+    // And a passive tap must not bring it back.
+    await tester.tap(find.byType(TerminalView).first);
+    await tester.pumpAndSettle();
+    expect(
+      tester.testTextInput.isVisible,
+      isFalse,
+      reason: 'closing the keyboard must not be undone by a terminal tap',
+    );
+    expect(FocusManager.instance.primaryFocus, isNot(isA<FocusScopeNode>()));
     expect(tester.takeException(), isNull);
     await _disposeTerminalSession(tester);
   });

@@ -388,6 +388,7 @@ class _DockerViewState extends ConsumerState<DockerView> {
         context: context,
         useSafeArea: false,
         builder: (ctx) {
+          final originatingBridge = bridge!;
           final isCompact =
               MediaQuery.sizeOf(ctx).width < LayoutBreakpoints.compactMax;
           final titleWidget = Row(
@@ -422,11 +423,12 @@ class _DockerViewState extends ConsumerState<DockerView> {
                 ),
                 body: SafeArea(
                   child: SharedTerminalCanvas(
-                    terminal: bridge!.terminal,
+                    terminal: originatingBridge.terminal,
                     onKey: (key, {bool isCtrl = false, bool isAlt = false}) {
-                      bridge!.sendKey(key, isCtrl: isCtrl, isAlt: isAlt);
+                      originatingBridge.sendKey(key, isCtrl: isCtrl, isAlt: isAlt);
                     },
-                    onPaste: () => bridge!.pasteClipboard(),
+                    onPaste: () => originatingBridge.pasteClipboard(),
+                    onPasteText: (text) => originatingBridge.pasteText(text),
                   ),
                 ),
               ),
@@ -453,16 +455,17 @@ class _DockerViewState extends ConsumerState<DockerView> {
                         bottom: Radius.circular(VRadius.input),
                       ),
                       child: SharedTerminalCanvas(
-                        terminal: bridge!.terminal,
+                        terminal: originatingBridge.terminal,
                         onKey:
                             (key, {bool isCtrl = false, bool isAlt = false}) {
-                              bridge!.sendKey(
+                              originatingBridge.sendKey(
                                 key,
                                 isCtrl: isCtrl,
                                 isAlt: isAlt,
                               );
                             },
-                        onPaste: () => bridge!.pasteClipboard(),
+                        onPaste: () => originatingBridge.pasteClipboard(),
+                        onPasteText: (text) => originatingBridge.pasteText(text),
                       ),
                     ),
                   ),

@@ -14,12 +14,74 @@ class TerminalSettings {
   /// 终端字体大小（9..24）。默认 13，与 xterm 的默认字号一致。
   final int fontSize;
 
-  const TerminalSettings({this.useTmux = false, this.fontSize = 13});
+  static const defaultPinnedKeys = [
+    'ESC',
+    'TAB',
+    'CTRL',
+    'ALT',
+    'Ctrl+C',
+    'PASTE',
+  ];
+  static const availableKeys = [
+    ...defaultPinnedKeys,
+    '↑',
+    '↓',
+    '←',
+    '→',
+    'HOME',
+    'END',
+    'PGUP',
+    'PGDN',
+    'INSERT',
+    'DELETE',
+    'BACKSPACE',
+    'ENTER',
+    'Ctrl+A',
+    'Ctrl+E',
+    'Ctrl+U',
+    'Ctrl+K',
+    'Ctrl+W',
+    'Ctrl+R',
+    'Ctrl+D',
+    'Ctrl+Z',
+    '/',
+    '-',
+    '_',
+    '|',
+    '~',
+    '.',
+    ':',
+    '=',
+    'F1',
+    'F2',
+    'F3',
+    'F4',
+    'F5',
+    'F6',
+    'F7',
+    'F8',
+    'F9',
+    'F10',
+    'F11',
+    'F12',
+  ];
+  final List<String> pinnedKeys;
 
-  TerminalSettings copyWith({bool? useTmux, int? fontSize}) {
+  const TerminalSettings({
+    this.useTmux = false,
+    this.fontSize = 13,
+    this.pinnedKeys = defaultPinnedKeys,
+  });
+
+  TerminalSettings copyWith({
+    bool? useTmux,
+    int? fontSize,
+    List<String>? pinnedKeys,
+  }) {
     return TerminalSettings(
       useTmux: useTmux ?? this.useTmux,
       fontSize: fontSize ?? this.fontSize,
+      pinnedKeys: pinnedKeys ?? this.pinnedKeys,
     );
   }
 }
@@ -35,8 +97,27 @@ class TerminalSettingsNotifier extends Notifier<TerminalSettings> {
     return TerminalSettings(
       useTmux: storage.getUseTmuxForTerminal(),
       fontSize: storage.getTerminalFontSize(),
+      pinnedKeys: List.unmodifiable(
+        (storage.getTerminalPinnedKeys() ?? TerminalSettings.defaultPinnedKeys)
+            .where(TerminalSettings.availableKeys.contains)
+            .toSet(),
+      ),
     );
   }
+
+  Future<void> setPinnedKeys(List<String> keys) async {
+    final valid = keys
+        .where(TerminalSettings.availableKeys.contains)
+        .toSet()
+        .toList();
+    await ref.read(localStorageServiceProvider).setTerminalPinnedKeys(valid);
+    if (ref.mounted) {
+      state = state.copyWith(pinnedKeys: List.unmodifiable(valid));
+    }
+  }
+
+  Future<void> resetPinnedKeys() =>
+      setPinnedKeys(TerminalSettings.defaultPinnedKeys);
 
   Future<void> setUseTmux(bool enabled) async {
     // 先改内存再落盘：开关必须立刻响应，写盘失败不该把 UI 卡在旧值上。

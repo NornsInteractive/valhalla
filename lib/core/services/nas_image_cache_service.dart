@@ -14,31 +14,72 @@ import '../../infrastructure/nas/nas_http_client.dart';
 class NasImageCacheService {
   final Future<NasSourceAdapter> Function(String) adapterFor;
   final int Function() budget;
-  final _pending = <String, Future<String?>>{};
-  Future<void> _work = Future.value();
+  final _pending = <String, _ThumbnailWork>{};
+  final _queue = <_ThumbnailWork>[];
+  bool _running = false;
+  bool _disposed = false;
+  bool _clearing = false;
+  Future<void>? _pumpFuture;
   int _writes = 0;
-  final _cancellation = NasCancellation();
   NasImageCacheService(this.adapterFor, this.budget);
 
-  Future<String?> thumbnail(NasMediaItem item) {
-    final key = sha256
-        .convert(
-          utf8.encode(
-            '${item.serverId}\u0000${item.path}\u0000${item.modifiedEpoch}\u0000${item.sizeBytes}',
-          ),
-        )
-        .toString();
-    if (_pending.containsKey(key)) return _pending[key]!;
-    // Serialize native decode and cap pending work to the visible viewport.
-    if (_pending.length >= 64) return Future.value(null);
-    final future = _work.then((_) => _load(item, key));
-    _pending[key] = future;
-    _work = future.then<void>((_) {}, onError: (Object _) {});
-    return future.whenComplete(() => _pending.remove(key));
+  String _key(NasMediaItem item) => sha256.convert(utf8.encode(
+    '${item.serverId}\u0000${item.path}\u0000${item.modifiedEpoch}\u0000${item.sizeBytes}')).toString();
+
+  Future<String?> thumbnail(NasMediaItem item, {Object? owner}) {
+    if (_disposed || _clearing) return Future.value(null);
+    final key = _key(item);
+    final existing = _pending[key];
+    if (existing != null) {
+      existing.owners.add(owner);
+      if (_queue.remove(existing)) _queue.add(existing);
+      return existing.result.future;
+    }
+    // New visible work takes priority over tiles that have scrolled away.
+    if (_pending.length >= 64 && _queue.isNotEmpty) _cancel(_queue.first);
+    final work = _ThumbnailWork(item, key, owner);
+    _pending[key] = work;
+    _queue.add(work);
+    _pumpFuture ??= _pump().whenComplete(() => _pumpFuture = null);
+    return work.result.future;
   }
 
-  Future<String?> _load(NasMediaItem item, String key) async {
-    _cancellation.check();
+  void releaseThumbnail(NasMediaItem item, Object owner) {
+    final work = _pending[_key(item)];
+    if (work == null) return;
+    work.owners.remove(owner);
+    if (work.owners.isEmpty) _cancel(work);
+  }
+
+  void _cancel(_ThumbnailWork work) {
+    work.cancellation.cancel();
+    _queue.remove(work);
+    if (identical(_pending[work.key], work)) _pending.remove(work.key);
+    if (!work.result.isCompleted) work.result.complete(null);
+  }
+
+  Future<void> _pump() async {
+    if (_running) return;
+    _running = true;
+    try {
+      while (_queue.isNotEmpty && !_disposed) {
+        final work = _queue.removeLast();
+        try {
+          final path = await _load(work.item, work.key, work.cancellation);
+          if (!work.result.isCompleted) work.result.complete(path);
+        } catch (error, stack) {
+          if (!work.result.isCompleted) {
+            work.result.completeError(error, stack);
+          }
+        } finally {
+          if (identical(_pending[work.key], work)) _pending.remove(work.key);
+        }
+      }
+    } finally { _running = false; }
+  }
+
+  Future<String?> _load(NasMediaItem item, String key, NasCancellation cancellation) async {
+    cancellation.check();
     final root = Directory(
       '${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2',
     );
@@ -54,7 +95,7 @@ class NasImageCacheService {
     if (preview == null && item.kind != NasMediaKind.image) return null;
     final resource = preview ?? await adapter.resolve(item);
     // The thumbnail working file is bounded separately from the persistent cache.
-    const maxInput = 256 * 1024 * 1024;
+    const maxInput = 32 * 1024 * 1024;
     if ((resource.sizeBytes ?? 0) > maxInput) return null;
     final temporary = File('${root.path}/$key.part');
     final sink = temporary.openWrite();
@@ -64,7 +105,7 @@ class NasImageCacheService {
         resource,
         0,
         resource.sizeBytes,
-        _cancellation,
+        cancellation,
       )) {
         size += chunk.length;
         if (size > maxInput) throw StateError('NAS_IMAGE_TOO_LARGE');
@@ -72,11 +113,15 @@ class NasImageCacheService {
         await sink.flush();
       }
       await sink.close();
+      cancellation.check();
       final buffer = await ui.ImmutableBuffer.fromFilePath(temporary.path);
       ui.ImageDescriptor? descriptor;
       ui.Codec? codec;
       try {
         descriptor = await ui.ImageDescriptor.encoded(buffer);
+        if (descriptor.width * descriptor.height > 80 * 1000 * 1000) {
+          throw StateError('NAS_IMAGE_TOO_LARGE');
+        }
         final scale = min(1.0, 512 / max(descriptor.width, descriptor.height));
         codec = await descriptor.instantiateCodec(
           targetWidth: max(1, (descriptor.width * scale).round()),
@@ -88,6 +133,7 @@ class NasImageCacheService {
             format: ui.ImageByteFormat.png,
           );
           if (data == null || data.lengthInBytes > budget()) return null;
+          cancellation.check();
           await target.writeAsBytes(data.buffer.asUint8List());
         } finally {
           frame.image.dispose();
@@ -124,5 +170,51 @@ class NasImageCacheService {
     }
   }
 
-  void dispose() => _cancellation.cancel();
+  Future<Map<String, int>> cacheUsage() async {
+    final root = Directory('${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2');
+    var bytes = 0;
+    var count = 0;
+    if (await root.exists()) {
+      await for (final entity in root.list()) {
+        if (entity is File && entity.path.endsWith('.png')) {
+          bytes += await entity.length();
+          count++;
+        }
+      }
+    }
+    return {'bytes': bytes, 'count': count};
+  }
+
+  Future<void> trimCache() async {
+    final root = Directory('${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2');
+    if (await root.exists()) await _prune(root);
+  }
+
+  Future<void> clearCache() async {
+    _clearing = true;
+    try {
+      for (final work in _pending.values.toList()) { _cancel(work); }
+      await _pumpFuture;
+      final root = Directory('${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2');
+      if (await root.exists()) {
+        await for (final entity in root.list()) {
+          if (entity is File && entity.path.endsWith('.png')) await entity.delete();
+        }
+      }
+    } finally { _clearing = false; }
+  }
+
+  void dispose() {
+    _disposed = true;
+    for (final work in _pending.values.toList()) { _cancel(work); }
+  }
+}
+
+class _ThumbnailWork {
+  final NasMediaItem item;
+  final String key;
+  final owners = <Object?>{};
+  final result = Completer<String?>();
+  final cancellation = NasCancellation();
+  _ThumbnailWork(this.item, this.key, Object? owner) { owners.add(owner); }
 }

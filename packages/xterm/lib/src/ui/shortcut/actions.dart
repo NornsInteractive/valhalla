@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:xterm/src/terminal.dart';
@@ -10,6 +11,7 @@ class TerminalActions extends StatelessWidget {
     required this.terminal,
     required this.controller,
     required this.child,
+    this.onPasteText,
   });
 
   final Terminal terminal;
@@ -17,6 +19,8 @@ class TerminalActions extends StatelessWidget {
   final TerminalController controller;
 
   final Widget child;
+
+  final FutureOr<void> Function(String text)? onPasteText;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +31,11 @@ class TerminalActions extends StatelessWidget {
             final data = await Clipboard.getData(Clipboard.kTextPlain);
             final text = data?.text;
             if (text != null) {
-              terminal.paste(text);
+              if (onPasteText != null) {
+                await onPasteText!(text);
+              } else {
+                terminal.paste(text);
+              }
               controller.clearSelection();
             }
             return null;

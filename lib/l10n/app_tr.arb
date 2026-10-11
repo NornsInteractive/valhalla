@@ -44,6 +44,19 @@
   "terminalClear": "Temizle",
   "terminalQuickCmds": "Komut Paleti",
   "terminalPaste": "Yapıştır",
+  "terminalConfirmPasteTitle": "Yapıştırmayı Onayla",
+  "terminalConfirmPasteMessage": "Uçbirime {count} satır metin yapıştırılıyor. Devam edilsin mi?",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "Uçbirim Çubuğu Tuşları",
+  "settingsTerminalPinnedKeysSubtitle": "Araç çubuğu kısayol tuşlarını özelleştirin ve yeniden sıralayın",
+  "terminalResetPinnedKeys": "Varsayılana Sıfırla",
+  "terminalToggleKeyboard": "Klavyeyi Aç/Kapat",
   "sftpCurrentPath": "Mevcut Yol",
   "sftpUpload": "Yükle",
   "sftpNewFolder": "Yeni Klasör",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "Gizli dosyaları göster",
   "sftpHideHiddenFiles": "Gizli dosyaları gizle",
   "sftpHiddenPreferenceSaveFailed": "Gizli dosya tercihi kaydedilemedi",
+  "sftpViewModeList": "Liste görünümü",
+  "sftpViewModeGrid": "Izgara görünümü",
+  "sftpViewPreferenceSaveFailed": "Görünüm modu tercihi kaydedilemedi",
   "sftpSymlink": "Sembolik bağlantı",
   "sftpLinkTargetUnavailable": "Sembolik bağlantı hedefi bozuk veya kullanılamıyor",
   "sftpLinkTargetPermissionDenied": "Sembolik bağlantı hedefine erişim reddedildi",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "Tanılama Ayrıntılarını Kopyala",
   "configImportErrorCopied": "Tanılama ayrıntıları panoya kopyalandı",
   "configImportErrorUnsupportedVersion": "Desteklenmeyen yedekleme biçimi veya sürümü",
-  "configImportErrorMalformed": "Hatalı veya bozuk yapılandırma JSON'u"
+  "configImportErrorMalformed": "Hatalı veya bozuk yapılandırma JSON'u",
+  "aboutRepository": "GitHub Deposu",
+  "updateCheckTitle": "Güncellemeleri denetle",
+  "updateChecking": "Güncellemeler denetleniyor...",
+  "updateCheckNow": "Şimdi denetle",
+  "updateUpToDate": "Valhalla güncel",
+  "updateInstalledVersion": "Yüklü: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "Yeni sürüm mevcut: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "Güncellemeyi görüntüle",
+  "updateLastChecked": "Son denetleme: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "Hiç denetlenmedi",
+  "updateAutoCheckTitle": "Otomatik güncelleme denetimi",
+  "updateAutoCheckSubtitle": "Uygulama etkinken güncellemeleri her gün denetle",
+  "updateAutoCheckSaveFailed": "Otomatik güncelleme denetimi ayarı kaydedilemedi",
+  "updateDialogTitle": "Yazılım Güncellemesi",
+  "updateCurrentVersion": "Mevcut: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "En son: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "Derleme {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "İşleme: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "Yükleme paketi",
+  "updateArtifactName": "Dosya: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "Boyut: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "SHA-256 karması: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "SHA-256 karmasını kopyala",
+  "updateHashCopied": "SHA-256 karması panoya kopyalandı",
+  "updateCopyCommit": "İşleme karmasını kopyala",
+  "updateCommitCopied": "İşleme karması panoya kopyalandı",
+  "updateReleaseNotes": "Sürüm Notları",
+  "updateNoReleaseNotes": "Sürüm notu sağlanmadı.",
+  "updateNoArtifactForPlatform": "Bu cihaz platformu/mimarisi için doğrudan yükleme paketi bulunmuyor.",
+  "updateOpenReleasePage": "GitHub'da Sürümleri Aç",
+  "updateDownload": "Güncellemeyi İndir",
+  "updateDownloading": "İndiriliyor... %{progress}",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "Duraklat",
+  "updateResume": "Devam et",
+  "updateRetry": "Yeniden dene",
+  "updateDownloadPaused": "İndirme duraklatıldı",
+  "updateDownloadCompleted": "İndirme tamamlandı ve doğrulandı",
+  "updateInstall": "Güncellemeyi Yükle",
+  "updateRevealInFolder": "Klasörde Göster",
+  "updateOpenFolder": "İndirme Konumunu Aç",
+  "updateRetryInstall": "Yüklemeyi Yeniden Dene",
+  "updateDesktopInstructions": "İndirilen arşivi çıkartın ve uygulama kapalıyken değiştirin. Çalışan programın üzerine asla yazmayın.",
+  "updateCopyErrorDetails": "Hata ayrıntılarını kopyala",
+  "updateErrorCopied": "Hata ayrıntıları panoya kopyalandı",
+  "updateErrorRateLimited": "GitHub API istek sınırı aşıldı. Lütfen daha sonra tekrar deneyin.",
+  "updateErrorNetwork": "Ağ bağlantısı başarısız oldu. Lütfen internet bağlantınızı kontrol edin.",
+  "updateErrorManifest": "Güncelleme bildirimi geçersiz veya gerekli meta veriler eksik.",
+  "updateErrorIntegrity": "İndirme bütünlüğü denetimi başarısız oldu. Dosya sağlama toplamı eşleşmedi.",
+  "updateErrorSignatureMismatch": "Yükleme imzası uyuşmazlığı: Güncelleme paketi bu uygulamadan farklı bir anahtarla imzalanmış. Farklı imzalar üzerine yazılamaz. Veri kaybını önlemek için uygulamayı asla kaldırmayın veya verileri temizlemeyin.",
+  "updateErrorPermissionRequired": "Yükleme izni gerekli. Lütfen sistem ayarlarında Valhalla için bilinmeyen uygulamaların yüklenmesine izin verin ve ardından Yeniden Yükle'ye dokunun.",
+  "updateErrorPermission": "Depolama veya sistem izni reddedildi.",
+  "updateErrorPackageInvalid": "Paket yolu veya kimliği geçersiz.",
+  "updateErrorStoreInstall": "Bu uygulama bir uygulama mağazasından yüklendi. Lütfen mağaza üzerinden güncelleyin.",
+  "updateErrorPlatform": "Yükleyici açılamadı veya başlatılamadı.",
+  "updateErrorGeneric": "Güncelleme işlemi başarısız oldu. Lütfen tekrar deneyin veya GitHub sürümlerini kontrol edin."
 }

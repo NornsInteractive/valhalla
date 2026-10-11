@@ -219,6 +219,15 @@ class NasMediaPlayerService {
     disposeQueue: disposeQueue,
   );
 
+  Future<void> retry() {
+    final item = current;
+    if (item == null) throw StateError('NAS_PLAYER_EMPTY');
+    return _requestOpen(item, queue: _queue, loadMore: _loadMore,
+      restartQueue: _restartQueue, quality: _quality,
+      disposeQueue: _queueLease?.dispose, position: player.state.position,
+      keepQueueState: true);
+  }
+
   Future<void> _requestOpen(
     NasMediaItem item, {
     List<NasMediaItem>? queue,

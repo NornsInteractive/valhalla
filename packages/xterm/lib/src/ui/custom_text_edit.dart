@@ -51,13 +51,22 @@ class CustomTextEdit extends StatefulWidget {
   CustomTextEditState createState() => CustomTextEditState();
 }
 
-class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
+class CustomTextEditState extends State<CustomTextEdit>
+    with TextInputClient, WidgetsBindingObserver {
   TextInputConnection? _connection;
+  bool _keyboardRequested = false;
+  double _lastBottomInset = 0.0;
+
+  bool get _isMobile =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
 
   @override
   void initState() {
-    widget.focusNode.addListener(_onFocusChange);
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    widget.focusNode.addListener(_onFocusChange);
   }
 
   @override
@@ -73,16 +82,42 @@ class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
       _closeInputConnectionIfNeeded();
     } else {
       if (oldWidget.readOnly && widget.focusNode.hasFocus) {
-        _openInputConnection();
+        if (!_isMobile || _keyboardRequested) {
+          _openInputConnection();
+        }
       }
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.focusNode.removeListener(_onFocusChange);
     _closeInputConnectionIfNeeded();
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (_isMobile && mounted) {
+      final bottomInset = View.of(context).viewInsets.bottom;
+      if (_lastBottomInset > 0 && bottomInset == 0) {
+        _keyboardRequested = false;
+        _closeInputConnectionIfNeeded();
+      }
+      _lastBottomInset = bottomInset;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      if (_isMobile) {
+        _keyboardRequested = false;
+        _closeInputConnectionIfNeeded();
+      }
+    }
   }
 
   @override
@@ -98,6 +133,7 @@ class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
   bool get hasInputConnection => _connection != null && _connection!.attached;
 
   void requestKeyboard() {
+    _keyboardRequested = true;
     if (widget.focusNode.hasFocus) {
       _openInputConnection();
     } else {
@@ -106,9 +142,8 @@ class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
   }
 
   void closeKeyboard() {
-    if (hasInputConnection) {
-      _connection?.close();
-    }
+    _keyboardRequested = false;
+    _closeInputConnectionIfNeeded();
   }
 
   void setEditingState(TextEditingValue value) {
@@ -142,9 +177,15 @@ class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
   }
 
   void _openOrCloseInputConnectionIfNeeded() {
-    if (widget.focusNode.hasFocus && widget.focusNode.consumeKeyboardToken()) {
-      _openInputConnection();
-    } else if (!widget.focusNode.hasFocus) {
+    if (widget.focusNode.hasFocus) {
+      final hasToken = widget.focusNode.consumeKeyboardToken();
+      final shouldOpen =
+          !_isMobile ? (hasToken || _keyboardRequested) : _keyboardRequested;
+      if (shouldOpen) {
+        _openInputConnection();
+      }
+    } else {
+      _keyboardRequested = false;
       _closeInputConnectionIfNeeded();
     }
   }
@@ -259,7 +300,8 @@ class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
 
   @override
   void connectionClosed() {
-    // print('connectionClosed');
+    _connection = null;
+    _keyboardRequested = false;
   }
 
   @override

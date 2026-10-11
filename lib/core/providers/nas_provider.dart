@@ -642,8 +642,17 @@ class NasNotifier extends Notifier<NasState> {
       ref.read(nasDownloadServiceProvider).download(item);
   Future<void> setOpenPolicy(NasMediaKind kind, NasOpenPolicy policy) =>
       ref.read(localStorageServiceProvider).saveNasOpenPolicy(kind, policy);
-  Future<String?> thumbnailPath(NasMediaItem item) =>
-      ref.read(nasImageCacheProvider).thumbnail(item);
+  Future<String?> thumbnailPath(NasMediaItem item, {Object? owner}) =>
+      ref.read(nasImageCacheProvider).thumbnail(item, owner: owner);
+  void releaseThumbnail(NasMediaItem item, Object owner) =>
+      ref.read(nasImageCacheProvider).releaseThumbnail(item, owner);
+  Future<Map<String, int>> thumbnailCacheUsage() => ref.read(nasImageCacheProvider).cacheUsage();
+  Future<void> clearThumbnailCache() => ref.read(nasImageCacheProvider).clearCache();
+  int get thumbnailCacheBudget => ref.read(localStorageServiceProvider).getNasThumbnailCacheBytes();
+  Future<void> setThumbnailCacheBudget(int bytes) async {
+    await ref.read(localStorageServiceProvider).saveNasThumbnailCacheBytes(bytes);
+    await ref.read(nasImageCacheProvider).trimCache();
+  }
   Future<Uri> imageUrl(NasMediaItem item) async {
     final adapter = await ref.read(
       nasSourceAdapterProvider(item.serverId).future,

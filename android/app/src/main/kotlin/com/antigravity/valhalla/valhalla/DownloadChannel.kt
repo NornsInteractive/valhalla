@@ -27,7 +27,6 @@ object DownloadChannel {
     private const val CHANNEL = "valhalla/downloads"
     private const val NOTIFICATION_CHANNEL_ID = "valhalla_downloads_progress"
     private const val NOTIFICATION_PERMISSION_REQUEST = 4202
-    private const val TAG = "DownloadChannel"
 
     private var hasRequestedNotificationPermission = false
 
@@ -42,13 +41,13 @@ object DownloadChannel {
             }
     }
 
-    private fun createOpenTransfersIntent(activity: Activity, requestCode: Int): PendingIntent {
+    private fun createOpenTransfersIntent(activity: Activity, requestCode: Int, update: Boolean): PendingIntent {
         return PendingIntent.getActivity(
             activity,
             requestCode,
             Intent(activity, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra(TransferNotifier.EXTRA_OPEN_TRANSFERS, true)
+                if (!update) putExtra(TransferNotifier.EXTRA_OPEN_TRANSFERS, true)
             },
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
@@ -61,7 +60,6 @@ object DownloadChannel {
     ) {
         val id = call.argument<String>("id")
         val name = call.argument<String>("name") ?: "download"
-        val path = call.argument<String>("path") ?: ""
         val bytes = (call.argument<Number>("bytes"))?.toLong() ?: 0L
         val total = (call.argument<Number>("total"))?.toLong() ?: 0L
         val status = call.argument<String>("status") ?: "running"
@@ -102,7 +100,9 @@ object DownloadChannel {
             return
         }
 
-        val openTransfersPendingIntent = createOpenTransfersIntent(activity, notificationId)
+        val openTransfersPendingIntent = createOpenTransfersIntent(
+            activity, notificationId, call.argument<String>("target") == "update",
+        )
 
         val builder = NotificationCompat.Builder(activity, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(name)
@@ -120,35 +120,7 @@ object DownloadChannel {
                     .setProgress(0, 0, false)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-                val file = File(path)
-                if (file.exists()) {
-                    try {
-                        val uri = FileProvider.getUriForFile(
-                            activity,
-                            "${activity.packageName}.fileprovider",
-                            file,
-                        )
-                        val mimeType = getMimeType(file.name)
-                        val viewIntent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(uri, mimeType)
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                                Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        val chooser = Intent.createChooser(viewIntent, file.name).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        val pendingIntent = PendingIntent.getActivity(
-                            activity,
-                            notificationId,
-                            chooser,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                        )
-                        builder.setContentIntent(pendingIntent)
-                    } catch (e: Exception) {
-                        android.util.Log.w(TAG, "Failed to create chooser for file: $path", e)
-                        // Content intent remains openTransfersPendingIntent
-                    }
-                }
+                // Open through Dart's integrity gate, never a stale file-provider URI.
             }
 
             "running" -> {

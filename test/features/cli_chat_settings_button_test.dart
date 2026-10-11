@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xterm/xterm.dart';
@@ -17,6 +18,7 @@ import '../support/fixed_terminal_settings.dart';
 class _FakeCliChatNotifier extends CliChatNotifier {
   final CliChatState _initialState;
   final List<String> sentTerminalKeys = [];
+  final List<String> pastedTerminalTexts = [];
   bool pasteTerminalClipboardCalled = false;
 
   _FakeCliChatNotifier(this._initialState);
@@ -32,6 +34,11 @@ class _FakeCliChatNotifier extends CliChatNotifier {
   @override
   Future<void> pasteTerminalClipboard() async {
     pasteTerminalClipboardCalled = true;
+  }
+
+  @override
+  void pasteTerminalText(String text) {
+    pastedTerminalTexts.add(text);
   }
 }
 
@@ -174,6 +181,21 @@ void main() {
     testWidgets(
       'renders SharedTerminalCanvas when terminal is active and connects key/paste calls',
       (tester) async {
+        const clipboardText = 'echo hello';
+        var clipboardReads = 0;
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+              if (call.method == 'Clipboard.getData') {
+                clipboardReads++;
+                return {'text': clipboardText};
+              }
+              return null;
+            });
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(SystemChannels.platform, null);
+        });
+
         final terminal = Terminal(maxLines: 50);
         final fakeNotifier = _FakeCliChatNotifier(
           CliChatState(
@@ -206,7 +228,17 @@ void main() {
         await tester.tap(pasteFinder);
         await tester.pumpAndSettle();
 
-        expect(fakeNotifier.pasteTerminalClipboardCalled, isTrue);
+        expect(clipboardReads, 1, reason: 'PASTE 只应在进入流程时读一次剪贴板');
+        expect(
+          fakeNotifier.pastedTerminalTexts,
+          [clipboardText],
+          reason: '应将快照后的单行剪贴板文本一次性发给 pasteTerminalText',
+        );
+        expect(
+          fakeNotifier.pasteTerminalClipboardCalled,
+          isFalse,
+          reason: 'onPasteText 已固化文本，legacy onPaste 不得再读剪贴板',
+        );
       },
     );
   });

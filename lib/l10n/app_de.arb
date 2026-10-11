@@ -44,6 +44,19 @@
   "terminalClear": "Leeren",
   "terminalQuickCmds": "Befehlspalette",
   "terminalPaste": "Einfügen",
+  "terminalConfirmPasteTitle": "Einfügen bestätigen",
+  "terminalConfirmPasteMessage": "{count} Zeilen Text in das Terminal einfügen. Fortfahren?",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "Terminal-Zusatztasten",
+  "settingsTerminalPinnedKeysSubtitle": "Tastaturleisten-Tasten anpassen und neu anordnen",
+  "terminalResetPinnedKeys": "Auf Standard zurücksetzen",
+  "terminalToggleKeyboard": "Tastatur umschalten",
   "sftpCurrentPath": "Aktueller Pfad",
   "sftpUpload": "Hochladen",
   "sftpNewFolder": "Neuer Ordner",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "Versteckte Dateien anzeigen",
   "sftpHideHiddenFiles": "Versteckte Dateien ausblenden",
   "sftpHiddenPreferenceSaveFailed": "Einstellung für versteckte Dateien konnte nicht gespeichert werden",
+  "sftpViewModeList": "Listenansicht",
+  "sftpViewModeGrid": "Rasteransicht",
+  "sftpViewPreferenceSaveFailed": "Einstellung für den Ansichtsmodus konnte nicht gespeichert werden",
   "sftpSymlink": "Symlink",
   "sftpLinkTargetUnavailable": "Symlink-Ziel ist ungültig oder nicht verfügbar",
   "sftpLinkTargetPermissionDenied": "Zugriff auf Symlink-Ziel verweigert",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "Diagnosedetails kopieren",
   "configImportErrorCopied": "Diagnosedetails in die Zwischenablage kopiert",
   "configImportErrorUnsupportedVersion": "Nicht unterstütztes Sicherungsformat oder Version",
-  "configImportErrorMalformed": "Fehlerhafte oder beschädigte Konfigurations-JSON"
+  "configImportErrorMalformed": "Fehlerhafte oder beschädigte Konfigurations-JSON",
+  "aboutRepository": "GitHub-Repository",
+  "updateCheckTitle": "Nach Updates suchen",
+  "updateChecking": "Suche nach Updates...",
+  "updateCheckNow": "Jetzt prüfen",
+  "updateUpToDate": "Valhalla ist auf dem neuesten Stand",
+  "updateInstalledVersion": "Installiert: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "Neue Version verfügbar: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "Update anzeigen",
+  "updateLastChecked": "Zuletzt geprüft: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "Nie geprüft",
+  "updateAutoCheckTitle": "Automatische Update-Prüfung",
+  "updateAutoCheckSubtitle": "Täglich nach Updates suchen, wenn die App aktiv ist",
+  "updateAutoCheckSaveFailed": "Fehler beim Speichern der automatischen Update-Einstellung",
+  "updateDialogTitle": "Software-Update",
+  "updateCurrentVersion": "Aktuell: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "Neueste: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "Build-Nummer: {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "Commit-Hash: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "Installationspaket",
+  "updateArtifactName": "Datei: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "Größe: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "SHA-256-Hash: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "SHA-256-Hash kopieren",
+  "updateHashCopied": "SHA-256-Hash in die Zwischenablage kopiert",
+  "updateCopyCommit": "Commit-Hash kopieren",
+  "updateCommitCopied": "Commit-Hash in die Zwischenablage kopiert",
+  "updateReleaseNotes": "Versionshinweise",
+  "updateNoReleaseNotes": "Keine Versionshinweise vorhanden.",
+  "updateNoArtifactForPlatform": "Kein direktes Installationspaket für diese Plattform/Architektur verfügbar.",
+  "updateOpenReleasePage": "Releases auf GitHub öffnen",
+  "updateDownload": "Update herunterladen",
+  "updateDownloading": "Wird heruntergeladen... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "Pausieren",
+  "updateResume": "Fortsetzen",
+  "updateRetry": "Wiederholen",
+  "updateDownloadPaused": "Download pausiert",
+  "updateDownloadCompleted": "Download abgeschlossen und verifiziert",
+  "updateInstall": "Update installieren",
+  "updateRevealInFolder": "Im Ordner anzeigen",
+  "updateOpenFolder": "Download-Ordner öffnen",
+  "updateRetryInstall": "Installation wiederholen",
+  "updateDesktopInstructions": "Extrahieren Sie das heruntergeladene Archiv und ersetzen Sie die Anwendung im geschlossenen Zustand. Überschreiben Sie niemals das laufende Programm.",
+  "updateCopyErrorDetails": "Fehlerdetails kopieren",
+  "updateErrorCopied": "Fehlerdetails in die Zwischenablage kopiert",
+  "updateErrorRateLimited": "GitHub-API-Ratenlimit überschritten. Bitte versuchen Sie es später erneut.",
+  "updateErrorNetwork": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung.",
+  "updateErrorManifest": "Update-Manifest ist ungültig oder erforderliche Metadaten fehlen.",
+  "updateErrorIntegrity": "Integritätsprüfung des Downloads fehlgeschlagen. Prüfsumme stimmt nicht überein.",
+  "updateErrorSignatureMismatch": "Signaturkonflikt bei der Installation: Das Update-Paket ist mit einem anderen Schlüssel signiert. Unterschiedliche Signaturen können nicht überschrieben werden. Deinstallieren oder löschen Sie niemals App-Daten, um Datenverlust zu vermeiden.",
+  "updateErrorPermissionRequired": "Installationsberechtigung erforderlich. Bitte erlauben Sie die Installation unbekannter Apps in den Systemeinstellungen und tippen Sie auf Wiederholen.",
+  "updateErrorPermission": "Speicher- oder Systemberechtigung verweigert.",
+  "updateErrorPackageInvalid": "Paketpfad oder Paketidentität ist ungültig.",
+  "updateErrorStoreInstall": "Diese App wurde über einen App Store installiert. Bitte aktualisieren Sie über den Store.",
+  "updateErrorPlatform": "Fehler beim Öffnen oder Starten des Installationsprogramms.",
+  "updateErrorGeneric": "Update-Vorgang fehlgeschlagen. Bitte versuchen Sie es erneut oder öffnen Sie die GitHub-Releases."
 }

@@ -44,6 +44,19 @@
   "terminalClear": "مسح",
   "terminalQuickCmds": "لوحة الأوامر",
   "terminalPaste": "لصق",
+  "terminalConfirmPasteTitle": "تأكيد اللصق",
+  "terminalConfirmPasteMessage": "لصق {count} من أسطر النص في الطرفية. هل تريد المتابعة؟",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "مفاتيح شريط الطرفية",
+  "settingsTerminalPinnedKeysSubtitle": "تخصيص وإعادة ترتيب مفاتيح شريط الأدوات",
+  "terminalResetPinnedKeys": "إعادة الضبط إلى الافتراضي",
+  "terminalToggleKeyboard": "تبديل لوحة المفاتيح",
   "sftpCurrentPath": "المسار الحالي",
   "sftpUpload": "رفع",
   "sftpNewFolder": "مجلد جديد",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "إظهار الملفات المخفية",
   "sftpHideHiddenFiles": "إخفاء الملفات المخفية",
   "sftpHiddenPreferenceSaveFailed": "فشل حفظ تفضيل الملفات المخفية",
+  "sftpViewModeList": "عرض القائمة",
+  "sftpViewModeGrid": "عرض الشبكة",
+  "sftpViewPreferenceSaveFailed": "فشل حفظ تفضيل وضع العرض",
   "sftpSymlink": "رابط رمزي",
   "sftpLinkTargetUnavailable": "هدف الرابط الرمزي تالف أو غير متوفر",
   "sftpLinkTargetPermissionDenied": "تم رفض الإذن للوصول إلى هدف الرابط الرمزي",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "نسخ تفاصيل التشخيص",
   "configImportErrorCopied": "تم نسخ تفاصيل التشخيص إلى الحافظة",
   "configImportErrorUnsupportedVersion": "تنسيق أو إصدار النسخة الاحتياطية غير مدعوم",
-  "configImportErrorMalformed": "ملف JSON للإعدادات تالف أو غير صالح"
+  "configImportErrorMalformed": "ملف JSON للإعدادات تالف أو غير صالح",
+  "aboutRepository": "مستودع GitHub",
+  "updateCheckTitle": "التحقق من وجود تحديثات",
+  "updateChecking": "جارٍ التحقق من وجود تحديثات...",
+  "updateCheckNow": "تحقق الآن",
+  "updateUpToDate": "Valhalla محدث إلى آخر إصدار",
+  "updateInstalledVersion": "المثبت: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "يتوفر إصدار جديد: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "عرض التحديث",
+  "updateLastChecked": "آخر فحص: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "لم يتم الفحص من قبل",
+  "updateAutoCheckTitle": "التحقق التلقائي من التحديثات",
+  "updateAutoCheckSubtitle": "التحقق يوميًا من التحديثات عندما يكون التطبيق نشطًا",
+  "updateAutoCheckSaveFailed": "فشل حفظ إعداد التحقق التلقائي من التحديثات",
+  "updateDialogTitle": "تحديث البرنامج",
+  "updateCurrentVersion": "الحالي: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "الأحدث: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "البناء {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "الالتزام: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "حزمة التثبيت",
+  "updateArtifactName": "الملف: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "الحجم: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "تجزئة SHA-256: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "نسخ تجزئة SHA-256",
+  "updateHashCopied": "تم نسخ تجزئة SHA-256 إلى الحافظة",
+  "updateCopyCommit": "نسخ تجزئة الالتزام",
+  "updateCommitCopied": "تم نسخ تجزئة الالتزام إلى الحافظة",
+  "updateReleaseNotes": "ملاحظات الإصدار",
+  "updateNoReleaseNotes": "لا توجد ملاحظات إصدار مقدمة.",
+  "updateNoArtifactForPlatform": "لا توجد حزمة تثبيت مباشرة متاحة لمنصة/معمارية هذا الجهاز.",
+  "updateOpenReleasePage": "فتح الإصدارات على GitHub",
+  "updateDownload": "تنزيل التحديث",
+  "updateDownloading": "جارٍ التنزيل... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "إيقاف مؤقت",
+  "updateResume": "استئناف",
+  "updateRetry": "إعادة المحاولة",
+  "updateDownloadPaused": "تم إيقاف التنزيل مؤقتًا",
+  "updateDownloadCompleted": "اكتمل التنزيل وتم التحقق منه",
+  "updateInstall": "تثبيت التحديث",
+  "updateRevealInFolder": "إظهار في المجلد",
+  "updateOpenFolder": "فتح موقع التنزيل",
+  "updateRetryInstall": "إعادة محاولة التثبيت",
+  "updateDesktopInstructions": "استخرج الأرشيف الذي تم تنزيله واستبدل التطبيق بعد إغلاقه. لا تقم أبدًا بالكتابة فوق البرنامج قيد التشغيل.",
+  "updateCopyErrorDetails": "نسخ تفاصيل الخطأ",
+  "updateErrorCopied": "تم نسخ تفاصيل الخطأ إلى الحافظة",
+  "updateErrorRateLimited": "تم تجاوز حد معدل واجهة برمجة تطبيقات GitHub. يرجى المحاولة مرة أخرى لاحقًا.",
+  "updateErrorNetwork": "فشل الاتصال بالشبكة. يرجى التحقق من اتصالك بالإنترنت.",
+  "updateErrorManifest": "بيان التحديث غير صالح أو تنقصه بيانات وصفية مطلوبة.",
+  "updateErrorIntegrity": "فشل التحقق من سلامة التنزيل. المجموع التحققي للملف غير متطابق.",
+  "updateErrorSignatureMismatch": "عدم تطابق توقيع التثبيت: تم توقيع حزمة التحديث بمفتاح مختلف عن هذا التطبيق. لا يمكن الكتابة فوق توقيعات مختلفة. لتجنب فقدان البيانات، لا تقم مطلقًا بإلغاء التثبيت أو مسح بيانات التطبيق.",
+  "updateErrorPermissionRequired": "إذن التثبيت مطلوب. يرجى السماح بتثبيت التطبيقات غير المعروفة لـ Valhalla في إعدادات النظام، ثم النقر فوق إعادة محاولة التثبيت.",
+  "updateErrorPermission": "تم رفض إذن التخزين أو النظام.",
+  "updateErrorPackageInvalid": "مسار الحزمة أو هويتها غير صالحة.",
+  "updateErrorStoreInstall": "تم تثبيت هذا التطبيق من متجر تطبيقات. يرجى التحديث عبر المتجر.",
+  "updateErrorPlatform": "فشل فتح برنامج التثبيت أو تشغيله.",
+  "updateErrorGeneric": "فشلت عملية التحديث. يرجى المحاولة مرة أخرى أو زيارة إصدارات GitHub."
 }

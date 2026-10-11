@@ -44,6 +44,19 @@
   "terminalClear": "Limpiar",
   "terminalQuickCmds": "Paleta de comandos",
   "terminalPaste": "Pegar",
+  "terminalConfirmPasteTitle": "Confirmar pegado",
+  "terminalConfirmPasteMessage": "Pegando {count} líneas de texto en la terminal. ¿Continuar?",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "Teclas de barra de terminal",
+  "settingsTerminalPinnedKeysSubtitle": "Personalizar y reordenar las teclas de la barra",
+  "terminalResetPinnedKeys": "Restablecer a valores predeterminados",
+  "terminalToggleKeyboard": "Alternar teclado",
   "sftpCurrentPath": "Ruta actual",
   "sftpUpload": "Subir",
   "sftpNewFolder": "Nueva carpeta",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "Mostrar archivos ocultos",
   "sftpHideHiddenFiles": "Ocultar archivos ocultos",
   "sftpHiddenPreferenceSaveFailed": "Error al guardar la preferencia de archivos ocultos",
+  "sftpViewModeList": "Vista de lista",
+  "sftpViewModeGrid": "Vista de cuadrícula",
+  "sftpViewPreferenceSaveFailed": "Error al guardar la preferencia de modo de vista",
   "sftpSymlink": "Enlace simbólico",
   "sftpLinkTargetUnavailable": "El destino del enlace simbólico no está disponible o está roto",
   "sftpLinkTargetPermissionDenied": "Permiso denegado para leer el destino del enlace simbólico",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "Copiar detalles de diagnóstico",
   "configImportErrorCopied": "Detalles de diagnóstico copiados al portapapeles",
   "configImportErrorUnsupportedVersion": "Formato o versión de copia de seguridad no compatible",
-  "configImportErrorMalformed": "JSON de configuración con formato incorrecto o dañado"
+  "configImportErrorMalformed": "JSON de configuración con formato incorrecto o dañado",
+  "aboutRepository": "Repositorio de GitHub",
+  "updateCheckTitle": "Buscar actualizaciones",
+  "updateChecking": "Buscando actualizaciones...",
+  "updateCheckNow": "Buscar ahora",
+  "updateUpToDate": "Valhalla está actualizado",
+  "updateInstalledVersion": "Instalado: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "Nueva versión disponible: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "Ver actualización",
+  "updateLastChecked": "Última comprobación: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "Nunca comprobado",
+  "updateAutoCheckTitle": "Comprobación automática de actualizaciones",
+  "updateAutoCheckSubtitle": "Buscar actualizaciones diariamente cuando la aplicación esté activa",
+  "updateAutoCheckSaveFailed": "Error al guardar la configuración de actualización automática",
+  "updateDialogTitle": "Actualización de software",
+  "updateCurrentVersion": "Actual: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "Última: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "Compilación {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "Hash del commit: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "Paquete de instalación",
+  "updateArtifactName": "Archivo: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "Tamaño: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "Hash SHA-256: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "Copiar hash SHA-256",
+  "updateHashCopied": "Hash SHA-256 copiado al portapapeles",
+  "updateCopyCommit": "Copiar hash del commit",
+  "updateCommitCopied": "Hash del commit copiado al portapapeles",
+  "updateReleaseNotes": "Notas de la versión",
+  "updateNoReleaseNotes": "No se proporcionaron notas de la versión.",
+  "updateNoArtifactForPlatform": "No hay ningún paquete de instalación directa disponible para esta plataforma/arquitectura.",
+  "updateOpenReleasePage": "Abrir versiones en GitHub",
+  "updateDownload": "Descargar actualización",
+  "updateDownloading": "Descargando... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "Pausar",
+  "updateResume": "Reanudar",
+  "updateRetry": "Reintentar",
+  "updateDownloadPaused": "Descarga pausada",
+  "updateDownloadCompleted": "Descarga completada y verificada",
+  "updateInstall": "Instalar actualización",
+  "updateRevealInFolder": "Mostrar en carpeta",
+  "updateOpenFolder": "Abrir ubicación de descarga",
+  "updateRetryInstall": "Reintentar instalación",
+  "updateDesktopInstructions": "Extraiga el archivo descargado y reemplace la aplicación cuando esté cerrada. Nunca sobrescriba el programa en ejecución.",
+  "updateCopyErrorDetails": "Copiar detalles del error",
+  "updateErrorCopied": "Detalles del error copiados al portapapeles",
+  "updateErrorRateLimited": "Límite de solicitudes de la API de GitHub excedido. Vuelva a intentarlo más tarde.",
+  "updateErrorNetwork": "Error de conexión de red. Compruebe su conexión a Internet.",
+  "updateErrorManifest": "El manifiesto de actualización no es válido o faltan metadatos necesarios.",
+  "updateErrorIntegrity": "Error en la comprobación de integridad de la descarga. La suma de comprobación no coincide.",
+  "updateErrorSignatureMismatch": "Error de firma de instalación: el paquete está firmado con una clave diferente a esta aplicación. No se pueden sobrescribir firmas diferentes. Para evitar la pérdida de datos, nunca desinstale ni borre los datos de la aplicación.",
+  "updateErrorPermissionRequired": "Se requiere permiso de instalación. Permita la instalación de aplicaciones desconocidas en los ajustes del sistema y pulse Reintentar instalación.",
+  "updateErrorPermission": "Permiso de almacenamiento o del sistema denegado.",
+  "updateErrorPackageInvalid": "La ruta o la identidad del paquete no son válidas.",
+  "updateErrorStoreInstall": "Esta aplicación se instaló desde una tienda de aplicaciones. Actualícela a través de la tienda.",
+  "updateErrorPlatform": "No se pudo abrir o iniciar el instalador.",
+  "updateErrorGeneric": "Error en la operación de actualización. Inténtelo de nuevo o consulte los lanzamientos en GitHub."
 }

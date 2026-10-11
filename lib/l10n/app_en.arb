@@ -44,6 +44,19 @@
   "terminalClear": "Clear",
   "terminalQuickCmds": "Command Palette",
   "terminalPaste": "Paste",
+  "terminalConfirmPasteTitle": "Confirm Paste",
+  "terminalConfirmPasteMessage": "Pasting {count} lines into the terminal. Continue?",
+  "@terminalConfirmPasteMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTerminalPinnedKeys": "Accessory Bar Keys",
+  "settingsTerminalPinnedKeysSubtitle": "Customize and reorder toolbar shortcut keys",
+  "terminalResetPinnedKeys": "Reset to Default",
+  "terminalToggleKeyboard": "Toggle Keyboard",
   "sftpCurrentPath": "Current Path",
   "sftpUpload": "Upload",
   "sftpNewFolder": "New Folder",
@@ -377,6 +390,9 @@
   "sftpShowHiddenFiles": "Show hidden files",
   "sftpHideHiddenFiles": "Hide hidden files",
   "sftpHiddenPreferenceSaveFailed": "Failed to save hidden files preference",
+  "sftpViewModeList": "List view",
+  "sftpViewModeGrid": "Grid view",
+  "sftpViewPreferenceSaveFailed": "Failed to save view mode preference",
   "sftpSymlink": "Symlink",
   "sftpLinkTargetUnavailable": "Symlink target is broken or unavailable",
   "sftpLinkTargetPermissionDenied": "Permission denied reading symlink target",
@@ -1468,5 +1484,137 @@
   "configImportErrorCopyDetails": "Copy Diagnostic Details",
   "configImportErrorCopied": "Diagnostic details copied to clipboard",
   "configImportErrorUnsupportedVersion": "Unsupported backup format or version",
-  "configImportErrorMalformed": "Malformed or damaged configuration JSON"
+  "configImportErrorMalformed": "Malformed or damaged configuration JSON",
+  "aboutRepository": "GitHub repository",
+  "updateCheckTitle": "Check for updates",
+  "updateChecking": "Checking for updates...",
+  "updateCheckNow": "Check now",
+  "updateUpToDate": "Valhalla is up to date",
+  "updateInstalledVersion": "Installed: v{version}",
+  "@updateInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBadge": "New version available: v{version}",
+  "@updateAvailableBadge": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateViewUpdate": "View update",
+  "updateLastChecked": "Last checked: {time}",
+  "@updateLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNeverChecked": "Never checked",
+  "updateAutoCheckTitle": "Automatic update check",
+  "updateAutoCheckSubtitle": "Check daily for updates when the app is active",
+  "updateAutoCheckSaveFailed": "Failed to save automatic update check setting",
+  "updateDialogTitle": "Software Update",
+  "updateCurrentVersion": "Current: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateTargetVersion": "Latest: v{version}",
+  "@updateTargetVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBuildNumber": "Build {build}",
+  "@updateBuildNumber": {
+    "placeholders": {
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCommit": "Commit: {commit}",
+  "@updateCommit": {
+    "placeholders": {
+      "commit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactDetails": "Installation package",
+  "updateArtifactName": "File: {name}",
+  "@updateArtifactName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactSize": "Size: {size}",
+  "@updateArtifactSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateArtifactHash": "SHA-256: {hash}",
+  "@updateArtifactHash": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCopyHash": "Copy SHA-256 hash",
+  "updateHashCopied": "SHA-256 hash copied to clipboard",
+  "updateCopyCommit": "Copy commit hash",
+  "updateCommitCopied": "Commit hash copied to clipboard",
+  "updateReleaseNotes": "Release Notes",
+  "updateNoReleaseNotes": "No release notes provided.",
+  "updateNoArtifactForPlatform": "No direct install package available for this device platform/architecture.",
+  "updateOpenReleasePage": "Open Releases on GitHub",
+  "updateDownload": "Download Update",
+  "updateDownloading": "Downloading... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePause": "Pause",
+  "updateResume": "Resume",
+  "updateRetry": "Retry",
+  "updateDownloadPaused": "Download paused",
+  "updateDownloadCompleted": "Download completed and verified",
+  "updateInstall": "Install Update",
+  "updateRevealInFolder": "Reveal in Folder",
+  "updateOpenFolder": "Open Folder",
+  "updateRetryInstall": "Retry Install",
+  "updateDesktopInstructions": "Extract the downloaded archive and replace the application when closed. Never overwrite the currently running executable.",
+  "updateCopyErrorDetails": "Copy error details",
+  "updateErrorCopied": "Error details copied to clipboard",
+  "updateErrorRateLimited": "GitHub API rate limit exceeded. Please try again later.",
+  "updateErrorNetwork": "Network connection failed. Please check your internet connection.",
+  "updateErrorManifest": "Update manifest is invalid or missing required metadata.",
+  "updateErrorIntegrity": "Download integrity check failed. The file checksum did not match.",
+  "updateErrorSignatureMismatch": "Installation signature mismatch: the update package is signed with a different key than this app. Cannot overwrite different signatures. To prevent data loss, never uninstall or clear app data.",
+  "updateErrorPermissionRequired": "Install permission required. Please allow installing unknown apps for Valhalla in system settings, then tap Retry Install.",
+  "updateErrorPermission": "Storage or system permission denied.",
+  "updateErrorPackageInvalid": "Package path or identity is invalid.",
+  "updateErrorStoreInstall": "This app was installed from an app store. Please update through the store.",
+  "updateErrorPlatform": "Failed to open or launch the installer.",
+  "updateErrorGeneric": "Update operation failed. Please try again or visit GitHub releases."
 }

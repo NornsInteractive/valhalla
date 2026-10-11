@@ -178,6 +178,9 @@ class _Sftp implements SftpClient {
   }) async => file;
 
   @override
+  Future<String> absolute(String path) async => path;
+
+  @override
   Future<void> close() async => closes++;
 
   @override

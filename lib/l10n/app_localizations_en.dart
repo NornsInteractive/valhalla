@@ -143,6 +143,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get terminalPaste => 'Paste';
 
   @override
+  String get terminalConfirmPasteTitle => 'Confirm Paste';
+
+  @override
+  String terminalConfirmPasteMessage(int count) {
+    return 'Pasting $count lines into the terminal. Continue?';
+  }
+
+  @override
+  String get settingsTerminalPinnedKeys => 'Accessory Bar Keys';
+
+  @override
+  String get settingsTerminalPinnedKeysSubtitle =>
+      'Customize and reorder toolbar shortcut keys';
+
+  @override
+  String get terminalResetPinnedKeys => 'Reset to Default';
+
+  @override
+  String get terminalToggleKeyboard => 'Toggle Keyboard';
+
+  @override
   String get sftpCurrentPath => 'Current Path';
 
   @override
@@ -1171,6 +1192,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get sftpHiddenPreferenceSaveFailed =>
       'Failed to save hidden files preference';
+
+  @override
+  String get sftpViewModeList => 'List view';
+
+  @override
+  String get sftpViewModeGrid => 'Grid view';
+
+  @override
+  String get sftpViewPreferenceSaveFailed =>
+      'Failed to save view mode preference';
 
   @override
   String get sftpSymlink => 'Symlink';
@@ -4058,4 +4089,204 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get configImportErrorMalformed =>
       'Malformed or damaged configuration JSON';
+
+  @override
+  String get aboutRepository => 'GitHub repository';
+
+  @override
+  String get updateCheckTitle => 'Check for updates';
+
+  @override
+  String get updateChecking => 'Checking for updates...';
+
+  @override
+  String get updateCheckNow => 'Check now';
+
+  @override
+  String get updateUpToDate => 'Valhalla is up to date';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'Installed: v$version';
+  }
+
+  @override
+  String updateAvailableBadge(String version) {
+    return 'New version available: v$version';
+  }
+
+  @override
+  String get updateViewUpdate => 'View update';
+
+  @override
+  String updateLastChecked(String time) {
+    return 'Last checked: $time';
+  }
+
+  @override
+  String get updateNeverChecked => 'Never checked';
+
+  @override
+  String get updateAutoCheckTitle => 'Automatic update check';
+
+  @override
+  String get updateAutoCheckSubtitle =>
+      'Check daily for updates when the app is active';
+
+  @override
+  String get updateAutoCheckSaveFailed =>
+      'Failed to save automatic update check setting';
+
+  @override
+  String get updateDialogTitle => 'Software Update';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return 'Current: $version';
+  }
+
+  @override
+  String updateTargetVersion(String version) {
+    return 'Latest: v$version';
+  }
+
+  @override
+  String updateBuildNumber(String build) {
+    return 'Build $build';
+  }
+
+  @override
+  String updateCommit(String commit) {
+    return 'Commit: $commit';
+  }
+
+  @override
+  String get updateArtifactDetails => 'Installation package';
+
+  @override
+  String updateArtifactName(String name) {
+    return 'File: $name';
+  }
+
+  @override
+  String updateArtifactSize(String size) {
+    return 'Size: $size';
+  }
+
+  @override
+  String updateArtifactHash(String hash) {
+    return 'SHA-256: $hash';
+  }
+
+  @override
+  String get updateCopyHash => 'Copy SHA-256 hash';
+
+  @override
+  String get updateHashCopied => 'SHA-256 hash copied to clipboard';
+
+  @override
+  String get updateCopyCommit => 'Copy commit hash';
+
+  @override
+  String get updateCommitCopied => 'Commit hash copied to clipboard';
+
+  @override
+  String get updateReleaseNotes => 'Release Notes';
+
+  @override
+  String get updateNoReleaseNotes => 'No release notes provided.';
+
+  @override
+  String get updateNoArtifactForPlatform =>
+      'No direct install package available for this device platform/architecture.';
+
+  @override
+  String get updateOpenReleasePage => 'Open Releases on GitHub';
+
+  @override
+  String get updateDownload => 'Download Update';
+
+  @override
+  String updateDownloading(String progress) {
+    return 'Downloading... $progress%';
+  }
+
+  @override
+  String get updatePause => 'Pause';
+
+  @override
+  String get updateResume => 'Resume';
+
+  @override
+  String get updateRetry => 'Retry';
+
+  @override
+  String get updateDownloadPaused => 'Download paused';
+
+  @override
+  String get updateDownloadCompleted => 'Download completed and verified';
+
+  @override
+  String get updateInstall => 'Install Update';
+
+  @override
+  String get updateRevealInFolder => 'Reveal in Folder';
+
+  @override
+  String get updateOpenFolder => 'Open Folder';
+
+  @override
+  String get updateRetryInstall => 'Retry Install';
+
+  @override
+  String get updateDesktopInstructions =>
+      'Extract the downloaded archive and replace the application when closed. Never overwrite the currently running executable.';
+
+  @override
+  String get updateCopyErrorDetails => 'Copy error details';
+
+  @override
+  String get updateErrorCopied => 'Error details copied to clipboard';
+
+  @override
+  String get updateErrorRateLimited =>
+      'GitHub API rate limit exceeded. Please try again later.';
+
+  @override
+  String get updateErrorNetwork =>
+      'Network connection failed. Please check your internet connection.';
+
+  @override
+  String get updateErrorManifest =>
+      'Update manifest is invalid or missing required metadata.';
+
+  @override
+  String get updateErrorIntegrity =>
+      'Download integrity check failed. The file checksum did not match.';
+
+  @override
+  String get updateErrorSignatureMismatch =>
+      'Installation signature mismatch: the update package is signed with a different key than this app. Cannot overwrite different signatures. To prevent data loss, never uninstall or clear app data.';
+
+  @override
+  String get updateErrorPermissionRequired =>
+      'Install permission required. Please allow installing unknown apps for Valhalla in system settings, then tap Retry Install.';
+
+  @override
+  String get updateErrorPermission => 'Storage or system permission denied.';
+
+  @override
+  String get updateErrorPackageInvalid =>
+      'Package path or identity is invalid.';
+
+  @override
+  String get updateErrorStoreInstall =>
+      'This app was installed from an app store. Please update through the store.';
+
+  @override
+  String get updateErrorPlatform => 'Failed to open or launch the installer.';
+
+  @override
+  String get updateErrorGeneric =>
+      'Update operation failed. Please try again or visit GitHub releases.';
 }
