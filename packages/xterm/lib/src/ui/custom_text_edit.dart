@@ -9,6 +9,7 @@ class CustomTextEdit extends StatefulWidget {
     required this.onInsert,
     required this.onDelete,
     required this.onComposing,
+    this.onComposingInput,
     required this.onAction,
     required this.onKeyEvent,
     required this.focusNode,
@@ -28,6 +29,9 @@ class CustomTextEdit extends StatefulWidget {
   final void Function() onDelete;
 
   final void Function(String?) onComposing;
+
+  // Modified terminal keys must not wait for Gboard to commit its preedit.
+  final bool Function(String)? onComposingInput;
 
   final void Function(TextInputAction) onAction;
 
@@ -258,6 +262,22 @@ class CustomTextEditState extends State<CustomTextEdit>
     // Get input after composing is done
     if (!_currentEditingState.composing.isCollapsed) {
       final text = _currentEditingState.text;
+      final initialText = _initEditingState.text;
+      final composing = _currentEditingState.composing;
+      if (text.startsWith(initialText) &&
+          text.length == initialText.length + 1 &&
+          composing.start == initialText.length &&
+          composing.end == text.length) {
+        final character = text.substring(initialText.length);
+        final code = character.codeUnitAt(0);
+        if (code >= 32 &&
+            code <= 126 &&
+            widget.onComposingInput?.call(character) == true) {
+          widget.onComposing(null);
+          setEditingState(_initEditingState);
+          return;
+        }
+      }
       final composingText = _currentEditingState.composing.textInside(text);
       widget.onComposing(composingText);
       return;

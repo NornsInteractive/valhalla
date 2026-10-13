@@ -97,7 +97,13 @@ class _TerminalHostState extends State<_TerminalHost> {
                   // 页共用画布的现状一致）。
                   SharedTerminalCanvas(
                     terminal: terminal,
-                    onKey: (_, {isCtrl = false, isAlt = false}) {},
+                    onKey:
+                        (
+                          _, {
+                          isCtrl = false,
+                          isAlt = false,
+                          isShift = false,
+                        }) {},
                     onPaste: () async {},
                   ),
                   const ColoredBox(

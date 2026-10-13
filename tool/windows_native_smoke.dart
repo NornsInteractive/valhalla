@@ -58,7 +58,7 @@ Future<void> main(List<String> arguments) async {
           body: SharedTerminalCanvas(
             key: surface,
             terminal: terminal,
-            onKey: (key, {isCtrl = false, isAlt = false}) {},
+            onKey: (key, {isCtrl = false, isAlt = false, isShift = false}) {},
             onPaste: () async {
               final text = (await Clipboard.getData(
                 Clipboard.kTextPlain,

@@ -21,6 +21,7 @@ List<String> _send(
   String key, {
   bool isCtrl = false,
   bool isAlt = false,
+  bool isShift = false,
   String setup = '',
 }) {
   final terminal = Terminal();
@@ -29,7 +30,13 @@ List<String> _send(
   if (setup.isNotEmpty) terminal.write(setup);
   // Drop anything the remote produced while entering the mode.
   written.clear();
-  sendTerminalAccessoryKey(terminal, key, isCtrl: isCtrl, isAlt: isAlt);
+  sendTerminalAccessoryKey(
+    terminal,
+    key,
+    isCtrl: isCtrl,
+    isAlt: isAlt,
+    isShift: isShift,
+  );
   return written.map(_readable).toList();
 }
 
@@ -139,6 +146,132 @@ void main() {
     });
   });
 
+  group('shift modifier on printable keys', () {
+    test('shift+tab sends the reverse-tab sequence', () {
+      expect(_send('TAB', isShift: true), _sends('\x1b[Z'));
+    });
+
+    test('shift folds letters into their uppercase form', () {
+      expect(_send('a', isShift: true), _sends('A'));
+      expect(_send('q', isShift: true), _sends('Q'));
+    });
+
+    test('shift maps the ASCII/US digit and symbol row', () {
+      expect(_send('1', isShift: true), _sends('!'));
+      expect(_send('/', isShift: true), _sends('?'));
+      expect(_send('-', isShift: true), _sends('_'));
+    });
+
+    test('ctrl+shift+letter keeps the normal control encoding', () {
+      expect(_send('a', isCtrl: true, isShift: true), _sends('\x01'));
+      expect(_send('c', isCtrl: true, isShift: true), _sends('\x03'));
+    });
+
+    test("ctrl+shift+'/' still folds to DEL after the shift map", () {
+      expect(_send('/', isCtrl: true, isShift: true), _sends('\x7f'));
+    });
+
+    test('shift and alt combine into one ESC-prefixed shifted letter', () {
+      expect(_send('x', isAlt: true, isShift: true), _sends('\x1bX'));
+    });
+  });
+
+  group('arrow keys carry the true CSI modifier in both buffers', () {
+    const buffers = <String, String>{'normal': '', 'alternate': '\x1b[?1049h'};
+    const arrows = <String, String>{'↑': 'A', '↓': 'B', '→': 'C', '←': 'D'};
+
+    /// Sends every arrow with the same modifiers in both buffers and asserts
+    /// the exact sequence built from [sequence].
+    void expectAllArrows(
+      String label,
+      String Function(String letter) sequence, {
+      bool ctrl = false,
+      bool shift = false,
+      bool alt = false,
+    }) {
+      buffers.forEach((buffer, setup) {
+        arrows.forEach((key, letter) {
+          expect(
+            _send(key, setup: setup, isCtrl: ctrl, isShift: shift, isAlt: alt),
+            _sends(sequence(letter)),
+            reason: '$label | $key | $buffer buffer',
+          );
+        });
+      });
+    }
+
+    test('plain arrows are unchanged in both buffers', () {
+      expectAllArrows('plain', (letter) => '\x1b[$letter');
+    });
+
+    test('ctrl arrows keep modifier 5 in both buffers', () {
+      expectAllArrows('ctrl', (letter) => '\x1b[1;5$letter', ctrl: true);
+    });
+
+    test('shift arrows report modifier 2 in both buffers', () {
+      expectAllArrows('shift', (letter) => '\x1b[1;2$letter', shift: true);
+    });
+
+    test('ctrl+shift arrows report modifier 6 in both buffers', () {
+      expectAllArrows(
+        'ctrl+shift',
+        (letter) => '\x1b[1;6$letter',
+        ctrl: true,
+        shift: true,
+      );
+    });
+
+    test('alt+shift arrows report modifier 4 in both buffers', () {
+      expectAllArrows(
+        'alt+shift',
+        (letter) => '\x1b[1;4$letter',
+        alt: true,
+        shift: true,
+      );
+    });
+  });
+
+  group('terminalFnKey is a local mapping', () {
+    test('digits map to F1..F10, minus/equals to F11/F12', () {
+      expect(terminalFnKey('1'), 'F1');
+      expect(terminalFnKey('2'), 'F2');
+      expect(terminalFnKey('3'), 'F3');
+      expect(terminalFnKey('4'), 'F4');
+      expect(terminalFnKey('5'), 'F5');
+      expect(terminalFnKey('6'), 'F6');
+      expect(terminalFnKey('7'), 'F7');
+      expect(terminalFnKey('8'), 'F8');
+      expect(terminalFnKey('9'), 'F9');
+      expect(terminalFnKey('0'), 'F10');
+      expect(terminalFnKey('-'), 'F11');
+      expect(terminalFnKey('='), 'F12');
+    });
+
+    test('arrows map to navigation keys and backspace to delete', () {
+      expect(terminalFnKey('←'), 'HOME');
+      expect(terminalFnKey('→'), 'END');
+      expect(terminalFnKey('↑'), 'PGUP');
+      expect(terminalFnKey('↓'), 'PGDN');
+      expect(terminalFnKey('BACKSPACE'), 'DELETE');
+    });
+
+    test('unmapped keys pass through unchanged', () {
+      expect(terminalFnKey('F5'), 'F5');
+      expect(terminalFnKey('ENTER'), 'ENTER');
+      expect(terminalFnKey('c'), 'c');
+      expect(terminalFnKey('CTRL'), 'CTRL');
+    });
+
+    test('mapped keys reach the pty as their function/named key bytes', () {
+      expect(_send(terminalFnKey('1')), _sends('\x1bOP'));
+      expect(_send(terminalFnKey('5')), _sends('\x1b[15~'));
+      expect(_send(terminalFnKey('0')), _sends('\x1b[21~'));
+      expect(_send(terminalFnKey('=')), _sends('\x1b[24~'));
+      expect(_send(terminalFnKey('↑')), _sends('\x1b[5~'));
+      expect(_send(terminalFnKey('BACKSPACE')), _sends('\x1b[3~'));
+    });
+  });
+
   group('modifier forwarding on special keys', () {
     test('ctrl changes the sequence produced for editing keys', () {
       expect(_send('DELETE', isCtrl: true), _sends('\x1b[3;5~'));
@@ -168,10 +301,16 @@ void main() {
         'F1',
       ];
       for (final key in specialKeys) {
-        sendTerminalAccessoryKey(terminal, key, isCtrl: true, isAlt: true);
+        sendTerminalAccessoryKey(
+          terminal,
+          key,
+          isCtrl: true,
+          isAlt: true,
+          isShift: true,
+        );
       }
       expect(events, hasLength(specialKeys.length));
-      expect(events.every((e) => e.ctrl && e.alt), isTrue);
+      expect(events.every((e) => e.ctrl && e.alt && e.shift), isTrue);
       expect(events.map((e) => e.key), contains(TerminalKey.arrowUp));
     });
 
@@ -183,6 +322,7 @@ void main() {
       expect(events, hasLength(1));
       expect(events.single.ctrl, isFalse);
       expect(events.single.alt, isFalse);
+      expect(events.single.shift, isFalse);
     });
   });
 

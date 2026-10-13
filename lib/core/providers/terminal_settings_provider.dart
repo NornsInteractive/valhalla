@@ -18,7 +18,9 @@ class TerminalSettings {
     'ESC',
     'TAB',
     'CTRL',
+    'SHIFT',
     'ALT',
+    'FN',
     'Ctrl+C',
     'PASTE',
   ];

@@ -27,7 +27,12 @@ class _FakeCliChatNotifier extends CliChatNotifier {
   CliChatState build() => _initialState;
 
   @override
-  void sendTerminalKey(String key, {bool isCtrl = false, bool isAlt = false}) {
+  void sendTerminalKey(
+    String key, {
+    bool isCtrl = false,
+    bool isAlt = false,
+    bool isShift = false,
+  }) {
     sentTerminalKeys.add(key);
   }
 

@@ -475,10 +475,21 @@ class TerminalSessionBridge {
   }
 
   /// 处理移动端按键栏按键映射
-  void sendKey(String key, {bool isCtrl = false, bool isAlt = false}) {
+  void sendKey(
+    String key, {
+    bool isCtrl = false,
+    bool isAlt = false,
+    bool isShift = false,
+  }) {
     HapticFeedback.lightImpact();
     if (_sshSession != null && _isSessionOpen) {
-      sendTerminalAccessoryKey(terminal, key, isCtrl: isCtrl, isAlt: isAlt);
+      sendTerminalAccessoryKey(
+        terminal,
+        key,
+        isCtrl: isCtrl,
+        isAlt: isAlt,
+        isShift: isShift,
+      );
     }
   }
 

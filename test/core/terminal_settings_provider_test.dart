@@ -7,6 +7,7 @@ import 'package:valhalla/data/storage/local_storage_service.dart';
 
 const _tmuxKey = 'valhalla_terminal_use_tmux_v1';
 const _fontSizeKey = 'valhalla_terminal_font_size_v1';
+const _pinnedKeysKey = 'valhalla_terminal_pinned_keys_v1';
 
 Future<ProviderContainer> _container() async {
   final localStorage = LocalStorageService(
@@ -142,9 +143,40 @@ void main() {
     });
 
     test('LocalStorageService 缺键返回 13', () async {
-      final storage = LocalStorageService(await SharedPreferences.getInstance());
+      final storage = LocalStorageService(
+        await SharedPreferences.getInstance(),
+      );
 
       expect(storage.getTerminalFontSize(), 13);
+    });
+  });
+
+  group('TerminalSettings.pinnedKeys', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('默认固定键开箱包含 SHIFT 与 FN', () async {
+      final container = await _container();
+      addTearDown(container.dispose);
+
+      final pinned = container.read(terminalSettingsProvider).pinnedKeys;
+      expect(pinned, contains('SHIFT'));
+      expect(pinned, contains('FN'));
+      expect(pinned, containsAll(['ESC', 'TAB', 'CTRL', 'ALT']));
+    });
+
+    test('显式存过的自定义固定键原样读回，不被默认列表覆盖', () async {
+      const custom = ['ESC', 'F1', 'HOME'];
+      SharedPreferences.setMockInitialValues({_pinnedKeysKey: custom});
+      final container = await _container();
+      addTearDown(container.dispose);
+
+      expect(
+        container.read(terminalSettingsProvider).pinnedKeys,
+        custom,
+        reason: '用户自定义列表必须原样保留，不得被默认 SHIFT/FN 列表顶掉',
+      );
     });
   });
 }

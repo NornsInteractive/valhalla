@@ -22,7 +22,7 @@ void main() {
     });
 
     Widget buildCanvas({
-      void Function(String key, {bool isCtrl, bool isAlt})? onKey,
+      void Function(String key, {bool isCtrl, bool isAlt, bool isShift})? onKey,
       Future<void> Function()? onPaste,
       void Function(String text)? onPasteText,
       Widget? footer,
@@ -151,7 +151,8 @@ void main() {
 
         await tester.pumpWidget(
           buildCanvas(
-            onKey: (key, {isCtrl = false, isAlt = false}) => sentKeys.add(key),
+            onKey: (key, {isCtrl = false, isAlt = false, isShift = false}) =>
+                sentKeys.add(key),
           ),
         );
         await tester.pumpAndSettle();
@@ -548,7 +549,7 @@ void main() {
 
     Widget imeCanvas() => _canvas(
       terminal,
-      onKey: (key, {isCtrl = false, isAlt = false}) {
+      onKey: (key, {isCtrl = false, isAlt = false, isShift = false}) {
         keys.add(key);
         modifiers.add((key, isCtrl, isAlt));
       },
@@ -641,7 +642,7 @@ void main() {
       await tester.pumpWidget(
         _canvas(
           Terminal(maxLines: 100),
-          onKey: (key, {isCtrl = false, isAlt = false}) {
+          onKey: (key, {isCtrl = false, isAlt = false, isShift = false}) {
             keys.add(key);
             modifiers.add((key, isCtrl, isAlt));
           },
@@ -930,7 +931,8 @@ void main() {
                 height: 600,
                 child: SharedTerminalCanvas(
                   terminal: terminal,
-                  onKey: (_, {isCtrl = false, isAlt = false}) {},
+                  onKey:
+                      (_, {isCtrl = false, isAlt = false, isShift = false}) {},
                 ),
               ),
             ),
@@ -975,7 +977,7 @@ void main() {
 /// 画布宿主：固定字号 notifier 免注入存储，可指定尺寸与字号缩放。
 Widget _canvas(
   Terminal terminal, {
-  void Function(String key, {bool isCtrl, bool isAlt})? onKey,
+  void Function(String key, {bool isCtrl, bool isAlt, bool isShift})? onKey,
   Future<void> Function()? onPaste,
   void Function(String text)? onPasteText,
   Widget? footer,
@@ -1002,7 +1004,9 @@ Widget _canvas(
             height: height,
             child: SharedTerminalCanvas(
               terminal: terminal,
-              onKey: onKey ?? (_, {isCtrl = false, isAlt = false}) {},
+              onKey:
+                  onKey ??
+                  (_, {isCtrl = false, isAlt = false, isShift = false}) {},
               onPaste: onPaste ?? () async {},
               onPasteText: onPasteText,
               footer: footer,
@@ -1050,7 +1054,7 @@ Widget _canvasApp(Terminal terminal, {TerminalStyle? textStyle}) {
         height: 600,
         child: SharedTerminalCanvas(
           terminal: terminal,
-          onKey: (_, {isCtrl = false, isAlt = false}) {},
+          onKey: (_, {isCtrl = false, isAlt = false, isShift = false}) {},
           onPaste: () async {},
           textStyle: textStyle,
         ),

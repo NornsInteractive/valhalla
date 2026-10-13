@@ -1093,11 +1093,22 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
             child: SharedTerminalCanvas(
               terminal: originatingTerminal,
               backgroundColor: const Color(0xFF1E1E1E),
-              onKey: (key, {bool isCtrl = false, bool isAlt = false}) {
-                ref
-                    .read(cliChatProvider.notifier)
-                    .sendTerminalKey(key, isCtrl: isCtrl, isAlt: isAlt);
-              },
+              onKey:
+                  (
+                    key, {
+                    bool isCtrl = false,
+                    bool isAlt = false,
+                    bool isShift = false,
+                  }) {
+                    ref
+                        .read(cliChatProvider.notifier)
+                        .sendTerminalKey(
+                          key,
+                          isCtrl: isCtrl,
+                          isAlt: isAlt,
+                          isShift: isShift,
+                        );
+                  },
               onPaste: () =>
                   ref.read(cliChatProvider.notifier).pasteTerminalClipboard(),
               onPasteText: (text) {

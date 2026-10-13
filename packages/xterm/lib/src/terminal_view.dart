@@ -151,6 +151,8 @@ class TerminalView extends StatefulWidget {
   final FutureOr<void> Function(String text)? onPasteText;
 
   /// Optional callback for text input (e.g. from mobile virtual keyboard/IME).
+  /// Software-keyboard delete and done actions offer '\b' and '\r' respectively.
+  /// A single ASCII preedit is also offered so modified keys can act immediately.
   /// Return true if the input was handled, preventing default terminal insertion.
   final bool Function(String text)? onTextInput;
 
@@ -279,13 +281,22 @@ class TerminalViewState extends State<TerminalView> {
         onInsert: _onInsert,
         onDelete: () {
           _scrollToBottom();
-          widget.terminal.keyInput(TerminalKey.backspace);
+          if (widget.onTextInput?.call('\b') != true) {
+            widget.terminal.keyInput(TerminalKey.backspace);
+          }
         },
         onComposing: _onComposing,
+        onComposingInput: (text) {
+          final handled = widget.onTextInput?.call(text) == true;
+          if (handled) _scrollToBottom();
+          return handled;
+        },
         onAction: (action) {
           _scrollToBottom();
           if (action == TextInputAction.done) {
-            widget.terminal.keyInput(TerminalKey.enter);
+            if (widget.onTextInput?.call('\r') != true) {
+              widget.terminal.keyInput(TerminalKey.enter);
+            }
           }
         },
         onKeyEvent: _handleKeyEvent,
@@ -418,6 +429,9 @@ class TerminalViewState extends State<TerminalView> {
   KeyEventResult _handleKeyEvent(FocusNode focusNode, KeyEvent event) {
     final resultOverride = widget.onKeyEvent?.call(focusNode, event);
     if (resultOverride != null && resultOverride != KeyEventResult.ignored) {
+      if (resultOverride == KeyEventResult.handled && event is! KeyUpEvent) {
+        _scrollToBottom();
+      }
       return resultOverride;
     }
 

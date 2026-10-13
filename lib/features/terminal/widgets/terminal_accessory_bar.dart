@@ -67,17 +67,31 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey> {
 enum _ExpandedCategory { nav, edit, symbols, fn }
 
 class TerminalAccessoryBar extends ConsumerStatefulWidget {
-  final void Function(String key, {bool isCtrl, bool isAlt}) onKey;
+  final void Function(String key, {bool isCtrl, bool isAlt, bool isShift})
+  onKey;
   final VoidCallback onToggleCtrl;
   final VoidCallback? onLockCtrl;
   final VoidCallback onToggleAlt;
   final VoidCallback? onLockAlt;
+  final VoidCallback? onToggleShift;
+  final VoidCallback? onLockShift;
+  final VoidCallback? onToggleFn;
+  final VoidCallback? onLockFn;
+  final void Function(String modifier)? onModifierDown;
+  final void Function(String modifier)? onModifierUp;
+  final void Function(String modifier)? onModifierCancel;
   final VoidCallback onPaste;
   final VoidCallback? onToggleKeyboard;
   final ModifierLockState? ctrlState;
   final ModifierLockState? altState;
+  final ModifierLockState? shiftState;
+  final ModifierLockState? fnState;
   final bool isCtrlActive;
   final bool isAltActive;
+  final bool isCtrlHeld;
+  final bool isAltHeld;
+  final bool isShiftHeld;
+  final bool isFnHeld;
   final bool pinKeyboardButtonTrailing;
 
   const TerminalAccessoryBar({
@@ -87,12 +101,25 @@ class TerminalAccessoryBar extends ConsumerStatefulWidget {
     this.onLockCtrl,
     required this.onToggleAlt,
     this.onLockAlt,
+    this.onToggleShift,
+    this.onLockShift,
+    this.onToggleFn,
+    this.onLockFn,
+    this.onModifierDown,
+    this.onModifierUp,
+    this.onModifierCancel,
     required this.onPaste,
     this.onToggleKeyboard,
     this.ctrlState,
     this.altState,
+    this.shiftState,
+    this.fnState,
     this.isCtrlActive = false,
     this.isAltActive = false,
+    this.isCtrlHeld = false,
+    this.isAltHeld = false,
+    this.isShiftHeld = false,
+    this.isFnHeld = false,
     this.pinKeyboardButtonTrailing = false,
   });
 
@@ -117,6 +144,12 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
           ? ModifierLockState.oneShot
           : ModifierLockState.inactive);
 
+  ModifierLockState get _effectiveShiftState =>
+      widget.shiftState ?? ModifierLockState.inactive;
+
+  ModifierLockState get _effectiveFnState =>
+      widget.fnState ?? ModifierLockState.inactive;
+
   void _handleKey(String key) {
     if (key.startsWith('Ctrl+')) {
       final chord = key.substring(5);
@@ -129,6 +162,8 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
   @override
   Widget build(BuildContext context) {
     final pinnedKeys = ref.watch(terminalSettingsProvider).pinnedKeys;
+    final showFnHint =
+        _effectiveFnState != ModifierLockState.inactive || widget.isFnHeld;
 
     return Container(
       color: context.colorScheme.surfaceContainerHighest,
@@ -138,6 +173,26 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (showFnHint)
+              Container(
+                key: const Key('terminal_fn_hint_row'),
+                color: context.colorScheme.surfaceContainer,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
+                ),
+                child: Text(
+                  '1..0,-,= → F1..F12  •  ←↑↓→ → Home/PgUp/PgDn/End  •  ⌫ → Del',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontFamily: 'JetBrains Mono',
+                    color: context.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             if (_isExpanded) _buildExpandedPanel(context),
             // Pinned accessory keys row
             Padding(
@@ -234,19 +289,27 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
     );
   }
 
-  Widget _buildPinnedKey(BuildContext context, String key) {
+  Widget _buildPinnedKey(
+    BuildContext context,
+    String key, {
+    bool isExpanded = false,
+  }) {
     if (key == 'CTRL') {
       return _buildModifierKey(
         context,
         label: 'CTRL',
         state: _effectiveCtrlState,
+        isHeld: widget.isCtrlHeld,
         onTap: widget.onToggleCtrl,
         onLongPress: widget.onLockCtrl ?? widget.onToggleCtrl,
+        isExpanded: isExpanded,
         tooltip: _effectiveCtrlState == ModifierLockState.locked
             ? 'Ctrl (Locked)'
-            : (_effectiveCtrlState == ModifierLockState.oneShot
-                  ? 'Ctrl (One-shot active)'
-                  : 'Ctrl (Tap once, Long press to lock)'),
+            : (widget.isCtrlHeld
+                  ? 'Ctrl (Held)'
+                  : (_effectiveCtrlState == ModifierLockState.oneShot
+                        ? 'Ctrl (One-shot active)'
+                        : 'Ctrl (Tap once, Long press to lock)')),
       );
     }
     if (key == 'ALT') {
@@ -254,13 +317,55 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
         context,
         label: 'ALT',
         state: _effectiveAltState,
+        isHeld: widget.isAltHeld,
         onTap: widget.onToggleAlt,
         onLongPress: widget.onLockAlt ?? widget.onToggleAlt,
+        isExpanded: isExpanded,
         tooltip: _effectiveAltState == ModifierLockState.locked
             ? 'Alt (Locked)'
-            : (_effectiveAltState == ModifierLockState.oneShot
-                  ? 'Alt (One-shot active)'
-                  : 'Alt (Tap once, Long press to lock)'),
+            : (widget.isAltHeld
+                  ? 'Alt (Held)'
+                  : (_effectiveAltState == ModifierLockState.oneShot
+                        ? 'Alt (One-shot active)'
+                        : 'Alt (Tap once, Long press to lock)')),
+      );
+    }
+    if (key == 'SHIFT') {
+      return _buildModifierKey(
+        context,
+        label: 'SHIFT',
+        state: _effectiveShiftState,
+        isHeld: widget.isShiftHeld,
+        onTap: widget.onToggleShift ?? () {},
+        onLongPress: widget.onLockShift ?? widget.onToggleShift ?? () {},
+        isExpanded: isExpanded,
+        tooltip: _effectiveShiftState == ModifierLockState.locked
+            ? 'Shift (Locked)'
+            : (widget.isShiftHeld
+                  ? 'Shift (Held)'
+                  : (_effectiveShiftState == ModifierLockState.oneShot
+                        ? 'Shift (One-shot active)'
+                        : 'Shift (Tap once, Long press to lock)')),
+      );
+    }
+    if (key == 'FN') {
+      const fnMapHint =
+          '1..0,-,= → F1..F12 • ←↑↓→ → Home/PgUp/PgDn/End • ⌫ → Del';
+      return _buildModifierKey(
+        context,
+        label: 'FN',
+        state: _effectiveFnState,
+        isHeld: widget.isFnHeld,
+        onTap: widget.onToggleFn ?? () {},
+        onLongPress: widget.onLockFn ?? widget.onToggleFn ?? () {},
+        isExpanded: isExpanded,
+        tooltip: _effectiveFnState == ModifierLockState.locked
+            ? 'Fn (Locked)\n$fnMapHint'
+            : (widget.isFnHeld
+                  ? 'Fn (Held)\n$fnMapHint'
+                  : (_effectiveFnState == ModifierLockState.oneShot
+                        ? 'Fn (One-shot active)\n$fnMapHint'
+                        : 'Fn (Tap once, Long press to lock)\n$fnMapHint')),
       );
     }
     if (key == 'PASTE') {
@@ -278,59 +383,28 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
     BuildContext context, {
     required String label,
     required ModifierLockState state,
+    required bool isHeld,
     required VoidCallback onTap,
     required VoidCallback onLongPress,
     required String tooltip,
+    bool isExpanded = false,
   }) {
-    final isLocked = state == ModifierLockState.locked;
-    final isOneShot = state == ModifierLockState.oneShot;
+    final pinnedKeys = ref.watch(terminalSettingsProvider).pinnedKeys;
+    final keyFinderKey = isExpanded && pinnedKeys.contains(label)
+        ? Key('terminal_accessory_expanded_key_$label')
+        : Key('terminal_accessory_key_$label');
 
-    final Color? bgColor = isLocked
-        ? context.colorScheme.primary
-        : (isOneShot ? context.colorScheme.primaryContainer : null);
-    final Color? fgColor = isLocked
-        ? context.colorScheme.onPrimary
-        : (isOneShot ? context.colorScheme.onPrimaryContainer : null);
-
-    return Tooltip(
-      message: tooltip,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: SizedBox(
-          height: 44,
-          child: FilledButton.tonal(
-            key: Key('terminal_accessory_key_$label'),
-            style: FilledButton.styleFrom(
-              backgroundColor: bgColor,
-              foregroundColor: fgColor,
-              minimumSize: const Size(44, 44),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-            onPressed: onTap,
-            onLongPress: onLongPress,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'JetBrains Mono',
-                  ),
-                ),
-                if (isLocked) ...[
-                  const SizedBox(width: 3),
-                  const Icon(Icons.lock, size: 12),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
+    return _ModifierKeyButton(
+      label: label,
+      state: state,
+      isHeld: isHeld,
+      onTap: onTap,
+      onLongPress: onLongPress,
+      onModifierDown: widget.onModifierDown,
+      onModifierUp: widget.onModifierUp,
+      onModifierCancel: widget.onModifierCancel,
+      tooltip: tooltip,
+      buttonKey: keyFinderKey,
     );
   }
 
@@ -383,6 +457,14 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
   }
 
   Widget _buildExpandedPanel(BuildContext context) {
+    final pinnedKeys = ref.watch(terminalSettingsProvider).pinnedKeys;
+    final missingModifiers = const [
+      'CTRL',
+      'SHIFT',
+      'ALT',
+      'FN',
+    ].where((mod) => !pinnedKeys.contains(mod)).toList();
+
     return Container(
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainer,
@@ -432,6 +514,23 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
               ),
             ],
           ),
+          if (missingModifiers.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            // Expanded panel modifier row: shows ONLY modifiers absent from pinnedKeys.
+            // Pinned and expanded duplicate controls share one held boolean which could cause
+            // premature release/rearm under multi-touch; showing only missing modifiers avoids
+            // duplicates while keeping all four modifiers accessible without an extra pointer counter.
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: missingModifiers
+                    .map(
+                      (mod) => _buildPinnedKey(context, mod, isExpanded: true),
+                    )
+                    .toList(),
+              ),
+            ),
+          ],
           const SizedBox(height: 6),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -522,5 +621,154 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
     return keys.map((key) {
       return _buildKey(context, key, onPressed: () => _handleKey(key));
     }).toList();
+  }
+}
+
+class _ModifierKeyButton extends StatefulWidget {
+  final String label;
+  final ModifierLockState state;
+  final bool isHeld;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+  final void Function(String modifier)? onModifierDown;
+  final void Function(String modifier)? onModifierUp;
+  final void Function(String modifier)? onModifierCancel;
+  final String tooltip;
+  final Key? buttonKey;
+
+  const _ModifierKeyButton({
+    required this.label,
+    required this.state,
+    required this.isHeld,
+    required this.onTap,
+    required this.onLongPress,
+    this.onModifierDown,
+    this.onModifierUp,
+    this.onModifierCancel,
+    required this.tooltip,
+    this.buttonKey,
+  });
+
+  @override
+  State<_ModifierKeyButton> createState() => _ModifierKeyButtonState();
+}
+
+class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
+  int? _activePointerId;
+  Offset? _downPosition;
+  bool _pointerAborted = false;
+  bool _pointerSequenceHandled = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLocked = widget.state == ModifierLockState.locked;
+    final isOneShot = widget.state == ModifierLockState.oneShot;
+    final isActive = isLocked || isOneShot || widget.isHeld;
+
+    final Color? bgColor = isLocked
+        ? context.colorScheme.primary
+        : (isActive ? context.colorScheme.primaryContainer : null);
+    final Color? fgColor = isLocked
+        ? context.colorScheme.onPrimary
+        : (isActive ? context.colorScheme.onPrimaryContainer : null);
+
+    final btn = FilledButton.tonal(
+      key: widget.buttonKey,
+      style: FilledButton.styleFrom(
+        backgroundColor: bgColor,
+        foregroundColor: fgColor,
+        minimumSize: const Size(44, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      ),
+      onPressed: () {
+        if (_pointerSequenceHandled) {
+          // Handled deterministically by pointer sequence; ignore duplicate gesture tap.
+          return;
+        }
+        // Allows accessibility and keyboard/programmatic taps to trigger normally.
+        widget.onTap();
+      },
+      onLongPress: widget.onModifierDown != null ? null : widget.onLongPress,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            widget.label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'JetBrains Mono',
+            ),
+          ),
+          if (isLocked) ...[
+            const SizedBox(width: 3),
+            const Icon(Icons.lock, size: 12),
+          ],
+        ],
+      ),
+    );
+
+    final interactive = widget.onModifierDown != null
+        ? Listener(
+            behavior: HitTestBehavior.opaque,
+            onPointerDown: (e) {
+              if (_activePointerId == null) {
+                _activePointerId = e.pointer;
+                _downPosition = e.position;
+                _pointerAborted = false;
+                _pointerSequenceHandled = true;
+                widget.onModifierDown!(widget.label);
+              }
+            },
+            onPointerMove: (e) {
+              if (e.pointer == _activePointerId &&
+                  !_pointerAborted &&
+                  _downPosition != null) {
+                final distance = (e.position - _downPosition!).distance;
+                if (distance > 18.0) {
+                  _pointerAborted = true;
+                  widget.onModifierCancel?.call(widget.label);
+                }
+              }
+            },
+            onPointerUp: (e) {
+              if (e.pointer == _activePointerId) {
+                _activePointerId = null;
+                _pointerSequenceHandled = true;
+                if (!_pointerAborted) {
+                  widget.onModifierUp?.call(widget.label);
+                }
+                _pointerAborted = false;
+                scheduleMicrotask(() {
+                  if (mounted) {
+                    _pointerSequenceHandled = false;
+                  }
+                });
+              }
+            },
+            onPointerCancel: (e) {
+              if (e.pointer == _activePointerId) {
+                _activePointerId = null;
+                _pointerAborted = false;
+                widget.onModifierCancel?.call(widget.label);
+                scheduleMicrotask(() {
+                  if (mounted) {
+                    _pointerSequenceHandled = false;
+                  }
+                });
+              }
+            },
+            child: btn,
+          )
+        : btn;
+
+    return Tooltip(
+      message: widget.tooltip,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: SizedBox(height: 44, child: interactive),
+      ),
+    );
   }
 }

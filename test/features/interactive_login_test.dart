@@ -109,9 +109,15 @@ void main() {
         createTestApp(
           child: Scaffold(
             body: TerminalAccessoryBar(
-              onKey: (key, {bool isCtrl = false, bool isAlt = false}) {
-                pressedKeys.add('${isCtrl ? 'Ctrl+' : ''}$key');
-              },
+              onKey:
+                  (
+                    key, {
+                    bool isCtrl = false,
+                    bool isAlt = false,
+                    bool isShift = false,
+                  }) {
+                    pressedKeys.add('${isCtrl ? 'Ctrl+' : ''}$key');
+                  },
               onToggleCtrl: () => ctrlToggled = true,
               onToggleAlt: () => altToggled = true,
               onPaste: () {

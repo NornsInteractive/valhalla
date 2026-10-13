@@ -55,9 +55,20 @@ class MoshBridgeAdapter extends TerminalSessionBridge {
   }
 
   @override
-  void sendKey(String key, {bool isCtrl = false, bool isAlt = false}) {
+  void sendKey(
+    String key, {
+    bool isCtrl = false,
+    bool isAlt = false,
+    bool isShift = false,
+  }) {
     HapticFeedback.lightImpact();
-    sendTerminalAccessoryKey(terminal, key, isCtrl: isCtrl, isAlt: isAlt);
+    sendTerminalAccessoryKey(
+      terminal,
+      key,
+      isCtrl: isCtrl,
+      isAlt: isAlt,
+      isShift: isShift,
+    );
   }
 
   @override

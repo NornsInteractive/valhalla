@@ -1422,9 +1422,14 @@ class CliChatNotifier extends Notifier<CliChatState> {
     state = state.copyWith(clearTerminal: true);
   }
 
-  void sendTerminalKey(String key, {bool isCtrl = false, bool isAlt = false}) {
+  void sendTerminalKey(
+    String key, {
+    bool isCtrl = false,
+    bool isAlt = false,
+    bool isShift = false,
+  }) {
     if (state.terminal == null) return;
-    _bridge?.sendKey(key, isCtrl: isCtrl, isAlt: isAlt);
+    _bridge?.sendKey(key, isCtrl: isCtrl, isAlt: isAlt, isShift: isShift);
   }
 
   Future<void> pasteTerminalClipboard() async {

@@ -102,7 +102,12 @@ class _FakeBridge extends TerminalSessionBridge {
   }
 
   @override
-  void sendKey(String key, {bool isCtrl = false, bool isAlt = false}) {
+  void sendKey(
+    String key, {
+    bool isCtrl = false,
+    bool isAlt = false,
+    bool isShift = false,
+  }) {
     sentKeys.add(key);
   }
 

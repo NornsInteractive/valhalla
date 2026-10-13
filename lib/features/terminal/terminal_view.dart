@@ -395,11 +395,22 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
                   terminal: originatingTab.terminal,
                   requestKeyboardOnTap: false,
                   pinKeyboardButtonTrailing: true,
-                  onKey: (key, {bool isCtrl = false, bool isAlt = false}) {
-                    ref
-                        .read(terminalProvider.notifier)
-                        .sendKey(key, isCtrl: isCtrl, isAlt: isAlt);
-                  },
+                  onKey:
+                      (
+                        key, {
+                        bool isCtrl = false,
+                        bool isAlt = false,
+                        bool isShift = false,
+                      }) {
+                        ref
+                            .read(terminalProvider.notifier)
+                            .sendKey(
+                              key,
+                              isCtrl: isCtrl,
+                              isAlt: isAlt,
+                              isShift: isShift,
+                            );
+                      },
                   onPaste: () =>
                       ref.read(terminalProvider.notifier).pasteClipboard(),
                   onPasteText: (text) {

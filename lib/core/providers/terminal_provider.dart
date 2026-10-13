@@ -379,13 +379,19 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     state = state.copyWith(isAltActive: !state.isAltActive);
   }
 
-  void sendKey(String key, {bool isCtrl = false, bool isAlt = false}) {
+  void sendKey(
+    String key, {
+    bool isCtrl = false,
+    bool isAlt = false,
+    bool isShift = false,
+  }) {
     final activeTab = state.activeTab;
     if (activeTab != null) {
       activeTab.bridge.sendKey(
         key,
         isCtrl: isCtrl || state.isCtrlActive,
         isAlt: isAlt || state.isAltActive,
+        isShift: isShift,
       );
       if (state.isCtrlActive || state.isAltActive) {
         state = state.copyWith(isCtrlActive: false, isAltActive: false);

@@ -440,13 +440,20 @@ class _DockerViewState extends ConsumerState<DockerView> {
                 body: SafeArea(
                   child: SharedTerminalCanvas(
                     terminal: originatingBridge.terminal,
-                    onKey: (key, {bool isCtrl = false, bool isAlt = false}) {
-                      originatingBridge.sendKey(
-                        key,
-                        isCtrl: isCtrl,
-                        isAlt: isAlt,
-                      );
-                    },
+                    onKey:
+                        (
+                          key, {
+                          bool isCtrl = false,
+                          bool isAlt = false,
+                          bool isShift = false,
+                        }) {
+                          originatingBridge.sendKey(
+                            key,
+                            isCtrl: isCtrl,
+                            isAlt: isAlt,
+                            isShift: isShift,
+                          );
+                        },
                     onPaste: () => originatingBridge.pasteClipboard(),
                     onPasteText: (text) => originatingBridge.pasteText(text),
                   ),
@@ -477,11 +484,17 @@ class _DockerViewState extends ConsumerState<DockerView> {
                       child: SharedTerminalCanvas(
                         terminal: originatingBridge.terminal,
                         onKey:
-                            (key, {bool isCtrl = false, bool isAlt = false}) {
+                            (
+                              key, {
+                              bool isCtrl = false,
+                              bool isAlt = false,
+                              bool isShift = false,
+                            }) {
                               originatingBridge.sendKey(
                                 key,
                                 isCtrl: isCtrl,
                                 isAlt: isAlt,
+                                isShift: isShift,
                               );
                             },
                         onPaste: () => originatingBridge.pasteClipboard(),

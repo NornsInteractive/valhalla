@@ -278,9 +278,20 @@ class _InteractiveLoginDialogState
           Expanded(
             child: SharedTerminalCanvas(
               terminal: originatingTerminal,
-              onKey: (key, {bool isCtrl = false, bool isAlt = false}) {
-                originatingBridge.sendKey(key, isCtrl: isCtrl, isAlt: isAlt);
-              },
+              onKey:
+                  (
+                    key, {
+                    bool isCtrl = false,
+                    bool isAlt = false,
+                    bool isShift = false,
+                  }) {
+                    originatingBridge.sendKey(
+                      key,
+                      isCtrl: isCtrl,
+                      isAlt: isAlt,
+                      isShift: isShift,
+                    );
+                  },
               onPaste: () => originatingBridge.pasteClipboard(),
               onPasteText: (text) {
                 if (mounted && _terminal == originatingTerminal) {
