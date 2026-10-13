@@ -270,6 +270,10 @@ class NasMetadataService {
             'ALBUM',
             'TRACK',
             'TRACKNUMBER',
+            'ALBUMARTIST',
+            'ALBUM_ARTIST',
+            'DISC',
+            'DISCNUMBER',
           }.contains(key)) {
             continue;
           }
@@ -285,6 +289,7 @@ class NasMetadataService {
           (tags['TRACK'] ?? tags['TRACKNUMBER'] ?? '').split('/').first,
         );
         final duration = player.state.duration;
+        final disc = int.tryParse((tags['DISC'] ?? tags['DISCNUMBER'] ?? '').split('/').first);
         return NasMediaItem(
           serverId: item.serverId,
           path: item.path,
@@ -294,6 +299,8 @@ class NasMetadataService {
           title: tags['TITLE'],
           artist: tags['ARTIST'],
           album: tags['ALBUM'],
+          albumArtist: tags['ALBUMARTIST'] ?? tags['ALBUM_ARTIST'],
+          discNumber: disc != null && disc > 0 ? disc : null,
           trackNumber: track != null && track > 0 ? track : null,
           durationMillis: duration > Duration.zero
               ? duration.inMilliseconds

@@ -33,7 +33,7 @@ void main() {
 
   group('SettingsView Navigation Settings', () {
     testWidgets(
-      'renders all 10 sections in bottom navigation checkboxes and startup dropdown',
+      'renders all enabled sections in bottom navigation checkboxes and startup dropdown',
       (tester) async {
         tester.view.physicalSize = const Size(1024, 3200);
         tester.view.devicePixelRatio = 1.0;
@@ -60,7 +60,7 @@ void main() {
         await tester.tap(tileFinder);
         await tester.pumpAndSettle();
 
-        // Verify all 10 sections exist in dialog radio list
+        // All experiments are enabled, so every stable section is available.
         for (final section in AppSection.values) {
           expect(
             find.byKey(Key('settings_startup_page_radio_${section.name}')),
@@ -70,7 +70,7 @@ void main() {
         await tester.tap(find.text('Cancel'));
         await tester.pumpAndSettle();
 
-        // Verify all 10 sections exist as bottom nav checkboxes
+        // Every section also has a bottom-navigation checkbox.
         for (final section in AppSection.values) {
           expect(
             find.byKey(Key('settings_bottom_nav_checkbox_${section.name}')),
@@ -232,6 +232,10 @@ void main() {
       );
       expect(
         find.byKey(ValueKey('settings_reorder_${AppSection.files.name}')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(ValueKey('settings_reorder_${AppSection.appCenter.name}')),
         findsOneWidget,
       );
     });
@@ -396,6 +400,10 @@ void main() {
       expect(
         find.byKey(const Key('settings_experimental_features_dialog')),
         findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('settings_experimental_app_center_tile')),
+        findsNothing,
       );
 
       final cliTile = find.byKey(

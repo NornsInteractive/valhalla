@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import '../../data/models/agent_profile.dart';
 import '../../core/utils/shell_quote.dart';
 import '../../core/utils/file_preview.dart';
+import '../../core/services/app_diagnostics.dart';
 import '../cli/agent_execution_target.dart';
 import '../sftp/sftp_client_service.dart';
 
@@ -40,7 +41,11 @@ class AcpWorkspaceFiles {
         (FilePreview.isTextPreviewable(name) ? 'text/plain' : null);
   }
 
-  Future<Uint8List> _run(String command, int limit) async {
+  Future<Uint8List> _run(
+    String command,
+    int limit, {
+    bool directoryListing = false,
+  }) async {
     if (_closed) throw StateError('ACP_FILE_READ_CANCELLED');
     final session = await client.execute(agentTargetCommand(profile, command));
     if (_closed) {
@@ -48,7 +53,11 @@ class AcpWorkspaceFiles {
       throw StateError('ACP_FILE_READ_CANCELLED');
     }
     _commands.add(session);
-    final stderr = session.stderr.listen((_) {});
+    final errors = BytesBuilder(copy: false);
+    final stderr = session.stderr.listen((chunk) {
+      final remaining = 8192 - errors.length;
+      if (remaining > 0) errors.add(chunk.take(remaining).toList());
+    });
     try {
       final builder = BytesBuilder(copy: false);
       await (() async {
@@ -61,7 +70,18 @@ class AcpWorkspaceFiles {
         await session.done;
       })().timeout(const Duration(seconds: 20));
       if (_closed) throw StateError('ACP_FILE_READ_CANCELLED');
-      if (session.exitCode != 0) throw StateError('ACP_FILE_READ_FAILED');
+      if (session.exitCode != 0) {
+        if (directoryListing) {
+          final message = utf8.decode(errors.toBytes(), allowMalformed: true);
+          if (message.contains('Permission denied')) {
+            throw StateError('ACP_DIRECTORY_PERMISSION_DENIED');
+          }
+          if (message.contains('No such file or directory')) {
+            throw StateError('ACP_DIRECTORY_NOT_FOUND');
+          }
+        }
+        throw StateError('ACP_FILE_READ_FAILED');
+      }
       return builder.takeBytes();
     } finally {
       session.close();
@@ -74,7 +94,16 @@ class AcpWorkspaceFiles {
     if (_closed) throw StateError('ACP_FILE_READ_CANCELLED');
     final existing = _sftp;
     if (existing != null) return existing;
-    final opened = await client.sftp().timeout(const Duration(seconds: 20));
+    final opened = await client
+        .sftp()
+        .then((value) async {
+          if (_closed) {
+            await value.close();
+            throw StateError('ACP_FILE_READ_CANCELLED');
+          }
+          return value;
+        })
+        .timeout(const Duration(seconds: 20));
     if (_closed) {
       opened.close();
       throw StateError('ACP_FILE_READ_CANCELLED');
@@ -94,13 +123,24 @@ class AcpWorkspaceFiles {
   Future<List<SftpFileItem>> list(String path) async {
     path = normalize(path);
     final result = <SftpFileItem>[];
-    void add(String name, bool directory, int size, int modified) {
-      if (name == '.' || name == '..' || name.contains('/')) return;
+    void add(
+      String name,
+      bool directory,
+      int size,
+      int modified, {
+      bool symbolicLink = false,
+      String? linkError,
+    }) {
+      if (name.isEmpty || name == '.' || name == '..' || name.contains('/')) {
+        return;
+      }
       result.add(
         SftpFileItem(
           name: name,
           path: p.posix.join(path, name),
           isDirectory: directory,
+          isSymbolicLink: symbolicLink,
+          linkTargetErrorCode: linkError,
           sizeBytes: size,
           formattedSize: SftpFileItem.formatBytes(size),
           permissions: '',
@@ -108,7 +148,7 @@ class AcpWorkspaceFiles {
           modifiedEpoch: modified,
         ),
       );
-      // ponytail: bound directory metadata at 10k; add remote paging if exceeded.
+      // shortcut: bound directory metadata at 10k; add remote paging if exceeded.
       if (result.length > 10000) throw StateError('ACP_DIRECTORY_TOO_LARGE');
     }
 
@@ -117,29 +157,76 @@ class AcpWorkspaceFiles {
       await for (final batch
           in sftp.readdir(path).timeout(const Duration(seconds: 20))) {
         if (_closed) throw StateError('ACP_FILE_READ_CANCELLED');
-        for (final entry in batch) {
-          add(
-            entry.filename,
-            entry.attr.isDirectory,
-            entry.attr.size ?? 0,
-            entry.attr.modifyTime ?? 0,
-          );
+        var index = 0;
+        Future<void> resolveEntries() async {
+          while (index < batch.length) {
+            final entry = batch[index++];
+            if (entry.filename == '.' || entry.filename == '..') continue;
+            var attrs = entry.attr;
+            String? linkError;
+            if (attrs.isSymbolicLink) {
+              try {
+                attrs = await sftp
+                    .stat(p.posix.join(path, entry.filename))
+                    .timeout(const Duration(seconds: 20));
+                if (attrs.isSymbolicLink ||
+                    attrs.type == SftpFileType.unknown) {
+                  linkError = SftpFileItem.linkTargetUnavailableCode;
+                }
+              } on SftpStatusError catch (error) {
+                if (error.code == SftpStatusCode.noConnection ||
+                    error.code == SftpStatusCode.connectionLost ||
+                    error.code == SftpStatusCode.badMessage) {
+                  rethrow;
+                }
+                linkError = error.code == SftpStatusCode.permissionDenied
+                    ? SftpFileItem.linkTargetPermissionDeniedCode
+                    : SftpFileItem.linkTargetUnavailableCode;
+              }
+            }
+            if (_closed) throw StateError('ACP_FILE_READ_CANCELLED');
+            add(
+              entry.filename,
+              linkError == null && attrs.isDirectory,
+              attrs.size ?? 0,
+              attrs.modifyTime ?? 0,
+              symbolicLink: entry.attr.isSymbolicLink,
+              linkError: linkError,
+            );
+          }
         }
+
+        await Future.wait(
+          List.generate(
+            batch.length < 4 ? batch.length : 4,
+            (_) => resolveEntries(),
+          ),
+        );
       }
     } else {
       // NUL fields preserve spaces/quotes/newlines. No shell name interpolation.
       final bytes = await _run(
-        'test -d ${cliShellQuote(path)} && test -r ${cliShellQuote(path)} && '
-        'find ${cliShellQuote(path)} -mindepth 1 -maxdepth 1 -printf \'%f\\0%y\\0%s\\0%T@\\0\'',
+        'test -d ${cliShellQuote(path)} || { LC_ALL=C ls -d -- ${cliShellQuote(path)} >&2; exit 1; }; '
+        'test -r ${cliShellQuote(path)} || { printf \'Permission denied\\n\' >&2; exit 1; }; '
+        'LC_ALL=C find -H ${cliShellQuote(path)} -mindepth 1 -maxdepth 1 -printf \'%f\\0%y%Y\\0%s\\0%T@\\0\'',
         4 * 1024 * 1024,
+        directoryListing: true,
       );
       final fields = utf8.decode(bytes).split('\u0000');
       for (var i = 0; i + 3 < fields.length; i += 4) {
+        final type = fields[i + 1];
+        final symbolicLink = type.startsWith('l');
+        final targetType = type.isEmpty ? '' : type.substring(type.length - 1);
+        final linkError = symbolicLink && targetType != 'd' && targetType != 'f'
+            ? SftpFileItem.linkTargetUnavailableCode
+            : null;
         add(
           fields[i],
-          fields[i + 1] == 'd',
+          targetType == 'd',
           int.tryParse(fields[i + 2]) ?? 0,
           double.tryParse(fields[i + 3])?.floor() ?? 0,
+          symbolicLink: symbolicLink,
+          linkError: linkError,
         );
       }
     }
@@ -183,6 +270,16 @@ class AcpWorkspaceFiles {
       session.close();
     }
     _commands.clear();
-    _sftp?.close();
+    final sftp = _sftp;
+    _sftp = null;
+    if (sftp != null) {
+      unawaited(
+        sftp.close().catchError((Object error, StackTrace stack) {
+          unawaited(
+            AppDiagnostics.instance.record('acp.files.close', error, stack),
+          );
+        }),
+      );
+    }
   }
 }

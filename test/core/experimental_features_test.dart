@@ -427,9 +427,11 @@ void main() {
       expect(AppSection.values[AppSection.cliChat.index], AppSection.cliChat);
       expect(AppSection.values[8], AppSection.cliChat);
       expect(AppSection.values[9], AppSection.nas);
+      expect(AppSection.values[10], AppSection.appCenter);
       final hidden = container.read(settingsProvider).availableSections;
       expect(hidden, isNot(contains(AppSection.cliChat)));
       expect(hidden, contains(AppSection.nas));
+      expect(hidden, contains(AppSection.appCenter));
 
       await container
           .read(settingsProvider.notifier)
@@ -437,7 +439,6 @@ void main() {
       expect(
         container.read(settingsProvider).availableSections,
         AppSection.values,
-        reason: '开启后候选列表应等于全部枚举，顺序稳定',
       );
     });
 

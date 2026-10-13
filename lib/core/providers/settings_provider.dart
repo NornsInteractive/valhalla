@@ -18,6 +18,7 @@ enum AppSection {
   settings,
   cliChat,
   nas,
+  appCenter,
 }
 
 /// Experimental features are opt-in; names remain stable across upgrades.
@@ -35,6 +36,7 @@ const defaultBottomNavigationSections = <AppSection>[
   AppSection.aiChat,
   AppSection.docker,
   AppSection.files,
+  AppSection.appCenter,
 ];
 
 const defaultDashboardQuickSections = <AppSection>[

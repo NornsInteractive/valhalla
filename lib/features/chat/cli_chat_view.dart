@@ -10,12 +10,13 @@ import '../../core/logging/sanitizer.dart';
 import '../../core/providers/agent_registry_provider.dart';
 import '../../core/providers/cli_chat_provider.dart';
 import '../../core/providers/server_provider.dart';
-import '../../core/providers/sftp_provider.dart';
 import '../../core/providers/storage_providers.dart';
 import '../../data/models/agent_profile.dart';
+import '../../data/models/remote_browser.dart' show RemoteBrowserSource;
 import '../../infrastructure/acp/agent_environment_service.dart';
 import '../agents/agent_management_view.dart';
-import '../../widgets/remote_directory_picker_dialog.dart';
+import '../../core/services/remote_browser_service.dart';
+import '../../widgets/remote_browser_dialog.dart';
 import '../../widgets/valhalla_card.dart';
 import '../../core/providers/commands_provider.dart';
 import '../../data/models/chat_launch_preference.dart';
@@ -1967,28 +1968,48 @@ class _CliChatViewState extends ConsumerState<CliChatView> {
       ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
       return;
     }
-    final initialServerId = ref.read(activeServerProvider)?.id;
-    final sftpOps = ref.read(sftpOperationsProvider);
-    final notifier = ref.read(cliChatProvider.notifier);
+    final snapshot = ref.read(cliChatProvider);
+    final profile = snapshot.activeAgent;
+    if (profile == null) return;
+    final serverKey = ref.read(activeServerProvider)?.connectionKey;
+    bool current() {
+      if (!mounted || !context.mounted) return false;
+      final state = ref.read(cliChatProvider);
+      return ref.read(activeServerProvider)?.connectionKey == serverKey &&
+          ref.read(serverConnectionProvider).isConnected &&
+          state.activeAgent == profile &&
+          state.activeSession?.id == snapshot.activeSession?.id &&
+          state.draftCwd == snapshot.draftCwd &&
+          !state.isSending &&
+          state.recoveryStatus != SessionRecoveryStatus.reconnecting &&
+          state.recoveryStatus != SessionRecoveryStatus.syncing;
+    }
 
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        return RemoteDirectoryPickerDialog(
-          initialPath: initialPath,
-          sftpOperations: sftpOps,
-          onSelect: (selectedPath) {
-            final currentServerId = ref.read(activeServerProvider)?.id;
-            final isConnected = ref.read(serverConnectionProvider).isConnected;
-            if (initialServerId == null ||
-                currentServerId != initialServerId ||
-                !isConnected) {
-              return;
-            }
-            notifier.setDraftWorkingDirectory(selectedPath);
-          },
-        );
-      },
-    );
+    final notifier = ref.read(cliChatProvider.notifier);
+    final factory = ref.read(remoteBrowserFactoryProvider);
+    RemoteBrowserSource? source;
+    try {
+      source = await factory.agent(
+        profile: profile,
+        initialPath: initialPath.isEmpty ? null : initialPath,
+        isCurrent: current,
+      );
+      if (!context.mounted || !source.isCurrent) return;
+      final picked = await RemoteBrowserDialog.pickDirectory(
+        context,
+        source,
+        initialPath: initialPath.isEmpty ? null : initialPath,
+      );
+      if (picked != null && source.isCurrent && current()) {
+        notifier.setDraftWorkingDirectory(picked);
+      }
+    } catch (error) {
+      if (!current() || !context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${context.l10n.chatRemoteReadFailed}: $error')),
+      );
+    } finally {
+      await source?.dispose();
+    }
   }
 }

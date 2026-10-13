@@ -1289,6 +1289,7 @@ class SettingsView extends ConsumerWidget {
       AppSection.settings => Icons.settings_outlined,
       AppSection.cliChat => Icons.forum_outlined,
       AppSection.nas => Icons.perm_media_outlined,
+      AppSection.appCenter => Icons.apps_outlined,
     };
   }
 
@@ -1304,6 +1305,7 @@ class SettingsView extends ConsumerWidget {
       AppSection.settings => context.l10n.navSettings,
       AppSection.cliChat => context.l10n.navCliChat,
       AppSection.nas => context.l10n.navNas,
+      AppSection.appCenter => context.l10n.navAppCenter,
     };
   }
 }

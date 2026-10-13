@@ -20,6 +20,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
+import java.lang.ref.WeakReference
 import java.util.Locale
 
 object DownloadChannel {
@@ -29,25 +30,87 @@ object DownloadChannel {
     private const val NOTIFICATION_PERMISSION_REQUEST = 4202
 
     private var hasRequestedNotificationPermission = false
+    private var methodChannel: MethodChannel? = null
+    private var activityRef: WeakReference<Activity>? = null
 
     fun register(activity: Activity, flutterEngine: FlutterEngine) {
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
-            .setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "reportProgress" -> handleReportProgress(activity, call, result)
-                    "openFile" -> handleOpenFile(activity, call, result)
-                    else -> result.notImplemented()
+        activityRef = WeakReference(activity)
+        val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+        methodChannel = channel
+        channel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "reportProgress" -> handleReportProgress(activity, call, result)
+                "openFile" -> handleOpenFile(activity, call, result)
+                "getNasLaunchAction" -> {
+                    val shouldOpen = (activityRef?.get() as? MainActivity)?.consumePendingOpenNasDownloads() ?: false
+                    result.success(shouldOpen)
                 }
+                else -> result.notImplemented()
             }
+        }
     }
 
-    private fun createOpenTransfersIntent(activity: Activity, requestCode: Int, update: Boolean): PendingIntent {
+    fun notifyOpenNasDownloads(onSuccess: (() -> Unit)? = null) {
+        val act = activityRef?.get()
+        val deliver = {
+            val channel = methodChannel
+            if (channel != null) {
+                channel.invokeMethod(
+                    "openNasDownloads",
+                    null,
+                    object : MethodChannel.Result {
+                        override fun success(result: Any?) {
+                            onSuccess?.invoke()
+                        }
+                        override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {}
+                        override fun notImplemented() {}
+                    },
+                )
+            }
+        }
+        if (act != null) {
+            act.runOnUiThread(deliver)
+        } else {
+            deliver()
+        }
+    }
+
+    fun notifyOpenTransfers(onSuccess: (() -> Unit)? = null) {
+        val act = activityRef?.get()
+        val deliver = {
+            val channel = methodChannel
+            if (channel != null) {
+                channel.invokeMethod(
+                    "openTransfers",
+                    null,
+                    object : MethodChannel.Result {
+                        override fun success(result: Any?) {
+                            onSuccess?.invoke()
+                        }
+                        override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {}
+                        override fun notImplemented() {}
+                    },
+                )
+            }
+        }
+        if (act != null) {
+            act.runOnUiThread(deliver)
+        } else {
+            deliver()
+        }
+    }
+
+    private fun createOpenTransfersIntent(activity: Activity, requestCode: Int, target: String?): PendingIntent {
         return PendingIntent.getActivity(
             activity,
             requestCode,
             Intent(activity, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                if (!update) putExtra(TransferNotifier.EXTRA_OPEN_TRANSFERS, true)
+                when (target) {
+                    "nas" -> putExtra(MainActivity.EXTRA_OPEN_NAS_DOWNLOADS, true)
+                    "update" -> { /* No launch action extra for update */ }
+                    else -> putExtra(TransferNotifier.EXTRA_OPEN_TRANSFERS, true)
+                }
             },
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
@@ -101,7 +164,7 @@ object DownloadChannel {
         }
 
         val openTransfersPendingIntent = createOpenTransfersIntent(
-            activity, notificationId, call.argument<String>("target") == "update",
+            activity, notificationId, call.argument<String>("target"),
         )
 
         val builder = NotificationCompat.Builder(activity, NOTIFICATION_CHANNEL_ID)

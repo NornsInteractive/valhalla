@@ -24,6 +24,7 @@ SftpFileItem _item(
   bool isDirectory = false,
   bool isSymbolicLink = false,
   int size = 12,
+  int modifiedEpoch = 0,
   String? path,
 }) => SftpFileItem(
   name: name,
@@ -31,6 +32,7 @@ SftpFileItem _item(
   isDirectory: isDirectory,
   isSymbolicLink: isSymbolicLink,
   sizeBytes: size,
+  modifiedEpoch: modifiedEpoch,
   formattedSize: '$size B',
   permissions: isDirectory ? 'drwxr-xr-x' : '-rw-r--r--',
   modified: '2026-10-09',
@@ -183,6 +185,10 @@ class _RecordingRemoteActions extends RemoteFileActions {
   String? error;
   Object? throwing;
 
+  /// 按源路径覆盖结果；未命中时回退到 [outcome]/[error]。
+  Map<String, RemoteFileOutcome> outcomes = {};
+  Map<String, String> failures = {};
+
   @override
   Future<RemoteFileResult> execute(
     String serverId,
@@ -198,6 +204,10 @@ class _RecordingRemoteActions extends RemoteFileActions {
     ));
     final failure = throwing;
     if (failure != null) throw failure;
+    final perPath = outcomes[source];
+    if (perPath != null) {
+      return RemoteFileResult(source, perPath, failures[source]);
+    }
     return RemoteFileResult(source, outcome, error);
   }
 }
@@ -696,6 +706,224 @@ void main() {
       ], expectedServer: snapshot);
       expect(results.single.outcome, RemoteFileOutcome.completed);
       expect(env.ops.deletedFiles, ['/var/www/my-project/a.log']);
+    });
+  });
+
+  group('retryFailedBatch', () {
+    test('只重试失败的条目，成功项不因重试而重放', () async {
+      final env = await _env();
+      final items = [
+        _item('first.log'),
+        _item('denied.log'),
+        _item('last.log'),
+      ];
+      env.ops.deleteFailingPaths.add('/var/www/my-project/denied.log');
+
+      final results = await env.notifier.runBatch(
+        RemoteFileAction.delete,
+        items,
+      );
+      expect(results.map((r) => r.outcome), [
+        RemoteFileOutcome.completed,
+        RemoteFileOutcome.failed,
+        RemoteFileOutcome.completed,
+      ]);
+      expect(env.ops.deletedFiles, [
+        '/var/www/my-project/first.log',
+        '/var/www/my-project/last.log',
+      ]);
+
+      env.ops.deleteFailingPaths.clear();
+      env.ops.files = [items[1]];
+      final retried = await env.notifier.retryFailedBatch(
+        RemoteFileAction.delete,
+        items,
+        results,
+        expectedServer: env.container.read(activeServerProvider)!,
+      );
+      expect(retried, hasLength(1));
+      expect(retried.single.path, '/var/www/my-project/denied.log');
+      expect(retried.single.outcome, RemoteFileOutcome.completed);
+      expect(env.ops.deletedFiles, [
+        '/var/www/my-project/first.log',
+        '/var/www/my-project/last.log',
+        '/var/www/my-project/denied.log',
+      ], reason: '每一条目最多执行一次，成功项不得重放');
+    });
+
+    test('成功的与跳过的条目都不重放', () async {
+      final env = await _env();
+      final items = [_item('a.log'), _item('b.log'), _item('c.log')];
+      env.actions.outcomes = {
+        '/var/www/my-project/a.log': RemoteFileOutcome.completed,
+        '/var/www/my-project/b.log': RemoteFileOutcome.skipped,
+        '/var/www/my-project/c.log': RemoteFileOutcome.failed,
+      };
+      env.actions.failures = {
+        '/var/www/my-project/b.log': 'FILE_TARGET_EXISTS',
+        '/var/www/my-project/c.log': 'FILE_TARGET_EXISTS',
+      };
+
+      final results = await env.notifier.runBatch(
+        RemoteFileAction.copy,
+        items,
+        targetDirectory: '/var/backups',
+      );
+      expect(results.map((r) => r.outcome), [
+        RemoteFileOutcome.completed,
+        RemoteFileOutcome.skipped,
+        RemoteFileOutcome.failed,
+      ]);
+
+      env.actions.outcomes = {};
+      env.actions.failures = {};
+      env.ops.files = [items[2]];
+      final retried = await env.notifier.retryFailedBatch(
+        RemoteFileAction.copy,
+        items,
+        results,
+        expectedServer: env.container.read(activeServerProvider)!,
+        targetDirectory: '/var/backups',
+      );
+      expect(retried.single.path, '/var/www/my-project/c.log');
+      expect(retried.single.outcome, RemoteFileOutcome.completed);
+      expect(env.actions.calls, hasLength(4), reason: '只应补发失败的 c.log');
+      expect(env.actions.calls.last.source, '/var/www/my-project/c.log');
+    });
+
+    test('重试前校验大小与 mtime，变化则该项失败且不碰远端', () async {
+      final env = await _env();
+      final items = [_item('a.log', size: 12, modifiedEpoch: 1700000000)];
+      env.ops.deleteFailingPaths.add('/var/www/my-project/a.log');
+      final results = await env.notifier.runBatch(
+        RemoteFileAction.delete,
+        items,
+      );
+      expect(results.single.outcome, RemoteFileOutcome.failed);
+
+      env.ops.deleteFailingPaths.clear();
+      env.ops.files = [_item('a.log', size: 99, modifiedEpoch: 1700009999)];
+      final retried = await env.notifier.retryFailedBatch(
+        RemoteFileAction.delete,
+        items,
+        results,
+        expectedServer: env.container.read(activeServerProvider)!,
+      );
+      expect(retried.single.outcome, RemoteFileOutcome.failed);
+      expect(retried.single.error, contains('FILE_SOURCE_CHANGED'));
+      expect(env.ops.deletedFiles, isEmpty, reason: '源变化时不得执行删除');
+    });
+
+    test('重试前校验类型，文件变目录则拒绝', () async {
+      final env = await _env();
+      final items = [_item('a.log')];
+      env.ops.deleteFailingPaths.add('/var/www/my-project/a.log');
+      final results = await env.notifier.runBatch(
+        RemoteFileAction.delete,
+        items,
+      );
+      env.ops.deleteFailingPaths.clear();
+      env.ops.files = [_item('a.log', isDirectory: true)];
+
+      final retried = await env.notifier.retryFailedBatch(
+        RemoteFileAction.delete,
+        items,
+        results,
+        expectedServer: env.container.read(activeServerProvider)!,
+      );
+      expect(retried.single.error, contains('FILE_SOURCE_CHANGED'));
+      expect(env.ops.deletedFiles, isEmpty);
+    });
+
+    test('重试前校验存在性，条目已消失则拒绝', () async {
+      final env = await _env();
+      final items = [_item('a.log')];
+      env.ops.deleteFailingPaths.add('/var/www/my-project/a.log');
+      final results = await env.notifier.runBatch(
+        RemoteFileAction.delete,
+        items,
+      );
+      env.ops.deleteFailingPaths.clear();
+      // 列表为空：fresh == null。
+      final retried = await env.notifier.retryFailedBatch(
+        RemoteFileAction.delete,
+        items,
+        results,
+        expectedServer: env.container.read(activeServerProvider)!,
+      );
+      expect(retried, hasLength(1));
+      expect(retried.single.error, contains('FILE_SOURCE_CHANGED'));
+      expect(env.ops.deletedFiles, isEmpty);
+    });
+
+    test('源未变化时重试成功', () async {
+      final env = await _env();
+      final items = [_item('a.log')];
+      env.ops.deleteFailingPaths.add('/var/www/my-project/a.log');
+      final results = await env.notifier.runBatch(
+        RemoteFileAction.delete,
+        items,
+      );
+      env.ops.deleteFailingPaths.clear();
+      env.ops.files = [_item('a.log')];
+
+      final retried = await env.notifier.retryFailedBatch(
+        RemoteFileAction.delete,
+        items,
+        results,
+        expectedServer: env.container.read(activeServerProvider)!,
+      );
+      expect(retried.single.outcome, RemoteFileOutcome.completed);
+      expect(env.ops.deletedFiles, ['/var/www/my-project/a.log']);
+    });
+
+    test('expectedServer 不一致时整批拒绝，不落到新服务器', () async {
+      final env = await _env();
+      final items = [_item('a.log'), _item('b.log')];
+      env.ops.deleteFailingPaths.add('/var/www/my-project/a.log');
+      final results = await env.notifier.runBatch(
+        RemoteFileAction.delete,
+        items,
+      );
+      final snapshot = env.container.read(activeServerProvider)!;
+      env.server.switchServer();
+      env.container.read(sftpProvider);
+      await pumpEventQueue();
+
+      await expectLater(
+        env.notifier.retryFailedBatch(
+          RemoteFileAction.delete,
+          items,
+          results,
+          expectedServer: snapshot,
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            'FILE_TARGET_CHANGED',
+          ),
+        ),
+      );
+      expect(env.ops.deletedFiles, ['/var/www/my-project/b.log']);
+    });
+
+    test('失败路径不在原始条目里时重试为空操作', () async {
+      final env = await _env();
+      final retried = await env.notifier.retryFailedBatch(
+        RemoteFileAction.delete,
+        [_item('a.log')],
+        [
+          const RemoteFileResult(
+            '/var/www/my-project/ghost.log',
+            RemoteFileOutcome.failed,
+            'already gone',
+          ),
+        ],
+        expectedServer: env.container.read(activeServerProvider)!,
+      );
+      expect(retried, isEmpty);
+      expect(env.ops.deletedFiles, isEmpty);
     });
   });
 

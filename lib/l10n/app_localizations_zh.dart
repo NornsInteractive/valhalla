@@ -9,6 +9,71 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get nasPlaylistLoadFailed => '播放列表暂时不可用，本地媒体列表仍可查看。请刷新重试。';
+
+  @override
+  String get nasAllLibraries => '全部媒体库';
+
+  @override
+  String get nasDiagnosticsTitle => '媒体源诊断';
+
+  @override
+  String get nasDiagnosticsConnection => '连接';
+
+  @override
+  String get nasDiagnosticsScan => '媒体库扫描';
+
+  @override
+  String get nasDiagnosticsLastSuccess => '上次连接成功时间';
+
+  @override
+  String get nasDiagnosticsCredentials => '正在检查已保存凭据';
+
+  @override
+  String get nasDiagnosticsFinalizing => '正在完成索引';
+
+  @override
+  String get nasDiagnosticsNotChecked => '尚未检测';
+
+  @override
+  String get nasCacheLegacy => '旧版缩略图（未归属来源）';
+
+  @override
+  String get nasCacheGlobalBudget => '缩略图预算（所有来源共用）';
+
+  @override
+  String get nasCacheNoSource => '请选择媒体源后管理对应缓存。';
+
+  @override
+  String get nasOfflineRecordedHint => '此为记录的下载字节数，并非实际磁盘占用。清理缩略图不会删除离线文件。';
+
+  @override
+  String nasCacheClearConfirm(String scope) {
+    return '清理“$scope”的缩略图？离线文件和远端媒体均会保留。';
+  }
+
+  @override
+  String nasOfflineRecordedBytes(String size) {
+    return '已记录下载量：$size';
+  }
+
+  @override
+  String get nasDeployDockerTitle => 'Docker 应用部署';
+
+  @override
+  String get nasDeployDockerDesc => '在应用中心打开官方 Jellyfin 应用，检查配置后再安装。';
+
+  @override
+  String get nasDeployNativeDesc => '使用官方软件包直接安装到当前服务器，不修改已有安装。';
+
+  @override
+  String get nasDeployEnableAppCenter => '是否启用实验性应用中心以继续？不会更改你的菜单布局。';
+
+  @override
+  String get nasDeployCatalogUnavailable =>
+      '官方 Jellyfin 应用暂不可用。请检查官方应用源已启用后重试。';
+
+  @override
   String get appName => 'Valhalla';
 
   @override
@@ -4220,11 +4285,964 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get nasThumbnailCacheOff => '关闭';
+
+  @override
+  String get navAppCenter => '应用中心';
+
+  @override
+  String get settingsExperimentalAppCenterTitle => '应用中心 (Docker)';
+
+  @override
+  String get settingsExperimentalAppCenterDesc => '实验性应用商店与容器部署管理';
+
+  @override
+  String get appCenterTitle => '应用中心';
+
+  @override
+  String get appCenterTabStore => '应用商店';
+
+  @override
+  String get appCenterTabInstalled => '已安装';
+
+  @override
+  String get appCenterTabTasks => '任务';
+
+  @override
+  String get appCenterSources => '应用源';
+
+  @override
+  String get appCenterManageSources => '管理应用源';
+
+  @override
+  String get appCenterAddSource => '添加源';
+
+  @override
+  String get appCenterSourceName => '源名称';
+
+  @override
+  String get appCenterSourceUrl => '源地址 (HTTPS)';
+
+  @override
+  String get appCenterDeleteSource => '删除源';
+
+  @override
+  String get appCenterRefresh => '刷新';
+
+  @override
+  String get appCenterSearchHint => '搜索应用...';
+
+  @override
+  String get appCenterFilterAllCategories => '全部分类';
+
+  @override
+  String get appCenterFilterAllSources => '全部源';
+
+  @override
+  String get appCenterNoApps => '未找到相关应用';
+
+  @override
+  String get appCenterNoInstalled => '未安装任何应用';
+
+  @override
+  String get appCenterNoTasks => '暂无运行中或近期任务';
+
+  @override
+  String get appCenterInstall => '安装';
+
+  @override
+  String get appCenterInstalledBadge => '已安装';
+
+  @override
+  String get appCenterIncompatibleBadge => '不兼容';
+
+  @override
+  String get appCenterUpdateAvailable => '有新版本';
+
+  @override
+  String get appCenterArchitectureBlocker => '不支持当前系统架构';
+
+  @override
+  String get appCenterAppDetails => '应用详情';
+
+  @override
+  String get appCenterVersion => '版本';
+
+  @override
+  String get appCenterCategory => '分类';
+
+  @override
+  String get appCenterSource => '来源';
+
+  @override
+  String get appCenterArchitectures => '支持架构';
+
+  @override
+  String get appCenterScreenshots => '应用截图';
+
+  @override
+  String get appCenterDescription => '说明';
+
+  @override
+  String appCenterWizardTitle(String appName) {
+    return '安装 $appName';
+  }
+
+  @override
+  String appCenterConfigureTitle(String appName) {
+    return '配置 $appName';
+  }
+
+  @override
+  String appCenterUpdateTitle(String appName) {
+    return '更新 $appName';
+  }
+
+  @override
+  String get appCenterStepEnvironment => '环境检查';
+
+  @override
+  String get appCenterStepConfig => '参数配置';
+
+  @override
+  String get appCenterStepReview => '确认方案';
+
+  @override
+  String get appCenterStepProgress => '执行进度';
+
+  @override
+  String get appCenterInstanceName => '实例名称';
+
+  @override
+  String get appCenterDataDirectory => '数据存储目录';
+
+  @override
+  String get appCenterBrowseDirectory => '浏览目录';
+
+  @override
+  String get appCenterNetworkAndPorts => '网络与端口';
+
+  @override
+  String get appCenterBindAddress => '绑定地址';
+
+  @override
+  String get appCenterBindLoopback => '仅本机 (127.0.0.1)';
+
+  @override
+  String get appCenterBindAll => '所有接口 (0.0.0.0)';
+
+  @override
+  String get appCenterPortMapping => '端口映射';
+
+  @override
+  String get appCenterMounts => '存储挂载';
+
+  @override
+  String get appCenterMountSource => '宿主机路径';
+
+  @override
+  String get appCenterMountTarget => '容器内路径';
+
+  @override
+  String get appCenterMountReadOnly => '只读';
+
+  @override
+  String get appCenterVariables => '配置变量';
+
+  @override
+  String get appCenterEnvironmentVariables => '环境变量';
+
+  @override
+  String get appCenterNext => '下一步';
+
+  @override
+  String get appCenterBack => '上一步';
+
+  @override
+  String get appCenterConfirmAndExecute => '执行部署方案';
+
+  @override
+  String get appCenterPlanPreview => '部署方案预览';
+
+  @override
+  String get appCenterPlanSanitizedNotice => '请在执行前确认生成的部署方案：';
+
+  @override
+  String get appCenterEnvironmentCheck => 'Docker 环境';
+
+  @override
+  String get appCenterDockerFound => 'Docker 环境可用';
+
+  @override
+  String get appCenterDockerMissing => '未安装 Docker';
+
+  @override
+  String get appCenterComposeFound => 'Docker Compose 可用';
+
+  @override
+  String get appCenterComposeMissing => '未安装 Docker Compose';
+
+  @override
+  String get appCenterBootstrapPrompt =>
+      '可在该服务器上自动安装 Docker 与 Compose，需要 root/sudo 权限。';
+
+  @override
+  String get appCenterBootstrapButton => '安装 Docker 与 Compose';
+
+  @override
+  String get appCenterSudoPassword => 'Sudo 密码 (可选 / 如需提权)';
+
+  @override
+  String get appCenterSudoPasswordHint => '输入用于特权操作的 sudo 密码';
+
+  @override
+  String get appCenterOpen => '打开 Web 界面';
+
+  @override
+  String get appCenterStart => '启动';
+
+  @override
+  String get appCenterStop => '停止';
+
+  @override
+  String get appCenterRestart => '重启';
+
+  @override
+  String get appCenterLogs => '日志';
+
+  @override
+  String get appCenterConfig => '配置';
+
+  @override
+  String get appCenterUpdate => '更新';
+
+  @override
+  String get appCenterRestore => '还原';
+
+  @override
+  String get appCenterUninstall => '卸载';
+
+  @override
+  String appCenterUninstallConfirmTitle(String appName) {
+    return '卸载 $appName？';
+  }
+
+  @override
+  String appCenterUninstallConfirmMessage(String appName) {
+    return '确定要卸载 $appName 吗？容器将被移除，但您的应用数据目录将完整保留。';
+  }
+
+  @override
+  String get appCenterUninstallKeepData => '仅卸载（保留数据）';
+
+  @override
+  String get appCenterUninstallDeleteSelected => '卸载并清理选中数据';
+
+  @override
+  String get appCenterUninstallInspecting => '正在检查应用数据目录...';
+
+  @override
+  String get appCenterUninstallInspectionFailedWarning =>
+      '数据目录检查失败或暂不支持清理。您仍可仅卸载应用容器并安全保留所有数据。';
+
+  @override
+  String get appCenterUninstallDirectoriesTitle => '数据目录与 Docker 卷';
+
+  @override
+  String get appCenterUninstallNoDirectories =>
+      '未检测到此应用的绑定挂载数据目录，容器将被移除并保留所有数据。';
+
+  @override
+  String get appCenterUninstallDefaultPreservedHint =>
+      '默认保留全部数据。仅勾选需要永久删除的目录或卷。';
+
+  @override
+  String get appCenterUninstallPermanentLossWarning => '选中的数据将从服务器永久删除，没有回收站。';
+
+  @override
+  String get appCenterUninstallSelectedPathsTitle => '将永久删除的数据：';
+
+  @override
+  String get appCenterUninstallRiskAck => '我已了解列出的风险及对其他应用的影响，并确认永久删除此数据。';
+
+  @override
+  String get remoteBrowserAllFileTypes => '全部格式';
+
+  @override
+  String get remoteBrowserDocuments => '文本与文档';
+
+  @override
+  String get remoteBrowserFileFormat => '文件格式';
+
+  @override
+  String get appCenterUninstallRiskSystem => '系统路径';
+
+  @override
+  String get appCenterUninstallRiskShared => '与其他应用共享';
+
+  @override
+  String get appCenterUninstallRiskVolume => 'Docker 卷';
+
+  @override
+  String get appCenterCleanupVolumeDeleteFailed =>
+      'Docker 卷删除失败。请先解除其他容器对此卷的使用，重新检查后重试。';
+
+  @override
+  String get appCenterCleanupPermissionDenied => '没有此数据的访问权限，请使用有权限的账号或 sudo。';
+
+  @override
+  String get appCenterCleanupCriticalPath => '服务器根目录、系统运行或管理目录不能在卸载应用时删除。';
+
+  @override
+  String appCenterUninstallTypeAppNameHint(String appName) {
+    return '请输入完整的应用名称以确认永久删除：$appName';
+  }
+
+  @override
+  String get appCenterUninstallRiskLegacy => '无独占所有权证明';
+
+  @override
+  String get appCenterUninstallRiskExternal => '应用根目录外路径';
+
+  @override
+  String get appCenterUninstallRiskMedia => '媒体或只读路径';
+
+  @override
+  String get appCenterUninstallTargetBlocked => '受保护目录，不可清理';
+
+  @override
+  String get appCenterCleanupProtected => '数据目录已保留，因为其受到保护或移除不安全';
+
+  @override
+  String get appCenterCleanupUnavailable => '清理检查不可用；仍可执行普通卸载并保留全部数据';
+
+  @override
+  String get appCenterCleanupChanged => '目录或部署目标已发生变化，请重新检查并确认';
+
+  @override
+  String get appCenterCleanupConfirmationRequired => '请重新确认所选目录、风险选项以及精确应用名称';
+
+  @override
+  String get appCenterCleanupRetryUnavailable => '清理无法安全重试，请检查任务详情';
+
+  @override
+  String get appCenterCleanupAlreadyAbsent => '目录已不存在，无需删除';
+
+  @override
+  String get appCenterCleanupDeleteFailed => '删除未完全成功，部分文件可能已被移除，请检查剩余路径';
+
+  @override
+  String get appCenterCleanupUnconfirmed => '无法确认清理结果或安全性，请在继续前检查任务并重新检查';
+
+  @override
+  String appCenterCleanupRetryTitle(String appName) {
+    return '重试 $appName 的剩余数据清理？';
+  }
+
+  @override
+  String get appCenterCleanupRetryDescription =>
+      '应用程序已被卸载。请仅选择未完成的数据目录；重试不会再次卸载该应用。';
+
+  @override
+  String get appCenterCleanupRetrySelected => '删除所选剩余数据';
+
+  @override
+  String get appCenterCleanupResultsTitle => '目录清理结果';
+
+  @override
+  String get appCenterCleanupPartialSummary => '应用程序已卸载；部分数据未完全清理。';
+
+  @override
+  String get appCenterCleanupPending => '未确认完成';
+
+  @override
+  String get appCenterCleanupRemoved => '已删除';
+
+  @override
+  String get appCenterCleanupRetained => '已保留';
+
+  @override
+  String get appCenterCleanupRetryAction => '重试剩余数据清理';
+
+  @override
+  String get appCenterJellyfinSoftwareTitle => '软件解码模式';
+
+  @override
+  String get appCenterJellyfinSoftwareDesc =>
+      '禁用 GPU 硬件转码，移除已审查的 GPU 设备映射，并将 /Media 目录挂载为只读。';
+
+  @override
+  String get appCenterJellyfinProfileUnavailable => '此模板无法应用软件解码预设';
+
+  @override
+  String get appCenterJellyfinSoftwareChanges => '已应用的预设变更：';
+
+  @override
+  String get nasNativeInstallTitle => '安装 Jellyfin（原生软件包）';
+
+  @override
+  String get nasNativeStepVerifyRepo => '验证官方签名软件源';
+
+  @override
+  String get nasNativeStepPreventAutostart => '防止服务未配置自动启动';
+
+  @override
+  String get nasNativeStepInstallPackages => '安装固定版本的已签名软件包';
+
+  @override
+  String get nasNativeStepConfigureLoopback => '配置仅本地监听';
+
+  @override
+  String get nasNativeStageInstalling => '正在安装软件包';
+
+  @override
+  String get nasNativeStageStarting => '正在启动 systemd 服务';
+
+  @override
+  String get nasNativeGuidanceMediaAccess =>
+      '媒体文件的权限与所有权保持不变；请确保 Jellyfin 服务用户具有读取权限。';
+
+  @override
+  String get nasNativeGuidanceNoUpgrade => '系统不会接管、修改或升级现有的 Jellyfin 安装。';
+
+  @override
+  String get nasNativeSupportedRequirements =>
+      '需要 Debian 或 Ubuntu (amd64/arm64)，包含 systemd 并具备 root 或免密 sudo 权限。';
+
+  @override
+  String get nasNativeExistingInstallTitle => '检测到现有的 Jellyfin 安装';
+
+  @override
+  String get nasNativeExistingInstallExplanation =>
+      '此服务器上已存在现有的 Jellyfin 安装。Valhalla 不会修改或重新安装它。请直接验证并连接。';
+
+  @override
+  String get nasNativeCancelExplanation => '已请求在安全检查点取消。正在运行的软件包操作将安全完成。';
+
+  @override
+  String get nasNativeMediaPathLabel => '媒体目录路径';
+
+  @override
+  String get nasNativeMediaPathHint =>
+      '服务器现有绝对路径（如 /media/library）。系统不会修改其权限或所有权。';
+
+  @override
+  String get nasNativeSudoRequired => '安装系统软件包需要 root 或免密 sudo 权限';
+
+  @override
+  String appCenterLogsTitle(String appName) {
+    return '$appName 日志';
+  }
+
+  @override
+  String get appCenterLogsEmpty => '该部署暂无日志记录';
+
+  @override
+  String get appCenterLogsCopied => '日志已复制到剪贴板';
+
+  @override
+  String get appCenterTaskStageQueued => '排队中';
+
+  @override
+  String get appCenterTaskStagePreparing => '准备中';
+
+  @override
+  String get appCenterTaskStagePulling => '拉取镜像中';
+
+  @override
+  String get appCenterTaskStageApplying => '应用配置中';
+
+  @override
+  String get appCenterTaskStageChecking => '验证运行状态';
+
+  @override
+  String get appCenterTaskStageSucceeded => '执行成功';
+
+  @override
+  String get appCenterTaskStageFailed => '执行失败';
+
+  @override
+  String get appCenterTaskStageCancelled => '已取消';
+
+  @override
+  String get appCenterTaskStageNeedsInspection => '需手动检查';
+
+  @override
+  String get appCenterCancelTask => '取消任务';
+
+  @override
+  String get appCenterCopyLog => '复制日志';
+
+  @override
+  String get appCenterErrorNotConnected => '服务器未连接';
+
+  @override
+  String get appCenterErrorEnvironmentRequired => '需要先进行 Docker 环境检查';
+
+  @override
+  String get appCenterErrorPlanExpired => '部署方案已过期或无效';
+
+  @override
+  String get appCenterErrorTargetChanged => '目标服务器已变更，操作已取消';
+
+  @override
+  String get appCenterErrorConfigInvalid => '应用配置无效';
+
+  @override
+  String appCenterErrorPathInvalid(String field) {
+    return '$field必须为绝对路径且非根目录“/”，且不能包含“.”或“..”路径段';
+  }
+
+  @override
+  String get appCenterErrorSourceInvalid => '应用源格式无效';
+
+  @override
+  String get appCenterErrorNoWebEntry => '该应用未提供 Web 界面';
+
+  @override
+  String get appCenterErrorHttpsDirectRequired => 'HTTPS 地址无法通过 SSH 隧道转发，请直接打开';
+
+  @override
+  String get appCenterErrorOpenFailed => '打开应用链接失败';
+
+  @override
+  String appCenterErrorGeneric(String error) {
+    return '应用中心错误：$error';
+  }
+
+  @override
+  String get appCenterSourceCommunityHint => '例如：社区应用商店';
+
+  @override
+  String get appCenterSourceUrlInvalidHttps => '必须是有效的 HTTPS 链接';
+
+  @override
+  String get appCenterDirectUrlLabel => '直连地址';
+
+  @override
+  String get appCenterErrorSourceRemoved => '应用源已从商店目录中移除，无法更新模板';
+
+  @override
+  String appCenterRestoreConfirmTitle(String appName) {
+    return '回滚 $appName？';
+  }
+
+  @override
+  String appCenterRestoreConfirmMessage(String appName) {
+    return '确认将 $appName 回滚至上一次的部署配置？';
+  }
+
+  @override
+  String appCenterHostPortLabel(String target) {
+    return '主机端口 (-> $target)';
+  }
+
+  @override
+  String appCenterHostMountLabel(String target) {
+    return '主机路径: $target';
+  }
+
+  @override
+  String get appCenterVersionLatest => '最新';
+
+  @override
+  String get appCenterWaitingForLogs => '等待任务日志中...';
+
+  @override
+  String get appCenterNoPreviewAvailable => '暂无预览内容';
+
+  @override
+  String get appCenterBlockerLocalDockerRequired =>
+      '需要本地 Docker 守护进程（不支持远程 DOCKER_HOST）';
+
+  @override
+  String get appCenterBlockerToolsRequired =>
+      '服务器缺少必需工具 (bash, setsid, flock, base64, realpath, ss, awk)';
+
+  @override
+  String get appCenterBlockerLinuxRequired => '需要 Linux 操作系统';
+
+  @override
+  String appCenterBlockerTemplateUnsupported(String feature) {
+    return '模板包含不受支持的特性：$feature';
+  }
+
+  @override
+  String get appCenterFieldRequired => '此项为必填项';
+
+  @override
+  String get appCenterContinueInstall => '继续安装';
+
+  @override
+  String get appCenterOperation => '操作';
+
+  @override
+  String get nasTabLibrary => '媒体库';
+
+  @override
+  String get nasContinueWatching => '继续观看';
+
+  @override
+  String get nasRecentPhotos => '最近照片';
+
+  @override
+  String get nasRecentVideos => '最近视频';
+
+  @override
+  String get nasRecentMusic => '最近音乐';
+
+  @override
+  String get nasDownloadPaused => '已暂停';
+
+  @override
+  String get nasDownloadDeleteConfirmTitle => '删除离线文件';
+
+  @override
+  String get nasDownloadDeleteConfirmMessage =>
+      '这将从您的设备上删除已下载的本地离线文件，远程服务器上的原始文件不会被删除。';
+
+  @override
+  String get nasDownloadDeleteConfirmButton => '删除离线副本';
+
+  @override
+  String get nasDownloadSourceChangedMessage =>
+      '自此下载开始以来，远程源配置已发生更改。是否要从头重新开始下载？';
+
+  @override
+  String get nasDownloadRestartFromScratch => '从头重新开始';
+
+  @override
+  String get nasDownloadErrorSourceChanged => '媒体源配置已更改';
+
+  @override
+  String get nasDownloadErrorOfflineFileInvalid => '下载的文件损坏或不完整';
+
+  @override
+  String get nasDownloadErrorStorageFailed => '写入下载存储失败';
+
+  @override
+  String get nasDownloadErrorHlsUnsupported => '流式切片不支持离线下载';
+
+  @override
+  String get nasDownloadErrorPathInvalid => '下载存储路径无效';
+
+  @override
+  String get nasOpenInApp => '在应用内打开';
+
+  @override
+  String get nasOpenSystem => '使用系统打开';
+
+  @override
+  String get sftpRecentDirectories => '最近访问目录';
+
+  @override
+  String get sftpNoRecentDirectories => '暂无最近访问目录';
+
+  @override
+  String get sftpRetryFailed => '重试失败项';
+
+  @override
+  String get appCenterDiskCheckFailed => '无法验证服务器上的可用磁盘空间';
+
+  @override
+  String get appCenterDiskFull => '服务器磁盘已满，无法继续操作';
+
+  @override
+  String get appCenterHealthInvalid => '容器健康检查失败或报告无效状态';
+
+  @override
+  String get appCenterPreflightSummary => '预检摘要';
+
+  @override
+  String get appCenterMeasuredAvailableSpace => '实测可用磁盘空间';
+
+  @override
+  String get appCenterUpdateComparison => '更新对比';
+
+  @override
+  String get appCenterNoChangesDetected => '未检测到配置结构变动';
+
+  @override
+  String get appCenterSectionImage => '容器镜像';
+
+  @override
+  String get appCenterSectionPorts => '端口映射';
+
+  @override
+  String get appCenterSectionVolumes => '存储挂载';
+
+  @override
+  String get appCenterSectionEnvironment => '环境变量';
+
+  @override
+  String get appCenterSectionHealthcheck => '健康检查';
+
+  @override
+  String get appCenterSectionRestart => '重启策略';
+
+  @override
+  String get appCenterSectionServices => '多服务编排';
+
+  @override
+  String get appCenterHealthNoCheck => '无健康检查';
+
+  @override
+  String get appCenterHealthHealthy => '健康';
+
+  @override
+  String get appCenterHealthUnhealthy => '异常';
+
+  @override
+  String get appCenterHealthStarting => '正在启动';
+
+  @override
+  String get appCenterNoSources => '尚未启用任何应用源';
+
+  @override
+  String get appCenterNoMatchingApps => '未找到符合搜索或筛选条件的应用';
+
+  @override
+  String get appCenterClearFilters => '清除筛选';
+
+  @override
+  String get appCenterSourceLoadFailed => '应用源加载失败';
+
+  @override
+  String get appCenterRetry => '重试';
+
+  @override
+  String get appCenterRecheck => '重新检查';
+
+  @override
+  String get appCenterRecheckTask => '重新检查任务状态';
+
+  @override
+  String get appCenterTaskNeedsInspectionTitle => '任务状态待确认';
+
+  @override
+  String get appCenterTaskNeedsInspectionMessage =>
+      '服务器端任务执行结果未知（可能连接中断或状态未回传）。请重新检查状态或查看日志，切勿盲目重复执行。';
+
+  @override
+  String appCenterStopConfirmTitle(String appName) {
+    return '停止 $appName？';
+  }
+
+  @override
+  String appCenterStopConfirmMessage(String appName, String serverName) {
+    return '确定要在服务器 $serverName 上停止 $appName 吗？所有运行中的容器将被终止。';
+  }
+
+  @override
+  String appCenterRestartConfirmTitle(String appName) {
+    return '重启 $appName？';
+  }
+
+  @override
+  String appCenterRestartConfirmMessage(String appName, String serverName) {
+    return '确定要在服务器 $serverName 上重启 $appName 吗？';
+  }
+
+  @override
+  String get appCenterBrowseStore => '浏览应用商店';
+
+  @override
+  String get appCenterViewTasks => '查看任务';
+
+  @override
+  String get appCenterViewInstalled => '查看已安装应用';
+
+  @override
+  String get appCenterRunInBackground => '后台运行';
+
+  @override
+  String get appCenterTaskDetails => '任务详情';
+
+  @override
+  String get appCenterTaskTarget => '目标';
+
+  @override
+  String get appCenterTaskDirectory => '目录';
+
+  @override
+  String get appCenterTaskCreatedAt => '创建时间';
+
+  @override
+  String appCenterTaskExitCode(int code) {
+    return '退出代码: $code';
+  }
+
+  @override
+  String get appCenterStatusRunning => '运行中';
+
+  @override
+  String get appCenterStatusStopped => '已停止';
+
+  @override
+  String get appCenterStatusInstalling => '安装中';
+
+  @override
+  String get appCenterStatusUnknown => '未知';
+
+  @override
+  String get appCenterEnvReady => 'Docker 与 Compose 运行环境就绪';
+
+  @override
+  String get appCenterEnvNotReady => 'Docker 环境未就绪';
+
+  @override
+  String get appCenterEnvInspecting => '正在检测服务器 Docker 环境...';
+
+  @override
+  String get appCenterUninstallWholeDataRoot => '完整数据根目录';
+
+  @override
+  String get appCenterUninstallWholeDataRootWarning =>
+      '包括存储在应用数据根目录下的未挂载文件和子目录。';
+
+  @override
+  String get appCenterUninstallCoveredByParent => '已被父目录覆盖';
+
+  @override
+  String get appCenterContainerNameInvalid =>
+      '实例名称必须以字母或数字开头，且仅包含字母、数字、下划线、点和连字符（最多 120 个字符）。';
+
+  @override
+  String get appCenterMainService => '主服务';
+
+  @override
+  String get appCenterContainerNamesPreview => '容器名称预览';
+
+  @override
+  String get appCenterContainersRecreationNotice => '修改实例容器名称将重新创建现有的应用容器。';
+
+  @override
+  String get remoteBrowserTitle => '远程文件浏览';
+
+  @override
+  String get remoteBrowserSelectDirectory => '选择目录';
+
+  @override
+  String get remoteBrowserSelectCurrentDirectory => '选择当前目录';
+
+  @override
+  String get remoteBrowserSearchHint => '搜索文件和文件夹...';
+
+  @override
+  String get remoteBrowserNoEntries => '未找到匹配的文件或目录';
+
+  @override
+  String get remoteBrowserEmptyDirectory => '此目录为空';
+
+  @override
+  String remoteBrowserSelectedCount(int count) {
+    return '已选择 $count 项';
+  }
+
+  @override
+  String get remoteBrowserParentDirectory => '上一级目录';
+
+  @override
+  String get remoteBrowserLibrariesTitle => '媒体库';
+
+  @override
+  String get remoteBrowserDisconnected => '远程连接已断开或不可用。';
+
+  @override
+  String get remoteBrowserTargetChanged => '目标环境或当前活动服务器已更改。';
+
+  @override
+  String get remoteBrowserPathInvalid => '请求的路径无效或无法访问。';
+
+  @override
+  String get remoteBrowserPathOutsideRoot => '请求的路径超出了允许的根目录范围。';
+
+  @override
+  String get remoteBrowserEntryUnavailable => '选中的条目不可用或无效。';
+
+  @override
+  String get nasBrowseUnavailable => 'NAS 浏览服务当前不可用。';
+
+  @override
+  String get nasInvalidDirectoryEntry => '浏览 NAS 时遇到无效的目录项。';
+
+  @override
+  String get nasInvalidLibraryResponse => '媒体库响应无效或格式异常。';
+
+  @override
+  String get nasScanFilterUnresolved => '无法解析扫描过滤路径。';
+
+  @override
+  String get nasSourceSaveIncomplete => '先前的数据源保存仅部分持久化。请重新输入凭据并成功保存后再进行浏览。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
 class AppLocalizationsZhHant extends AppLocalizationsZh {
   AppLocalizationsZhHant() : super('zh_Hant');
+
+  @override
+  String get nasPlaylistLoadFailed => '播放清單暫時無法載入，本機媒體清單仍可查看。請重新整理後再試。';
+
+  @override
+  String get nasAllLibraries => '全部媒體庫';
+
+  @override
+  String get nasDiagnosticsTitle => '媒體來源診斷';
+
+  @override
+  String get nasDiagnosticsConnection => '連線';
+
+  @override
+  String get nasDiagnosticsScan => '媒體庫掃描';
+
+  @override
+  String get nasDiagnosticsLastSuccess => '上次連線成功時間';
+
+  @override
+  String get nasDiagnosticsCredentials => '正在檢查已儲存的憑證';
+
+  @override
+  String get nasDiagnosticsFinalizing => '正在完成索引';
+
+  @override
+  String get nasDiagnosticsNotChecked => '尚未檢查';
+
+  @override
+  String get nasCacheLegacy => '舊版縮圖（未歸屬來源）';
+
+  @override
+  String get nasCacheGlobalBudget => '縮圖空間上限（所有來源共用）';
+
+  @override
+  String get nasCacheNoSource => '請選擇媒體來源，以管理其快取。';
+
+  @override
+  String get nasOfflineRecordedHint => '這是記錄的下載位元組數，並非實測的磁碟用量。清除縮圖不會刪除離線檔案。';
+
+  @override
+  String nasCacheClearConfirm(String scope) {
+    return '清除「$scope」的縮圖？離線檔案和遠端媒體都會保留。';
+  }
+
+  @override
+  String nasOfflineRecordedBytes(String size) {
+    return '已記錄下載量：$size';
+  }
+
+  @override
+  String get nasDeployDockerTitle => 'Docker 應用程式部署';
+
+  @override
+  String get nasDeployDockerDesc => '在應用程式中心開啟官方 Jellyfin 應用程式，檢查設定後再安裝。';
+
+  @override
+  String get nasDeployNativeDesc => '使用官方套件直接安裝到此伺服器，不會變更現有安裝。';
+
+  @override
+  String get nasDeployEnableAppCenter => '是否啟用實驗性應用程式中心以繼續？選單配置不會變更。';
+
+  @override
+  String get nasDeployCatalogUnavailable =>
+      '官方 Jellyfin 應用程式暫時無法使用。請確認已啟用官方來源後再試。';
 
   @override
   String get appName => 'Valhalla';
@@ -8438,4 +9456,893 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get nasThumbnailCacheOff => '關閉';
+
+  @override
+  String get navAppCenter => '應用中心';
+
+  @override
+  String get settingsExperimentalAppCenterTitle => '應用中心 (Docker)';
+
+  @override
+  String get settingsExperimentalAppCenterDesc => '實驗性應用商店與容器部署管理';
+
+  @override
+  String get appCenterTitle => '應用中心';
+
+  @override
+  String get appCenterTabStore => '應用商店';
+
+  @override
+  String get appCenterTabInstalled => '已安裝';
+
+  @override
+  String get appCenterTabTasks => '任務';
+
+  @override
+  String get appCenterSources => '應用來源';
+
+  @override
+  String get appCenterManageSources => '管理應用來源';
+
+  @override
+  String get appCenterAddSource => '新增來源';
+
+  @override
+  String get appCenterSourceName => '來源名稱';
+
+  @override
+  String get appCenterSourceUrl => '來源網址 (HTTPS)';
+
+  @override
+  String get appCenterDeleteSource => '刪除來源';
+
+  @override
+  String get appCenterRefresh => '重新整理';
+
+  @override
+  String get appCenterSearchHint => '搜尋應用程式...';
+
+  @override
+  String get appCenterFilterAllCategories => '所有分類';
+
+  @override
+  String get appCenterFilterAllSources => '所有來源';
+
+  @override
+  String get appCenterNoApps => '找不到相關應用程式';
+
+  @override
+  String get appCenterNoInstalled => '尚未安裝任何應用程式';
+
+  @override
+  String get appCenterNoTasks => '目前無執行中或近期任務';
+
+  @override
+  String get appCenterInstall => '安裝';
+
+  @override
+  String get appCenterInstalledBadge => '已安裝';
+
+  @override
+  String get appCenterIncompatibleBadge => '不相容';
+
+  @override
+  String get appCenterUpdateAvailable => '有新版本';
+
+  @override
+  String get appCenterArchitectureBlocker => '不支援目前系統架構';
+
+  @override
+  String get appCenterAppDetails => '應用程式詳情';
+
+  @override
+  String get appCenterVersion => '版本';
+
+  @override
+  String get appCenterCategory => '分類';
+
+  @override
+  String get appCenterSource => '來源';
+
+  @override
+  String get appCenterArchitectures => '支援架構';
+
+  @override
+  String get appCenterScreenshots => '應用截圖';
+
+  @override
+  String get appCenterDescription => '說明';
+
+  @override
+  String appCenterWizardTitle(String appName) {
+    return '安裝 $appName';
+  }
+
+  @override
+  String appCenterConfigureTitle(String appName) {
+    return '設定 $appName';
+  }
+
+  @override
+  String appCenterUpdateTitle(String appName) {
+    return '更新 $appName';
+  }
+
+  @override
+  String get appCenterStepEnvironment => '環境檢查';
+
+  @override
+  String get appCenterStepConfig => '參數設定';
+
+  @override
+  String get appCenterStepReview => '確認方案';
+
+  @override
+  String get appCenterStepProgress => '執行進度';
+
+  @override
+  String get appCenterInstanceName => '實例名稱';
+
+  @override
+  String get appCenterDataDirectory => '資料儲存目錄';
+
+  @override
+  String get appCenterBrowseDirectory => '瀏覽目錄';
+
+  @override
+  String get appCenterNetworkAndPorts => '網路與連接埠';
+
+  @override
+  String get appCenterBindAddress => '繫結位址';
+
+  @override
+  String get appCenterBindLoopback => '僅本機 (127.0.0.1)';
+
+  @override
+  String get appCenterBindAll => '所有介面 (0.0.0.0)';
+
+  @override
+  String get appCenterPortMapping => '連接埠對應';
+
+  @override
+  String get appCenterMounts => '儲存掛載';
+
+  @override
+  String get appCenterMountSource => '主機路徑';
+
+  @override
+  String get appCenterMountTarget => '容器內路徑';
+
+  @override
+  String get appCenterMountReadOnly => '唯讀';
+
+  @override
+  String get appCenterVariables => '設定變數';
+
+  @override
+  String get appCenterEnvironmentVariables => '環境變數';
+
+  @override
+  String get appCenterNext => '下一步';
+
+  @override
+  String get appCenterBack => '上一步';
+
+  @override
+  String get appCenterConfirmAndExecute => '執行部署方案';
+
+  @override
+  String get appCenterPlanPreview => '部署方案預覽';
+
+  @override
+  String get appCenterPlanSanitizedNotice => '執行前請檢視產生的部署方案：';
+
+  @override
+  String get appCenterEnvironmentCheck => 'Docker 環境';
+
+  @override
+  String get appCenterDockerFound => 'Docker 環境可用';
+
+  @override
+  String get appCenterDockerMissing => '未安裝 Docker';
+
+  @override
+  String get appCenterComposeFound => 'Docker Compose 可用';
+
+  @override
+  String get appCenterComposeMissing => '未安裝 Docker Compose';
+
+  @override
+  String get appCenterBootstrapPrompt =>
+      '可在該伺服器上自動安裝 Docker 與 Compose，需要 root/sudo 權限。';
+
+  @override
+  String get appCenterBootstrapButton => '安裝 Docker 與 Compose';
+
+  @override
+  String get appCenterSudoPassword => 'Sudo 密碼 (選填 / 如需提權)';
+
+  @override
+  String get appCenterSudoPasswordHint => '輸入用於特權操作的 sudo 密碼';
+
+  @override
+  String get appCenterOpen => '開啟 Web 介面';
+
+  @override
+  String get appCenterStart => '啟動';
+
+  @override
+  String get appCenterStop => '停止';
+
+  @override
+  String get appCenterRestart => '重新啟動';
+
+  @override
+  String get appCenterLogs => '記錄';
+
+  @override
+  String get appCenterConfig => '設定';
+
+  @override
+  String get appCenterUpdate => '更新';
+
+  @override
+  String get appCenterRestore => '還原';
+
+  @override
+  String get appCenterUninstall => '解除安裝';
+
+  @override
+  String appCenterUninstallConfirmTitle(String appName) {
+    return '解除安裝 $appName？';
+  }
+
+  @override
+  String appCenterUninstallConfirmMessage(String appName) {
+    return '確定要解除安裝 $appName 嗎？容器將被移除，但您的應用程式資料目錄將完整保留。';
+  }
+
+  @override
+  String get appCenterUninstallKeepData => '僅解除安裝（保留資料）';
+
+  @override
+  String get appCenterUninstallDeleteSelected => '解除安裝並清理所選資料';
+
+  @override
+  String get appCenterUninstallInspecting => '正在檢查應用程式資料目錄...';
+
+  @override
+  String get appCenterUninstallInspectionFailedWarning =>
+      '資料目錄檢查失敗或暫不支援清理。您仍可僅解除安裝應用程式容器並安全保留所有資料。';
+
+  @override
+  String get appCenterUninstallDirectoriesTitle => '資料目錄與 Docker 磁碟區';
+
+  @override
+  String get appCenterUninstallNoDirectories =>
+      '未偵測到此應用程式的綁定掛載資料目錄，容器將被移除並保留所有資料。';
+
+  @override
+  String get appCenterUninstallDefaultPreservedHint =>
+      '預設保留全部資料。僅勾選需要永久刪除的目錄或磁碟區。';
+
+  @override
+  String get appCenterUninstallPermanentLossWarning =>
+      '選取的資料將從伺服器永久刪除，沒有資源回收筒。';
+
+  @override
+  String get appCenterUninstallSelectedPathsTitle => '將永久刪除的資料：';
+
+  @override
+  String get appCenterUninstallRiskAck => '我已了解列出的風險及對其他應用程式的影響，並確認永久刪除此資料。';
+
+  @override
+  String get remoteBrowserAllFileTypes => '全部格式';
+
+  @override
+  String get remoteBrowserDocuments => '文字與文件';
+
+  @override
+  String get remoteBrowserFileFormat => '檔案格式';
+
+  @override
+  String get appCenterUninstallRiskSystem => '系統路徑';
+
+  @override
+  String get appCenterUninstallRiskShared => '與其他應用程式共用';
+
+  @override
+  String get appCenterUninstallRiskVolume => 'Docker 磁碟區';
+
+  @override
+  String get appCenterCleanupVolumeDeleteFailed =>
+      'Docker 磁碟區刪除失敗。請先解除其他容器對它的使用，重新檢查後再試。';
+
+  @override
+  String get appCenterCleanupPermissionDenied => '沒有此資料的存取權限，請使用有權限的帳號或 sudo。';
+
+  @override
+  String get appCenterCleanupCriticalPath => '伺服器根目錄、系統執行或管理目錄不能在解除安裝應用程式時刪除。';
+
+  @override
+  String appCenterUninstallTypeAppNameHint(String appName) {
+    return '請輸入完整的應用程式名稱以確認永久刪除：$appName';
+  }
+
+  @override
+  String get appCenterUninstallRiskLegacy => '無獨占所有權證明';
+
+  @override
+  String get appCenterUninstallRiskExternal => '應用程式根目錄外路徑';
+
+  @override
+  String get appCenterUninstallRiskMedia => '媒體或唯讀路徑';
+
+  @override
+  String get appCenterUninstallTargetBlocked => '受保護目錄，不可清理';
+
+  @override
+  String get appCenterCleanupProtected => '資料目錄已保留，因為其受到保護或移除不安全';
+
+  @override
+  String get appCenterCleanupUnavailable => '清理檢查無法使用；仍可執行普通解除安裝並保留全部資料';
+
+  @override
+  String get appCenterCleanupChanged => '目錄或部署目標已發生變化，請重新檢查並確認';
+
+  @override
+  String get appCenterCleanupConfirmationRequired => '請重新確認所選目錄、風險選項以及精確應用程式名稱';
+
+  @override
+  String get appCenterCleanupRetryUnavailable => '清理無法安全重試，請檢查任務詳細資訊';
+
+  @override
+  String get appCenterCleanupAlreadyAbsent => '目錄已不存在，無需刪除';
+
+  @override
+  String get appCenterCleanupDeleteFailed => '刪除未完全成功，部分檔案可能已被移除，請檢查剩餘路徑';
+
+  @override
+  String get appCenterCleanupUnconfirmed => '無法確認清理結果或安全性，請在繼續前檢查任務並重新檢查';
+
+  @override
+  String appCenterCleanupRetryTitle(String appName) {
+    return '重試 $appName 的剩餘資料清理？';
+  }
+
+  @override
+  String get appCenterCleanupRetryDescription =>
+      '應用程式已被解除安裝。請僅選取未完成的資料目錄；重試不會再次解除安裝該應用程式。';
+
+  @override
+  String get appCenterCleanupRetrySelected => '刪除所選剩餘資料';
+
+  @override
+  String get appCenterCleanupResultsTitle => '目錄清理結果';
+
+  @override
+  String get appCenterCleanupPartialSummary => '應用程式已解除安裝；部分資料未完全清理。';
+
+  @override
+  String get appCenterCleanupPending => '未確認完成';
+
+  @override
+  String get appCenterCleanupRemoved => '已刪除';
+
+  @override
+  String get appCenterCleanupRetained => '已保留';
+
+  @override
+  String get appCenterCleanupRetryAction => '重試剩餘資料清理';
+
+  @override
+  String get appCenterJellyfinSoftwareTitle => '軟體解碼模式';
+
+  @override
+  String get appCenterJellyfinSoftwareDesc =>
+      '停用 GPU 硬體轉碼，移除已審查的 GPU 裝置對應，並將 /Media 目錄掛載為唯讀。';
+
+  @override
+  String get appCenterJellyfinProfileUnavailable => '此範本無法套用軟體解碼設定檔';
+
+  @override
+  String get appCenterJellyfinSoftwareChanges => '已套用的設定檔變更：';
+
+  @override
+  String get nasNativeInstallTitle => '安裝 Jellyfin（原生套件）';
+
+  @override
+  String get nasNativeStepVerifyRepo => '驗證官方簽署的軟體來源';
+
+  @override
+  String get nasNativeStepPreventAutostart => '防止服務在尚未設定時自動啟動';
+
+  @override
+  String get nasNativeStepInstallPackages => '安裝固定版本的已簽署套件';
+
+  @override
+  String get nasNativeStepConfigureLoopback => '設定僅限本機的監聽位址';
+
+  @override
+  String get nasNativeStageInstalling => '正在安裝固定版本套件';
+
+  @override
+  String get nasNativeStageStarting => '正在啟動 systemd 服務';
+
+  @override
+  String get nasNativeGuidanceMediaAccess =>
+      '媒體檔案的權限與擁有者保持不變；請確保 Jellyfin 服務使用者具有讀取權限。';
+
+  @override
+  String get nasNativeGuidanceNoUpgrade => '不會接管、修改或升級現有的 Jellyfin 安裝。';
+
+  @override
+  String get nasNativeSupportedRequirements =>
+      '需要 Debian 或 Ubuntu（amd64/arm64）、systemd，以及 root 或免密碼 sudo 權限。';
+
+  @override
+  String get nasNativeExistingInstallTitle => '偵測到現有的 Jellyfin 安裝';
+
+  @override
+  String get nasNativeExistingInstallExplanation =>
+      '此伺服器已安裝 Jellyfin。Valhalla 不會修改或重新安裝，請直接驗證並連線。';
+
+  @override
+  String get nasNativeCancelExplanation => '已要求在安全檢查點取消。執行中的套件操作將安全完成。';
+
+  @override
+  String get nasNativeMediaPathLabel => '媒體目錄路徑';
+
+  @override
+  String get nasNativeMediaPathHint =>
+      '伺服器上已存在的絕對路徑（例如 /media/library）。權限保持不變。';
+
+  @override
+  String get nasNativeSudoRequired => '安裝系統套件需要 root 或免密碼 sudo 權限';
+
+  @override
+  String appCenterLogsTitle(String appName) {
+    return '$appName 記錄';
+  }
+
+  @override
+  String get appCenterLogsEmpty => '此部署尚無記錄';
+
+  @override
+  String get appCenterLogsCopied => '記錄已複製到剪貼簿';
+
+  @override
+  String get appCenterTaskStageQueued => '排隊中';
+
+  @override
+  String get appCenterTaskStagePreparing => '準備中';
+
+  @override
+  String get appCenterTaskStagePulling => '正在提取映像檔';
+
+  @override
+  String get appCenterTaskStageApplying => '套用設定中';
+
+  @override
+  String get appCenterTaskStageChecking => '驗證運作狀態';
+
+  @override
+  String get appCenterTaskStageSucceeded => '執行成功';
+
+  @override
+  String get appCenterTaskStageFailed => '執行失敗';
+
+  @override
+  String get appCenterTaskStageCancelled => '已取消';
+
+  @override
+  String get appCenterTaskStageNeedsInspection => '需手動檢查';
+
+  @override
+  String get appCenterCancelTask => '取消任務';
+
+  @override
+  String get appCenterCopyLog => '複製記錄';
+
+  @override
+  String get appCenterErrorNotConnected => '伺服器未連線';
+
+  @override
+  String get appCenterErrorEnvironmentRequired => '需要先進行 Docker 環境檢查';
+
+  @override
+  String get appCenterErrorPlanExpired => '部署方案已過期或無效';
+
+  @override
+  String get appCenterErrorTargetChanged => '目標伺服器已變更，操作已取消';
+
+  @override
+  String get appCenterErrorConfigInvalid => '應用程式設定無效';
+
+  @override
+  String appCenterErrorPathInvalid(String field) {
+    return '$field必須為絕對路徑且非根目錄「/」，且不能包含「.」或「..」路徑段';
+  }
+
+  @override
+  String get appCenterErrorSourceInvalid => '應用程式來源格式無效';
+
+  @override
+  String get appCenterErrorNoWebEntry => '此應用程式未提供 Web 介面';
+
+  @override
+  String get appCenterErrorHttpsDirectRequired => 'HTTPS 位址無法透過 SSH 通道轉送，請直接開啟';
+
+  @override
+  String get appCenterErrorOpenFailed => '開啟應用程式連結失敗';
+
+  @override
+  String appCenterErrorGeneric(String error) {
+    return '應用中心錯誤：$error';
+  }
+
+  @override
+  String get appCenterSourceCommunityHint => '例如：社群應用商店';
+
+  @override
+  String get appCenterSourceUrlInvalidHttps => '必須是有效的 HTTPS 連結';
+
+  @override
+  String get appCenterDirectUrlLabel => '直連網址';
+
+  @override
+  String get appCenterErrorSourceRemoved => '應用來源已從商店目錄中移除，無法更新範本';
+
+  @override
+  String appCenterRestoreConfirmTitle(String appName) {
+    return '還原 $appName？';
+  }
+
+  @override
+  String appCenterRestoreConfirmMessage(String appName) {
+    return '確認將 $appName 還原至上一次的部署設定？';
+  }
+
+  @override
+  String appCenterHostPortLabel(String target) {
+    return '主機連接埠 (-> $target)';
+  }
+
+  @override
+  String appCenterHostMountLabel(String target) {
+    return '主機路徑: $target';
+  }
+
+  @override
+  String get appCenterVersionLatest => '最新';
+
+  @override
+  String get appCenterWaitingForLogs => '等待任務記錄中...';
+
+  @override
+  String get appCenterNoPreviewAvailable => '暫無預覽內容';
+
+  @override
+  String get appCenterBlockerLocalDockerRequired =>
+      '需要本地 Docker 常駐程式（不支援遠端 DOCKER_HOST）';
+
+  @override
+  String get appCenterBlockerToolsRequired =>
+      '伺服器缺少必備工具 (bash, setsid, flock, base64, realpath, ss, awk)';
+
+  @override
+  String get appCenterBlockerLinuxRequired => '需要 Linux 作業系統';
+
+  @override
+  String appCenterBlockerTemplateUnsupported(String feature) {
+    return '範本包含不支援的特性：$feature';
+  }
+
+  @override
+  String get appCenterFieldRequired => '此欄位為必填';
+
+  @override
+  String get appCenterContinueInstall => '繼續安裝';
+
+  @override
+  String get appCenterOperation => '操作';
+
+  @override
+  String get nasTabLibrary => '媒體庫';
+
+  @override
+  String get nasContinueWatching => '繼續觀看';
+
+  @override
+  String get nasRecentPhotos => '最近照片';
+
+  @override
+  String get nasRecentVideos => '最近影片';
+
+  @override
+  String get nasRecentMusic => '最近音樂';
+
+  @override
+  String get nasDownloadPaused => '已暫停';
+
+  @override
+  String get nasDownloadDeleteConfirmTitle => '刪除離線檔案';
+
+  @override
+  String get nasDownloadDeleteConfirmMessage =>
+      '這將從您的裝置中刪除已下載的本地離線檔案，遠端伺服器上的原始檔案不會被刪除。';
+
+  @override
+  String get nasDownloadDeleteConfirmButton => '刪除離線副本';
+
+  @override
+  String get nasDownloadSourceChangedMessage =>
+      '自此下載開始以來，遠端來源設定已變更。是否要從頭重新開始下載？';
+
+  @override
+  String get nasDownloadRestartFromScratch => '從頭重新開始';
+
+  @override
+  String get nasDownloadErrorSourceChanged => '媒體來源設定已變更';
+
+  @override
+  String get nasDownloadErrorOfflineFileInvalid => '下載的檔案已損壞或不完整';
+
+  @override
+  String get nasDownloadErrorStorageFailed => '寫入下載儲存失敗';
+
+  @override
+  String get nasDownloadErrorHlsUnsupported => '串流格式不支援離線下載';
+
+  @override
+  String get nasDownloadErrorPathInvalid => '下載儲存路徑無效';
+
+  @override
+  String get nasOpenInApp => '於應用程式中開啟';
+
+  @override
+  String get nasOpenSystem => '使用系統開啟';
+
+  @override
+  String get sftpRecentDirectories => '最近目錄';
+
+  @override
+  String get sftpNoRecentDirectories => '尚無最近目錄';
+
+  @override
+  String get sftpRetryFailed => '重試失敗項目';
+
+  @override
+  String get appCenterDiskCheckFailed => '無法驗證伺服器上的可用磁碟空間';
+
+  @override
+  String get appCenterDiskFull => '伺服器磁碟已滿，無法繼續操作';
+
+  @override
+  String get appCenterHealthInvalid => '容器健康狀態檢查失敗或回報無效狀態';
+
+  @override
+  String get appCenterPreflightSummary => '預檢摘要';
+
+  @override
+  String get appCenterMeasuredAvailableSpace => '實測可用磁碟空間';
+
+  @override
+  String get appCenterUpdateComparison => '更新差異比較';
+
+  @override
+  String get appCenterNoChangesDetected => '未檢測到結構性變更';
+
+  @override
+  String get appCenterSectionImage => '容器映像檔';
+
+  @override
+  String get appCenterSectionPorts => '連接埠對應';
+
+  @override
+  String get appCenterSectionVolumes => '儲存空間掛載';
+
+  @override
+  String get appCenterSectionEnvironment => '環境變數';
+
+  @override
+  String get appCenterSectionHealthcheck => '健康狀態檢查';
+
+  @override
+  String get appCenterSectionRestart => '重新啟動策略';
+
+  @override
+  String get appCenterSectionServices => '服務項目';
+
+  @override
+  String get appCenterHealthNoCheck => '無健康檢查';
+
+  @override
+  String get appCenterHealthHealthy => '正常';
+
+  @override
+  String get appCenterHealthUnhealthy => '異常';
+
+  @override
+  String get appCenterHealthStarting => '啟動中';
+
+  @override
+  String get appCenterNoSources => '尚未啟用任何應用程式來源';
+
+  @override
+  String get appCenterNoMatchingApps => '找不到符合搜尋或篩選條件的應用程式';
+
+  @override
+  String get appCenterClearFilters => '清除篩選';
+
+  @override
+  String get appCenterSourceLoadFailed => '應用程式來源載入失敗';
+
+  @override
+  String get appCenterRetry => '重試';
+
+  @override
+  String get appCenterRecheck => '重新檢查';
+
+  @override
+  String get appCenterRecheckTask => '重新檢查任務狀態';
+
+  @override
+  String get appCenterTaskNeedsInspectionTitle => '任務狀態未確認';
+
+  @override
+  String get appCenterTaskNeedsInspectionMessage =>
+      '伺服器端任務執行結果未知（可能連線中斷或狀態未回報）。請重新檢查狀態或檢視日誌，切勿盲目重複執行。';
+
+  @override
+  String appCenterStopConfirmTitle(String appName) {
+    return '停止 $appName？';
+  }
+
+  @override
+  String appCenterStopConfirmMessage(String appName, String serverName) {
+    return '確定要在伺服器 $serverName 上停止 $appName 嗎？所有執行中的容器將被終止。';
+  }
+
+  @override
+  String appCenterRestartConfirmTitle(String appName) {
+    return '重啟 $appName？';
+  }
+
+  @override
+  String appCenterRestartConfirmMessage(String appName, String serverName) {
+    return '確定要在伺服器 $serverName 上重啟 $appName 嗎？';
+  }
+
+  @override
+  String get appCenterBrowseStore => '前往應用商店瀏覽';
+
+  @override
+  String get appCenterViewTasks => '查看任務';
+
+  @override
+  String get appCenterViewInstalled => '查看已安裝應用';
+
+  @override
+  String get appCenterRunInBackground => '背景執行';
+
+  @override
+  String get appCenterTaskDetails => '任務詳情';
+
+  @override
+  String get appCenterTaskTarget => '目標';
+
+  @override
+  String get appCenterTaskDirectory => '目錄';
+
+  @override
+  String get appCenterTaskCreatedAt => '建立時間';
+
+  @override
+  String appCenterTaskExitCode(int code) {
+    return '結束代碼: $code';
+  }
+
+  @override
+  String get appCenterStatusRunning => '執行中';
+
+  @override
+  String get appCenterStatusStopped => '已停止';
+
+  @override
+  String get appCenterStatusInstalling => '安裝中';
+
+  @override
+  String get appCenterStatusUnknown => '未知';
+
+  @override
+  String get appCenterEnvReady => 'Docker 與 Compose 執行環境就緒';
+
+  @override
+  String get appCenterEnvNotReady => 'Docker 環境未就緒';
+
+  @override
+  String get appCenterEnvInspecting => '正在檢測伺服器 Docker 環境...';
+
+  @override
+  String get appCenterUninstallWholeDataRoot => '完整資料根目錄';
+
+  @override
+  String get appCenterUninstallWholeDataRootWarning =>
+      '包括儲存在應用程式資料根目錄下的未掛載檔案和子目錄。';
+
+  @override
+  String get appCenterUninstallCoveredByParent => '已被上層目錄涵蓋';
+
+  @override
+  String get appCenterContainerNameInvalid =>
+      '執行個體名稱必須以字母或數字開頭，且僅能包含字母、數字、底線、小數點和連字號（最多 120 個字元）。';
+
+  @override
+  String get appCenterMainService => '主服務';
+
+  @override
+  String get appCenterContainerNamesPreview => '容器名稱預覽';
+
+  @override
+  String get appCenterContainersRecreationNotice => '修改執行個體容器名稱將重新建立現有的應用程式容器。';
+
+  @override
+  String get remoteBrowserTitle => '遠端檔案瀏覽';
+
+  @override
+  String get remoteBrowserSelectDirectory => '選取目錄';
+
+  @override
+  String get remoteBrowserSelectCurrentDirectory => '選取目前目錄';
+
+  @override
+  String get remoteBrowserSearchHint => '搜尋檔案與資料夾...';
+
+  @override
+  String get remoteBrowserNoEntries => '找不到相符的檔案或目錄';
+
+  @override
+  String get remoteBrowserEmptyDirectory => '此目錄為空';
+
+  @override
+  String remoteBrowserSelectedCount(int count) {
+    return '已選取 $count 項';
+  }
+
+  @override
+  String get remoteBrowserParentDirectory => '上一層目錄';
+
+  @override
+  String get remoteBrowserLibrariesTitle => '媒體庫';
+
+  @override
+  String get remoteBrowserDisconnected => '遠端連線已中斷或無法使用。';
+
+  @override
+  String get remoteBrowserTargetChanged => '目標環境或目前活動伺服器已變更。';
+
+  @override
+  String get remoteBrowserPathInvalid => '請求的路徑無效或無法存取。';
+
+  @override
+  String get remoteBrowserPathOutsideRoot => '請求的路徑超出了允許的根目錄範圍。';
+
+  @override
+  String get remoteBrowserEntryUnavailable => '選取的項目無法使用或無效。';
+
+  @override
+  String get nasBrowseUnavailable => 'NAS 瀏覽服務目前無法使用。';
+
+  @override
+  String get nasInvalidDirectoryEntry => '瀏覽 NAS 時遇到無效的目錄項目。';
+
+  @override
+  String get nasInvalidLibraryResponse => '媒體庫回應無效或格式不正確。';
+
+  @override
+  String get nasScanFilterUnresolved => '無法解析掃描過濾路徑。';
+
+  @override
+  String get nasSourceSaveIncomplete => '先前儲存的來源僅部分保存。請重新輸入憑證並成功儲存後再進行瀏覽。';
 }

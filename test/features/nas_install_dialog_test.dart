@@ -6,9 +6,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:valhalla/core/providers/nas_install_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/services/nas_install_service.dart';
+import 'package:valhalla/core/services/remote_browser_service.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/features/nas/widgets/nas_install_dialog.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import 'package:valhalla/widgets/remote_browser_dialog.dart';
+import '../support/nas_browser_fixture.dart';
 
 class FakeNasInstallPlan implements NasInstallPlan {
   @override
@@ -232,16 +235,26 @@ Widget _buildTestApp({
   required FakeNasInstallService service,
   List<ServerProfile>? servers,
   ServerProfile? activeServer,
+  bool hasActiveServer = true,
+  void Function(NasBrowserFixture)? browserCreated,
 }) {
   return ProviderScope(
     overrides: [
+      if (browserCreated != null)
+        remoteBrowserFactoryProvider.overrideWith((ref) {
+          final factory = NasBrowserFixture(ref);
+          browserCreated(factory);
+          return factory;
+        }),
       nasInstallServiceProvider.overrideWith((ref) => service),
       nasInstallTaskProvider.overrideWith((ref) => service.states),
       serverListProvider.overrideWith(
         () => _FakeServerListNotifier(servers ?? [_testServer1, _testServer2]),
       ),
       activeServerProvider.overrideWith(
-        () => _FakeActiveServerNotifier(activeServer ?? _testServer1),
+        () => _FakeActiveServerNotifier(
+          hasActiveServer ? activeServer ?? _testServer1 : null,
+        ),
       ),
     ],
     child: MaterialApp(
@@ -266,6 +279,96 @@ Widget _buildTestApp({
 
 void main() {
   group('NasInstallDialog Widget Tests', () {
+    testWidgets(
+      'deployment data picker keeps destination leaf and cancellation is read-only',
+      (tester) async {
+        final service = FakeNasInstallService();
+        addTearDown(service.taskController.close);
+        late NasBrowserFixture browser;
+        await tester.pumpWidget(
+          _buildTestApp(
+            service: service,
+            browserCreated: (value) => browser = value,
+          ),
+        );
+        await tester.tap(find.byKey(const Key('open_dialog_button')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(
+          find.byKey(const Key('nas_install_browse_data_root')),
+        );
+        await tester.tap(find.byKey(const Key('nas_install_browse_data_root')));
+        await settleNasBrowser(tester);
+        expect(find.byType(RemoteBrowserDialog), findsOneWidget);
+        expect(browser.paths, [
+          '/var/lib/valhalla-nas',
+          '/var/lib',
+          '/var',
+          '/',
+        ]);
+        await tester.tap(find.text('Chosen directory'));
+        await settleNasBrowser(tester);
+        await tester.tap(
+          find.byKey(const Key('remote_browser_confirm_button')),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<TextField>(
+                find.byKey(const Key('nas_install_data_root_field')),
+              )
+              .controller!
+              .text,
+          '/chosen/jellyfin',
+        );
+        expect(browser.sources.single.isCurrent, isFalse);
+        await tester.ensureVisible(
+          find.byKey(const Key('nas_install_browse_media_path')),
+        );
+        await tester.tap(
+          find.byKey(const Key('nas_install_browse_media_path')),
+        );
+        await settleNasBrowser(tester);
+        await tester.tap(
+          find.descendant(
+            of: find.byType(RemoteBrowserDialog),
+            matching: find.widgetWithText(TextButton, 'Cancel'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<TextField>(
+                find.byKey(const Key('nas_install_media_path_field')),
+              )
+              .controller!
+              .text,
+          '/media',
+        );
+        expect(service.lastPrepareRequest, isNull);
+        expect(tester.takeException(), isNull);
+      },
+    );
+    testWidgets(
+      'does not choose the first saved server without an active target',
+      (tester) async {
+        final service = FakeNasInstallService();
+        addTearDown(service.taskController.close);
+        await tester.pumpWidget(
+          _buildTestApp(service: service, hasActiveServer: false),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('open_dialog_button')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_install_prepare_button')));
+        await tester.pumpAndSettle();
+        expect(service.lastPrepareRequest, isNull);
+        expect(
+          find.byKey(const Key('nas_install_local_error')),
+          findsOneWidget,
+        );
+      },
+    );
+
     testWidgets('strict port range validation rejects out of range values', (
       tester,
     ) async {

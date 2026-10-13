@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'nas_media.dart';
+import 'remote_browser.dart';
 
 enum NasSourceType { sftp, webdav, smb, jellyfin, emby }
 
@@ -126,6 +127,9 @@ class NasResource {
   final String mimeType;
   final String? playSessionId;
   final bool seekable;
+
+  /// Fresh source validator, never an index timestamp or a credentialed URL.
+  final String? version;
   const NasResource({
     this.uri,
     this.headers = const {},
@@ -134,13 +138,20 @@ class NasResource {
     this.mimeType = 'application/octet-stream',
     this.playSessionId,
     this.seekable = true,
+    this.version,
   }) : assert(uri != null || read != null);
 }
 
 /// Every implementation captures its source; global SSH selection is irrelevant.
 abstract class NasSourceAdapter {
+  Future<NasResource> resolveForDownload(NasMediaItem item) => resolve(item);
   NasSource get source;
   Future<void> probe();
+  /// Lists one directory, or the accessible media libraries at `/`.
+  Stream<List<RemoteBrowserEntry>> browse(
+    String path,
+    NasCancellation cancellation,
+  ) => Stream.error(UnsupportedError('NAS_BROWSE_UNAVAILABLE'));
   Stream<List<NasMediaItem>> scan(
     NasScanConfig config,
     NasCancellation cancellation,

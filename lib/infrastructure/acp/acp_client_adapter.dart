@@ -8,6 +8,7 @@ import 'package:acpd/acpd.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/logging/sanitizer.dart';
 import '../../core/security/agent_command_validator.dart';
+import '../../core/services/app_diagnostics.dart';
 import '../../data/models/agent_profile.dart';
 import '../../data/models/chat_session.dart';
 import '../../data/models/acp_account_info.dart';
@@ -490,32 +491,45 @@ class ACPClientAdapter {
     );
 
     if (!_initialized) {
-      final init = await connection.client.initialize(
-        const InitializeRequest(
-          protocolVersion: ProtocolVersion.v1,
-          clientInfo: Implementation(name: 'Valhalla', version: '1.0.0'),
-          clientCapabilities: ClientCapabilities(
-            session: ClientSessionCapabilities(
-              configOptions: SessionConfigOptionsCapabilities(
-                boolean: BooleanConfigOptionCapabilities(),
+      final elapsed = Stopwatch()..start();
+      var outcome = 'failed';
+      try {
+        final init = await connection.client.initialize(
+          const InitializeRequest(
+            protocolVersion: ProtocolVersion.v1,
+            clientInfo: Implementation(name: 'Valhalla', version: '1.0.0'),
+            clientCapabilities: ClientCapabilities(
+              session: ClientSessionCapabilities(
+                configOptions: SessionConfigOptionsCapabilities(
+                  boolean: BooleanConfigOptionCapabilities(),
+                ),
               ),
             ),
           ),
-        ),
-        timeout: requestTimeout,
-      );
+          timeout: requestTimeout,
+        );
 
-      // agent 在此声明它支持的认证方式；原先被丢弃，导致认证要求无从满足。
-      _authMethods = init.authMethods
-          .map(_toAuthMethod)
-          .toList(growable: false);
-      agentCapabilities = init.agentCapabilities ?? const AgentCapabilities();
-      agentInfo = init.agentInfo;
-      _initialized = true;
-      for (final pending in _earlyAccountUpdates) {
-        _receiveAccount(pending);
+        // agent 在此声明它支持的认证方式；原先被丢弃，导致认证要求无从满足。
+        _authMethods = init.authMethods
+            .map(_toAuthMethod)
+            .toList(growable: false);
+        agentCapabilities = init.agentCapabilities ?? const AgentCapabilities();
+        agentInfo = init.agentInfo;
+        _initialized = true;
+        for (final pending in _earlyAccountUpdates) {
+          _receiveAccount(pending);
+        }
+        _earlyAccountUpdates.clear();
+        outcome = 'completed';
+      } finally {
+        unawaited(
+          AppDiagnostics.instance.recordTiming(
+            'acp.initialize',
+            elapsed,
+            outcome: outcome,
+          ),
+        );
       }
-      _earlyAccountUpdates.clear();
     }
   }
 

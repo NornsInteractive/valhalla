@@ -82,7 +82,9 @@ class _Session extends Fake implements SSHSession {
   }
 }
 
-class _FallbackExecutor extends _Executor {
+class _LocalExecutor extends _Executor {
+  final bool portable;
+  _LocalExecutor({this.portable = false});
   @override
   Future<SSHExecutionResult> executeWithLoginShell(
     String serverId,
@@ -90,7 +92,7 @@ class _FallbackExecutor extends _Executor {
     Duration timeout = const Duration(seconds: 30),
     String? sudoPassword,
   }) async {
-    if (command.contains('-printf')) {
+    if (portable && command.contains('-printf')) {
       return const SSHExecutionResult(
         exitCode: 1,
         stdout: '',
@@ -106,6 +108,10 @@ class _FallbackExecutor extends _Executor {
   }
 }
 
+class _FallbackExecutor extends _LocalExecutor {
+  _FallbackExecutor() : super(portable: true);
+}
+
 void main() {
   test('normalizes roots, applies excludes, and parses nul records', () async {
     final executor = _Executor();
@@ -116,7 +122,7 @@ void main() {
         excludePaths: ['/media/private', '/outside'],
       ),
     );
-    expect(normalized.includePaths, ['/media']);
+    expect(normalized.includePaths, ['/media', '/media/photos']);
     expect(normalized.excludePaths, ['/media/private']);
 
     final items = await service.scan('server', normalized);
@@ -237,4 +243,172 @@ void main() {
       expect(result.single.sizeBytes, 3);
     },
   );
+
+  for (final portable in [false, true]) {
+    final mode = portable ? 'portable' : 'GNU';
+    test(
+      '$mode explicit roots partition ordinary and symlink subtrees',
+      () async {
+        final fixture = await Directory.systemTemp.createTemp(
+          'valhalla-scan-roots-',
+        );
+        addTearDown(() => fixture.delete(recursive: true));
+        final parent = await Directory('${fixture.path}/parent').create();
+        final child = await Directory("${parent.path}/child[*?]'\\").create();
+        final grandchild = await Directory('${child.path}/grandchild').create();
+        final external = await Directory('${fixture.path}/external').create();
+        final ignored = await Directory('${fixture.path}/ignored').create();
+        final rootFile = await File(
+          '${parent.path}/root.jpg',
+        ).writeAsString('root');
+        final childFile = await File(
+          '${child.path}/child.jpg',
+        ).writeAsString('child');
+        final grandFile = await File(
+          '${grandchild.path}/grand.jpg',
+        ).writeAsString('grand');
+        await File('${external.path}/external.jpg').writeAsString('external');
+        await File('${ignored.path}/sentinel.jpg').writeAsString('ignored');
+        final link = await Link(
+          '${parent.path}/chosen-link',
+        ).create(external.path);
+        await Link('${external.path}/internal-link').create(ignored.path);
+        await Link('${parent.path}/unselected-link').create(ignored.path);
+        final service = NasScanService(_LocalExecutor(portable: portable));
+        final items = await service.scan(
+          'fixture',
+          NasScanConfig(
+            includePaths: [
+              parent.path,
+              child.path,
+              grandchild.path,
+              link.path,
+              link.path,
+            ],
+          ),
+        );
+        expect(
+          items.map((item) => item.path),
+          unorderedEquals([
+            rootFile.path,
+            childFile.path,
+            grandFile.path,
+            '${link.path}/external.jpg',
+          ]),
+        );
+        expect(
+          await File('${ignored.path}/sentinel.jpg').readAsString(),
+          'ignored',
+        );
+      },
+      skip: Platform.isWindows,
+    );
+
+    test(
+      '$mode literal excludes do not match glob neighbours',
+      () async {
+        final fixture = await Directory.systemTemp.createTemp(
+          'valhalla-scan-glob-',
+        );
+        addTearDown(() => fixture.delete(recursive: true));
+        final excluded = <String>[];
+        final kept = <String>[];
+        for (final name in [
+          'star*',
+          'question?',
+          'bracket[ab]',
+          r'back\slash',
+          "quote'",
+        ]) {
+          final directory = await Directory('${fixture.path}/$name').create();
+          await File('${directory.path}/hidden.jpg').writeAsString('skip');
+          excluded.add(directory.path);
+        }
+        for (final name in [
+          'star-other',
+          'questionx',
+          'bracketa',
+          'backslash',
+          'normal',
+        ]) {
+          final directory = await Directory('${fixture.path}/$name').create();
+          kept.add(
+            (await File(
+              '${directory.path}/kept.jpg',
+            ).writeAsString('keep')).path,
+          );
+        }
+        final items = await NasScanService(_LocalExecutor(portable: portable))
+            .scan(
+              'fixture',
+              NasScanConfig(
+                includePaths: [fixture.path],
+                excludePaths: excluded,
+              ),
+            );
+        expect(items.map((item) => item.path), unorderedEquals(kept));
+      },
+      skip: Platform.isWindows,
+    );
+
+    test(
+      '$mode ancestor and root exclusions produce successful empty scans',
+      () async {
+        final fixture = await Directory.systemTemp.createTemp(
+          'valhalla-scan-exclude-',
+        );
+        addTearDown(() => fixture.delete(recursive: true));
+        final child = await Directory('${fixture.path}/child').create();
+        await File('${child.path}/hidden.jpg').writeAsString('skip');
+        final service = NasScanService(_LocalExecutor(portable: portable));
+        for (final excluded in [fixture.path, child.path, '/']) {
+          final config = NasScanConfig(
+            includePaths: [child.path],
+            excludePaths: [excluded],
+          );
+          expect(service.normalize(config).excludePaths, [excluded]);
+          expect(await service.scan('fixture', config), isEmpty);
+        }
+        expect(
+          await service.scan(
+            'fixture',
+            NasScanConfig(
+              includePaths: [fixture.path, child.path],
+              excludePaths: [fixture.path],
+            ),
+          ),
+          isEmpty,
+        );
+      },
+      skip: Platform.isWindows,
+    );
+
+    test(
+      '$mode missing later root cannot report partial scan success',
+      () async {
+        final fixture = await Directory.systemTemp.createTemp(
+          'valhalla-scan-failure-',
+        );
+        addTearDown(() => fixture.delete(recursive: true));
+        final first = await Directory('${fixture.path}/a-valid').create();
+        await File('${first.path}/first.jpg').writeAsString('first');
+        await expectLater(
+          NasScanService(_LocalExecutor(portable: portable)).scan(
+            'fixture',
+            NasScanConfig(
+              includePaths: [first.path, '${fixture.path}/z-missing'],
+            ),
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (error) => error.message,
+              'code',
+              startsWith('NAS_SCAN_FAILED:'),
+            ),
+          ),
+        );
+      },
+      skip: Platform.isWindows,
+    );
+  }
 }

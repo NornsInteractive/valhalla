@@ -15,7 +15,9 @@ import '../../core/providers/sftp_provider.dart';
 import '../../infrastructure/sftp/remote_file_actions.dart';
 import '../../infrastructure/sftp/sftp_client_service.dart';
 import '../../widgets/state_views.dart';
-import '../../widgets/valhalla_card.dart';
+import '../../data/models/remote_browser.dart';
+import '../../widgets/remote_browser_toolbar.dart';
+import '../../widgets/remote_browser_view.dart';
 import 'widgets/batch_confirm_dialog.dart';
 import 'widgets/file_bookmarks_dialog.dart';
 import 'widgets/remote_file_batch_results_dialog.dart';
@@ -57,6 +59,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   int? _batchCompleted;
   int? _batchTotal;
   bool _isTogglingBookmark = false;
+  List<SftpFileItem>? _browserFiles;
+  List<RemoteBrowserEntry> _browserEntries = const [];
+  Map<String, SftpFileItem> _browserFilesByPath = const {};
 
   /// 已经响应过的 `openTransfersRequest` 值，0 表示还没响应过任何一次。
   int _handledOpenTransfersRequest = 0;
@@ -598,10 +603,10 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
         return;
       }
 
-      setState(() {
-        _isSelectionMode = false;
-        _selectedPaths.clear();
-      });
+      final succeededPaths = results
+          .where((r) => r.outcome == RemoteFileOutcome.completed)
+          .map((r) => r.path)
+          .toSet();
 
       final hasFailures = results.any(
         (r) =>
@@ -609,9 +614,37 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
             r.outcome == RemoteFileOutcome.skipped,
       );
 
+      setState(() {
+        _selectedPaths.removeWhere(succeededPaths.contains);
+        if (_selectedPaths.isEmpty) {
+          _isSelectionMode = false;
+        }
+      });
+
       if (hasFailures) {
         if (mounted) {
-          await RemoteFileBatchResultsDialog.show(context, results: results);
+          await RemoteFileBatchResultsDialog.show(
+            context,
+            results: results,
+            action: action,
+            originalItems: selectedItems,
+            expectedServer: expectedServer,
+            targetDirectory: targetDirectory,
+            onResultsUpdated: (updatedResults) {
+              if (mounted) {
+                final newlySucceeded = updatedResults
+                    .where((r) => r.outcome == RemoteFileOutcome.completed)
+                    .map((r) => r.path)
+                    .toSet();
+                setState(() {
+                  _selectedPaths.removeWhere(newlySucceeded.contains);
+                  if (_selectedPaths.isEmpty) {
+                    _isSelectionMode = false;
+                  }
+                });
+              }
+            },
+          );
         }
       } else {
         final queuedCount = results
@@ -833,6 +866,23 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
   @override
   Widget build(BuildContext context) {
     final sftpState = ref.watch(sftpProvider);
+    final activeServer = ref.watch(activeServerProvider);
+    final serverConnectionKey =
+        activeServer?.connectionKey.toString() ?? 'no_server';
+
+    ref.listen<Object?>(activeServerProvider.select((s) => s?.connectionKey), (
+      previous,
+      next,
+    ) {
+      if (previous != null && previous != next) {
+        if (_selectedPaths.isNotEmpty || _isSelectionMode) {
+          setState(() {
+            _selectedPaths.clear();
+            _isSelectionMode = false;
+          });
+        }
+      }
+    });
 
     ref.listen<String>(sftpProvider.select((s) => s.currentPath), (
       previous,
@@ -840,6 +890,12 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     ) {
       if (previous != null && previous != next) {
         _searchController.clear();
+        if (_selectedPaths.isNotEmpty || _isSelectionMode) {
+          setState(() {
+            _selectedPaths.clear();
+            _isSelectionMode = false;
+          });
+        }
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && _breadcrumbScrollController.hasClients) {
             final target = _breadcrumbScrollController.position.maxScrollExtent;
@@ -890,7 +946,18 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                     itemBuilder: (_, _) => const SkeletonListTile(),
                   ),
                 )
-              : _buildFileList(sftpState),
+              : Stack(
+                  children: [
+                    _buildFileList(sftpState, serverConnectionKey),
+                    if (sftpState.isLoading)
+                      const Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: LinearProgressIndicator(minHeight: 2),
+                      ),
+                  ],
+                ),
         ),
       ],
     );
@@ -898,399 +965,167 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
 
   Widget _buildBreadcrumbBar(SftpState state) {
     final notifier = ref.read(sftpProvider.notifier);
-    final segments = state.pathSegments;
     final isConnected = ref.watch(
       serverConnectionProvider.select((s) => s.isConnected),
     );
-
-    return Entrance(
-      index: 0,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        color: context.colorScheme.surface,
-        child: Directionality(
-          textDirection: TextDirection.ltr,
-          child: Row(
-            children: [
-              IconButton(
-                key: const Key('sftp_breadcrumb_up'),
-                icon: const Icon(Icons.arrow_upward, size: 18),
-                tooltip: context.l10n.sftpUpDirectory,
-                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                onPressed: (state.isAtRoot || !isConnected)
-                    ? null
-                    : () => notifier.navigateUp(),
-              ),
-              _buildBreadcrumbSegment(
-                key: const Key('sftp_breadcrumb_root'),
-                label: '/',
-                tooltip: '/',
-                isCurrent: state.isAtRoot,
-                onTap: isConnected ? () => notifier.navigateTo('/') : null,
-                maxWidth: 44,
-              ),
-              const SizedBox(width: 2),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: _breadcrumbScrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: List.generate(segments.length, (index) {
-                      final seg = segments[index];
-                      final pathUpTo = '/${segments.take(index + 1).join('/')}';
-                      final isLast = index == segments.length - 1;
-
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.chevron_right,
-                            size: 10,
-                            color: context.colorScheme.outline,
-                          ),
-                          _buildBreadcrumbSegment(
-                            key: Key('sftp_breadcrumb_seg_$index'),
-                            label: seg,
-                            tooltip: pathUpTo,
-                            isCurrent: isLast,
-                            onTap: isConnected
-                                ? () => notifier.navigateTo(pathUpTo)
-                                : null,
-                            maxWidth: 120,
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
-                ),
-              ),
-              IconButton(
-                key: const Key('sftp_current_path_bookmark_button'),
-                icon: Icon(
-                  ref.watch(fileBookmarksProvider).contains(state.currentPath)
-                      ? Icons.bookmark
-                      : Icons.bookmark_border,
-                  size: 18,
-                  color:
-                      ref
-                          .watch(fileBookmarksProvider)
-                          .contains(state.currentPath)
-                      ? context.colorScheme.primary
-                      : null,
-                ),
-                tooltip:
-                    ref.watch(fileBookmarksProvider).contains(state.currentPath)
-                    ? context.l10n.sftpRemoveBookmark
-                    : context.l10n.sftpAddBookmark,
-                onPressed: (isConnected && !_isTogglingBookmark)
-                    ? () async {
-                        if (_isTogglingBookmark) return;
-                        setState(() => _isTogglingBookmark = true);
-                        try {
-                          await ref
-                              .read(fileBookmarksProvider.notifier)
-                              .toggle(state.currentPath);
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(e.toString()),
-                                backgroundColor: context.vDanger,
-                              ),
-                            );
-                          }
-                        } finally {
-                          if (mounted) {
-                            setState(() => _isTogglingBookmark = false);
-                          }
-                        }
-                      }
-                    : null,
-              ),
-            ],
-          ),
+    return RemoteBrowserBreadcrumb(
+      keyPrefix: 'sftp',
+      path: state.currentPath,
+      scrollController: _breadcrumbScrollController,
+      onUp: state.isAtRoot || !isConnected ? null : () => notifier.navigateUp(),
+      onNavigate: isConnected ? (path) => notifier.navigateTo(path) : null,
+      trailing: IconButton(
+        key: const Key('sftp_current_path_bookmark_button'),
+        icon: Icon(
+          ref.watch(fileBookmarksProvider).contains(state.currentPath)
+              ? Icons.bookmark
+              : Icons.bookmark_border,
+          size: 18,
+          color: ref.watch(fileBookmarksProvider).contains(state.currentPath)
+              ? context.colorScheme.primary
+              : null,
         ),
-      ),
-    );
-  }
-
-  Widget _buildBreadcrumbSegment({
-    Key? key,
-    required String label,
-    required String tooltip,
-    required bool isCurrent,
-    required VoidCallback? onTap,
-    double maxWidth = 120,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        key: key,
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(VRadius.button),
-        child: Container(
-          constraints: BoxConstraints(
-            minHeight: 44,
-            minWidth: 24,
-            maxWidth: maxWidth,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-          child: Center(
-            widthFactor: 1,
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: monoTextStyle(
-                fontSize: 12,
-                fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
-                color: isCurrent
-                    ? context.colorScheme.onSurface
-                    : (onTap != null
-                          ? context.colorScheme.primary
-                          : context.colorScheme.outline),
-              ),
-            ),
-          ),
-        ),
+        tooltip: ref.watch(fileBookmarksProvider).contains(state.currentPath)
+            ? context.l10n.sftpRemoveBookmark
+            : context.l10n.sftpAddBookmark,
+        onPressed: (isConnected && !_isTogglingBookmark)
+            ? () async {
+                if (_isTogglingBookmark) return;
+                setState(() => _isTogglingBookmark = true);
+                try {
+                  await ref
+                      .read(fileBookmarksProvider.notifier)
+                      .toggle(state.currentPath);
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(e.toString()),
+                        backgroundColor: context.vDanger,
+                      ),
+                    );
+                  }
+                } finally {
+                  if (mounted) {
+                    setState(() => _isTogglingBookmark = false);
+                  }
+                }
+              }
+            : null,
       ),
     );
   }
 
   Widget _buildActionBar(SftpState state) {
-    if (_isSelectionMode) {
-      return _buildSelectionActionBar(state);
-    }
+    if (_isSelectionMode) return _buildSelectionActionBar(state);
     final notifier = ref.read(sftpProvider.notifier);
     final isConnected = ref.watch(
       serverConnectionProvider.select((s) => s.isConnected),
     );
-    final isCompact =
-        MediaQuery.sizeOf(context).width < LayoutBreakpoints.compactMax;
-    final isGrid = switch (state.viewMode) {
-      SftpViewMode.grid => true,
-      SftpViewMode.list => false,
-      null => !isCompact,
-    };
-
-    return Entrance(
-      index: 1,
-      child: Container(
-        color: context.colorScheme.surfaceContainerLowest,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Row 1: Dedicated Search Field
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
-              child: SizedBox(
-                height: 36,
-                child: TextField(
-                  key: const Key('sftp_search_field'),
-                  controller: _searchController,
-                  onChanged: (val) => notifier.setSearchQuery(val),
-                  decoration: InputDecoration(
-                    hintText: context.l10n.sftpSearchHint,
-                    hintStyle: context.textTheme.bodySmall,
-                    prefixIcon: const Icon(Icons.search, size: 16),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 16),
-                            tooltip: 'Clear',
-                            onPressed: () {
-                              _searchController.clear();
-                              notifier.setSearchQuery('');
-                            },
-                          )
-                        : null,
-                    contentPadding: EdgeInsets.zero,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(VRadius.input),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: context.colorScheme.surfaceContainerHighest,
-                  ),
-                  style: context.textTheme.bodyMedium,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isGrid =
+            state.viewMode == SftpViewMode.grid ||
+            state.viewMode == null &&
+                constraints.maxWidth >= LayoutBreakpoints.compactMax;
+        return RemoteBrowserToolbar(
+          keyPrefix: 'sftp',
+          searchController: _searchController,
+          onSearchChanged: notifier.setSearchQuery,
+          showHidden: state.showHiddenFiles,
+          onToggleHidden: _isTogglingHiddenFiles
+              ? null
+              : () async {
+                  if (_isTogglingHiddenFiles) return;
+                  setState(() => _isTogglingHiddenFiles = true);
+                  try {
+                    await notifier.setShowHiddenFiles(!state.showHiddenFiles);
+                  } finally {
+                    if (mounted) setState(() => _isTogglingHiddenFiles = false);
+                  }
+                },
+          sortField: state.sortKey.name,
+          sortAscending: state.sortAscending,
+          onSort: (key, ascending) => notifier.setSort(
+            key: SftpSortKey.values.byName(key),
+            ascending: ascending,
+          ),
+          isGrid: isGrid,
+          onToggleView: _isSettingViewMode
+              ? null
+              : () => _handleSetViewMode(
+                  isGrid ? SftpViewMode.list : SftpViewMode.grid,
                 ),
-              ),
+          leadingActions: [
+            IconButton(
+              icon: const Icon(Icons.upload_file, size: 20),
+              tooltip: context.l10n.sftpUpload,
+              onPressed:
+                  (state.activeTransfer != null ||
+                      !isConnected ||
+                      state.cachedAt != null)
+                  ? null
+                  : _handleUpload,
             ),
-            // Row 2: Action buttons (Responsive horizontal scroll, never wrap or overflow)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.upload_file, size: 20),
-                    tooltip: context.l10n.sftpUpload,
-                    onPressed:
-                        (state.activeTransfer != null ||
-                            !isConnected ||
-                            state.cachedAt != null)
-                        ? null
-                        : _handleUpload,
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.create_new_folder_outlined,
-                      size: 20,
-                    ),
-                    tooltip: context.l10n.sftpNewFolder,
-                    onPressed: (isConnected && state.cachedAt == null)
-                        ? _showNewFolderDialog
-                        : null,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.note_add_outlined, size: 20),
-                    tooltip: context.l10n.sftpNewFile,
-                    onPressed: (isConnected && state.cachedAt == null)
-                        ? _showNewFileDialog
-                        : null,
-                  ),
-                  IconButton(
-                    key: const Key('sftpToggleHiddenButton'),
-                    isSelected: state.showHiddenFiles,
-                    icon: const Icon(Icons.visibility_off, size: 20),
-                    selectedIcon: const Icon(Icons.visibility, size: 20),
-                    tooltip: state.showHiddenFiles
-                        ? context.l10n.sftpHideHiddenFiles
-                        : context.l10n.sftpShowHiddenFiles,
-                    style: state.showHiddenFiles
-                        ? IconButton.styleFrom(
-                            foregroundColor: context.colorScheme.primary,
-                          )
-                        : null,
-                    onPressed: _isTogglingHiddenFiles
-                        ? null
-                        : () async {
-                            if (_isTogglingHiddenFiles) return;
-                            setState(() {
-                              _isTogglingHiddenFiles = true;
-                            });
-                            try {
-                              await notifier.setShowHiddenFiles(
-                                !state.showHiddenFiles,
-                              );
-                            } finally {
-                              if (mounted) {
-                                setState(() {
-                                  _isTogglingHiddenFiles = false;
-                                });
-                              }
-                            }
-                          },
-                  ),
-                  IconButton(
-                    key: const Key('sftpToggleViewModeButton'),
-                    icon: Icon(
-                      isGrid ? Icons.view_list : Icons.grid_view,
-                      size: 20,
-                    ),
-                    tooltip: isGrid
-                        ? context.l10n.sftpViewModeList
-                        : context.l10n.sftpViewModeGrid,
-                    onPressed: _isSettingViewMode
-                        ? null
-                        : () => _handleSetViewMode(
-                            isGrid ? SftpViewMode.list : SftpViewMode.grid,
-                          ),
-                  ),
-                  PopupMenuButton<Object>(
-                    icon: const Icon(Icons.sort, size: 20),
-                    tooltip: context.l10n.sftpSort,
-                    onSelected: (value) {
-                      if (value is SftpSortKey) {
-                        final isSameKey = state.sortKey == value;
-                        notifier.setSort(
-                          key: value,
-                          ascending: isSameKey
-                              ? !state.sortAscending
-                              : state.sortAscending,
-                        );
-                      } else if (value == 'asc') {
-                        notifier.setSort(key: state.sortKey, ascending: true);
-                      } else if (value == 'desc') {
-                        notifier.setSort(key: state.sortKey, ascending: false);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      CheckedPopupMenuItem<SftpSortKey>(
-                        value: SftpSortKey.name,
-                        checked: state.sortKey == SftpSortKey.name,
-                        child: Text(context.l10n.sftpSortName),
-                      ),
-                      CheckedPopupMenuItem<SftpSortKey>(
-                        value: SftpSortKey.size,
-                        checked: state.sortKey == SftpSortKey.size,
-                        child: Text(context.l10n.sftpSortSize),
-                      ),
-                      CheckedPopupMenuItem<SftpSortKey>(
-                        value: SftpSortKey.date,
-                        checked: state.sortKey == SftpSortKey.date,
-                        child: Text(context.l10n.sftpSortDate),
-                      ),
-                      const PopupMenuDivider(),
-                      CheckedPopupMenuItem<String>(
-                        value: 'asc',
-                        checked: state.sortAscending,
-                        child: Text(context.l10n.sftpSortAscending),
-                      ),
-                      CheckedPopupMenuItem<String>(
-                        value: 'desc',
-                        checked: !state.sortAscending,
-                        child: Text(context.l10n.sftpSortDescending),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, size: 20),
-                    tooltip: context.l10n.sftpRefresh,
-                    onPressed: isConnected ? () => notifier.refresh() : null,
-                  ),
-                  IconButton(
-                    key: const Key('sftpBookmarksListButton'),
-                    icon: const Icon(Icons.bookmarks_outlined, size: 20),
-                    tooltip: context.l10n.sftpBookmarksTitle,
-                    onPressed: isConnected ? _showBookmarksDialog : null,
-                  ),
-                  IconButton(
-                    key: const Key('sftpSelectModeButton'),
-                    icon: const Icon(Icons.checklist, size: 20),
-                    tooltip: context.l10n.sftpSelectMode,
-                    onPressed: _toggleSelectionMode,
-                  ),
-                  IconButton(
-                    key: const Key('sftpTransferListButton'),
-                    style: _highlightTransferButton
-                        ? IconButton.styleFrom(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primaryContainer,
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onPrimaryContainer,
-                          )
-                        : null,
-                    icon: KeyedSubtree(
-                      key: _transferIconKey,
-                      child: Badge(
-                        isLabelVisible: state.pendingTransferCount > 0,
-                        label: Text('${state.pendingTransferCount}'),
-                        child: const Icon(Icons.swap_vert, size: 20),
-                      ),
-                    ),
-                    tooltip: context.l10n.transferList,
-                    onPressed: () => _showTransferListModal(context),
-                  ),
-                ],
-              ),
+            IconButton(
+              icon: const Icon(Icons.create_new_folder_outlined, size: 20),
+              tooltip: context.l10n.sftpNewFolder,
+              onPressed: (isConnected && state.cachedAt == null)
+                  ? _showNewFolderDialog
+                  : null,
+            ),
+            IconButton(
+              icon: const Icon(Icons.note_add_outlined, size: 20),
+              tooltip: context.l10n.sftpNewFile,
+              onPressed: (isConnected && state.cachedAt == null)
+                  ? _showNewFileDialog
+                  : null,
             ),
           ],
-        ),
-      ),
+          trailingActions: [
+            IconButton(
+              icon: const Icon(Icons.refresh, size: 20),
+              tooltip: context.l10n.sftpRefresh,
+              onPressed: isConnected ? () => notifier.refresh() : null,
+            ),
+            IconButton(
+              key: const Key('sftpBookmarksListButton'),
+              icon: const Icon(Icons.bookmarks_outlined, size: 20),
+              tooltip: context.l10n.sftpBookmarksTitle,
+              onPressed: isConnected ? _showBookmarksDialog : null,
+            ),
+            IconButton(
+              key: const Key('sftpSelectModeButton'),
+              icon: const Icon(Icons.checklist, size: 20),
+              tooltip: context.l10n.sftpSelectMode,
+              onPressed: _toggleSelectionMode,
+            ),
+            IconButton(
+              key: const Key('sftpTransferListButton'),
+              style: _highlightTransferButton
+                  ? IconButton.styleFrom(
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer,
+                      foregroundColor: Theme.of(
+                        context,
+                      ).colorScheme.onPrimaryContainer,
+                    )
+                  : null,
+              icon: KeyedSubtree(
+                key: _transferIconKey,
+                child: Badge(
+                  isLabelVisible: state.pendingTransferCount > 0,
+                  label: Text('${state.pendingTransferCount}'),
+                  child: const Icon(Icons.swap_vert, size: 20),
+                ),
+              ),
+              tooltip: context.l10n.transferList,
+              onPressed: () => _showTransferListModal(context),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1403,61 +1238,61 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     );
   }
 
-  Widget _buildFileList(SftpState state) {
+  Widget _buildFileList(SftpState state, String serverConnectionKey) {
     final files = state.filteredFiles;
     final notifier = ref.read(sftpProvider.notifier);
-
     if (files.isEmpty) {
       return EmptyStateView(
         icon: Icons.folder_open,
         title: context.l10n.sftpEmpty,
       );
     }
-
+    if (!identical(files, _browserFiles)) {
+      _browserFiles = files;
+      _browserFilesByPath = {for (final item in files) item.path: item};
+      _browserEntries = [for (final item in files) _browserEntry(item)];
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < LayoutBreakpoints.compactMax;
-        final useGrid = switch (state.viewMode) {
-          SftpViewMode.grid => true,
-          SftpViewMode.list => false,
-          null => !isCompact,
-        };
-        if (!useGrid) {
-          return ListView.separated(
-            itemCount: files.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final item = files[index];
-              return _buildFileListItem(context, item, state, notifier);
-            },
-          );
-        }
-        return GridView.builder(
-          padding: const EdgeInsets.all(12),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: LayoutBreakpoints.gridFileListMaxExtent,
-            mainAxisExtent: 72,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
+        final isGrid =
+            state.viewMode == SftpViewMode.grid ||
+            state.viewMode == null &&
+                constraints.maxWidth >= LayoutBreakpoints.compactMax;
+        final mode = isGrid
+            ? RemoteBrowserViewMode.grid
+            : RemoteBrowserViewMode.list;
+        return RemoteBrowserEntriesView(
+          entries: _browserEntries,
+          viewMode: mode,
+          locationKey: 'sftp_files_${serverConnectionKey}_${state.currentPath}',
+          itemBuilder: (context, entry) => _buildFileListItem(
+            context,
+            _browserFilesByPath[entry.id]!,
+            state,
+            notifier,
+            mode,
           ),
-          itemCount: files.length,
-          itemBuilder: (context, index) {
-            final item = files[index];
-            return ValhallaCard(
-              margin: EdgeInsets.zero,
-              child: _buildFileListItem(context, item, state, notifier),
-            );
-          },
         );
       },
     );
   }
+
+  RemoteBrowserEntry _browserEntry(SftpFileItem item) => RemoteBrowserEntry(
+    id: item.path,
+    name: item.name,
+    isDirectory: item.isDirectory,
+    sizeBytes: item.sizeBytes,
+    modifiedEpoch: item.modifiedEpoch,
+    isSymbolicLink: item.isSymbolicLink,
+    linkTargetErrorCode: item.linkTargetErrorCode,
+  );
 
   Widget _buildFileListItem(
     BuildContext context,
     SftpFileItem item,
     SftpState state,
     SftpNotifier notifier,
+    RemoteBrowserViewMode viewMode,
   ) {
     final isDotDot = item.name == '..';
     final isSpecialNav = isDotDot;
@@ -1555,26 +1390,14 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
       leadingWidget = fileIconWidget;
     }
 
-    final baseTitleStyle = item.isDirectory
-        ? context.textTheme.titleSmall
-        : context.textTheme.bodyMedium;
-    final titleStyle = isHidden
-        ? baseTitleStyle?.copyWith(
-            color: context.colorScheme.onSurface.withValues(alpha: 0.62),
-          )
-        : baseTitleStyle;
-
-    return ListTile(
+    return RemoteBrowserEntryTile(
+      key: ValueKey('sftp_file_${item.path}'),
+      entry: _browserEntry(item),
+      viewMode: viewMode,
       selected: _isSelectionMode && isSelected,
       leading: leadingWidget,
-      title: Text(
-        item.name,
-        style: titleStyle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: isSpecialNav
-          ? null
+      metadata: isSpecialNav
+          ? const SizedBox.shrink()
           : Row(
               children: [
                 Flexible(
@@ -1611,7 +1434,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
               ],
             ),
       trailing: (isSpecialNav || _isSelectionMode)
-          ? null
+          ? const SizedBox.shrink()
           : PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, size: 18),
               onSelected: (action) {

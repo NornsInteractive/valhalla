@@ -43,6 +43,15 @@ class SmbClient {
     await for (final _ in _request('probe', const [], cancelled)) {}
   }
 
+  Stream<List<SmbEntry>> list(String path, {Future<void>? cancelled}) async* {
+    await for (final value in _request('list', [
+      [normalizePath(path)],
+      <String>[],
+    ], cancelled)) {
+      yield (value as List).cast<SmbEntry>();
+    }
+  }
+
   Stream<List<SmbEntry>> walk({
     required List<String> roots,
     List<String> excludes = const [],
@@ -229,7 +238,8 @@ Future<void> _worker(List<Object?> request) async {
     }
 
     final arguments = request[3] as List<Object?>;
-    if (request[2] == 'walk') {
+    if (request[2] == 'walk' || request[2] == 'list') {
+      final recursive = request[2] == 'walk';
       final roots = arguments[0] as List<String>;
       final excludes = arguments[1] as List<String>;
       Future<void> walk(String path, int depth) async {
@@ -270,7 +280,7 @@ Future<void> _worker(List<Object?> request) async {
               page.add(
                 SmbEntry(child, entry.size, entry.modifiedSeconds, isDirectory),
               );
-              if (isDirectory) directories.add(child);
+              if (recursive && isDirectory) directories.add(child);
             }
             if (page.isNotEmpty) await send(page);
             // Depth-first traversal holds only one bounded page per ancestor.

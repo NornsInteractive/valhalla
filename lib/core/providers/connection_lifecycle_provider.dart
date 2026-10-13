@@ -10,6 +10,7 @@ import 'server_provider.dart';
 import 'storage_providers.dart';
 import 'app_visibility_provider.dart';
 import 'agent_registry_provider.dart';
+import '../services/app_diagnostics.dart';
 
 /// 进程存活期间维持 SSH / ACP 连接的编排器。
 ///
@@ -29,7 +30,8 @@ class ConnectionLifecycleCoordinator {
     required this.keepAlive,
     required this.activeServer,
     this.onVisibilityChanged,
-  });
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now;
 
   final SSHClientManager sshManager;
 
@@ -41,6 +43,7 @@ class ConnectionLifecycleCoordinator {
   /// 读取当前活跃服务器。
   final ServerProfile? Function() activeServer;
   final void Function(bool foreground)? onVisibilityChanged;
+  final DateTime Function() _now;
 
   /// 应用是否已经退到后台。
   ///
@@ -63,10 +66,24 @@ class ConnectionLifecycleCoordinator {
   /// 返回复验结果，测试与调用方据此判断是否需要展示重连状态。
   Future<bool> onResumed() {
     if (_resuming != null) return _resuming!;
+    final elapsed = Stopwatch()..start();
+    var outcome = 'failed';
     late final Future<bool> future;
-    future = _resume().whenComplete(() {
-      if (identical(_resuming, future)) _resuming = null;
-    });
+    future = _resume()
+        .then((alive) {
+          outcome = alive ? 'healthy' : 'unavailable';
+          return alive;
+        })
+        .whenComplete(() {
+          unawaited(
+            AppDiagnostics.instance.recordTiming(
+              'connection.resume',
+              elapsed,
+              outcome: outcome,
+            ),
+          );
+          if (identical(_resuming, future)) _resuming = null;
+        });
     _resuming = future;
     return future;
   }
@@ -104,7 +121,7 @@ class ConnectionLifecycleCoordinator {
 
     final briefPause =
         _pausedAt == null ||
-        DateTime.now().difference(_pausedAt!) < const Duration(seconds: 10);
+        _now().difference(_pausedAt!) < const Duration(seconds: 10);
     if ((!wasBackground || briefPause) &&
         sshManager.recentlyVerified(server.id)) {
       if (reconnectController?.userIntent == true &&
@@ -136,7 +153,7 @@ class ConnectionLifecycleCoordinator {
   Future<void> onPaused() async {
     if (_disposed || _inBackground) return;
     _inBackground = true;
-    _pausedAt = DateTime.now();
+    _pausedAt = _now();
     _epoch++;
     _resuming = null;
     sshManager.setAppInBackground(true);

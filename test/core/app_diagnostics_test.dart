@@ -4,6 +4,29 @@ import 'package:valhalla/core/services/app_diagnostics.dart';
 
 void main() {
   test(
+    'operation timing is local, bounded metadata and never a content payload',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'diagnostics-timing-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final service = AppDiagnostics(directoryProvider: () async => directory);
+      await service.initialize();
+      final elapsed = Stopwatch()..start();
+      await service.recordTiming(
+        'sftp.directory',
+        elapsed,
+        outcome: 'completed',
+        count: 10000,
+      );
+      final text = await service.read();
+      expect(text, contains('[timing.sftp.directory]'));
+      expect(text, matches(r'durationMs=\d+ outcome=completed count=10000'));
+      expect(elapsed.isRunning, isFalse);
+      expect(text, isNot(contains('path=')));
+    },
+  );
+  test(
     'rotates three bounded files and redacts persisted and exported text',
     () async {
       final directory = await Directory.systemTemp.createTemp(

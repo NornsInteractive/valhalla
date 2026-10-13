@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
 import '../../../core/constants/layout_breakpoints.dart';
 import '../../../core/design/tokens.dart';
@@ -8,7 +9,9 @@ import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/nas_install_provider.dart';
 import '../../../core/providers/server_provider.dart';
 import '../../../core/services/nas_install_service.dart';
+import '../../../core/services/remote_browser_service.dart';
 import '../../../data/models/server_profile.dart';
+import '../../../widgets/remote_browser_dialog.dart';
 import 'nas_localizations.dart';
 
 class NasInstallDialog extends ConsumerStatefulWidget {
@@ -43,6 +46,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
   bool _isReconciling = false;
   String? _localError;
   bool _forceNewDeployment = false;
+  bool _isBrowsing = false;
   Timer? _elapsedTimer;
 
   @override
@@ -75,6 +79,54 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
     });
   }
 
+  Future<void> _browsePath({required bool dataRoot}) async {
+    if (_isSubmitting || _isBrowsing) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    final active = ref.read(activeServerProvider);
+    final targetId = _selectedServerId ?? active?.id;
+    if (active == null || active.id != targetId) {
+      setState(() => _localError = context.l10n.nasInstallBlockerSshRequired);
+      return;
+    }
+    final controller = dataRoot ? _dataRootCtrl : _mediaPathCtrl;
+    final original = controller.text;
+    final product = _product;
+    final initialPath = original.trim().isEmpty ? '/' : original.trim();
+    setState(() => _isBrowsing = true);
+    try {
+      final browser = ref
+          .read(remoteBrowserFactoryProvider)
+          .host(
+            initialPath: dataRoot ? p.posix.dirname(initialPath) : initialPath,
+            isCurrent: () =>
+                mounted &&
+                controller.text == original &&
+                _product == product &&
+                (_selectedServerId ?? ref.read(activeServerProvider)?.id) ==
+                    targetId,
+          );
+      try {
+        final selected = await RemoteBrowserDialog.pickDirectory(
+          context,
+          browser,
+        );
+        if (mounted && browser.isCurrent && selected != null) {
+          setState(() {
+            controller.text = dataRoot
+                ? p.posix.join(selected, p.posix.basename(initialPath))
+                : selected;
+          });
+        }
+      } finally {
+        await browser.dispose();
+      }
+    } catch (error) {
+      if (mounted) setState(() => _localError = context.nasBrowserError(error));
+    } finally {
+      if (mounted) setState(() => _isBrowsing = false);
+    }
+  }
+
   String _formatDuration(Duration d) {
     final m = d.inMinutes.toString().padLeft(2, '0');
     final s = (d.inSeconds % 60).toString().padLeft(2, '0');
@@ -101,8 +153,6 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
     } else if (activeServer != null &&
         servers.any((s) => s.id == activeServer.id)) {
       targetServer = activeServer;
-    } else if (servers.isNotEmpty) {
-      targetServer = servers.first;
     } else {
       targetServer = null;
     }
@@ -487,17 +537,14 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
         ? (_selectedServerId ??
               (servers.any((s) => s.id == activeServer?.id)
                   ? activeServer?.id
-                  : servers.firstOrNull?.id))
+                  : null))
         : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Product Selection
-        Text(
-          context.nasInstallProduct,
-          style: context.textTheme.titleSmall,
-        ),
+        Text(context.nasInstallProduct, style: context.textTheme.titleSmall),
         const SizedBox(height: 8),
         SegmentedButton<NasInstallProduct>(
           segments: const [
@@ -525,10 +572,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
         const SizedBox(height: 14),
 
         // Target Server
-        Text(
-          context.nasSshServer,
-          style: context.textTheme.titleSmall,
-        ),
+        Text(context.nasSshServer, style: context.textTheme.titleSmall),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           key: const Key('nas_install_server_selector'),
@@ -563,6 +607,14 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
           enabled: !_isSubmitting,
           decoration: InputDecoration(
             labelText: context.nasInstallMediaPath,
+            suffixIcon: IconButton(
+              key: const Key('nas_install_browse_media_path'),
+              tooltip: context.l10n.remoteBrowserSelectDirectory,
+              onPressed: _isSubmitting || _isBrowsing
+                  ? null
+                  : () => _browsePath(dataRoot: false),
+              icon: const Icon(Icons.folder_open_outlined),
+            ),
             helperText: context.nasInstallMediaPathHint,
             border: const OutlineInputBorder(),
             isDense: true,
@@ -577,6 +629,14 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
           enabled: !_isSubmitting,
           decoration: InputDecoration(
             labelText: context.nasInstallDataRoot,
+            suffixIcon: IconButton(
+              key: const Key('nas_install_browse_data_root'),
+              tooltip: context.l10n.remoteBrowserSelectDirectory,
+              onPressed: _isSubmitting || _isBrowsing
+                  ? null
+                  : () => _browsePath(dataRoot: true),
+              icon: const Icon(Icons.folder_open_outlined),
+            ),
             helperText: context.nasInstallDataRootHint,
             border: const OutlineInputBorder(),
             isDense: true,
@@ -718,9 +778,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
         if (plan.blockers.isNotEmpty) ...[
           Text(
             context.nasInstallBlockersTitle,
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: context.vDanger,
-            ),
+            style: theme.textTheme.titleSmall?.copyWith(color: context.vDanger),
           ),
           const SizedBox(height: 6),
           Container(
@@ -737,11 +795,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.cancel,
-                        size: 14,
-                        color: context.vDanger,
-                      ),
+                      Icon(Icons.cancel, size: 14, color: context.vDanger),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -840,10 +894,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
         const SizedBox(height: 12),
 
         // Steps
-        Text(
-          context.nasInstallPlannedSteps,
-          style: theme.textTheme.titleSmall,
-        ),
+        Text(context.nasInstallPlannedSteps, style: theme.textTheme.titleSmall),
         const SizedBox(height: 6),
         ...plan.steps.map((st) {
           return Padding(
@@ -884,9 +935,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
                   Icon(
                     isUrl ? Icons.link : Icons.info_outline,
                     size: 14,
-                    color: isUrl
-                        ? context.vInfo
-                        : theme.colorScheme.secondary,
+                    color: isUrl ? context.vInfo : theme.colorScheme.secondary,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -956,11 +1005,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
                       child: CircularProgressIndicator(strokeWidth: 2.5),
                     )
                   else if (isSuccess)
-                    Icon(
-                      Icons.check_circle,
-                      color: context.vSuccess,
-                      size: 20,
-                    )
+                    Icon(Icons.check_circle, color: context.vSuccess, size: 20)
                   else if (isFailed)
                     Icon(
                       Icons.error_outline,
@@ -1087,10 +1132,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              context.nasInstallLogTail,
-              style: theme.textTheme.titleSmall,
-            ),
+            Text(context.nasInstallLogTail, style: theme.textTheme.titleSmall),
           ],
         ),
         const SizedBox(height: 6),
@@ -1139,10 +1181,7 @@ class _NasInstallDialogState extends ConsumerState<NasInstallDialog> {
           Expanded(
             child: Text(
               value,
-              style: monoTextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w400,
-              ),
+              style: monoTextStyle(fontSize: 11, fontWeight: FontWeight.w400),
               overflow: TextOverflow.ellipsis,
               maxLines: 2,
             ),

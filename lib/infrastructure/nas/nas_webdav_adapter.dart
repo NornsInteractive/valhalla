@@ -5,6 +5,7 @@ import 'package:xml/xml_events.dart';
 
 import '../../data/models/nas_media.dart';
 import '../../data/models/nas_source.dart';
+import '../../data/models/remote_browser.dart';
 import 'nas_http_client.dart';
 
 class NasWebDavAdapter extends NasSourceAdapter {
@@ -28,18 +29,30 @@ class NasWebDavAdapter extends NasSourceAdapter {
         },
       );
 
-  Uri get _root => _endpoint.replace(
-    path:
-        '${_endpoint.path.replaceFirst(RegExp(r'/$'), '')}'
-        '${source.rootPath == '/' ? '/' : '/${source.rootPath.replaceFirst(RegExp(r'^/'), '')}'}',
-  );
-  Uri _path(String value) {
+  static List<String> _segments(String value) {
     if (value.contains('\u0000') || value.split('/').contains('..')) {
       throw const NasHttpException('NAS_INVALID_PATH');
     }
-    final root = _root.path.replaceFirst(RegExp(r'/$'), '');
+    return value
+        .split('/')
+        .where((part) => part.isNotEmpty && part != '.')
+        .toList();
+  }
+
+  Uri get _root => _endpoint.replace(
+    pathSegments: [
+      ..._endpoint.pathSegments.where((part) => part.isNotEmpty),
+      ..._segments(source.rootPath),
+      '',
+    ],
+  );
+  Uri _path(String value) {
     return _root.replace(
-      path: '$root/${value.replaceFirst(RegExp(r'^/'), '')}',
+      pathSegments: [
+        ..._root.pathSegments.where((part) => part.isNotEmpty),
+        ..._segments(value),
+        '',
+      ],
     );
   }
 
@@ -57,6 +70,66 @@ class NasWebDavAdapter extends NasSourceAdapter {
       headers: const {'Depth': '0'},
     );
     response.close();
+  }
+
+  @override
+  Stream<List<RemoteBrowserEntry>> browse(
+    String path,
+    NasCancellation cancellation,
+  ) async* {
+    cancellation.check();
+    final directory = _path(path);
+    final response = await _http.open(
+      'PROPFIND',
+      directory,
+      headers: const {'Depth': '1'},
+      cancellation: cancellation,
+    );
+    try {
+      var page = <RemoteBrowserEntry>[];
+      final parent = directory.path.replaceFirst(RegExp(r'/$'), '');
+      final root = _root.path.replaceFirst(RegExp(r'/$'), '');
+      await for (final entry in _davEntries(response.decodedBytes)) {
+        cancellation.check();
+        final uri = directory.resolve(entry.href);
+        if (!nasSameOrigin(_endpoint, uri) ||
+            uri.userInfo.isNotEmpty ||
+            uri.hasQuery ||
+            uri.hasFragment) {
+          continue;
+        }
+        final child = uri.path.replaceFirst(RegExp(r'/$'), '');
+        if (!child.startsWith('$parent/') ||
+            child.substring(parent.length + 1).contains('/')) {
+          continue;
+        }
+        final name = Uri.decodeComponent(child.substring(parent.length + 1));
+        if (name.isEmpty ||
+            name == '.' ||
+            name == '..' ||
+            name.contains('/') ||
+            name.contains('\x00')) {
+          continue;
+        }
+        page.add(
+          RemoteBrowserEntry(
+            id: Uri.decodeComponent(child.substring(root.length)),
+            name: name,
+            isDirectory: entry.directory,
+            sizeBytes: entry.size,
+            modifiedEpoch: entry.modified,
+            mimeType: entry.mime,
+          ),
+        );
+        if (page.length == 128) {
+          yield page;
+          page = [];
+        }
+      }
+      if (page.isNotEmpty) yield page;
+    } finally {
+      response.close();
+    }
   }
 
   @override
@@ -206,6 +279,17 @@ class NasWebDavAdapter extends NasSourceAdapter {
 
   @override
   Future<void> dispose() async => _http.close();
+
+  @override
+  Future<NasResource> resolveForDownload(NasMediaItem item) {
+    if (item.serverId != source.id || !item.path.startsWith('/')) {
+      throw const NasHttpException('NAS_SOURCE_MISMATCH');
+    }
+    return _http.downloadResource(
+      _endpoint.replace(path: item.path),
+      mimeType: item.mimeType ?? 'application/octet-stream',
+    );
+  }
 }
 
 int _modified(String? value) {

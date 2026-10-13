@@ -773,7 +773,8 @@ void main() {
   });
 
   test(
-    'download failure removes partial; retry atomically completes captured source',
+    'download failure keeps the exact partial bytes; explicit restart replaces '
+    'them and completes the captured source',
     () async {
       final directory = await Directory.systemTemp.createTemp('nas-download');
       var attempts = 0;
@@ -804,7 +805,27 @@ void main() {
           (tasks) => tasks.any((e) => e.status == NasDownloadStatus.failed),
         );
         final id = service.download(_item('original.mp3'));
-        await failed;
+        final task = (await failed).singleWhere((e) => e.id == id);
+        expect(task.status, NasDownloadStatus.failed);
+        expect(task.error, 'NAS_DOWNLOAD_FAILED');
+        expect(task.received, 5);
+        expect(task.localPath, isNotNull);
+        final partials = await directory
+            .list()
+            .where((file) => file.path.endsWith('.part'))
+            .toList();
+        expect(partials, hasLength(1));
+        expect(await File(partials.single.path).readAsBytes(), [0, 1, 2, 3, 4]);
+        expect(await File(task.localPath!).exists(), isFalse);
+
+        final completed = service.changes.firstWhere(
+          (tasks) => tasks.any((e) => e.status == NasDownloadStatus.completed),
+        );
+        service.retry(id);
+        final retried = (await completed).singleWhere((e) => e.id == id);
+        expect(retried.status, NasDownloadStatus.completed);
+        expect(retried.received, 10);
+        expect(ids, ['source-a', 'source-a']);
         expect(
           await directory
               .list()
@@ -812,14 +833,8 @@ void main() {
               .length,
           0,
         );
-        final completed = service.changes.firstWhere(
-          (tasks) => tasks.any((e) => e.status == NasDownloadStatus.completed),
-        );
-        service.retry(id);
-        final task = (await completed).single;
-        expect(ids, ['source-a', 'source-a']);
         expect(
-          await File(task.localPath!).readAsBytes(),
+          await File(retried.localPath!).readAsBytes(),
           List.generate(10, (i) => i),
         );
       } finally {
@@ -891,6 +906,40 @@ void main() {
           reason: 'retry resumes at the current position',
         );
         expect(native.state.position, const Duration(seconds: 42));
+        expect(service.state.error, isNull);
+      } finally {
+        await service.dispose();
+        await proxy.dispose();
+        await directory.delete(recursive: true);
+      }
+    },
+  );
+
+  test(
+    'offline playback opens the downloaded file without touching an adapter',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'nas-offline-player',
+      );
+      final repository = NasIndexRepository('${directory.path}/index.sqlite');
+      await repository.initialize();
+      final local = File('${directory.path}/offline.mp3');
+      await local.writeAsBytes(List.generate(10, (i) => i));
+      final native = _Player(), proxy = NasMediaProxyService(_Ssh());
+      final service = NasMediaPlayerService(
+        proxy,
+        repository,
+        player: native,
+        localPathFor: (item) async =>
+            item.path == 'offline.mp3' ? local.path : null,
+        adapterFor: (_) async =>
+            throw StateError('NAS_ADAPTER_MUST_NOT_BE_TOUCHED'),
+      );
+      try {
+        await service.open(_item('offline.mp3'));
+        expect(service.current?.path, 'offline.mp3');
+        expect(native.opened, [local.path]);
+        expect(native.headers.single, isEmpty);
         expect(service.state.error, isNull);
       } finally {
         await service.dispose();

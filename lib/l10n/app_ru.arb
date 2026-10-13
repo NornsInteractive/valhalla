@@ -1,5 +1,55 @@
 {
   "@@locale": "ru",
+  "nasPlaylistLoadFailed": "Плейлисты временно недоступны. Сохранённый список медиафайлов по-прежнему доступен. Обновите, чтобы повторить попытку.",
+  "nasAllLibraries": "Все медиатеки",
+  "nasNativeInstallTitle": "Установить Jellyfin (нативный пакет)",
+  "nasNativeStepVerifyRepo": "Проверить официальный подписанный репозиторий",
+  "nasNativeStepPreventAutostart": "Запретить автозапуск службы до настройки",
+  "nasNativeStepInstallPackages": "Установить подписанные пакеты фиксированных версий",
+  "nasNativeStepConfigureLoopback": "Настроить прослушивание только на localhost",
+  "nasNativeStageInstalling": "Установка пакетов фиксированных версий",
+  "nasNativeStageStarting": "Запуск службы systemd",
+  "nasNativeGuidanceMediaAccess": "Права доступа и владельцы медиафайлов не меняются. Убедитесь, что пользователь службы Jellyfin имеет доступ на чтение.",
+  "nasNativeGuidanceNoUpgrade": "Существующие установки Jellyfin не будут приняты под управление, изменены или обновлены.",
+  "nasNativeSupportedRequirements": "Требуются Debian или Ubuntu (amd64/arm64), systemd и права root либо sudo без пароля.",
+  "nasNativeExistingInstallTitle": "Обнаружена существующая установка Jellyfin",
+  "nasNativeExistingInstallExplanation": "На этом сервере уже установлен Jellyfin. Valhalla не будет изменять или переустанавливать его. Проверьте подключение напрямую.",
+  "nasNativeCancelExplanation": "Запрошена отмена в ближайшей безопасной точке. Текущие операции с пакетами будут безопасно завершены.",
+  "nasNativeMediaPathLabel": "Путь к каталогу медиафайлов",
+  "nasNativeMediaPathHint": "Существующий абсолютный путь на сервере (например, /media/library). Права доступа не меняются.",
+  "nasNativeSudoRequired": "Для установки системных пакетов требуются права root или sudo без пароля",
+  "nasDiagnosticsTitle": "Диагностика медиаисточника",
+  "nasDiagnosticsConnection": "Подключение",
+  "nasDiagnosticsScan": "Сканирование медиатеки",
+  "nasDiagnosticsLastSuccess": "Последнее успешное подключение",
+  "nasDiagnosticsCredentials": "Проверка сохранённых учётных данных",
+  "nasDiagnosticsFinalizing": "Завершение индексации",
+  "nasDiagnosticsNotChecked": "Не проверено",
+  "nasCacheLegacy": "Старые миниатюры (без привязки к источнику)",
+  "nasCacheGlobalBudget": "Лимит миниатюр (все источники)",
+  "nasCacheNoSource": "Выберите медиаисточник для управления его кэшем.",
+  "nasOfflineRecordedHint": "Учтённый объём загрузок, а не измеренное место на диске. Очистка миниатюр не удаляет офлайн-файлы.",
+  "nasCacheClearConfirm": "Очистить миниатюры для «{scope}»? Офлайн-файлы и удалённые медиафайлы будут сохранены.",
+  "nasOfflineRecordedBytes": "Учтённые загрузки: {size}",
+  "nasDeployDockerTitle": "Приложение Docker",
+  "nasDeployDockerDesc": "Откройте официальное приложение Jellyfin в Центре приложений. Перед установкой проверьте настройки.",
+  "nasDeployNativeDesc": "Установите Jellyfin прямо на этот сервер из официальных пакетов. Существующие установки не изменятся.",
+  "nasDeployEnableAppCenter": "Включить экспериментальный Центр приложений для продолжения? Расположение меню не изменится.",
+  "nasDeployCatalogUnavailable": "Официальное приложение Jellyfin недоступно. Убедитесь, что официальный источник включён, и повторите попытку.",
+  "@nasCacheClearConfirm": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "@nasOfflineRecordedBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "appName": "Valhalla",
   "appSubtitle": "AI-нативное управление серверами и агентами",
   "navAiChat": "AI чат",
@@ -1663,5 +1713,418 @@
   "nasThumbnailCacheBudget": "Лимит кэша",
   "nasThumbnailCacheClear": "Очистить кэш",
   "nasThumbnailCacheCleared": "Кэш миниатюр очищен",
-  "nasThumbnailCacheOff": "Выкл"
+  "nasThumbnailCacheOff": "Выкл",
+  "navAppCenter": "Центр приложений",
+  "settingsExperimentalAppCenterTitle": "Центр приложений (Docker)",
+  "settingsExperimentalAppCenterDesc": "Экспериментальный магазин приложений и менеджер развертывания контейнеров",
+  "appCenterTitle": "Центр приложений",
+  "appCenterTabStore": "Каталог",
+  "appCenterTabInstalled": "Установленные",
+  "appCenterTabTasks": "Задачи",
+  "appCenterSources": "Источники",
+  "appCenterManageSources": "Управление источниками",
+  "appCenterAddSource": "Добавить источник",
+  "appCenterSourceName": "Имя источника",
+  "appCenterSourceUrl": "URL источника (HTTPS)",
+  "appCenterDeleteSource": "Удалить источник",
+  "appCenterRefresh": "Обновить",
+  "appCenterSearchHint": "Поиск приложений...",
+  "appCenterFilterAllCategories": "Все категории",
+  "appCenterFilterAllSources": "Все источники",
+  "appCenterNoApps": "Приложения не найдены",
+  "appCenterNoInstalled": "Нет установленных приложений",
+  "appCenterNoTasks": "Нет активных или недавних задач",
+  "appCenterInstall": "Установить",
+  "appCenterInstalledBadge": "Установлено",
+  "appCenterIncompatibleBadge": "Несовместимо",
+  "appCenterUpdateAvailable": "Доступно обновление",
+  "appCenterArchitectureBlocker": "Архитектура не поддерживается",
+  "appCenterAppDetails": "Сведения о приложении",
+  "appCenterVersion": "Версия",
+  "appCenterCategory": "Категория",
+  "appCenterSource": "Источник",
+  "appCenterArchitectures": "Поддерживаемые архитектуры",
+  "appCenterScreenshots": "Скриншоты",
+  "appCenterDescription": "Описание",
+  "appCenterWizardTitle": "Установка {appName}",
+  "@appCenterWizardTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterConfigureTitle": "Настройка {appName}",
+  "@appCenterConfigureTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUpdateTitle": "Обновление {appName}",
+  "@appCenterUpdateTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStepEnvironment": "Окружение",
+  "appCenterStepConfig": "Конфигурация",
+  "appCenterStepReview": "Проверка плана",
+  "appCenterStepProgress": "Выполнение",
+  "appCenterInstanceName": "Имя экземпляра",
+  "appCenterDataDirectory": "Каталог данных",
+  "appCenterBrowseDirectory": "Обзор каталога",
+  "appCenterNetworkAndPorts": "Сеть и порты",
+  "appCenterBindAddress": "Адрес привязки",
+  "appCenterBindLoopback": "Только localhost (127.0.0.1)",
+  "appCenterBindAll": "Все интерфейсы (0.0.0.0)",
+  "appCenterPortMapping": "Сопоставление портов",
+  "appCenterMounts": "Точки монтирования",
+  "appCenterMountSource": "Путь на хосте",
+  "appCenterMountTarget": "Путь в контейнере",
+  "appCenterMountReadOnly": "Только для чтения",
+  "appCenterVariables": "Переменные",
+  "appCenterEnvironmentVariables": "Переменные окружения",
+  "appCenterNext": "Далее",
+  "appCenterBack": "Назад",
+  "appCenterConfirmAndExecute": "Выполнить план",
+  "appCenterPlanPreview": "Предварительный просмотр плана развертывания",
+  "appCenterPlanSanitizedNotice": "Проверьте созданный план развертывания перед выполнением:",
+  "appCenterEnvironmentCheck": "Окружение Docker",
+  "appCenterDockerFound": "Docker доступен",
+  "appCenterDockerMissing": "Docker не установлен",
+  "appCenterComposeFound": "Docker Compose доступен",
+  "appCenterComposeMissing": "Docker Compose не установлен",
+  "appCenterBootstrapPrompt": "Docker и Compose могут быть установлены на этот сервер автоматически. Требуются права root/sudo.",
+  "appCenterBootstrapButton": "Установить Docker и Compose",
+  "appCenterSudoPassword": "Пароль sudo (необязательно / при необходимости)",
+  "appCenterSudoPasswordHint": "Введите пароль sudo для привилегированных операций",
+  "appCenterOpen": "Открыть веб-интерфейс",
+  "appCenterStart": "Запустить",
+  "appCenterStop": "Остановить",
+  "appCenterRestart": "Перезапустить",
+  "appCenterLogs": "Журналы",
+  "appCenterConfig": "Настроить",
+  "appCenterUpdate": "Обновить",
+  "appCenterRestore": "Восстановить",
+  "appCenterUninstall": "Удалить",
+  "appCenterUninstallConfirmTitle": "Удалить {appName}?",
+  "@appCenterUninstallConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallConfirmMessage": "Вы уверены, что хотите удалить {appName}? Контейнеры будут удалены, но каталог данных приложения будет сохранен.",
+  "@appCenterUninstallConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallKeepData": "Удалить (Сохранить данные)",
+  "appCenterUninstallDeleteSelected": "Удалить и очистить выбранное",
+  "appCenterUninstallInspecting": "Проверка каталогов данных приложения...",
+  "appCenterUninstallInspectionFailedWarning": "Сбой проверки очистки данных. Вы по-прежнему можете удалить контейнеры приложения, сохранив все данные в безопасности.",
+  "appCenterUninstallDirectoriesTitle": "Каталоги данных и тома Docker",
+  "appCenterUninstallNoDirectories": "Каталоги данных привязки не обнаружены. Контейнеры будут удалены с сохранением данных.",
+  "appCenterUninstallDefaultPreservedHint": "По умолчанию все данные сохраняются. Выбирайте только каталоги и тома для безвозвратного удаления.",
+  "appCenterUninstallPermanentLossWarning": "Выбранные данные будут безвозвратно удалены с сервера. Корзины нет.",
+  "appCenterUninstallSelectedPathsTitle": "Данные для безвозвратного удаления:",
+  "appCenterUninstallRiskAck": "Я понимаю риски и влияние на другие приложения и подтверждаю безвозвратное удаление этих данных.",
+  "remoteBrowserAllFileTypes": "Все форматы",
+  "remoteBrowserDocuments": "Текст и документы",
+  "remoteBrowserFileFormat": "Формат файла",
+  "appCenterUninstallRiskSystem": "Системный путь",
+  "appCenterUninstallRiskShared": "Используется другими приложениями",
+  "appCenterUninstallRiskVolume": "Том Docker",
+  "appCenterCleanupVolumeDeleteFailed": "Не удалось удалить том Docker. Освободите его от других контейнеров, повторите проверку и попробуйте снова.",
+  "appCenterCleanupPermissionDenied": "Доступ запрещён. Используйте учётную запись с доступом к данным или sudo.",
+  "appCenterCleanupCriticalPath": "Корень сервера, рабочие и управляющие системные каталоги нельзя удалить при удалении приложения.",
+  "appCenterUninstallTypeAppNameHint": "Введите точное имя приложения для подтверждения безвозвратного удаления: {appName}",
+  "@appCenterUninstallTypeAppNameHint": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallRiskLegacy": "Исключительное владение не подтверждено",
+  "appCenterUninstallRiskExternal": "Вне корневого каталога данных приложения",
+  "appCenterUninstallRiskMedia": "Медиа или каталог только для чтения",
+  "appCenterUninstallTargetBlocked": "Защищенный каталог, удаление невозможно",
+  "appCenterCleanupProtected": "Каталог данных сохранен, так как он защищен или небезопасен для удаления",
+  "appCenterCleanupUnavailable": "Проверка очистки недоступна; возможно обычное удаление с сохранением данных",
+  "appCenterCleanupChanged": "Каталог или целевой сервер изменились; проверьте и подтвердите снова",
+  "appCenterCleanupConfirmationRequired": "Пожалуйста, подтвердите выбранные каталоги, риски и точное имя приложения заново",
+  "appCenterCleanupRetryUnavailable": "Безопасный повтор очистки недоступен; проверьте сведения о задаче",
+  "appCenterCleanupAlreadyAbsent": "Каталог уже отсутствует; удаление не требуется",
+  "appCenterCleanupDeleteFailed": "Удаление не завершено; некоторые файлы уже могли быть удалены. Проверьте оставшиеся пути.",
+  "appCenterCleanupUnconfirmed": "Не удалось подтвердить результат или безопасность очистки; проверьте задачу перед продолжением",
+  "appCenterCleanupRetryTitle": "Повторить очистку оставшихся данных для {appName}?",
+  "@appCenterCleanupRetryTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterCleanupRetryDescription": "Приложение уже удалено. Выберите только незавершенные каталоги данных; повтор не выполнит его повторное удаление.",
+  "appCenterCleanupRetrySelected": "Удалить выбранные оставшиеся данные",
+  "appCenterCleanupResultsTitle": "Результаты очистки каталогов",
+  "appCenterCleanupPartialSummary": "Приложение удалено; часть данных не была полностью очищена.",
+  "appCenterCleanupPending": "Завершение не подтверждено",
+  "appCenterCleanupRemoved": "Удалено",
+  "appCenterCleanupRetained": "Сохранено",
+  "appCenterCleanupRetryAction": "Повторить очистку оставшихся данных",
+  "appCenterJellyfinSoftwareTitle": "Режим программного декодирования",
+  "appCenterJellyfinSoftwareDesc": "Отключает транскодирование на GPU, удаляет проверенные сопоставления GPU-устройств и монтирует /Media только для чтения.",
+  "appCenterJellyfinProfileUnavailable": "Профиль программного декодирования недоступен для этого шаблона",
+  "appCenterJellyfinSoftwareChanges": "Примененные изменения профиля:",
+  "appCenterLogsTitle": "Журналы {appName}",
+  "@appCenterLogsTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterLogsEmpty": "Для этого развертывания нет записей журнала",
+  "appCenterLogsCopied": "Журналы скопированы в буфер обмена",
+  "appCenterTaskStageQueued": "В очереди",
+  "appCenterTaskStagePreparing": "Подготовка",
+  "appCenterTaskStagePulling": "Загрузка образов",
+  "appCenterTaskStageApplying": "Применение конфигурации",
+  "appCenterTaskStageChecking": "Проверка состояния",
+  "appCenterTaskStageSucceeded": "Успешно",
+  "appCenterTaskStageFailed": "Ошибка",
+  "appCenterTaskStageCancelled": "Отменено",
+  "appCenterTaskStageNeedsInspection": "Требуется проверка",
+  "appCenterCancelTask": "Отменить задачу",
+  "appCenterCopyLog": "Копировать журнал",
+  "appCenterErrorNotConnected": "Сервер не подключен",
+  "appCenterErrorEnvironmentRequired": "Требуется проверка окружения Docker",
+  "appCenterErrorPlanExpired": "План развертывания устарел или недействителен",
+  "appCenterErrorTargetChanged": "Целевой сервер изменился; операция отменена",
+  "appCenterErrorConfigInvalid": "Недействительная конфигурация приложения",
+  "appCenterErrorPathInvalid": "{field} должен быть абсолютным путем кроме корневого (/), и не может содержать сегменты . или ..",
+  "@appCenterErrorPathInvalid": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterErrorSourceInvalid": "Недействительный источник каталога приложений",
+  "appCenterErrorNoWebEntry": "Это приложение не имеет веб-интерфейса",
+  "appCenterErrorHttpsDirectRequired": "Точка доступа HTTPS не может быть туннелирована через SSH; откройте напрямую",
+  "appCenterErrorOpenFailed": "Не удалось открыть URL приложения",
+  "appCenterErrorGeneric": "Ошибка Центра приложений: {error}",
+  "@appCenterErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterSourceCommunityHint": "напр. Магазин сообщества",
+  "appCenterSourceUrlInvalidHttps": "Должен быть действительный URL-адрес HTTPS",
+  "appCenterDirectUrlLabel": "Прямой URL",
+  "appCenterErrorSourceRemoved": "Источник приложения больше недоступен в каталоге. Невозможно обновить шаблон.",
+  "appCenterRestoreConfirmTitle": "Восстановить {appName}?",
+  "@appCenterRestoreConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestoreConfirmMessage": "Восстановить {appName} до предыдущей конфигурации развертывания?",
+  "@appCenterRestoreConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostPortLabel": "Порт хоста (-> {target})",
+  "@appCenterHostPortLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostMountLabel": "Хост: {target}",
+  "@appCenterHostMountLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterVersionLatest": "последняя",
+  "appCenterWaitingForLogs": "Ожидание журналов задачи...",
+  "appCenterNoPreviewAvailable": "Предварительный просмотр недоступен",
+  "appCenterBlockerLocalDockerRequired": "Требуется локальный демон Docker (удаленный DOCKER_HOST не поддерживается)",
+  "appCenterBlockerToolsRequired": "На сервере отсутствуют необходимые утилиты (bash, setsid, flock, base64, realpath, ss, awk)",
+  "appCenterBlockerLinuxRequired": "Требуется операционная система Linux",
+  "appCenterBlockerTemplateUnsupported": "Неподдерживаемая возможность шаблона: {feature}",
+  "@appCenterBlockerTemplateUnsupported": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterFieldRequired": "Это поле обязательно для заполнения",
+  "appCenterContinueInstall": "Продолжить установку",
+  "appCenterOperation": "Операция",
+  "nasTabLibrary": "Медиатека",
+  "nasContinueWatching": "Продолжить просмотр",
+  "nasRecentPhotos": "Недавние фото",
+  "nasRecentVideos": "Недавние видео",
+  "nasRecentMusic": "Недавняя музыка",
+  "nasDownloadPaused": "Приостановлено",
+  "nasDownloadDeleteConfirmTitle": "Удалить офлайн-файл",
+  "nasDownloadDeleteConfirmMessage": "Это действие удалит скачанный офлайн-файл с вашего устройства. Исходный файл на сервере останется без изменений.",
+  "nasDownloadDeleteConfirmButton": "Удалить локальную копию",
+  "nasDownloadSourceChangedMessage": "Конфигурация удаленного источника изменилась с момента начала загрузки. Хотите перезапустить скачивание сначала?",
+  "nasDownloadRestartFromScratch": "Начать сначала",
+  "nasDownloadErrorSourceChanged": "Конфигурация источника изменилась",
+  "nasDownloadErrorOfflineFileInvalid": "Скачанный файл поврежден или неполон",
+  "nasDownloadErrorStorageFailed": "Ошибка записи файла в хранилище",
+  "nasDownloadErrorHlsUnsupported": "Офлайн-загрузка потоковых трансляций не поддерживается",
+  "nasDownloadErrorPathInvalid": "Недопустимый путь сохранения загрузки",
+  "nasOpenInApp": "Открыть в приложении",
+  "nasOpenSystem": "Открыть через систему",
+  "sftpRecentDirectories": "Недавние каталоги",
+  "sftpNoRecentDirectories": "Нет недавних каталогов",
+  "sftpRetryFailed": "Повторить неудачные",
+  "appCenterDiskCheckFailed": "Не удалось проверить доступное дисковое пространство на сервере",
+  "appCenterDiskFull": "Диск сервера переполнен; невозможно продолжить операцию",
+  "appCenterHealthInvalid": "Проверка состояния контейнера не пройдена или возвращено недопустимое состояние",
+  "appCenterPreflightSummary": "Сводка предварительной проверки",
+  "appCenterMeasuredAvailableSpace": "Измеренное свободное место",
+  "appCenterUpdateComparison": "Сравнение обновления",
+  "appCenterNoChangesDetected": "Структурных изменений не обнаружено",
+  "appCenterSectionImage": "Образ контейнера",
+  "appCenterSectionPorts": "Сопоставление портов",
+  "appCenterSectionVolumes": "Точки монтирования",
+  "appCenterSectionEnvironment": "Переменные окружения",
+  "appCenterSectionHealthcheck": "Проверка работоспособности",
+  "appCenterSectionRestart": "Политика перезапуска",
+  "appCenterSectionServices": "Службы",
+  "appCenterHealthNoCheck": "Без проверки состояния",
+  "appCenterHealthHealthy": "Исправен",
+  "appCenterHealthUnhealthy": "Неисправен",
+  "appCenterHealthStarting": "Запуск",
+  "appCenterNoSources": "Нет включенных источников приложений",
+  "appCenterNoMatchingApps": "Нет приложений, соответствующих поиску или фильтрам",
+  "appCenterClearFilters": "Очистить фильтры",
+  "appCenterSourceLoadFailed": "Не удалось загрузить источник приложений",
+  "appCenterRetry": "Повторить",
+  "appCenterRecheck": "Перепроверить",
+  "appCenterRecheckTask": "Перепроверить статус задачи",
+  "appCenterTaskNeedsInspectionTitle": "Статус задачи не подтвержден",
+  "appCenterTaskNeedsInspectionMessage": "Результат задачи на сервере неизвестен. Проверьте статус или просмотрите логи; не повторяйте операцию вслепую.",
+  "appCenterStopConfirmTitle": "Остановить {appName}?",
+  "@appCenterStopConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStopConfirmMessage": "Вы уверены, что хотите остановить {appName} на сервере {serverName}? Работающие контейнеры будут остановлены.",
+  "@appCenterStopConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmTitle": "Перезапустить {appName}?",
+  "@appCenterRestartConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmMessage": "Вы уверены, что хотите перезапустить {appName} на сервере {serverName}?",
+  "@appCenterRestartConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterBrowseStore": "Перейти в магазин",
+  "appCenterViewTasks": "Просмотреть задачи",
+  "appCenterViewInstalled": "Просмотреть установленное приложение",
+  "appCenterRunInBackground": "Выполнять в фоне",
+  "appCenterTaskDetails": "Подробности задачи",
+  "appCenterTaskTarget": "Цель",
+  "appCenterTaskDirectory": "Каталог",
+  "appCenterTaskCreatedAt": "Создано",
+  "appCenterTaskExitCode": "Код завершения: {code}",
+  "@appCenterTaskExitCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "appCenterStatusRunning": "Работает",
+  "appCenterStatusStopped": "Остановлен",
+  "appCenterStatusInstalling": "Установка",
+  "appCenterStatusUnknown": "Неизвестно",
+  "appCenterEnvReady": "Среда Docker и Compose готова",
+  "appCenterEnvNotReady": "Среда Docker не готова",
+  "appCenterEnvInspecting": "Проверка среды Docker...",
+  "appCenterUninstallWholeDataRoot": "Полный корневой каталог данных",
+  "appCenterUninstallWholeDataRootWarning": "Сюда входят несмонтированные файлы и подкаталоги в корневом каталоге данных приложения.",
+  "appCenterUninstallCoveredByParent": "Перекрывается родительским каталогом",
+  "appCenterContainerNameInvalid": "Имя экземпляра должно начинаться с буквы или цифры и содержать только буквы, цифры, подчеркивания, точки и дефисы (до 120 символов).",
+  "appCenterMainService": "Основная служба",
+  "appCenterContainerNamesPreview": "Предпросмотр имен контейнеров",
+  "appCenterContainersRecreationNotice": "Изменение имен контейнеров экземпляра приведет к пересозданию существующих контейнеров приложения.",
+  "remoteBrowserTitle": "Удаленный обозреватель файлов",
+  "remoteBrowserSelectDirectory": "Выбрать каталог",
+  "remoteBrowserSelectCurrentDirectory": "Выбрать текущий каталог",
+  "remoteBrowserSearchHint": "Поиск файлов и папок...",
+  "remoteBrowserNoEntries": "Совпадающие файлы или каталоги не найдены",
+  "remoteBrowserEmptyDirectory": "Этот каталог пуст",
+  "remoteBrowserSelectedCount": "{count, plural, =1{Выбран 1 элемент} few{Выбрано {count} элемента} many{Выбрано {count} элементов} other{Выбрано {count} элементов}}",
+  "@remoteBrowserSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remoteBrowserParentDirectory": "Родительский каталог",
+  "remoteBrowserLibrariesTitle": "Медиатеки",
+  "remoteBrowserDisconnected": "Удаленное подключение потеряно или недоступно.",
+  "remoteBrowserTargetChanged": "Целевое окружение или активный сервер изменились.",
+  "remoteBrowserPathInvalid": "Запрошенный путь недействителен или недоступен.",
+  "remoteBrowserPathOutsideRoot": "Запрошенный путь находится вне разрешенного корневого каталога.",
+  "remoteBrowserEntryUnavailable": "Выбранный элемент недоступен или недействителен.",
+  "nasBrowseUnavailable": "Служба обзора NAS в данный момент недоступна.",
+  "nasInvalidDirectoryEntry": "При обзоре NAS обнаружен недействительный элемент каталога.",
+  "nasInvalidLibraryResponse": "Недействительный или поврежденный ответ медиатеки.",
+  "nasScanFilterUnresolved": "Не удалось разрешить путь фильтра сканирования.",
+  "nasSourceSaveIncomplete": "Предыдущее сохранение источника выполнено лишь частично. Введите учетные данные заново и сохраните их перед обзором."
 }

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:valhalla/core/providers/nas_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/settings_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
@@ -65,6 +68,10 @@ void main() {
             serverListProvider.overrideWith(_TestServerListNotifier.new),
             activeServerProvider.overrideWith(_TestActiveServerNotifier.new),
             sftpProvider.overrideWith(_FakeSftpNotifier.new),
+            nasHomeProvider.overrideWith(
+              (ref) async => const NasHomeSections(),
+            ),
+            nasDownloadsProvider.overrideWith((ref) => Stream.value(const [])),
           ],
         );
         addTearDown(container.dispose);

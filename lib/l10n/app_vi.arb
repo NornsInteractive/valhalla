@@ -1,5 +1,55 @@
 {
   "@@locale": "vi",
+  "nasPlaylistLoadFailed": "Danh sách phát tạm thời không khả dụng. Bạn vẫn có thể xem danh sách nội dung đã lưu. Hãy làm mới để thử lại.",
+  "nasAllLibraries": "Tất cả thư viện",
+  "nasNativeInstallTitle": "Cài đặt Jellyfin (gói hệ thống)",
+  "nasNativeStepVerifyRepo": "Xác minh kho chính thức có chữ ký",
+  "nasNativeStepPreventAutostart": "Ngăn dịch vụ tự khởi động trước khi cấu hình",
+  "nasNativeStepInstallPackages": "Cài các gói có chữ ký với phiên bản cố định",
+  "nasNativeStepConfigureLoopback": "Cấu hình chỉ lắng nghe trên localhost",
+  "nasNativeStageInstalling": "Đang cài các gói có phiên bản cố định",
+  "nasNativeStageStarting": "Đang khởi động dịch vụ systemd",
+  "nasNativeGuidanceMediaAccess": "Quyền truy cập và chủ sở hữu tệp phương tiện không thay đổi. Hãy bảo đảm người dùng dịch vụ Jellyfin có quyền đọc.",
+  "nasNativeGuidanceNoUpgrade": "Không tiếp quản, sửa đổi hoặc nâng cấp các bản Jellyfin đã cài đặt.",
+  "nasNativeSupportedRequirements": "Yêu cầu Debian hoặc Ubuntu (amd64/arm64), systemd và quyền root hoặc sudo không cần mật khẩu.",
+  "nasNativeExistingInstallTitle": "Phát hiện Jellyfin đã được cài đặt",
+  "nasNativeExistingInstallExplanation": "Jellyfin đã được cài trên máy chủ này. Valhalla sẽ không sửa đổi hay cài đặt lại. Hãy kiểm tra kết nối trực tiếp.",
+  "nasNativeCancelExplanation": "Đã yêu cầu hủy tại điểm an toàn tiếp theo. Các thao tác gói đang chạy sẽ hoàn tất an toàn.",
+  "nasNativeMediaPathLabel": "Đường dẫn thư mục phương tiện",
+  "nasNativeMediaPathHint": "Đường dẫn tuyệt đối đã tồn tại trên máy chủ (ví dụ: /media/library). Quyền truy cập không thay đổi.",
+  "nasNativeSudoRequired": "Cần quyền root hoặc sudo không cần mật khẩu để cài gói hệ thống",
+  "nasDiagnosticsTitle": "Chẩn đoán nguồn phương tiện",
+  "nasDiagnosticsConnection": "Kết nối",
+  "nasDiagnosticsScan": "Quét thư viện",
+  "nasDiagnosticsLastSuccess": "Lần kết nối thành công gần nhất",
+  "nasDiagnosticsCredentials": "Đang kiểm tra thông tin đăng nhập đã lưu",
+  "nasDiagnosticsFinalizing": "Đang hoàn tất chỉ mục",
+  "nasDiagnosticsNotChecked": "Chưa kiểm tra",
+  "nasCacheLegacy": "Ảnh thu nhỏ cũ (chưa gán nguồn)",
+  "nasCacheGlobalBudget": "Giới hạn ảnh thu nhỏ (mọi nguồn)",
+  "nasCacheNoSource": "Chọn nguồn phương tiện để quản lý bộ nhớ đệm của nguồn đó.",
+  "nasOfflineRecordedHint": "Đây là số byte tải xuống được ghi nhận, không phải dung lượng đĩa đo được. Xóa ảnh thu nhỏ không xóa tệp ngoại tuyến.",
+  "nasCacheClearConfirm": "Xóa ảnh thu nhỏ của {scope}? Các tệp ngoại tuyến và phương tiện từ xa vẫn được giữ lại.",
+  "nasOfflineRecordedBytes": "Dữ liệu tải xuống đã ghi nhận: {size}",
+  "nasDeployDockerTitle": "Ứng dụng Docker",
+  "nasDeployDockerDesc": "Mở ứng dụng Jellyfin chính thức trong Trung tâm ứng dụng. Kiểm tra cấu hình trước khi cài đặt.",
+  "nasDeployNativeDesc": "Cài Jellyfin trực tiếp trên máy chủ này bằng các gói chính thức. Các bản cài đặt hiện có không bị thay đổi.",
+  "nasDeployEnableAppCenter": "Bật Trung tâm ứng dụng thử nghiệm để tiếp tục? Bố cục menu của bạn sẽ không thay đổi.",
+  "nasDeployCatalogUnavailable": "Ứng dụng Jellyfin chính thức hiện không khả dụng. Kiểm tra xem nguồn chính thức đã được bật rồi thử lại.",
+  "@nasCacheClearConfirm": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "@nasOfflineRecordedBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "appName": "Valhalla",
   "appSubtitle": "Quản lý Máy chủ & Agent Chuẩn AI",
   "navAiChat": "Trò chuyện AI",
@@ -1663,5 +1713,418 @@
   "nasThumbnailCacheBudget": "Giới hạn bộ nhớ đệm",
   "nasThumbnailCacheClear": "Xóa bộ nhớ đệm",
   "nasThumbnailCacheCleared": "Đã xóa bộ nhớ đệm hình thu nhỏ",
-  "nasThumbnailCacheOff": "Tắt"
+  "nasThumbnailCacheOff": "Tắt",
+  "navAppCenter": "Trung tâm ứng dụng",
+  "settingsExperimentalAppCenterTitle": "Trung tâm ứng dụng (Docker)",
+  "settingsExperimentalAppCenterDesc": "Cửa hàng ứng dụng thử nghiệm và trình quản lý triển khai container",
+  "appCenterTitle": "Trung tâm ứng dụng",
+  "appCenterTabStore": "Cửa hàng",
+  "appCenterTabInstalled": "Đã cài đặt",
+  "appCenterTabTasks": "Tác vụ",
+  "appCenterSources": "Nguồn",
+  "appCenterManageSources": "Quản lý nguồn",
+  "appCenterAddSource": "Thêm nguồn",
+  "appCenterSourceName": "Tên nguồn",
+  "appCenterSourceUrl": "URL nguồn (HTTPS)",
+  "appCenterDeleteSource": "Xóa nguồn",
+  "appCenterRefresh": "Làm mới",
+  "appCenterSearchHint": "Tìm kiếm ứng dụng...",
+  "appCenterFilterAllCategories": "Tất cả danh mục",
+  "appCenterFilterAllSources": "Tất cả nguồn",
+  "appCenterNoApps": "Không tìm thấy ứng dụng",
+  "appCenterNoInstalled": "Chưa cài đặt ứng dụng nào",
+  "appCenterNoTasks": "Không có tác vụ đang chạy hoặc gần đây",
+  "appCenterInstall": "Cài đặt",
+  "appCenterInstalledBadge": "Đã cài đặt",
+  "appCenterIncompatibleBadge": "Không tương thích",
+  "appCenterUpdateAvailable": "Có bản cập nhật",
+  "appCenterArchitectureBlocker": "Kiến trúc không được hỗ trợ",
+  "appCenterAppDetails": "Chi tiết ứng dụng",
+  "appCenterVersion": "Phiên bản",
+  "appCenterCategory": "Danh mục",
+  "appCenterSource": "Nguồn",
+  "appCenterArchitectures": "Kiến trúc hỗ trợ",
+  "appCenterScreenshots": "Ảnh chụp màn hình",
+  "appCenterDescription": "Mô tả",
+  "appCenterWizardTitle": "Cài đặt {appName}",
+  "@appCenterWizardTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterConfigureTitle": "Cấu hình {appName}",
+  "@appCenterConfigureTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUpdateTitle": "Cập nhật {appName}",
+  "@appCenterUpdateTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStepEnvironment": "Môi trường",
+  "appCenterStepConfig": "Cấu hình",
+  "appCenterStepReview": "Xem lại kế hoạch",
+  "appCenterStepProgress": "Tiến độ",
+  "appCenterInstanceName": "Tên phiên bản",
+  "appCenterDataDirectory": "Thư mục dữ liệu",
+  "appCenterBrowseDirectory": "Duyệt thư mục",
+  "appCenterNetworkAndPorts": "Mạng & Cổng",
+  "appCenterBindAddress": "Địa chỉ liên kết",
+  "appCenterBindLoopback": "Chỉ máy cục bộ (127.0.0.1)",
+  "appCenterBindAll": "Tất cả giao diện (0.0.0.0)",
+  "appCenterPortMapping": "Ánh xạ cổng",
+  "appCenterMounts": "Điểm gắn kết lưu trữ",
+  "appCenterMountSource": "Đường dẫn máy chủ",
+  "appCenterMountTarget": "Đường dẫn container",
+  "appCenterMountReadOnly": "Chỉ đọc",
+  "appCenterVariables": "Biến",
+  "appCenterEnvironmentVariables": "Biến môi trường",
+  "appCenterNext": "Tiếp theo",
+  "appCenterBack": "Quay lại",
+  "appCenterConfirmAndExecute": "Thực thi kế hoạch",
+  "appCenterPlanPreview": "Xem trước kế hoạch triển khai",
+  "appCenterPlanSanitizedNotice": "Xem lại kế hoạch triển khai đã tạo trước khi thực thi:",
+  "appCenterEnvironmentCheck": "Môi trường Docker",
+  "appCenterDockerFound": "Docker khả dụng",
+  "appCenterDockerMissing": "Docker chưa được cài đặt",
+  "appCenterComposeFound": "Docker Compose khả dụng",
+  "appCenterComposeMissing": "Docker Compose chưa được cài đặt",
+  "appCenterBootstrapPrompt": "Docker và Compose có thể được cài đặt tự động trên máy chủ này. Cần quyền root/sudo.",
+  "appCenterBootstrapButton": "Cài đặt Docker & Compose",
+  "appCenterSudoPassword": "Mật khẩu Sudo (tùy chọn / nếu cần)",
+  "appCenterSudoPasswordHint": "Nhập mật khẩu sudo cho các thao tác đặc quyền",
+  "appCenterOpen": "Mở giao diện Web",
+  "appCenterStart": "Khởi động",
+  "appCenterStop": "Dừng",
+  "appCenterRestart": "Khởi động lại",
+  "appCenterLogs": "Nhật ký",
+  "appCenterConfig": "Cấu hình",
+  "appCenterUpdate": "Cập nhật",
+  "appCenterRestore": "Khôi phục",
+  "appCenterUninstall": "Gỡ cài đặt",
+  "appCenterUninstallConfirmTitle": "Gỡ cài đặt {appName}?",
+  "@appCenterUninstallConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallConfirmMessage": "Bạn có chắc chắn muốn gỡ cài đặt {appName}? Các container sẽ bị xóa, nhưng thư mục dữ liệu ứng dụng của bạn sẽ được giữ lại.",
+  "@appCenterUninstallConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallKeepData": "Gỡ cài đặt (Giữ lại dữ liệu)",
+  "appCenterUninstallDeleteSelected": "Gỡ cài đặt & Xóa mục đã chọn",
+  "appCenterUninstallInspecting": "Đang kiểm tra các thư mục dữ liệu ứng dụng...",
+  "appCenterUninstallInspectionFailedWarning": "Kiểm tra dọn dẹp dữ liệu thất bại. Bạn vẫn có thể gỡ cài đặt các container ứng dụng trong khi giữ an toàn toàn bộ dữ liệu.",
+  "appCenterUninstallDirectoriesTitle": "Thư mục dữ liệu và ổ Docker",
+  "appCenterUninstallNoDirectories": "Không phát hiện thư mục dữ liệu gắn kết nào. Các container sẽ bị xóa trong khi dữ liệu được giữ lại.",
+  "appCenterUninstallDefaultPreservedHint": "Mặc định giữ mọi dữ liệu. Chỉ chọn thư mục hoặc ổ muốn xóa vĩnh viễn.",
+  "appCenterUninstallPermanentLossWarning": "Dữ liệu đã chọn sẽ bị xóa vĩnh viễn khỏi máy chủ, không có thùng rác.",
+  "appCenterUninstallSelectedPathsTitle": "Dữ liệu sẽ bị xóa vĩnh viễn:",
+  "appCenterUninstallRiskAck": "Tôi hiểu các rủi ro và ảnh hưởng đến ứng dụng khác, đồng thời xác nhận xóa vĩnh viễn dữ liệu này.",
+  "remoteBrowserAllFileTypes": "Mọi định dạng",
+  "remoteBrowserDocuments": "Văn bản và tài liệu",
+  "remoteBrowserFileFormat": "Định dạng tệp",
+  "appCenterUninstallRiskSystem": "Đường dẫn hệ thống",
+  "appCenterUninstallRiskShared": "Dùng chung với ứng dụng khác",
+  "appCenterUninstallRiskVolume": "Ổ Docker",
+  "appCenterCleanupVolumeDeleteFailed": "Không thể xóa ổ Docker. Ngừng sử dụng ổ trong các container khác, kiểm tra lại rồi thử lại.",
+  "appCenterCleanupPermissionDenied": "Không có quyền truy cập. Hãy dùng tài khoản có quyền truy cập dữ liệu hoặc sudo.",
+  "appCenterCleanupCriticalPath": "Không thể xóa thư mục gốc máy chủ hoặc thư mục vận hành và quản lý hệ thống khi gỡ ứng dụng.",
+  "appCenterUninstallTypeAppNameHint": "Nhập chính xác tên ứng dụng để xác nhận xóa vĩnh viễn: {appName}",
+  "@appCenterUninstallTypeAppNameHint": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallRiskLegacy": "Chưa xác minh quyền sở hữu độc quyền",
+  "appCenterUninstallRiskExternal": "Nằm ngoài thư mục gốc dữ liệu ứng dụng",
+  "appCenterUninstallRiskMedia": "Đường dẫn đa phương tiện hoặc chỉ đọc",
+  "appCenterUninstallTargetBlocked": "Thư mục được bảo vệ, không thể xóa",
+  "appCenterCleanupProtected": "Thư mục dữ liệu được giữ lại vì được bảo vệ hoặc không an toàn để xóa",
+  "appCenterCleanupUnavailable": "Kiểm tra dọn dẹp không khả dụng; vẫn có thể gỡ cài đặt thông thường và giữ lại dữ liệu",
+  "appCenterCleanupChanged": "Thư mục hoặc mục tiêu triển khai đã thay đổi; vui lòng kiểm tra và xác nhận lại",
+  "appCenterCleanupConfirmationRequired": "Vui lòng xác nhận lại các thư mục đã chọn, rủi ro và tên ứng dụng chính xác",
+  "appCenterCleanupRetryUnavailable": "Không thể thử lại dọn dẹp một cách an toàn; kiểm tra chi tiết tác vụ",
+  "appCenterCleanupAlreadyAbsent": "Thư mục đã không còn tồn tại; không cần xóa",
+  "appCenterCleanupDeleteFailed": "Xóa chưa hoàn tất; một số tệp có thể đã bị xóa. Hãy kiểm tra các đường dẫn còn lại.",
+  "appCenterCleanupUnconfirmed": "Không thể xác nhận kết quả hoặc tính an toàn của việc dọn dẹp; kiểm tra tác vụ trước khi tiếp tục",
+  "appCenterCleanupRetryTitle": "Thử lại dọn dẹp dữ liệu còn lại cho {appName}?",
+  "@appCenterCleanupRetryTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterCleanupRetryDescription": "Ứng dụng đã được gỡ cài đặt. Chỉ chọn các thư mục dữ liệu chưa hoàn tất; thử lại sẽ không gỡ cài đặt lại ứng dụng.",
+  "appCenterCleanupRetrySelected": "Xóa dữ liệu còn lại đã chọn",
+  "appCenterCleanupResultsTitle": "Kết quả dọn dẹp thư mục",
+  "appCenterCleanupPartialSummary": "Ứng dụng đã được gỡ cài đặt; một số dữ liệu chưa được xóa hoàn toàn.",
+  "appCenterCleanupPending": "Chưa xác nhận hoàn tất",
+  "appCenterCleanupRemoved": "Đã xóa",
+  "appCenterCleanupRetained": "Đã giữ lại",
+  "appCenterCleanupRetryAction": "Thử lại dọn dẹp dữ liệu còn lại",
+  "appCenterJellyfinSoftwareTitle": "Chế độ giải mã phần mềm",
+  "appCenterJellyfinSoftwareDesc": "Tắt chuyển mã GPU, xóa các ánh xạ thiết bị GPU đã xem xét và gắn kết /Media dưới dạng chỉ đọc.",
+  "appCenterJellyfinProfileUnavailable": "Hồ sơ giải mã phần mềm không khả dụng cho mẫu này",
+  "appCenterJellyfinSoftwareChanges": "Các thay đổi hồ sơ đã áp dụng:",
+  "appCenterLogsTitle": "Nhật ký {appName}",
+  "@appCenterLogsTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterLogsEmpty": "Chưa có nhật ký nào được ghi lại cho bản triển khai này",
+  "appCenterLogsCopied": "Đã sao chép nhật ký vào khay nhớ tạm",
+  "appCenterTaskStageQueued": "Đang chờ",
+  "appCenterTaskStagePreparing": "Đang chuẩn bị",
+  "appCenterTaskStagePulling": "Đang tải hình ảnh",
+  "appCenterTaskStageApplying": "Đang áp dụng cấu hình",
+  "appCenterTaskStageChecking": "Đang kiểm tra trạng thái",
+  "appCenterTaskStageSucceeded": "Thành công",
+  "appCenterTaskStageFailed": "Thất bại",
+  "appCenterTaskStageCancelled": "Đã hủy",
+  "appCenterTaskStageNeedsInspection": "Cần kiểm tra",
+  "appCenterCancelTask": "Hủy tác vụ",
+  "appCenterCopyLog": "Sao chép nhật ký",
+  "appCenterErrorNotConnected": "Máy chủ chưa được kết nối",
+  "appCenterErrorEnvironmentRequired": "Cần kiểm tra môi trường Docker",
+  "appCenterErrorPlanExpired": "Kế hoạch triển khai đã hết hạn hoặc không hợp lệ",
+  "appCenterErrorTargetChanged": "Máy chủ đích đã thay đổi; thao tác bị hủy",
+  "appCenterErrorConfigInvalid": "Cấu hình ứng dụng không hợp lệ",
+  "appCenterErrorPathInvalid": "{field} phải là đường dẫn tuyệt đối khác với gốc (/), và không được chứa các đoạn . hoặc ..",
+  "@appCenterErrorPathInvalid": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterErrorSourceInvalid": "Nguồn cửa hàng ứng dụng không hợp lệ",
+  "appCenterErrorNoWebEntry": "Ứng dụng này không cung cấp giao diện web",
+  "appCenterErrorHttpsDirectRequired": "Điểm cuối HTTPS không thể tạo đường hầm qua SSH; vui lòng mở trực tiếp",
+  "appCenterErrorOpenFailed": "Không thể mở liên kết ứng dụng",
+  "appCenterErrorGeneric": "Lỗi Trung tâm ứng dụng: {error}",
+  "@appCenterErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterSourceCommunityHint": "vd. Cửa hàng cộng đồng",
+  "appCenterSourceUrlInvalidHttps": "Phải là URL HTTPS hợp lệ",
+  "appCenterDirectUrlLabel": "URL trực tiếp",
+  "appCenterErrorSourceRemoved": "Nguồn ứng dụng không còn trong danh mục. Không thể cập nhật mẫu.",
+  "appCenterRestoreConfirmTitle": "Khôi phục {appName}?",
+  "@appCenterRestoreConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestoreConfirmMessage": "Khôi phục {appName} về cấu hình triển khai trước đó?",
+  "@appCenterRestoreConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostPortLabel": "Cổng máy chủ (-> {target})",
+  "@appCenterHostPortLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostMountLabel": "Máy chủ: {target}",
+  "@appCenterHostMountLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterVersionLatest": "mới nhất",
+  "appCenterWaitingForLogs": "Đang đợi nhật ký tác vụ...",
+  "appCenterNoPreviewAvailable": "Không có bản xem trước",
+  "appCenterBlockerLocalDockerRequired": "Cần có daemon Docker cục bộ (không hỗ trợ DOCKER_HOST từ xa)",
+  "appCenterBlockerToolsRequired": "Thiếu các công cụ bắt buộc trên máy chủ (bash, setsid, flock, base64, realpath, ss, awk)",
+  "appCenterBlockerLinuxRequired": "Cần có hệ điều hành Linux",
+  "appCenterBlockerTemplateUnsupported": "Tính năng mẫu không được hỗ trợ: {feature}",
+  "@appCenterBlockerTemplateUnsupported": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterFieldRequired": "Trường này là bắt buộc",
+  "appCenterContinueInstall": "Tiếp tục cài đặt",
+  "appCenterOperation": "Thao tác",
+  "nasTabLibrary": "Thư viện",
+  "nasContinueWatching": "Tiếp tục xem",
+  "nasRecentPhotos": "Ảnh gần đây",
+  "nasRecentVideos": "Video gần đây",
+  "nasRecentMusic": "Nhạc gần đây",
+  "nasDownloadPaused": "Đã tạm dừng",
+  "nasDownloadDeleteConfirmTitle": "Xóa tệp ngoại tuyến",
+  "nasDownloadDeleteConfirmMessage": "Thao tác này sẽ xóa tệp ngoại tuyến đã tải về khỏi thiết bị của bạn. Tệp gốc trên máy chủ từ xa sẽ không bị xóa.",
+  "nasDownloadDeleteConfirmButton": "Xóa bản sao ngoại tuyến",
+  "nasDownloadSourceChangedMessage": "Cấu hình nguồn từ xa đã thay đổi kể từ khi quá trình tải về bắt đầu. Bạn có muốn bắt đầu lại từ đầu không?",
+  "nasDownloadRestartFromScratch": "Bắt đầu lại từ đầu",
+  "nasDownloadErrorSourceChanged": "Cấu hình nguồn đã thay đổi",
+  "nasDownloadErrorOfflineFileInvalid": "Tệp đã tải về bị hỏng hoặc không hoàn chỉnh",
+  "nasDownloadErrorStorageFailed": "Ghi vào bộ nhớ thất bại",
+  "nasDownloadErrorHlsUnsupported": "Không hỗ trợ tải ngoại tuyến đối với luồng phát trực tiếp",
+  "nasDownloadErrorPathInvalid": "Đường dẫn lưu trữ tải về không hợp lệ",
+  "nasOpenInApp": "Mở trong ứng dụng",
+  "nasOpenSystem": "Mở bằng hệ thống",
+  "sftpRecentDirectories": "Thư mục gần đây",
+  "sftpNoRecentDirectories": "Không có thư mục gần đây",
+  "sftpRetryFailed": "Thử lại mục thất bại",
+  "appCenterDiskCheckFailed": "Không thể kiểm tra dung lượng ổ đĩa còn trống trên máy chủ",
+  "appCenterDiskFull": "Ổ đĩa máy chủ đã đầy; không thể tiếp tục thao tác",
+  "appCenterHealthInvalid": "Kiểm tra tình trạng vùng chứa thất bại hoặc báo cáo trạng thái không hợp lệ",
+  "appCenterPreflightSummary": "Tóm tắt kiểm tra sơ bộ",
+  "appCenterMeasuredAvailableSpace": "Dung lượng đĩa trống đo được",
+  "appCenterUpdateComparison": "So sánh bản cập nhật",
+  "appCenterNoChangesDetected": "Không phát hiện thay đổi cấu trúc nào",
+  "appCenterSectionImage": "Ảnh vùng chứa",
+  "appCenterSectionPorts": "Ánh xạ cổng",
+  "appCenterSectionVolumes": "Điểm gắn kết lưu trữ",
+  "appCenterSectionEnvironment": "Biến môi trường",
+  "appCenterSectionHealthcheck": "Kiểm tra tình trạng",
+  "appCenterSectionRestart": "Chính sách khởi động lại",
+  "appCenterSectionServices": "Các dịch vụ",
+  "appCenterHealthNoCheck": "Không có kiểm tra tình trạng",
+  "appCenterHealthHealthy": "Khỏe mạnh",
+  "appCenterHealthUnhealthy": "Không ổn định",
+  "appCenterHealthStarting": "Đang khởi động",
+  "appCenterNoSources": "Chưa bật nguồn ứng dụng nào",
+  "appCenterNoMatchingApps": "Không có ứng dụng nào khớp với tìm kiếm hoặc bộ lọc",
+  "appCenterClearFilters": "Xóa bộ lọc",
+  "appCenterSourceLoadFailed": "Tải nguồn ứng dụng thất bại",
+  "appCenterRetry": "Thử lại",
+  "appCenterRecheck": "Kiểm tra lại",
+  "appCenterRecheckTask": "Kiểm tra lại trạng thái tác vụ",
+  "appCenterTaskNeedsInspectionTitle": "Chưa xác nhận trạng thái tác vụ",
+  "appCenterTaskNeedsInspectionMessage": "Kết quả tác vụ trên máy chủ không xác định. Vui lòng kiểm tra lại trạng thái hoặc xem nhật ký, không lặp lại thao tác tùy tiện.",
+  "appCenterStopConfirmTitle": "Dừng {appName}?",
+  "@appCenterStopConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStopConfirmMessage": "Bạn có chắc chắn muốn dừng {appName} trên máy chủ {serverName} không? Các vùng chứa đang chạy sẽ bị dừng.",
+  "@appCenterStopConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmTitle": "Khởi động lại {appName}?",
+  "@appCenterRestartConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmMessage": "Bạn có chắc chắn muốn khởi động lại {appName} trên máy chủ {serverName} không?",
+  "@appCenterRestartConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterBrowseStore": "Duyệt cửa hàng",
+  "appCenterViewTasks": "Xem tác vụ",
+  "appCenterViewInstalled": "Xem ứng dụng đã cài",
+  "appCenterRunInBackground": "Chạy dưới nền",
+  "appCenterTaskDetails": "Chi tiết tác vụ",
+  "appCenterTaskTarget": "Mục tiêu",
+  "appCenterTaskDirectory": "Thư mục",
+  "appCenterTaskCreatedAt": "Thời gian tạo",
+  "appCenterTaskExitCode": "Mã thoát: {code}",
+  "@appCenterTaskExitCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "appCenterStatusRunning": "Đang chạy",
+  "appCenterStatusStopped": "Đã dừng",
+  "appCenterStatusInstalling": "Đang cài đặt",
+  "appCenterStatusUnknown": "Không xác định",
+  "appCenterEnvReady": "Môi trường Docker & Compose đã sẵn sàng",
+  "appCenterEnvNotReady": "Môi trường Docker chưa sẵn sàng",
+  "appCenterEnvInspecting": "Đang kiểm tra môi trường Docker...",
+  "appCenterUninstallWholeDataRoot": "Toàn bộ thư mục gốc dữ liệu",
+  "appCenterUninstallWholeDataRootWarning": "Bao gồm các tệp chưa gắn kết và thư mục con được lưu trữ dưới thư mục gốc dữ liệu ứng dụng.",
+  "appCenterUninstallCoveredByParent": "Đã được thư mục cha bao gồm",
+  "appCenterContainerNameInvalid": "Tên phiên bản phải bắt đầu bằng ký tự chữ hoặc số và chỉ chứa chữ cái, số, dấu gạch dưới, dấu chấm và dấu gạch nối (tối đa 120 ký tự).",
+  "appCenterMainService": "Dịch vụ chính",
+  "appCenterContainerNamesPreview": "Xem trước tên vùng chứa",
+  "appCenterContainersRecreationNotice": "Thay đổi tên vùng chứa phiên bản sẽ tạo lại các vùng chứa ứng dụng hiện có.",
+  "remoteBrowserTitle": "Trình duyệt tệp từ xa",
+  "remoteBrowserSelectDirectory": "Chọn thư mục",
+  "remoteBrowserSelectCurrentDirectory": "Chọn thư mục hiện tại",
+  "remoteBrowserSearchHint": "Tìm kiếm tệp và thư mục...",
+  "remoteBrowserNoEntries": "Không tìm thấy tệp hoặc thư mục phù hợp",
+  "remoteBrowserEmptyDirectory": "Thư mục này trống",
+  "remoteBrowserSelectedCount": "Đã chọn {count} mục",
+  "@remoteBrowserSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remoteBrowserParentDirectory": "Thư mục cha",
+  "remoteBrowserLibrariesTitle": "Thư viện phương tiện",
+  "remoteBrowserDisconnected": "Kết nối từ xa bị mất hoặc không khả dụng.",
+  "remoteBrowserTargetChanged": "Môi trường đích hoặc máy chủ đang hoạt động đã thay đổi.",
+  "remoteBrowserPathInvalid": "Đường dẫn được yêu cầu không hợp lệ hoặc không thể truy cập.",
+  "remoteBrowserPathOutsideRoot": "Đường dẫn được yêu cầu nằm ngoài thư mục gốc cho phép.",
+  "remoteBrowserEntryUnavailable": "Mục đã chọn không khả dụng hoặc không hợp lệ.",
+  "nasBrowseUnavailable": "Dịch vụ duyệt NAS hiện không khả dụng.",
+  "nasInvalidDirectoryEntry": "Gặp mục thư mục không hợp lệ khi duyệt NAS.",
+  "nasInvalidLibraryResponse": "Phản hồi thư viện phương tiện không hợp lệ hoặc bị lỗi.",
+  "nasScanFilterUnresolved": "Không thể phân giải đường dẫn bộ lọc quét.",
+  "nasSourceSaveIncomplete": "Lần lưu nguồn trước đó chỉ được lưu một phần. Vui lòng nhập lại thông tin xác thực và lưu thành công trước khi duyệt."
 }

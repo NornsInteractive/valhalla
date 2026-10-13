@@ -16,6 +16,8 @@ import 'package:valhalla/infrastructure/sftp/sftp_client_service.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_host_key_verifier.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import 'package:valhalla/widgets/remote_browser_toolbar.dart';
+import 'package:valhalla/widgets/remote_browser_view.dart';
 
 /// 视图模式持久化用例要让真实的 `SftpNotifier.build()` 跑起来，它会向
 /// `sshClientManagerProvider` 要客户端；这里给一个永远不连接的空壳。
@@ -210,6 +212,8 @@ class _TestSftpNotifier extends SftpNotifier {
   @override
   SftpState build() => _initial;
 
+  void emit(SftpState next) => state = next;
+
   @override
   Future<void> openFileForEditing(SftpFileItem item) async {
     if (item.sizeBytes > SftpClientService.maxPreviewBytes) {
@@ -309,6 +313,8 @@ class _ActiveServerWithProfile extends ActiveServerNotifier {
 
   @override
   ServerProfile? build() => _server;
+
+  void emit(ServerProfile next) => state = next;
 }
 
 const _kFileViewServer = ServerProfile(
@@ -328,6 +334,7 @@ Widget _buildTestApp({
   _FakeOperations? ops,
   _TestSftpNotifier? notifier,
   LocalStorageService? storage,
+  _ActiveServerWithProfile? server,
 }) {
   final operations = ops ?? _FakeOperations();
   final notif = notifier ?? _TestSftpNotifier(state, operations);
@@ -335,7 +342,7 @@ Widget _buildTestApp({
     overrides: [
       localStorageServiceProvider.overrideWithValue(storage ?? _storage),
       activeServerProvider.overrideWith(
-        () => _ActiveServerWithProfile(_kFileViewServer),
+        () => server ?? _ActiveServerWithProfile(_kFileViewServer),
       ),
       sftpOperationsProvider.overrideWithValue(operations),
       sftpProvider.overrideWith(() => notif),
@@ -382,6 +389,84 @@ void main() {
   });
 
   group('SftpFileView', () {
+    for (final mode in SftpViewMode.values) {
+      testWidgets(
+        '$mode retains refresh scroll and isolates directory scroll',
+        (tester) async {
+          final initial = SftpState(
+            currentPath: '/var/www',
+            viewMode: mode,
+            files: List.generate(100, (i) => _makeItem('file_$i.txt')),
+          );
+          final notifier = _TestSftpNotifier(initial);
+          await tester.pumpWidget(
+            _buildTestApp(state: initial, notifier: notifier),
+          );
+          await tester.pumpAndSettle();
+          Finder listing() => mode == SftpViewMode.list
+              ? find.byType(ListView)
+              : find.byType(GridView);
+          ScrollPosition position() => tester
+              .state<ScrollableState>(
+                find.descendant(
+                  of: listing(),
+                  matching: find.byType(Scrollable),
+                ),
+              )
+              .position;
+          position().jumpTo(600);
+          await tester.pump();
+          notifier.emit(initial.copyWith(isLoading: true));
+          await tester.pump();
+          expect(position().pixels, closeTo(600, 1));
+          notifier.emit(initial);
+          await tester.pumpAndSettle();
+          expect(position().pixels, closeTo(600, 1));
+
+          notifier.emit(initial.copyWith(currentPath: '/another'));
+          await tester.pumpAndSettle();
+          expect(position().pixels, 0);
+          position().jumpTo(300);
+          await tester.pump();
+          notifier.emit(initial);
+          await tester.pumpAndSettle();
+          expect(position().pixels, closeTo(600, 1));
+        },
+      );
+    }
+
+    testWidgets(
+      'selection survives refresh but not directory or target change',
+      (tester) async {
+        final initial = SftpState(
+          currentPath: '/var/www',
+          viewMode: SftpViewMode.list,
+          files: [_makeItem('notes.txt')],
+        );
+        final notifier = _TestSftpNotifier(initial);
+        final server = _ActiveServerWithProfile(_kFileViewServer);
+        await tester.pumpWidget(
+          _buildTestApp(state: initial, notifier: notifier, server: server),
+        );
+        await tester.pumpAndSettle();
+        await tester.longPress(find.text('notes.txt'));
+        await tester.pumpAndSettle();
+        expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isTrue);
+        notifier.emit(initial.copyWith(isLoading: true));
+        await tester.pump();
+        expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isTrue);
+        notifier.emit(initial.copyWith(currentPath: '/another'));
+        await tester.pumpAndSettle();
+        expect(find.byType(Checkbox), findsNothing);
+        await tester.longPress(find.text('notes.txt'));
+        await tester.pumpAndSettle();
+        expect(find.byType(Checkbox), findsOneWidget);
+        server.emit(_kFileViewServer.copyWith(host: '10.0.0.2'));
+        await tester.pumpAndSettle();
+        expect(find.byType(Checkbox), findsNothing);
+      },
+    );
+
     testWidgets(
       'unsupported files (.zip, .png) hide open menu item and do not read file or open editor on tap',
       (tester) async {
@@ -799,7 +884,7 @@ void main() {
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
       expect(
-        find.widgetWithIcon(PopupMenuButton<Object>, Icons.sort),
+        find.widgetWithIcon(PopupMenuButton<String>, Icons.sort),
         findsOneWidget,
       );
 
@@ -812,11 +897,8 @@ void main() {
       expect(find.text(l10n.sftpSortAscending), findsOneWidget);
       expect(find.text(l10n.sftpSortDescending), findsOneWidget);
 
-      final nameItem = tester.widget<CheckedPopupMenuItem<SftpSortKey>>(
-        find.widgetWithText(
-          CheckedPopupMenuItem<SftpSortKey>,
-          l10n.sftpSortName,
-        ),
+      final nameItem = tester.widget<CheckedPopupMenuItem<String>>(
+        find.widgetWithText(CheckedPopupMenuItem<String>, l10n.sftpSortName),
       );
       expect(nameItem.checked, isTrue);
 
@@ -829,10 +911,7 @@ void main() {
       expect(ascItem.checked, isTrue);
 
       await tester.tap(
-        find.widgetWithText(
-          CheckedPopupMenuItem<SftpSortKey>,
-          l10n.sftpSortSize,
-        ),
+        find.widgetWithText(CheckedPopupMenuItem<String>, l10n.sftpSortSize),
       );
       await tester.pumpAndSettle();
 
@@ -859,10 +938,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(
-        find.widgetWithText(
-          CheckedPopupMenuItem<SftpSortKey>,
-          l10n.sftpSortName,
-        ),
+        find.widgetWithText(CheckedPopupMenuItem<String>, l10n.sftpSortName),
       );
       await tester.pumpAndSettle();
 
@@ -874,10 +950,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(
-        find.widgetWithText(
-          CheckedPopupMenuItem<SftpSortKey>,
-          l10n.sftpSortName,
-        ),
+        find.widgetWithText(CheckedPopupMenuItem<String>, l10n.sftpSortName),
       );
       await tester.pumpAndSettle();
 
@@ -889,10 +962,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(
-        find.widgetWithText(
-          CheckedPopupMenuItem<SftpSortKey>,
-          l10n.sftpSortName,
-        ),
+        find.widgetWithText(CheckedPopupMenuItem<String>, l10n.sftpSortName),
       );
       await tester.pumpAndSettle();
 
@@ -1208,6 +1278,7 @@ void main() {
           currentPath: '/var/www',
           showHiddenFiles: true,
           files: [_makeItem('.env'), _makeItem('notes.txt')],
+          viewMode: SftpViewMode.list,
         );
 
         await tester.pumpWidget(_buildTestApp(state: state));
@@ -1280,6 +1351,7 @@ void main() {
           final state = SftpState(
             currentPath: '/var/www',
             showHiddenFiles: true,
+            viewMode: SftpViewMode.list,
             files: [
               _makeItem('.git', isDirectory: true),
               _makeItem('html', isDirectory: true),
@@ -1315,6 +1387,138 @@ void main() {
         },
       );
     });
+
+    for (final width in [320.0, 360.0, 390.0, 430.0]) {
+      testWidgets('shared file grid has two vertical cards at $width dp', (
+        tester,
+      ) async {
+        tester.view.physicalSize = Size(width, 850);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final state = SftpState(
+          currentPath: '/var/www',
+          viewMode: SftpViewMode.grid,
+          files: [
+            _makeItem('alpha.txt'),
+            _makeItem('beta.txt'),
+            _makeItem('gamma.txt'),
+          ],
+        );
+        await tester.pumpWidget(_buildTestApp(state: state));
+        await tester.pumpAndSettle();
+        expect(find.byType(RemoteBrowserToolbar), findsOneWidget);
+        expect(find.byType(RemoteBrowserBreadcrumb), findsOneWidget);
+        expect(find.byType(RemoteBrowserEntriesView), findsOneWidget);
+        final alpha = find.byKey(
+          const ValueKey('sftp_file_/var/www/alpha.txt'),
+        );
+        final beta = find.byKey(const ValueKey('sftp_file_/var/www/beta.txt'));
+        expect(tester.getTopLeft(alpha).dy, tester.getTopLeft(beta).dy);
+        expect(
+          tester.getTopLeft(beta).dx,
+          greaterThan(tester.getTopLeft(alpha).dx),
+        );
+        expect(tester.getSize(alpha).height, greaterThan(100));
+        expect(
+          tester.getTopLeft(find.byKey(const Key('sftp_search_field'))).dy,
+          lessThan(
+            tester
+                .getTopLeft(find.byKey(const Key('sftpToggleViewModeButton')))
+                .dy,
+          ),
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('shared grid is one vertical card at 320dp and 2x text', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 950);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.reset);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final state = SftpState(
+        currentPath: '/data/compose/test',
+        viewMode: SftpViewMode.grid,
+        files: [_makeItem('alpha.txt'), _makeItem('beta.txt')],
+      );
+      await tester.pumpWidget(_buildTestApp(state: state));
+      await tester.pumpAndSettle();
+      final alpha = find.byKey(const ValueKey('sftp_file_/var/www/alpha.txt'));
+      final beta = find.byKey(const ValueKey('sftp_file_/var/www/beta.txt'));
+      expect(tester.getTopLeft(alpha).dx, tester.getTopLeft(beta).dx);
+      expect(
+        tester.getTopLeft(beta).dy,
+        greaterThan(tester.getTopLeft(alpha).dy),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'view toggle keeps the visible entry, not old per-view offset',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 850);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final state = SftpState(
+          currentPath: '/var/www',
+          viewMode: SftpViewMode.list,
+          files: List.generate(
+            100,
+            (i) => _makeItem('file_${i.toString().padLeft(3, '0')}.txt'),
+          ),
+        );
+        await tester.pumpWidget(_buildTestApp(state: state));
+        await tester.pumpAndSettle();
+        tester
+            .state<ScrollableState>(
+              find.descendant(
+                of: find.byType(ListView),
+                matching: find.byType(Scrollable),
+              ),
+            )
+            .position
+            .jumpTo(12 + 20 * 72);
+        await tester.pump();
+        await tester.tap(find.byKey(const Key('sftpToggleViewModeButton')));
+        await tester.pumpAndSettle();
+        final anchor = find.byKey(
+          const ValueKey('sftp_file_/var/www/file_020.txt'),
+        );
+        final viewport = tester.getRect(find.byType(RemoteBrowserEntriesView));
+        expect(viewport.overlaps(tester.getRect(anchor)), isTrue);
+        await tester.tap(find.byKey(const Key('sftpToggleViewModeButton')));
+        await tester.pumpAndSettle();
+        expect(viewport.overlaps(tester.getRect(anchor)), isTrue);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      '320dp grid selection keeps checkbox and hidden title readable',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 850);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final state = SftpState(
+          currentPath: '/var/www',
+          viewMode: SftpViewMode.grid,
+          showHiddenFiles: true,
+          files: [_makeItem('.env'), _makeItem('notes.txt')],
+        );
+        await tester.pumpWidget(_buildTestApp(state: state));
+        await tester.pumpAndSettle();
+        final hidden = tester.widget<Text>(find.text('.env'));
+        final normal = tester.widget<Text>(find.text('notes.txt'));
+        expect(hidden.style!.color!.a, lessThan(normal.style!.color!.a));
+        await tester.longPress(find.text('.env'));
+        await tester.pumpAndSettle();
+        expect(find.byType(Checkbox), findsNWidgets(2));
+        expect(tester.takeException(), isNull);
+      },
+    );
 
     group('View mode persistence', () {
       late SharedPreferences prefs;

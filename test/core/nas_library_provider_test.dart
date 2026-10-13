@@ -346,6 +346,9 @@ void main() {
         await notifier.loadPrevious();
         expect(container.read(nasProvider).playlistOffset, 2);
         await notifier.refresh();
+        expect(container.read(nasProvider).playlistOffset, 2);
+        expect(container.read(nasProvider).hasPrevious, false);
+        await notifier.refresh(preservePosition: false);
         expect(container.read(nasProvider).playlistOffset, 0);
         expect(container.read(nasProvider).hasPrevious, false);
       } finally {

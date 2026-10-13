@@ -198,6 +198,94 @@ void main() {
   });
 
   group('AiChatView - conversation survives recovery', () {
+    ScrollPosition chatPosition(WidgetTester tester) => tester
+        .widgetList<ListView>(find.byType(ListView))
+        .singleWhere((view) => view.controller != null)
+        .controller!
+        .position;
+
+    AiChatState historyState({List<ChatMessage>? messages, int offset = 0}) =>
+        AiChatState(
+          sessions: [
+            _session(
+              'scroll-session',
+              messages: messages ?? const [],
+            ).copyWith(messageOffset: offset),
+          ],
+          activeSessionId: 'scroll-session',
+          activeAgentProfile: harnessAgent,
+          readyAgents: [harnessAgent],
+        );
+
+    List<ChatMessage> history(int start, int end) => [
+      for (var i = start; i < end; i++)
+        _message('scroll-$i', 'Message $i\nsecond line\nthird line'),
+    ];
+
+    testWidgets('same-session asynchronously loaded history opens at latest', (
+      tester,
+    ) async {
+      final notifier = RecoveryChatNotifier(historyState());
+      final connection = FakeConnectionNotifier(
+        const ServerConnectionState(status: ConnectionStateEnum.connected),
+      );
+      await pumpChatView(tester, notifier: notifier, connection: connection);
+      await tester.pumpAndSettle();
+      notifier.emit(historyState(messages: history(0, 30)));
+      await tester.pumpAndSettle();
+      final position = chatPosition(tester);
+      expect(position.maxScrollExtent, greaterThan(500));
+      expect(position.pixels, closeTo(position.maxScrollExtent, 1));
+    });
+
+    testWidgets('older history prepend compensates the reading position', (
+      tester,
+    ) async {
+      final notifier = RecoveryChatNotifier(
+        historyState(messages: history(20, 40), offset: 20),
+      );
+      final connection = FakeConnectionNotifier(
+        const ServerConnectionState(status: ConnectionStateEnum.connected),
+      );
+      await pumpChatView(tester, notifier: notifier, connection: connection);
+      await tester.pumpAndSettle();
+      chatPosition(tester).jumpTo(300);
+      await tester.pump();
+      final oldExtent = chatPosition(tester).maxScrollExtent;
+      notifier.emit(historyState(messages: history(0, 40)));
+      await tester.pumpAndSettle();
+      final position = chatPosition(tester);
+      expect(position.pixels, greaterThan(300));
+      expect(
+        position.pixels - 300,
+        closeTo(position.maxScrollExtent - oldExtent, 20),
+      );
+    });
+
+    testWidgets('stream updates preserve browsing and follow only at bottom', (
+      tester,
+    ) async {
+      final notifier = RecoveryChatNotifier(
+        historyState(messages: history(0, 30)),
+      );
+      final connection = FakeConnectionNotifier(
+        const ServerConnectionState(status: ConnectionStateEnum.connected),
+      );
+      await pumpChatView(tester, notifier: notifier, connection: connection);
+      await tester.pumpAndSettle();
+      chatPosition(tester).jumpTo(300);
+      await tester.pump();
+      notifier.emit(historyState(messages: history(0, 31)));
+      await tester.pumpAndSettle();
+      expect(chatPosition(tester).pixels, closeTo(300, 1));
+      chatPosition(tester).jumpTo(chatPosition(tester).maxScrollExtent);
+      await tester.pump();
+      notifier.emit(historyState(messages: history(0, 32)));
+      await tester.pumpAndSettle();
+      final position = chatPosition(tester);
+      expect(position.pixels, closeTo(position.maxScrollExtent, 1));
+    });
+
     /// Pumps the real chat view with a two-message conversation and a
     /// connection the test can move.
     Future<(RecoveryChatNotifier, FakeConnectionNotifier)> pumpChat(

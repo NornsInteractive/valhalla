@@ -1,5 +1,55 @@
 {
   "@@locale": "ja",
+  "nasPlaylistLoadFailed": "プレイリストを一時的に読み込めません。保存済みのメディア一覧は引き続き表示できます。更新して再試行してください。",
+  "nasAllLibraries": "すべてのライブラリ",
+  "nasNativeInstallTitle": "Jellyfin をインストール（ネイティブパッケージ）",
+  "nasNativeStepVerifyRepo": "署名付き公式リポジトリを検証",
+  "nasNativeStepPreventAutostart": "設定前のサービス自動起動を防止",
+  "nasNativeStepInstallPackages": "バージョンを固定した署名付きパッケージをインストール",
+  "nasNativeStepConfigureLoopback": "localhost のみで待ち受けるように設定",
+  "nasNativeStageInstalling": "固定バージョンのパッケージをインストール中",
+  "nasNativeStageStarting": "systemd サービスを起動中",
+  "nasNativeGuidanceMediaAccess": "メディアファイルの権限と所有者は変更しません。Jellyfin のサービスユーザーに読み取り権限があることを確認してください。",
+  "nasNativeGuidanceNoUpgrade": "既存の Jellyfin 環境の管理引き継ぎ、変更、アップグレードは行いません。",
+  "nasNativeSupportedRequirements": "Debian または Ubuntu（amd64/arm64）、systemd、および root またはパスワード不要の sudo 権限が必要です。",
+  "nasNativeExistingInstallTitle": "既存の Jellyfin が見つかりました",
+  "nasNativeExistingInstallExplanation": "このサーバーには Jellyfin が既にインストールされています。Valhalla は変更や再インストールを行いません。直接接続を確認してください。",
+  "nasNativeCancelExplanation": "安全なチェックポイントでのキャンセルを要求しました。進行中のパッケージ操作は安全に完了します。",
+  "nasNativeMediaPathLabel": "メディアディレクトリのパス",
+  "nasNativeMediaPathHint": "サーバー上に存在する絶対パス（例：/media/library）。権限は変更しません。",
+  "nasNativeSudoRequired": "システムパッケージのインストールには root またはパスワード不要の sudo 権限が必要です",
+  "nasDiagnosticsTitle": "メディアソースの診断",
+  "nasDiagnosticsConnection": "接続",
+  "nasDiagnosticsScan": "ライブラリのスキャン",
+  "nasDiagnosticsLastSuccess": "前回の接続成功日時",
+  "nasDiagnosticsCredentials": "保存済みの認証情報を確認中",
+  "nasDiagnosticsFinalizing": "インデックスを仕上げ中",
+  "nasDiagnosticsNotChecked": "未確認",
+  "nasCacheLegacy": "旧形式のサムネイル（ソース未割り当て）",
+  "nasCacheGlobalBudget": "サムネイル容量の上限（全ソース共通）",
+  "nasCacheNoSource": "キャッシュを管理するメディアソースを選択してください。",
+  "nasOfflineRecordedHint": "記録されたダウンロードのバイト数であり、実測のディスク使用量ではありません。サムネイルを削除してもオフラインファイルは削除されません。",
+  "nasCacheClearConfirm": "{scope} のサムネイルを削除しますか？オフラインファイルとリモートメディアは保持されます。",
+  "nasOfflineRecordedBytes": "記録済みダウンロード量：{size}",
+  "nasDeployDockerTitle": "Docker アプリ",
+  "nasDeployDockerDesc": "アプリセンターで公式 Jellyfin アプリを開きます。インストール前に設定を確認してください。",
+  "nasDeployNativeDesc": "公式パッケージを使用して、このサーバーに Jellyfin を直接インストールします。既存のインストールは変更しません。",
+  "nasDeployEnableAppCenter": "実験的なアプリセンターを有効にして続行しますか？メニューの配置は変わりません。",
+  "nasDeployCatalogUnavailable": "公式 Jellyfin アプリを利用できません。公式ソースが有効になっていることを確認してから、再試行してください。",
+  "@nasCacheClearConfirm": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "@nasOfflineRecordedBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "appName": "Valhalla",
   "appSubtitle": "AI ネイティブ サーバー & エージェント管理",
   "navAiChat": "AI チャット",
@@ -1663,5 +1713,418 @@
   "nasThumbnailCacheBudget": "キャッシュ上限",
   "nasThumbnailCacheClear": "キャッシュをクリア",
   "nasThumbnailCacheCleared": "サムネイルキャッシュをクリアしました",
-  "nasThumbnailCacheOff": "オフ"
+  "nasThumbnailCacheOff": "オフ",
+  "navAppCenter": "アプリセンター",
+  "settingsExperimentalAppCenterTitle": "アプリセンター (Docker)",
+  "settingsExperimentalAppCenterDesc": "実験的なアプリストアおよびコンテナデプロイ管理",
+  "appCenterTitle": "アプリセンター",
+  "appCenterTabStore": "ストア",
+  "appCenterTabInstalled": "インストール済み",
+  "appCenterTabTasks": "タスク",
+  "appCenterSources": "ソース",
+  "appCenterManageSources": "ソースの管理",
+  "appCenterAddSource": "ソースの追加",
+  "appCenterSourceName": "ソース名",
+  "appCenterSourceUrl": "ソースURL (HTTPS)",
+  "appCenterDeleteSource": "ソースの削除",
+  "appCenterRefresh": "更新",
+  "appCenterSearchHint": "アプリを検索...",
+  "appCenterFilterAllCategories": "すべてのカテゴリ",
+  "appCenterFilterAllSources": "すべてのソース",
+  "appCenterNoApps": "アプリが見つかりません",
+  "appCenterNoInstalled": "インストール済みのアプリはありません",
+  "appCenterNoTasks": "実行中または最近のタスクはありません",
+  "appCenterInstall": "インストール",
+  "appCenterInstalledBadge": "インストール済み",
+  "appCenterIncompatibleBadge": "非互換",
+  "appCenterUpdateAvailable": "アップデート可能",
+  "appCenterArchitectureBlocker": "アーキテクチャが対応していません",
+  "appCenterAppDetails": "アプリの詳細",
+  "appCenterVersion": "バージョン",
+  "appCenterCategory": "カテゴリ",
+  "appCenterSource": "ソース",
+  "appCenterArchitectures": "対応アーキテクチャ",
+  "appCenterScreenshots": "スクリーンショット",
+  "appCenterDescription": "説明",
+  "appCenterWizardTitle": "{appName} をインストール",
+  "@appCenterWizardTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterConfigureTitle": "{appName} を設定",
+  "@appCenterConfigureTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUpdateTitle": "{appName} をアップデート",
+  "@appCenterUpdateTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStepEnvironment": "環境",
+  "appCenterStepConfig": "設定",
+  "appCenterStepReview": "プラン確認",
+  "appCenterStepProgress": "進捗状況",
+  "appCenterInstanceName": "インスタンス名",
+  "appCenterDataDirectory": "データディレクトリ",
+  "appCenterBrowseDirectory": "ディレクトリを選択",
+  "appCenterNetworkAndPorts": "ネットワークとポート",
+  "appCenterBindAddress": "バインドアドレス",
+  "appCenterBindLoopback": "ローカルホストのみ (127.0.0.1)",
+  "appCenterBindAll": "すべてのインターフェース (0.0.0.0)",
+  "appCenterPortMapping": "ポートマッピング",
+  "appCenterMounts": "ストレージマウント",
+  "appCenterMountSource": "ホストパス",
+  "appCenterMountTarget": "コンテナパス",
+  "appCenterMountReadOnly": "読み取り専用",
+  "appCenterVariables": "変数",
+  "appCenterEnvironmentVariables": "環境変数",
+  "appCenterNext": "次へ",
+  "appCenterBack": "戻る",
+  "appCenterConfirmAndExecute": "プランを実行",
+  "appCenterPlanPreview": "デプロイプランのプレビュー",
+  "appCenterPlanSanitizedNotice": "実行前に生成されたデプロイプランを確認してください：",
+  "appCenterEnvironmentCheck": "Docker 環境",
+  "appCenterDockerFound": "Docker が利用可能です",
+  "appCenterDockerMissing": "Docker がインストールされていません",
+  "appCenterComposeFound": "Docker Compose が利用可能です",
+  "appCenterComposeMissing": "Docker Compose がインストールされていません",
+  "appCenterBootstrapPrompt": "このサーバーに Docker と Compose を自動セットアップできます。root/sudo 権限が必要です。",
+  "appCenterBootstrapButton": "Docker と Compose をインストール",
+  "appCenterSudoPassword": "Sudo パスワード (任意 / 必要な場合)",
+  "appCenterSudoPasswordHint": "特権操作用の sudo パスワードを入力",
+  "appCenterOpen": "Web UI を開く",
+  "appCenterStart": "起動",
+  "appCenterStop": "停止",
+  "appCenterRestart": "再起動",
+  "appCenterLogs": "ログ",
+  "appCenterConfig": "設定",
+  "appCenterUpdate": "アップデート",
+  "appCenterRestore": "復元",
+  "appCenterUninstall": "アンインストール",
+  "appCenterUninstallConfirmTitle": "{appName} をアンインストールしますか？",
+  "@appCenterUninstallConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallConfirmMessage": "{appName} をアンインストールしてもよろしいですか？コンテナは削除されますが、アプリのデータディレクトリは保持されます。",
+  "@appCenterUninstallConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallKeepData": "アンインストール（データを保持）",
+  "appCenterUninstallDeleteSelected": "アンインストールして選択項目を削除",
+  "appCenterUninstallInspecting": "アプリのデータディレクトリを確認中...",
+  "appCenterUninstallInspectionFailedWarning": "データクリーンアップの確認に失敗しました。すべてのデータを安全に保持したまま、アプリコンテナのみをアンインストールできます。",
+  "appCenterUninstallDirectoriesTitle": "データディレクトリと Docker ボリューム",
+  "appCenterUninstallNoDirectories": "バインドマウントのデータディレクトリは検出されませんでした。データを保持したままコンテナが削除されます。",
+  "appCenterUninstallDefaultPreservedHint": "既定ではすべてのデータを保持します。完全に削除するディレクトリやボリュームのみを選択してください。",
+  "appCenterUninstallPermanentLossWarning": "選択したデータはサーバーから完全に削除されます。ゴミ箱はありません。",
+  "appCenterUninstallSelectedPathsTitle": "完全に削除するデータ：",
+  "appCenterUninstallRiskAck": "表示されたリスクと他のアプリへの影響を理解し、このデータの完全削除を確認します。",
+  "remoteBrowserAllFileTypes": "すべての形式",
+  "remoteBrowserDocuments": "テキストと文書",
+  "remoteBrowserFileFormat": "ファイル形式",
+  "appCenterUninstallRiskSystem": "システムパス",
+  "appCenterUninstallRiskShared": "他のアプリと共有",
+  "appCenterUninstallRiskVolume": "Docker ボリューム",
+  "appCenterCleanupVolumeDeleteFailed": "Docker ボリュームを削除できませんでした。他のコンテナによる使用を解除し、再確認してから再試行してください。",
+  "appCenterCleanupPermissionDenied": "アクセス権限がありません。データにアクセスできるアカウントまたは sudo を使用してください。",
+  "appCenterCleanupCriticalPath": "サーバーのルート、実行用・管理用ディレクトリはアプリのアンインストールでは削除できません。",
+  "appCenterUninstallTypeAppNameHint": "完全削除を確認するには、正確なアプリ名を入力してください：{appName}",
+  "@appCenterUninstallTypeAppNameHint": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallRiskLegacy": "排他的所有権が未確認",
+  "appCenterUninstallRiskExternal": "アプリデータルート外のパス",
+  "appCenterUninstallRiskMedia": "メディアまたは読み取り専用パス",
+  "appCenterUninstallTargetBlocked": "保護されたディレクトリのため削除できません",
+  "appCenterCleanupProtected": "保護されているか削除が安全でないため、データディレクトリは保持されました",
+  "appCenterCleanupUnavailable": "クリーンアップの確認を利用できません。データを保持したまま通常アンインストールは可能です。",
+  "appCenterCleanupChanged": "ディレクトリまたはデプロイ対象が変更されました。再確認してもう一度確定してください。",
+  "appCenterCleanupConfirmationRequired": "選択したディレクトリ、リスク、正確なアプリ名をもう一度確認してください",
+  "appCenterCleanupRetryUnavailable": "安全なクリーンアップの再試行は利用できません。タスクの詳細を確認してください。",
+  "appCenterCleanupAlreadyAbsent": "ディレクトリは既に存在しません。削除は不要です。",
+  "appCenterCleanupDeleteFailed": "削除が不完全です。一部のファイルは既に削除された可能性があります。残りのパスを確認してください。",
+  "appCenterCleanupUnconfirmed": "クリーンアップの結果または安全性を確認できませんでした。続行する前にタスクを確認し再検査してください。",
+  "appCenterCleanupRetryTitle": "{appName} の残りのデータクリーンアップを再試行しますか？",
+  "@appCenterCleanupRetryTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterCleanupRetryDescription": "アプリケーションは既にアンインストールされています。未完了のデータディレクトリのみを選択してください。再試行しても再度アンインストールされることはありません。",
+  "appCenterCleanupRetrySelected": "選択した残りのデータを削除",
+  "appCenterCleanupResultsTitle": "ディレクトリのクリーンアップ結果",
+  "appCenterCleanupPartialSummary": "アプリケーションはアンインストールされましたが、一部のデータが完全には消去されませんでした。",
+  "appCenterCleanupPending": "完了が未確認",
+  "appCenterCleanupRemoved": "削除済み",
+  "appCenterCleanupRetained": "保持済み",
+  "appCenterCleanupRetryAction": "残りのデータクリーンアップを再試行",
+  "appCenterJellyfinSoftwareTitle": "ソフトウェアデコードモード",
+  "appCenterJellyfinSoftwareDesc": "GPUトランスコードを無効化し、確認済みのGPUデバイスマッピングを削除して、/Mediaを読み取り専用でマウントします。",
+  "appCenterJellyfinProfileUnavailable": "このテンプレートではソフトウェアデコードプロファイルを利用できません",
+  "appCenterJellyfinSoftwareChanges": "適用されたプロファイルの変更:",
+  "appCenterLogsTitle": "{appName} のログ",
+  "@appCenterLogsTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterLogsEmpty": "このデプロイのログは記録されていません",
+  "appCenterLogsCopied": "ログをクリップボードにコピーしました",
+  "appCenterTaskStageQueued": "待機中",
+  "appCenterTaskStagePreparing": "準備中",
+  "appCenterTaskStagePulling": "イメージを取得中",
+  "appCenterTaskStageApplying": "設定を適用中",
+  "appCenterTaskStageChecking": "状態を確認中",
+  "appCenterTaskStageSucceeded": "成功",
+  "appCenterTaskStageFailed": "失敗",
+  "appCenterTaskStageCancelled": "キャンセル済み",
+  "appCenterTaskStageNeedsInspection": "手動確認が必要",
+  "appCenterCancelTask": "タスクをキャンセル",
+  "appCenterCopyLog": "ログをコピー",
+  "appCenterErrorNotConnected": "サーバーが接続されていません",
+  "appCenterErrorEnvironmentRequired": "Docker 環境の確認が必要です",
+  "appCenterErrorPlanExpired": "デプロイプランの有効期限が切れているか無効です",
+  "appCenterErrorTargetChanged": "接続先サーバーが変更されたため、操作を中止しました",
+  "appCenterErrorConfigInvalid": "無効なアプリ設定です",
+  "appCenterErrorPathInvalid": "{field}はルート（/）以外の絶対パスである必要があり、. または .. セグメントを含めることはできません",
+  "@appCenterErrorPathInvalid": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterErrorSourceInvalid": "無効なアプリストアソースです",
+  "appCenterErrorNoWebEntry": "このアプリには Web インターフェースがありません",
+  "appCenterErrorHttpsDirectRequired": "HTTPS エンドポイントは SSH トンネル経由で開けません。直接開いてください",
+  "appCenterErrorOpenFailed": "アプリ URL を開けませんでした",
+  "appCenterErrorGeneric": "アプリセンターエラー：{error}",
+  "@appCenterErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterSourceCommunityHint": "例: コミュニティストア",
+  "appCenterSourceUrlInvalidHttps": "有効な HTTPS URL を入力してください",
+  "appCenterDirectUrlLabel": "直接 URL",
+  "appCenterErrorSourceRemoved": "アプリソースがカタログから削除されたため、テンプレートを更新できません。",
+  "appCenterRestoreConfirmTitle": "{appName} を復元しますか？",
+  "@appCenterRestoreConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestoreConfirmMessage": "{appName} を以前のデプロイ構成に復元しますか？",
+  "@appCenterRestoreConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostPortLabel": "ホストポート (-> {target})",
+  "@appCenterHostPortLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostMountLabel": "ホスト: {target}",
+  "@appCenterHostMountLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterVersionLatest": "最新",
+  "appCenterWaitingForLogs": "タスクログを待機中...",
+  "appCenterNoPreviewAvailable": "プレビューがありません",
+  "appCenterBlockerLocalDockerRequired": "ローカル Docker デーモンが必要です（リモート DOCKER_HOST は非対応）",
+  "appCenterBlockerToolsRequired": "サーバーに必要なツールが不足しています (bash, setsid, flock, base64, realpath, ss, awk)",
+  "appCenterBlockerLinuxRequired": "Linux オペレーティングシステムが必要です",
+  "appCenterBlockerTemplateUnsupported": "サポートされていないテンプレート機能: {feature}",
+  "@appCenterBlockerTemplateUnsupported": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterFieldRequired": "この項目は必須です",
+  "appCenterContinueInstall": "インストールを続行",
+  "appCenterOperation": "操作",
+  "nasTabLibrary": "ライブラリ",
+  "nasContinueWatching": "続きを見る",
+  "nasRecentPhotos": "最近の写真",
+  "nasRecentVideos": "最近の動画",
+  "nasRecentMusic": "最近の音楽",
+  "nasDownloadPaused": "一時停止中",
+  "nasDownloadDeleteConfirmTitle": "オフラインファイルの削除",
+  "nasDownloadDeleteConfirmMessage": "端末にダウンロードされたローカルのオフラインファイルを削除します。リモートサーバーの元ファイルは削除されません。",
+  "nasDownloadDeleteConfirmButton": "オフラインコピーを削除",
+  "nasDownloadSourceChangedMessage": "ダウンロード開始後にリモートソースの設定が変更されました。最初から再ダウンロードしますか？",
+  "nasDownloadRestartFromScratch": "最初から再開",
+  "nasDownloadErrorSourceChanged": "ソース設定が変更されました",
+  "nasDownloadErrorOfflineFileInvalid": "ダウンロードされたファイルが破損しているか不完全です",
+  "nasDownloadErrorStorageFailed": "ストレージへの保存に失敗しました",
+  "nasDownloadErrorHlsUnsupported": "ストリーミング配信のオフライン保存には非対応です",
+  "nasDownloadErrorPathInvalid": "ダウンロード保存先パスが無効です",
+  "nasOpenInApp": "アプリ内で開く",
+  "nasOpenSystem": "システムで開く",
+  "sftpRecentDirectories": "最近使ったディレクトリ",
+  "sftpNoRecentDirectories": "最近使ったディレクトリはありません",
+  "sftpRetryFailed": "失敗項目を再試行",
+  "appCenterDiskCheckFailed": "サーバー上の空きディスク容量を確認できませんでした",
+  "appCenterDiskFull": "サーバーのディスク容量が一杯です。操作を続行できません",
+  "appCenterHealthInvalid": "コンテナのヘルスチェックに失敗したか、無効な状態が報告されました",
+  "appCenterPreflightSummary": "事前チェック概要",
+  "appCenterMeasuredAvailableSpace": "計測された空き容量",
+  "appCenterUpdateComparison": "アップデート比較",
+  "appCenterNoChangesDetected": "構造上の変更は検出されませんでした",
+  "appCenterSectionImage": "コンテナイメージ",
+  "appCenterSectionPorts": "ポートマッピング",
+  "appCenterSectionVolumes": "ストレージマウント",
+  "appCenterSectionEnvironment": "環境変数",
+  "appCenterSectionHealthcheck": "ヘルスチェック",
+  "appCenterSectionRestart": "再起動ポリシー",
+  "appCenterSectionServices": "サービス一覧",
+  "appCenterHealthNoCheck": "ヘルスチェックなし",
+  "appCenterHealthHealthy": "正常",
+  "appCenterHealthUnhealthy": "異常",
+  "appCenterHealthStarting": "起動中",
+  "appCenterNoSources": "有効なアプリソースがありません",
+  "appCenterNoMatchingApps": "検索またはフィルタ条件に一致するアプリがありません",
+  "appCenterClearFilters": "フィルターをクリア",
+  "appCenterSourceLoadFailed": "アプリソースの読み込みに失敗しました",
+  "appCenterRetry": "再試行",
+  "appCenterRecheck": "再チェック",
+  "appCenterRecheckTask": "タスク状態を再確認",
+  "appCenterTaskNeedsInspectionTitle": "タスク結果が未確認です",
+  "appCenterTaskNeedsInspectionMessage": "サーバーでのタスク結果が不明です。むやみに再実行せず、状態を再確認するかログを確認してください。",
+  "appCenterStopConfirmTitle": "{appName} を停止しますか？",
+  "@appCenterStopConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStopConfirmMessage": "サーバー {serverName} 上の {appName} を停止してもよろしいですか？実行中のコンテナが停止します。",
+  "@appCenterStopConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmTitle": "{appName} を再起動しますか？",
+  "@appCenterRestartConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmMessage": "サーバー {serverName} 上の {appName} を再起動してもよろしいですか？",
+  "@appCenterRestartConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterBrowseStore": "アプリストアを見る",
+  "appCenterViewTasks": "タスクを表示",
+  "appCenterViewInstalled": "インストール済みアプリを表示",
+  "appCenterRunInBackground": "バックグラウンドで実行",
+  "appCenterTaskDetails": "タスク詳細",
+  "appCenterTaskTarget": "対象",
+  "appCenterTaskDirectory": "ディレクトリ",
+  "appCenterTaskCreatedAt": "作成日時",
+  "appCenterTaskExitCode": "終了コード: {code}",
+  "@appCenterTaskExitCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "appCenterStatusRunning": "実行中",
+  "appCenterStatusStopped": "停止中",
+  "appCenterStatusInstalling": "インストール中",
+  "appCenterStatusUnknown": "不明",
+  "appCenterEnvReady": "Docker & Compose 環境は準備完了です",
+  "appCenterEnvNotReady": "Docker 環境の準備ができていません",
+  "appCenterEnvInspecting": "Docker 環境を検出中...",
+  "appCenterUninstallWholeDataRoot": "データルート全体",
+  "appCenterUninstallWholeDataRootWarning": "アプリケーションデータルート配下に保存されているマウントされていないファイルやサブディレクトリも含まれます。",
+  "appCenterUninstallCoveredByParent": "親ディレクトリに含まれています",
+  "appCenterContainerNameInvalid": "インスタンス名は英数字で始まり、英数字、アンダースコア、ピリオド、ハイフンのみを使用できます（最大120文字）。",
+  "appCenterMainService": "メインサービス",
+  "appCenterContainerNamesPreview": "コンテナ名プレビュー",
+  "appCenterContainersRecreationNotice": "インスタンスコンテナ名を変更すると、既存のアプリケーションコンテナが再作成されます。",
+  "remoteBrowserTitle": "リモートファイルブラウザ",
+  "remoteBrowserSelectDirectory": "ディレクトリを選択",
+  "remoteBrowserSelectCurrentDirectory": "現在のディレクトリを選択",
+  "remoteBrowserSearchHint": "ファイルとフォルダを検索...",
+  "remoteBrowserNoEntries": "一致するファイルまたはディレクトリが見つかりません",
+  "remoteBrowserEmptyDirectory": "このディレクトリは空です",
+  "remoteBrowserSelectedCount": "{count} 件選択中",
+  "@remoteBrowserSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remoteBrowserParentDirectory": "親ディレクトリ",
+  "remoteBrowserLibrariesTitle": "メディアライブラリ",
+  "remoteBrowserDisconnected": "リモート接続が切断されたか利用できません。",
+  "remoteBrowserTargetChanged": "ターゲット環境またはアクティブなサーバーが変更されました。",
+  "remoteBrowserPathInvalid": "要求されたパスが無効であるかアクセスできません。",
+  "remoteBrowserPathOutsideRoot": "要求されたパスは許可されたルートディレクトリの外にあります。",
+  "remoteBrowserEntryUnavailable": "選択されたエントリは利用できないか無効です。",
+  "nasBrowseUnavailable": "NAS ブラウズサービスは現在利用できません。",
+  "nasInvalidDirectoryEntry": "NAS の参照中に無効なディレクトリエントリが見つかりました。",
+  "nasInvalidLibraryResponse": "メディアライブラリの応答が無効または不正です。",
+  "nasScanFilterUnresolved": "スキャンフィルタパスを解決できません。",
+  "nasSourceSaveIncomplete": "以前のソース保存が一部しか永続化されていません。資格情報を再入力して正常に保存してから参照してください。"
 }

@@ -1,5 +1,55 @@
 {
   "@@locale": "fr",
+  "nasPlaylistLoadFailed": "Les listes de lecture sont temporairement indisponibles. Votre liste de médias enregistrée reste accessible. Actualisez pour réessayer.",
+  "nasAllLibraries": "Toutes les médiathèques",
+  "nasNativeInstallTitle": "Installer Jellyfin (paquet natif)",
+  "nasNativeStepVerifyRepo": "Vérifier le dépôt officiel signé",
+  "nasNativeStepPreventAutostart": "Empêcher le démarrage automatique avant la configuration",
+  "nasNativeStepInstallPackages": "Installer les paquets signés aux versions fixées",
+  "nasNativeStepConfigureLoopback": "Configurer une écoute limitée à localhost",
+  "nasNativeStageInstalling": "Installation des paquets aux versions fixées",
+  "nasNativeStageStarting": "Démarrage du service systemd",
+  "nasNativeGuidanceMediaAccess": "Les permissions et les propriétaires des fichiers multimédias restent inchangés. Vérifiez que l’utilisateur du service Jellyfin dispose d’un accès en lecture.",
+  "nasNativeGuidanceNoUpgrade": "Les installations Jellyfin existantes ne seront ni prises en charge, ni modifiées, ni mises à niveau.",
+  "nasNativeSupportedRequirements": "Nécessite Debian ou Ubuntu (amd64/arm64), systemd et un accès root ou sudo sans mot de passe.",
+  "nasNativeExistingInstallTitle": "Installation Jellyfin existante détectée",
+  "nasNativeExistingInstallExplanation": "Jellyfin est déjà installé sur ce serveur. Valhalla ne le modifiera pas et ne le réinstallera pas. Vérifiez directement sa connexion.",
+  "nasNativeCancelExplanation": "Annulation demandée au prochain point sûr. Les opérations de gestion des paquets en cours se termineront normalement.",
+  "nasNativeMediaPathLabel": "Chemin du dossier multimédia",
+  "nasNativeMediaPathHint": "Chemin absolu existant sur le serveur (par exemple /media/library). Les permissions restent inchangées.",
+  "nasNativeSudoRequired": "L’installation de paquets système nécessite un accès root ou sudo sans mot de passe",
+  "nasDiagnosticsTitle": "Diagnostic de la source multimédia",
+  "nasDiagnosticsConnection": "Connexion",
+  "nasDiagnosticsScan": "Analyse de la médiathèque",
+  "nasDiagnosticsLastSuccess": "Dernière connexion réussie",
+  "nasDiagnosticsCredentials": "Vérification des identifiants enregistrés",
+  "nasDiagnosticsFinalizing": "Finalisation de l’index",
+  "nasDiagnosticsNotChecked": "Non vérifié",
+  "nasCacheLegacy": "Anciennes miniatures (sans source attribuée)",
+  "nasCacheGlobalBudget": "Limite des miniatures (toutes les sources)",
+  "nasCacheNoSource": "Sélectionnez une source multimédia pour gérer son cache.",
+  "nasOfflineRecordedHint": "Volume de téléchargement enregistré, et non espace disque mesuré. Vider les miniatures ne supprime pas les fichiers hors ligne.",
+  "nasCacheClearConfirm": "Supprimer les miniatures de {scope} ? Les fichiers hors ligne et les médias distants seront conservés.",
+  "nasOfflineRecordedBytes": "Téléchargements enregistrés : {size}",
+  "nasDeployDockerTitle": "Application Docker",
+  "nasDeployDockerDesc": "Ouvrez l’application officielle Jellyfin dans le Centre d’applications. Vérifiez sa configuration avant de l’installer.",
+  "nasDeployNativeDesc": "Installez Jellyfin directement sur ce serveur à l’aide de ses paquets officiels. Les installations existantes restent inchangées.",
+  "nasDeployEnableAppCenter": "Activer le Centre d’applications expérimental pour continuer ? La disposition du menu ne changera pas.",
+  "nasDeployCatalogUnavailable": "L’application officielle Jellyfin est indisponible. Vérifiez que la source officielle est activée, puis réessayez.",
+  "@nasCacheClearConfirm": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "@nasOfflineRecordedBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "appName": "Valhalla",
   "appSubtitle": "Gestion de serveurs & d'agents native IA",
   "navAiChat": "Chat IA",
@@ -1663,5 +1713,418 @@
   "nasThumbnailCacheBudget": "Budget du cache",
   "nasThumbnailCacheClear": "Vider le cache",
   "nasThumbnailCacheCleared": "Cache des miniatures vidé",
-  "nasThumbnailCacheOff": "Désactivé"
+  "nasThumbnailCacheOff": "Désactivé",
+  "navAppCenter": "Centre d'applications",
+  "settingsExperimentalAppCenterTitle": "Centre d'applications (Docker)",
+  "settingsExperimentalAppCenterDesc": "Boutique d'applications expérimentale et gestionnaire de déploiement de conteneurs",
+  "appCenterTitle": "Centre d'applications",
+  "appCenterTabStore": "Boutique",
+  "appCenterTabInstalled": "Installées",
+  "appCenterTabTasks": "Tâches",
+  "appCenterSources": "Sources",
+  "appCenterManageSources": "Gérer les sources",
+  "appCenterAddSource": "Ajouter une source",
+  "appCenterSourceName": "Nom de la source",
+  "appCenterSourceUrl": "URL de la source (HTTPS)",
+  "appCenterDeleteSource": "Supprimer la source",
+  "appCenterRefresh": "Actualiser",
+  "appCenterSearchHint": "Rechercher des applications...",
+  "appCenterFilterAllCategories": "Toutes les catégories",
+  "appCenterFilterAllSources": "Toutes les sources",
+  "appCenterNoApps": "Aucune application trouvée",
+  "appCenterNoInstalled": "Aucune application installée",
+  "appCenterNoTasks": "Aucune tâche active ou récente",
+  "appCenterInstall": "Installer",
+  "appCenterInstalledBadge": "Installée",
+  "appCenterIncompatibleBadge": "Incompatible",
+  "appCenterUpdateAvailable": "Mise à jour disponible",
+  "appCenterArchitectureBlocker": "Architecture non prise en charge",
+  "appCenterAppDetails": "Détails de l'application",
+  "appCenterVersion": "Version",
+  "appCenterCategory": "Catégorie",
+  "appCenterSource": "Source",
+  "appCenterArchitectures": "Architectures prises en charge",
+  "appCenterScreenshots": "Captures d'écran",
+  "appCenterDescription": "Description",
+  "appCenterWizardTitle": "Installer {appName}",
+  "@appCenterWizardTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterConfigureTitle": "Configurer {appName}",
+  "@appCenterConfigureTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUpdateTitle": "Mettre à jour {appName}",
+  "@appCenterUpdateTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStepEnvironment": "Environnement",
+  "appCenterStepConfig": "Configuration",
+  "appCenterStepReview": "Vérifier le plan",
+  "appCenterStepProgress": "Progression",
+  "appCenterInstanceName": "Nom de l'instance",
+  "appCenterDataDirectory": "Répertoire des données",
+  "appCenterBrowseDirectory": "Parcourir le répertoire",
+  "appCenterNetworkAndPorts": "Réseau et ports",
+  "appCenterBindAddress": "Adresse de liaison",
+  "appCenterBindLoopback": "Localhost uniquement (127.0.0.1)",
+  "appCenterBindAll": "Toutes les interfaces (0.0.0.0)",
+  "appCenterPortMapping": "Mappage des ports",
+  "appCenterMounts": "Points de montage",
+  "appCenterMountSource": "Chemin hôte",
+  "appCenterMountTarget": "Chemin conteneur",
+  "appCenterMountReadOnly": "Lecture seule",
+  "appCenterVariables": "Variables",
+  "appCenterEnvironmentVariables": "Variables d'environnement",
+  "appCenterNext": "Suivant",
+  "appCenterBack": "Retour",
+  "appCenterConfirmAndExecute": "Exécuter le plan",
+  "appCenterPlanPreview": "Aperçu du plan de déploiement",
+  "appCenterPlanSanitizedNotice": "Vérifiez le plan de déploiement généré avant l'exécution :",
+  "appCenterEnvironmentCheck": "Environnement Docker",
+  "appCenterDockerFound": "Docker est disponible",
+  "appCenterDockerMissing": "Docker n'est pas installé",
+  "appCenterComposeFound": "Docker Compose est disponible",
+  "appCenterComposeMissing": "Docker Compose n'est pas installé",
+  "appCenterBootstrapPrompt": "Docker et Compose peuvent être installés sur ce serveur. Une permission root/sudo est requise.",
+  "appCenterBootstrapButton": "Installer Docker et Compose",
+  "appCenterSudoPassword": "Mot de passe sudo (facultatif / si requis)",
+  "appCenterSudoPasswordHint": "Entrez le mot de passe sudo pour les opérations privilégiées",
+  "appCenterOpen": "Ouvrir l'interface Web",
+  "appCenterStart": "Démarrer",
+  "appCenterStop": "Arrêter",
+  "appCenterRestart": "Redémarrer",
+  "appCenterLogs": "Journaux",
+  "appCenterConfig": "Configurer",
+  "appCenterUpdate": "Mettre à jour",
+  "appCenterRestore": "Restaurer",
+  "appCenterUninstall": "Désinstaller",
+  "appCenterUninstallConfirmTitle": "Désinstaller {appName} ?",
+  "@appCenterUninstallConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallConfirmMessage": "Voulez-vous vraiment désinstaller {appName} ? Les conteneurs seront supprimés, mais votre répertoire de données d'application sera conservé.",
+  "@appCenterUninstallConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallKeepData": "Désinstaller (Conserver les données)",
+  "appCenterUninstallDeleteSelected": "Désinstaller et supprimer la sélection",
+  "appCenterUninstallInspecting": "Inspection des répertoires de données de l'application...",
+  "appCenterUninstallInspectionFailedWarning": "Échec de l'inspection du nettoyage des données. Vous pouvez toujours désinstaller les conteneurs d'application tout en conservant toutes les données en toute sécurité.",
+  "appCenterUninstallDirectoriesTitle": "Dossiers de données et volumes Docker",
+  "appCenterUninstallNoDirectories": "Aucun répertoire de données monté détecté. Les conteneurs seront supprimés tout en conservant les données.",
+  "appCenterUninstallDefaultPreservedHint": "Toutes les données sont conservées par défaut. Sélectionnez uniquement les dossiers ou volumes à supprimer définitivement.",
+  "appCenterUninstallPermanentLossWarning": "Les données sélectionnées seront supprimées définitivement du serveur, sans corbeille.",
+  "appCenterUninstallSelectedPathsTitle": "Données à supprimer définitivement :",
+  "appCenterUninstallRiskAck": "Je comprends les risques et les conséquences pour les autres applications et confirme la suppression définitive de ces données.",
+  "remoteBrowserAllFileTypes": "Tous les formats",
+  "remoteBrowserDocuments": "Texte et documents",
+  "remoteBrowserFileFormat": "Format de fichier",
+  "appCenterUninstallRiskSystem": "Chemin système",
+  "appCenterUninstallRiskShared": "Partagé avec d’autres applications",
+  "appCenterUninstallRiskVolume": "Volume Docker",
+  "appCenterCleanupVolumeDeleteFailed": "Échec de suppression du volume Docker. Libérez son utilisation par les autres conteneurs, puis vérifiez et réessayez.",
+  "appCenterCleanupPermissionDenied": "Accès refusé. Utilisez un compte ayant accès aux données ou sudo.",
+  "appCenterCleanupCriticalPath": "La racine du serveur et les dossiers d’exécution ou de gestion ne peuvent pas être supprimés lors de la désinstallation.",
+  "appCenterUninstallTypeAppNameHint": "Saisissez le nom exact de l'application pour confirmer la suppression définitive : {appName}",
+  "@appCenterUninstallTypeAppNameHint": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallRiskLegacy": "Propriété exclusive non vérifiée",
+  "appCenterUninstallRiskExternal": "En dehors de la racine des données de l'application",
+  "appCenterUninstallRiskMedia": "Chemin média ou en lecture seule",
+  "appCenterUninstallTargetBlocked": "Répertoire protégé, suppression impossible",
+  "appCenterCleanupProtected": "Répertoire de données conservé car il est protégé ou dangereux à supprimer",
+  "appCenterCleanupUnavailable": "Inspection du nettoyage indisponible ; désinstallation possible en conservant les données",
+  "appCenterCleanupChanged": "Répertoire ou cible de déploiement modifié ; veuillez inspecter et confirmer à nouveau",
+  "appCenterCleanupConfirmationRequired": "Veuillez confirmer à nouveau les répertoires sélectionnés, les risques et le nom exact de l'application",
+  "appCenterCleanupRetryUnavailable": "Le nettoyage ne peut pas être réessayé en toute sécurité ; inspecter les détails de la tâche",
+  "appCenterCleanupAlreadyAbsent": "Le répertoire est déjà absent ; aucune suppression nécessaire",
+  "appCenterCleanupDeleteFailed": "Suppression incomplète ; certains fichiers ont peut-être déjà été supprimés. Inspecter les chemins restants.",
+  "appCenterCleanupUnconfirmed": "Impossible de confirmer le résultat ou la sécurité du nettoyage ; inspecter la tâche et revérifier avant de continuer",
+  "appCenterCleanupRetryTitle": "Réessayer le nettoyage des données restantes pour {appName} ?",
+  "@appCenterCleanupRetryTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterCleanupRetryDescription": "L'application est déjà désinstallée. Sélectionnez uniquement les répertoires de données inachevés ; la nouvelle tentative ne la désinstallera pas à nouveau.",
+  "appCenterCleanupRetrySelected": "Supprimer les données restantes sélectionnées",
+  "appCenterCleanupResultsTitle": "Résultats du nettoyage des répertoires",
+  "appCenterCleanupPartialSummary": "Application désinstallée ; certaines données n'ont pas été entièrement effacées.",
+  "appCenterCleanupPending": "Non confirmé comme terminé",
+  "appCenterCleanupRemoved": "Supprimé",
+  "appCenterCleanupRetained": "Conservé",
+  "appCenterCleanupRetryAction": "Réessayer le nettoyage des données restantes",
+  "appCenterJellyfinSoftwareTitle": "Mode de décodage logiciel",
+  "appCenterJellyfinSoftwareDesc": "Désactive le transcodage GPU, supprime les mappages de périphériques GPU examinés et monte /Media en lecture seule.",
+  "appCenterJellyfinProfileUnavailable": "Le profil de décodage logiciel n'est pas disponible pour ce modèle",
+  "appCenterJellyfinSoftwareChanges": "Modifications de profil appliquées :",
+  "appCenterLogsTitle": "Journaux de {appName}",
+  "@appCenterLogsTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterLogsEmpty": "Aucun journal enregistré pour ce déploiement",
+  "appCenterLogsCopied": "Journaux copiés dans le presse-papiers",
+  "appCenterTaskStageQueued": "En file d'attente",
+  "appCenterTaskStagePreparing": "En préparation",
+  "appCenterTaskStagePulling": "Téléchargement des images",
+  "appCenterTaskStageApplying": "Application de la configuration",
+  "appCenterTaskStageChecking": "Vérification de l'état",
+  "appCenterTaskStageSucceeded": "Réussi",
+  "appCenterTaskStageFailed": "Échoué",
+  "appCenterTaskStageCancelled": "Annulé",
+  "appCenterTaskStageNeedsInspection": "Nécessite une inspection",
+  "appCenterCancelTask": "Annuler la tâche",
+  "appCenterCopyLog": "Copier le journal",
+  "appCenterErrorNotConnected": "Le serveur n'est pas connecté",
+  "appCenterErrorEnvironmentRequired": "Vérification de l'environnement Docker requise",
+  "appCenterErrorPlanExpired": "Plan de déploiement expiré ou invalide",
+  "appCenterErrorTargetChanged": "Le serveur cible a changé ; opération annulée",
+  "appCenterErrorConfigInvalid": "Configuration d'application invalide",
+  "appCenterErrorPathInvalid": "{field} doit être un chemin absolu autre que la racine (/), et ne peut pas contenir de segments . ou ..",
+  "@appCenterErrorPathInvalid": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterErrorSourceInvalid": "Source de boutique d'applications invalide",
+  "appCenterErrorNoWebEntry": "Cette application ne fournit pas d'interface Web",
+  "appCenterErrorHttpsDirectRequired": "Le point de terminaison HTTPS ne peut pas être tunnelisé via SSH ; veuillez l'ouvrir directement",
+  "appCenterErrorOpenFailed": "Échec de l'ouverture de l'URL de l'application",
+  "appCenterErrorGeneric": "Erreur du Centre d'applications : {error}",
+  "@appCenterErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterSourceCommunityHint": "ex. Boutique communautaire",
+  "appCenterSourceUrlInvalidHttps": "Doit être une URL HTTPS valide",
+  "appCenterDirectUrlLabel": "URL directe",
+  "appCenterErrorSourceRemoved": "La source de l'application n'est plus disponible dans le catalogue. Impossible de mettre à jour le modèle.",
+  "appCenterRestoreConfirmTitle": "Restaurer {appName} ?",
+  "@appCenterRestoreConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestoreConfirmMessage": "Restaurer {appName} à sa configuration de déploiement précédente ?",
+  "@appCenterRestoreConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostPortLabel": "Port hôte (-> {target})",
+  "@appCenterHostPortLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostMountLabel": "Chemin hôte ({target})",
+  "@appCenterHostMountLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterVersionLatest": "dernière",
+  "appCenterWaitingForLogs": "En attente des journaux de tâche...",
+  "appCenterNoPreviewAvailable": "Aucun aperçu disponible",
+  "appCenterBlockerLocalDockerRequired": "Démon Docker local requis (DOCKER_HOST distant non pris en charge)",
+  "appCenterBlockerToolsRequired": "Outils requis manquants sur le serveur (bash, setsid, flock, base64, realpath, ss, awk)",
+  "appCenterBlockerLinuxRequired": "Système d'exploitation Linux requis",
+  "appCenterBlockerTemplateUnsupported": "Fonctionnalité de modèle non prise en charge : {feature}",
+  "@appCenterBlockerTemplateUnsupported": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterFieldRequired": "Ce champ est obligatoire",
+  "appCenterContinueInstall": "Continuer l'installation",
+  "appCenterOperation": "Opération",
+  "nasTabLibrary": "Bibliothèque",
+  "nasContinueWatching": "Reprendre la lecture",
+  "nasRecentPhotos": "Photos récentes",
+  "nasRecentVideos": "Vidéos récentes",
+  "nasRecentMusic": "Musique récente",
+  "nasDownloadPaused": "En pause",
+  "nasDownloadDeleteConfirmTitle": "Supprimer le fichier hors-ligne",
+  "nasDownloadDeleteConfirmMessage": "Cela supprimera le fichier local hors-ligne de votre appareil. Le fichier d'origine sur le serveur distant ne sera pas supprimé.",
+  "nasDownloadDeleteConfirmButton": "Supprimer la copie locale",
+  "nasDownloadSourceChangedMessage": "La configuration de la source distante a changé depuis le lancement du téléchargement. Voulez-vous recommencer depuis le début ?",
+  "nasDownloadRestartFromScratch": "Recommencer depuis le début",
+  "nasDownloadErrorSourceChanged": "Configuration de la source modifiée",
+  "nasDownloadErrorOfflineFileInvalid": "Le fichier téléchargé est corrompu ou incomplet",
+  "nasDownloadErrorStorageFailed": "Échec de l'écriture sur le stockage",
+  "nasDownloadErrorHlsUnsupported": "Téléchargement hors-ligne non pris en charge pour ce flux",
+  "nasDownloadErrorPathInvalid": "Chemin de stockage du téléchargement non valide",
+  "nasOpenInApp": "Ouvrir dans l'application",
+  "nasOpenSystem": "Ouvrir avec le système",
+  "sftpRecentDirectories": "Répertoires récents",
+  "sftpNoRecentDirectories": "Aucun répertoire récent",
+  "sftpRetryFailed": "Réessayer les échecs",
+  "appCenterDiskCheckFailed": "Impossible de vérifier l'espace disque disponible sur le serveur",
+  "appCenterDiskFull": "Disque du serveur plein ; impossible de continuer",
+  "appCenterHealthInvalid": "Vérification de santé du conteneur échouée ou état invalide",
+  "appCenterPreflightSummary": "Résumé des vérifications préalables",
+  "appCenterMeasuredAvailableSpace": "Espace disque disponible mesuré",
+  "appCenterUpdateComparison": "Comparaison de mise à jour",
+  "appCenterNoChangesDetected": "Aucun changement structurel détecté",
+  "appCenterSectionImage": "Image de conteneur",
+  "appCenterSectionPorts": "Mappages de ports",
+  "appCenterSectionVolumes": "Points de montage",
+  "appCenterSectionEnvironment": "Variables d'environnement",
+  "appCenterSectionHealthcheck": "Contrôle de santé",
+  "appCenterSectionRestart": "Politique de redémarrage",
+  "appCenterSectionServices": "Services",
+  "appCenterHealthNoCheck": "Aucun contrôle de santé",
+  "appCenterHealthHealthy": "Sain",
+  "appCenterHealthUnhealthy": "Défaillant",
+  "appCenterHealthStarting": "Démarrage en cours",
+  "appCenterNoSources": "Aucune source d'application activée",
+  "appCenterNoMatchingApps": "Aucune application ne correspond à votre recherche ou vos filtres",
+  "appCenterClearFilters": "Effacer les filtres",
+  "appCenterSourceLoadFailed": "Échec du chargement de la source d'applications",
+  "appCenterRetry": "Réessayer",
+  "appCenterRecheck": "Revérifier",
+  "appCenterRecheckTask": "Revérifier le statut de la tâche",
+  "appCenterTaskNeedsInspectionTitle": "Statut de tâche non confirmé",
+  "appCenterTaskNeedsInspectionMessage": "Résultat de la tâche sur le serveur inconnu. Veuillez vérifier le statut ou consulter les journaux sans réexécuter aveuglément.",
+  "appCenterStopConfirmTitle": "Arrêter {appName} ?",
+  "@appCenterStopConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStopConfirmMessage": "Voulez-vous vraiment arrêter {appName} sur le serveur {serverName} ? Les conteneurs en cours seront arrêtés.",
+  "@appCenterStopConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmTitle": "Redémarrer {appName} ?",
+  "@appCenterRestartConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmMessage": "Voulez-vous vraiment redémarrer {appName} sur le serveur {serverName} ?",
+  "@appCenterRestartConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterBrowseStore": "Parcourir le Store",
+  "appCenterViewTasks": "Voir les tâches",
+  "appCenterViewInstalled": "Voir l'application installée",
+  "appCenterRunInBackground": "Exécuter en arrière-plan",
+  "appCenterTaskDetails": "Détails de la tâche",
+  "appCenterTaskTarget": "Cible",
+  "appCenterTaskDirectory": "Répertoire",
+  "appCenterTaskCreatedAt": "Créé le",
+  "appCenterTaskExitCode": "Code de sortie : {code}",
+  "@appCenterTaskExitCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "appCenterStatusRunning": "En cours d'exécution",
+  "appCenterStatusStopped": "Arrêté",
+  "appCenterStatusInstalling": "Installation",
+  "appCenterStatusUnknown": "Inconnu",
+  "appCenterEnvReady": "Environnement Docker et Compose prêt",
+  "appCenterEnvNotReady": "Environnement Docker non prêt",
+  "appCenterEnvInspecting": "Vérification de l'environnement Docker...",
+  "appCenterUninstallWholeDataRoot": "Racine complète des données",
+  "appCenterUninstallWholeDataRootWarning": "Cela inclut les fichiers non montés et les sous-répertoires stockés sous la racine des données de l'application.",
+  "appCenterUninstallCoveredByParent": "Couvert par le répertoire parent",
+  "appCenterContainerNameInvalid": "Le nom de l'instance doit commencer par un caractère alphanumérique et ne contenir que des lettres, des chiffres, des traits de soulignement, des points et des tirets (jusqu'à 120 caractères).",
+  "appCenterMainService": "Service principal",
+  "appCenterContainerNamesPreview": "Aperçu des noms de conteneurs",
+  "appCenterContainersRecreationNotice": "La modification des noms de conteneurs de l'instance recréera les conteneurs existants de l'application.",
+  "remoteBrowserTitle": "Explorateur distant",
+  "remoteBrowserSelectDirectory": "Sélectionner un répertoire",
+  "remoteBrowserSelectCurrentDirectory": "Sélectionner le répertoire actuel",
+  "remoteBrowserSearchHint": "Rechercher des fichiers et dossiers...",
+  "remoteBrowserNoEntries": "Aucun fichier ou répertoire correspondant trouvé",
+  "remoteBrowserEmptyDirectory": "Ce répertoire est vide",
+  "remoteBrowserSelectedCount": "{count, plural, =1{1 élément sélectionné} other{{count} éléments sélectionnés}}",
+  "@remoteBrowserSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remoteBrowserParentDirectory": "Répertoire parent",
+  "remoteBrowserLibrariesTitle": "Bibliothèques multimédias",
+  "remoteBrowserDisconnected": "Connexion distante perdue ou indisponible.",
+  "remoteBrowserTargetChanged": "L'environnement cible ou le serveur actif a changé.",
+  "remoteBrowserPathInvalid": "Le chemin demandé est invalide ou inaccessible.",
+  "remoteBrowserPathOutsideRoot": "Le chemin demandé se situe en dehors du répertoire racine autorisé.",
+  "remoteBrowserEntryUnavailable": "L'entrée sélectionnée est indisponible ou invalide.",
+  "nasBrowseUnavailable": "Le service de navigation NAS est actuellement indisponible.",
+  "nasInvalidDirectoryEntry": "Entrée de répertoire invalide rencontrée lors de la navigation dans le NAS.",
+  "nasInvalidLibraryResponse": "Réponse de bibliothèque multimédia invalide ou malformée.",
+  "nasScanFilterUnresolved": "Impossible de résoudre le chemin du filtre d'analyse.",
+  "nasSourceSaveIncomplete": "Un enregistrement précédent de la source n'a persisté que partiellement. Veuillez ressaisir les identifiants et enregistrer avec succès avant de naviguer."
 }

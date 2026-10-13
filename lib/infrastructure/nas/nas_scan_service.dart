@@ -23,30 +23,24 @@ class NasScanService {
     }
 
     final includes = config.includePaths.map(clean).toSet().toList()..sort();
-    final collapsed = <String>[];
-    for (final candidate in includes) {
-      if (!collapsed.any(
-        (root) => candidate == root || path.posix.isWithin(root, candidate),
-      )) {
-        collapsed.add(candidate);
-      }
-    }
     final excludes =
         config.excludePaths
             .map(clean)
             .where(
-              (candidate) => collapsed.any(
+              (candidate) => includes.any(
                 (root) =>
-                    candidate == root || path.posix.isWithin(root, candidate),
+                    candidate == root ||
+                    path.posix.isWithin(root, candidate) ||
+                    path.posix.isWithin(candidate, root),
               ),
             )
             .toSet()
             .toList()
           ..sort();
-    return NasScanConfig(includePaths: collapsed, excludePaths: excludes);
+    return NasScanConfig(includePaths: includes, excludePaths: excludes);
   }
 
-  String _findPrefix(NasScanConfig raw) {
+  List<String> _findPrefixes(NasScanConfig raw) {
     final config = normalize(raw);
     if (config.includePaths.isEmpty) {
       throw StateError('NAS_SCAN_PATH_REQUIRED');
@@ -78,23 +72,37 @@ class NasScanService {
       'opus',
       'wma',
     ];
-    final prune = config.excludePaths.isEmpty
-        ? ''
-        : '\\( ${config.excludePaths.map((entry) {
-            final quoted = cliShellQuote(entry);
-            final descendants = cliShellQuote(entry == '/' ? '/*' : '$entry/*');
-            return "-path $quoted -o -path $descendants";
-          }).join(' -o ')} \\) -prune -o ';
     final types =
         '\\( ${extensions.map((ext) => "-iname ${cliShellQuote('*.$ext')}").join(' -o ')} \\)';
-    return 'find -P ${config.includePaths.map(cliShellQuote).join(' ')} '
-        '$prune-type f $types';
+    return config.includePaths.map((root) {
+      // Separate explicit roots so a selected link below another root is kept,
+      // while ordinary overlapping trees are enumerated only once.
+      final pruned = {
+        ...config.excludePaths,
+        ...config.includePaths.where(
+          (other) => path.posix.isWithin(root, other),
+        ),
+      };
+      final prune = pruned.isEmpty
+          ? ''
+          : '\\( ${pruned.map((entry) {
+              // Shell quoting does not disable find's own -path glob syntax.
+              final literal = entry.replaceAllMapped(RegExp(r'[\\*?\[\]]'), (match) => '\\${match[0]}');
+              final quoted = cliShellQuote(literal);
+              final descendants = cliShellQuote(entry == '/' ? '/*' : '$literal/*');
+              return "-path $quoted -o -path $descendants";
+            }).join(' -o ')} \\) -prune -o ';
+      // Follow explicitly selected link roots, never links found inside them.
+      return 'find -H ${cliShellQuote(root)} $prune-type f $types';
+    }).toList();
   }
 
   /// Kept for older callers; indexing uses [scanBatches] to bound memory.
   Future<List<NasMediaItem>> scan(String serverId, NasScanConfig raw) async {
-    final findPrefix = _findPrefix(raw);
-    final command = '$findPrefix -printf ${cliShellQuote('%p\\0%s\\0%T@\\0')}';
+    final prefixes = _findPrefixes(raw);
+    final command = prefixes
+        .map((prefix) => '$prefix -printf ${cliShellQuote('%p\\0%s\\0%T@\\0')}')
+        .join(' && ');
     var result = await executor.executeWithLoginShell(
       serverId,
       command,
@@ -103,7 +111,7 @@ class NasScanService {
     if (!result.isSuccess && _unsupportedPrintf(result.stderr)) {
       result = await executor.executeWithLoginShell(
         serverId,
-        _portableFind(findPrefix),
+        prefixes.map(_portableFind).join(' && '),
         timeout: const Duration(minutes: 30),
       );
     }
@@ -130,7 +138,7 @@ class NasScanService {
     int batchSize = 256,
   }) async* {
     cancellation.check();
-    final prefix = _findPrefix(raw);
+    final prefixes = _findPrefixes(raw);
     final client = executor.getClient(serverId);
     if (client == null || client.isClosed) {
       throw StateError('NAS_SSH_NOT_CONNECTED');
@@ -138,7 +146,8 @@ class NasScanService {
     // Probe before emitting any rows, so format fallback cannot duplicate rows.
     final command =
         "if find / -maxdepth 0 -printf '' >/dev/null 2>&1; then "
-        '$prefix -printf ${cliShellQuote('%p\\0%s\\0%T@\\0')}; else ${_portableFind(prefix)}; fi';
+        '${prefixes.map((prefix) => '$prefix -printf ${cliShellQuote('%p\\0%s\\0%T@\\0')}').join(' && ')}; '
+        'else ${prefixes.map(_portableFind).join(' && ')}; fi';
     final session = await client.execute(command);
     final unregister = cancellation.onCancel(session.close);
     final errors = StringBuffer();
@@ -244,7 +253,7 @@ class NasScanService {
     // stat formats do not portably decode \\0. Shell printf supplies real NUL
     // bytes, and only numeric metadata goes through word splitting.
     const script =
-        r'''for file do metadata=$(stat -c '%s %Y' "$file" 2>/dev/null || stat -f '%z %m' "$file") || exit 1; set -- $metadata; [ "$#" -eq 2 ] || exit 1; printf '%s\0%s\0%s\0' "$file" "$1" "$2"; done''';
+        r'''for file do metadata=$(stat -L -c '%s %Y' "$file" 2>/dev/null || stat -L -f '%z %m' "$file") || exit 1; set -- $metadata; [ "$#" -eq 2 ] || exit 1; printf '%s\0%s\0%s\0' "$file" "$1" "$2"; done''';
     return '$prefix -exec sh -c ${cliShellQuote(script)} sh {} +';
   }
 

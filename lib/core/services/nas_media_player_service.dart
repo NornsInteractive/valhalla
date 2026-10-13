@@ -72,6 +72,8 @@ class NasMediaPlayerService {
   final NasMediaProxyService _proxy;
   final NasIndexRepository _repository;
   final Future<NasSourceAdapter> Function(String)? adapterFor;
+  final Future<String?> Function(NasMediaItem)? localPathFor;
+  final void Function()? onPlaybackSaved;
   final Player player;
   final NasHlsRelayService _hls = NasHlsRelayService();
   Timer? _heartbeat;
@@ -102,6 +104,8 @@ class NasMediaPlayerService {
     this._proxy,
     this._repository, {
     this.adapterFor,
+    this.localPathFor,
+    this.onPlaybackSaved,
     Player? player,
   }) : player = player ?? Player() {
     _heartbeat = Timer.periodic(const Duration(minutes: 1), (_) {
@@ -222,10 +226,16 @@ class NasMediaPlayerService {
   Future<void> retry() {
     final item = current;
     if (item == null) throw StateError('NAS_PLAYER_EMPTY');
-    return _requestOpen(item, queue: _queue, loadMore: _loadMore,
-      restartQueue: _restartQueue, quality: _quality,
-      disposeQueue: _queueLease?.dispose, position: player.state.position,
-      keepQueueState: true);
+    return _requestOpen(
+      item,
+      queue: _queue,
+      loadMore: _loadMore,
+      restartQueue: _restartQueue,
+      quality: _quality,
+      disposeQueue: _queueLease?.dispose,
+      position: player.state.position,
+      keepQueueState: true,
+    );
   }
 
   Future<void> _requestOpen(
@@ -289,12 +299,18 @@ class NasMediaPlayerService {
     _emit();
     Uri? newRelay;
     try {
-      final adapter = await adapterFor?.call(item.serverId);
+      final localPath = await localPathFor?.call(item);
+      final adapter = localPath == null
+          ? await adapterFor?.call(item.serverId)
+          : null;
       final resource = await adapter?.resolve(item, quality: _quality);
       if (!_valid(epoch)) return;
       final Uri url;
       final Map<String, String> headers;
-      if (resource?.uri != null &&
+      if (localPath != null) {
+        url = Uri.file(localPath);
+        headers = const {};
+      } else if (resource?.uri != null &&
           (resource!.mimeType.toLowerCase().contains('mpegurl') ||
               resource.uri!.path.toLowerCase().endsWith('.m3u8'))) {
         url = await _hls.expose(resource);
@@ -411,6 +427,10 @@ class NasMediaPlayerService {
               'ALBUM',
               'TRACK',
               'TRACKNUMBER',
+              'ALBUMARTIST',
+              'ALBUM_ARTIST',
+              'DISC',
+              'DISCNUMBER',
             }.contains(key)) {
               continue;
             }
@@ -425,11 +445,15 @@ class NasMediaPlayerService {
               artist = tags['ARTIST'],
               album = tags['ALBUM'];
           final track = tags['TRACK'] ?? tags['TRACKNUMBER'];
+          final albumArtist = tags['ALBUMARTIST'] ?? tags['ALBUM_ARTIST'];
+          final disc = int.tryParse((tags['DISC'] ?? tags['DISCNUMBER'] ?? '').split('/').first);
           if (!_valid(epoch)) return;
           final duration = player.state.duration;
           if (title == null &&
               artist == null &&
               album == null &&
+              albumArtist == null &&
+              disc == null &&
               track == null &&
               duration <= Duration.zero) {
             return;
@@ -438,6 +462,8 @@ class NasMediaPlayerService {
             title: title,
             artist: artist,
             album: album,
+            albumArtist: albumArtist,
+            discNumber: disc != null && disc > 0 ? disc : null,
             trackNumber: int.tryParse(track?.split('/').first ?? ''),
             durationMillis: duration > Duration.zero
                 ? duration.inMilliseconds
@@ -687,6 +713,7 @@ class NasMediaPlayerService {
           updatedAt: DateTime.now(),
         ),
       );
+      onPlaybackSaved?.call();
     } catch (_) {
       reportPlatformError('NAS_PLAYBACK_SAVE_FAILED');
     }

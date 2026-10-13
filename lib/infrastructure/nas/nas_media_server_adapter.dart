@@ -2,6 +2,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../data/models/nas_media.dart';
 import '../../data/models/nas_source.dart';
+import '../../data/models/remote_browser.dart';
 import 'nas_http_client.dart';
 
 /// Small, explicit bindings to the official Jellyfin and Emby REST APIs. Their
@@ -122,6 +123,57 @@ class NasMediaServerAdapter extends NasSourceAdapter {
   String get _itemsRoute => _emby ? 'Users/$_user/Items' : 'Items';
   Map<String, String> get _userQuery => {'UserId': source.userId ?? ''};
 
+  Future<List<Map<String, dynamic>>> _libraries(
+    NasCancellation cancellation,
+  ) async {
+    final data = await _http.json(
+      'GET',
+      _url('Users/$_user/Views', {'IncludeExternalContent': 'false'}),
+      cancellation: cancellation,
+    );
+    final items = data['Items'];
+    if (items is! List ||
+        items.any(
+          (item) =>
+              item is! Map ||
+              item['Id'] is! String ||
+              (item['Id'] as String).isEmpty ||
+              item['Name'] is! String,
+        )) {
+      throw const NasHttpException('NAS_INVALID_LIBRARY_RESPONSE');
+    }
+    return [for (final item in items) Map<String, dynamic>.from(item as Map)];
+  }
+
+  @override
+  Stream<List<RemoteBrowserEntry>> browse(
+    String path,
+    NasCancellation cancellation,
+  ) async* {
+    cancellation.check();
+    if (path != '/') throw const NasHttpException('NAS_INVALID_PATH');
+    final libraries = await _libraries(cancellation);
+    var page = <RemoteBrowserEntry>[];
+    for (final library in libraries) {
+      cancellation.check();
+      final id = library['Id'] as String;
+      _id(id);
+      page.add(
+        RemoteBrowserEntry(
+          id: id,
+          name: library['Name'] as String,
+          isDirectory: true,
+          canEnter: false,
+        ),
+      );
+      if (page.length == _pageSize) {
+        yield page;
+        page = [];
+      }
+    }
+    if (page.isNotEmpty) yield page;
+  }
+
   Stream<List<Map<String, dynamic>>> _pages(
     String route,
     Map<String, String> query,
@@ -198,6 +250,15 @@ class NasMediaServerAdapter extends NasSourceAdapter {
           : (data['RunTimeTicks'] as num).toInt() ~/ 10000,
       artist: artists,
       album: data['Album'] as String?,
+      albumId: data['AlbumId'] as String?,
+      albumArtist:
+          data['AlbumArtist'] as String? ??
+          (data['AlbumArtists'] as List?)
+              ?.whereType<Map>()
+              .map((entry) => entry['Name'])
+              .whereType<String>()
+              .join(', '),
+      discNumber: (data['ParentIndexNumber'] as num?)?.toInt(),
       trackNumber: (data['IndexNumber'] as num?)?.toInt(),
       width: (video?['Width'] as num?)?.toInt(),
       height: (video?['Height'] as num?)?.toInt(),
@@ -211,10 +272,124 @@ class NasMediaServerAdapter extends NasSourceAdapter {
     NasScanConfig config,
     NasCancellation cancellation,
   ) async* {
-    final parents = config.includePaths.isNotEmpty
-        ? config.includePaths
-        : [source.rootPath];
-    for (final parent in parents.toSet()) {
+    cancellation.check();
+    final includes =
+        (config.includePaths.isNotEmpty
+                ? config.includePaths
+                : [source.rootPath])
+            .map((path) => path.isEmpty ? '/' : path)
+            .toSet();
+    if (config.excludePaths.contains('/')) return;
+    final excludedPaths = config.excludePaths.where(_isPhysicalPath).toList();
+    final excludedIds = config.excludePaths
+        .where((path) => !_isPhysicalPath(path))
+        .toSet();
+    final excludedLibraries = <String>{};
+    final parents = <String, List<String>?>{};
+    final individualItems = <NasMediaItem>[];
+    final metadata = <String, Map<String, dynamic>>{};
+    Future<Map<String, dynamic>> selectionItem(String id) async {
+      if (metadata[id] case final existing?) return existing;
+      final item = await _http.json(
+        'GET',
+        _url('Users/$_user/Items/${_id(id)}'),
+        cancellation: cancellation,
+      );
+      if (item['Id'] is! String ||
+          (item['IsFolder'] is! bool && _item(item) == null)) {
+        throw const NasHttpException('NAS_SCAN_FILTER_UNRESOLVED');
+      }
+      return metadata[id] = item;
+    }
+
+    if (includes.length == 1 && includes.contains('/') && excludedIds.isEmpty) {
+      // Unfiltered historical scans retain the existing paged request path.
+      parents[''] = null;
+    } else {
+      final libraries = {
+        for (final library in await _libraries(cancellation))
+          library['Id'] as String: library,
+      };
+      for (final id in excludedIds) {
+        if (libraries.containsKey(id)) {
+          excludedLibraries.add(id);
+        } else {
+          final item = await selectionItem(id);
+          if (item['IsFolder'] == true) {
+            final path = item['Path'];
+            if (path is! String || !_isPhysicalPath(path)) {
+              throw const NasHttpException('NAS_SCAN_FILTER_UNRESOLVED');
+            }
+            excludedPaths.add(path);
+          }
+        }
+      }
+      final allowed = libraries.keys.where(
+        (id) => !excludedLibraries.contains(id),
+      );
+      for (final include in includes) {
+        cancellation.check();
+        if (include == '/') {
+          for (final id in allowed) {
+            parents[id] = null;
+          }
+        } else if (_isPhysicalPath(include)) {
+          for (final id in allowed) {
+            if (!parents.containsKey(id)) {
+              parents[id] = [include];
+            } else {
+              parents[id]?.add(include);
+            }
+          }
+        } else if (!excludedIds.contains(include)) {
+          if (libraries.containsKey(include)) {
+            parents[include] = null;
+            continue;
+          }
+          final item = await selectionItem(include);
+          if (excludedLibraries.isNotEmpty) {
+            var current = include;
+            final visited = <String>{};
+            while (!libraries.containsKey(current)) {
+              if (!visited.add(current) || visited.length > 128) {
+                throw const NasHttpException('NAS_SCAN_FILTER_UNRESOLVED');
+              }
+              final parent = (await selectionItem(current))['ParentId'];
+              if (parent is! String || parent.isEmpty) {
+                throw const NasHttpException('NAS_SCAN_FILTER_UNRESOLVED');
+              }
+              current = parent;
+            }
+            if (excludedLibraries.contains(current)) continue;
+          }
+          if (item['IsFolder'] == true) {
+            parents[include] = null;
+          } else if (_item(item) case final media?) {
+            individualItems.add(media);
+          } else {
+            throw const NasHttpException('NAS_SCAN_FILTER_UNRESOLVED');
+          }
+        }
+      }
+    }
+    bool selected(NasMediaItem item, List<String>? includedPaths) {
+      if (excludedIds.contains(item.path)) return false;
+      if (excludedPaths.isEmpty && includedPaths == null) return true;
+      final path = item.sourcePath;
+      if (path == null || !_isPhysicalPath(path)) {
+        throw const NasHttpException('NAS_SCAN_FILTER_UNRESOLVED');
+      }
+      return !excludedPaths.any((root) => _insidePhysicalPath(path, root)) &&
+          (includedPaths == null ||
+              includedPaths.any((root) => _insidePhysicalPath(path, root)));
+    }
+
+    final selectedIndividuals = individualItems
+        .where((item) => selected(item, null))
+        .toList();
+    if (selectedIndividuals.isNotEmpty) yield selectedIndividuals;
+    for (final entry in parents.entries) {
+      final parent = entry.key;
       await for (final page in _pages(_itemsRoute, {
         'Recursive': 'true',
         'IncludeItemTypes': 'Movie,Episode,Video,MusicVideo,Audio,Photo',
@@ -223,30 +398,51 @@ class NasMediaServerAdapter extends NasSourceAdapter {
         'Fields': _fields,
         'EnableUserData': 'true',
         'ImageTypeLimit': '1',
-        if (parent.isNotEmpty && parent != '/') 'ParentId': parent,
+        if (parent.isNotEmpty) 'ParentId': parent,
       }, cancellation)) {
         final items = page
             .map(_item)
             .whereType<NasMediaItem>()
-            .where(
-              (item) => !config.excludePaths.any(
-                (exclude) =>
-                    item.path == exclude ||
-                    (item.sourcePath != null &&
-                        (item.sourcePath == exclude ||
-                            item.sourcePath!.startsWith('$exclude/'))),
-              ),
-            )
+            .where((item) => selected(item, entry.value))
             .toList();
         if (items.isNotEmpty) yield items;
       }
     }
   }
 
+  static bool _isPhysicalPath(String value) =>
+      value.startsWith('/') ||
+      value.startsWith(r'\\') ||
+      RegExp(r'^[a-zA-Z]:[/\\]').hasMatch(value);
+
+  static bool _insidePhysicalPath(String path, String root) {
+    if (root.startsWith(r'\\') || RegExp(r'^[a-zA-Z]:[/\\]').hasMatch(root)) {
+      path = path.replaceAll(r'\', '/').toLowerCase();
+      root = root.replaceAll(r'\', '/').toLowerCase();
+    }
+    root = root.replaceFirst(RegExp(r'/+$'), '');
+    return path == root || path.startsWith('$root/');
+  }
+
   void _checkSource(NasMediaItem item) {
     if (item.serverId != source.id) {
       throw const NasHttpException('NAS_SOURCE_MISMATCH');
     }
+  }
+
+  @override
+  Future<NasResource> resolveForDownload(NasMediaItem item) {
+    _checkSource(item);
+    final id = _id(item.path);
+    final uri = switch (item.kind) {
+      NasMediaKind.video => _url('Videos/$id/stream', {'Static': 'true'}),
+      NasMediaKind.audio => _url('Audio/$id/stream', {'Static': 'true'}),
+      NasMediaKind.image => _url('Items/$id/Download'),
+    };
+    return _http.downloadResource(
+      uri,
+      mimeType: item.mimeType ?? 'application/octet-stream',
+    );
   }
 
   @override

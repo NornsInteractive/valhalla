@@ -20,6 +20,8 @@ import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/repositories/nas_index_repository.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/nas/nas_media_view.dart';
+import 'package:valhalla/features/nas/widgets/nas_deployment_chooser.dart';
+import 'package:valhalla/features/nas/widgets/nas_diagnostics_dialog.dart';
 import 'package:valhalla/features/nas/widgets/nas_downloads_sheet.dart';
 import 'package:valhalla/features/nas/widgets/nas_full_player_dialog.dart';
 import 'package:valhalla/features/nas/widgets/nas_image_viewer_dialog.dart';
@@ -108,6 +110,8 @@ class _FakeNasNotifier extends NasNotifier {
   bool? favoritedValue;
   bool loadMoreCalled = false;
   bool loadPreviousCalled = false;
+  int refreshCalls = 0;
+  int imageUrlCalls = 0;
   String? createdPlaylistName;
   String? deletedPlaylistId;
   String? renamedPlaylistId;
@@ -116,6 +120,21 @@ class _FakeNasNotifier extends NasNotifier {
   String? removedFromPlaylistId;
   NasMediaItem? movedPlaylistItem;
   int? movedPlaylistIndex;
+  NasSortKey? updatedSortKey;
+  bool? updatedSortAscending;
+  final selectedCategories = <String>[];
+  final _categoryMemory = <(String?, String), NasState>{};
+  final batchInvocations =
+      <
+        ({
+          List<NasMediaItem> items,
+          NasBatchOperation operation,
+          String? playlistId,
+        })
+      >[];
+  final batchFailurePaths = <String>{};
+  NasBatchResult? retriedBatchResult;
+  Completer<void>? batchGate;
   final Uri lastImageUrl = Uri.parse('http://127.0.0.1:8080/relay/sample.jpg');
 
   _FakeNasNotifier(this._initialState);
@@ -124,7 +143,84 @@ class _FakeNasNotifier extends NasNotifier {
   NasState build() => _initialState;
 
   @override
-  Future<void> refresh() async {}
+  int get thumbnailCacheBudget => 128 * 1024 * 1024;
+
+  @override
+  Future<Map<String, Map<String, int>>> thumbnailCacheUsageBySource() async =>
+      {};
+
+  @override
+  Future<void> refresh({bool preservePosition = true}) async => refreshCalls++;
+
+  @override
+  Future<void> selectCategory(
+    String category, {
+    NasMediaKind? filter,
+    bool favoritesOnly = false,
+  }) async {
+    selectedCategories.add(category);
+    updatedFilter = filter;
+    updatedFavoritesOnly = favoritesOnly;
+    if (state.browseCategory == category) return;
+    _categoryMemory[(state.serverId, state.browseCategory)] = state;
+    state =
+        _categoryMemory[(state.serverId, category)] ??
+        state.copyWith(
+          browseCategory: category,
+          search: '',
+          filter: filter,
+          clearFilter: filter == null,
+          favoritesOnly: favoritesOnly,
+          clearScope: true,
+          sortKey: NasSortKey.modified,
+          sortAscending: false,
+        );
+  }
+
+  @override
+  Future<void> setSort(NasSortKey key, {required bool ascending}) async {
+    updatedSortKey = key;
+    updatedSortAscending = ascending;
+    state = state.copyWith(sortKey: key, sortAscending: ascending);
+  }
+
+  @override
+  Future<NasBatchResult> runBatch(
+    List<NasMediaItem> items, {
+    required NasBatchOperation operation,
+    String? playlistId,
+  }) async {
+    batchInvocations.add((
+      items: List.of(items),
+      operation: operation,
+      playlistId: playlistId,
+    ));
+    await batchGate?.future;
+    return NasBatchResult(
+      sourceId: items.first.serverId,
+      operation: operation,
+      playlistId: playlistId,
+      results: [
+        for (final item in items)
+          NasBatchItemResult(
+            item,
+            errorCode: batchFailurePaths.contains(item.path)
+                ? 'NAS_BATCH_ITEM_FAILED'
+                : null,
+          ),
+      ],
+    );
+  }
+
+  @override
+  Future<NasBatchResult> retryBatch(NasBatchResult result) {
+    retriedBatchResult = result;
+    return runBatch(
+      result.failedItems,
+      operation: result.operation,
+      playlistId: result.playlistId,
+    );
+  }
 
   @override
   Future<void> saveConfig(NasScanConfig config) async {
@@ -158,6 +254,9 @@ class _FakeNasNotifier extends NasNotifier {
     String? artist,
     String? album,
     String? playlistId,
+    String? albumKey,
+    int? modifiedFromEpoch,
+    int? modifiedBeforeEpoch,
   }) async {
     scopedFolder = folder;
     scopedArtist = artist;
@@ -176,6 +275,9 @@ class _FakeNasNotifier extends NasNotifier {
           artist: artist,
           album: album,
           playlistId: playlistId,
+          albumKey: albumKey,
+          modifiedFromEpoch: modifiedFromEpoch,
+          modifiedBeforeEpoch: modifiedBeforeEpoch,
           items: scopedItems ?? state.items,
         );
   }
@@ -198,6 +300,12 @@ class _FakeNasNotifier extends NasNotifier {
   Future<List<NasIndexGroupCount>> groups(
     NasIndexGroup group, {
     String? after,
+    NasMediaKind? kind,
+    String? folder,
+    String? artist,
+    String? albumKey,
+    int? modifiedFromEpoch,
+    int? modifiedBeforeEpoch,
   }) async {
     groupsCalledCount++;
     lastGroupsAfter = after;
@@ -279,7 +387,10 @@ class _FakeNasNotifier extends NasNotifier {
       null;
 
   @override
-  Future<Uri> imageUrl(NasMediaItem item) async => lastImageUrl;
+  Future<Uri> imageUrl(NasMediaItem item) async {
+    imageUrlCalls++;
+    return lastImageUrl;
+  }
 
   @override
   Future<void> createPlaylist(String name) async {
@@ -471,11 +582,13 @@ void main() {
     LocalStorageService? storage,
     NasPlayerSnapshot? playbackSnapshot,
     List<NasDownloadTask>? downloads,
+    Stream<List<NasDownloadTask>>? downloadsStream,
     NasDownloadService? downloadService,
     NasMetadataProgress? metadataProgress,
     List<ServerProfile>? servers,
     Widget? home,
     NasMediaProxyService? proxyService,
+    NasHomeSections? homeSections,
   }) {
     final effectiveStorage = storage ?? defaultStorage;
     final effectiveDownloadService = downloadService ?? _FakeDownloadService();
@@ -493,6 +606,21 @@ void main() {
           () => sourcesNotifier ?? _TestNasSourcesNotifier(),
         ),
         nasProvider.overrideWith(() => notifier),
+        nasHomeProvider.overrideWith((ref) async {
+          if (homeSections != null) return homeSections;
+          final items = notifier.state.items;
+          return NasHomeSections(
+            photos: items
+                .where((i) => i.kind == NasMediaKind.image)
+                .toList(growable: false),
+            videos: items
+                .where((i) => i.kind == NasMediaKind.video)
+                .toList(growable: false),
+            music: items
+                .where((i) => i.kind == NasMediaKind.audio)
+                .toList(growable: false),
+          );
+        }),
         nasMediaProxyServiceProvider.overrideWithValue(
           proxyService ?? _RecordingNasMediaProxy(),
         ),
@@ -500,7 +628,7 @@ void main() {
           (ref) => Stream.value(playbackSnapshot ?? const NasPlayerSnapshot()),
         ),
         nasDownloadsProvider.overrideWith(
-          (ref) => Stream.value(downloads ?? const []),
+          (ref) => downloadsStream ?? Stream.value(downloads ?? const []),
         ),
         nasDownloadServiceProvider.overrideWithValue(effectiveDownloadService),
         if (metadataProgress != null)
@@ -520,7 +648,815 @@ void main() {
     );
   }
 
+  group('NAS organization browsing state', () {
+    final photos = List.generate(
+      60,
+      (index) => NasMediaItem(
+        serverId: 'src-nas',
+        path: '/media/photo_$index.jpg',
+        kind: NasMediaKind.image,
+        sizeBytes: 1024,
+        modifiedEpoch: 1700000000 + index,
+      ),
+    );
+
+    testWidgets(
+      'remote playlist warning keeps media and exposes a localized retry',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            items: photos.take(3).toList(),
+            config: const NasScanConfig(includePaths: ['/media']),
+            browseCategory: 'photos',
+            filter: NasMediaKind.image,
+            errorCode: 'NAS_PLAYLIST_LOAD_FAILED',
+          ),
+        );
+        await tester.pumpWidget(
+          createNasApp(notifier: notifier, locale: const Locale('en')),
+        );
+        await tester.pumpAndSettle();
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(NasMediaView)),
+        );
+        expect(find.text(l10n.nasPlaylistLoadFailed), findsOneWidget);
+        expect(find.textContaining('Scan failed'), findsNothing);
+        final before = notifier.refreshCalls;
+        await tester.tap(find.byKey(const Key('nas_playlist_retry_button')));
+        await tester.pumpAndSettle();
+        expect(notifier.refreshCalls, before + 1);
+        expect(notifier.state.items, hasLength(3));
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'sort menu forwards selected direction while manual playlists hide sorting',
+      (tester) async {
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: photos,
+          ),
+        );
+        await tester.pumpWidget(
+          createNasApp(notifier: notifier, locale: const Locale('en')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-sort')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is PopupMenuItem<(NasSortKey, bool)> &&
+                widget.value == (NasSortKey.name, true),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(notifier.updatedSortKey, NasSortKey.name);
+        expect(notifier.updatedSortAscending, true);
+        notifier.state = notifier.state.copyWith(playlistId: 'manual');
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('nas-sort')), findsNothing);
+        expect(find.byIcon(Icons.sort), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'individual selection toggles one tile without opening media and metadata is reachable',
+      (tester) async {
+        final loaded = photos.take(2).toList();
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: loaded,
+          ),
+        );
+        await tester.pumpWidget(
+          createNasApp(notifier: notifier, locale: const Locale('en')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_tab_photos')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-selection')));
+        await tester.pumpAndSettle();
+        // Selecting, then deselecting, the first tile must not open it. The
+        // second tile alone is the expected input to the eventual batch.
+        for (final item in [loaded.first, loaded.last, loaded.first]) {
+          await tester.tap(find.byKey(Key('nas_item_${item.name}')));
+          await tester.pumpAndSettle();
+          expect(find.byType(NasImageViewerDialog), findsNothing);
+          expect(find.byType(NasFullPlayerDialog), findsNothing);
+          expect(notifier.openedItem, isNull);
+          expect(notifier.imageUrlCalls, 0);
+          expect(notifier.downloadedItem, isNull);
+        }
+        await tester.tap(find.byKey(const Key('nas-batch-favorite')));
+        await tester.pumpAndSettle();
+        expect(notifier.batchInvocations.single.items, [loaded.last]);
+        expect(notifier.loadMoreCalled, false);
+
+        // Metadata must be an actual user action, not merely a declared
+        // helper. This fixture serves no thumbnails or original image data.
+        final metadataAction = find.descendant(
+          of: find.byKey(Key('nas_item_${loaded.last.name}')),
+          matching: find.byKey(const Key('nas-metadata-action')),
+        );
+        expect(metadataAction, findsOneWidget);
+        await tester.tap(metadataAction);
+        await tester.pumpAndSettle();
+        final metadataDialog = find.byKey(const Key('nas-metadata-dialog'));
+        expect(metadataDialog, findsOneWidget);
+        expect(
+          find.descendant(
+            of: metadataDialog,
+            matching: find.text(loaded.last.path),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: metadataDialog,
+            matching: find.text(loaded.last.name),
+          ),
+          findsOneWidget,
+        );
+        expect(notifier.openedItem, isNull);
+        expect(notifier.imageUrlCalls, 0);
+        expect(notifier.downloadedItem, isNull);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'home photo tile respects selection mode without opening the original',
+      (tester) async {
+        final loaded = photos.take(2).toList();
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: loaded,
+          ),
+        );
+        await tester.pumpWidget(
+          createNasApp(notifier: notifier, locale: const Locale('en')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-selection')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(Key('nas_item_${loaded.first.name}')));
+        await tester.pumpAndSettle();
+        expect(find.byType(NasImageViewerDialog), findsNothing);
+        expect(find.byType(NasFullPlayerDialog), findsNothing);
+        expect(notifier.openedItem, isNull);
+        expect(notifier.imageUrlCalls, 0);
+        expect(notifier.downloadedItem, isNull);
+        await tester.tap(find.byKey(const Key('nas-batch-favorite')));
+        await tester.pumpAndSettle();
+        expect(notifier.batchInvocations.single.items, [loaded.first]);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'home shelf photo opens the clicked image when library page contains another photo',
+      (tester) async {
+        final photoA = NasMediaItem(
+          serverId: 'src-nas',
+          path: '/media/photo_a.jpg',
+          kind: NasMediaKind.image,
+          sizeBytes: 1024,
+          modifiedEpoch: 1700000000,
+        );
+        final photoB = NasMediaItem(
+          serverId: 'src-nas',
+          path: '/media/photo_b.jpg',
+          kind: NasMediaKind.image,
+          sizeBytes: 1024,
+          modifiedEpoch: 1700000000,
+        );
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: [photoA],
+          ),
+        );
+        await tester.pumpWidget(
+          createNasApp(
+            notifier: notifier,
+            homeSections: NasHomeSections(
+              photos: [photoB],
+              videos: const [],
+              music: const [],
+            ),
+            locale: const Locale('en'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(Key('nas_item_${photoB.name}')));
+        await tester.pumpAndSettle();
+        expect(find.byType(NasImageViewerDialog), findsOneWidget);
+        final viewer = tester.widget<NasImageViewerDialog>(
+          find.byType(NasImageViewerDialog),
+        );
+        expect(viewer.items[viewer.initialIndex].path, photoB.path);
+        expect(viewer.items[viewer.initialIndex].path, isNot(photoA.path));
+        await tester.tap(find.byIcon(Icons.arrow_back));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'select loaded does not fetch other pages and failed-only retry excludes successes',
+      (tester) async {
+        final loaded = photos.take(2).toList();
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: loaded,
+            matchingCount: 50000,
+            hasMore: true,
+          ),
+        );
+        notifier.batchFailurePaths.add(loaded.last.path);
+        await tester.pumpWidget(
+          createNasApp(notifier: notifier, locale: const Locale('en')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_tab_photos')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-selection')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-select-loaded')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-batch-favorite')));
+        await tester.pumpAndSettle();
+        expect(notifier.batchInvocations.single.items, loaded);
+        expect(
+          notifier.batchInvocations.single.operation,
+          NasBatchOperation.favorite,
+        );
+        expect(notifier.loadMoreCalled, false);
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.text('1 succeeded, 1 failed'), findsOneWidget);
+        notifier.batchFailurePaths.clear();
+        await tester.tap(find.byKey(const Key('nas-batch-retry')));
+        await tester.pumpAndSettle();
+        expect(notifier.retriedBatchResult, isNotNull);
+        expect(notifier.batchInvocations.length, 2);
+        expect(notifier.batchInvocations.last.items, [loaded.last]);
+        expect(notifier.loadMoreCalled, false);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'source change clears selection and suppresses late batch presentation',
+      (tester) async {
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: photos.take(2).toList(),
+          ),
+        );
+        notifier.batchGate = Completer<void>();
+        final sources = _TestNasSourcesNotifier(
+          const NasSourcesState(
+            sources: [
+              NasSource(
+                id: 'src-nas',
+                name: 'Source A',
+                type: NasSourceType.sftp,
+              ),
+              NasSource(
+                id: 'src-other',
+                name: 'Source B',
+                type: NasSourceType.sftp,
+              ),
+            ],
+            selectedId: 'src-nas',
+          ),
+        );
+        await tester.pumpWidget(
+          createNasApp(
+            notifier: notifier,
+            sourcesNotifier: sources,
+            locale: const Locale('en'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-selection')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-select-loaded')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-batch-favorite')));
+        await tester.pump();
+        final batchButton = tester.widget<IconButton>(
+          find.byKey(const Key('nas-batch-favorite')),
+        );
+        expect(notifier.batchInvocations.length, 1);
+        await sources.select('src-other');
+        await tester.pump();
+        notifier.batchGate!.complete();
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('nas-batch-favorite')), findsNothing);
+        expect(find.byType(SnackBar), findsNothing);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(
+          batchButton.onPressed,
+          isNull,
+          reason: 'A pending batch must disable duplicate submission.',
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'pending search debounce cannot overwrite the newly selected category',
+      (tester) async {
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: photos,
+          ),
+        );
+        await tester.pumpWidget(createNasApp(notifier: notifier));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_tab_photos')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byIcon(Icons.search).first);
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('nas_search_field')),
+          'old-category-query',
+        );
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.tap(find.byKey(const Key('nas_tab_videos')));
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
+        expect(notifier.state.browseCategory, 'videos');
+        expect(notifier.state.search, '');
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'batch playlist action forwards only loaded selections and chosen playlist',
+      (tester) async {
+        final loaded = photos.take(2).toList();
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: loaded,
+            playlists: [
+              NasPlaylist(
+                id: 'party',
+                serverId: 'src-nas',
+                name: 'Party Mix',
+                createdAt: DateTime(2026),
+              ),
+            ],
+            hasMore: true,
+            matchingCount: 1000,
+          ),
+        );
+        await tester.pumpWidget(
+          createNasApp(notifier: notifier, locale: const Locale('en')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-selection')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-select-loaded')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas-batch-playlist')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Party Mix'));
+        await tester.pumpAndSettle();
+        expect(notifier.batchInvocations.single.items, loaded);
+        expect(notifier.batchInvocations.single.playlistId, 'party');
+        expect(
+          notifier.batchInvocations.single.operation,
+          NasBatchOperation.addToPlaylist,
+        );
+        expect(notifier.loadMoreCalled, false);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'source round trip restores its query controller and scroll independently',
+      (tester) async {
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: photos,
+          ),
+        );
+        final sources = _TestNasSourcesNotifier(
+          const NasSourcesState(
+            sources: [
+              NasSource(
+                id: 'src-nas',
+                name: 'Source A',
+                type: NasSourceType.sftp,
+              ),
+              NasSource(
+                id: 'src-other',
+                name: 'Source B',
+                type: NasSourceType.sftp,
+              ),
+            ],
+            selectedId: 'src-nas',
+          ),
+        );
+        await tester.pumpWidget(
+          createNasApp(notifier: notifier, sourcesNotifier: sources),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_tab_photos')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byIcon(Icons.search).first);
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('nas_search_field')),
+          'source-a',
+        );
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
+        final grid = find.byKey(const Key('nas_image_grid'));
+        await tester.drag(grid, const Offset(0, -550));
+        await tester.pumpAndSettle();
+        final oldOffset = tester.widget<ScrollView>(grid).controller!.offset;
+        expect(oldOffset, greaterThan(100));
+        final stateA = notifier.state;
+        await sources.select('src-other');
+        notifier.state = const NasState(
+          serverId: 'src-other',
+          search: 'source-b',
+          config: NasScanConfig(includePaths: ['/other']),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const Key('nas_search_field')))
+              .controller!
+              .text,
+          'source-b',
+        );
+        await sources.select('src-nas');
+        notifier.state = stateA;
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const Key('nas_search_field')))
+              .controller!
+              .text,
+          'source-a',
+        );
+        expect(grid, findsOneWidget);
+        expect(
+          tester.widget<ScrollView>(grid).controller!.offset,
+          closeTo(oldOffset, 1),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('selection controls fit a 320px viewport with doubled text', (
+      tester,
+    ) async {
+      final reportedErrors = <FlutterErrorDetails>[];
+      final previousErrorHandler = FlutterError.onError;
+      FlutterError.onError = (details) {
+        reportedErrors.add(details);
+        previousErrorHandler?.call(details);
+      };
+      addTearDown(() => FlutterError.onError = previousErrorHandler);
+      tester.view.physicalSize = const Size(320, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final notifier = _FakeNasNotifier(
+        NasState(
+          serverId: 'src-nas',
+          config: const NasScanConfig(includePaths: ['/media']),
+          items: photos.take(2).toList(),
+        ),
+      );
+      await tester.pumpWidget(
+        createNasApp(
+          notifier: notifier,
+          locale: const Locale('en'),
+          home: Builder(
+            builder: (context) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(2)),
+              child: const Scaffold(body: NasMediaView()),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('nas-selection')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('nas-select-loaded')), findsOneWidget);
+      expect(find.byKey(const Key('nas-batch-favorite')), findsOneWidget);
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: reportedErrors.map((details) => details.toString()).join('\n'),
+      );
+    });
+
+    testWidgets(
+      'photos first date header with 100 items fits 320px doubled text',
+      (tester) async {
+        final hundredImages = List.generate(
+          100,
+          (index) => NasMediaItem(
+            serverId: 'src-nas',
+            path: '/media/header_$index.jpg',
+            kind: NasMediaKind.image,
+            sizeBytes: 1024,
+            modifiedEpoch:
+                DateTime.utc(2026, 10, 13).millisecondsSinceEpoch ~/ 1000,
+          ),
+        );
+
+        final reportedErrors = <FlutterErrorDetails>[];
+        final previousErrorHandler = FlutterError.onError;
+        FlutterError.onError = (details) {
+          reportedErrors.add(details);
+          previousErrorHandler?.call(details);
+        };
+        addTearDown(() => FlutterError.onError = previousErrorHandler);
+        tester.view.physicalSize = const Size(320, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: hundredImages,
+          ),
+        );
+
+        await tester.pumpWidget(
+          createNasApp(
+            notifier: notifier,
+            locale: const Locale('en'),
+            home: Builder(
+              builder: (context) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: const TextScaler.linear(2)),
+                child: const Scaffold(body: NasMediaView()),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_tab_photos')));
+        await tester.pumpAndSettle();
+
+        final dateHeader = find.byWidgetPredicate(
+          (widget) =>
+              widget is RichText &&
+              widget.text.toPlainText() == '2026-10-13 (UTC)  (100)',
+        );
+        expect(dateHeader, findsOneWidget);
+
+        final firstTile = find.byKey(const Key('nas_item_header_0.jpg'));
+        expect(firstTile, findsOneWidget);
+
+        final dateHeaderRect = tester.getRect(dateHeader);
+        final firstTileRect = tester.getRect(firstTile);
+
+        expect(dateHeaderRect.bottom, lessThanOrEqualTo(firstTileRect.top));
+        expect(dateHeaderRect.left, greaterThanOrEqualTo(0.0));
+        expect(dateHeaderRect.right, lessThanOrEqualTo(320.0));
+
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'restored provider category and query are reflected on the first frame',
+      (tester) async {
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            browseCategory: 'photos',
+            search: 'photo',
+            filter: NasMediaKind.image,
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: photos,
+          ),
+        );
+        await tester.pumpWidget(createNasApp(notifier: notifier));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('nas_image_grid')), findsOneWidget);
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const Key('nas_search_field')))
+              .controller!
+              .text,
+          'photo',
+        );
+        expect(notifier.state.search, 'photo');
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'category round trip keeps each query and updates the search controller',
+      (tester) async {
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: photos,
+          ),
+        );
+        await tester.pumpWidget(createNasApp(notifier: notifier));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_tab_photos')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byIcon(Icons.search).first);
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('nas_search_field')),
+          'photo',
+        );
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
+        expect(notifier.state.search, 'photo');
+        await tester.tap(find.byKey(const Key('nas_tab_videos')));
+        await tester.pumpAndSettle();
+        expect(notifier.state.search, '');
+        if (find.byKey(const Key('nas_search_field')).evaluate().isEmpty) {
+          await tester.tap(find.byIcon(Icons.search).first);
+          await tester.pumpAndSettle();
+        }
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const Key('nas_search_field')))
+              .controller!
+              .text,
+          '',
+        );
+        await tester.enterText(
+          find.byKey(const Key('nas_search_field')),
+          'movie',
+        );
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_tab_photos')));
+        await tester.pumpAndSettle();
+        expect(notifier.state.search, 'photo');
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const Key('nas_search_field')))
+              .controller!
+              .text,
+          'photo',
+        );
+        expect(
+          notifier.selectedCategories,
+          containsAllInOrder(['photos', 'videos', 'photos']),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'background refresh keeps visible items and category round trip restores scroll',
+      (tester) async {
+        final notifier = _FakeNasNotifier(
+          NasState(
+            serverId: 'src-nas',
+            config: const NasScanConfig(includePaths: ['/media']),
+            items: photos,
+          ),
+        );
+        await tester.pumpWidget(createNasApp(notifier: notifier));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_tab_photos')));
+        await tester.pumpAndSettle();
+        final grid = find.byKey(const Key('nas_image_grid'));
+        await tester.drag(grid, const Offset(0, -600));
+        await tester.pumpAndSettle();
+        final offset = tester.widget<ScrollView>(grid).controller!.offset;
+        expect(offset, greaterThan(100));
+        notifier.state = notifier.state.copyWith(isLoading: true);
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(grid, findsOneWidget);
+        expect(
+          tester.widget<ScrollView>(grid).controller!.offset,
+          closeTo(offset, 1),
+        );
+        notifier.state = notifier.state.copyWith(isLoading: false);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_tab_videos')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_tab_photos')));
+        await tester.pumpAndSettle();
+        expect(
+          tester.widget<ScrollView>(grid).controller!.offset,
+          closeTo(offset, 1),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  });
+
   group('NasMediaView Empty & Config States', () {
+    testWidgets(
+      'empty library deployment opens the shared deployment chooser',
+      (tester) async {
+        await tester.pumpWidget(
+          createNasApp(
+            notifier: _FakeNasNotifier(const NasState()),
+            sourcesNotifier: _TestNasSourcesNotifier(const NasSourcesState()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nas_install_wizard_button')));
+        await tester.pumpAndSettle();
+        expect(find.byType(NasDeploymentChooser), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('source menu deployment uses the same chooser', (tester) async {
+      await tester.pumpWidget(
+        createNasApp(notifier: _FakeNasNotifier(const NasState())),
+      );
+      await tester.pumpAndSettle();
+      final context = tester.element(find.byType(NasMediaView));
+      await tester.tap(find.byTooltip(context.nasSources));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is PopupMenuItem<String> && widget.value == '__install__',
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(NasDeploymentChooser), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'source menu diagnostics keeps the selected source and is read only on open',
+      (tester) async {
+        final sources = _TestNasSourcesNotifier();
+        final notifier = _FakeNasNotifier(const NasState(serverId: 'src-nas'));
+        await tester.pumpWidget(
+          createNasApp(notifier: notifier, sourcesNotifier: sources),
+        );
+        await tester.pumpAndSettle();
+        final context = tester.element(find.byType(NasMediaView));
+        await tester.tap(find.byTooltip(context.nasSources));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is PopupMenuItem<String> &&
+                widget.value == '__diagnostics__',
+          ),
+        );
+        await tester.pumpAndSettle();
+        final dialog = tester.widget<NasDiagnosticsDialog>(
+          find.byType(NasDiagnosticsDialog),
+        );
+        expect(dialog.source.id, 'src-nas');
+        expect(sources.probeCalled, isFalse);
+        expect(notifier.scanCalled, isFalse);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets('shows empty sources state when no sources are configured', (
       tester,
     ) async {
@@ -1423,6 +2359,55 @@ void main() {
       },
     );
 
+    testWidgets('Music navigation fits a 320px viewport with doubled text', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final notifier = _FakeNasNotifier(
+        NasState(
+          serverId: 'src-nas',
+          config: const NasScanConfig(includePaths: ['/music']),
+          items: const [
+            NasMediaItem(
+              serverId: 'src-nas',
+              path: '/music/song.mp3',
+              kind: NasMediaKind.audio,
+              sizeBytes: 2048,
+              modifiedEpoch: 1700000000,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpWidget(
+        createNasApp(
+          notifier: notifier,
+          locale: const Locale('en'),
+          home: Builder(
+            builder: (context) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(2)),
+              child: const Scaffold(body: NasMediaView()),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('nas_tab_music')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('nas_tab_music')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final context = tester.element(find.byType(NasMediaView));
+      expect(find.text(context.nasAllTracks), findsOneWidget);
+      expect(find.text(context.nasByArtist), findsOneWidget);
+      expect(find.text(context.nasByAlbum), findsOneWidget);
+      expect(find.text(context.nasPlayAll), findsOneWidget);
+    });
+
     testWidgets(
       'Music tab renders metadata enriching banner when background enrichment is running',
       (tester) async {
@@ -1500,6 +2485,9 @@ void main() {
               localStorageServiceProvider.overrideWithValue(defaultStorage),
               nasSourcesProvider.overrideWith(() => sourcesNotifier),
               nasProvider.overrideWith(() => notifier),
+              nasHomeProvider.overrideWith(
+                (ref) async => const NasHomeSections(),
+              ),
               nasPlaybackProvider.overrideWith(
                 (ref) => Stream.value(const NasPlayerSnapshot()),
               ),
@@ -1601,7 +2589,8 @@ void main() {
         await tester.tap(overflowBtnFinder);
         await tester.pumpAndSettle();
 
-        expect(find.byType(PopupMenuItem<String>), findsNWidgets(5));
+        expect(find.byType(PopupMenuItem<String>), findsNWidgets(6));
+        expect(find.byKey(const Key('nas-metadata-action')), findsOneWidget);
         expect(find.byIcon(Icons.playlist_add), findsOneWidget);
         expect(
           find.descendant(
@@ -1811,6 +2800,15 @@ void main() {
           const NasState(
             serverId: 'src-nas',
             config: NasScanConfig(includePaths: ['/mnt/media']),
+            items: [
+              NasMediaItem(
+                serverId: 'src-nas',
+                path: '/mnt/media/music/seed.mp3',
+                kind: NasMediaKind.audio,
+                sizeBytes: 1024,
+                modifiedEpoch: 1700000000,
+              ),
+            ],
           ),
         );
         notifier.customGroups = page1;
@@ -1818,9 +2816,9 @@ void main() {
         await tester.pumpWidget(createNasApp(notifier: notifier));
         await tester.pumpAndSettle();
 
-        // Switch to Folders tab
+        // Switch to Library tab (Folders is the default library subsection).
         await tester.tap(
-          find.byKey(const Key('nas_tab_folders')),
+          find.byKey(const Key('nas_tab_library')),
           warnIfMissed: false,
         );
         await tester.pumpAndSettle();
@@ -1990,8 +2988,8 @@ void main() {
         await tester.pumpWidget(createNasApp(notifier: notifier));
         await tester.pumpAndSettle();
 
-        // Navigate to Folders tab
-        await tester.tap(find.byKey(const Key('nas_tab_folders')));
+        // Navigate to Library tab (Folders is the default library subsection).
+        await tester.tap(find.byKey(const Key('nas_tab_library')));
         await tester.pumpAndSettle();
 
         // Initially shows folder groups
@@ -2156,11 +3154,6 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Switch to Playlists tab
-        await tester.tap(find.byKey(const Key('nas_tab_playlists')));
-        await tester.pumpAndSettle();
-
-        // Detail surface for pl-1 is rendered
         expect(
           find.byKey(const Key('nas_playlist_detail_surface')),
           findsOneWidget,
@@ -2413,8 +3406,15 @@ void main() {
 
         expect(find.byKey(const Key('nas_scan_config_dialog')), findsOneWidget);
 
-        // Verify initial 'all' was normalized to '/'
-        expect(find.text('/'), findsWidgets);
+        // Stored sentinel remains '/', while the UI displays a readable label.
+        expect(
+          find.text(
+            AppLocalizations.of(
+              tester.element(find.byType(NasScanConfigDialog)),
+            ).nasAllLibraries,
+          ),
+          findsWidgets,
+        );
         expect(find.text('all'), findsNothing);
 
         // Add a new include path where user types 'ALL'
@@ -2448,5 +3448,432 @@ void main() {
         expect(savedConfig!.excludePaths.contains('all'), isFalse);
       },
     );
+  });
+
+  group('NasMediaView Offline Downloads Reachability', () {
+    const offlineAudio = NasMediaItem(
+      serverId: 'src-nas',
+      path: '/mnt/media/music/offline_track.mp3',
+      kind: NasMediaKind.audio,
+      sizeBytes: 5 * 1024 * 1024,
+      modifiedEpoch: 1700000000,
+    );
+
+    const offlineState = NasState(
+      serverId: 'src-nas',
+      config: NasScanConfig(includePaths: ['/mnt/media']),
+      items: [offlineAudio],
+    );
+
+    _TestNasSourcesNotifier noActiveSource() => _TestNasSourcesNotifier(
+      const NasSourcesState(
+        sources: [
+          NasSource(
+            id: 'src-nas',
+            name: 'Home NAS',
+            type: NasSourceType.sftp,
+            endpoint: '192.168.1.50',
+          ),
+        ],
+        selectedId: null,
+      ),
+    );
+
+    Future<void> openLibraryDownloads(WidgetTester tester) async {
+      await tester.tap(
+        find.byKey(const Key('nas_tab_library')),
+        warnIfMissed: false,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('nas_tab_downloads')),
+        warnIfMissed: false,
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets(
+      'paused and completed tasks render through Library with no selected source',
+      (tester) async {
+        final notifier = _FakeNasNotifier(offlineState);
+        final tasks = [
+          const NasDownloadTask(
+            id: 'off-paused',
+            item: offlineAudio,
+            status: NasDownloadStatus.paused,
+            received: 1024,
+            total: 5 * 1024 * 1024,
+          ),
+          const NasDownloadTask(
+            id: 'off-done',
+            item: offlineAudio,
+            status: NasDownloadStatus.completed,
+            received: 5 * 1024 * 1024,
+            total: 5 * 1024 * 1024,
+            localPath: '/offline/offline_track.mp3',
+          ),
+        ];
+
+        await tester.pumpWidget(
+          createNasApp(
+            notifier: notifier,
+            sourcesNotifier: noActiveSource(),
+            downloads: tasks,
+            locale: const Locale('en'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await openLibraryDownloads(tester);
+
+        expect(find.byKey(const Key('nas_downloads_list')), findsOneWidget);
+        expect(
+          find.byKey(const Key('nas_download_task_off-paused')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('nas_download_task_off-done')),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Paused'), findsOneWidget);
+        expect(find.text('Completed'), findsOneWidget);
+        expect(find.text('未配置媒体源'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'downloads stay reachable from the top bar when no source is configured',
+      (tester) async {
+        final notifier = _FakeNasNotifier(const NasState());
+        final tasks = [
+          const NasDownloadTask(
+            id: 'off-no-source',
+            item: offlineAudio,
+            status: NasDownloadStatus.completed,
+            received: 5 * 1024 * 1024,
+            total: 5 * 1024 * 1024,
+            localPath: '/offline/offline_track.mp3',
+          ),
+        ];
+
+        await tester.pumpWidget(
+          createNasApp(
+            notifier: notifier,
+            sourcesNotifier: _TestNasSourcesNotifier(
+              const NasSourcesState(sources: [], selectedId: null),
+            ),
+            downloads: tasks,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('未配置媒体源'), findsOneWidget);
+
+        await tester.tap(find.byKey(const Key('nas_downloads_button')));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(NasDownloadsSheet), findsOneWidget);
+        expect(
+          find.byKey(const Key('nas_download_task_off-no-source')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'empty Library retains subsection navigation around downloads',
+      (tester) async {
+        await tester.pumpWidget(
+          createNasApp(
+            notifier: _FakeNasNotifier(const NasState()),
+            sourcesNotifier: _TestNasSourcesNotifier(const NasSourcesState()),
+            locale: const Locale('en'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await openLibraryDownloads(tester);
+        expect(find.byType(NasDownloadsSheet), findsOneWidget);
+        expect(find.byKey(const Key('nas_tab_folders')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('nas_tab_folders')));
+        await tester.pumpAndSettle();
+        expect(find.byType(NasDownloadsSheet), findsNothing);
+        expect(find.byKey(const Key('nas_tab_downloads')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'downloads loading state is reachable through Library without a remote adapter',
+      (tester) async {
+        final notifier = _FakeNasNotifier(offlineState);
+        final controller = StreamController<List<NasDownloadTask>>.broadcast();
+        addTearDown(controller.close);
+
+        await tester.pumpWidget(
+          createNasApp(
+            notifier: notifier,
+            sourcesNotifier: noActiveSource(),
+            downloadsStream: controller.stream,
+            locale: const Locale('en'),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        await tester.tap(
+          find.byKey(const Key('nas_tab_library')),
+          warnIfMissed: false,
+        );
+        await tester.pump();
+        await tester.tap(
+          find.byKey(const Key('nas_tab_downloads')),
+          warnIfMissed: false,
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(
+          find.descendant(
+            of: find.byType(NasDownloadsSheet),
+            matching: find.byType(CircularProgressIndicator),
+          ),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'downloads error state stays local and offers retry with no remote adapter',
+      (tester) async {
+        final notifier = _FakeNasNotifier(offlineState);
+
+        await tester.pumpWidget(
+          createNasApp(
+            notifier: notifier,
+            sourcesNotifier: noActiveSource(),
+            downloadsStream: Stream<List<NasDownloadTask>>.error(
+              StateError('OFFLINE_NETWORK_UNAVAILABLE'),
+            ),
+            locale: const Locale('en'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await openLibraryDownloads(tester);
+
+        expect(
+          find.descendant(
+            of: find.byType(NasDownloadsSheet),
+            matching: find.byIcon(Icons.error_outline),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Retry'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  });
+
+  testWidgets('missing offline image never connects or offers remote actions', (
+    tester,
+  ) async {
+    final notifier = _FakeNasNotifier(const NasState());
+    const photo = NasMediaItem(
+      serverId: 'removed-source',
+      path: '/photo.png',
+      kind: NasMediaKind.image,
+      sizeBytes: 1,
+      modifiedEpoch: 1,
+    );
+    await tester.pumpWidget(
+      createNasApp(
+        notifier: notifier,
+        sourcesNotifier: _TestNasSourcesNotifier(const NasSourcesState()),
+        locale: const Locale('en'),
+        home: NasImageViewerDialog(
+          item: photo,
+          items: const [photo, photo],
+          localFilePath: '/__valhalla_missing_offline_fixture__/photo.png',
+          onOpenExternal: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(notifier.imageUrlCalls, 0);
+    expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
+    for (final icon in [
+      Icons.cast,
+      Icons.download_outlined,
+      Icons.favorite_border,
+      Icons.chevron_right,
+      Icons.play_circle_outline,
+    ]) {
+      expect(find.byIcon(icon), findsNothing);
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  group('NAS dialogs remain usable without RenderFlex overflow', () {
+    const scanConfig = NasScanConfig(
+      includePaths: ['/mnt/media', '/mnt/media/photos', '/mnt/media/videos'],
+      excludePaths: ['/mnt/media/cache'],
+    );
+
+    Widget dialogLauncher() {
+      return Consumer(
+        builder: (ctx, ref, _) {
+          final currentSource = ref.read(nasSourcesProvider).selected;
+          return Scaffold(
+            body: Column(
+              children: [
+                ElevatedButton(
+                  key: const Key('open_source_dialog'),
+                  onPressed: () => NasSourceDialog.show(ctx),
+                  child: const Text('source'),
+                ),
+                ElevatedButton(
+                  key: const Key('open_scan_dialog'),
+                  onPressed: () => NasScanConfigDialog.show(
+                    ctx,
+                    source: currentSource,
+                    sourceId: currentSource?.id,
+                    initialConfig: scanConfig,
+                    onSave: (_) {},
+                  ),
+                  child: const Text('scan'),
+                ),
+                ElevatedButton(
+                  key: const Key('open_settings_dialog'),
+                  onPressed: () => NasLibrarySettingsDialog.show(
+                    ctx,
+                    source: currentSource,
+                    sourceId: currentSource?.id,
+                    currentPolicy: NasOpenPolicy.inApp,
+                    onPolicyChanged: (_) {},
+                    scanConfig: scanConfig,
+                    onSaveScanConfig: (_) {},
+                    isScanning: false,
+                    onScan: () {},
+                    onCancelScan: () {},
+                  ),
+                  child: const Text('settings'),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    Future<void> checkDialog(
+      WidgetTester tester, {
+      required String buttonKey,
+      required String dialogKey,
+    }) async {
+      await tester.tap(find.byKey(Key(buttonKey)));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(Key(dialogKey)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      final scrollable = find.descendant(
+        of: find.byKey(Key(dialogKey)),
+        matching: find.byType(Scrollable),
+      );
+      if (scrollable.evaluate().isNotEmpty) {
+        await tester.drag(scrollable.first, const Offset(0, -600));
+        await tester.pumpAndSettle();
+      }
+      expect(tester.takeException(), isNull);
+
+      final appBarClose = find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byIcon(Icons.close),
+      );
+      await tester.tap(
+        appBarClose.evaluate().isNotEmpty
+            ? appBarClose
+            : find.byIcon(Icons.close).first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(Key(dialogKey)), findsNothing);
+    }
+
+    Future<void> exerciseAllDialogs(
+      WidgetTester tester, {
+      required double width,
+      required double height,
+      required Locale locale,
+      double textScale = 1.0,
+    }) async {
+      tester.view.physicalSize = Size(width, height);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      if (textScale != 1.0) {
+        tester.platformDispatcher.textScaleFactorTestValue = textScale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      }
+
+      final notifier = _FakeNasNotifier(
+        const NasState(serverId: 'src-nas', config: scanConfig),
+      );
+
+      await tester.pumpWidget(
+        createNasApp(
+          notifier: notifier,
+          locale: locale,
+          home: dialogLauncher(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await checkDialog(
+        tester,
+        buttonKey: 'open_source_dialog',
+        dialogKey: 'nas_source_dialog',
+      );
+      await checkDialog(
+        tester,
+        buttonKey: 'open_scan_dialog',
+        dialogKey: 'nas_scan_config_dialog',
+      );
+      await checkDialog(
+        tester,
+        buttonKey: 'open_settings_dialog',
+        dialogKey: 'nas_library_settings_dialog',
+      );
+    }
+
+    testWidgets('at 320dp with 2x text scale', (tester) async {
+      await exerciseAllDialogs(
+        tester,
+        width: 320,
+        height: 800,
+        locale: const Locale('en'),
+        textScale: 2.0,
+      );
+    });
+
+    testWidgets('in Arabic RTL', (tester) async {
+      await exerciseAllDialogs(
+        tester,
+        width: 360,
+        height: 800,
+        locale: const Locale('ar'),
+      );
+    });
+
+    testWidgets('on desktop', (tester) async {
+      await exerciseAllDialogs(
+        tester,
+        width: 1280,
+        height: 900,
+        locale: const Locale('en'),
+      );
+    });
   });
 }

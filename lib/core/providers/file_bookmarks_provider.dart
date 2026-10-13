@@ -4,6 +4,42 @@ import 'package:path/path.dart' as p;
 import 'server_provider.dart';
 import 'storage_providers.dart';
 
+final fileRecentDirectoriesProvider =
+    NotifierProvider<FileRecentDirectoriesNotifier, List<String>>(
+      FileRecentDirectoriesNotifier.new,
+    );
+
+class FileRecentDirectoriesNotifier extends Notifier<List<String>> {
+  Future<void> _writes = Future.value();
+  @override
+  List<String> build() {
+    final id = ref.watch(activeServerProvider.select((s) => s?.id));
+    return id == null
+        ? []
+        : ref.read(localStorageServiceProvider).getRecentDirectories(id);
+  }
+
+  Future<void> record(String serverId, String directory) {
+    if (!p.posix.isAbsolute(directory) || directory.contains('\x00')) {
+      throw const FormatException('FILE_PATH_INVALID');
+    }
+    directory = p.posix.normalize(directory);
+    final storage = ref.read(localStorageServiceProvider);
+    final next = _writes.then((_) async {
+      final entries = [
+        directory,
+        ...storage.getRecentDirectories(serverId).where((d) => d != directory),
+      ].take(20).toList();
+      await storage.saveRecentDirectories(serverId, entries);
+      if (ref.mounted && ref.read(activeServerProvider)?.id == serverId) {
+        state = entries;
+      }
+    });
+    _writes = next.catchError((Object _) {});
+    return next;
+  }
+}
+
 final fileBookmarksProvider =
     NotifierProvider<FileBookmarksNotifier, List<String>>(
       FileBookmarksNotifier.new,

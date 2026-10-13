@@ -1,5 +1,55 @@
 {
   "@@locale": "id",
+  "nasPlaylistLoadFailed": "Daftar putar sementara tidak tersedia. Daftar media tersimpan tetap dapat diakses. Segarkan untuk mencoba lagi.",
+  "nasAllLibraries": "Semua pustaka",
+  "nasNativeInstallTitle": "Instal Jellyfin (paket native)",
+  "nasNativeStepVerifyRepo": "Verifikasi repositori resmi bertanda tangan",
+  "nasNativeStepPreventAutostart": "Cegah layanan mulai otomatis sebelum dikonfigurasi",
+  "nasNativeStepInstallPackages": "Instal paket bertanda tangan dengan versi tetap",
+  "nasNativeStepConfigureLoopback": "Atur agar hanya mendengarkan di localhost",
+  "nasNativeStageInstalling": "Menginstal paket dengan versi tetap",
+  "nasNativeStageStarting": "Memulai layanan systemd",
+  "nasNativeGuidanceMediaAccess": "Izin dan kepemilikan berkas media tidak diubah. Pastikan pengguna layanan Jellyfin memiliki akses baca.",
+  "nasNativeGuidanceNoUpgrade": "Instalasi Jellyfin yang sudah ada tidak akan diambil alih, diubah, atau ditingkatkan.",
+  "nasNativeSupportedRequirements": "Memerlukan Debian atau Ubuntu (amd64/arm64), systemd, serta akses root atau sudo tanpa kata sandi.",
+  "nasNativeExistingInstallTitle": "Instalasi Jellyfin yang sudah ada terdeteksi",
+  "nasNativeExistingInstallExplanation": "Jellyfin sudah terinstal di server ini. Valhalla tidak akan mengubah atau menginstalnya ulang. Verifikasi koneksinya secara langsung.",
+  "nasNativeCancelExplanation": "Pembatalan diminta pada titik aman berikutnya. Operasi paket yang sedang berjalan akan diselesaikan dengan aman.",
+  "nasNativeMediaPathLabel": "Jalur direktori media",
+  "nasNativeMediaPathHint": "Jalur absolut yang sudah ada di server (mis. /media/library). Izin tidak diubah.",
+  "nasNativeSudoRequired": "Akses root atau sudo tanpa kata sandi diperlukan untuk menginstal paket sistem",
+  "nasDiagnosticsTitle": "Diagnostik sumber media",
+  "nasDiagnosticsConnection": "Koneksi",
+  "nasDiagnosticsScan": "Pemindaian pustaka",
+  "nasDiagnosticsLastSuccess": "Koneksi terakhir yang berhasil",
+  "nasDiagnosticsCredentials": "Memeriksa kredensial tersimpan",
+  "nasDiagnosticsFinalizing": "Menyelesaikan indeks",
+  "nasDiagnosticsNotChecked": "Belum diperiksa",
+  "nasCacheLegacy": "Thumbnail lama (belum terkait sumber)",
+  "nasCacheGlobalBudget": "Batas penyimpanan thumbnail (semua sumber)",
+  "nasCacheNoSource": "Pilih sumber media untuk mengelola cache-nya.",
+  "nasOfflineRecordedHint": "Jumlah byte unduhan yang tercatat, bukan penggunaan disk yang diukur. Membersihkan thumbnail tidak menghapus berkas offline.",
+  "nasCacheClearConfirm": "Bersihkan thumbnail untuk {scope}? Berkas offline dan media jarak jauh akan tetap disimpan.",
+  "nasOfflineRecordedBytes": "Unduhan tercatat: {size}",
+  "nasDeployDockerTitle": "Aplikasi Docker",
+  "nasDeployDockerDesc": "Buka aplikasi resmi Jellyfin di Pusat Aplikasi. Tinjau konfigurasinya sebelum menginstal.",
+  "nasDeployNativeDesc": "Instal Jellyfin langsung di server ini menggunakan paket resminya. Instalasi yang sudah ada tidak diubah.",
+  "nasDeployEnableAppCenter": "Aktifkan Pusat Aplikasi eksperimental untuk melanjutkan? Tata letak menu Anda tidak akan berubah.",
+  "nasDeployCatalogUnavailable": "Aplikasi resmi Jellyfin tidak tersedia. Pastikan sumber resmi diaktifkan, lalu coba lagi.",
+  "@nasCacheClearConfirm": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "@nasOfflineRecordedBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "appName": "Valhalla",
   "appSubtitle": "Manajemen Server & Agen Berbasis AI",
   "navAiChat": "Obrolan AI",
@@ -1663,5 +1713,418 @@
   "nasThumbnailCacheBudget": "Anggaran Cache",
   "nasThumbnailCacheClear": "Bersihkan Cache",
   "nasThumbnailCacheCleared": "Cache gambar mini dibersihkan",
-  "nasThumbnailCacheOff": "Mati"
+  "nasThumbnailCacheOff": "Mati",
+  "navAppCenter": "Pusat Aplikasi",
+  "settingsExperimentalAppCenterTitle": "Pusat Aplikasi (Docker)",
+  "settingsExperimentalAppCenterDesc": "Toko aplikasi eksperimental dan pengelola penerapan kontainer",
+  "appCenterTitle": "Pusat Aplikasi",
+  "appCenterTabStore": "Toko",
+  "appCenterTabInstalled": "Terpasang",
+  "appCenterTabTasks": "Tugas",
+  "appCenterSources": "Sumber",
+  "appCenterManageSources": "Kelola Sumber",
+  "appCenterAddSource": "Tambah Sumber",
+  "appCenterSourceName": "Nama Sumber",
+  "appCenterSourceUrl": "URL Sumber (HTTPS)",
+  "appCenterDeleteSource": "Hapus Sumber",
+  "appCenterRefresh": "Segarkan",
+  "appCenterSearchHint": "Cari aplikasi...",
+  "appCenterFilterAllCategories": "Semua Kategori",
+  "appCenterFilterAllSources": "Semua Sumber",
+  "appCenterNoApps": "Tidak ada aplikasi ditemukan",
+  "appCenterNoInstalled": "Tidak ada aplikasi terpasang",
+  "appCenterNoTasks": "Tidak ada tugas aktif atau terbaru",
+  "appCenterInstall": "Pasang",
+  "appCenterInstalledBadge": "Terpasang",
+  "appCenterIncompatibleBadge": "Tidak Kompatibel",
+  "appCenterUpdateAvailable": "Pembaruan Tersedia",
+  "appCenterArchitectureBlocker": "Arsitektur tidak didukung",
+  "appCenterAppDetails": "Detail Aplikasi",
+  "appCenterVersion": "Versi",
+  "appCenterCategory": "Kategori",
+  "appCenterSource": "Sumber",
+  "appCenterArchitectures": "Arsitektur yang Didukung",
+  "appCenterScreenshots": "Tangkapan Layar",
+  "appCenterDescription": "Deskripsi",
+  "appCenterWizardTitle": "Pasang {appName}",
+  "@appCenterWizardTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterConfigureTitle": "Konfigurasi {appName}",
+  "@appCenterConfigureTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUpdateTitle": "Perbarui {appName}",
+  "@appCenterUpdateTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStepEnvironment": "Lingkungan",
+  "appCenterStepConfig": "Konfigurasi",
+  "appCenterStepReview": "Tinjau Rencana",
+  "appCenterStepProgress": "Kemajuan",
+  "appCenterInstanceName": "Nama Instans",
+  "appCenterDataDirectory": "Direktori Data",
+  "appCenterBrowseDirectory": "Jelajahi Direktori",
+  "appCenterNetworkAndPorts": "Jaringan & Port",
+  "appCenterBindAddress": "Alamat Ikat",
+  "appCenterBindLoopback": "Hanya Localhost (127.0.0.1)",
+  "appCenterBindAll": "Semua Antarmuka (0.0.0.0)",
+  "appCenterPortMapping": "Pemetaan Port",
+  "appCenterMounts": "Penyimpanan Pasang (Mounts)",
+  "appCenterMountSource": "Jalur Host",
+  "appCenterMountTarget": "Jalur Kontainer",
+  "appCenterMountReadOnly": "Hanya-baca",
+  "appCenterVariables": "Variabel",
+  "appCenterEnvironmentVariables": "Variabel Lingkungan",
+  "appCenterNext": "Berikutnya",
+  "appCenterBack": "Kembali",
+  "appCenterConfirmAndExecute": "Jalankan Rencana",
+  "appCenterPlanPreview": "Pratinjau Rencana Penerapan",
+  "appCenterPlanSanitizedNotice": "Tinjau rencana penerapan yang dibuat sebelum eksekusi:",
+  "appCenterEnvironmentCheck": "Lingkungan Docker",
+  "appCenterDockerFound": "Docker tersedia",
+  "appCenterDockerMissing": "Docker tidak terpasang",
+  "appCenterComposeFound": "Docker Compose tersedia",
+  "appCenterComposeMissing": "Docker Compose tidak terpasang",
+  "appCenterBootstrapPrompt": "Docker dan Compose dapat disiapkan secara otomatis di server ini. Izin root/sudo diperlukan.",
+  "appCenterBootstrapButton": "Pasang Docker & Compose",
+  "appCenterSudoPassword": "Kata Sandi Sudo (opsional / jika diperlukan)",
+  "appCenterSudoPasswordHint": "Masukkan kata sandi sudo untuk operasi berhak akses",
+  "appCenterOpen": "Buka Antarmuka Web",
+  "appCenterStart": "Mulai",
+  "appCenterStop": "Hentikan",
+  "appCenterRestart": "Mulai Ulang",
+  "appCenterLogs": "Log",
+  "appCenterConfig": "Konfigurasi",
+  "appCenterUpdate": "Perbarui",
+  "appCenterRestore": "Pulihkan",
+  "appCenterUninstall": "Copot Pemasangan",
+  "appCenterUninstallConfirmTitle": "Copot pemasangan {appName}?",
+  "@appCenterUninstallConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallConfirmMessage": "Apakah Anda yakin ingin mencopot pemasangan {appName}? Kontainer akan dihapus, tetapi direktori data aplikasi Anda akan dipertahankan.",
+  "@appCenterUninstallConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallKeepData": "Copot Pemasangan (Simpan Data)",
+  "appCenterUninstallDeleteSelected": "Copot & Hapus yang Dipilih",
+  "appCenterUninstallInspecting": "Memeriksa direktori data aplikasi...",
+  "appCenterUninstallInspectionFailedWarning": "Pemeriksaan pembersihan data gagal. Anda masih dapat mencopot kontainer aplikasi sambil tetap menyimpan semua data dengan aman.",
+  "appCenterUninstallDirectoriesTitle": "Direktori data dan volume Docker",
+  "appCenterUninstallNoDirectories": "Tidak ada direktori data bind mount yang terdeteksi. Kontainer akan dihapus sementara data tetap dipertahankan.",
+  "appCenterUninstallDefaultPreservedHint": "Semua data disimpan secara default. Pilih hanya direktori atau volume yang ingin dihapus permanen.",
+  "appCenterUninstallPermanentLossWarning": "Data yang dipilih akan dihapus permanen dari server. Tidak ada keranjang sampah.",
+  "appCenterUninstallSelectedPathsTitle": "Data yang akan dihapus permanen:",
+  "appCenterUninstallRiskAck": "Saya memahami risiko dan dampaknya pada aplikasi lain serta mengonfirmasi penghapusan permanen data ini.",
+  "remoteBrowserAllFileTypes": "Semua format",
+  "remoteBrowserDocuments": "Teks dan dokumen",
+  "remoteBrowserFileFormat": "Format berkas",
+  "appCenterUninstallRiskSystem": "Jalur sistem",
+  "appCenterUninstallRiskShared": "Dibagikan dengan aplikasi lain",
+  "appCenterUninstallRiskVolume": "Volume Docker",
+  "appCenterCleanupVolumeDeleteFailed": "Volume Docker gagal dihapus. Lepaskan penggunaannya oleh kontainer lain, periksa kembali, lalu coba lagi.",
+  "appCenterCleanupPermissionDenied": "Akses ditolak. Gunakan akun dengan akses ke data atau sudo.",
+  "appCenterCleanupCriticalPath": "Direktori akar server serta direktori runtime dan pengelolaan sistem tidak dapat dihapus saat menghapus aplikasi.",
+  "appCenterUninstallTypeAppNameHint": "Ketik nama aplikasi persis untuk mengonfirmasi penghapusan permanen: {appName}",
+  "@appCenterUninstallTypeAppNameHint": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallRiskLegacy": "Kepemilikan eksklusif belum diverifikasi",
+  "appCenterUninstallRiskExternal": "Di luar direktori root data aplikasi",
+  "appCenterUninstallRiskMedia": "Jalur media atau hanya-baca",
+  "appCenterUninstallTargetBlocked": "Direktori dilindungi, tidak dapat dihapus",
+  "appCenterCleanupProtected": "Direktori data dipertahankan karena dilindungi atau tidak aman untuk dihapus",
+  "appCenterCleanupUnavailable": "Pemeriksaan pembersihan tidak tersedia; pencopotan biasa tetap dapat dilakukan dengan mempertahankan data",
+  "appCenterCleanupChanged": "Direktori atau target penerapan berubah; harap periksa dan konfirmasi ulang",
+  "appCenterCleanupConfirmationRequired": "Harap konfirmasi ulang direktori yang dipilih, risiko, dan nama aplikasi yang tepat",
+  "appCenterCleanupRetryUnavailable": "Pembersihan tidak dapat dicoba ulang dengan aman; periksa detail tugas",
+  "appCenterCleanupAlreadyAbsent": "Direktori sudah tidak ada; tidak perlu penghapusan",
+  "appCenterCleanupDeleteFailed": "Penghapusan tidak lengkap; beberapa file mungkin sudah dihapus. Periksa jalur yang tersisa.",
+  "appCenterCleanupUnconfirmed": "Tidak dapat mengonfirmasi hasil atau keamanan pembersihan; periksa tugas sebelum melanjutkan",
+  "appCenterCleanupRetryTitle": "Coba lagi pembersihan sisa data untuk {appName}?",
+  "@appCenterCleanupRetryTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterCleanupRetryDescription": "Aplikasi sudah dicopot pemasangannya. Pilih hanya direktori data yang belum selesai; mencoba lagi tidak akan mencopotnya kembali.",
+  "appCenterCleanupRetrySelected": "Hapus sisa data yang dipilih",
+  "appCenterCleanupResultsTitle": "Hasil pembersihan direktori",
+  "appCenterCleanupPartialSummary": "Aplikasi dicopot pemasangannya; sebagian data belum sepenuhnya dibersihkan.",
+  "appCenterCleanupPending": "Belum dikonfirmasi selesai",
+  "appCenterCleanupRemoved": "Dihapus",
+  "appCenterCleanupRetained": "Dipertahankan",
+  "appCenterCleanupRetryAction": "Coba lagi pembersihan sisa data",
+  "appCenterJellyfinSoftwareTitle": "Mode decoding perangkat lunak",
+  "appCenterJellyfinSoftwareDesc": "Menonaktifkan transcoding GPU, menghapus pemetaan perangkat GPU yang ditinjau, dan memasang /Media sebagai hanya-baca.",
+  "appCenterJellyfinProfileUnavailable": "Profil decoding perangkat lunak tidak tersedia untuk templat ini",
+  "appCenterJellyfinSoftwareChanges": "Perubahan profil yang diterapkan:",
+  "appCenterLogsTitle": "Log {appName}",
+  "@appCenterLogsTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterLogsEmpty": "Tidak ada log yang tercatat untuk penerapan ini",
+  "appCenterLogsCopied": "Log disalin ke papan klip",
+  "appCenterTaskStageQueued": "Dalam antrean",
+  "appCenterTaskStagePreparing": "Mempersiapkan",
+  "appCenterTaskStagePulling": "Mengunduh gambar",
+  "appCenterTaskStageApplying": "Menerapkan konfigurasi",
+  "appCenterTaskStageChecking": "Memeriksa status",
+  "appCenterTaskStageSucceeded": "Berhasil",
+  "appCenterTaskStageFailed": "Gagal",
+  "appCenterTaskStageCancelled": "Dibatalkan",
+  "appCenterTaskStageNeedsInspection": "Perlu Pemeriksaan",
+  "appCenterCancelTask": "Batalkan Tugas",
+  "appCenterCopyLog": "Salin Log",
+  "appCenterErrorNotConnected": "Server tidak terhubung",
+  "appCenterErrorEnvironmentRequired": "Pemeriksaan lingkungan Docker diperlukan",
+  "appCenterErrorPlanExpired": "Rencana penerapan kedaluwarsa atau tidak valid",
+  "appCenterErrorTargetChanged": "Server target berubah; operasi dibatalkan",
+  "appCenterErrorConfigInvalid": "Konfigurasi aplikasi tidak valid",
+  "appCenterErrorPathInvalid": "{field} harus berupa jalur absolut selain root (/), dan tidak boleh berisi segmen . atau ..",
+  "@appCenterErrorPathInvalid": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterErrorSourceInvalid": "Sumber toko aplikasi tidak valid",
+  "appCenterErrorNoWebEntry": "Aplikasi ini tidak menyediakan antarmuka web",
+  "appCenterErrorHttpsDirectRequired": "Titik akhir HTTPS tidak dapat ditautkan melalui SSH; silakan buka langsung",
+  "appCenterErrorOpenFailed": "Gagal membuka URL aplikasi",
+  "appCenterErrorGeneric": "Kesalahan Pusat Aplikasi: {error}",
+  "@appCenterErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterSourceCommunityHint": "cth. Toko Komunitas",
+  "appCenterSourceUrlInvalidHttps": "Harus berupa URL HTTPS yang valid",
+  "appCenterDirectUrlLabel": "URL Langsung",
+  "appCenterErrorSourceRemoved": "Sumber aplikasi tidak lagi tersedia di katalog. Tidak dapat memperbarui template.",
+  "appCenterRestoreConfirmTitle": "Pulihkan {appName}?",
+  "@appCenterRestoreConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestoreConfirmMessage": "Pulihkan {appName} ke konfigurasi penerapan sebelumnya?",
+  "@appCenterRestoreConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostPortLabel": "Port Host (-> {target})",
+  "@appCenterHostPortLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostMountLabel": "Jalur host ({target})",
+  "@appCenterHostMountLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterVersionLatest": "terbaru",
+  "appCenterWaitingForLogs": "Menunggu log tugas...",
+  "appCenterNoPreviewAvailable": "Tidak ada pratinjau yang tersedia",
+  "appCenterBlockerLocalDockerRequired": "Daemon Docker lokal diperlukan (DOCKER_HOST jarak jauh tidak didukung)",
+  "appCenterBlockerToolsRequired": "Alat yang diperlukan hilang di server (bash, setsid, flock, base64, realpath, ss, awk)",
+  "appCenterBlockerLinuxRequired": "Sistem operasi Linux diperlukan",
+  "appCenterBlockerTemplateUnsupported": "Fitur template tidak didukung: {feature}",
+  "@appCenterBlockerTemplateUnsupported": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterFieldRequired": "Bagian ini wajib diisi",
+  "appCenterContinueInstall": "Lanjutkan Instalasi",
+  "appCenterOperation": "Operasi",
+  "nasTabLibrary": "Pustaka",
+  "nasContinueWatching": "Lanjutkan Menonton",
+  "nasRecentPhotos": "Foto Terbaru",
+  "nasRecentVideos": "Video Terbaru",
+  "nasRecentMusic": "Musik Terbaru",
+  "nasDownloadPaused": "Dijeda",
+  "nasDownloadDeleteConfirmTitle": "Hapus Berkas Offline",
+  "nasDownloadDeleteConfirmMessage": "Tindakan ini akan menghapus berkas offline lokal dari perangkat Anda. Berkas asli di server jarak jauh tidak akan dihapus.",
+  "nasDownloadDeleteConfirmButton": "Hapus Salinan Offline",
+  "nasDownloadSourceChangedMessage": "Konfigurasi sumber jarak jauh telah berubah sejak unduhan dimulai. Apakah Anda ingin mengulang unduhan dari awal?",
+  "nasDownloadRestartFromScratch": "Mulai Ulang dari Awal",
+  "nasDownloadErrorSourceChanged": "Konfigurasi sumber berubah",
+  "nasDownloadErrorOfflineFileInvalid": "Berkas yang diunduh rusak atau tidak lengkap",
+  "nasDownloadErrorStorageFailed": "Gagal menulis ke penyimpanan",
+  "nasDownloadErrorHlsUnsupported": "Unduhan offline tidak didukung untuk streaming",
+  "nasDownloadErrorPathInvalid": "Jalur penyimpanan unduhan tidak valid",
+  "nasOpenInApp": "Buka di Aplikasi",
+  "nasOpenSystem": "Buka dengan Sistem",
+  "sftpRecentDirectories": "Direktori Terakhir",
+  "sftpNoRecentDirectories": "Tidak ada direktori terbaru",
+  "sftpRetryFailed": "Ulangi yang Gagal",
+  "appCenterDiskCheckFailed": "Tidak dapat memverifikasi ruang disk yang tersedia di server",
+  "appCenterDiskFull": "Disk server penuh; tidak dapat melanjutkan operasi",
+  "appCenterHealthInvalid": "Pemeriksaan kesehatan kontainer gagal atau melaporkan status tidak valid",
+  "appCenterPreflightSummary": "Ringkasan Pra-Pemeriksaan",
+  "appCenterMeasuredAvailableSpace": "Ruang Disk Tersedia Terukur",
+  "appCenterUpdateComparison": "Perbandingan Pembaruan",
+  "appCenterNoChangesDetected": "Tidak ada perubahan struktural yang terdeteksi",
+  "appCenterSectionImage": "Gambar Kontainer",
+  "appCenterSectionPorts": "Pemetaan Port",
+  "appCenterSectionVolumes": "Pemasangan Penyimpanan",
+  "appCenterSectionEnvironment": "Variabel Lingkungan",
+  "appCenterSectionHealthcheck": "Pemeriksaan Kesehatan",
+  "appCenterSectionRestart": "Kebijakan Mulai Ulang",
+  "appCenterSectionServices": "Layanan",
+  "appCenterHealthNoCheck": "Tanpa pemeriksaan kesehatan",
+  "appCenterHealthHealthy": "Sehat",
+  "appCenterHealthUnhealthy": "Tidak Sehat",
+  "appCenterHealthStarting": "Memulai",
+  "appCenterNoSources": "Tidak ada sumber aplikasi yang diaktifkan",
+  "appCenterNoMatchingApps": "Tidak ada aplikasi yang cocok dengan pencarian atau filter",
+  "appCenterClearFilters": "Hapus Filter",
+  "appCenterSourceLoadFailed": "Gagal memuat sumber aplikasi",
+  "appCenterRetry": "Coba lagi",
+  "appCenterRecheck": "Periksa Ulang",
+  "appCenterRecheckTask": "Periksa Ulang Status Tugas",
+  "appCenterTaskNeedsInspectionTitle": "Status Tugas Belum Terkonfirmasi",
+  "appCenterTaskNeedsInspectionMessage": "Hasil tugas di server tidak diketahui. Harap periksa ulang status atau lihat log; jangan mengulang operasi tanpa verifikasi.",
+  "appCenterStopConfirmTitle": "Hentikan {appName}?",
+  "@appCenterStopConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStopConfirmMessage": "Yakin ingin menghentikan {appName} di server {serverName}? Kontainer yang sedang berjalan akan dihentikan.",
+  "@appCenterStopConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmTitle": "Mulai ulang {appName}?",
+  "@appCenterRestartConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmMessage": "Yakin ingin memulai ulang {appName} di server {serverName}?",
+  "@appCenterRestartConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterBrowseStore": "Jelajahi Toko Aplikasi",
+  "appCenterViewTasks": "Lihat Tugas",
+  "appCenterViewInstalled": "Lihat Aplikasi Terinstal",
+  "appCenterRunInBackground": "Jalankan di Latar Belakang",
+  "appCenterTaskDetails": "Detail Tugas",
+  "appCenterTaskTarget": "Target",
+  "appCenterTaskDirectory": "Direktori",
+  "appCenterTaskCreatedAt": "Dibuat pada",
+  "appCenterTaskExitCode": "Kode keluar: {code}",
+  "@appCenterTaskExitCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "appCenterStatusRunning": "Berjalan",
+  "appCenterStatusStopped": "Berhenti",
+  "appCenterStatusInstalling": "Menginstal",
+  "appCenterStatusUnknown": "Tidak diketahui",
+  "appCenterEnvReady": "Lingkungan Docker & Compose Siap",
+  "appCenterEnvNotReady": "Lingkungan Docker Belum Siap",
+  "appCenterEnvInspecting": "Memeriksa lingkungan Docker server...",
+  "appCenterUninstallWholeDataRoot": "Seluruh Direktori Pangkal Data",
+  "appCenterUninstallWholeDataRootWarning": "Ini mencakup file yang belum dipasang dan subdirektori yang disimpan di bawah direktori pangkal data aplikasi.",
+  "appCenterUninstallCoveredByParent": "Dicakup oleh direktori induk",
+  "appCenterContainerNameInvalid": "Nama instans harus diawali dengan karakter alfanumerik dan hanya boleh berisi huruf, angka, garis bawah, titik, dan tanda hubung (hingga 120 karakter).",
+  "appCenterMainService": "Layanan Utama",
+  "appCenterContainerNamesPreview": "Pratinjau nama kontainer",
+  "appCenterContainersRecreationNotice": "Mengubah nama kontainer instans akan membuat ulang kontainer aplikasi yang ada.",
+  "remoteBrowserTitle": "Peramban Berkas Jarak Jauh",
+  "remoteBrowserSelectDirectory": "Pilih Direktori",
+  "remoteBrowserSelectCurrentDirectory": "Pilih Direktori Saat Ini",
+  "remoteBrowserSearchHint": "Cari berkas dan folder...",
+  "remoteBrowserNoEntries": "Tidak ada berkas atau direktori yang cocok",
+  "remoteBrowserEmptyDirectory": "Direktori ini kosong",
+  "remoteBrowserSelectedCount": "{count} item dipilih",
+  "@remoteBrowserSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remoteBrowserParentDirectory": "Direktori Induk",
+  "remoteBrowserLibrariesTitle": "Pustaka Media",
+  "remoteBrowserDisconnected": "Koneksi jarak jauh terputus atau tidak tersedia.",
+  "remoteBrowserTargetChanged": "Lingkungan target atau server aktif berubah.",
+  "remoteBrowserPathInvalid": "Jalur yang diminta tidak valid atau tidak dapat diakses.",
+  "remoteBrowserPathOutsideRoot": "Jalur yang diminta berada di luar direktori pangkal yang diizinkan.",
+  "remoteBrowserEntryUnavailable": "Entri yang dipilih tidak tersedia atau tidak valid.",
+  "nasBrowseUnavailable": "Layanan penjelajahan NAS saat ini tidak tersedia.",
+  "nasInvalidDirectoryEntry": "Entri direktori tidak valid ditemukan saat menjelajahi NAS.",
+  "nasInvalidLibraryResponse": "Respons pustaka media tidak valid atau salah bentuk.",
+  "nasScanFilterUnresolved": "Tidak dapat menyelesaikan jalur filter pemindaian.",
+  "nasSourceSaveIncomplete": "Penyimpanan sumber sebelumnya hanya tersimpan sebagian. Masukkan kembali kredensial dan simpan dengan sukses sebelum menjelajah."
 }

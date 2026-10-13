@@ -9,6 +9,77 @@ class AppLocalizationsIt extends AppLocalizations {
   AppLocalizationsIt([String locale = 'it']) : super(locale);
 
   @override
+  String get nasPlaylistLoadFailed =>
+      'Le playlist non sono disponibili al momento. L’elenco dei contenuti salvato resta disponibile. Aggiorna per riprovare.';
+
+  @override
+  String get nasAllLibraries => 'Tutte le librerie';
+
+  @override
+  String get nasDiagnosticsTitle => 'Diagnostica della sorgente multimediale';
+
+  @override
+  String get nasDiagnosticsConnection => 'Connessione';
+
+  @override
+  String get nasDiagnosticsScan => 'Scansione della libreria';
+
+  @override
+  String get nasDiagnosticsLastSuccess => 'Ultima connessione riuscita';
+
+  @override
+  String get nasDiagnosticsCredentials => 'Verifica delle credenziali salvate';
+
+  @override
+  String get nasDiagnosticsFinalizing => 'Completamento dell’indice';
+
+  @override
+  String get nasDiagnosticsNotChecked => 'Non verificato';
+
+  @override
+  String get nasCacheLegacy => 'Vecchie miniature (senza sorgente assegnata)';
+
+  @override
+  String get nasCacheGlobalBudget => 'Limite miniature (tutte le sorgenti)';
+
+  @override
+  String get nasCacheNoSource =>
+      'Seleziona una sorgente multimediale per gestirne la cache.';
+
+  @override
+  String get nasOfflineRecordedHint =>
+      'Byte scaricati registrati, non spazio su disco misurato. La pulizia delle miniature non elimina i file offline.';
+
+  @override
+  String nasCacheClearConfirm(String scope) {
+    return 'Eliminare le miniature di $scope? I file offline e i contenuti remoti verranno conservati.';
+  }
+
+  @override
+  String nasOfflineRecordedBytes(String size) {
+    return 'Download registrati: $size';
+  }
+
+  @override
+  String get nasDeployDockerTitle => 'Applicazione Docker';
+
+  @override
+  String get nasDeployDockerDesc =>
+      'Apri l’applicazione ufficiale Jellyfin nel Centro applicazioni. Controlla la configurazione prima di installarla.';
+
+  @override
+  String get nasDeployNativeDesc =>
+      'Installa Jellyfin direttamente su questo server con i suoi pacchetti ufficiali. Le installazioni esistenti restano invariate.';
+
+  @override
+  String get nasDeployEnableAppCenter =>
+      'Attivare il Centro applicazioni sperimentale per continuare? La disposizione del menu non cambierà.';
+
+  @override
+  String get nasDeployCatalogUnavailable =>
+      'L’applicazione ufficiale Jellyfin non è disponibile. Verifica che la sorgente ufficiale sia attiva e riprova.';
+
+  @override
   String get appName => 'Valhalla';
 
   @override
@@ -4490,4 +4561,976 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get nasThumbnailCacheOff => 'Disattivato';
+
+  @override
+  String get navAppCenter => 'Centro applicazioni';
+
+  @override
+  String get settingsExperimentalAppCenterTitle =>
+      'Centro applicazioni (Docker)';
+
+  @override
+  String get settingsExperimentalAppCenterDesc =>
+      'Store di applicazioni sperimentale e gestore delle distribuzioni di container';
+
+  @override
+  String get appCenterTitle => 'Centro applicazioni';
+
+  @override
+  String get appCenterTabStore => 'Store';
+
+  @override
+  String get appCenterTabInstalled => 'Installate';
+
+  @override
+  String get appCenterTabTasks => 'Attività';
+
+  @override
+  String get appCenterSources => 'Sorgenti';
+
+  @override
+  String get appCenterManageSources => 'Gestisci sorgenti';
+
+  @override
+  String get appCenterAddSource => 'Aggiungi sorgente';
+
+  @override
+  String get appCenterSourceName => 'Nome sorgente';
+
+  @override
+  String get appCenterSourceUrl => 'URL sorgente (HTTPS)';
+
+  @override
+  String get appCenterDeleteSource => 'Elimina sorgente';
+
+  @override
+  String get appCenterRefresh => 'Aggiorna';
+
+  @override
+  String get appCenterSearchHint => 'Cerca applicazioni...';
+
+  @override
+  String get appCenterFilterAllCategories => 'Tutte le categorie';
+
+  @override
+  String get appCenterFilterAllSources => 'Tutte le sorgenti';
+
+  @override
+  String get appCenterNoApps => 'Nessuna applicazione trovata';
+
+  @override
+  String get appCenterNoInstalled => 'Nessuna applicazione installata';
+
+  @override
+  String get appCenterNoTasks => 'Nessuna attività recente o in corso';
+
+  @override
+  String get appCenterInstall => 'Installa';
+
+  @override
+  String get appCenterInstalledBadge => 'Installata';
+
+  @override
+  String get appCenterIncompatibleBadge => 'Incompatibile';
+
+  @override
+  String get appCenterUpdateAvailable => 'Aggiornamento disponibile';
+
+  @override
+  String get appCenterArchitectureBlocker => 'Architettura non supportata';
+
+  @override
+  String get appCenterAppDetails => 'Dettagli applicazione';
+
+  @override
+  String get appCenterVersion => 'Versione';
+
+  @override
+  String get appCenterCategory => 'Categoria';
+
+  @override
+  String get appCenterSource => 'Sorgente';
+
+  @override
+  String get appCenterArchitectures => 'Architetture supportate';
+
+  @override
+  String get appCenterScreenshots => 'Schermate';
+
+  @override
+  String get appCenterDescription => 'Descrizione';
+
+  @override
+  String appCenterWizardTitle(String appName) {
+    return 'Installa $appName';
+  }
+
+  @override
+  String appCenterConfigureTitle(String appName) {
+    return 'Configura $appName';
+  }
+
+  @override
+  String appCenterUpdateTitle(String appName) {
+    return 'Aggiorna $appName';
+  }
+
+  @override
+  String get appCenterStepEnvironment => 'Ambiente';
+
+  @override
+  String get appCenterStepConfig => 'Configurazione';
+
+  @override
+  String get appCenterStepReview => 'Riepilogo piano';
+
+  @override
+  String get appCenterStepProgress => 'Avanzamento';
+
+  @override
+  String get appCenterInstanceName => 'Nome istanza';
+
+  @override
+  String get appCenterDataDirectory => 'Directory dei dati';
+
+  @override
+  String get appCenterBrowseDirectory => 'Sfoglia directory';
+
+  @override
+  String get appCenterNetworkAndPorts => 'Rete e porte';
+
+  @override
+  String get appCenterBindAddress => 'Indirizzo di associazione';
+
+  @override
+  String get appCenterBindLoopback => 'Solo localhost (127.0.0.1)';
+
+  @override
+  String get appCenterBindAll => 'Tutte le interfacce (0.0.0.0)';
+
+  @override
+  String get appCenterPortMapping => 'Mappatura delle porte';
+
+  @override
+  String get appCenterMounts => 'Punti di montaggio';
+
+  @override
+  String get appCenterMountSource => 'Percorso host';
+
+  @override
+  String get appCenterMountTarget => 'Percorso container';
+
+  @override
+  String get appCenterMountReadOnly => 'Sola lettura';
+
+  @override
+  String get appCenterVariables => 'Variabili';
+
+  @override
+  String get appCenterEnvironmentVariables => 'Variabili d\'ambiente';
+
+  @override
+  String get appCenterNext => 'Avanti';
+
+  @override
+  String get appCenterBack => 'Indietro';
+
+  @override
+  String get appCenterConfirmAndExecute => 'Esegui piano';
+
+  @override
+  String get appCenterPlanPreview => 'Anteprima piano di distribuzione';
+
+  @override
+  String get appCenterPlanSanitizedNotice =>
+      'Verifica il piano di distribuzione generato prima dell\'esecuzione:';
+
+  @override
+  String get appCenterEnvironmentCheck => 'Ambiente Docker';
+
+  @override
+  String get appCenterDockerFound => 'Docker è disponibile';
+
+  @override
+  String get appCenterDockerMissing => 'Docker non è installato';
+
+  @override
+  String get appCenterComposeFound => 'Docker Compose è disponibile';
+
+  @override
+  String get appCenterComposeMissing => 'Docker Compose non è installato';
+
+  @override
+  String get appCenterBootstrapPrompt =>
+      'Docker e Compose possono essere installati automaticamente su questo server. Sono richiesti i permessi di root/sudo.';
+
+  @override
+  String get appCenterBootstrapButton => 'Installa Docker e Compose';
+
+  @override
+  String get appCenterSudoPassword =>
+      'Password sudo (facoltativa / se richiesta)';
+
+  @override
+  String get appCenterSudoPasswordHint =>
+      'Inserisci la password sudo per le operazioni con privilegi';
+
+  @override
+  String get appCenterOpen => 'Apri interfaccia Web';
+
+  @override
+  String get appCenterStart => 'Avvia';
+
+  @override
+  String get appCenterStop => 'Arresta';
+
+  @override
+  String get appCenterRestart => 'Riavvia';
+
+  @override
+  String get appCenterLogs => 'Log';
+
+  @override
+  String get appCenterConfig => 'Configura';
+
+  @override
+  String get appCenterUpdate => 'Aggiorna';
+
+  @override
+  String get appCenterRestore => 'Ripristina';
+
+  @override
+  String get appCenterUninstall => 'Disinstalla';
+
+  @override
+  String appCenterUninstallConfirmTitle(String appName) {
+    return 'Disinstallare $appName?';
+  }
+
+  @override
+  String appCenterUninstallConfirmMessage(String appName) {
+    return 'Sei sicuro di voler disinstallare $appName? I container verranno rimossi, ma la directory dei dati dell\'applicazione sarà conservata.';
+  }
+
+  @override
+  String get appCenterUninstallKeepData => 'Disinstalla (Conserva dati)';
+
+  @override
+  String get appCenterUninstallDeleteSelected =>
+      'Disinstalla ed elimina selezionati';
+
+  @override
+  String get appCenterUninstallInspecting =>
+      'Ispezione delle directory dei dati dell\'applicazione...';
+
+  @override
+  String get appCenterUninstallInspectionFailedWarning =>
+      'Ispezione della pulizia dei dati non riuscita. È comunque possibile disinstallare i container dell\'applicazione conservando in sicurezza tutti i dati.';
+
+  @override
+  String get appCenterUninstallDirectoriesTitle =>
+      'Directory dati e volumi Docker';
+
+  @override
+  String get appCenterUninstallNoDirectories =>
+      'Nessuna directory di dati con montaggio bind rilevata. I container verranno rimossi conservando i dati.';
+
+  @override
+  String get appCenterUninstallDefaultPreservedHint =>
+      'Tutti i dati vengono conservati per impostazione predefinita. Selezionare solo directory o volumi da eliminare definitivamente.';
+
+  @override
+  String get appCenterUninstallPermanentLossWarning =>
+      'I dati selezionati verranno eliminati definitivamente dal server. Non è disponibile un cestino.';
+
+  @override
+  String get appCenterUninstallSelectedPathsTitle =>
+      'Dati da eliminare definitivamente:';
+
+  @override
+  String get appCenterUninstallRiskAck =>
+      'Comprendo i rischi e gli effetti sulle altre applicazioni e confermo l’eliminazione definitiva di questi dati.';
+
+  @override
+  String get remoteBrowserAllFileTypes => 'Tutti i formati';
+
+  @override
+  String get remoteBrowserDocuments => 'Testo e documenti';
+
+  @override
+  String get remoteBrowserFileFormat => 'Formato file';
+
+  @override
+  String get appCenterUninstallRiskSystem => 'Percorso di sistema';
+
+  @override
+  String get appCenterUninstallRiskShared => 'Condiviso con altre applicazioni';
+
+  @override
+  String get appCenterUninstallRiskVolume => 'Volume Docker';
+
+  @override
+  String get appCenterCleanupVolumeDeleteFailed =>
+      'Impossibile eliminare il volume Docker. Liberarlo dagli altri container, controllare nuovamente e riprovare.';
+
+  @override
+  String get appCenterCleanupPermissionDenied =>
+      'Accesso negato. Usare un account con accesso ai dati o sudo.';
+
+  @override
+  String get appCenterCleanupCriticalPath =>
+      'La radice del server e le directory di esecuzione o gestione non possono essere eliminate durante la disinstallazione.';
+
+  @override
+  String appCenterUninstallTypeAppNameHint(String appName) {
+    return 'Digita il nome esatto dell\'applicazione per confermare l\'eliminazione permanente: $appName';
+  }
+
+  @override
+  String get appCenterUninstallRiskLegacy =>
+      'Proprietà esclusiva non verificata';
+
+  @override
+  String get appCenterUninstallRiskExternal =>
+      'Fuori dalla radice dei dati dell\'applicazione';
+
+  @override
+  String get appCenterUninstallRiskMedia =>
+      'Percorso multimediale o di sola lettura';
+
+  @override
+  String get appCenterUninstallTargetBlocked =>
+      'Directory protetta, non eliminabile';
+
+  @override
+  String get appCenterCleanupProtected =>
+      'Directory dei dati conservata perché protetta o non sicura da rimuovere';
+
+  @override
+  String get appCenterCleanupUnavailable =>
+      'Ispezione di pulizia non disponibile; disinstallazione possibile conservando i dati';
+
+  @override
+  String get appCenterCleanupChanged =>
+      'Directory o destinazione di distribuzione modificata; ispezionare e confermare di nuovo';
+
+  @override
+  String get appCenterCleanupConfirmationRequired =>
+      'Confermare di nuovo le directory selezionate, i rischi e il nome esatto dell\'applicazione';
+
+  @override
+  String get appCenterCleanupRetryUnavailable =>
+      'Impossibile riprovare la pulizia in sicurezza; ispezionare i dettagli dell\'attività';
+
+  @override
+  String get appCenterCleanupAlreadyAbsent =>
+      'La directory è già assente; nessuna eliminazione necessaria';
+
+  @override
+  String get appCenterCleanupDeleteFailed =>
+      'Eliminazione incompleta; alcuni file potrebbero essere già stati rimossi. Ispezionare i percorsi rimanenti.';
+
+  @override
+  String get appCenterCleanupUnconfirmed =>
+      'Impossibile confermare il risultato o la sicurezza della pulizia; ispezionare l\'attività e ricontrollare prima di continuare';
+
+  @override
+  String appCenterCleanupRetryTitle(String appName) {
+    return 'Riprovare la pulizia dei dati rimanenti per $appName?';
+  }
+
+  @override
+  String get appCenterCleanupRetryDescription =>
+      'L\'applicazione è già disinstallata. Selezionare solo le directory di dati incomplete; il nuovo tentativo non la disinstallerà nuovamente.';
+
+  @override
+  String get appCenterCleanupRetrySelected =>
+      'Elimina i dati rimanenti selezionati';
+
+  @override
+  String get appCenterCleanupResultsTitle =>
+      'Risultati della pulizia delle directory';
+
+  @override
+  String get appCenterCleanupPartialSummary =>
+      'Applicazione disinstallata; alcuni dati non sono stati completamente cancellati.';
+
+  @override
+  String get appCenterCleanupPending => 'Non confermato come completato';
+
+  @override
+  String get appCenterCleanupRemoved => 'Rimosso';
+
+  @override
+  String get appCenterCleanupRetained => 'Conservato';
+
+  @override
+  String get appCenterCleanupRetryAction =>
+      'Riprova pulizia dei dati rimanenti';
+
+  @override
+  String get appCenterJellyfinSoftwareTitle =>
+      'Modalità di decodifica software';
+
+  @override
+  String get appCenterJellyfinSoftwareDesc =>
+      'Disabilita la transcodifica GPU, rimuove le mappature dei dispositivi GPU esaminate e monta /Media in sola lettura.';
+
+  @override
+  String get appCenterJellyfinProfileUnavailable =>
+      'Il profilo di decodifica software non è disponibile per questo modello';
+
+  @override
+  String get appCenterJellyfinSoftwareChanges =>
+      'Modifiche del profilo applicate:';
+
+  @override
+  String get nasNativeInstallTitle => 'Installa Jellyfin (pacchetto nativo)';
+
+  @override
+  String get nasNativeStepVerifyRepo =>
+      'Verifica il repository ufficiale firmato';
+
+  @override
+  String get nasNativeStepPreventAutostart =>
+      'Impedisci l’avvio automatico prima della configurazione';
+
+  @override
+  String get nasNativeStepInstallPackages =>
+      'Installa pacchetti firmati con versioni fissate';
+
+  @override
+  String get nasNativeStepConfigureLoopback =>
+      'Configura l’ascolto solo su localhost';
+
+  @override
+  String get nasNativeStageInstalling =>
+      'Installazione dei pacchetti con versioni fissate';
+
+  @override
+  String get nasNativeStageStarting => 'Avvio del servizio systemd';
+
+  @override
+  String get nasNativeGuidanceMediaAccess =>
+      'Permessi e proprietari dei file multimediali restano invariati. Assicurati che l’utente del servizio Jellyfin abbia accesso in lettura.';
+
+  @override
+  String get nasNativeGuidanceNoUpgrade =>
+      'Le installazioni Jellyfin esistenti non verranno adottate, modificate o aggiornate.';
+
+  @override
+  String get nasNativeSupportedRequirements =>
+      'Richiede Debian o Ubuntu (amd64/arm64), systemd e accesso root o sudo senza password.';
+
+  @override
+  String get nasNativeExistingInstallTitle =>
+      'Rilevata un’installazione Jellyfin esistente';
+
+  @override
+  String get nasNativeExistingInstallExplanation =>
+      'Jellyfin è già installato su questo server. Valhalla non lo modificherà né lo reinstallerà. Verifica direttamente la connessione.';
+
+  @override
+  String get nasNativeCancelExplanation =>
+      'Annullamento richiesto al prossimo punto sicuro. Le operazioni sui pacchetti in corso verranno completate in sicurezza.';
+
+  @override
+  String get nasNativeMediaPathLabel => 'Percorso della cartella multimediale';
+
+  @override
+  String get nasNativeMediaPathHint =>
+      'Percorso assoluto già esistente sul server (es. /media/library). I permessi restano invariati.';
+
+  @override
+  String get nasNativeSudoRequired =>
+      'Per installare pacchetti di sistema è necessario l’accesso root o sudo senza password';
+
+  @override
+  String appCenterLogsTitle(String appName) {
+    return 'Log di $appName';
+  }
+
+  @override
+  String get appCenterLogsEmpty =>
+      'Nessun log registrato per questa distribuzione';
+
+  @override
+  String get appCenterLogsCopied => 'Log copiati negli appunti';
+
+  @override
+  String get appCenterTaskStageQueued => 'In coda';
+
+  @override
+  String get appCenterTaskStagePreparing => 'In preparazione';
+
+  @override
+  String get appCenterTaskStagePulling => 'Download immagini';
+
+  @override
+  String get appCenterTaskStageApplying => 'Applicazione configurazione';
+
+  @override
+  String get appCenterTaskStageChecking => 'Verifica stato';
+
+  @override
+  String get appCenterTaskStageSucceeded => 'Riuscito';
+
+  @override
+  String get appCenterTaskStageFailed => 'Non riuscito';
+
+  @override
+  String get appCenterTaskStageCancelled => 'Annullato';
+
+  @override
+  String get appCenterTaskStageNeedsInspection => 'Richiede ispezione';
+
+  @override
+  String get appCenterCancelTask => 'Annulla attività';
+
+  @override
+  String get appCenterCopyLog => 'Copia log';
+
+  @override
+  String get appCenterErrorNotConnected => 'Il server non è connesso';
+
+  @override
+  String get appCenterErrorEnvironmentRequired =>
+      'Verifica dell\'ambiente Docker richiesta';
+
+  @override
+  String get appCenterErrorPlanExpired =>
+      'Piano di distribuzione scaduto o non valido';
+
+  @override
+  String get appCenterErrorTargetChanged =>
+      'Il server di destinazione è cambiato; operazione annullata';
+
+  @override
+  String get appCenterErrorConfigInvalid =>
+      'Configurazione applicazione non valida';
+
+  @override
+  String appCenterErrorPathInvalid(String field) {
+    return '$field deve essere un percorso assoluto diverso dalla radice (/), e non può contenere segmenti . o ..';
+  }
+
+  @override
+  String get appCenterErrorSourceInvalid => 'Sorgente dello store non valida';
+
+  @override
+  String get appCenterErrorNoWebEntry =>
+      'Questa applicazione non fornisce un\'interfaccia Web';
+
+  @override
+  String get appCenterErrorHttpsDirectRequired =>
+      'L\'endpoint HTTPS non può essere instradato tramite SSH; aprilo direttamente';
+
+  @override
+  String get appCenterErrorOpenFailed =>
+      'Impossibile aprire l\'URL dell\'applicazione';
+
+  @override
+  String appCenterErrorGeneric(String error) {
+    return 'Errore Centro applicazioni: $error';
+  }
+
+  @override
+  String get appCenterSourceCommunityHint => 'es. Negozio della comunità';
+
+  @override
+  String get appCenterSourceUrlInvalidHttps =>
+      'Deve essere un URL HTTPS valido';
+
+  @override
+  String get appCenterDirectUrlLabel => 'URL diretto';
+
+  @override
+  String get appCenterErrorSourceRemoved =>
+      'La sorgente dell\'applicazione non è più disponibile nel catalogo. Impossibile aggiornare il modello.';
+
+  @override
+  String appCenterRestoreConfirmTitle(String appName) {
+    return 'Ripristinare $appName?';
+  }
+
+  @override
+  String appCenterRestoreConfirmMessage(String appName) {
+    return 'Ripristinare $appName alla precedente configurazione di distribuzione?';
+  }
+
+  @override
+  String appCenterHostPortLabel(String target) {
+    return 'Porta host (-> $target)';
+  }
+
+  @override
+  String appCenterHostMountLabel(String target) {
+    return 'Percorso host ($target)';
+  }
+
+  @override
+  String get appCenterVersionLatest => 'ultima';
+
+  @override
+  String get appCenterWaitingForLogs => 'In attesa dei log dell\'attività...';
+
+  @override
+  String get appCenterNoPreviewAvailable => 'Nessuna anteprima disponibile';
+
+  @override
+  String get appCenterBlockerLocalDockerRequired =>
+      'È richiesto il demone Docker locale (DOCKER_HOST remoto non supportato)';
+
+  @override
+  String get appCenterBlockerToolsRequired =>
+      'Strumenti richiesti mancanti sul server (bash, setsid, flock, base64, realpath, ss, awk)';
+
+  @override
+  String get appCenterBlockerLinuxRequired =>
+      'È richiesto il sistema operativo Linux';
+
+  @override
+  String appCenterBlockerTemplateUnsupported(String feature) {
+    return 'Funzionalità del modello non supportata: $feature';
+  }
+
+  @override
+  String get appCenterFieldRequired => 'Questo campo è obbligatorio';
+
+  @override
+  String get appCenterContinueInstall => 'Continua l\'installazione';
+
+  @override
+  String get appCenterOperation => 'Operazione';
+
+  @override
+  String get nasTabLibrary => 'Libreria';
+
+  @override
+  String get nasContinueWatching => 'Continua a guardare';
+
+  @override
+  String get nasRecentPhotos => 'Foto recenti';
+
+  @override
+  String get nasRecentVideos => 'Video recenti';
+
+  @override
+  String get nasRecentMusic => 'Musica recente';
+
+  @override
+  String get nasDownloadPaused => 'In pausa';
+
+  @override
+  String get nasDownloadDeleteConfirmTitle => 'Elimina file offline';
+
+  @override
+  String get nasDownloadDeleteConfirmMessage =>
+      'Questo eliminerà il file offline scaricato dal dispositivo. Il file originale sul server remoto non verrà eliminato.';
+
+  @override
+  String get nasDownloadDeleteConfirmButton => 'Elimina copia offline';
+
+  @override
+  String get nasDownloadSourceChangedMessage =>
+      'La configurazione della sorgente remota è cambiata dall\'avvio del download. Vuoi riavviare il download dall\'inizio?';
+
+  @override
+  String get nasDownloadRestartFromScratch => 'Riavvia dall\'inizio';
+
+  @override
+  String get nasDownloadErrorSourceChanged =>
+      'Configurazione della sorgente modificata';
+
+  @override
+  String get nasDownloadErrorOfflineFileInvalid =>
+      'Il file scaricato è corrotto o incompleto';
+
+  @override
+  String get nasDownloadErrorStorageFailed => 'Scrittura su disco non riuscita';
+
+  @override
+  String get nasDownloadErrorHlsUnsupported =>
+      'Download offline non supportato per flussi in streaming';
+
+  @override
+  String get nasDownloadErrorPathInvalid =>
+      'Percorso di salvataggio del download non valido';
+
+  @override
+  String get nasOpenInApp => 'Apri nell\'app';
+
+  @override
+  String get nasOpenSystem => 'Apri con il sistema';
+
+  @override
+  String get sftpRecentDirectories => 'Directory recenti';
+
+  @override
+  String get sftpNoRecentDirectories => 'Nessuna directory recente';
+
+  @override
+  String get sftpRetryFailed => 'Riprova non riusciti';
+
+  @override
+  String get appCenterDiskCheckFailed =>
+      'Impossibile verificare lo spazio su disco disponibile sul server';
+
+  @override
+  String get appCenterDiskFull =>
+      'Il disco del server è pieno; impossibile procedere con l\'operazione';
+
+  @override
+  String get appCenterHealthInvalid =>
+      'Controllo dello stato del container fallito o stato non valido';
+
+  @override
+  String get appCenterPreflightSummary => 'Riepilogo verifica preliminare';
+
+  @override
+  String get appCenterMeasuredAvailableSpace =>
+      'Spazio su disco disponibile misurato';
+
+  @override
+  String get appCenterUpdateComparison => 'Confronto aggiornamento';
+
+  @override
+  String get appCenterNoChangesDetected =>
+      'Nessuna modifica strutturale rilevata';
+
+  @override
+  String get appCenterSectionImage => 'Immagine container';
+
+  @override
+  String get appCenterSectionPorts => 'Mappature porte';
+
+  @override
+  String get appCenterSectionVolumes => 'Punti di montaggio';
+
+  @override
+  String get appCenterSectionEnvironment => 'Variabili d\'ambiente';
+
+  @override
+  String get appCenterSectionHealthcheck => 'Controllo integrità';
+
+  @override
+  String get appCenterSectionRestart => 'Criterio di riavvio';
+
+  @override
+  String get appCenterSectionServices => 'Servizi';
+
+  @override
+  String get appCenterHealthNoCheck => 'Nessun controllo integrità';
+
+  @override
+  String get appCenterHealthHealthy => 'In salute';
+
+  @override
+  String get appCenterHealthUnhealthy => 'Non integro';
+
+  @override
+  String get appCenterHealthStarting => 'Avvio in corso';
+
+  @override
+  String get appCenterNoSources => 'Nessuna sorgente di applicazioni abilitata';
+
+  @override
+  String get appCenterNoMatchingApps =>
+      'Nessuna applicazione corrisponde alla ricerca o ai filtri';
+
+  @override
+  String get appCenterClearFilters => 'Cancella filtri';
+
+  @override
+  String get appCenterSourceLoadFailed =>
+      'Impossibile caricare la sorgente di applicazioni';
+
+  @override
+  String get appCenterRetry => 'Riprova';
+
+  @override
+  String get appCenterRecheck => 'Ricontrolla';
+
+  @override
+  String get appCenterRecheckTask => 'Ricontrolla stato attività';
+
+  @override
+  String get appCenterTaskNeedsInspectionTitle =>
+      'Stato dell\'attività non confermato';
+
+  @override
+  String get appCenterTaskNeedsInspectionMessage =>
+      'Esito attività sul server sconosciuto. Ricontrolla lo stato o esamina i log; non rieseguire ciecamente.';
+
+  @override
+  String appCenterStopConfirmTitle(String appName) {
+    return 'Arrestare $appName?';
+  }
+
+  @override
+  String appCenterStopConfirmMessage(String appName, String serverName) {
+    return 'Vuoi davvero arrestare $appName sul server $serverName? I container in esecuzione verranno arrestati.';
+  }
+
+  @override
+  String appCenterRestartConfirmTitle(String appName) {
+    return 'Riavviare $appName?';
+  }
+
+  @override
+  String appCenterRestartConfirmMessage(String appName, String serverName) {
+    return 'Vuoi davvero riavviare $appName sul server $serverName?';
+  }
+
+  @override
+  String get appCenterBrowseStore => 'Sfoglia App Store';
+
+  @override
+  String get appCenterViewTasks => 'Visualizza attività';
+
+  @override
+  String get appCenterViewInstalled => 'Visualizza app installata';
+
+  @override
+  String get appCenterRunInBackground => 'Esegui in background';
+
+  @override
+  String get appCenterTaskDetails => 'Dettagli attività';
+
+  @override
+  String get appCenterTaskTarget => 'Destinazione';
+
+  @override
+  String get appCenterTaskDirectory => 'Directory';
+
+  @override
+  String get appCenterTaskCreatedAt => 'Creato il';
+
+  @override
+  String appCenterTaskExitCode(int code) {
+    return 'Codice di uscita: $code';
+  }
+
+  @override
+  String get appCenterStatusRunning => 'In esecuzione';
+
+  @override
+  String get appCenterStatusStopped => 'Arrestato';
+
+  @override
+  String get appCenterStatusInstalling => 'Installazione';
+
+  @override
+  String get appCenterStatusUnknown => 'Sconosciuto';
+
+  @override
+  String get appCenterEnvReady => 'Ambiente Docker e Compose pronto';
+
+  @override
+  String get appCenterEnvNotReady => 'Ambiente Docker non pronto';
+
+  @override
+  String get appCenterEnvInspecting => 'Verifica ambiente Docker...';
+
+  @override
+  String get appCenterUninstallWholeDataRoot => 'Intera radice dei dati';
+
+  @override
+  String get appCenterUninstallWholeDataRootWarning =>
+      'Include file non montati e sottodirectory archiviati nella radice dei dati dell\'applicazione.';
+
+  @override
+  String get appCenterUninstallCoveredByParent =>
+      'Coperto dalla directory principale';
+
+  @override
+  String get appCenterContainerNameInvalid =>
+      'Il nome dell\'istanza deve iniziare con un carattere alfanumerico e contenere solo lettere, numeri, trattini bassi, punti e trattini (fino a 120 caratteri).';
+
+  @override
+  String get appCenterMainService => 'Servizio principale';
+
+  @override
+  String get appCenterContainerNamesPreview => 'Anteprima nomi container';
+
+  @override
+  String get appCenterContainersRecreationNotice =>
+      'La modifica dei nomi dei container dell\'istanza ricreerà i container dell\'applicazione esistenti.';
+
+  @override
+  String get remoteBrowserTitle => 'Browser file remoto';
+
+  @override
+  String get remoteBrowserSelectDirectory => 'Seleziona directory';
+
+  @override
+  String get remoteBrowserSelectCurrentDirectory =>
+      'Seleziona directory corrente';
+
+  @override
+  String get remoteBrowserSearchHint => 'Cerca file e cartelle...';
+
+  @override
+  String get remoteBrowserNoEntries =>
+      'Nessun file o directory corrispondente trovato';
+
+  @override
+  String get remoteBrowserEmptyDirectory => 'Questa directory è vuota';
+
+  @override
+  String remoteBrowserSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count elementi selezionati',
+      one: '1 elemento selezionato',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get remoteBrowserParentDirectory => 'Directory superiore';
+
+  @override
+  String get remoteBrowserLibrariesTitle => 'Librerie multimediali';
+
+  @override
+  String get remoteBrowserDisconnected =>
+      'Connessione remota persa o non disponibile.';
+
+  @override
+  String get remoteBrowserTargetChanged =>
+      'L\'ambiente di destinazione o il server attivo sono cambiati.';
+
+  @override
+  String get remoteBrowserPathInvalid =>
+      'Il percorso richiesto non è valido o non è accessibile.';
+
+  @override
+  String get remoteBrowserPathOutsideRoot =>
+      'Il percorso richiesto è esterno alla directory radice consentita.';
+
+  @override
+  String get remoteBrowserEntryUnavailable =>
+      'La voce selezionata non è disponibile o non è valida.';
+
+  @override
+  String get nasBrowseUnavailable =>
+      'Il servizio di navigazione NAS non è attualmente disponibile.';
+
+  @override
+  String get nasInvalidDirectoryEntry =>
+      'Voce di directory non valida rilevata durante l\'esplorazione del NAS.';
+
+  @override
+  String get nasInvalidLibraryResponse =>
+      'Risposta della libreria multimediale non valida o non corretta.';
+
+  @override
+  String get nasScanFilterUnresolved =>
+      'Impossibile risolvere il percorso del filtro di scansione.';
+
+  @override
+  String get nasSourceSaveIncomplete =>
+      'Un salvataggio precedente della sorgente è stato mantenuto solo parzialmente. Reinserisci le credenziali e salva correttamente prima di navigare.';
 }

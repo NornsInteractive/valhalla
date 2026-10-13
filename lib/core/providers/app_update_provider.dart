@@ -85,6 +85,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
   Map<String, dynamic>? _runtime;
   Future<void>? _check;
   Future<void>? _downloadTask;
+  Future<void>? _openTask;
   int _downloadEpoch = 0;
   int _releaseEpoch = 0;
 
@@ -378,7 +379,10 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     if (artifact != null) _reportDownload('paused', artifact);
   }
 
-  Future<void> openDownloaded() async {
+  Future<void> openDownloaded() =>
+      _openTask ??= _openDownloaded().whenComplete(() => _openTask = null);
+
+  Future<void> _openDownloaded() async {
     if (state.downloadStatus != AppUpdateDownloadStatus.completed ||
         state.localPath == null) {
       return;
@@ -386,12 +390,23 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     final artifact = state.artifact;
     final path = state.localPath!;
     final version = state.release?.version;
+    final releaseEpoch = _releaseEpoch;
+    final downloadEpoch = _downloadEpoch;
     if (artifact == null ||
         !await File(path).exists() ||
         await File(path).length() != artifact.size ||
         (await sha256.bind(File(path).openRead()).first).toString() !=
             artifact.sha256) {
       throw StateError('UPDATE_DOWNLOAD_INTEGRITY_FAILED');
+    }
+    // File verification yields; a newer release/disposal must invalidate this open.
+    if (!ref.mounted ||
+        releaseEpoch != _releaseEpoch ||
+        downloadEpoch != _downloadEpoch ||
+        state.downloadStatus != AppUpdateDownloadStatus.completed ||
+        state.localPath != path ||
+        state.artifact?.sha256 != artifact.sha256) {
+      return;
     }
     if (Platform.isAndroid) {
       await platformChannel.invokeMethod<void>('install', {

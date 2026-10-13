@@ -1169,6 +1169,7 @@ void main() {
         isNull,
         reason: '未应用偏好时不产生该旁路标记',
       );
+      expect(prefs.getBool('valhalla_navigation_app_center_v3'), isNull);
     });
 
     test('applyPreferences=true 时写入白名单偏好', () async {
@@ -1204,6 +1205,7 @@ void main() {
         'files',
       ]);
       expect(prefs.getBool('valhalla_navigation_acp_v2'), true);
+      expect(prefs.getBool('valhalla_navigation_app_center_v3'), true);
     });
 
     test('偏好键类型错误时 appendConfiguration 拒绝并保持存储不变', () async {
@@ -1280,6 +1282,7 @@ void main() {
         reason: '失败的偏好写入必须被还原',
       );
       expect(prefs.getBool('valhalla_navigation_acp_v2'), isNull);
+      expect(prefs.getBool('valhalla_navigation_app_center_v3'), isNull);
     });
 
     test('既有值被覆盖后回滚回旧值', () async {

@@ -2,6 +2,7 @@ import 'package:valhalla_smb/valhalla_smb.dart';
 
 import '../../data/models/nas_media.dart';
 import '../../data/models/nas_source.dart';
+import '../../data/models/remote_browser.dart';
 import 'nas_sftp_adapter.dart' show nasMimeType;
 
 class NasSmbAdapter extends NasSourceAdapter {
@@ -63,6 +64,39 @@ class NasSmbAdapter extends NasSourceAdapter {
     _operations.add(cancellation);
     try {
       await _client.probe(cancelled: cancellation.whenCancelled);
+    } finally {
+      _operations.remove(cancellation);
+    }
+  }
+
+  @override
+  Stream<List<RemoteBrowserEntry>> browse(
+    String path,
+    NasCancellation cancellation,
+  ) async* {
+    _check();
+    cancellation.check();
+    _operations.add(cancellation);
+    try {
+      await for (final page in _client.list(
+        _path(path),
+        cancelled: cancellation.whenCancelled,
+      )) {
+        cancellation.check();
+        yield [
+          for (final entry in page)
+            RemoteBrowserEntry(
+              id: '/${_basePath.isEmpty ? entry.path : entry.path.substring(_basePath.length + 1)}',
+              name: entry.path.split('/').last,
+              isDirectory: entry.isDirectory,
+              sizeBytes: entry.size,
+              modifiedEpoch: entry.modifiedSeconds,
+            ),
+        ];
+      }
+    } on SmbException {
+      cancellation.check();
+      rethrow;
     } finally {
       _operations.remove(cancellation);
     }
@@ -144,6 +178,13 @@ class NasSmbAdapter extends NasSourceAdapter {
         }
       },
     );
+  }
+
+  @override
+  Future<NasResource> resolveForDownload(NasMediaItem item) async {
+    final resource = await resolve(item);
+    // The installed SMB bridge has no fresh file validator: read to EOF, never resume from indexed metadata.
+    return NasResource(mimeType: resource.mimeType, read: resource.read);
   }
 
   @override

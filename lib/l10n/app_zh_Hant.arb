@@ -1,5 +1,55 @@
 {
   "@@locale": "zh_Hant",
+  "nasPlaylistLoadFailed": "播放清單暫時無法載入，本機媒體清單仍可查看。請重新整理後再試。",
+  "nasAllLibraries": "全部媒體庫",
+  "nasNativeInstallTitle": "安裝 Jellyfin（原生套件）",
+  "nasNativeStepVerifyRepo": "驗證官方簽署的軟體來源",
+  "nasNativeStepPreventAutostart": "防止服務在尚未設定時自動啟動",
+  "nasNativeStepInstallPackages": "安裝固定版本的已簽署套件",
+  "nasNativeStepConfigureLoopback": "設定僅限本機的監聽位址",
+  "nasNativeStageInstalling": "正在安裝固定版本套件",
+  "nasNativeStageStarting": "正在啟動 systemd 服務",
+  "nasNativeGuidanceMediaAccess": "媒體檔案的權限與擁有者保持不變；請確保 Jellyfin 服務使用者具有讀取權限。",
+  "nasNativeGuidanceNoUpgrade": "不會接管、修改或升級現有的 Jellyfin 安裝。",
+  "nasNativeSupportedRequirements": "需要 Debian 或 Ubuntu（amd64/arm64）、systemd，以及 root 或免密碼 sudo 權限。",
+  "nasNativeExistingInstallTitle": "偵測到現有的 Jellyfin 安裝",
+  "nasNativeExistingInstallExplanation": "此伺服器已安裝 Jellyfin。Valhalla 不會修改或重新安裝，請直接驗證並連線。",
+  "nasNativeCancelExplanation": "已要求在安全檢查點取消。執行中的套件操作將安全完成。",
+  "nasNativeMediaPathLabel": "媒體目錄路徑",
+  "nasNativeMediaPathHint": "伺服器上已存在的絕對路徑（例如 /media/library）。權限保持不變。",
+  "nasNativeSudoRequired": "安裝系統套件需要 root 或免密碼 sudo 權限",
+  "nasDiagnosticsTitle": "媒體來源診斷",
+  "nasDiagnosticsConnection": "連線",
+  "nasDiagnosticsScan": "媒體庫掃描",
+  "nasDiagnosticsLastSuccess": "上次連線成功時間",
+  "nasDiagnosticsCredentials": "正在檢查已儲存的憑證",
+  "nasDiagnosticsFinalizing": "正在完成索引",
+  "nasDiagnosticsNotChecked": "尚未檢查",
+  "nasCacheLegacy": "舊版縮圖（未歸屬來源）",
+  "nasCacheGlobalBudget": "縮圖空間上限（所有來源共用）",
+  "nasCacheNoSource": "請選擇媒體來源，以管理其快取。",
+  "nasOfflineRecordedHint": "這是記錄的下載位元組數，並非實測的磁碟用量。清除縮圖不會刪除離線檔案。",
+  "nasCacheClearConfirm": "清除「{scope}」的縮圖？離線檔案和遠端媒體都會保留。",
+  "nasOfflineRecordedBytes": "已記錄下載量：{size}",
+  "nasDeployDockerTitle": "Docker 應用程式部署",
+  "nasDeployDockerDesc": "在應用程式中心開啟官方 Jellyfin 應用程式，檢查設定後再安裝。",
+  "nasDeployNativeDesc": "使用官方套件直接安裝到此伺服器，不會變更現有安裝。",
+  "nasDeployEnableAppCenter": "是否啟用實驗性應用程式中心以繼續？選單配置不會變更。",
+  "nasDeployCatalogUnavailable": "官方 Jellyfin 應用程式暫時無法使用。請確認已啟用官方來源後再試。",
+  "@nasCacheClearConfirm": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "@nasOfflineRecordedBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "appName": "Valhalla",
   "appSubtitle": "AI 原生遠程伺服器與 Agent 運維中心",
   "navAiChat": "智能工作階段",
@@ -1663,5 +1713,418 @@
   "nasThumbnailCacheBudget": "快取上限",
   "nasThumbnailCacheClear": "清除快取",
   "nasThumbnailCacheCleared": "縮圖快取已清除",
-  "nasThumbnailCacheOff": "關閉"
+  "nasThumbnailCacheOff": "關閉",
+  "navAppCenter": "應用中心",
+  "settingsExperimentalAppCenterTitle": "應用中心 (Docker)",
+  "settingsExperimentalAppCenterDesc": "實驗性應用商店與容器部署管理",
+  "appCenterTitle": "應用中心",
+  "appCenterTabStore": "應用商店",
+  "appCenterTabInstalled": "已安裝",
+  "appCenterTabTasks": "任務",
+  "appCenterSources": "應用來源",
+  "appCenterManageSources": "管理應用來源",
+  "appCenterAddSource": "新增來源",
+  "appCenterSourceName": "來源名稱",
+  "appCenterSourceUrl": "來源網址 (HTTPS)",
+  "appCenterDeleteSource": "刪除來源",
+  "appCenterRefresh": "重新整理",
+  "appCenterSearchHint": "搜尋應用程式...",
+  "appCenterFilterAllCategories": "所有分類",
+  "appCenterFilterAllSources": "所有來源",
+  "appCenterNoApps": "找不到相關應用程式",
+  "appCenterNoInstalled": "尚未安裝任何應用程式",
+  "appCenterNoTasks": "目前無執行中或近期任務",
+  "appCenterInstall": "安裝",
+  "appCenterInstalledBadge": "已安裝",
+  "appCenterIncompatibleBadge": "不相容",
+  "appCenterUpdateAvailable": "有新版本",
+  "appCenterArchitectureBlocker": "不支援目前系統架構",
+  "appCenterAppDetails": "應用程式詳情",
+  "appCenterVersion": "版本",
+  "appCenterCategory": "分類",
+  "appCenterSource": "來源",
+  "appCenterArchitectures": "支援架構",
+  "appCenterScreenshots": "應用截圖",
+  "appCenterDescription": "說明",
+  "appCenterWizardTitle": "安裝 {appName}",
+  "@appCenterWizardTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterConfigureTitle": "設定 {appName}",
+  "@appCenterConfigureTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUpdateTitle": "更新 {appName}",
+  "@appCenterUpdateTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStepEnvironment": "環境檢查",
+  "appCenterStepConfig": "參數設定",
+  "appCenterStepReview": "確認方案",
+  "appCenterStepProgress": "執行進度",
+  "appCenterInstanceName": "實例名稱",
+  "appCenterDataDirectory": "資料儲存目錄",
+  "appCenterBrowseDirectory": "瀏覽目錄",
+  "appCenterNetworkAndPorts": "網路與連接埠",
+  "appCenterBindAddress": "繫結位址",
+  "appCenterBindLoopback": "僅本機 (127.0.0.1)",
+  "appCenterBindAll": "所有介面 (0.0.0.0)",
+  "appCenterPortMapping": "連接埠對應",
+  "appCenterMounts": "儲存掛載",
+  "appCenterMountSource": "主機路徑",
+  "appCenterMountTarget": "容器內路徑",
+  "appCenterMountReadOnly": "唯讀",
+  "appCenterVariables": "設定變數",
+  "appCenterEnvironmentVariables": "環境變數",
+  "appCenterNext": "下一步",
+  "appCenterBack": "上一步",
+  "appCenterConfirmAndExecute": "執行部署方案",
+  "appCenterPlanPreview": "部署方案預覽",
+  "appCenterPlanSanitizedNotice": "執行前請檢視產生的部署方案：",
+  "appCenterEnvironmentCheck": "Docker 環境",
+  "appCenterDockerFound": "Docker 環境可用",
+  "appCenterDockerMissing": "未安裝 Docker",
+  "appCenterComposeFound": "Docker Compose 可用",
+  "appCenterComposeMissing": "未安裝 Docker Compose",
+  "appCenterBootstrapPrompt": "可在該伺服器上自動安裝 Docker 與 Compose，需要 root/sudo 權限。",
+  "appCenterBootstrapButton": "安裝 Docker 與 Compose",
+  "appCenterSudoPassword": "Sudo 密碼 (選填 / 如需提權)",
+  "appCenterSudoPasswordHint": "輸入用於特權操作的 sudo 密碼",
+  "appCenterOpen": "開啟 Web 介面",
+  "appCenterStart": "啟動",
+  "appCenterStop": "停止",
+  "appCenterRestart": "重新啟動",
+  "appCenterLogs": "記錄",
+  "appCenterConfig": "設定",
+  "appCenterUpdate": "更新",
+  "appCenterRestore": "還原",
+  "appCenterUninstall": "解除安裝",
+  "appCenterUninstallConfirmTitle": "解除安裝 {appName}？",
+  "@appCenterUninstallConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallConfirmMessage": "確定要解除安裝 {appName} 嗎？容器將被移除，但您的應用程式資料目錄將完整保留。",
+  "@appCenterUninstallConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallKeepData": "僅解除安裝（保留資料）",
+  "appCenterUninstallDeleteSelected": "解除安裝並清理所選資料",
+  "appCenterUninstallInspecting": "正在檢查應用程式資料目錄...",
+  "appCenterUninstallInspectionFailedWarning": "資料目錄檢查失敗或暫不支援清理。您仍可僅解除安裝應用程式容器並安全保留所有資料。",
+  "appCenterUninstallDirectoriesTitle": "資料目錄與 Docker 磁碟區",
+  "appCenterUninstallNoDirectories": "未偵測到此應用程式的綁定掛載資料目錄，容器將被移除並保留所有資料。",
+  "appCenterUninstallDefaultPreservedHint": "預設保留全部資料。僅勾選需要永久刪除的目錄或磁碟區。",
+  "appCenterUninstallPermanentLossWarning": "選取的資料將從伺服器永久刪除，沒有資源回收筒。",
+  "appCenterUninstallSelectedPathsTitle": "將永久刪除的資料：",
+  "appCenterUninstallRiskAck": "我已了解列出的風險及對其他應用程式的影響，並確認永久刪除此資料。",
+  "remoteBrowserAllFileTypes": "全部格式",
+  "remoteBrowserDocuments": "文字與文件",
+  "remoteBrowserFileFormat": "檔案格式",
+  "appCenterUninstallRiskSystem": "系統路徑",
+  "appCenterUninstallRiskShared": "與其他應用程式共用",
+  "appCenterUninstallRiskVolume": "Docker 磁碟區",
+  "appCenterCleanupVolumeDeleteFailed": "Docker 磁碟區刪除失敗。請先解除其他容器對它的使用，重新檢查後再試。",
+  "appCenterCleanupPermissionDenied": "沒有此資料的存取權限，請使用有權限的帳號或 sudo。",
+  "appCenterCleanupCriticalPath": "伺服器根目錄、系統執行或管理目錄不能在解除安裝應用程式時刪除。",
+  "appCenterUninstallTypeAppNameHint": "請輸入完整的應用程式名稱以確認永久刪除：{appName}",
+  "@appCenterUninstallTypeAppNameHint": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallRiskLegacy": "無獨占所有權證明",
+  "appCenterUninstallRiskExternal": "應用程式根目錄外路徑",
+  "appCenterUninstallRiskMedia": "媒體或唯讀路徑",
+  "appCenterUninstallTargetBlocked": "受保護目錄，不可清理",
+  "appCenterCleanupProtected": "資料目錄已保留，因為其受到保護或移除不安全",
+  "appCenterCleanupUnavailable": "清理檢查無法使用；仍可執行普通解除安裝並保留全部資料",
+  "appCenterCleanupChanged": "目錄或部署目標已發生變化，請重新檢查並確認",
+  "appCenterCleanupConfirmationRequired": "請重新確認所選目錄、風險選項以及精確應用程式名稱",
+  "appCenterCleanupRetryUnavailable": "清理無法安全重試，請檢查任務詳細資訊",
+  "appCenterCleanupAlreadyAbsent": "目錄已不存在，無需刪除",
+  "appCenterCleanupDeleteFailed": "刪除未完全成功，部分檔案可能已被移除，請檢查剩餘路徑",
+  "appCenterCleanupUnconfirmed": "無法確認清理結果或安全性，請在繼續前檢查任務並重新檢查",
+  "appCenterCleanupRetryTitle": "重試 {appName} 的剩餘資料清理？",
+  "@appCenterCleanupRetryTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterCleanupRetryDescription": "應用程式已被解除安裝。請僅選取未完成的資料目錄；重試不會再次解除安裝該應用程式。",
+  "appCenterCleanupRetrySelected": "刪除所選剩餘資料",
+  "appCenterCleanupResultsTitle": "目錄清理結果",
+  "appCenterCleanupPartialSummary": "應用程式已解除安裝；部分資料未完全清理。",
+  "appCenterCleanupPending": "未確認完成",
+  "appCenterCleanupRemoved": "已刪除",
+  "appCenterCleanupRetained": "已保留",
+  "appCenterCleanupRetryAction": "重試剩餘資料清理",
+  "appCenterJellyfinSoftwareTitle": "軟體解碼模式",
+  "appCenterJellyfinSoftwareDesc": "停用 GPU 硬體轉碼，移除已審查的 GPU 裝置對應，並將 /Media 目錄掛載為唯讀。",
+  "appCenterJellyfinProfileUnavailable": "此範本無法套用軟體解碼設定檔",
+  "appCenterJellyfinSoftwareChanges": "已套用的設定檔變更：",
+  "appCenterLogsTitle": "{appName} 記錄",
+  "@appCenterLogsTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterLogsEmpty": "此部署尚無記錄",
+  "appCenterLogsCopied": "記錄已複製到剪貼簿",
+  "appCenterTaskStageQueued": "排隊中",
+  "appCenterTaskStagePreparing": "準備中",
+  "appCenterTaskStagePulling": "正在提取映像檔",
+  "appCenterTaskStageApplying": "套用設定中",
+  "appCenterTaskStageChecking": "驗證運作狀態",
+  "appCenterTaskStageSucceeded": "執行成功",
+  "appCenterTaskStageFailed": "執行失敗",
+  "appCenterTaskStageCancelled": "已取消",
+  "appCenterTaskStageNeedsInspection": "需手動檢查",
+  "appCenterCancelTask": "取消任務",
+  "appCenterCopyLog": "複製記錄",
+  "appCenterErrorNotConnected": "伺服器未連線",
+  "appCenterErrorEnvironmentRequired": "需要先進行 Docker 環境檢查",
+  "appCenterErrorPlanExpired": "部署方案已過期或無效",
+  "appCenterErrorTargetChanged": "目標伺服器已變更，操作已取消",
+  "appCenterErrorConfigInvalid": "應用程式設定無效",
+  "appCenterErrorPathInvalid": "{field}必須為絕對路徑且非根目錄「/」，且不能包含「.」或「..」路徑段",
+  "@appCenterErrorPathInvalid": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterErrorSourceInvalid": "應用程式來源格式無效",
+  "appCenterErrorNoWebEntry": "此應用程式未提供 Web 介面",
+  "appCenterErrorHttpsDirectRequired": "HTTPS 位址無法透過 SSH 通道轉送，請直接開啟",
+  "appCenterErrorOpenFailed": "開啟應用程式連結失敗",
+  "appCenterErrorGeneric": "應用中心錯誤：{error}",
+  "@appCenterErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterSourceCommunityHint": "例如：社群應用商店",
+  "appCenterSourceUrlInvalidHttps": "必須是有效的 HTTPS 連結",
+  "appCenterDirectUrlLabel": "直連網址",
+  "appCenterErrorSourceRemoved": "應用來源已從商店目錄中移除，無法更新範本",
+  "appCenterRestoreConfirmTitle": "還原 {appName}？",
+  "@appCenterRestoreConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestoreConfirmMessage": "確認將 {appName} 還原至上一次的部署設定？",
+  "@appCenterRestoreConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostPortLabel": "主機連接埠 (-> {target})",
+  "@appCenterHostPortLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostMountLabel": "主機路徑: {target}",
+  "@appCenterHostMountLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterVersionLatest": "最新",
+  "appCenterWaitingForLogs": "等待任務記錄中...",
+  "appCenterNoPreviewAvailable": "暫無預覽內容",
+  "appCenterBlockerLocalDockerRequired": "需要本地 Docker 常駐程式（不支援遠端 DOCKER_HOST）",
+  "appCenterBlockerToolsRequired": "伺服器缺少必備工具 (bash, setsid, flock, base64, realpath, ss, awk)",
+  "appCenterBlockerLinuxRequired": "需要 Linux 作業系統",
+  "appCenterBlockerTemplateUnsupported": "範本包含不支援的特性：{feature}",
+  "@appCenterBlockerTemplateUnsupported": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterFieldRequired": "此欄位為必填",
+  "appCenterContinueInstall": "繼續安裝",
+  "appCenterOperation": "操作",
+  "nasTabLibrary": "媒體庫",
+  "nasContinueWatching": "繼續觀看",
+  "nasRecentPhotos": "最近照片",
+  "nasRecentVideos": "最近影片",
+  "nasRecentMusic": "最近音樂",
+  "nasDownloadPaused": "已暫停",
+  "nasDownloadDeleteConfirmTitle": "刪除離線檔案",
+  "nasDownloadDeleteConfirmMessage": "這將從您的裝置中刪除已下載的本地離線檔案，遠端伺服器上的原始檔案不會被刪除。",
+  "nasDownloadDeleteConfirmButton": "刪除離線副本",
+  "nasDownloadSourceChangedMessage": "自此下載開始以來，遠端來源設定已變更。是否要從頭重新開始下載？",
+  "nasDownloadRestartFromScratch": "從頭重新開始",
+  "nasDownloadErrorSourceChanged": "媒體來源設定已變更",
+  "nasDownloadErrorOfflineFileInvalid": "下載的檔案已損壞或不完整",
+  "nasDownloadErrorStorageFailed": "寫入下載儲存失敗",
+  "nasDownloadErrorHlsUnsupported": "串流格式不支援離線下載",
+  "nasDownloadErrorPathInvalid": "下載儲存路徑無效",
+  "nasOpenInApp": "於應用程式中開啟",
+  "nasOpenSystem": "使用系統開啟",
+  "sftpRecentDirectories": "最近目錄",
+  "sftpNoRecentDirectories": "尚無最近目錄",
+  "sftpRetryFailed": "重試失敗項目",
+  "appCenterDiskCheckFailed": "無法驗證伺服器上的可用磁碟空間",
+  "appCenterDiskFull": "伺服器磁碟已滿，無法繼續操作",
+  "appCenterHealthInvalid": "容器健康狀態檢查失敗或回報無效狀態",
+  "appCenterPreflightSummary": "預檢摘要",
+  "appCenterMeasuredAvailableSpace": "實測可用磁碟空間",
+  "appCenterUpdateComparison": "更新差異比較",
+  "appCenterNoChangesDetected": "未檢測到結構性變更",
+  "appCenterSectionImage": "容器映像檔",
+  "appCenterSectionPorts": "連接埠對應",
+  "appCenterSectionVolumes": "儲存空間掛載",
+  "appCenterSectionEnvironment": "環境變數",
+  "appCenterSectionHealthcheck": "健康狀態檢查",
+  "appCenterSectionRestart": "重新啟動策略",
+  "appCenterSectionServices": "服務項目",
+  "appCenterHealthNoCheck": "無健康檢查",
+  "appCenterHealthHealthy": "正常",
+  "appCenterHealthUnhealthy": "異常",
+  "appCenterHealthStarting": "啟動中",
+  "appCenterNoSources": "尚未啟用任何應用程式來源",
+  "appCenterNoMatchingApps": "找不到符合搜尋或篩選條件的應用程式",
+  "appCenterClearFilters": "清除篩選",
+  "appCenterSourceLoadFailed": "應用程式來源載入失敗",
+  "appCenterRetry": "重試",
+  "appCenterRecheck": "重新檢查",
+  "appCenterRecheckTask": "重新檢查任務狀態",
+  "appCenterTaskNeedsInspectionTitle": "任務狀態未確認",
+  "appCenterTaskNeedsInspectionMessage": "伺服器端任務執行結果未知（可能連線中斷或狀態未回報）。請重新檢查狀態或檢視日誌，切勿盲目重複執行。",
+  "appCenterStopConfirmTitle": "停止 {appName}？",
+  "@appCenterStopConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStopConfirmMessage": "確定要在伺服器 {serverName} 上停止 {appName} 嗎？所有執行中的容器將被終止。",
+  "@appCenterStopConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmTitle": "重啟 {appName}？",
+  "@appCenterRestartConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmMessage": "確定要在伺服器 {serverName} 上重啟 {appName} 嗎？",
+  "@appCenterRestartConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterBrowseStore": "前往應用商店瀏覽",
+  "appCenterViewTasks": "查看任務",
+  "appCenterViewInstalled": "查看已安裝應用",
+  "appCenterRunInBackground": "背景執行",
+  "appCenterTaskDetails": "任務詳情",
+  "appCenterTaskTarget": "目標",
+  "appCenterTaskDirectory": "目錄",
+  "appCenterTaskCreatedAt": "建立時間",
+  "appCenterTaskExitCode": "結束代碼: {code}",
+  "@appCenterTaskExitCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "appCenterStatusRunning": "執行中",
+  "appCenterStatusStopped": "已停止",
+  "appCenterStatusInstalling": "安裝中",
+  "appCenterStatusUnknown": "未知",
+  "appCenterEnvReady": "Docker 與 Compose 執行環境就緒",
+  "appCenterEnvNotReady": "Docker 環境未就緒",
+  "appCenterEnvInspecting": "正在檢測伺服器 Docker 環境...",
+  "appCenterUninstallWholeDataRoot": "完整資料根目錄",
+  "appCenterUninstallWholeDataRootWarning": "包括儲存在應用程式資料根目錄下的未掛載檔案和子目錄。",
+  "appCenterUninstallCoveredByParent": "已被上層目錄涵蓋",
+  "appCenterContainerNameInvalid": "執行個體名稱必須以字母或數字開頭，且僅能包含字母、數字、底線、小數點和連字號（最多 120 個字元）。",
+  "appCenterMainService": "主服務",
+  "appCenterContainerNamesPreview": "容器名稱預覽",
+  "appCenterContainersRecreationNotice": "修改執行個體容器名稱將重新建立現有的應用程式容器。",
+  "remoteBrowserTitle": "遠端檔案瀏覽",
+  "remoteBrowserSelectDirectory": "選取目錄",
+  "remoteBrowserSelectCurrentDirectory": "選取目前目錄",
+  "remoteBrowserSearchHint": "搜尋檔案與資料夾...",
+  "remoteBrowserNoEntries": "找不到相符的檔案或目錄",
+  "remoteBrowserEmptyDirectory": "此目錄為空",
+  "remoteBrowserSelectedCount": "已選取 {count} 項",
+  "@remoteBrowserSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remoteBrowserParentDirectory": "上一層目錄",
+  "remoteBrowserLibrariesTitle": "媒體庫",
+  "remoteBrowserDisconnected": "遠端連線已中斷或無法使用。",
+  "remoteBrowserTargetChanged": "目標環境或目前活動伺服器已變更。",
+  "remoteBrowserPathInvalid": "請求的路徑無效或無法存取。",
+  "remoteBrowserPathOutsideRoot": "請求的路徑超出了允許的根目錄範圍。",
+  "remoteBrowserEntryUnavailable": "選取的項目無法使用或無效。",
+  "nasBrowseUnavailable": "NAS 瀏覽服務目前無法使用。",
+  "nasInvalidDirectoryEntry": "瀏覽 NAS 時遇到無效的目錄項目。",
+  "nasInvalidLibraryResponse": "媒體庫回應無效或格式不正確。",
+  "nasScanFilterUnresolved": "無法解析掃描過濾路徑。",
+  "nasSourceSaveIncomplete": "先前儲存的來源僅部分保存。請重新輸入憑證並成功儲存後再進行瀏覽。"
 }

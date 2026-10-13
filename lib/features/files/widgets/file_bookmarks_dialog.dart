@@ -40,6 +40,7 @@ class FileBookmarksDialog extends ConsumerStatefulWidget {
 class _FileBookmarksDialogState extends ConsumerState<FileBookmarksDialog> {
   ServerProfile? _capturedServer;
   bool _isToggling = false;
+  int _selectedTab = 0;
 
   @override
   void initState() {
@@ -90,6 +91,7 @@ class _FileBookmarksDialogState extends ConsumerState<FileBookmarksDialog> {
     });
 
     final bookmarks = ref.watch(fileBookmarksProvider);
+    final recentDirs = ref.watch(fileRecentDirectoriesProvider);
     final isCurrentBookmarked = bookmarks.contains(widget.currentPath);
 
     return AlertDialog(
@@ -116,187 +118,286 @@ class _FileBookmarksDialogState extends ConsumerState<FileBookmarksDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Current path bookmark toggle tile
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: context.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(VRadius.input),
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isNarrow = constraints.maxWidth < 360;
-                    final actionButton = TextButton.icon(
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      icon: Icon(
-                        isCurrentBookmarked ? Icons.remove : Icons.add,
-                        size: 16,
-                      ),
-                      label: Text(
-                        isCurrentBookmarked
-                            ? context.l10n.sftpRemoveBookmark
-                            : context.l10n.sftpAddBookmark,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      onPressed: _isToggling
-                          ? null
-                          : () => _handleToggle(widget.currentPath),
-                    );
+              SegmentedButton<int>(
+                segments: [
+                  ButtonSegment<int>(
+                    value: 0,
+                    icon: const Icon(Icons.bookmarks_rounded, size: 16),
+                    label: Text(
+                      context.l10n.sftpBookmarksTitle,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                  ButtonSegment<int>(
+                    value: 1,
+                    icon: const Icon(Icons.history_rounded, size: 16),
+                    label: Text(
+                      context.sftpRecentDirectoriesLabel,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+                selected: {_selectedTab},
+                onSelectionChanged: (set) {
+                  if (set.isNotEmpty) {
+                    setState(() => _selectedTab = set.first);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              if (_selectedTab == 0) ...[
+                // Current path bookmark toggle tile
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: context.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(VRadius.input),
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isNarrow = constraints.maxWidth < 360;
+                      final actionButton = TextButton.icon(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        icon: Icon(
+                          isCurrentBookmarked ? Icons.remove : Icons.add,
+                          size: 16,
+                        ),
+                        label: Text(
+                          isCurrentBookmarked
+                              ? context.l10n.sftpRemoveBookmark
+                              : context.l10n.sftpAddBookmark,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        onPressed: _isToggling
+                            ? null
+                            : () => _handleToggle(widget.currentPath),
+                      );
 
-                    if (isNarrow) {
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                isCurrentBookmarked
-                                    ? Icons.bookmark_rounded
-                                    : Icons.bookmark_border_rounded,
-                                size: 20,
-                                color: isCurrentBookmarked
-                                    ? context.colorScheme.primary
-                                    : context.colorScheme.outline,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      context.l10n.sftpCurrentDirectory,
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      widget.currentPath,
-                                      style: monoTextStyle(
-                                        fontSize: 11,
-                                        color: context.colorScheme.outline,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
+                      if (isNarrow) {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  isCurrentBookmarked
+                                      ? Icons.bookmark_rounded
+                                      : Icons.bookmark_border_rounded,
+                                  size: 20,
+                                  color: isCurrentBookmarked
+                                      ? context.colorScheme.primary
+                                      : context.colorScheme.outline,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        context.l10n.sftpCurrentDirectory,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Text(
+                                        widget.currentPath,
+                                        style: monoTextStyle(
+                                          fontSize: 11,
+                                          color: context.colorScheme.outline,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: actionButton,
+                            ),
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          Icon(
+                            isCurrentBookmarked
+                                ? Icons.bookmark_rounded
+                                : Icons.bookmark_border_rounded,
+                            size: 20,
+                            color: isCurrentBookmarked
+                                ? context.colorScheme.primary
+                                : context.colorScheme.outline,
                           ),
-                          const SizedBox(height: 4),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: actionButton,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  context.l10n.sftpCurrentDirectory,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  widget.currentPath,
+                                  style: monoTextStyle(
+                                    fontSize: 11,
+                                    color: context.colorScheme.outline,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
+                          actionButton,
                         ],
                       );
-                    }
-
-                    return Row(
-                      children: [
-                        Icon(
-                          isCurrentBookmarked
-                              ? Icons.bookmark_rounded
-                              : Icons.bookmark_border_rounded,
-                          size: 20,
-                          color: isCurrentBookmarked
-                              ? context.colorScheme.primary
-                              : context.colorScheme.outline,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                context.l10n.sftpCurrentDirectory,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Divider(height: 1),
+                Flexible(
+                  child: bookmarks.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Center(
+                            child: Text(
+                              context.l10n.sftpNoBookmarks,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: context.colorScheme.outline,
                               ),
-                              Text(
-                                widget.currentPath,
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: bookmarks.length,
+                          separatorBuilder: (context, index) =>
+                              const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final path = bookmarks[index];
+                            return ListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(
+                                Icons.folder_special_rounded,
+                                size: 20,
+                                color: context.colorScheme.primary,
+                              ),
+                              title: Text(
+                                path,
                                 style: monoTextStyle(
-                                  fontSize: 11,
-                                  color: context.colorScheme.outline,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        actionButton,
-                      ],
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              Flexible(
-                child: bookmarks.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Center(
-                          child: Text(
-                            context.l10n.sftpNoBookmarks,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.colorScheme.outline,
-                            ),
-                          ),
-                        ),
-                      )
-                    : ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: bookmarks.length,
-                        separatorBuilder: (context, index) =>
-                            const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final path = bookmarks[index];
-                          return ListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            leading: Icon(
-                              Icons.folder_special_rounded,
-                              size: 20,
-                              color: context.colorScheme.primary,
-                            ),
-                            title: Text(
-                              path,
-                              style: monoTextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                              trailing: IconButton(
+                                icon: const Icon(Icons.close, size: 16),
+                                tooltip: context.l10n.sftpRemoveBookmark,
+                                onPressed: _isToggling
+                                    ? null
+                                    : () => _handleToggle(path),
                               ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.close, size: 16),
-                              tooltip: context.l10n.sftpRemoveBookmark,
-                              onPressed: _isToggling
-                                  ? null
-                                  : () => _handleToggle(path),
-                            ),
-                            onTap: () {
-                              if (!_isSameServer()) {
+                              onTap: () {
+                                if (!_isSameServer()) {
+                                  Navigator.of(context).pop();
+                                  return;
+                                }
                                 Navigator.of(context).pop();
-                                return;
-                              }
-                              Navigator.of(context).pop();
-                              widget.onSelectPath(path);
-                            },
-                          );
-                        },
-                      ),
-              ),
+                                widget.onSelectPath(path);
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ] else ...[
+                // Recent directories tab
+                Flexible(
+                  child: recentDirs.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Center(
+                            child: Text(
+                              context.sftpNoRecentDirectoriesLabel,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: context.colorScheme.outline,
+                              ),
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: recentDirs.length,
+                          separatorBuilder: (context, index) =>
+                              const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final path = recentDirs[index];
+                            final isBookmarked = bookmarks.contains(path);
+                            return ListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(
+                                Icons.folder_outlined,
+                                size: 20,
+                                color: context.colorScheme.primary,
+                              ),
+                              title: Text(
+                                path,
+                                style: monoTextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  isBookmarked
+                                      ? Icons.bookmark_rounded
+                                      : Icons.bookmark_border_rounded,
+                                  size: 16,
+                                  color: isBookmarked
+                                      ? context.colorScheme.primary
+                                      : context.colorScheme.outline,
+                                ),
+                                tooltip: isBookmarked
+                                    ? context.l10n.sftpRemoveBookmark
+                                    : context.l10n.sftpAddBookmark,
+                                onPressed: _isToggling
+                                    ? null
+                                    : () => _handleToggle(path),
+                              ),
+                              onTap: () {
+                                if (!_isSameServer()) {
+                                  Navigator.of(context).pop();
+                                  return;
+                                }
+                                Navigator.of(context).pop();
+                                widget.onSelectPath(path);
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
             ],
           ),
         ),
@@ -308,5 +409,51 @@ class _FileBookmarksDialogState extends ConsumerState<FileBookmarksDialog> {
         ),
       ],
     );
+  }
+}
+
+extension on BuildContext {
+  String get sftpRecentDirectoriesLabel {
+    final loc = l10n.localeName.split('_').first;
+    return switch (loc) {
+      'zh' => l10n.localeName.contains('Hant') ? '最近目錄' : '最近访问目录',
+      'de' => 'Zuletzt verwendete Verzeichnisse',
+      'fr' => 'Répertoires récents',
+      'es' => 'Directorios recientes',
+      'pt' => 'Diretórios recentes',
+      'it' => 'Directory recenti',
+      'id' => 'Direktori Terakhir',
+      'ja' => '最近使ったディレクトリ',
+      'ko' => '최근 디렉터리',
+      'ru' => 'Недавние каталоги',
+      'ar' => 'المجلدات الأخيرة',
+      'hi' => 'हाल की निर्देशिकाएं',
+      'tr' => 'Son Dizinler',
+      'vi' => 'Thư mục gần đây',
+      'th' => 'ไดเรกทอรีล่าสุด',
+      _ => 'Recent Directories',
+    };
+  }
+
+  String get sftpNoRecentDirectoriesLabel {
+    final loc = l10n.localeName.split('_').first;
+    return switch (loc) {
+      'zh' => l10n.localeName.contains('Hant') ? '尚無最近目錄' : '暂无最近访问目录',
+      'de' => 'Keine kürzlich verwendeten Verzeichnisse',
+      'fr' => 'Aucun répertoire récent',
+      'es' => 'Sin directorios recientes',
+      'pt' => 'Nenhum diretório recente',
+      'it' => 'Nessuna directory recente',
+      'id' => 'Tidak ada direktori terbaru',
+      'ja' => '最近使ったディレクトリはありません',
+      'ko' => '최근 디렉터리가 없습니다',
+      'ru' => 'Нет недавних каталогов',
+      'ar' => 'لا توجد مجلدات أخيرة',
+      'hi' => 'कोई हाल की निर्देशिका नहीं',
+      'tr' => 'Son kullanılan dizin yok',
+      'vi' => 'Không có thư mục gần đây',
+      'th' => 'ไม่มีไดเรกทอรีล่าสุด',
+      _ => 'No recent directories',
+    };
   }
 }

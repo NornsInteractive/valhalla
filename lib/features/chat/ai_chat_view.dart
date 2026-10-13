@@ -48,6 +48,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   final ScrollController _scrollController = ScrollController();
   String? _selectedAuthMethodId;
   String? _scrolledSessionId;
+  bool _pendingInitialHistory = false;
   bool _userNearBottom = true;
   bool _isSending = false;
   bool _isLoadingComposerCommands = false;
@@ -64,12 +65,25 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         offset: initialDraft.length,
       );
     }
-    _scrolledSessionId = ref.read(aiChatProvider).activeSessionId;
+    final initialChat = ref.read(aiChatProvider);
+    final initialSessionId = initialChat.activeSessionId;
+    final initialServerKey = ref.read(activeServerProvider)?.connectionKey;
+    final initialAgentId = initialChat.activeAgentProfile?.id;
+    _scrolledSessionId = initialSessionId;
+    _pendingInitialHistory =
+        initialChat.activeSession != null &&
+        initialChat.activeSession!.messages.isEmpty;
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      if (!mounted || !_scrollController.hasClients) return;
+      final currentChat = ref.read(aiChatProvider);
+      final currentServer = ref.read(activeServerProvider);
+      if (currentChat.activeSessionId != initialSessionId ||
+          currentChat.activeAgentProfile?.id != initialAgentId ||
+          currentServer?.connectionKey != initialServerKey) {
+        return;
       }
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     });
   }
 
@@ -93,21 +107,30 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
-    }
+    if (!mounted || !_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
   }
 
   void _followBottomIfNeeded() {
-    if (!_scrollController.hasClients || !_userNearBottom) return;
+    if (!mounted || !_scrollController.hasClients || !_userNearBottom) return;
+    final chatState = ref.read(aiChatProvider);
+    final targetSessionId = chatState.activeSessionId;
+    final targetServerKey = ref.read(activeServerProvider)?.connectionKey;
+    final targetAgentId = chatState.activeAgentProfile?.id;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients && _userNearBottom) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      if (!mounted || !_scrollController.hasClients || !_userNearBottom) return;
+      final currentChat = ref.read(aiChatProvider);
+      final currentServer = ref.read(activeServerProvider);
+      if (currentChat.activeSessionId != targetSessionId ||
+          currentChat.activeAgentProfile?.id != targetAgentId ||
+          currentServer?.connectionKey != targetServerKey) {
+        return;
       }
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     });
   }
 
@@ -415,7 +438,20 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     _promptController.clear();
     ref.read(aiChatProvider.notifier).updateDraftText('');
     _userNearBottom = true;
-    Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+    final sendSessionId = sentSessionId;
+    final sendAgentId = sentAgentId;
+    final sendServerKey = ref.read(activeServerProvider)?.connectionKey;
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (!mounted || !_scrollController.hasClients) return;
+      final currentChat = ref.read(aiChatProvider);
+      final currentServer = ref.read(activeServerProvider);
+      if (currentChat.activeSessionId != sendSessionId ||
+          currentChat.activeAgentProfile?.id != sendAgentId ||
+          currentServer?.connectionKey != sendServerKey) {
+        return;
+      }
+      _scrollToBottom();
+    });
 
     try {
       await ref.read(aiChatProvider.notifier).sendMessage(text);
@@ -688,27 +724,69 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       if (nextSessionId != null && nextSessionId != _scrolledSessionId) {
         _scrolledSessionId = nextSessionId;
         _userNearBottom = true;
+        _pendingInitialHistory = nextMessages.isEmpty;
+        final targetSessionId = nextSessionId;
+        final targetServerKey = ref.read(activeServerProvider)?.connectionKey;
+        final targetAgentId = next.activeAgentProfile?.id;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || !_scrollController.hasClients) return;
+          final currentChat = ref.read(aiChatProvider);
+          final currentServer = ref.read(activeServerProvider);
+          if (currentChat.activeSessionId != targetSessionId ||
+              currentChat.activeAgentProfile?.id != targetAgentId ||
+              currentServer?.connectionKey != targetServerKey) {
+            return;
+          }
           _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
         });
         return;
       }
 
+      if (_pendingInitialHistory && nextMessages.isNotEmpty) {
+        _pendingInitialHistory = false;
+        _userNearBottom = true;
+        final targetSessionId = nextSessionId;
+        final targetServerKey = ref.read(activeServerProvider)?.connectionKey;
+        final targetAgentId = next.activeAgentProfile?.id;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_scrollController.hasClients) return;
+          final currentChat = ref.read(aiChatProvider);
+          final currentServer = ref.read(activeServerProvider);
+          if (currentChat.activeSessionId != targetSessionId ||
+              currentChat.activeAgentProfile?.id != targetAgentId ||
+              currentServer?.connectionKey != targetServerKey) {
+            return;
+          }
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        });
+      }
+
+      final prevOffset = previous?.activeSession?.messageOffset;
+      final nextOffset = next.activeSession?.messageOffset;
       final isPrepend =
           previous != null &&
           prevSessionId == nextSessionId &&
           nextSessionId != null &&
-          prevMessages.isNotEmpty &&
-          nextMessages.length > prevMessages.length &&
-          nextMessages.any((m) => m.id == prevMessages.first.id) &&
-          nextMessages.first.id != prevMessages.first.id;
+          prevOffset != null &&
+          nextOffset != null &&
+          nextOffset < prevOffset &&
+          nextMessages.length > prevMessages.length;
 
       if (isPrepend && _scrollController.hasClients) {
+        final targetSessionId = nextSessionId;
+        final targetServerKey = ref.read(activeServerProvider)?.connectionKey;
+        final targetAgentId = next.activeAgentProfile?.id;
         final oldMaxScroll = _scrollController.position.maxScrollExtent;
         final oldPixels = _scrollController.position.pixels;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || !_scrollController.hasClients) return;
+          final currentChat = ref.read(aiChatProvider);
+          final currentServer = ref.read(activeServerProvider);
+          if (currentChat.activeSessionId != targetSessionId ||
+              currentChat.activeAgentProfile?.id != targetAgentId ||
+              currentServer?.connectionKey != targetServerKey) {
+            return;
+          }
           final newMaxScroll = _scrollController.position.maxScrollExtent;
           final delta = newMaxScroll - oldMaxScroll;
           if (delta > 0) {
@@ -2900,7 +2978,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     String? rawWorkingDir,
   ) async {
     final connState = ref.read(serverConnectionProvider);
-    final recoveryStatus = ref.read(aiChatProvider).recoveryStatus;
+    final snapshot = ref.read(aiChatProvider);
+    final recoveryStatus = snapshot.recoveryStatus;
     if (!connState.isConnected ||
         recoveryStatus == SessionRecoveryStatus.reconnecting ||
         recoveryStatus == SessionRecoveryStatus.syncing) {
@@ -2909,12 +2988,30 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
       return;
     }
-    final selectedDir = await RemoteWorkspaceBrowserDialog.show(
-      context,
-      mode: RemoteBrowserMode.directory,
-      initialPath: rawWorkingDir,
-    );
+    final serverKey = ref.read(activeServerProvider)?.connectionKey;
+    Object? selectedDir;
+    try {
+      selectedDir = await RemoteWorkspaceBrowserDialog.show(
+        context,
+        mode: RemoteBrowserMode.directory,
+        initialPath: rawWorkingDir,
+      );
+    } catch (error) {
+      if (!mounted || !context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${context.l10n.chatRemoteReadFailed}: $error')),
+      );
+      return;
+    }
     if (!mounted || !context.mounted) return;
+    final current = ref.read(aiChatProvider);
+    if (ref.read(activeServerProvider)?.connectionKey != serverKey ||
+        !ref.read(serverConnectionProvider).isConnected ||
+        current.activeAgentProfile != snapshot.activeAgentProfile ||
+        current.activeSessionId != snapshot.activeSessionId ||
+        current.draftWorkingDirectory != snapshot.draftWorkingDirectory) {
+      return;
+    }
     if (selectedDir is String && selectedDir.isNotEmpty) {
       ref.read(aiChatProvider.notifier).setDraftWorkingDirectory(selectedDir);
     }
@@ -2988,7 +3085,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
   Future<void> _promptRemoteTextFile(BuildContext context) async {
     final connState = ref.read(serverConnectionProvider);
-    final recoveryStatus = ref.read(aiChatProvider).recoveryStatus;
+    final snapshot = ref.read(aiChatProvider);
+    final recoveryStatus = snapshot.recoveryStatus;
     if (!connState.isConnected ||
         recoveryStatus == SessionRecoveryStatus.reconnecting ||
         recoveryStatus == SessionRecoveryStatus.syncing) {
@@ -2997,33 +3095,44 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
       return;
     }
-    final selected = await RemoteWorkspaceBrowserDialog.show(
-      context,
-      mode: RemoteBrowserMode.files,
-    );
-    if (!mounted || !context.mounted) return;
+    final serverKey = ref.read(activeServerProvider)?.connectionKey;
+    bool current() {
+      if (!mounted || !context.mounted) return false;
+      final state = ref.read(aiChatProvider);
+      return ref.read(activeServerProvider)?.connectionKey == serverKey &&
+          ref.read(serverConnectionProvider).isConnected &&
+          state.activeAgentProfile == snapshot.activeAgentProfile &&
+          state.activeSessionId == snapshot.activeSessionId &&
+          state.draftWorkingDirectory == snapshot.draftWorkingDirectory &&
+          !state.isGenerating;
+    }
+
+    Object? selected;
+    try {
+      selected = await RemoteWorkspaceBrowserDialog.show(
+        context,
+        mode: RemoteBrowserMode.files,
+      );
+    } catch (error) {
+      if (!current() || !context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${context.l10n.chatRemoteReadFailed}: $error')),
+      );
+      return;
+    }
+    if (!current()) return;
     if (selected is List<String> && selected.isNotEmpty) {
-      final targetServerId = ref.read(activeServerProvider)?.id;
-      final targetAgentId = ref.read(aiChatProvider).activeAgentProfile?.id;
-      final targetSessionId = ref.read(aiChatProvider).activeSessionId;
       final notifier = ref.read(aiChatProvider.notifier);
       final errors = <String, Object>{};
       for (final path in selected) {
-        if (!mounted || !context.mounted) return;
-        final currentServerId = ref.read(activeServerProvider)?.id;
-        final currentState = ref.read(aiChatProvider);
-        if (currentServerId != targetServerId ||
-            currentState.activeAgentProfile?.id != targetAgentId ||
-            currentState.activeSessionId != targetSessionId) {
-          break;
-        }
+        if (!current()) return;
         try {
           await notifier.attachRemoteFile(path);
         } catch (e) {
           errors[path] = e;
         }
       }
-      if (!mounted || !context.mounted) return;
+      if (!current() || !context.mounted) return;
       if (errors.isNotEmpty) {
         final details = errors.entries
             .map((e) => '${e.key.split("/").last}: ${e.value}')

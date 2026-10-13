@@ -214,9 +214,10 @@ void main() {
             .destinations
             .length;
 
-        // 未开启实验特性时：只显示默认固定的 4 项。
+        // 未开启实验特性时：只显示默认固定的常规功能。
+        final defaultCount = defaultBottomNavigationSections.length;
         expect(find.byType(NavigationRail), findsOneWidget);
-        expect(destinationCount(), 4);
+        expect(destinationCount(), defaultCount);
         expect(
           find.descendant(
             of: find.byType(NavigationRail),
@@ -240,11 +241,11 @@ void main() {
           AppSection.nas,
         ]);
         await tester.pumpAndSettle();
-        expect(destinationCount(), 4);
+        expect(destinationCount(), defaultCount);
 
         await notifier.setExperimentalFeature(ExperimentalFeature.nas, true);
         await tester.pumpAndSettle();
-        expect(destinationCount(), 5);
+        expect(destinationCount(), defaultCount + 1);
 
         final nasIcon = find.descendant(
           of: find.byType(NavigationRail),
@@ -270,7 +271,7 @@ void main() {
           0,
         );
         // 关闭后条目从 rail 隐藏，但保存的选择仍然保留。
-        expect(destinationCount(), 4);
+        expect(destinationCount(), defaultCount);
         expect(
           container.read(settingsProvider).bottomNavigationSections,
           contains(AppSection.nas),
@@ -282,14 +283,14 @@ void main() {
           AppSection.cliChat,
         ]);
         await tester.pumpAndSettle();
-        expect(destinationCount(), 4);
+        expect(destinationCount(), defaultCount);
 
         await notifier.setExperimentalFeature(
           ExperimentalFeature.cliChat,
           true,
         );
         await tester.pumpAndSettle();
-        expect(destinationCount(), 5);
+        expect(destinationCount(), defaultCount + 1);
         final forumIcon = find.descendant(
           of: find.byType(NavigationRail),
           matching: find.byIcon(Icons.forum_outlined),
@@ -315,7 +316,7 @@ void main() {
               .index,
           0,
         );
-        expect(destinationCount(), 4);
+        expect(destinationCount(), defaultCount);
         expect(
           container.read(settingsProvider).bottomNavigationSections,
           containsAllInOrder([AppSection.nas, AppSection.cliChat]),

@@ -127,6 +127,126 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
   ];
 
+  /// No description provided for @nasPlaylistLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlists are temporarily unavailable. Your saved media list is still available. Refresh to retry.'**
+  String get nasPlaylistLoadFailed;
+
+  /// No description provided for @nasAllLibraries.
+  ///
+  /// In en, this message translates to:
+  /// **'All libraries'**
+  String get nasAllLibraries;
+
+  /// No description provided for @nasDiagnosticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Media source diagnostics'**
+  String get nasDiagnosticsTitle;
+
+  /// No description provided for @nasDiagnosticsConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection'**
+  String get nasDiagnosticsConnection;
+
+  /// No description provided for @nasDiagnosticsScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Library scan'**
+  String get nasDiagnosticsScan;
+
+  /// No description provided for @nasDiagnosticsLastSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Last successful connection'**
+  String get nasDiagnosticsLastSuccess;
+
+  /// No description provided for @nasDiagnosticsCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking saved credentials'**
+  String get nasDiagnosticsCredentials;
+
+  /// No description provided for @nasDiagnosticsFinalizing.
+  ///
+  /// In en, this message translates to:
+  /// **'Finalizing index'**
+  String get nasDiagnosticsFinalizing;
+
+  /// No description provided for @nasDiagnosticsNotChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked'**
+  String get nasDiagnosticsNotChecked;
+
+  /// No description provided for @nasCacheLegacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Legacy thumbnails (unassigned)'**
+  String get nasCacheLegacy;
+
+  /// No description provided for @nasCacheGlobalBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Thumbnail budget (all sources)'**
+  String get nasCacheGlobalBudget;
+
+  /// No description provided for @nasCacheNoSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a media source to manage its cache.'**
+  String get nasCacheNoSource;
+
+  /// No description provided for @nasOfflineRecordedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded download bytes, not measured disk usage. Thumbnail cleanup does not remove offline files.'**
+  String get nasOfflineRecordedHint;
+
+  /// No description provided for @nasCacheClearConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear thumbnails for {scope}? Offline files and remote media will be kept.'**
+  String nasCacheClearConfirm(String scope);
+
+  /// No description provided for @nasOfflineRecordedBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded downloads: {size}'**
+  String nasOfflineRecordedBytes(String size);
+
+  /// No description provided for @nasDeployDockerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker application'**
+  String get nasDeployDockerTitle;
+
+  /// No description provided for @nasDeployDockerDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the official Jellyfin application in App Center. Review its configuration before installing.'**
+  String get nasDeployDockerDesc;
+
+  /// No description provided for @nasDeployNativeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Install Jellyfin directly on this server using its official packages. Existing installations are not changed.'**
+  String get nasDeployNativeDesc;
+
+  /// No description provided for @nasDeployEnableAppCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable the experimental App Center to continue? Your menu layout will not change.'**
+  String get nasDeployEnableAppCenter;
+
+  /// No description provided for @nasDeployCatalogUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The official Jellyfin application is unavailable. Check that the official source is enabled, then try again.'**
+  String get nasDeployCatalogUnavailable;
+
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
@@ -8102,6 +8222,1662 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Off'**
   String get nasThumbnailCacheOff;
+
+  /// No description provided for @navAppCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'App Center'**
+  String get navAppCenter;
+
+  /// No description provided for @settingsExperimentalAppCenterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App Center (Docker)'**
+  String get settingsExperimentalAppCenterTitle;
+
+  /// No description provided for @settingsExperimentalAppCenterDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Experimental application store and container deployment manager'**
+  String get settingsExperimentalAppCenterDesc;
+
+  /// No description provided for @appCenterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App Center'**
+  String get appCenterTitle;
+
+  /// No description provided for @appCenterTabStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Store'**
+  String get appCenterTabStore;
+
+  /// No description provided for @appCenterTabInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get appCenterTabInstalled;
+
+  /// No description provided for @appCenterTabTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get appCenterTabTasks;
+
+  /// No description provided for @appCenterSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get appCenterSources;
+
+  /// No description provided for @appCenterManageSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Sources'**
+  String get appCenterManageSources;
+
+  /// No description provided for @appCenterAddSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Source'**
+  String get appCenterAddSource;
+
+  /// No description provided for @appCenterSourceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Source Name'**
+  String get appCenterSourceName;
+
+  /// No description provided for @appCenterSourceUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Source URL (HTTPS)'**
+  String get appCenterSourceUrl;
+
+  /// No description provided for @appCenterDeleteSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Source'**
+  String get appCenterDeleteSource;
+
+  /// No description provided for @appCenterRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get appCenterRefresh;
+
+  /// No description provided for @appCenterSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search applications...'**
+  String get appCenterSearchHint;
+
+  /// No description provided for @appCenterFilterAllCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All Categories'**
+  String get appCenterFilterAllCategories;
+
+  /// No description provided for @appCenterFilterAllSources.
+  ///
+  /// In en, this message translates to:
+  /// **'All Sources'**
+  String get appCenterFilterAllSources;
+
+  /// No description provided for @appCenterNoApps.
+  ///
+  /// In en, this message translates to:
+  /// **'No applications found'**
+  String get appCenterNoApps;
+
+  /// No description provided for @appCenterNoInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'No applications installed'**
+  String get appCenterNoInstalled;
+
+  /// No description provided for @appCenterNoTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No active or recent tasks'**
+  String get appCenterNoTasks;
+
+  /// No description provided for @appCenterInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get appCenterInstall;
+
+  /// No description provided for @appCenterInstalledBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get appCenterInstalledBadge;
+
+  /// No description provided for @appCenterIncompatibleBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Incompatible'**
+  String get appCenterIncompatibleBadge;
+
+  /// No description provided for @appCenterUpdateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Available'**
+  String get appCenterUpdateAvailable;
+
+  /// No description provided for @appCenterArchitectureBlocker.
+  ///
+  /// In en, this message translates to:
+  /// **'Architecture not supported'**
+  String get appCenterArchitectureBlocker;
+
+  /// No description provided for @appCenterAppDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Application Details'**
+  String get appCenterAppDetails;
+
+  /// No description provided for @appCenterVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get appCenterVersion;
+
+  /// No description provided for @appCenterCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get appCenterCategory;
+
+  /// No description provided for @appCenterSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get appCenterSource;
+
+  /// No description provided for @appCenterArchitectures.
+  ///
+  /// In en, this message translates to:
+  /// **'Supported Architectures'**
+  String get appCenterArchitectures;
+
+  /// No description provided for @appCenterScreenshots.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshots'**
+  String get appCenterScreenshots;
+
+  /// No description provided for @appCenterDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get appCenterDescription;
+
+  /// No description provided for @appCenterWizardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Install {appName}'**
+  String appCenterWizardTitle(String appName);
+
+  /// No description provided for @appCenterConfigureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure {appName}'**
+  String appCenterConfigureTitle(String appName);
+
+  /// No description provided for @appCenterUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update {appName}'**
+  String appCenterUpdateTitle(String appName);
+
+  /// No description provided for @appCenterStepEnvironment.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment'**
+  String get appCenterStepEnvironment;
+
+  /// No description provided for @appCenterStepConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration'**
+  String get appCenterStepConfig;
+
+  /// No description provided for @appCenterStepReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review Plan'**
+  String get appCenterStepReview;
+
+  /// No description provided for @appCenterStepProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get appCenterStepProgress;
+
+  /// No description provided for @appCenterInstanceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Instance Name'**
+  String get appCenterInstanceName;
+
+  /// No description provided for @appCenterDataDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Directory'**
+  String get appCenterDataDirectory;
+
+  /// No description provided for @appCenterBrowseDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse Directory'**
+  String get appCenterBrowseDirectory;
+
+  /// No description provided for @appCenterNetworkAndPorts.
+  ///
+  /// In en, this message translates to:
+  /// **'Network & Ports'**
+  String get appCenterNetworkAndPorts;
+
+  /// No description provided for @appCenterBindAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Bind Address'**
+  String get appCenterBindAddress;
+
+  /// No description provided for @appCenterBindLoopback.
+  ///
+  /// In en, this message translates to:
+  /// **'Localhost only (127.0.0.1)'**
+  String get appCenterBindLoopback;
+
+  /// No description provided for @appCenterBindAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All interfaces (0.0.0.0)'**
+  String get appCenterBindAll;
+
+  /// No description provided for @appCenterPortMapping.
+  ///
+  /// In en, this message translates to:
+  /// **'Port Mappings'**
+  String get appCenterPortMapping;
+
+  /// No description provided for @appCenterMounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Mounts'**
+  String get appCenterMounts;
+
+  /// No description provided for @appCenterMountSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Host Path'**
+  String get appCenterMountSource;
+
+  /// No description provided for @appCenterMountTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Container Path'**
+  String get appCenterMountTarget;
+
+  /// No description provided for @appCenterMountReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only'**
+  String get appCenterMountReadOnly;
+
+  /// No description provided for @appCenterVariables.
+  ///
+  /// In en, this message translates to:
+  /// **'Variables'**
+  String get appCenterVariables;
+
+  /// No description provided for @appCenterEnvironmentVariables.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment Variables'**
+  String get appCenterEnvironmentVariables;
+
+  /// No description provided for @appCenterNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get appCenterNext;
+
+  /// No description provided for @appCenterBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get appCenterBack;
+
+  /// No description provided for @appCenterConfirmAndExecute.
+  ///
+  /// In en, this message translates to:
+  /// **'Execute Plan'**
+  String get appCenterConfirmAndExecute;
+
+  /// No description provided for @appCenterPlanPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Deployment Plan Preview'**
+  String get appCenterPlanPreview;
+
+  /// No description provided for @appCenterPlanSanitizedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the generated deployment plan before execution:'**
+  String get appCenterPlanSanitizedNotice;
+
+  /// No description provided for @appCenterEnvironmentCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker Environment'**
+  String get appCenterEnvironmentCheck;
+
+  /// No description provided for @appCenterDockerFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker is available'**
+  String get appCenterDockerFound;
+
+  /// No description provided for @appCenterDockerMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker is not installed'**
+  String get appCenterDockerMissing;
+
+  /// No description provided for @appCenterComposeFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker Compose is available'**
+  String get appCenterComposeFound;
+
+  /// No description provided for @appCenterComposeMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker Compose is not installed'**
+  String get appCenterComposeMissing;
+
+  /// No description provided for @appCenterBootstrapPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker and Compose can be bootstrapped on this server. Root/sudo permission is required.'**
+  String get appCenterBootstrapPrompt;
+
+  /// No description provided for @appCenterBootstrapButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Install Docker & Compose'**
+  String get appCenterBootstrapButton;
+
+  /// No description provided for @appCenterSudoPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Sudo Password (optional / if required)'**
+  String get appCenterSudoPassword;
+
+  /// No description provided for @appCenterSudoPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter sudo password for privileged operations'**
+  String get appCenterSudoPasswordHint;
+
+  /// No description provided for @appCenterOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Web UI'**
+  String get appCenterOpen;
+
+  /// No description provided for @appCenterStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get appCenterStart;
+
+  /// No description provided for @appCenterStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get appCenterStop;
+
+  /// No description provided for @appCenterRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart'**
+  String get appCenterRestart;
+
+  /// No description provided for @appCenterLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs'**
+  String get appCenterLogs;
+
+  /// No description provided for @appCenterConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure'**
+  String get appCenterConfig;
+
+  /// No description provided for @appCenterUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get appCenterUpdate;
+
+  /// No description provided for @appCenterRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get appCenterRestore;
+
+  /// No description provided for @appCenterUninstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall'**
+  String get appCenterUninstall;
+
+  /// No description provided for @appCenterUninstallConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall {appName}?'**
+  String appCenterUninstallConfirmTitle(String appName);
+
+  /// No description provided for @appCenterUninstallConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to uninstall {appName}? Containers will be removed, but your application data directory will be preserved.'**
+  String appCenterUninstallConfirmMessage(String appName);
+
+  /// No description provided for @appCenterUninstallKeepData.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall (Keep Data)'**
+  String get appCenterUninstallKeepData;
+
+  /// No description provided for @appCenterUninstallDeleteSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall & Delete Selected'**
+  String get appCenterUninstallDeleteSelected;
+
+  /// No description provided for @appCenterUninstallInspecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspecting application directories...'**
+  String get appCenterUninstallInspecting;
+
+  /// No description provided for @appCenterUninstallInspectionFailedWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory cleanup inspection failed. You can still uninstall application containers while safely keeping all data.'**
+  String get appCenterUninstallInspectionFailedWarning;
+
+  /// No description provided for @appCenterUninstallDirectoriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data directories and Docker volumes'**
+  String get appCenterUninstallDirectoriesTitle;
+
+  /// No description provided for @appCenterUninstallNoDirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'No bind mount data directories detected. Containers will be removed while preserving data.'**
+  String get appCenterUninstallNoDirectories;
+
+  /// No description provided for @appCenterUninstallDefaultPreservedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'All data is kept by default. Select only the directories or volumes you want to permanently delete.'**
+  String get appCenterUninstallDefaultPreservedHint;
+
+  /// No description provided for @appCenterUninstallPermanentLossWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected data will be permanently deleted from the server. There is no recycle bin.'**
+  String get appCenterUninstallPermanentLossWarning;
+
+  /// No description provided for @appCenterUninstallSelectedPathsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data to permanently delete:'**
+  String get appCenterUninstallSelectedPathsTitle;
+
+  /// No description provided for @appCenterUninstallRiskAck.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand the listed risks, including effects on other applications, and confirm permanent deletion of this data.'**
+  String get appCenterUninstallRiskAck;
+
+  /// No description provided for @remoteBrowserAllFileTypes.
+  ///
+  /// In en, this message translates to:
+  /// **'All formats'**
+  String get remoteBrowserAllFileTypes;
+
+  /// No description provided for @remoteBrowserDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Text and documents'**
+  String get remoteBrowserDocuments;
+
+  /// No description provided for @remoteBrowserFileFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'File format'**
+  String get remoteBrowserFileFormat;
+
+  /// No description provided for @appCenterUninstallRiskSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System path'**
+  String get appCenterUninstallRiskSystem;
+
+  /// No description provided for @appCenterUninstallRiskShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared with other applications'**
+  String get appCenterUninstallRiskShared;
+
+  /// No description provided for @appCenterUninstallRiskVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker volume'**
+  String get appCenterUninstallRiskVolume;
+
+  /// No description provided for @appCenterCleanupVolumeDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker volume deletion failed. Release references from other containers, inspect again and retry.'**
+  String get appCenterCleanupVolumeDeleteFailed;
+
+  /// No description provided for @appCenterCleanupPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied. Use an account with access to this data or sudo.'**
+  String get appCenterCleanupPermissionDenied;
+
+  /// No description provided for @appCenterCleanupCriticalPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Server root, runtime or management directory: application uninstall cannot remove this path.'**
+  String get appCenterCleanupCriticalPath;
+
+  /// No description provided for @appCenterUninstallTypeAppNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the exact application name to confirm permanent deletion: {appName}'**
+  String appCenterUninstallTypeAppNameHint(String appName);
+
+  /// No description provided for @appCenterUninstallRiskLegacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Unverified ownership'**
+  String get appCenterUninstallRiskLegacy;
+
+  /// No description provided for @appCenterUninstallRiskExternal.
+  ///
+  /// In en, this message translates to:
+  /// **'Outside app data root'**
+  String get appCenterUninstallRiskExternal;
+
+  /// No description provided for @appCenterUninstallRiskMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Media / read-only path'**
+  String get appCenterUninstallRiskMedia;
+
+  /// No description provided for @appCenterUninstallTargetBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected directory, cannot be deleted'**
+  String get appCenterUninstallTargetBlocked;
+
+  /// No description provided for @appCenterCleanupProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Data directory kept because it is protected or unsafe to remove'**
+  String get appCenterCleanupProtected;
+
+  /// No description provided for @appCenterCleanupUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup inspection is unavailable. You can still uninstall while preserving data.'**
+  String get appCenterCleanupUnavailable;
+
+  /// No description provided for @appCenterCleanupChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory or deployment target changed. Please inspect and confirm again.'**
+  String get appCenterCleanupChanged;
+
+  /// No description provided for @appCenterCleanupConfirmationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm selected directories, risks, and exact application name again'**
+  String get appCenterCleanupConfirmationRequired;
+
+  /// No description provided for @appCenterCleanupRetryUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup cannot be safely retried. Please inspect task details.'**
+  String get appCenterCleanupRetryUnavailable;
+
+  /// No description provided for @appCenterCleanupAlreadyAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory is already absent; no deletion required'**
+  String get appCenterCleanupAlreadyAbsent;
+
+  /// No description provided for @appCenterCleanupDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletion incomplete; some files may have already been removed. Inspect remaining paths.'**
+  String get appCenterCleanupDeleteFailed;
+
+  /// No description provided for @appCenterCleanupUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup safety or result could not be confirmed. Inspect task and recheck before continuing.'**
+  String get appCenterCleanupUnconfirmed;
+
+  /// No description provided for @appCenterCleanupRetryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry remaining data cleanup for {appName}?'**
+  String appCenterCleanupRetryTitle(String appName);
+
+  /// No description provided for @appCenterCleanupRetryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Application is already uninstalled. Select only unfinished data directories; retry will not uninstall it again.'**
+  String get appCenterCleanupRetryDescription;
+
+  /// No description provided for @appCenterCleanupRetrySelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected remaining data'**
+  String get appCenterCleanupRetrySelected;
+
+  /// No description provided for @appCenterCleanupResultsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory cleanup results'**
+  String get appCenterCleanupResultsTitle;
+
+  /// No description provided for @appCenterCleanupPartialSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Application uninstalled; some data was not fully cleared.'**
+  String get appCenterCleanupPartialSummary;
+
+  /// No description provided for @appCenterCleanupPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Not confirmed complete'**
+  String get appCenterCleanupPending;
+
+  /// No description provided for @appCenterCleanupRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed'**
+  String get appCenterCleanupRemoved;
+
+  /// No description provided for @appCenterCleanupRetained.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept'**
+  String get appCenterCleanupRetained;
+
+  /// No description provided for @appCenterCleanupRetryAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry remaining data cleanup'**
+  String get appCenterCleanupRetryAction;
+
+  /// No description provided for @appCenterJellyfinSoftwareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Software decoding mode'**
+  String get appCenterJellyfinSoftwareTitle;
+
+  /// No description provided for @appCenterJellyfinSoftwareDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Disables GPU transcoding, removes reviewed GPU device mappings, and mounts /Media as read-only.'**
+  String get appCenterJellyfinSoftwareDesc;
+
+  /// No description provided for @appCenterJellyfinProfileUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Software decoding profile is unavailable for this template'**
+  String get appCenterJellyfinProfileUnavailable;
+
+  /// No description provided for @appCenterJellyfinSoftwareChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied profile changes:'**
+  String get appCenterJellyfinSoftwareChanges;
+
+  /// No description provided for @nasNativeInstallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Install Jellyfin (Native Package)'**
+  String get nasNativeInstallTitle;
+
+  /// No description provided for @nasNativeStepVerifyRepo.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify official signed repository'**
+  String get nasNativeStepVerifyRepo;
+
+  /// No description provided for @nasNativeStepPreventAutostart.
+  ///
+  /// In en, this message translates to:
+  /// **'Prevent unconfigured automatic service start'**
+  String get nasNativeStepPreventAutostart;
+
+  /// No description provided for @nasNativeStepInstallPackages.
+  ///
+  /// In en, this message translates to:
+  /// **'Install pinned signed packages'**
+  String get nasNativeStepInstallPackages;
+
+  /// No description provided for @nasNativeStepConfigureLoopback.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure localhost-only listener'**
+  String get nasNativeStepConfigureLoopback;
+
+  /// No description provided for @nasNativeStageInstalling.
+  ///
+  /// In en, this message translates to:
+  /// **'Installing Pinned Packages'**
+  String get nasNativeStageInstalling;
+
+  /// No description provided for @nasNativeStageStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting Systemd Service'**
+  String get nasNativeStageStarting;
+
+  /// No description provided for @nasNativeGuidanceMediaAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions and ownership of media files remain unchanged; ensure Jellyfin service user has read access.'**
+  String get nasNativeGuidanceMediaAccess;
+
+  /// No description provided for @nasNativeGuidanceNoUpgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing Jellyfin installations will not be adopted, mutated, or upgraded.'**
+  String get nasNativeGuidanceNoUpgrade;
+
+  /// No description provided for @nasNativeSupportedRequirements.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires Debian or Ubuntu (amd64/arm64) with systemd and root or passwordless sudo.'**
+  String get nasNativeSupportedRequirements;
+
+  /// No description provided for @nasNativeExistingInstallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing Jellyfin Installation Detected'**
+  String get nasNativeExistingInstallTitle;
+
+  /// No description provided for @nasNativeExistingInstallExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'An existing installation was found on this server. Valhalla will not modify or reinstall it. Verify its connection directly.'**
+  String get nasNativeExistingInstallExplanation;
+
+  /// No description provided for @nasNativeCancelExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancellation requested at safe checkpoint. In-flight package operations will finish safely.'**
+  String get nasNativeCancelExplanation;
+
+  /// No description provided for @nasNativeMediaPathLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Media Directory Path'**
+  String get nasNativeMediaPathLabel;
+
+  /// No description provided for @nasNativeMediaPathHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing absolute server path (e.g. /media/library). Permissions remain unchanged.'**
+  String get nasNativeMediaPathHint;
+
+  /// No description provided for @nasNativeSudoRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Root or passwordless sudo access is required to install system packages'**
+  String get nasNativeSudoRequired;
+
+  /// No description provided for @appCenterLogsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{appName} Logs'**
+  String appCenterLogsTitle(String appName);
+
+  /// No description provided for @appCenterLogsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs recorded for this deployment'**
+  String get appCenterLogsEmpty;
+
+  /// No description provided for @appCenterLogsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs copied to clipboard'**
+  String get appCenterLogsCopied;
+
+  /// No description provided for @appCenterTaskStageQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get appCenterTaskStageQueued;
+
+  /// No description provided for @appCenterTaskStagePreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get appCenterTaskStagePreparing;
+
+  /// No description provided for @appCenterTaskStagePulling.
+  ///
+  /// In en, this message translates to:
+  /// **'Pulling images'**
+  String get appCenterTaskStagePulling;
+
+  /// No description provided for @appCenterTaskStageApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying configuration'**
+  String get appCenterTaskStageApplying;
+
+  /// No description provided for @appCenterTaskStageChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying health'**
+  String get appCenterTaskStageChecking;
+
+  /// No description provided for @appCenterTaskStageSucceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Succeeded'**
+  String get appCenterTaskStageSucceeded;
+
+  /// No description provided for @appCenterTaskStageFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get appCenterTaskStageFailed;
+
+  /// No description provided for @appCenterTaskStageCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get appCenterTaskStageCancelled;
+
+  /// No description provided for @appCenterTaskStageNeedsInspection.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs Inspection'**
+  String get appCenterTaskStageNeedsInspection;
+
+  /// No description provided for @appCenterCancelTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Task'**
+  String get appCenterCancelTask;
+
+  /// No description provided for @appCenterCopyLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Log'**
+  String get appCenterCopyLog;
+
+  /// No description provided for @appCenterErrorNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Server is not connected'**
+  String get appCenterErrorNotConnected;
+
+  /// No description provided for @appCenterErrorEnvironmentRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker environment check required'**
+  String get appCenterErrorEnvironmentRequired;
+
+  /// No description provided for @appCenterErrorPlanExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Deployment plan expired or invalid'**
+  String get appCenterErrorPlanExpired;
+
+  /// No description provided for @appCenterErrorTargetChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Target server changed; operation cancelled'**
+  String get appCenterErrorTargetChanged;
+
+  /// No description provided for @appCenterErrorConfigInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid application configuration'**
+  String get appCenterErrorConfigInvalid;
+
+  /// No description provided for @appCenterErrorPathInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'{field} must be an absolute path other than root (/), and cannot contain . or .. segments'**
+  String appCenterErrorPathInvalid(String field);
+
+  /// No description provided for @appCenterErrorSourceInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid application store source'**
+  String get appCenterErrorSourceInvalid;
+
+  /// No description provided for @appCenterErrorNoWebEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'This application does not provide a web interface'**
+  String get appCenterErrorNoWebEntry;
+
+  /// No description provided for @appCenterErrorHttpsDirectRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTPS endpoint cannot be tunneled via SSH; please open directly'**
+  String get appCenterErrorHttpsDirectRequired;
+
+  /// No description provided for @appCenterErrorOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to launch application URL'**
+  String get appCenterErrorOpenFailed;
+
+  /// No description provided for @appCenterErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Application Center error: {error}'**
+  String appCenterErrorGeneric(String error);
+
+  /// No description provided for @appCenterSourceCommunityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Community Store'**
+  String get appCenterSourceCommunityHint;
+
+  /// No description provided for @appCenterSourceUrlInvalidHttps.
+  ///
+  /// In en, this message translates to:
+  /// **'Must be a valid HTTPS URL'**
+  String get appCenterSourceUrlInvalidHttps;
+
+  /// No description provided for @appCenterDirectUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct URL'**
+  String get appCenterDirectUrlLabel;
+
+  /// No description provided for @appCenterErrorSourceRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Application source is no longer available in catalog. Cannot update template.'**
+  String get appCenterErrorSourceRemoved;
+
+  /// No description provided for @appCenterRestoreConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore {appName}?'**
+  String appCenterRestoreConfirmTitle(String appName);
+
+  /// No description provided for @appCenterRestoreConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore {appName} to its previous deployment configuration?'**
+  String appCenterRestoreConfirmMessage(String appName);
+
+  /// No description provided for @appCenterHostPortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Host Port (-> {target})'**
+  String appCenterHostPortLabel(String target);
+
+  /// No description provided for @appCenterHostMountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Host: {target}'**
+  String appCenterHostMountLabel(String target);
+
+  /// No description provided for @appCenterVersionLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'latest'**
+  String get appCenterVersionLatest;
+
+  /// No description provided for @appCenterWaitingForLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for task logs...'**
+  String get appCenterWaitingForLogs;
+
+  /// No description provided for @appCenterNoPreviewAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No preview available'**
+  String get appCenterNoPreviewAvailable;
+
+  /// No description provided for @appCenterBlockerLocalDockerRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Docker daemon required (remote DOCKER_HOST not supported)'**
+  String get appCenterBlockerLocalDockerRequired;
+
+  /// No description provided for @appCenterBlockerToolsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing required tools on server (bash, setsid, flock, base64, realpath, ss, awk)'**
+  String get appCenterBlockerToolsRequired;
+
+  /// No description provided for @appCenterBlockerLinuxRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Linux operating system required'**
+  String get appCenterBlockerLinuxRequired;
+
+  /// No description provided for @appCenterBlockerTemplateUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported template feature: {feature}'**
+  String appCenterBlockerTemplateUnsupported(String feature);
+
+  /// No description provided for @appCenterFieldRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get appCenterFieldRequired;
+
+  /// No description provided for @appCenterContinueInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Installation'**
+  String get appCenterContinueInstall;
+
+  /// No description provided for @appCenterOperation.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation'**
+  String get appCenterOperation;
+
+  /// No description provided for @nasTabLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get nasTabLibrary;
+
+  /// No description provided for @nasContinueWatching.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Watching'**
+  String get nasContinueWatching;
+
+  /// No description provided for @nasRecentPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Photos'**
+  String get nasRecentPhotos;
+
+  /// No description provided for @nasRecentVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Videos'**
+  String get nasRecentVideos;
+
+  /// No description provided for @nasRecentMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Music'**
+  String get nasRecentMusic;
+
+  /// No description provided for @nasDownloadPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get nasDownloadPaused;
+
+  /// No description provided for @nasDownloadDeleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Offline File'**
+  String get nasDownloadDeleteConfirmTitle;
+
+  /// No description provided for @nasDownloadDeleteConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will delete the local downloaded file from your device. The original file on the remote server will not be deleted.'**
+  String get nasDownloadDeleteConfirmMessage;
+
+  /// No description provided for @nasDownloadDeleteConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Offline Copy'**
+  String get nasDownloadDeleteConfirmButton;
+
+  /// No description provided for @nasDownloadSourceChangedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The remote source configuration has changed since this download started. Would you like to restart the download from the beginning?'**
+  String get nasDownloadSourceChangedMessage;
+
+  /// No description provided for @nasDownloadRestartFromScratch.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart from Beginning'**
+  String get nasDownloadRestartFromScratch;
+
+  /// No description provided for @nasDownloadErrorSourceChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Source configuration changed'**
+  String get nasDownloadErrorSourceChanged;
+
+  /// No description provided for @nasDownloadErrorOfflineFileInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded file is corrupted or incomplete'**
+  String get nasDownloadErrorOfflineFileInvalid;
+
+  /// No description provided for @nasDownloadErrorStorageFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to write download to storage'**
+  String get nasDownloadErrorStorageFailed;
+
+  /// No description provided for @nasDownloadErrorHlsUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline download is not supported for streaming streams'**
+  String get nasDownloadErrorHlsUnsupported;
+
+  /// No description provided for @nasDownloadErrorPathInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Download storage path is invalid'**
+  String get nasDownloadErrorPathInvalid;
+
+  /// No description provided for @nasOpenInApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in App'**
+  String get nasOpenInApp;
+
+  /// No description provided for @nasOpenSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Open with System'**
+  String get nasOpenSystem;
+
+  /// No description provided for @sftpRecentDirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Directories'**
+  String get sftpRecentDirectories;
+
+  /// No description provided for @sftpNoRecentDirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent directories'**
+  String get sftpNoRecentDirectories;
+
+  /// No description provided for @sftpRetryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Failed'**
+  String get sftpRetryFailed;
+
+  /// No description provided for @appCenterDiskCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify available disk space on server'**
+  String get appCenterDiskCheckFailed;
+
+  /// No description provided for @appCenterDiskFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Server disk is full; cannot proceed with operation'**
+  String get appCenterDiskFull;
+
+  /// No description provided for @appCenterHealthInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Container healthcheck failed or reported invalid state'**
+  String get appCenterHealthInvalid;
+
+  /// No description provided for @appCenterPreflightSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Preflight Summary'**
+  String get appCenterPreflightSummary;
+
+  /// No description provided for @appCenterMeasuredAvailableSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Available Disk Space'**
+  String get appCenterMeasuredAvailableSpace;
+
+  /// No description provided for @appCenterUpdateComparison.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Comparison'**
+  String get appCenterUpdateComparison;
+
+  /// No description provided for @appCenterNoChangesDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'No structural changes detected'**
+  String get appCenterNoChangesDetected;
+
+  /// No description provided for @appCenterSectionImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Container Image'**
+  String get appCenterSectionImage;
+
+  /// No description provided for @appCenterSectionPorts.
+  ///
+  /// In en, this message translates to:
+  /// **'Port Mappings'**
+  String get appCenterSectionPorts;
+
+  /// No description provided for @appCenterSectionVolumes.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Mounts'**
+  String get appCenterSectionVolumes;
+
+  /// No description provided for @appCenterSectionEnvironment.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment Variables'**
+  String get appCenterSectionEnvironment;
+
+  /// No description provided for @appCenterSectionHealthcheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Check'**
+  String get appCenterSectionHealthcheck;
+
+  /// No description provided for @appCenterSectionRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart Policy'**
+  String get appCenterSectionRestart;
+
+  /// No description provided for @appCenterSectionServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Services'**
+  String get appCenterSectionServices;
+
+  /// No description provided for @appCenterHealthNoCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'No health check'**
+  String get appCenterHealthNoCheck;
+
+  /// No description provided for @appCenterHealthHealthy.
+  ///
+  /// In en, this message translates to:
+  /// **'Healthy'**
+  String get appCenterHealthHealthy;
+
+  /// No description provided for @appCenterHealthUnhealthy.
+  ///
+  /// In en, this message translates to:
+  /// **'Unhealthy'**
+  String get appCenterHealthUnhealthy;
+
+  /// No description provided for @appCenterHealthStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting'**
+  String get appCenterHealthStarting;
+
+  /// No description provided for @appCenterNoSources.
+  ///
+  /// In en, this message translates to:
+  /// **'No application sources enabled'**
+  String get appCenterNoSources;
+
+  /// No description provided for @appCenterNoMatchingApps.
+  ///
+  /// In en, this message translates to:
+  /// **'No applications match your search or filters'**
+  String get appCenterNoMatchingApps;
+
+  /// No description provided for @appCenterClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Filters'**
+  String get appCenterClearFilters;
+
+  /// No description provided for @appCenterSourceLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load application source'**
+  String get appCenterSourceLoadFailed;
+
+  /// No description provided for @appCenterRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get appCenterRetry;
+
+  /// No description provided for @appCenterRecheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Recheck'**
+  String get appCenterRecheck;
+
+  /// No description provided for @appCenterRecheckTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Recheck Task Status'**
+  String get appCenterRecheckTask;
+
+  /// No description provided for @appCenterTaskNeedsInspectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Task outcome unknown'**
+  String get appCenterTaskNeedsInspectionTitle;
+
+  /// No description provided for @appCenterTaskNeedsInspectionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The task outcome on the server is unknown. Please recheck task status or inspect logs before retrying.'**
+  String get appCenterTaskNeedsInspectionMessage;
+
+  /// No description provided for @appCenterStopConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop {appName}?'**
+  String appCenterStopConfirmTitle(String appName);
+
+  /// No description provided for @appCenterStopConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to stop {appName} on server {serverName}? Running containers will be stopped.'**
+  String appCenterStopConfirmMessage(String appName, String serverName);
+
+  /// No description provided for @appCenterRestartConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart {appName}?'**
+  String appCenterRestartConfirmTitle(String appName);
+
+  /// No description provided for @appCenterRestartConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to restart {appName} on server {serverName}?'**
+  String appCenterRestartConfirmMessage(String appName, String serverName);
+
+  /// No description provided for @appCenterBrowseStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse App Store'**
+  String get appCenterBrowseStore;
+
+  /// No description provided for @appCenterViewTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'View Tasks'**
+  String get appCenterViewTasks;
+
+  /// No description provided for @appCenterViewInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'View Installed App'**
+  String get appCenterViewInstalled;
+
+  /// No description provided for @appCenterRunInBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Run in Background'**
+  String get appCenterRunInBackground;
+
+  /// No description provided for @appCenterTaskDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Details'**
+  String get appCenterTaskDetails;
+
+  /// No description provided for @appCenterTaskTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get appCenterTaskTarget;
+
+  /// No description provided for @appCenterTaskDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory'**
+  String get appCenterTaskDirectory;
+
+  /// No description provided for @appCenterTaskCreatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Created At'**
+  String get appCenterTaskCreatedAt;
+
+  /// No description provided for @appCenterTaskExitCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit code: {code}'**
+  String appCenterTaskExitCode(int code);
+
+  /// No description provided for @appCenterStatusRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get appCenterStatusRunning;
+
+  /// No description provided for @appCenterStatusStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get appCenterStatusStopped;
+
+  /// No description provided for @appCenterStatusInstalling.
+  ///
+  /// In en, this message translates to:
+  /// **'Installing'**
+  String get appCenterStatusInstalling;
+
+  /// No description provided for @appCenterStatusUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get appCenterStatusUnknown;
+
+  /// No description provided for @appCenterEnvReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker & Compose Ready'**
+  String get appCenterEnvReady;
+
+  /// No description provided for @appCenterEnvNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker Environment Not Ready'**
+  String get appCenterEnvNotReady;
+
+  /// No description provided for @appCenterEnvInspecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspecting Docker environment...'**
+  String get appCenterEnvInspecting;
+
+  /// No description provided for @appCenterUninstallWholeDataRoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole Data Root'**
+  String get appCenterUninstallWholeDataRoot;
+
+  /// No description provided for @appCenterUninstallWholeDataRootWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This includes unmounted files and subdirectories stored under the application data root.'**
+  String get appCenterUninstallWholeDataRootWarning;
+
+  /// No description provided for @appCenterUninstallCoveredByParent.
+  ///
+  /// In en, this message translates to:
+  /// **'Covered by parent directory'**
+  String get appCenterUninstallCoveredByParent;
+
+  /// No description provided for @appCenterContainerNameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Instance name must start with an alphanumeric character and contain only letters, numbers, underscores, periods, and hyphens (up to 120 characters).'**
+  String get appCenterContainerNameInvalid;
+
+  /// No description provided for @appCenterMainService.
+  ///
+  /// In en, this message translates to:
+  /// **'Main Service'**
+  String get appCenterMainService;
+
+  /// No description provided for @appCenterContainerNamesPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Container names preview'**
+  String get appCenterContainerNamesPreview;
+
+  /// No description provided for @appCenterContainersRecreationNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing instance container names will recreate the existing application containers.'**
+  String get appCenterContainersRecreationNotice;
+
+  /// No description provided for @remoteBrowserTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Browser'**
+  String get remoteBrowserTitle;
+
+  /// No description provided for @remoteBrowserSelectDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Directory'**
+  String get remoteBrowserSelectDirectory;
+
+  /// No description provided for @remoteBrowserSelectCurrentDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Current Directory'**
+  String get remoteBrowserSelectCurrentDirectory;
+
+  /// No description provided for @remoteBrowserSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search files and folders...'**
+  String get remoteBrowserSearchHint;
+
+  /// No description provided for @remoteBrowserNoEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching files or directories found'**
+  String get remoteBrowserNoEntries;
+
+  /// No description provided for @remoteBrowserEmptyDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'This directory is empty'**
+  String get remoteBrowserEmptyDirectory;
+
+  /// No description provided for @remoteBrowserSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item selected} other{{count} items selected}}'**
+  String remoteBrowserSelectedCount(int count);
+
+  /// No description provided for @remoteBrowserParentDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Parent Directory'**
+  String get remoteBrowserParentDirectory;
+
+  /// No description provided for @remoteBrowserLibrariesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Media Libraries'**
+  String get remoteBrowserLibrariesTitle;
+
+  /// No description provided for @remoteBrowserDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote connection lost or unavailable.'**
+  String get remoteBrowserDisconnected;
+
+  /// No description provided for @remoteBrowserTargetChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Target environment or active server changed.'**
+  String get remoteBrowserTargetChanged;
+
+  /// No description provided for @remoteBrowserPathInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The requested path is invalid or cannot be accessed.'**
+  String get remoteBrowserPathInvalid;
+
+  /// No description provided for @remoteBrowserPathOutsideRoot.
+  ///
+  /// In en, this message translates to:
+  /// **'The requested path is outside the allowed root directory.'**
+  String get remoteBrowserPathOutsideRoot;
+
+  /// No description provided for @remoteBrowserEntryUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected entry is unavailable or invalid.'**
+  String get remoteBrowserEntryUnavailable;
+
+  /// No description provided for @nasBrowseUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'NAS browse service is currently unavailable.'**
+  String get nasBrowseUnavailable;
+
+  /// No description provided for @nasInvalidDirectoryEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid directory entry encountered while browsing NAS.'**
+  String get nasInvalidDirectoryEntry;
+
+  /// No description provided for @nasInvalidLibraryResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid or malformed media library response.'**
+  String get nasInvalidLibraryResponse;
+
+  /// No description provided for @nasScanFilterUnresolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to resolve scan filter path.'**
+  String get nasScanFilterUnresolved;
+
+  /// No description provided for @nasSourceSaveIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'A previous source save only partially persisted. Please re-enter credentials and save successfully before browsing.'**
+  String get nasSourceSaveIncomplete;
 }
 
 class _AppLocalizationsDelegate

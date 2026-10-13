@@ -51,6 +51,21 @@ class AppDiagnostics {
     }
   }
 
+  /// Callers supply fixed operation/outcome labels, never targets or contents.
+  Future<void> recordTiming(
+    String operation,
+    Stopwatch elapsed, {
+    required String outcome,
+    int? count,
+  }) {
+    elapsed.stop();
+    return record(
+      'timing.$operation',
+      'durationMs=${elapsed.elapsedMilliseconds} outcome=$outcome'
+          '${count == null ? '' : ' count=$count'}',
+    );
+  }
+
   /// Queue size is bounded too: an error storm cannot retain unlimited stacks.
   Future<void> record(String source, Object error, [StackTrace? stack]) {
     if (_queued >= 32 || _directory == null) {

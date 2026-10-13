@@ -448,13 +448,13 @@ void main() {
   });
 
   group('Group 4: 底部 NavigationBar 目的地与索引边界防护', () {
-    testWidgets('底栏恰好 4 个目的地且不包含 more_horiz', (tester) async {
+    testWidgets('默认底栏 5 个目的地且不包含 more_horiz', (tester) async {
       await _pumpShell(tester, size: const Size(580, 1000));
 
       final navBar = tester.widget<MainBottomNavigationBar>(
         find.byType(MainBottomNavigationBar),
       );
-      expect(navBar.sections, hasLength(4));
+      expect(navBar.sections, defaultBottomNavigationSections);
       expect(find.byIcon(Icons.more_horiz), findsNothing);
     });
 

@@ -347,8 +347,11 @@ class TerminalSessionBridge {
       _stdoutSub = const Utf8Decoder(allowMalformed: true)
           .bind(_sshSession!.stdout)
           .listen(
-            terminal.write,
+            (data) {
+              if (current()) terminal.write(data);
+            },
             onError: (err) {
+              if (!current()) return;
               terminal.write(
                 '\r\n\x1b[31m[SSH Session Error: $err]\x1b[0m\r\n',
               );
@@ -356,6 +359,7 @@ class TerminalSessionBridge {
               _setState(TerminalConnectionState.error);
             },
             onDone: () {
+              if (!current()) return;
               terminal.write(
                 '\r\n\x1b[33m[SSH Connection Closed by Remote Host]\x1b[0m\r\n',
               );
@@ -364,32 +368,58 @@ class TerminalSessionBridge {
             },
           );
 
-      _stderrSub = const Utf8Decoder(
-        allowMalformed: true,
-      ).bind(_sshSession!.stderr).listen(terminal.write, onError: (Object error, StackTrace stack) {
-        if (!current()) return;
-        unawaited(AppDiagnostics.instance.record('terminal.stderr', error, stack));
-        _isSessionOpen = false;
-        _setState(TerminalConnectionState.error);
-      });
+      _stderrSub = const Utf8Decoder(allowMalformed: true)
+          .bind(session.stderr)
+          .listen(
+            (data) {
+              if (current()) terminal.write(data);
+            },
+            onError: (Object error, StackTrace stack) {
+              if (!current()) return;
+              unawaited(
+                AppDiagnostics.instance.record('terminal.stderr', error, stack),
+              );
+              _isSessionOpen = false;
+              _setState(TerminalConnectionState.error);
+            },
+          );
 
       terminal.onOutput = (String data) {
-        if (_sshSession != null && _isSessionOpen) {
-          _sshSession!.stdin.add(utf8.encode(data));
+        if (current() && identical(_sshSession, session) && _isSessionOpen) {
+          try {
+            session.stdin.add(utf8.encode(data));
+          } catch (error, stack) {
+            unawaited(
+              AppDiagnostics.instance.record('terminal.input', error, stack),
+            );
+            _isSessionOpen = false;
+            _setState(TerminalConnectionState.error);
+          }
         }
       };
 
       terminal.onResize = (int w, int h, int pw, int ph) {
-        if (w <= 0 || h <= 0) return;
+        if (!current() || w <= 0 || h <= 0) return;
         _lastWidth = w;
         _lastHeight = h;
         _resizeTimer?.cancel();
         final size = (w, h, pw, ph);
         if (size == _sentSize || !_isSessionOpen) return;
         _resizeTimer = Timer(const Duration(milliseconds: 75), () {
-          if (_sshSession != null && _isSessionOpen && size != _sentSize) {
-            _sshSession!.resizeTerminal(w, h, pw, ph);
-            _sentSize = size;
+          if (current() &&
+              identical(_sshSession, session) &&
+              _isSessionOpen &&
+              size != _sentSize) {
+            try {
+              session.resizeTerminal(w, h, pw, ph);
+              _sentSize = size;
+            } catch (error, stack) {
+              unawaited(
+                AppDiagnostics.instance.record('terminal.resize', error, stack),
+              );
+              _isSessionOpen = false;
+              _setState(TerminalConnectionState.error);
+            }
           }
         });
       };

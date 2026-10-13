@@ -6,6 +6,8 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valhalla/data/models/agent_profile.dart';
 import 'package:valhalla/infrastructure/acp/acp_workspace_files.dart';
+import 'package:valhalla/core/services/remote_browser_service.dart';
+import 'package:valhalla/data/models/remote_browser.dart';
 
 /// 远端工作目录读取的边界回归测试。
 ///
@@ -182,6 +184,124 @@ void main() {
       expect(items.map((item) => item.name), ['good']);
     });
 
+    test('目录链接可进入，文件链接可读，断链不可选且 alias 路径保留', () async {
+      client.setStdout(
+        'find',
+        utf8.encode(
+          'album-link\u0000ld\u000012\u0000100\u0000'
+          'file-link.png\u0000lf\u000013\u0000100\u0000'
+          'broken\u0000lN\u000014\u0000100\u0000'
+          'loop\u0000lL\u000015\u0000100\u0000'
+          'regular\u0000ff\u000016\u0000100\u0000',
+        ),
+      );
+      final items = await files.list('/workspace');
+      expect(items.first.name, 'album-link');
+      expect(items.first.path, '/workspace/album-link');
+      expect(items.first.isDirectory, isTrue);
+      expect(items.first.isSymbolicLink, isTrue);
+      expect(remoteBrowserEntryFromSftp(items.first).canEnter, isTrue);
+      expect(
+        remoteBrowserEntryFromSftp(
+          items.firstWhere((item) => item.name == 'file-link.png'),
+        ).selectable,
+        isTrue,
+      );
+      for (final name in ['broken', 'loop']) {
+        final item = items.firstWhere((item) => item.name == name);
+        expect(item.isSymbolicLink, isTrue);
+        expect(remoteBrowserEntryFromSftp(item).selectable, isFalse);
+      }
+      expect(client.commands.single, contains('find -H'));
+      expect(client.commands.single, contains('%y%Y'));
+    });
+
+    test('Docker 浏览在所选容器用户中执行，不启动 ACP 或 CLI 会话', () async {
+      final profile = dockerProfile().copyWith(containerUser: 'dev');
+      final source = await agentRemoteBrowser(
+        client: client,
+        profile: profile,
+        targetKey: 'fixture-target',
+        initialPath: '/workspace',
+        isCurrent: () => true,
+      );
+      client.setStdout('find', utf8.encode(record('src', directory: true)));
+      final result = await source.list('/workspace').toList();
+      expect(result.single.single.id, '/workspace/src');
+      expect(client.commands.single, startsWith('docker exec -i'));
+      expect(client.commands.single, contains("--user 'dev'"));
+      expect(client.commands.single, contains("'valhalla-agent'"));
+      expect(client.commands.single, isNot(contains('--stdio')));
+      await source.dispose();
+      expect(client.closes, 0);
+    });
+
+    test('取消一项 Docker 目录读取不关闭另一项读取、图片预览或 SSH', () async {
+      final target = _HoldingClient();
+      final source = await agentRemoteBrowser(
+        client: target,
+        profile: dockerProfile(),
+        targetKey: 'target',
+        initialPath: '/workspace',
+        isCurrent: () => true,
+      );
+      final first = source.list('/first').listen((_) {});
+      final second = source.list('/second').listen((_) {});
+      final preview = source.preview(
+        const RemoteBrowserEntry(
+          id: '/photo.png',
+          name: 'photo.png',
+          isDirectory: false,
+          mimeType: 'image/png',
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(target.sessions, hasLength(3));
+      final firstSession = target.sessions.entries
+          .firstWhere((entry) => entry.key.contains('/first'))
+          .value;
+      final secondSession = target.sessions.entries
+          .firstWhere((entry) => entry.key.contains('/second'))
+          .value;
+      final previewSession = target.sessions.entries
+          .firstWhere((entry) => entry.key.contains('head -c'))
+          .value;
+      await first.cancel().timeout(const Duration(milliseconds: 500));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(firstSession.closed, isTrue);
+      expect(secondSession.closed, isFalse);
+      expect(previewSession.closed, isFalse);
+      previewSession.finish(Uint8List.fromList([1, 2, 3]));
+      expect(await preview, [1, 2, 3]);
+      await source.dispose().timeout(const Duration(milliseconds: 500));
+      await second.cancel();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(secondSession.closed, isTrue);
+      expect(target.closes, 0);
+    });
+
+    test('迟到的 SSH execute 通道在目录取消后关闭而不是泄漏', () async {
+      final target = _HoldingClient()..opening = Completer<SSHSession>();
+      final source = await agentRemoteBrowser(
+        client: target,
+        profile: dockerProfile(),
+        targetKey: 'target',
+        initialPath: '/workspace',
+        isCurrent: () => true,
+      );
+      final errors = <Object>[];
+      final sub = source.list('/late').listen((_) {}, onError: errors.add);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await sub.cancel().timeout(const Duration(milliseconds: 500));
+      final late = _HoldingSession();
+      target.opening!.complete(late);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(late.closed, isTrue);
+      expect(errors, isEmpty);
+      await source.dispose();
+      expect(target.closes, 0);
+    });
+
     test('非法路径在发起任何远端命令之前就被拒绝', () async {
       await expectLater(
         files.list('relative/path'),
@@ -242,11 +362,71 @@ void main() {
   });
 }
 
+class _HoldingClient extends Fake implements SSHClient {
+  final sessions = <String, _HoldingSession>{};
+  Completer<SSHSession>? opening;
+  int closes = 0;
+  @override
+  bool get isClosed => false;
+  @override
+  Future<void> close() async {
+    closes++;
+  }
+
+  @override
+  Future<SSHSession> execute(
+    String command, {
+    SSHPtyConfig? pty,
+    SSHX11Config? x11,
+    Map<String, String>? environment,
+  }) async {
+    if (opening != null) return opening!.future;
+    final session = _HoldingSession();
+    sessions[command] = session;
+    return session;
+  }
+}
+
+class _HoldingSession extends Fake implements SSHSession {
+  final output = StreamController<Uint8List>();
+  final errors = StreamController<Uint8List>();
+  final completed = Completer<void>();
+  bool closed = false;
+  @override
+  Stream<Uint8List> get stdout => output.stream;
+  @override
+  Stream<Uint8List> get stderr => errors.stream;
+  @override
+  Future<void> get done => completed.future;
+  @override
+  int? get exitCode => 0;
+  void finish(Uint8List bytes) {
+    output.add(bytes);
+    close();
+  }
+
+  @override
+  void close() {
+    if (closed) return;
+    closed = true;
+    unawaited(output.close());
+    unawaited(errors.close());
+    completed.complete();
+  }
+}
+
 /// 记录命令并按关键字返回可配置输出的最小 SSH 客户端。
 class _FakeExecClient implements SSHClient {
   final List<String> commands = [];
   final Map<String, Uint8List> _stdout = {};
   int exitCode = 0;
+  int closes = 0;
+  @override
+  bool get isClosed => false;
+  @override
+  Future<void> close() async {
+    closes++;
+  }
 
   /// `pwd -P` 的输出，单独配置。
   Uint8List pwdOutput = Uint8List(0);

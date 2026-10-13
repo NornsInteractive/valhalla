@@ -8,6 +8,7 @@ import 'package:valhalla/data/storage/local_storage_service.dart';
 
 const _bottomNavigationKey = 'valhalla_bottom_navigation_v1';
 const _migrationFlagKey = 'valhalla_navigation_acp_v2';
+const _appCenterMigrationFlagKey = 'valhalla_navigation_app_center_v3';
 
 /// 本轮导航默认值的读时迁移 + ACP 会话偏好隔离。
 void main() {
@@ -42,6 +43,7 @@ void main() {
         'aiChat',
         'docker',
         'files',
+        'appCenter',
       ]);
       expect(
         containerWith(storage).read(settingsProvider).bottomNavigationSections,
@@ -50,6 +52,7 @@ void main() {
           AppSection.aiChat,
           AppSection.docker,
           AppSection.files,
+          AppSection.appCenter,
         ],
       );
     });
@@ -116,6 +119,109 @@ void main() {
         'docker',
         'files',
       ]);
+    });
+
+    test('已保存的旧 ACP 默认菜单升级后追加应用中心', () async {
+      final storage = await storageWith({
+        _migrationFlagKey: true,
+        _bottomNavigationKey: <String>[
+          'dashboard',
+          'aiChat',
+          'docker',
+          'files',
+        ],
+      });
+      expect(storage.getBottomNavigationSections(), [
+        'dashboard',
+        'aiChat',
+        'docker',
+        'files',
+        'appCenter',
+      ]);
+      expect(storage.exportConfigurationPreferences()[_bottomNavigationKey], [
+        'dashboard',
+        'aiChat',
+        'docker',
+        'files',
+        'appCenter',
+      ]);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getStringList(_bottomNavigationKey), [
+        'dashboard',
+        'aiChat',
+        'docker',
+        'files',
+      ]);
+    });
+
+    test('重新排序的旧菜单不被修改', () async {
+      final storage = await storageWith({
+        _bottomNavigationKey: <String>[
+          'aiChat',
+          'dashboard',
+          'docker',
+          'files',
+        ],
+      });
+      expect(storage.getBottomNavigationSections(), [
+        'aiChat',
+        'dashboard',
+        'docker',
+        'files',
+      ]);
+    });
+
+    test('移除应用中心后重建存储和设置不会再次加回', () async {
+      final storage = await storageWith({});
+      final container = containerWith(storage);
+      expect(
+        container.read(settingsProvider).visibleBottomNavigationSections,
+        contains(AppSection.appCenter),
+      );
+      await container
+          .read(settingsProvider.notifier)
+          .setBottomNavigationSections(const [
+            AppSection.dashboard,
+            AppSection.aiChat,
+            AppSection.docker,
+            AppSection.files,
+          ]);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool(_appCenterMigrationFlagKey), isTrue);
+      final reloaded = containerWith(LocalStorageService(prefs));
+      expect(reloaded.read(settingsProvider).visibleBottomNavigationSections, [
+        AppSection.dashboard,
+        AppSection.aiChat,
+        AppSection.docker,
+        AppSection.files,
+      ]);
+    });
+
+    test('导入用户明确保存的菜单不触发默认项追加', () async {
+      final storage = await storageWith({});
+      await storage.appendConfiguration(
+        servers: const [],
+        agents: const [],
+        commands: const [],
+        bookmarks: const {},
+        defaultAgents: const {},
+        preferences: const {
+          _bottomNavigationKey: <String>[
+            'dashboard',
+            'aiChat',
+            'docker',
+            'files',
+          ],
+        },
+      );
+      expect(storage.getBottomNavigationSections(), [
+        'dashboard',
+        'aiChat',
+        'docker',
+        'files',
+      ]);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool(_appCenterMigrationFlagKey), isTrue);
     });
   });
 

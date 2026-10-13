@@ -19,6 +19,7 @@ class NasImageCacheService {
   bool _running = false;
   bool _disposed = false;
   bool _clearing = false;
+  _ThumbnailWork? _activeWork;
   Future<void>? _pumpFuture;
   int _writes = 0;
   NasImageCacheService(this.adapterFor, this.budget);
@@ -62,8 +63,9 @@ class NasImageCacheService {
     if (_running) return;
     _running = true;
     try {
-      while (_queue.isNotEmpty && !_disposed) {
+      while (_queue.isNotEmpty && !_disposed && !_clearing) {
         final work = _queue.removeLast();
+        _activeWork = work;
         try {
           final path = await _load(work.item, work.key, work.cancellation);
           if (!work.result.isCompleted) work.result.complete(path);
@@ -73,6 +75,8 @@ class NasImageCacheService {
           }
         } finally {
           if (identical(_pending[work.key], work)) _pending.remove(work.key);
+          _activeWork = null;
+          if (!work.finished.isCompleted) work.finished.complete();
         }
       }
     } finally { _running = false; }
@@ -87,6 +91,7 @@ class NasImageCacheService {
     final target = File('${root.path}/$key.png');
     if (await target.exists()) {
       await target.setLastModified(DateTime.now());
+      await _recordOwner(target, item.sourceId);
       return target.path;
     }
     if (budget() <= 0) return null;
@@ -135,6 +140,10 @@ class NasImageCacheService {
           if (data == null || data.lengthInBytes > budget()) return null;
           cancellation.check();
           await target.writeAsBytes(data.buffer.asUint8List());
+          // Commit ownership even if cancellation arrives during the write, so
+          // a source-scoped clear can still identify this completed cache file.
+          await _recordOwner(target, item.sourceId);
+          cancellation.check();
         } finally {
           frame.image.dispose();
         }
@@ -154,7 +163,7 @@ class NasImageCacheService {
   Future<void> _prune(Directory root) async {
     final files = <(File, FileStat)>[];
     var total = 0;
-    await for (final entity in root.list()) {
+    await for (final entity in root.list(followLinks: false)) {
       if (entity is! File || !entity.path.endsWith('.png')) continue;
       final stat = await entity.stat();
       total += stat.size;
@@ -165,22 +174,79 @@ class NasImageCacheService {
     for (final file in files) {
       if (total <= budget() && count <= 2000) break;
       await file.$1.delete();
+      await _removeOwner(file.$1);
       total -= file.$2.size;
       count--;
     }
   }
 
-  Future<Map<String, int>> cacheUsage() async {
+  File _ownerFile(File thumbnail) => File('${thumbnail.path}.owner.json');
+
+  Future<void> _recordOwner(File thumbnail, String sourceId) async {
+    final file = _ownerFile(thumbnail);
+    if (await file.exists()) return;
+    final temporary = File('${file.path}.tmp');
+    await temporary.writeAsString(jsonEncode({'sourceId': sourceId}));
+    await temporary.rename(file.path);
+  }
+
+  Future<String> _owner(File thumbnail) async {
+    final file = _ownerFile(thumbnail);
+    if (await FileSystemEntity.type(file.path, followLinks: false) !=
+        FileSystemEntityType.file) {
+      return '';
+    }
+    if (await file.length() > 4096) return '';
+    try {
+      final value = jsonDecode(await file.readAsString());
+      final source = value is Map ? value['sourceId'] : null;
+      return source is String && source.isNotEmpty ? source : '';
+    } on FormatException {
+      return '';
+    }
+  }
+
+  Future<void> _removeOwner(File thumbnail) async {
+    final file = _ownerFile(thumbnail);
+    if (await FileSystemEntity.type(file.path, followLinks: false) ==
+        FileSystemEntityType.file) {
+      await file.delete();
+    }
+  }
+
+  /// The empty key represents pre-existing cache with unknown ownership.
+  Future<Map<String, Map<String, int>>> cacheUsageBySource() async {
     final root = Directory('${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2');
-    var bytes = 0;
-    var count = 0;
+    final usage = <String, Map<String, int>>{};
     if (await root.exists()) {
-      await for (final entity in root.list()) {
+      await for (final entity in root.list(followLinks: false)) {
         if (entity is File && entity.path.endsWith('.png')) {
-          bytes += await entity.length();
-          count++;
+          try {
+            final owner = await _owner(entity);
+            final size = await entity.length();
+            final entry = usage.putIfAbsent(owner, () => {'bytes': 0, 'count': 0});
+            entry['bytes'] = entry['bytes']! + size;
+            entry['count'] = entry['count']! + 1;
+          } on FileSystemException catch (error) {
+            if (error.osError?.errorCode != 2) rethrow;
+          }
         }
       }
+    }
+    return usage;
+  }
+
+  Future<Map<String, int>> cacheUsage({
+    String? sourceId,
+    bool legacyOnly = false,
+  }) async {
+    final usage = await cacheUsageBySource();
+    if (legacyOnly) return usage[''] ?? {'bytes': 0, 'count': 0};
+    if (sourceId != null) return usage[sourceId] ?? {'bytes': 0, 'count': 0};
+    var bytes = 0, count = 0;
+    for (final entry in usage.values) {
+      bytes += entry['bytes']!;
+      count += entry['count']!;
     }
     return {'bytes': bytes, 'count': count};
   }
@@ -190,18 +256,41 @@ class NasImageCacheService {
     if (await root.exists()) await _prune(root);
   }
 
-  Future<void> clearCache() async {
+  Future<void> clearCache({String? sourceId, bool legacyOnly = false}) async {
+    if (_clearing) throw StateError('NAS_CACHE_BUSY');
     _clearing = true;
     try {
-      for (final work in _pending.values.toList()) { _cancel(work); }
-      await _pumpFuture;
+      final active = _activeWork;
+      bool matches(_ThumbnailWork work) =>
+          !legacyOnly && (sourceId == null || work.item.sourceId == sourceId);
+      for (final work in _pending.values.toList()) {
+        if (matches(work)) _cancel(work);
+      }
+      // An active write must finish its ownership sidecar before legacy cleanup.
+      if (active != null) await active.finished.future;
       final root = Directory('${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2');
       if (await root.exists()) {
-        await for (final entity in root.list()) {
-          if (entity is File && entity.path.endsWith('.png')) await entity.delete();
+        await for (final entity in root.list(followLinks: false)) {
+          if (entity is! File || !entity.path.endsWith('.png')) continue;
+          try {
+            final owner = await _owner(entity);
+            if (legacyOnly ? owner.isNotEmpty : sourceId != null && owner != sourceId) {
+              continue;
+            }
+            await entity.delete();
+            await _removeOwner(entity);
+          } on FileSystemException catch (error) {
+            if (error.osError?.errorCode != 2) rethrow;
+          }
         }
       }
-    } finally { _clearing = false; }
+    } finally {
+      await _pumpFuture;
+      _clearing = false;
+      if (_queue.isNotEmpty && !_disposed) {
+        _pumpFuture ??= _pump().whenComplete(() => _pumpFuture = null);
+      }
+    }
   }
 
   void dispose() {
@@ -215,6 +304,7 @@ class _ThumbnailWork {
   final String key;
   final owners = <Object?>{};
   final result = Completer<String?>();
+  final finished = Completer<void>();
   final cancellation = NasCancellation();
   _ThumbnailWork(this.item, this.key, Object? owner) { owners.add(owner); }
 }

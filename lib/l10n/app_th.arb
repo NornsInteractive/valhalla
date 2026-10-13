@@ -1,5 +1,55 @@
 {
   "@@locale": "th",
+  "nasPlaylistLoadFailed": "ไม่สามารถโหลดเพลย์ลิสต์ได้ชั่วคราว ยังคงดูรายการสื่อที่บันทึกไว้ได้ โปรดรีเฟรชเพื่อลองอีกครั้ง",
+  "nasAllLibraries": "คลังทั้งหมด",
+  "nasNativeInstallTitle": "ติดตั้ง Jellyfin (แพ็กเกจเนทีฟ)",
+  "nasNativeStepVerifyRepo": "ตรวจสอบคลังแพ็กเกจทางการที่ลงลายเซ็น",
+  "nasNativeStepPreventAutostart": "ป้องกันบริการเริ่มอัตโนมัติก่อนตั้งค่าเสร็จ",
+  "nasNativeStepInstallPackages": "ติดตั้งแพ็กเกจที่ลงลายเซ็นและระบุรุ่นแน่นอน",
+  "nasNativeStepConfigureLoopback": "ตั้งค่าให้รับการเชื่อมต่อเฉพาะ localhost",
+  "nasNativeStageInstalling": "กำลังติดตั้งแพ็กเกจรุ่นที่กำหนด",
+  "nasNativeStageStarting": "กำลังเริ่มบริการ systemd",
+  "nasNativeGuidanceMediaAccess": "สิทธิ์และเจ้าของไฟล์สื่อจะไม่เปลี่ยนแปลง โปรดตรวจสอบว่าผู้ใช้บริการ Jellyfin มีสิทธิ์อ่าน",
+  "nasNativeGuidanceNoUpgrade": "จะไม่รับช่วงการจัดการ แก้ไข หรืออัปเกรด Jellyfin ที่ติดตั้งอยู่แล้ว",
+  "nasNativeSupportedRequirements": "ต้องใช้ Debian หรือ Ubuntu (amd64/arm64) พร้อม systemd และสิทธิ์ root หรือ sudo ที่ไม่ต้องใช้รหัสผ่าน",
+  "nasNativeExistingInstallTitle": "ตรวจพบ Jellyfin ที่ติดตั้งอยู่แล้ว",
+  "nasNativeExistingInstallExplanation": "เซิร์ฟเวอร์นี้ติดตั้ง Jellyfin อยู่แล้ว Valhalla จะไม่แก้ไขหรือติดตั้งใหม่ โปรดตรวจสอบการเชื่อมต่อโดยตรง",
+  "nasNativeCancelExplanation": "ส่งคำขอยกเลิกที่จุดตรวจสอบที่ปลอดภัยแล้ว การจัดการแพ็กเกจที่กำลังทำงานจะเสร็จสิ้นอย่างปลอดภัย",
+  "nasNativeMediaPathLabel": "พาธไดเรกทอรีสื่อ",
+  "nasNativeMediaPathHint": "พาธแบบเต็มที่มีอยู่บนเซิร์ฟเวอร์ (เช่น /media/library) สิทธิ์จะไม่เปลี่ยนแปลง",
+  "nasNativeSudoRequired": "ต้องมีสิทธิ์ root หรือ sudo ที่ไม่ต้องใช้รหัสผ่านเพื่อติดตั้งแพ็กเกจระบบ",
+  "nasDiagnosticsTitle": "การวินิจฉัยแหล่งสื่อ",
+  "nasDiagnosticsConnection": "การเชื่อมต่อ",
+  "nasDiagnosticsScan": "สแกนคลังสื่อ",
+  "nasDiagnosticsLastSuccess": "การเชื่อมต่อสำเร็จล่าสุด",
+  "nasDiagnosticsCredentials": "กำลังตรวจสอบข้อมูลรับรองที่บันทึกไว้",
+  "nasDiagnosticsFinalizing": "กำลังจัดทำดัชนีให้เสร็จสมบูรณ์",
+  "nasDiagnosticsNotChecked": "ยังไม่ได้ตรวจสอบ",
+  "nasCacheLegacy": "ภาพขนาดย่อเดิม (ยังไม่ผูกกับแหล่งสื่อ)",
+  "nasCacheGlobalBudget": "ขีดจำกัดพื้นที่ภาพขนาดย่อ (ทุกแหล่งสื่อ)",
+  "nasCacheNoSource": "เลือกแหล่งสื่อเพื่อจัดการแคชของแหล่งนั้น",
+  "nasOfflineRecordedHint": "เป็นจำนวนไบต์ดาวน์โหลดที่บันทึกไว้ ไม่ใช่พื้นที่ดิสก์ที่วัดจริง การล้างภาพขนาดย่อจะไม่ลบไฟล์ออฟไลน์",
+  "nasCacheClearConfirm": "ล้างภาพขนาดย่อของ {scope} หรือไม่? ไฟล์ออฟไลน์และสื่อระยะไกลจะยังคงอยู่",
+  "nasOfflineRecordedBytes": "ยอดดาวน์โหลดที่บันทึกไว้: {size}",
+  "nasDeployDockerTitle": "แอป Docker",
+  "nasDeployDockerDesc": "เปิดแอป Jellyfin ทางการในศูนย์แอป ตรวจสอบการตั้งค่าก่อนติดตั้ง",
+  "nasDeployNativeDesc": "ติดตั้ง Jellyfin ลงบนเซิร์ฟเวอร์นี้โดยตรงด้วยแพ็กเกจทางการ โดยไม่เปลี่ยนแปลงการติดตั้งที่มีอยู่",
+  "nasDeployEnableAppCenter": "เปิดใช้ศูนย์แอปแบบทดลองเพื่อดำเนินการต่อหรือไม่? รูปแบบเมนูของคุณจะไม่เปลี่ยน",
+  "nasDeployCatalogUnavailable": "แอป Jellyfin ทางการไม่พร้อมใช้งาน โปรดตรวจสอบว่าเปิดใช้แหล่งแอปทางการแล้วลองอีกครั้ง",
+  "@nasCacheClearConfirm": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "@nasOfflineRecordedBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "appName": "Valhalla",
   "appSubtitle": "การจัดการเซิร์ฟเวอร์และ Agent แบบ AI-Native",
   "navAiChat": "แชท AI",
@@ -1663,5 +1713,418 @@
   "nasThumbnailCacheBudget": "ขีดจำกัดแคช",
   "nasThumbnailCacheClear": "ล้างแคช",
   "nasThumbnailCacheCleared": "ล้างแคชรูปขนาดย่อแล้ว",
-  "nasThumbnailCacheOff": "ปิด"
+  "nasThumbnailCacheOff": "ปิด",
+  "navAppCenter": "ศูนย์แอปพลิเคชัน",
+  "settingsExperimentalAppCenterTitle": "ศูนย์แอปพลิเคชัน (Docker)",
+  "settingsExperimentalAppCenterDesc": "ร้านค้าแอปพลิเคชันและการจัดการการปรับใช้คอนเทนเนอร์แบบทดลอง",
+  "appCenterTitle": "ศูนย์แอปพลิเคชัน",
+  "appCenterTabStore": "ร้านค้า",
+  "appCenterTabInstalled": "ติดตั้งแล้ว",
+  "appCenterTabTasks": "งาน",
+  "appCenterSources": "แหล่งที่มา",
+  "appCenterManageSources": "จัดการแหล่งที่มา",
+  "appCenterAddSource": "เพิ่มแหล่งที่มา",
+  "appCenterSourceName": "ชื่อแหล่งที่มา",
+  "appCenterSourceUrl": "URL แหล่งที่มา (HTTPS)",
+  "appCenterDeleteSource": "ลบแหล่งที่มา",
+  "appCenterRefresh": "รีเฟรช",
+  "appCenterSearchHint": "ค้นหาแอปพลิเคชัน...",
+  "appCenterFilterAllCategories": "ทุกหมวดหมู่",
+  "appCenterFilterAllSources": "ทุกแหล่งที่มา",
+  "appCenterNoApps": "ไม่พบแอปพลิเคชัน",
+  "appCenterNoInstalled": "ไม่มีแอปพลิเคชันที่ติดตั้ง",
+  "appCenterNoTasks": "ไม่มีงานที่กำลังดำเนินการหรือล่าสุด",
+  "appCenterInstall": "ติดตั้ง",
+  "appCenterInstalledBadge": "ติดตั้งแล้ว",
+  "appCenterIncompatibleBadge": "ไม่เข้ากัน",
+  "appCenterUpdateAvailable": "มีการอัปเดต",
+  "appCenterArchitectureBlocker": "ไม่รองรับสถาปัตยกรรมนี้",
+  "appCenterAppDetails": "รายละเอียดแอปพลิเคชัน",
+  "appCenterVersion": "เวอร์ชัน",
+  "appCenterCategory": "หมวดหมู่",
+  "appCenterSource": "แหล่งที่มา",
+  "appCenterArchitectures": "สถาปัตยกรรมที่รองรับ",
+  "appCenterScreenshots": "ภาพหน้าจอ",
+  "appCenterDescription": "คำอธิบาย",
+  "appCenterWizardTitle": "ติดตั้ง {appName}",
+  "@appCenterWizardTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterConfigureTitle": "กำหนดค่า {appName}",
+  "@appCenterConfigureTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUpdateTitle": "อัปเดต {appName}",
+  "@appCenterUpdateTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStepEnvironment": "สภาพแวดล้อม",
+  "appCenterStepConfig": "การกำหนดค่า",
+  "appCenterStepReview": "ตรวจสอบแผน",
+  "appCenterStepProgress": "ความคืบหน้า",
+  "appCenterInstanceName": "ชื่ออินสแตนซ์",
+  "appCenterDataDirectory": "ไดเรกทอรีข้อมูล",
+  "appCenterBrowseDirectory": "เรียกดูไดเรกทอรี",
+  "appCenterNetworkAndPorts": "เครือข่ายและพอร์ต",
+  "appCenterBindAddress": "ที่อยู่ผูกมัด",
+  "appCenterBindLoopback": "เฉพาะโฮสต์ภายใน (127.0.0.1)",
+  "appCenterBindAll": "ทุกอินเทอร์เฟซ (0.0.0.0)",
+  "appCenterPortMapping": "การแมปพอร์ต",
+  "appCenterMounts": "จุดเชื่อมต่อพื้นที่จัดเก็บ",
+  "appCenterMountSource": "เส้นทางบนโฮสต์",
+  "appCenterMountTarget": "เส้นทางในคอนเทนเนอร์",
+  "appCenterMountReadOnly": "อ่านอย่างเดียว",
+  "appCenterVariables": "ตัวแปร",
+  "appCenterEnvironmentVariables": "ตัวแปรสภาพแวดล้อม",
+  "appCenterNext": "ถัดไป",
+  "appCenterBack": "ย้อนกลับ",
+  "appCenterConfirmAndExecute": "ดำเนินการตามแผน",
+  "appCenterPlanPreview": "ดูตัวอย่างแผนการปรับใช้",
+  "appCenterPlanSanitizedNotice": "โปรดตรวจสอบแผนการปรับใช้ที่สร้างขึ้นก่อนดำเนินการ:",
+  "appCenterEnvironmentCheck": "สภาพแวดล้อม Docker",
+  "appCenterDockerFound": "พร้อมใช้งาน Docker",
+  "appCenterDockerMissing": "ยังไม่ได้ติดตั้ง Docker",
+  "appCenterComposeFound": "พร้อมใช้งาน Docker Compose",
+  "appCenterComposeMissing": "ยังไม่ได้ติดตั้ง Docker Compose",
+  "appCenterBootstrapPrompt": "สามารถติดตั้ง Docker และ Compose บนเซิร์ฟเวอร์นี้ได้โดยอัตโนมัติ ต้องใช้สิทธิ์ root/sudo",
+  "appCenterBootstrapButton": "ติดตั้ง Docker และ Compose",
+  "appCenterSudoPassword": "รหัสผ่าน Sudo (ไม่บังคับ / หากจำเป็น)",
+  "appCenterSudoPasswordHint": "ป้อนรหัสผ่าน sudo สำหรับการดำเนินการที่ต้องการสิทธิ์พิเศษ",
+  "appCenterOpen": "เปิดเว็บอินเทอร์เฟซ",
+  "appCenterStart": "เริ่ม",
+  "appCenterStop": "หยุด",
+  "appCenterRestart": "เริ่มใหม่",
+  "appCenterLogs": "บันทึก",
+  "appCenterConfig": "กำหนดค่า",
+  "appCenterUpdate": "อัปเดต",
+  "appCenterRestore": "กู้คืน",
+  "appCenterUninstall": "ถอนการติดตั้ง",
+  "appCenterUninstallConfirmTitle": "ถอนการติดตั้ง {appName} หรือไม่?",
+  "@appCenterUninstallConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallConfirmMessage": "แน่ใจหรือไม่ว่าต้องการถอนการติดตั้ง {appName}? คอนเทนเนอร์จะถูกลบ แต่ไดเรกทอรีข้อมูลแอปพลิเคชันของคุณจะยังคงอยู่",
+  "@appCenterUninstallConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallKeepData": "ถอนการติดตั้ง (เก็บข้อมูลไว้)",
+  "appCenterUninstallDeleteSelected": "ถอนการติดตั้งและลบที่เลือก",
+  "appCenterUninstallInspecting": "กำลังตรวจสอบไดเรกทอรีข้อมูลแอปพลิเคชัน...",
+  "appCenterUninstallInspectionFailedWarning": "การตรวจสอบการล้างข้อมูลล้มเหลว คุณยังสามารถถอนการติดตั้งคอนเทนเนอร์แอปพลิเคชันได้โดยที่ข้อมูลทั้งหมดยังคงปลอดภัย",
+  "appCenterUninstallDirectoriesTitle": "ไดเรกทอรีข้อมูลและโวลุ่ม Docker",
+  "appCenterUninstallNoDirectories": "ตรวจไม่พบไดเรกทอรีข้อมูลที่เชื่อมโยง คอนเทนเนอร์จะถูกลบในขณะที่ข้อมูลยังคงอยู่",
+  "appCenterUninstallDefaultPreservedHint": "เก็บข้อมูลทั้งหมดไว้ตามค่าเริ่มต้น เลือกเฉพาะไดเรกทอรีหรือโวลุ่มที่ต้องการลบอย่างถาวร",
+  "appCenterUninstallPermanentLossWarning": "ข้อมูลที่เลือกจะถูกลบจากเซิร์ฟเวอร์อย่างถาวรโดยไม่มีถังขยะ",
+  "appCenterUninstallSelectedPathsTitle": "ข้อมูลที่จะลบอย่างถาวร:",
+  "appCenterUninstallRiskAck": "ฉันเข้าใจความเสี่ยงและผลต่อแอปอื่น และยืนยันการลบข้อมูลนี้อย่างถาวร",
+  "remoteBrowserAllFileTypes": "ทุกชนิดไฟล์",
+  "remoteBrowserDocuments": "ข้อความและเอกสาร",
+  "remoteBrowserFileFormat": "รูปแบบไฟล์",
+  "appCenterUninstallRiskSystem": "เส้นทางระบบ",
+  "appCenterUninstallRiskShared": "ใช้ร่วมกับแอปอื่น",
+  "appCenterUninstallRiskVolume": "โวลุ่ม Docker",
+  "appCenterCleanupVolumeDeleteFailed": "ลบโวลุ่ม Docker ไม่สำเร็จ โปรดยกเลิกการใช้งานจากคอนเทนเนอร์อื่น ตรวจสอบแล้วลองอีกครั้ง",
+  "appCenterCleanupPermissionDenied": "ไม่มีสิทธิ์เข้าถึง โปรดใช้บัญชีที่เข้าถึงข้อมูลได้หรือ sudo",
+  "appCenterCleanupCriticalPath": "ไม่สามารถลบไดเรกทอรีรากของเซิร์ฟเวอร์หรือไดเรกทอรีรันไทม์และการจัดการระบบขณะถอนการติดตั้งแอป",
+  "appCenterUninstallTypeAppNameHint": "พิมพ์ชื่อแอปพลิเคชันที่ถูกต้องเพื่อยืนยันการลบถาวร: {appName}",
+  "@appCenterUninstallTypeAppNameHint": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallRiskLegacy": "ยังไม่ได้รับการยืนยันการเป็นเจ้าของแต่เพียงผู้เดียว",
+  "appCenterUninstallRiskExternal": "อยู่นอกรูทข้อมูลของแอปพลิเคชัน",
+  "appCenterUninstallRiskMedia": "เส้นทางสื่อหรือแบบอ่านอย่างเดียว",
+  "appCenterUninstallTargetBlocked": "ไดเรกทอรีได้รับการป้องกัน ไม่สามารถลบได้",
+  "appCenterCleanupProtected": "เก็บไดเรกทอรีข้อมูลไว้เนื่องจากได้รับการป้องกันหรือไม่ปลอดภัยที่จะลบ",
+  "appCenterCleanupUnavailable": "การตรวจสอบการล้างข้อมูลไม่พร้อมใช้งาน ยังคงสามารถถอนการติดตั้งทั่วไปโดยเก็บข้อมูลไว้ได้",
+  "appCenterCleanupChanged": "ไดเรกทอรีหรือเป้าหมายการปรับใช้มีการเปลี่ยนแปลง โปรดตรวจสอบและยืนยันอีกครั้ง",
+  "appCenterCleanupConfirmationRequired": "โปรดยืนยันไดเรกทอรีที่เลือก ความเสี่ยง และชื่อแอปพลิเคชันที่ถูกต้องอีกครั้ง",
+  "appCenterCleanupRetryUnavailable": "ไม่สามารถลองล้างข้อมูลใหม่ได้อย่างปลอดภัย โปรดตรวจสอบรายละเอียดงาน",
+  "appCenterCleanupAlreadyAbsent": "ไดเรกทอรีไม่มีอยู่แล้ว ไม่จำเป็นต้องลบ",
+  "appCenterCleanupDeleteFailed": "การลบไม่สมบูรณ์ บางไฟล์อาจถูกลบไปแล้ว โปรดตรวจสอบเส้นทางที่เหลือ",
+  "appCenterCleanupUnconfirmed": "ไม่สามารถยืนยันผลลัพธ์หรือความปลอดภัยของการล้างข้อมูล โปรดตรวจสอบงานอีกครั้งก่อนดำเนินการต่อ",
+  "appCenterCleanupRetryTitle": "ลองล้างข้อมูลที่เหลือสำหรับ {appName} ใหม่หรือไม่?",
+  "@appCenterCleanupRetryTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterCleanupRetryDescription": "แอปพลิเคชันถูกถอนการติดตั้งแล้ว เลือกเฉพาะไดเรกทอรีข้อมูลที่ยังไม่เสร็จสิ้น การลองใหม่จะไม่ถอนการติดตั้งแอปพลิเคชันซ้ำ",
+  "appCenterCleanupRetrySelected": "ลบข้อมูลที่เหลือที่เลือก",
+  "appCenterCleanupResultsTitle": "ผลการล้างไดเรกทอรี",
+  "appCenterCleanupPartialSummary": "ถอนการติดตั้งแอปพลิเคชันแล้ว ข้อมูลบางส่วนยังไม่ได้รับการล้างทั้งหมด",
+  "appCenterCleanupPending": "ยังไม่ได้รับการยืนยันว่าเสร็จสิ้น",
+  "appCenterCleanupRemoved": "ลบแล้ว",
+  "appCenterCleanupRetained": "เก็บไว้",
+  "appCenterCleanupRetryAction": "ลองล้างข้อมูลที่เหลือใหม่",
+  "appCenterJellyfinSoftwareTitle": "โหมดถอดรหัสด้วยซอฟต์แวร์",
+  "appCenterJellyfinSoftwareDesc": "ปิดใช้งานการแปลงรหัสด้วย GPU ลบการแมปอุปกรณ์ GPU ที่ได้รับการตรวจสอบ และเมานต์ /Media เป็นแบบอ่านอย่างเดียว",
+  "appCenterJellyfinProfileUnavailable": "โปรไฟล์การถอดรหัสด้วยซอฟต์แวร์ไม่พร้อมใช้งานสำหรับเทมเพลตนี้",
+  "appCenterJellyfinSoftwareChanges": "การเปลี่ยนแปลงโปรไฟล์ที่นำไปใช้:",
+  "appCenterLogsTitle": "บันทึก {appName}",
+  "@appCenterLogsTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterLogsEmpty": "ไม่มีบันทึกสำหรับการปรับใช้นี้",
+  "appCenterLogsCopied": "คัดลอกบันทึกไปยังคลิปบอร์ดแล้ว",
+  "appCenterTaskStageQueued": "อยู่ในคิว",
+  "appCenterTaskStagePreparing": "กำลังเตรียม",
+  "appCenterTaskStagePulling": "กำลังดึงอิมเมจ",
+  "appCenterTaskStageApplying": "กำลังใช้การกำหนดค่า",
+  "appCenterTaskStageChecking": "กำลังตรวจสอบสถานะ",
+  "appCenterTaskStageSucceeded": "สำเร็จ",
+  "appCenterTaskStageFailed": "ล้มเหลว",
+  "appCenterTaskStageCancelled": "ยกเลิกแล้ว",
+  "appCenterTaskStageNeedsInspection": "ต้องตรวจสอบด้วยตนเอง",
+  "appCenterCancelTask": "ยกเลิกงาน",
+  "appCenterCopyLog": "คัดลอกบันทึก",
+  "appCenterErrorNotConnected": "เซิร์ฟเวอร์ไม่ได้เชื่อมต่อ",
+  "appCenterErrorEnvironmentRequired": "จำเป็นต้องตรวจสอบสภาพแวดล้อม Docker ก่อน",
+  "appCenterErrorPlanExpired": "แผนการปรับใช้หมดอายุหรือไม่ถูกต้อง",
+  "appCenterErrorTargetChanged": "เซิร์ฟเวอร์เป้าหมายเปลี่ยนไป การดำเนินการถูกยกเลิก",
+  "appCenterErrorConfigInvalid": "การกำหนดค่าแอปพลิเคชันไม่ถูกต้อง",
+  "appCenterErrorPathInvalid": "{field} ต้องเป็นพาธสัมบูรณ์ที่ไม่ใช่รูท (/) และต้องไม่มีส่วน . หรือ ..",
+  "@appCenterErrorPathInvalid": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterErrorSourceInvalid": "แหล่งที่มาของร้านค้าแอปพลิเคชันไม่ถูกต้อง",
+  "appCenterErrorNoWebEntry": "แอปพลิเคชันนี้ไม่มีเว็บอินเทอร์เฟซ",
+  "appCenterErrorHttpsDirectRequired": "ไม่สามารถทันเนลปลายทาง HTTPS ผ่าน SSH ได้ โปรดเปิดโดยตรง",
+  "appCenterErrorOpenFailed": "ไม่สามารถเปิด URL แอปพลิเคชันได้",
+  "appCenterErrorGeneric": "ข้อผิดพลาดของศูนย์แอปพลิเคชัน: {error}",
+  "@appCenterErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterSourceCommunityHint": "เช่น ร้านค้าชุมชน",
+  "appCenterSourceUrlInvalidHttps": "ต้องเป็น URL HTTPS ที่ถูกต้อง",
+  "appCenterDirectUrlLabel": "URL ตรง",
+  "appCenterErrorSourceRemoved": "แหล่งที่มาของแอปไม่มีอยู่ในแคตตาล็อกอีกต่อไป ไม่สามารถอัปเดตเทมเพลตได้",
+  "appCenterRestoreConfirmTitle": "กู้คืน {appName}?",
+  "@appCenterRestoreConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestoreConfirmMessage": "กู้คืน {appName} กลับไปยังการกำหนดค่าการปรับใช้ก่อนหน้าหรือไม่?",
+  "@appCenterRestoreConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostPortLabel": "พอร์ตโฮสต์ (-> {target})",
+  "@appCenterHostPortLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostMountLabel": "โฮสต์: {target}",
+  "@appCenterHostMountLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterVersionLatest": "ล่าสุด",
+  "appCenterWaitingForLogs": "กำลังรอรายงานบันทึกงาน...",
+  "appCenterNoPreviewAvailable": "ไม่มีการแสดงตัวอย่าง",
+  "appCenterBlockerLocalDockerRequired": "จำเป็นต้องใช้ Docker daemon ภายในเครื่อง (ไม่รองรับ DOCKER_HOST ระยะไกล)",
+  "appCenterBlockerToolsRequired": "ไม่มีเครื่องมือที่จำเป็นบนเซิร์ฟเวอร์ (bash, setsid, flock, base64, realpath, ss, awk)",
+  "appCenterBlockerLinuxRequired": "จำเป็นต้องใช้ระบบปฏิบัติการ Linux",
+  "appCenterBlockerTemplateUnsupported": "คุณสมบัติเทมเพลตที่ไม่รองรับ: {feature}",
+  "@appCenterBlockerTemplateUnsupported": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterFieldRequired": "ต้องระบุฟิลด์นี้",
+  "appCenterContinueInstall": "ดำเนินการติดตั้งต่อ",
+  "appCenterOperation": "การดำเนินการ",
+  "nasTabLibrary": "คลังสื่อ",
+  "nasContinueWatching": "ดูต่อ",
+  "nasRecentPhotos": "รูปล่าสุด",
+  "nasRecentVideos": "วิดีโอล่าสุด",
+  "nasRecentMusic": "เพลงล่าสุด",
+  "nasDownloadPaused": "หยุดชั่วคราวแล้ว",
+  "nasDownloadDeleteConfirmTitle": "ลบไฟล์ออฟไลน์",
+  "nasDownloadDeleteConfirmMessage": "การดำเนินการนี้จะลบไฟล์ออฟไลน์ที่ดาวน์โหลดไว้ออกจากอุปกรณ์ของคุณ ไฟล์ต้นฉบับบนเซิร์ฟเวอร์ระยะไกลจะไม่ถูกลบ",
+  "nasDownloadDeleteConfirmButton": "ลบสำเนาออฟไลน์",
+  "nasDownloadSourceChangedMessage": "การกำหนดค่าแหล่งที่มาระยะไกลมีการเปลี่ยนแปลงตั้งแต่เริ่มดาวน์โหลด คุณต้องการเริ่มดาวน์โหลดใหม่ตั้งแต่ต้นหรือไม่?",
+  "nasDownloadRestartFromScratch": "เริ่มใหม่ตั้งแต่ต้น",
+  "nasDownloadErrorSourceChanged": "การกำหนดค่าแหล่งที่มาเปลี่ยนไป",
+  "nasDownloadErrorOfflineFileInvalid": "ไฟล์ที่ดาวน์โหลดเสียหายหรือไม่สมบูรณ์",
+  "nasDownloadErrorStorageFailed": "บันทึกลงพื้นที่จัดเก็บข้อมูลไม่สำเร็จ",
+  "nasDownloadErrorHlsUnsupported": "ไม่รองรับการดาวน์โหลดออฟไลน์สำหรับสตรีมแบบแบ่งส่วน",
+  "nasDownloadErrorPathInvalid": "เส้นทางจัดเก็บข้อมูลดาวน์โหลดไม่ถูกต้อง",
+  "nasOpenInApp": "เปิดในแอป",
+  "nasOpenSystem": "เปิดด้วยระบบ",
+  "sftpRecentDirectories": "ไดเรกทอรีล่าสุด",
+  "sftpNoRecentDirectories": "ไม่มีไดเรกทอรีล่าสุด",
+  "sftpRetryFailed": "ลองใหม่รายการที่ล้มเหลว",
+  "appCenterDiskCheckFailed": "ไม่สามารถตรวจสอบพื้นที่ว่างในดิสก์บนเซิร์ฟเวอร์ได้",
+  "appCenterDiskFull": "ดิสก์ของเซิร์ฟเวอร์เต็ม ไม่สามารถดำเนินการต่อได้",
+  "appCenterHealthInvalid": "การตรวจสอบสถานะคอนเทนเนอร์ล้มเหลวหรือรายงานสถานะไม่ถูกต้อง",
+  "appCenterPreflightSummary": "สรุปการตรวจสอบเบื้องต้น",
+  "appCenterMeasuredAvailableSpace": "พื้นที่ว่างในดิสก์ที่วัดได้",
+  "appCenterUpdateComparison": "การเปรียบเทียบการอัปเดต",
+  "appCenterNoChangesDetected": "ตรวจไม่พบการเปลี่ยนแปลงโครงสร้าง",
+  "appCenterSectionImage": "อิมเมจคอนเทนเนอร์",
+  "appCenterSectionPorts": "การแมปพอร์ต",
+  "appCenterSectionVolumes": "จุดเมานต์พื้นที่จัดเก็บ",
+  "appCenterSectionEnvironment": "ตัวแปรสภาพแวดล้อม",
+  "appCenterSectionHealthcheck": "การตรวจสุขภาพระบบ",
+  "appCenterSectionRestart": "นโยบายการรีสตาร์ต",
+  "appCenterSectionServices": "บริการต่างๆ",
+  "appCenterHealthNoCheck": "ไม่มีการตรวจสอบสถานะ",
+  "appCenterHealthHealthy": "ปกติ",
+  "appCenterHealthUnhealthy": "ไม่ปกติ",
+  "appCenterHealthStarting": "กำลังเริ่ม",
+  "appCenterNoSources": "ไม่มีแหล่งแอปพลิเคชันที่เปิดใช้งาน",
+  "appCenterNoMatchingApps": "ไม่พบแอปพลิเคชันที่ตรงกับการค้นหาหรือตัวกรอง",
+  "appCenterClearFilters": "ล้างตัวกรอง",
+  "appCenterSourceLoadFailed": "โหลดแหล่งแอปพลิเคชันไม่สำเร็จ",
+  "appCenterRetry": "ลองใหม่",
+  "appCenterRecheck": "ตรวจสอบอีกครั้ง",
+  "appCenterRecheckTask": "ตรวจสอบสถานะงานอีกครั้ง",
+  "appCenterTaskNeedsInspectionTitle": "ยังไม่ยืนยันสถานะงาน",
+  "appCenterTaskNeedsInspectionMessage": "ไม่ทราบผลลัพธ์ของงานบนเซิร์ฟเวอร์ โปรดตรวจสอบสถานะหรือดูบันทึก อย่ากดทำซ้ำโดยไม่ตรวจสอบ",
+  "appCenterStopConfirmTitle": "หยุด {appName} หรือไม่?",
+  "@appCenterStopConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStopConfirmMessage": "คุณแน่ใจหรือไม่ว่าต้องการหยุด {appName} บนเซิร์ฟเวอร์ {serverName}? คอนเทนเนอร์ที่กำลังทำงานจะถูกหยุด",
+  "@appCenterStopConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmTitle": "รีสตาร์ต {appName} หรือไม่?",
+  "@appCenterRestartConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmMessage": "คุณแน่ใจหรือไม่ว่าต้องการรีสตาร์ต {appName} บนเซิร์ฟเวอร์ {serverName}?",
+  "@appCenterRestartConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterBrowseStore": "เลือกดูในร้านแอป",
+  "appCenterViewTasks": "ดูงาน",
+  "appCenterViewInstalled": "ดูแอปที่ติดตั้งแล้ว",
+  "appCenterRunInBackground": "ทำงานในเบื้องหลัง",
+  "appCenterTaskDetails": "รายละเอียดงาน",
+  "appCenterTaskTarget": "เป้าหมาย",
+  "appCenterTaskDirectory": "ไดเรกทอรี",
+  "appCenterTaskCreatedAt": "สร้างเมื่อ",
+  "appCenterTaskExitCode": "รหัสออก: {code}",
+  "@appCenterTaskExitCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "appCenterStatusRunning": "กำลังทำงาน",
+  "appCenterStatusStopped": "หยุดแล้ว",
+  "appCenterStatusInstalling": "กำลังติดตั้ง",
+  "appCenterStatusUnknown": "ไม่ทราบ",
+  "appCenterEnvReady": "สภาพแวดล้อม Docker และ Compose พร้อมแล้ว",
+  "appCenterEnvNotReady": "สภาพแวดล้อม Docker ยังไม่พร้อม",
+  "appCenterEnvInspecting": "กำลังตรวจสอบสภาพแวดล้อม Docker...",
+  "appCenterUninstallWholeDataRoot": "รูทข้อมูลทั้งหมด",
+  "appCenterUninstallWholeDataRootWarning": "ซึ่งรวมถึงไฟล์ที่ไม่ได้เมานต์และไดเรกทอรีย่อยที่จัดเก็บไว้ใต้รูทข้อมูลของแอปพลิเคชัน",
+  "appCenterUninstallCoveredByParent": "ครอบคลุมโดยไดเรกทอรีหลักแล้ว",
+  "appCenterContainerNameInvalid": "ชื่ออินสแตนซ์ต้องขึ้นต้นด้วยตัวอักษรหรือตัวเลข และมีได้เฉพาะตัวอักษร ตัวเลข ขีดล่าง จุด และยัติภังค์ (สูงสุด 120 อักขระ)",
+  "appCenterMainService": "บริการหลัก",
+  "appCenterContainerNamesPreview": "ดูตัวอย่างชื่อคอนเทนเนอร์",
+  "appCenterContainersRecreationNotice": "การเปลี่ยนชื่อคอนเทนเนอร์อินสแตนซ์จะสร้างคอนเทนเนอร์แอปพลิเคชันที่มีอยู่ขึ้นใหม่",
+  "remoteBrowserTitle": "เบราว์เซอร์ไฟล์ระยะไกล",
+  "remoteBrowserSelectDirectory": "เลือกไดเรกทอรี",
+  "remoteBrowserSelectCurrentDirectory": "เลือกไดเรกทอรีปัจจุบัน",
+  "remoteBrowserSearchHint": "ค้นหาไฟล์และโฟลเดอร์...",
+  "remoteBrowserNoEntries": "ไม่พบไฟล์หรือไดเรกทอรีที่ตรงกัน",
+  "remoteBrowserEmptyDirectory": "ไดเรกทอรีนี้ว่างเปล่า",
+  "remoteBrowserSelectedCount": "เลือกแล้ว {count} รายการ",
+  "@remoteBrowserSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remoteBrowserParentDirectory": "ไดเรกทอรีระดับบน",
+  "remoteBrowserLibrariesTitle": "ไลบรารีสื่อ",
+  "remoteBrowserDisconnected": "การเชื่อมต่อระยะไกลขาดหายหรือไม่พร้อมใช้งาน",
+  "remoteBrowserTargetChanged": "สภาพแวดล้อมเป้าหมายหรือเซิร์ฟเวอร์ที่ใช้งานอยู่มีการเปลี่ยนแปลง",
+  "remoteBrowserPathInvalid": "เส้นทางที่ร้องขอไม่ถูกต้องหรือไม่สามารถเข้าถึงได้",
+  "remoteBrowserPathOutsideRoot": "เส้นทางที่ร้องขออยู่นอกไดเรกทอรีรูทที่อนุญาต",
+  "remoteBrowserEntryUnavailable": "รายการที่เลือกไม่พร้อมใช้งานหรือไม่ถูกต้อง",
+  "nasBrowseUnavailable": "บริการเรียกดู NAS ไม่พร้อมใช้งานในขณะนี้",
+  "nasInvalidDirectoryEntry": "พบรายการไดเรกทอรีที่ไม่ถูกต้องขณะเรียกดู NAS",
+  "nasInvalidLibraryResponse": "การตอบสนองของไลบรารีสื่อไม่ถูกต้องหรือมีรูปแบบไม่ถูกต้อง",
+  "nasScanFilterUnresolved": "ไม่สามารถแปลงเส้นทางตัวกรองการสแกนได้",
+  "nasSourceSaveIncomplete": "การบันทึกแหล่งที่มาก่อนหน้านี้คงอยู่เพียงบางส่วนเท่านั้น โปรดป้อนข้อมูลรับรองอีกครั้งและบันทึกให้สำเร็จก่อนเรียกดู"
 }

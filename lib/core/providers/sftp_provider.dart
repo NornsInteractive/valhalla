@@ -17,6 +17,7 @@ import '../services/app_diagnostics.dart';
 import 'server_provider.dart';
 import 'infrastructure_providers.dart';
 import 'storage_providers.dart';
+import 'file_bookmarks_provider.dart';
 import '../../data/models/server_profile.dart';
 
 final downloadPlatformServiceProvider = Provider<DownloadPlatformService>(
@@ -219,6 +220,18 @@ class SftpTransfer {
 }
 
 class SftpState {
+  // Weak keys release old directory projections with their immutable file lists.
+  static final _listingCache =
+      Expando<
+        ({
+          String query,
+          bool root,
+          bool hidden,
+          SftpSortKey sort,
+          bool ascending,
+          List<SftpFileItem> items,
+        })
+      >();
   final bool downloadNotificationsUnavailable;
   final String currentPath;
   final List<SftpFileItem> files;
@@ -324,6 +337,15 @@ class SftpState {
   /// 目录跑到文件后面是 bug，而「目录优先」是文件管理器的通行约定。
   List<SftpFileItem> get filteredFiles {
     final q = searchQuery.trim().toLowerCase();
+    final cached = _listingCache[files];
+    if (cached != null &&
+        cached.query == q &&
+        cached.root == isAtRoot &&
+        cached.hidden == showHiddenFiles &&
+        cached.sort == sortKey &&
+        cached.ascending == sortAscending) {
+      return cached.items;
+    }
     final visible = files.where(
       (file) =>
           file.name != '.' &&
@@ -355,7 +377,16 @@ class SftpState {
     }
 
     result.sort(compare);
-    return result;
+    final items = List<SftpFileItem>.unmodifiable(result);
+    _listingCache[files] = (
+      query: q,
+      root: isAtRoot,
+      hidden: showHiddenFiles,
+      sort: sortKey,
+      ascending: sortAscending,
+      items: items,
+    );
+    return items;
   }
 
   /// 复制并覆盖字段。
@@ -715,11 +746,19 @@ class SftpNotifier extends Notifier<SftpState> {
   }) async {
     final sourceEpoch = _sourceEpoch;
     final loadEpoch = ++_loadEpoch;
+    final elapsed = Stopwatch()..start();
+    var outcome = 'failed';
+    int? count;
     final normalized = _normalizeRemotePath(path);
     state = state.copyWith(isLoading: !quiet, clearError: true);
     try {
       final items = await _service.listFiles(normalized);
-      if (!_currentSource(sourceEpoch) || loadEpoch != _loadEpoch) return false;
+      if (!_currentSource(sourceEpoch) || loadEpoch != _loadEpoch) {
+        outcome = 'superseded';
+        return false;
+      }
+      count = items.length;
+      outcome = 'completed';
       state = state.copyWith(
         currentPath: normalized,
         files: items,
@@ -729,6 +768,16 @@ class SftpNotifier extends Notifier<SftpState> {
       );
       final server = _boundServer;
       if (server != null) {
+        unawaited(
+          ref
+              .read(fileRecentDirectoriesProvider.notifier)
+              .record(server.id, normalized)
+              .catchError((Object error, StackTrace stack) {
+                unawaited(
+                  AppDiagnostics.instance.record('sftp.recent', error, stack),
+                );
+              }),
+        );
         unawaited(
           ref
               .read(localStorageServiceProvider)
@@ -745,7 +794,10 @@ class SftpNotifier extends Notifier<SftpState> {
       }
       return true;
     } catch (e) {
-      if (!_currentSource(sourceEpoch) || loadEpoch != _loadEpoch) return false;
+      if (!_currentSource(sourceEpoch) || loadEpoch != _loadEpoch) {
+        outcome = 'superseded';
+        return false;
+      }
       state = state.copyWith(
         isLoading: false,
         errorMessage: ref.read(serverConnectionProvider).isConnected
@@ -753,6 +805,15 @@ class SftpNotifier extends Notifier<SftpState> {
             : null,
       );
       return false;
+    } finally {
+      unawaited(
+        AppDiagnostics.instance.recordTiming(
+          'sftp.directory',
+          elapsed,
+          outcome: outcome,
+          count: count,
+        ),
+      );
     }
   }
 
@@ -1587,11 +1648,34 @@ class SftpNotifier extends Notifier<SftpState> {
 
   bool _batchBusy = false;
 
+  Future<List<RemoteFileResult>> retryFailedBatch(
+    RemoteFileAction action,
+    List<SftpFileItem> originalItems,
+    List<RemoteFileResult> results, {
+    required ServerProfile expectedServer,
+    String? targetDirectory,
+    void Function(int completed, int total)? onProgress,
+  }) {
+    final failed = results
+        .where((r) => r.outcome == RemoteFileOutcome.failed)
+        .map((r) => r.path)
+        .toSet();
+    return runBatch(
+      action,
+      originalItems.where((i) => failed.contains(i.path)).toList(),
+      expectedServer: expectedServer,
+      targetDirectory: targetDirectory,
+      validateSources: true,
+      onProgress: onProgress,
+    );
+  }
+
   Future<List<RemoteFileResult>> runBatch(
     RemoteFileAction action,
     List<SftpFileItem> items, {
     String? targetDirectory,
     ServerProfile? expectedServer,
+    bool validateSources = false,
     void Function(int completed, int total)? onProgress,
   }) async {
     if (_batchBusy) throw StateError('FILE_OPERATION_PENDING');
@@ -1631,6 +1715,22 @@ class SftpNotifier extends Notifier<SftpState> {
               item.name == '.' ||
               item.name == '..') {
             throw const FormatException('FILE_PATH_INVALID');
+          }
+          if (validateSources) {
+            final listing = await service.listFiles(
+              path_util.posix.dirname(item.path),
+            );
+            final fresh = listing.where((i) => i.path == item.path).firstOrNull;
+            if (!_currentSource(sourceEpoch)) {
+              throw StateError('FILE_TARGET_CHANGED');
+            }
+            if (fresh == null ||
+                fresh.isDirectory != item.isDirectory ||
+                fresh.isSymbolicLink != item.isSymbolicLink ||
+                fresh.sizeBytes != item.sizeBytes ||
+                fresh.modifiedEpoch != item.modifiedEpoch) {
+              throw StateError('FILE_SOURCE_CHANGED');
+            }
           }
           switch (action) {
             case RemoteFileAction.download:

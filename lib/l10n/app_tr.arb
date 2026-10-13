@@ -1,5 +1,55 @@
 {
   "@@locale": "tr",
+  "nasPlaylistLoadFailed": "Çalma listeleri geçici olarak kullanılamıyor. Kayıtlı medya listesi hâlâ kullanılabilir. Yeniden denemek için yenileyin.",
+  "nasAllLibraries": "Tüm kitaplıklar",
+  "nasNativeInstallTitle": "Jellyfin’i yükle (yerel paket)",
+  "nasNativeStepVerifyRepo": "İmzalı resmî depoyu doğrula",
+  "nasNativeStepPreventAutostart": "Yapılandırma tamamlanmadan otomatik hizmet başlangıcını engelle",
+  "nasNativeStepInstallPackages": "Sabit sürümlü imzalı paketleri yükle",
+  "nasNativeStepConfigureLoopback": "Dinlemeyi yalnızca localhost ile sınırla",
+  "nasNativeStageInstalling": "Sabit sürümlü paketler yükleniyor",
+  "nasNativeStageStarting": "systemd hizmeti başlatılıyor",
+  "nasNativeGuidanceMediaAccess": "Medya dosyalarının izinleri ve sahipliği değiştirilmez. Jellyfin hizmet kullanıcısının okuma iznine sahip olduğundan emin olun.",
+  "nasNativeGuidanceNoUpgrade": "Mevcut Jellyfin kurulumları devralınmaz, değiştirilmez veya yükseltilmez.",
+  "nasNativeSupportedRequirements": "Debian veya Ubuntu (amd64/arm64), systemd ve root erişimi ya da parolasız sudo gerektirir.",
+  "nasNativeExistingInstallTitle": "Mevcut Jellyfin kurulumu algılandı",
+  "nasNativeExistingInstallExplanation": "Bu sunucuda Jellyfin zaten kurulu. Valhalla kurulumu değiştirmez veya yeniden yüklemez. Bağlantısını doğrudan doğrulayın.",
+  "nasNativeCancelExplanation": "Bir sonraki güvenli kontrol noktasında iptal istendi. Devam eden paket işlemleri güvenli biçimde tamamlanacak.",
+  "nasNativeMediaPathLabel": "Medya dizini yolu",
+  "nasNativeMediaPathHint": "Sunucuda mevcut mutlak yol (ör. /media/library). İzinler değiştirilmez.",
+  "nasNativeSudoRequired": "Sistem paketlerini yüklemek için root erişimi veya parolasız sudo gerekir",
+  "nasDiagnosticsTitle": "Medya kaynağı tanılama",
+  "nasDiagnosticsConnection": "Bağlantı",
+  "nasDiagnosticsScan": "Kitaplık taraması",
+  "nasDiagnosticsLastSuccess": "Son başarılı bağlantı",
+  "nasDiagnosticsCredentials": "Kayıtlı kimlik bilgileri kontrol ediliyor",
+  "nasDiagnosticsFinalizing": "Dizin tamamlanıyor",
+  "nasDiagnosticsNotChecked": "Kontrol edilmedi",
+  "nasCacheLegacy": "Eski küçük resimler (kaynak atanmamış)",
+  "nasCacheGlobalBudget": "Küçük resim sınırı (tüm kaynaklar)",
+  "nasCacheNoSource": "Önbelleğini yönetmek için bir medya kaynağı seçin.",
+  "nasOfflineRecordedHint": "Bu değer ölçülen disk kullanımı değil, kaydedilen indirme baytlarıdır. Küçük resimleri temizlemek çevrimdışı dosyaları silmez.",
+  "nasCacheClearConfirm": "{scope} için küçük resimler temizlensin mi? Çevrimdışı dosyalar ve uzak medya korunacak.",
+  "nasOfflineRecordedBytes": "Kaydedilen indirmeler: {size}",
+  "nasDeployDockerTitle": "Docker uygulaması",
+  "nasDeployDockerDesc": "Uygulama Merkezi’nde resmî Jellyfin uygulamasını açın. Yüklemeden önce yapılandırmasını inceleyin.",
+  "nasDeployNativeDesc": "Jellyfin’i resmî paketleriyle doğrudan bu sunucuya yükleyin. Mevcut kurulumlar değiştirilmez.",
+  "nasDeployEnableAppCenter": "Devam etmek için deneysel Uygulama Merkezi etkinleştirilsin mi? Menü düzeniniz değişmeyecek.",
+  "nasDeployCatalogUnavailable": "Resmî Jellyfin uygulaması kullanılamıyor. Resmî kaynağın etkin olduğunu kontrol edip yeniden deneyin.",
+  "@nasCacheClearConfirm": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "@nasOfflineRecordedBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "appName": "Valhalla",
   "appSubtitle": "Yapay Zeka Destekli Sunucu ve Ajan Yönetimi",
   "navAiChat": "AI Sohbeti",
@@ -1663,5 +1713,418 @@
   "nasThumbnailCacheBudget": "Önbellek Boyutu",
   "nasThumbnailCacheClear": "Önbelleği Temizle",
   "nasThumbnailCacheCleared": "Küçük resim önbelleği temizlendi",
-  "nasThumbnailCacheOff": "Kapalı"
+  "nasThumbnailCacheOff": "Kapalı",
+  "navAppCenter": "Uygulama Merkezi",
+  "settingsExperimentalAppCenterTitle": "Uygulama Merkezi (Docker)",
+  "settingsExperimentalAppCenterDesc": "Deneysel uygulama mağazası ve konteyner dağıtım yöneticisi",
+  "appCenterTitle": "Uygulama Merkezi",
+  "appCenterTabStore": "Mağaza",
+  "appCenterTabInstalled": "Yüklü",
+  "appCenterTabTasks": "Görevler",
+  "appCenterSources": "Kaynaklar",
+  "appCenterManageSources": "Kaynakları Yönet",
+  "appCenterAddSource": "Kaynak Ekle",
+  "appCenterSourceName": "Kaynak Adı",
+  "appCenterSourceUrl": "Kaynak URL'si (HTTPS)",
+  "appCenterDeleteSource": "Kaynağı Sil",
+  "appCenterRefresh": "Yenile",
+  "appCenterSearchHint": "Uygulama ara...",
+  "appCenterFilterAllCategories": "Tüm Kategoriler",
+  "appCenterFilterAllSources": "Tüm Kaynaklar",
+  "appCenterNoApps": "Uygulama bulunamadı",
+  "appCenterNoInstalled": "Yüklü uygulama yok",
+  "appCenterNoTasks": "Etkin veya son görev yok",
+  "appCenterInstall": "Yükle",
+  "appCenterInstalledBadge": "Yüklü",
+  "appCenterIncompatibleBadge": "Uyumsuz",
+  "appCenterUpdateAvailable": "Güncelleme Mevcut",
+  "appCenterArchitectureBlocker": "Mimari desteklenmiyor",
+  "appCenterAppDetails": "Uygulama Ayrıntıları",
+  "appCenterVersion": "Sürüm",
+  "appCenterCategory": "Kategori",
+  "appCenterSource": "Kaynak",
+  "appCenterArchitectures": "Desteklenen Mimariler",
+  "appCenterScreenshots": "Ekran Görüntüleri",
+  "appCenterDescription": "Açıklama",
+  "appCenterWizardTitle": "{appName} Yükle",
+  "@appCenterWizardTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterConfigureTitle": "{appName} Yapılandır",
+  "@appCenterConfigureTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUpdateTitle": "{appName} Güncelle",
+  "@appCenterUpdateTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStepEnvironment": "Ortam",
+  "appCenterStepConfig": "Yapılandırma",
+  "appCenterStepReview": "Planı İncele",
+  "appCenterStepProgress": "İlerleme",
+  "appCenterInstanceName": "Örnek Adı",
+  "appCenterDataDirectory": "Veri Dizini",
+  "appCenterBrowseDirectory": "Dizine Göz At",
+  "appCenterNetworkAndPorts": "Ağ ve Bağlantı Noktaları",
+  "appCenterBindAddress": "Bağlama Adresi",
+  "appCenterBindLoopback": "Yalnızca Yerel Ana Bilgisayar (127.0.0.1)",
+  "appCenterBindAll": "Tüm Arabirimler (0.0.0.0)",
+  "appCenterPortMapping": "Bağlantı Noktası Eşlemeleri",
+  "appCenterMounts": "Depolama Bağlantıları",
+  "appCenterMountSource": "Ana Bilgisayar Yolu",
+  "appCenterMountTarget": "Konteyner Yolu",
+  "appCenterMountReadOnly": "Salt Okunur",
+  "appCenterVariables": "Değişkenler",
+  "appCenterEnvironmentVariables": "Ortam Değişkenleri",
+  "appCenterNext": "İleri",
+  "appCenterBack": "Geri",
+  "appCenterConfirmAndExecute": "Planı Yürüt",
+  "appCenterPlanPreview": "Dağıtım Planı Önizlemesi",
+  "appCenterPlanSanitizedNotice": "Yürütmeden önce oluşturulan dağıtım planını inceleyin:",
+  "appCenterEnvironmentCheck": "Docker Ortamı",
+  "appCenterDockerFound": "Docker kullanılabilir",
+  "appCenterDockerMissing": "Docker yüklü değil",
+  "appCenterComposeFound": "Docker Compose kullanılabilir",
+  "appCenterComposeMissing": "Docker Compose yüklü değil",
+  "appCenterBootstrapPrompt": "Docker ve Compose bu sunucuya otomatik olarak kurulabilir. Root/sudo izni gereklidir.",
+  "appCenterBootstrapButton": "Docker ve Compose Kur",
+  "appCenterSudoPassword": "Sudo Parolası (isteğe bağlı / gerekirse)",
+  "appCenterSudoPasswordHint": "Ayrıcalıklı işlemler için sudo parolasını girin",
+  "appCenterOpen": "Web Arayüzünü Aç",
+  "appCenterStart": "Başlat",
+  "appCenterStop": "Durdur",
+  "appCenterRestart": "Yeniden Başlat",
+  "appCenterLogs": "Günlükler",
+  "appCenterConfig": "Yapılandır",
+  "appCenterUpdate": "Güncelle",
+  "appCenterRestore": "Geri Yükle",
+  "appCenterUninstall": "Kaldır",
+  "appCenterUninstallConfirmTitle": "{appName} kaldırılsın mı?",
+  "@appCenterUninstallConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallConfirmMessage": "{appName} uygulamasını kaldırmak istediğinizden emin misiniz? Konteynerler kaldırılacak, ancak uygulama veri dizininiz korunacaktır.",
+  "@appCenterUninstallConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallKeepData": "Kaldır (Verileri Koru)",
+  "appCenterUninstallDeleteSelected": "Kaldır ve Seçilenleri Sil",
+  "appCenterUninstallInspecting": "Uygulama veri dizinleri inceleniyor...",
+  "appCenterUninstallInspectionFailedWarning": "Veri temizleme incelemesi başarısız oldu. Tüm verileri güvenle koruyarak uygulama konteynerlerini yine de kaldırabilirsiniz.",
+  "appCenterUninstallDirectoriesTitle": "Veri dizinleri ve Docker birimleri",
+  "appCenterUninstallNoDirectories": "Bağlama noktası veri dizini algılanmadı. Veriler korunurken konteynerler kaldırılacaktır.",
+  "appCenterUninstallDefaultPreservedHint": "Varsayılan olarak tüm veriler korunur. Yalnızca kalıcı silmek istediğiniz dizin veya birimleri seçin.",
+  "appCenterUninstallPermanentLossWarning": "Seçilen veriler sunucudan kalıcı olarak silinecek. Geri dönüşüm kutusu yoktur.",
+  "appCenterUninstallSelectedPathsTitle": "Kalıcı silinecek veriler:",
+  "appCenterUninstallRiskAck": "Riskleri ve diğer uygulamalara etkilerini anlıyor ve bu verilerin kalıcı silinmesini onaylıyorum.",
+  "remoteBrowserAllFileTypes": "Tüm biçimler",
+  "remoteBrowserDocuments": "Metin ve belgeler",
+  "remoteBrowserFileFormat": "Dosya biçimi",
+  "appCenterUninstallRiskSystem": "Sistem yolu",
+  "appCenterUninstallRiskShared": "Diğer uygulamalarla paylaşılıyor",
+  "appCenterUninstallRiskVolume": "Docker birimi",
+  "appCenterCleanupVolumeDeleteFailed": "Docker birimi silinemedi. Diğer konteynerlerin kullanımını kaldırın, yeniden denetleyip deneyin.",
+  "appCenterCleanupPermissionDenied": "Erişim reddedildi. Verilere erişebilen bir hesap veya sudo kullanın.",
+  "appCenterCleanupCriticalPath": "Sunucu kökü ile sistem çalışma ve yönetim dizinleri uygulama kaldırılırken silinemez.",
+  "appCenterUninstallTypeAppNameHint": "Kalıcı silmeyi onaylamak için tam uygulama adını yazın: {appName}",
+  "@appCenterUninstallTypeAppNameHint": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallRiskLegacy": "Doğrulanmamış münhasır sahiplik",
+  "appCenterUninstallRiskExternal": "Uygulama veri kök dizini dışındaki yol",
+  "appCenterUninstallRiskMedia": "Medya veya salt okunur yol",
+  "appCenterUninstallTargetBlocked": "Korumalı dizin, silinemez",
+  "appCenterCleanupProtected": "Korumalı veya kaldırılması güvenli olmadığı için veri dizini korundu",
+  "appCenterCleanupUnavailable": "Temizleme denetimi kullanılamıyor; veriler korunarak normal kaldırma işlemi yapılabilir",
+  "appCenterCleanupChanged": "Dizin veya dağıtım hedefi değişti; lütfen yeniden inceleyin ve onaylayın",
+  "appCenterCleanupConfirmationRequired": "Lütfen seçilen dizinleri, riskleri ve tam uygulama adını yeniden onaylayın",
+  "appCenterCleanupRetryUnavailable": "Temizleme güvenli bir şekilde yeniden denenemiyor; görev ayrıntılarını inceleyin",
+  "appCenterCleanupAlreadyAbsent": "Dizin zaten mevcut değil; silme işlemi gerekmiyor",
+  "appCenterCleanupDeleteFailed": "Silme tamamlanamadı; bazı dosyalar zaten kaldırılmış olabilir. Kalan yolları inceleyin.",
+  "appCenterCleanupUnconfirmed": "Temizleme sonucu veya güvenliği doğrulanamadı; devam etmeden önce görevi inceleyin ve yeniden kontrol edin",
+  "appCenterCleanupRetryTitle": "{appName} için kalan veri temizliğini yeniden dene?",
+  "@appCenterCleanupRetryTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterCleanupRetryDescription": "Uygulama zaten kaldırıldı. Yalnızca tamamlanmamış veri dizinlerini seçin; yeniden deneme uygulamayı tekrar kaldırmaz.",
+  "appCenterCleanupRetrySelected": "Seçilen kalan verileri sil",
+  "appCenterCleanupResultsTitle": "Dizin temizleme sonuçları",
+  "appCenterCleanupPartialSummary": "Uygulama kaldırıldı; bazı veriler tamamen temizlenmedi.",
+  "appCenterCleanupPending": "Tamamlandığı doğrulanmadı",
+  "appCenterCleanupRemoved": "Kaldırıldı",
+  "appCenterCleanupRetained": "Korundu",
+  "appCenterCleanupRetryAction": "Kalan veri temizliğini yeniden dene",
+  "appCenterJellyfinSoftwareTitle": "Yazılımsal kod çözme modu",
+  "appCenterJellyfinSoftwareDesc": "GPU kod dönüştürmeyi devre dışı bırakır, incelenen GPU aygıt eşlemelerini kaldırır ve /Media dizinini salt okunur olarak bağlar.",
+  "appCenterJellyfinProfileUnavailable": "Yazılımsal kod çözme profili bu şablon için kullanılamıyor",
+  "appCenterJellyfinSoftwareChanges": "Uygulanan profil değişiklikleri:",
+  "appCenterLogsTitle": "{appName} Günlükleri",
+  "@appCenterLogsTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterLogsEmpty": "Bu dağıtım için kaydedilmiş günlük yok",
+  "appCenterLogsCopied": "Günlükler panoya kopyalandı",
+  "appCenterTaskStageQueued": "Kuyrukta",
+  "appCenterTaskStagePreparing": "Hazırlanıyor",
+  "appCenterTaskStagePulling": "İmajlar indiriliyor",
+  "appCenterTaskStageApplying": "Yapılandırma uygulanıyor",
+  "appCenterTaskStageChecking": "Durum doğrulanıyor",
+  "appCenterTaskStageSucceeded": "Başarılı",
+  "appCenterTaskStageFailed": "Başarısız",
+  "appCenterTaskStageCancelled": "İptal edildi",
+  "appCenterTaskStageNeedsInspection": "İnceleme Gerekli",
+  "appCenterCancelTask": "Görevi İptal Et",
+  "appCenterCopyLog": "Günlüğü Kopyala",
+  "appCenterErrorNotConnected": "Sunucu bağlı değil",
+  "appCenterErrorEnvironmentRequired": "Docker ortam kontrolü gereklidir",
+  "appCenterErrorPlanExpired": "Dağıtım planının süresi doldu veya geçersiz",
+  "appCenterErrorTargetChanged": "Hedef sunucu değişti; işlem iptal edildi",
+  "appCenterErrorConfigInvalid": "Geçersiz uygulama yapılandırması",
+  "appCenterErrorPathInvalid": "{field} kök dizin (/) dışında mutlak bir yol olmalı ve . veya .. bölümleri içeremez",
+  "@appCenterErrorPathInvalid": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterErrorSourceInvalid": "Geçersiz uygulama mağazası kaynağı",
+  "appCenterErrorNoWebEntry": "Bu uygulama bir web arayüzü sağlamıyor",
+  "appCenterErrorHttpsDirectRequired": "HTTPS uç noktası SSH üzerinden tünellenemez; lütfen doğrudan açın",
+  "appCenterErrorOpenFailed": "Uygulama URL'si açılamadı",
+  "appCenterErrorGeneric": "Uygulama Merkezi hatası: {error}",
+  "@appCenterErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterSourceCommunityHint": "ör. Topluluk Mağazası",
+  "appCenterSourceUrlInvalidHttps": "Geçerli bir HTTPS URL'si olmalıdır",
+  "appCenterDirectUrlLabel": "Doğrudan URL",
+  "appCenterErrorSourceRemoved": "Uygulama kaynağı artık katalogda mevcut değil. Şablon güncellenemiyor.",
+  "appCenterRestoreConfirmTitle": "{appName} geri yüklensin mi?",
+  "@appCenterRestoreConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestoreConfirmMessage": "{appName} önceki dağıtım yapılandırmasına geri yüklensin mi?",
+  "@appCenterRestoreConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostPortLabel": "Ana Bilgisayar Bağlantı Noktası (-> {target})",
+  "@appCenterHostPortLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostMountLabel": "Ana Bilgisayar: {target}",
+  "@appCenterHostMountLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterVersionLatest": "en son",
+  "appCenterWaitingForLogs": "Görev günlükleri bekleniyor...",
+  "appCenterNoPreviewAvailable": "Önizleme mevcut değil",
+  "appCenterBlockerLocalDockerRequired": "Yerel Docker arka plan programı gereklidir (uzak DOCKER_HOST desteklenmez)",
+  "appCenterBlockerToolsRequired": "Sunucuda gerekli araçlar eksik (bash, setsid, flock, base64, realpath, ss, awk)",
+  "appCenterBlockerLinuxRequired": "Linux işletim sistemi gereklidir",
+  "appCenterBlockerTemplateUnsupported": "Desteklenmeyen şablon özelliği: {feature}",
+  "@appCenterBlockerTemplateUnsupported": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterFieldRequired": "Bu alan zorunludur",
+  "appCenterContinueInstall": "Kuruluma Devam Et",
+  "appCenterOperation": "İşlem",
+  "nasTabLibrary": "Kitaplık",
+  "nasContinueWatching": "İzlemeye Devam Et",
+  "nasRecentPhotos": "Son Fotoğraflar",
+  "nasRecentVideos": "Son Videolar",
+  "nasRecentMusic": "Son Müzikler",
+  "nasDownloadPaused": "Duraklatıldı",
+  "nasDownloadDeleteConfirmTitle": "Çevrimdışı Dosyayı Sil",
+  "nasDownloadDeleteConfirmMessage": "Bu işlem indirilen yerel çevrimdışı dosyayı cihazınızdan siler. Uzak sunucudaki orijinal dosya silinmez.",
+  "nasDownloadDeleteConfirmButton": "Çevrimdışı Kopyayı Sil",
+  "nasDownloadSourceChangedMessage": "İndirme başladığından bu yana uzak kaynak yapılandırması değişti. İndirmeyi baştan yeniden başlatmak ister misiniz?",
+  "nasDownloadRestartFromScratch": "Baştan Yeniden Başlat",
+  "nasDownloadErrorSourceChanged": "Kaynak yapılandırması değişti",
+  "nasDownloadErrorOfflineFileInvalid": "İndirilen dosya bozuk veya eksik",
+  "nasDownloadErrorStorageFailed": "Depolamaya yazma başarısız oldu",
+  "nasDownloadErrorHlsUnsupported": "Akış formatları için çevrimdışı indirme desteklenmiyor",
+  "nasDownloadErrorPathInvalid": "İndirme depolama yolu geçersiz",
+  "nasOpenInApp": "Uygulamada Aç",
+  "nasOpenSystem": "Sistemle Aç",
+  "sftpRecentDirectories": "Son Dizinler",
+  "sftpNoRecentDirectories": "Son kullanılan dizin yok",
+  "sftpRetryFailed": "Başarısızları Yeniden Dene",
+  "appCenterDiskCheckFailed": "Sunucudaki kullanılabilir disk alanı doğrulanamadı",
+  "appCenterDiskFull": "Sunucu diski dolu; işleme devam edilemiyor",
+  "appCenterHealthInvalid": "Kapsayıcı sağlık denetimi başarısız oldu veya geçersiz durum bildirildi",
+  "appCenterPreflightSummary": "Ön Denetim Özeti",
+  "appCenterMeasuredAvailableSpace": "Ölçülen Kullanılabilir Disk Alanı",
+  "appCenterUpdateComparison": "Güncelleme Karşılaştırması",
+  "appCenterNoChangesDetected": "Yapısal bir değişiklik algılanmadı",
+  "appCenterSectionImage": "Kapsayıcı İmajı",
+  "appCenterSectionPorts": "Bağlantı Noktası Eşlemeleri",
+  "appCenterSectionVolumes": "Depolama Bağlama Noktaları",
+  "appCenterSectionEnvironment": "Ortam Değişkenleri",
+  "appCenterSectionHealthcheck": "Sağlık Denetimi",
+  "appCenterSectionRestart": "Yeniden Başlatma İlkesi",
+  "appCenterSectionServices": "Hizmetler",
+  "appCenterHealthNoCheck": "Sağlık denetimi yok",
+  "appCenterHealthHealthy": "Sağlıklı",
+  "appCenterHealthUnhealthy": "Sorunlu",
+  "appCenterHealthStarting": "Başlatılıyor",
+  "appCenterNoSources": "Etkin uygulama kaynağı yok",
+  "appCenterNoMatchingApps": "Arama veya filtrelerle eşleşen uygulama yok",
+  "appCenterClearFilters": "Filtreleri Temizle",
+  "appCenterSourceLoadFailed": "Uygulama kaynağı yüklenemedi",
+  "appCenterRetry": "Yeniden dene",
+  "appCenterRecheck": "Yeniden Denetle",
+  "appCenterRecheckTask": "Görev Durumunu Yeniden Denetle",
+  "appCenterTaskNeedsInspectionTitle": "Görev Durumu Doğrulanmadı",
+  "appCenterTaskNeedsInspectionMessage": "Sunucudaki görev sonucu bilinmiyor. Lütfen durumu yeniden denetleyin veya günlükleri inceleyin; işlemi körü körüne tekrarlamayın.",
+  "appCenterStopConfirmTitle": "{appName} durdurulsun mu?",
+  "@appCenterStopConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStopConfirmMessage": "{appName} uygulamasını {serverName} sunucusunda durdurmak istediğinize emin misiniz? Çalışan kapsayıcılar durdurulacaktır.",
+  "@appCenterStopConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmTitle": "{appName} yeniden başlatılsın mı?",
+  "@appCenterRestartConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmMessage": "{appName} uygulamasını {serverName} sunucusunda yeniden başlatmak istediğinize emin misiniz?",
+  "@appCenterRestartConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterBrowseStore": "Mağazaya Göz At",
+  "appCenterViewTasks": "Görevleri Gör",
+  "appCenterViewInstalled": "Yüklü Uygulamayı Gör",
+  "appCenterRunInBackground": "Arka Planda Çalıştır",
+  "appCenterTaskDetails": "Görev Ayrıntıları",
+  "appCenterTaskTarget": "Hedef",
+  "appCenterTaskDirectory": "Dizin",
+  "appCenterTaskCreatedAt": "Oluşturulma Tarihi",
+  "appCenterTaskExitCode": "Çıkış kodu: {code}",
+  "@appCenterTaskExitCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "appCenterStatusRunning": "Çalışıyor",
+  "appCenterStatusStopped": "Durduruldu",
+  "appCenterStatusInstalling": "Yükleniyor",
+  "appCenterStatusUnknown": "Bilinmiyor",
+  "appCenterEnvReady": "Docker ve Compose Ortamı Hazır",
+  "appCenterEnvNotReady": "Docker Ortamı Hazır Değil",
+  "appCenterEnvInspecting": "Docker ortamı denetleniyor...",
+  "appCenterUninstallWholeDataRoot": "Tüm Veri Kök Dizini",
+  "appCenterUninstallWholeDataRootWarning": "Bu, uygulama veri kökü altında depolanan bağlanmamış dosyaları ve alt dizinleri içerir.",
+  "appCenterUninstallCoveredByParent": "Üst dizin tarafından kapsanıyor",
+  "appCenterContainerNameInvalid": "Örnek adı bir alfasayısal karakterle başlamalı ve yalnızca harfler, sayılar, alt çizgiler, noktalar ve tireler içermelidir (en fazla 120 karakter).",
+  "appCenterMainService": "Ana Servis",
+  "appCenterContainerNamesPreview": "Kapsayıcı adları önizlemesi",
+  "appCenterContainersRecreationNotice": "Örnek kapsayıcı adlarının değiştirilmesi mevcut uygulama kapsayıcılarını yeniden oluşturacaktır.",
+  "remoteBrowserTitle": "Uzak Dosya Tarayıcısı",
+  "remoteBrowserSelectDirectory": "Dizin Seç",
+  "remoteBrowserSelectCurrentDirectory": "Mevcut Dizini Seç",
+  "remoteBrowserSearchHint": "Dosya ve klasörlerde ara...",
+  "remoteBrowserNoEntries": "Eşleşen dosya veya dizin bulunamadı",
+  "remoteBrowserEmptyDirectory": "Bu dizin boş",
+  "remoteBrowserSelectedCount": "{count, plural, =1{1 öğe seçildi} other{{count} öğe seçildi}}",
+  "@remoteBrowserSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remoteBrowserParentDirectory": "Üst Dizin",
+  "remoteBrowserLibrariesTitle": "Medya Kitaplıkları",
+  "remoteBrowserDisconnected": "Uzak bağlantı kesildi veya kullanılamıyor.",
+  "remoteBrowserTargetChanged": "Hedef ortam veya etkin sunucu değişti.",
+  "remoteBrowserPathInvalid": "İstenen yol geçersiz veya erişilemiyor.",
+  "remoteBrowserPathOutsideRoot": "İstenen yol izin verilen kök dizinin dışında.",
+  "remoteBrowserEntryUnavailable": "Seçilen girdi kullanılamıyor veya geçersiz.",
+  "nasBrowseUnavailable": "NAS tarama hizmeti şu anda kullanılamıyor.",
+  "nasInvalidDirectoryEntry": "NAS taranırken geçersiz dizin girdisiyle karşılaşıldı.",
+  "nasInvalidLibraryResponse": "Geçersiz veya bozuk medya kitaplığı yanıtı.",
+  "nasScanFilterUnresolved": "Tarama filtresi yolu çözümlenemiyor.",
+  "nasSourceSaveIncomplete": "Önceki kaynak kaydı yalnızca kısmen kalıcı oldu. Lütfen göz atmadan önce kimlik bilgilerini yeniden girin ve başarıyla kaydedin."
 }

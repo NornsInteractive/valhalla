@@ -8,6 +8,7 @@ import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -383,6 +384,7 @@ void main() {
   Future<void> settleRelease({
     String tag = 'v9.9.9',
     ProviderContainer? target,
+    Map<String, dynamic>? payload,
   }) async {
     final scope = target ?? container!;
     final notifier = scope.read(appUpdateProvider.notifier);
@@ -395,12 +397,84 @@ void main() {
     );
     service.nextCheckGate.complete(
       AppUpdateCheck(
-        release: AppUpdateService.parseRelease(_releaseJson(tag: tag)),
+        release: AppUpdateService.parseRelease(
+          payload ?? _releaseJson(tag: tag),
+        ),
       ),
     );
     await pump();
     await pending;
   }
+
+  Future<void> completeVerifiedDownload() async {
+    final bytes = List<int>.generate(4096, (i) => i % 251);
+    await settleRelease(
+      payload: updatePayload(
+        versionName: '9.9.9+42',
+        packages: [
+          updatePackage(
+            version: '9.9.9',
+            hash: sha256.convert(bytes).toString(),
+          ),
+        ],
+      ),
+    );
+    final opened = service.nextWriterOpened();
+    final task = container!.read(appUpdateProvider.notifier).download();
+    await opened;
+    await File(
+      service.downloadDestinations.single,
+    ).writeAsBytes(bytes, flush: true);
+    service.downloadGates.single.complete();
+    await task;
+    expect(currentState().downloadStatus, AppUpdateDownloadStatus.completed);
+    launcherPlatform.launched.clear();
+  }
+
+  test(
+    'repeated opens share verification and launch the completed file once',
+    () async {
+      await completeVerifiedDownload();
+      final notifier = container!.read(appUpdateProvider.notifier);
+      final first = notifier.openDownloaded();
+      final second = notifier.openDownloaded();
+      expect(second, same(first));
+      await first;
+      expect(launcherPlatform.launched, hasLength(1));
+    },
+  );
+
+  test(
+    'disposal during file verification prevents a late OS handoff',
+    () async {
+      await completeVerifiedDownload();
+      final notifier = container!.read(appUpdateProvider.notifier);
+      final pending = notifier.openDownloaded();
+      disposeContainer();
+      await pending;
+      expect(launcherPlatform.launched, isEmpty);
+      expect(methodCalls.where((call) => call.method == 'install'), isEmpty);
+    },
+  );
+
+  test(
+    'a replacement release invalidates an in-flight completed-file open',
+    () async {
+      await completeVerifiedDownload();
+      final notifier = container!.read(appUpdateProvider.notifier);
+      final check = notifier.check();
+      await pump();
+      service.nextCheckGate.complete(
+        AppUpdateCheck(
+          release: AppUpdateService.parseRelease(_releaseJson(tag: 'v10.0.0')),
+        ),
+      );
+      final opening = notifier.openDownloaded();
+      await Future.wait([check, opening]);
+      expect(currentState().release!.version, '10.0.0');
+      expect(launcherPlatform.launched, isEmpty);
+    },
+  );
 
   test(
     'pause then immediate resume waits for the gated writer and reuses the path',

@@ -9,6 +9,78 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String get nasPlaylistLoadFailed =>
+      'Daftar putar sementara tidak tersedia. Daftar media tersimpan tetap dapat diakses. Segarkan untuk mencoba lagi.';
+
+  @override
+  String get nasAllLibraries => 'Semua pustaka';
+
+  @override
+  String get nasDiagnosticsTitle => 'Diagnostik sumber media';
+
+  @override
+  String get nasDiagnosticsConnection => 'Koneksi';
+
+  @override
+  String get nasDiagnosticsScan => 'Pemindaian pustaka';
+
+  @override
+  String get nasDiagnosticsLastSuccess => 'Koneksi terakhir yang berhasil';
+
+  @override
+  String get nasDiagnosticsCredentials => 'Memeriksa kredensial tersimpan';
+
+  @override
+  String get nasDiagnosticsFinalizing => 'Menyelesaikan indeks';
+
+  @override
+  String get nasDiagnosticsNotChecked => 'Belum diperiksa';
+
+  @override
+  String get nasCacheLegacy => 'Thumbnail lama (belum terkait sumber)';
+
+  @override
+  String get nasCacheGlobalBudget =>
+      'Batas penyimpanan thumbnail (semua sumber)';
+
+  @override
+  String get nasCacheNoSource =>
+      'Pilih sumber media untuk mengelola cache-nya.';
+
+  @override
+  String get nasOfflineRecordedHint =>
+      'Jumlah byte unduhan yang tercatat, bukan penggunaan disk yang diukur. Membersihkan thumbnail tidak menghapus berkas offline.';
+
+  @override
+  String nasCacheClearConfirm(String scope) {
+    return 'Bersihkan thumbnail untuk $scope? Berkas offline dan media jarak jauh akan tetap disimpan.';
+  }
+
+  @override
+  String nasOfflineRecordedBytes(String size) {
+    return 'Unduhan tercatat: $size';
+  }
+
+  @override
+  String get nasDeployDockerTitle => 'Aplikasi Docker';
+
+  @override
+  String get nasDeployDockerDesc =>
+      'Buka aplikasi resmi Jellyfin di Pusat Aplikasi. Tinjau konfigurasinya sebelum menginstal.';
+
+  @override
+  String get nasDeployNativeDesc =>
+      'Instal Jellyfin langsung di server ini menggunakan paket resminya. Instalasi yang sudah ada tidak diubah.';
+
+  @override
+  String get nasDeployEnableAppCenter =>
+      'Aktifkan Pusat Aplikasi eksperimental untuk melanjutkan? Tata letak menu Anda tidak akan berubah.';
+
+  @override
+  String get nasDeployCatalogUnavailable =>
+      'Aplikasi resmi Jellyfin tidak tersedia. Pastikan sumber resmi diaktifkan, lalu coba lagi.';
+
+  @override
   String get appName => 'Valhalla';
 
   @override
@@ -4454,4 +4526,956 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get nasThumbnailCacheOff => 'Mati';
+
+  @override
+  String get navAppCenter => 'Pusat Aplikasi';
+
+  @override
+  String get settingsExperimentalAppCenterTitle => 'Pusat Aplikasi (Docker)';
+
+  @override
+  String get settingsExperimentalAppCenterDesc =>
+      'Toko aplikasi eksperimental dan pengelola penerapan kontainer';
+
+  @override
+  String get appCenterTitle => 'Pusat Aplikasi';
+
+  @override
+  String get appCenterTabStore => 'Toko';
+
+  @override
+  String get appCenterTabInstalled => 'Terpasang';
+
+  @override
+  String get appCenterTabTasks => 'Tugas';
+
+  @override
+  String get appCenterSources => 'Sumber';
+
+  @override
+  String get appCenterManageSources => 'Kelola Sumber';
+
+  @override
+  String get appCenterAddSource => 'Tambah Sumber';
+
+  @override
+  String get appCenterSourceName => 'Nama Sumber';
+
+  @override
+  String get appCenterSourceUrl => 'URL Sumber (HTTPS)';
+
+  @override
+  String get appCenterDeleteSource => 'Hapus Sumber';
+
+  @override
+  String get appCenterRefresh => 'Segarkan';
+
+  @override
+  String get appCenterSearchHint => 'Cari aplikasi...';
+
+  @override
+  String get appCenterFilterAllCategories => 'Semua Kategori';
+
+  @override
+  String get appCenterFilterAllSources => 'Semua Sumber';
+
+  @override
+  String get appCenterNoApps => 'Tidak ada aplikasi ditemukan';
+
+  @override
+  String get appCenterNoInstalled => 'Tidak ada aplikasi terpasang';
+
+  @override
+  String get appCenterNoTasks => 'Tidak ada tugas aktif atau terbaru';
+
+  @override
+  String get appCenterInstall => 'Pasang';
+
+  @override
+  String get appCenterInstalledBadge => 'Terpasang';
+
+  @override
+  String get appCenterIncompatibleBadge => 'Tidak Kompatibel';
+
+  @override
+  String get appCenterUpdateAvailable => 'Pembaruan Tersedia';
+
+  @override
+  String get appCenterArchitectureBlocker => 'Arsitektur tidak didukung';
+
+  @override
+  String get appCenterAppDetails => 'Detail Aplikasi';
+
+  @override
+  String get appCenterVersion => 'Versi';
+
+  @override
+  String get appCenterCategory => 'Kategori';
+
+  @override
+  String get appCenterSource => 'Sumber';
+
+  @override
+  String get appCenterArchitectures => 'Arsitektur yang Didukung';
+
+  @override
+  String get appCenterScreenshots => 'Tangkapan Layar';
+
+  @override
+  String get appCenterDescription => 'Deskripsi';
+
+  @override
+  String appCenterWizardTitle(String appName) {
+    return 'Pasang $appName';
+  }
+
+  @override
+  String appCenterConfigureTitle(String appName) {
+    return 'Konfigurasi $appName';
+  }
+
+  @override
+  String appCenterUpdateTitle(String appName) {
+    return 'Perbarui $appName';
+  }
+
+  @override
+  String get appCenterStepEnvironment => 'Lingkungan';
+
+  @override
+  String get appCenterStepConfig => 'Konfigurasi';
+
+  @override
+  String get appCenterStepReview => 'Tinjau Rencana';
+
+  @override
+  String get appCenterStepProgress => 'Kemajuan';
+
+  @override
+  String get appCenterInstanceName => 'Nama Instans';
+
+  @override
+  String get appCenterDataDirectory => 'Direktori Data';
+
+  @override
+  String get appCenterBrowseDirectory => 'Jelajahi Direktori';
+
+  @override
+  String get appCenterNetworkAndPorts => 'Jaringan & Port';
+
+  @override
+  String get appCenterBindAddress => 'Alamat Ikat';
+
+  @override
+  String get appCenterBindLoopback => 'Hanya Localhost (127.0.0.1)';
+
+  @override
+  String get appCenterBindAll => 'Semua Antarmuka (0.0.0.0)';
+
+  @override
+  String get appCenterPortMapping => 'Pemetaan Port';
+
+  @override
+  String get appCenterMounts => 'Penyimpanan Pasang (Mounts)';
+
+  @override
+  String get appCenterMountSource => 'Jalur Host';
+
+  @override
+  String get appCenterMountTarget => 'Jalur Kontainer';
+
+  @override
+  String get appCenterMountReadOnly => 'Hanya-baca';
+
+  @override
+  String get appCenterVariables => 'Variabel';
+
+  @override
+  String get appCenterEnvironmentVariables => 'Variabel Lingkungan';
+
+  @override
+  String get appCenterNext => 'Berikutnya';
+
+  @override
+  String get appCenterBack => 'Kembali';
+
+  @override
+  String get appCenterConfirmAndExecute => 'Jalankan Rencana';
+
+  @override
+  String get appCenterPlanPreview => 'Pratinjau Rencana Penerapan';
+
+  @override
+  String get appCenterPlanSanitizedNotice =>
+      'Tinjau rencana penerapan yang dibuat sebelum eksekusi:';
+
+  @override
+  String get appCenterEnvironmentCheck => 'Lingkungan Docker';
+
+  @override
+  String get appCenterDockerFound => 'Docker tersedia';
+
+  @override
+  String get appCenterDockerMissing => 'Docker tidak terpasang';
+
+  @override
+  String get appCenterComposeFound => 'Docker Compose tersedia';
+
+  @override
+  String get appCenterComposeMissing => 'Docker Compose tidak terpasang';
+
+  @override
+  String get appCenterBootstrapPrompt =>
+      'Docker dan Compose dapat disiapkan secara otomatis di server ini. Izin root/sudo diperlukan.';
+
+  @override
+  String get appCenterBootstrapButton => 'Pasang Docker & Compose';
+
+  @override
+  String get appCenterSudoPassword =>
+      'Kata Sandi Sudo (opsional / jika diperlukan)';
+
+  @override
+  String get appCenterSudoPasswordHint =>
+      'Masukkan kata sandi sudo untuk operasi berhak akses';
+
+  @override
+  String get appCenterOpen => 'Buka Antarmuka Web';
+
+  @override
+  String get appCenterStart => 'Mulai';
+
+  @override
+  String get appCenterStop => 'Hentikan';
+
+  @override
+  String get appCenterRestart => 'Mulai Ulang';
+
+  @override
+  String get appCenterLogs => 'Log';
+
+  @override
+  String get appCenterConfig => 'Konfigurasi';
+
+  @override
+  String get appCenterUpdate => 'Perbarui';
+
+  @override
+  String get appCenterRestore => 'Pulihkan';
+
+  @override
+  String get appCenterUninstall => 'Copot Pemasangan';
+
+  @override
+  String appCenterUninstallConfirmTitle(String appName) {
+    return 'Copot pemasangan $appName?';
+  }
+
+  @override
+  String appCenterUninstallConfirmMessage(String appName) {
+    return 'Apakah Anda yakin ingin mencopot pemasangan $appName? Kontainer akan dihapus, tetapi direktori data aplikasi Anda akan dipertahankan.';
+  }
+
+  @override
+  String get appCenterUninstallKeepData => 'Copot Pemasangan (Simpan Data)';
+
+  @override
+  String get appCenterUninstallDeleteSelected => 'Copot & Hapus yang Dipilih';
+
+  @override
+  String get appCenterUninstallInspecting =>
+      'Memeriksa direktori data aplikasi...';
+
+  @override
+  String get appCenterUninstallInspectionFailedWarning =>
+      'Pemeriksaan pembersihan data gagal. Anda masih dapat mencopot kontainer aplikasi sambil tetap menyimpan semua data dengan aman.';
+
+  @override
+  String get appCenterUninstallDirectoriesTitle =>
+      'Direktori data dan volume Docker';
+
+  @override
+  String get appCenterUninstallNoDirectories =>
+      'Tidak ada direktori data bind mount yang terdeteksi. Kontainer akan dihapus sementara data tetap dipertahankan.';
+
+  @override
+  String get appCenterUninstallDefaultPreservedHint =>
+      'Semua data disimpan secara default. Pilih hanya direktori atau volume yang ingin dihapus permanen.';
+
+  @override
+  String get appCenterUninstallPermanentLossWarning =>
+      'Data yang dipilih akan dihapus permanen dari server. Tidak ada keranjang sampah.';
+
+  @override
+  String get appCenterUninstallSelectedPathsTitle =>
+      'Data yang akan dihapus permanen:';
+
+  @override
+  String get appCenterUninstallRiskAck =>
+      'Saya memahami risiko dan dampaknya pada aplikasi lain serta mengonfirmasi penghapusan permanen data ini.';
+
+  @override
+  String get remoteBrowserAllFileTypes => 'Semua format';
+
+  @override
+  String get remoteBrowserDocuments => 'Teks dan dokumen';
+
+  @override
+  String get remoteBrowserFileFormat => 'Format berkas';
+
+  @override
+  String get appCenterUninstallRiskSystem => 'Jalur sistem';
+
+  @override
+  String get appCenterUninstallRiskShared => 'Dibagikan dengan aplikasi lain';
+
+  @override
+  String get appCenterUninstallRiskVolume => 'Volume Docker';
+
+  @override
+  String get appCenterCleanupVolumeDeleteFailed =>
+      'Volume Docker gagal dihapus. Lepaskan penggunaannya oleh kontainer lain, periksa kembali, lalu coba lagi.';
+
+  @override
+  String get appCenterCleanupPermissionDenied =>
+      'Akses ditolak. Gunakan akun dengan akses ke data atau sudo.';
+
+  @override
+  String get appCenterCleanupCriticalPath =>
+      'Direktori akar server serta direktori runtime dan pengelolaan sistem tidak dapat dihapus saat menghapus aplikasi.';
+
+  @override
+  String appCenterUninstallTypeAppNameHint(String appName) {
+    return 'Ketik nama aplikasi persis untuk mengonfirmasi penghapusan permanen: $appName';
+  }
+
+  @override
+  String get appCenterUninstallRiskLegacy =>
+      'Kepemilikan eksklusif belum diverifikasi';
+
+  @override
+  String get appCenterUninstallRiskExternal =>
+      'Di luar direktori root data aplikasi';
+
+  @override
+  String get appCenterUninstallRiskMedia => 'Jalur media atau hanya-baca';
+
+  @override
+  String get appCenterUninstallTargetBlocked =>
+      'Direktori dilindungi, tidak dapat dihapus';
+
+  @override
+  String get appCenterCleanupProtected =>
+      'Direktori data dipertahankan karena dilindungi atau tidak aman untuk dihapus';
+
+  @override
+  String get appCenterCleanupUnavailable =>
+      'Pemeriksaan pembersihan tidak tersedia; pencopotan biasa tetap dapat dilakukan dengan mempertahankan data';
+
+  @override
+  String get appCenterCleanupChanged =>
+      'Direktori atau target penerapan berubah; harap periksa dan konfirmasi ulang';
+
+  @override
+  String get appCenterCleanupConfirmationRequired =>
+      'Harap konfirmasi ulang direktori yang dipilih, risiko, dan nama aplikasi yang tepat';
+
+  @override
+  String get appCenterCleanupRetryUnavailable =>
+      'Pembersihan tidak dapat dicoba ulang dengan aman; periksa detail tugas';
+
+  @override
+  String get appCenterCleanupAlreadyAbsent =>
+      'Direktori sudah tidak ada; tidak perlu penghapusan';
+
+  @override
+  String get appCenterCleanupDeleteFailed =>
+      'Penghapusan tidak lengkap; beberapa file mungkin sudah dihapus. Periksa jalur yang tersisa.';
+
+  @override
+  String get appCenterCleanupUnconfirmed =>
+      'Tidak dapat mengonfirmasi hasil atau keamanan pembersihan; periksa tugas sebelum melanjutkan';
+
+  @override
+  String appCenterCleanupRetryTitle(String appName) {
+    return 'Coba lagi pembersihan sisa data untuk $appName?';
+  }
+
+  @override
+  String get appCenterCleanupRetryDescription =>
+      'Aplikasi sudah dicopot pemasangannya. Pilih hanya direktori data yang belum selesai; mencoba lagi tidak akan mencopotnya kembali.';
+
+  @override
+  String get appCenterCleanupRetrySelected => 'Hapus sisa data yang dipilih';
+
+  @override
+  String get appCenterCleanupResultsTitle => 'Hasil pembersihan direktori';
+
+  @override
+  String get appCenterCleanupPartialSummary =>
+      'Aplikasi dicopot pemasangannya; sebagian data belum sepenuhnya dibersihkan.';
+
+  @override
+  String get appCenterCleanupPending => 'Belum dikonfirmasi selesai';
+
+  @override
+  String get appCenterCleanupRemoved => 'Dihapus';
+
+  @override
+  String get appCenterCleanupRetained => 'Dipertahankan';
+
+  @override
+  String get appCenterCleanupRetryAction => 'Coba lagi pembersihan sisa data';
+
+  @override
+  String get appCenterJellyfinSoftwareTitle => 'Mode decoding perangkat lunak';
+
+  @override
+  String get appCenterJellyfinSoftwareDesc =>
+      'Menonaktifkan transcoding GPU, menghapus pemetaan perangkat GPU yang ditinjau, dan memasang /Media sebagai hanya-baca.';
+
+  @override
+  String get appCenterJellyfinProfileUnavailable =>
+      'Profil decoding perangkat lunak tidak tersedia untuk templat ini';
+
+  @override
+  String get appCenterJellyfinSoftwareChanges =>
+      'Perubahan profil yang diterapkan:';
+
+  @override
+  String get nasNativeInstallTitle => 'Instal Jellyfin (paket native)';
+
+  @override
+  String get nasNativeStepVerifyRepo =>
+      'Verifikasi repositori resmi bertanda tangan';
+
+  @override
+  String get nasNativeStepPreventAutostart =>
+      'Cegah layanan mulai otomatis sebelum dikonfigurasi';
+
+  @override
+  String get nasNativeStepInstallPackages =>
+      'Instal paket bertanda tangan dengan versi tetap';
+
+  @override
+  String get nasNativeStepConfigureLoopback =>
+      'Atur agar hanya mendengarkan di localhost';
+
+  @override
+  String get nasNativeStageInstalling => 'Menginstal paket dengan versi tetap';
+
+  @override
+  String get nasNativeStageStarting => 'Memulai layanan systemd';
+
+  @override
+  String get nasNativeGuidanceMediaAccess =>
+      'Izin dan kepemilikan berkas media tidak diubah. Pastikan pengguna layanan Jellyfin memiliki akses baca.';
+
+  @override
+  String get nasNativeGuidanceNoUpgrade =>
+      'Instalasi Jellyfin yang sudah ada tidak akan diambil alih, diubah, atau ditingkatkan.';
+
+  @override
+  String get nasNativeSupportedRequirements =>
+      'Memerlukan Debian atau Ubuntu (amd64/arm64), systemd, serta akses root atau sudo tanpa kata sandi.';
+
+  @override
+  String get nasNativeExistingInstallTitle =>
+      'Instalasi Jellyfin yang sudah ada terdeteksi';
+
+  @override
+  String get nasNativeExistingInstallExplanation =>
+      'Jellyfin sudah terinstal di server ini. Valhalla tidak akan mengubah atau menginstalnya ulang. Verifikasi koneksinya secara langsung.';
+
+  @override
+  String get nasNativeCancelExplanation =>
+      'Pembatalan diminta pada titik aman berikutnya. Operasi paket yang sedang berjalan akan diselesaikan dengan aman.';
+
+  @override
+  String get nasNativeMediaPathLabel => 'Jalur direktori media';
+
+  @override
+  String get nasNativeMediaPathHint =>
+      'Jalur absolut yang sudah ada di server (mis. /media/library). Izin tidak diubah.';
+
+  @override
+  String get nasNativeSudoRequired =>
+      'Akses root atau sudo tanpa kata sandi diperlukan untuk menginstal paket sistem';
+
+  @override
+  String appCenterLogsTitle(String appName) {
+    return 'Log $appName';
+  }
+
+  @override
+  String get appCenterLogsEmpty =>
+      'Tidak ada log yang tercatat untuk penerapan ini';
+
+  @override
+  String get appCenterLogsCopied => 'Log disalin ke papan klip';
+
+  @override
+  String get appCenterTaskStageQueued => 'Dalam antrean';
+
+  @override
+  String get appCenterTaskStagePreparing => 'Mempersiapkan';
+
+  @override
+  String get appCenterTaskStagePulling => 'Mengunduh gambar';
+
+  @override
+  String get appCenterTaskStageApplying => 'Menerapkan konfigurasi';
+
+  @override
+  String get appCenterTaskStageChecking => 'Memeriksa status';
+
+  @override
+  String get appCenterTaskStageSucceeded => 'Berhasil';
+
+  @override
+  String get appCenterTaskStageFailed => 'Gagal';
+
+  @override
+  String get appCenterTaskStageCancelled => 'Dibatalkan';
+
+  @override
+  String get appCenterTaskStageNeedsInspection => 'Perlu Pemeriksaan';
+
+  @override
+  String get appCenterCancelTask => 'Batalkan Tugas';
+
+  @override
+  String get appCenterCopyLog => 'Salin Log';
+
+  @override
+  String get appCenterErrorNotConnected => 'Server tidak terhubung';
+
+  @override
+  String get appCenterErrorEnvironmentRequired =>
+      'Pemeriksaan lingkungan Docker diperlukan';
+
+  @override
+  String get appCenterErrorPlanExpired =>
+      'Rencana penerapan kedaluwarsa atau tidak valid';
+
+  @override
+  String get appCenterErrorTargetChanged =>
+      'Server target berubah; operasi dibatalkan';
+
+  @override
+  String get appCenterErrorConfigInvalid => 'Konfigurasi aplikasi tidak valid';
+
+  @override
+  String appCenterErrorPathInvalid(String field) {
+    return '$field harus berupa jalur absolut selain root (/), dan tidak boleh berisi segmen . atau ..';
+  }
+
+  @override
+  String get appCenterErrorSourceInvalid => 'Sumber toko aplikasi tidak valid';
+
+  @override
+  String get appCenterErrorNoWebEntry =>
+      'Aplikasi ini tidak menyediakan antarmuka web';
+
+  @override
+  String get appCenterErrorHttpsDirectRequired =>
+      'Titik akhir HTTPS tidak dapat ditautkan melalui SSH; silakan buka langsung';
+
+  @override
+  String get appCenterErrorOpenFailed => 'Gagal membuka URL aplikasi';
+
+  @override
+  String appCenterErrorGeneric(String error) {
+    return 'Kesalahan Pusat Aplikasi: $error';
+  }
+
+  @override
+  String get appCenterSourceCommunityHint => 'cth. Toko Komunitas';
+
+  @override
+  String get appCenterSourceUrlInvalidHttps =>
+      'Harus berupa URL HTTPS yang valid';
+
+  @override
+  String get appCenterDirectUrlLabel => 'URL Langsung';
+
+  @override
+  String get appCenterErrorSourceRemoved =>
+      'Sumber aplikasi tidak lagi tersedia di katalog. Tidak dapat memperbarui template.';
+
+  @override
+  String appCenterRestoreConfirmTitle(String appName) {
+    return 'Pulihkan $appName?';
+  }
+
+  @override
+  String appCenterRestoreConfirmMessage(String appName) {
+    return 'Pulihkan $appName ke konfigurasi penerapan sebelumnya?';
+  }
+
+  @override
+  String appCenterHostPortLabel(String target) {
+    return 'Port Host (-> $target)';
+  }
+
+  @override
+  String appCenterHostMountLabel(String target) {
+    return 'Jalur host ($target)';
+  }
+
+  @override
+  String get appCenterVersionLatest => 'terbaru';
+
+  @override
+  String get appCenterWaitingForLogs => 'Menunggu log tugas...';
+
+  @override
+  String get appCenterNoPreviewAvailable => 'Tidak ada pratinjau yang tersedia';
+
+  @override
+  String get appCenterBlockerLocalDockerRequired =>
+      'Daemon Docker lokal diperlukan (DOCKER_HOST jarak jauh tidak didukung)';
+
+  @override
+  String get appCenterBlockerToolsRequired =>
+      'Alat yang diperlukan hilang di server (bash, setsid, flock, base64, realpath, ss, awk)';
+
+  @override
+  String get appCenterBlockerLinuxRequired => 'Sistem operasi Linux diperlukan';
+
+  @override
+  String appCenterBlockerTemplateUnsupported(String feature) {
+    return 'Fitur template tidak didukung: $feature';
+  }
+
+  @override
+  String get appCenterFieldRequired => 'Bagian ini wajib diisi';
+
+  @override
+  String get appCenterContinueInstall => 'Lanjutkan Instalasi';
+
+  @override
+  String get appCenterOperation => 'Operasi';
+
+  @override
+  String get nasTabLibrary => 'Pustaka';
+
+  @override
+  String get nasContinueWatching => 'Lanjutkan Menonton';
+
+  @override
+  String get nasRecentPhotos => 'Foto Terbaru';
+
+  @override
+  String get nasRecentVideos => 'Video Terbaru';
+
+  @override
+  String get nasRecentMusic => 'Musik Terbaru';
+
+  @override
+  String get nasDownloadPaused => 'Dijeda';
+
+  @override
+  String get nasDownloadDeleteConfirmTitle => 'Hapus Berkas Offline';
+
+  @override
+  String get nasDownloadDeleteConfirmMessage =>
+      'Tindakan ini akan menghapus berkas offline lokal dari perangkat Anda. Berkas asli di server jarak jauh tidak akan dihapus.';
+
+  @override
+  String get nasDownloadDeleteConfirmButton => 'Hapus Salinan Offline';
+
+  @override
+  String get nasDownloadSourceChangedMessage =>
+      'Konfigurasi sumber jarak jauh telah berubah sejak unduhan dimulai. Apakah Anda ingin mengulang unduhan dari awal?';
+
+  @override
+  String get nasDownloadRestartFromScratch => 'Mulai Ulang dari Awal';
+
+  @override
+  String get nasDownloadErrorSourceChanged => 'Konfigurasi sumber berubah';
+
+  @override
+  String get nasDownloadErrorOfflineFileInvalid =>
+      'Berkas yang diunduh rusak atau tidak lengkap';
+
+  @override
+  String get nasDownloadErrorStorageFailed => 'Gagal menulis ke penyimpanan';
+
+  @override
+  String get nasDownloadErrorHlsUnsupported =>
+      'Unduhan offline tidak didukung untuk streaming';
+
+  @override
+  String get nasDownloadErrorPathInvalid =>
+      'Jalur penyimpanan unduhan tidak valid';
+
+  @override
+  String get nasOpenInApp => 'Buka di Aplikasi';
+
+  @override
+  String get nasOpenSystem => 'Buka dengan Sistem';
+
+  @override
+  String get sftpRecentDirectories => 'Direktori Terakhir';
+
+  @override
+  String get sftpNoRecentDirectories => 'Tidak ada direktori terbaru';
+
+  @override
+  String get sftpRetryFailed => 'Ulangi yang Gagal';
+
+  @override
+  String get appCenterDiskCheckFailed =>
+      'Tidak dapat memverifikasi ruang disk yang tersedia di server';
+
+  @override
+  String get appCenterDiskFull =>
+      'Disk server penuh; tidak dapat melanjutkan operasi';
+
+  @override
+  String get appCenterHealthInvalid =>
+      'Pemeriksaan kesehatan kontainer gagal atau melaporkan status tidak valid';
+
+  @override
+  String get appCenterPreflightSummary => 'Ringkasan Pra-Pemeriksaan';
+
+  @override
+  String get appCenterMeasuredAvailableSpace => 'Ruang Disk Tersedia Terukur';
+
+  @override
+  String get appCenterUpdateComparison => 'Perbandingan Pembaruan';
+
+  @override
+  String get appCenterNoChangesDetected =>
+      'Tidak ada perubahan struktural yang terdeteksi';
+
+  @override
+  String get appCenterSectionImage => 'Gambar Kontainer';
+
+  @override
+  String get appCenterSectionPorts => 'Pemetaan Port';
+
+  @override
+  String get appCenterSectionVolumes => 'Pemasangan Penyimpanan';
+
+  @override
+  String get appCenterSectionEnvironment => 'Variabel Lingkungan';
+
+  @override
+  String get appCenterSectionHealthcheck => 'Pemeriksaan Kesehatan';
+
+  @override
+  String get appCenterSectionRestart => 'Kebijakan Mulai Ulang';
+
+  @override
+  String get appCenterSectionServices => 'Layanan';
+
+  @override
+  String get appCenterHealthNoCheck => 'Tanpa pemeriksaan kesehatan';
+
+  @override
+  String get appCenterHealthHealthy => 'Sehat';
+
+  @override
+  String get appCenterHealthUnhealthy => 'Tidak Sehat';
+
+  @override
+  String get appCenterHealthStarting => 'Memulai';
+
+  @override
+  String get appCenterNoSources => 'Tidak ada sumber aplikasi yang diaktifkan';
+
+  @override
+  String get appCenterNoMatchingApps =>
+      'Tidak ada aplikasi yang cocok dengan pencarian atau filter';
+
+  @override
+  String get appCenterClearFilters => 'Hapus Filter';
+
+  @override
+  String get appCenterSourceLoadFailed => 'Gagal memuat sumber aplikasi';
+
+  @override
+  String get appCenterRetry => 'Coba lagi';
+
+  @override
+  String get appCenterRecheck => 'Periksa Ulang';
+
+  @override
+  String get appCenterRecheckTask => 'Periksa Ulang Status Tugas';
+
+  @override
+  String get appCenterTaskNeedsInspectionTitle =>
+      'Status Tugas Belum Terkonfirmasi';
+
+  @override
+  String get appCenterTaskNeedsInspectionMessage =>
+      'Hasil tugas di server tidak diketahui. Harap periksa ulang status atau lihat log; jangan mengulang operasi tanpa verifikasi.';
+
+  @override
+  String appCenterStopConfirmTitle(String appName) {
+    return 'Hentikan $appName?';
+  }
+
+  @override
+  String appCenterStopConfirmMessage(String appName, String serverName) {
+    return 'Yakin ingin menghentikan $appName di server $serverName? Kontainer yang sedang berjalan akan dihentikan.';
+  }
+
+  @override
+  String appCenterRestartConfirmTitle(String appName) {
+    return 'Mulai ulang $appName?';
+  }
+
+  @override
+  String appCenterRestartConfirmMessage(String appName, String serverName) {
+    return 'Yakin ingin memulai ulang $appName di server $serverName?';
+  }
+
+  @override
+  String get appCenterBrowseStore => 'Jelajahi Toko Aplikasi';
+
+  @override
+  String get appCenterViewTasks => 'Lihat Tugas';
+
+  @override
+  String get appCenterViewInstalled => 'Lihat Aplikasi Terinstal';
+
+  @override
+  String get appCenterRunInBackground => 'Jalankan di Latar Belakang';
+
+  @override
+  String get appCenterTaskDetails => 'Detail Tugas';
+
+  @override
+  String get appCenterTaskTarget => 'Target';
+
+  @override
+  String get appCenterTaskDirectory => 'Direktori';
+
+  @override
+  String get appCenterTaskCreatedAt => 'Dibuat pada';
+
+  @override
+  String appCenterTaskExitCode(int code) {
+    return 'Kode keluar: $code';
+  }
+
+  @override
+  String get appCenterStatusRunning => 'Berjalan';
+
+  @override
+  String get appCenterStatusStopped => 'Berhenti';
+
+  @override
+  String get appCenterStatusInstalling => 'Menginstal';
+
+  @override
+  String get appCenterStatusUnknown => 'Tidak diketahui';
+
+  @override
+  String get appCenterEnvReady => 'Lingkungan Docker & Compose Siap';
+
+  @override
+  String get appCenterEnvNotReady => 'Lingkungan Docker Belum Siap';
+
+  @override
+  String get appCenterEnvInspecting => 'Memeriksa lingkungan Docker server...';
+
+  @override
+  String get appCenterUninstallWholeDataRoot =>
+      'Seluruh Direktori Pangkal Data';
+
+  @override
+  String get appCenterUninstallWholeDataRootWarning =>
+      'Ini mencakup file yang belum dipasang dan subdirektori yang disimpan di bawah direktori pangkal data aplikasi.';
+
+  @override
+  String get appCenterUninstallCoveredByParent =>
+      'Dicakup oleh direktori induk';
+
+  @override
+  String get appCenterContainerNameInvalid =>
+      'Nama instans harus diawali dengan karakter alfanumerik dan hanya boleh berisi huruf, angka, garis bawah, titik, dan tanda hubung (hingga 120 karakter).';
+
+  @override
+  String get appCenterMainService => 'Layanan Utama';
+
+  @override
+  String get appCenterContainerNamesPreview => 'Pratinjau nama kontainer';
+
+  @override
+  String get appCenterContainersRecreationNotice =>
+      'Mengubah nama kontainer instans akan membuat ulang kontainer aplikasi yang ada.';
+
+  @override
+  String get remoteBrowserTitle => 'Peramban Berkas Jarak Jauh';
+
+  @override
+  String get remoteBrowserSelectDirectory => 'Pilih Direktori';
+
+  @override
+  String get remoteBrowserSelectCurrentDirectory => 'Pilih Direktori Saat Ini';
+
+  @override
+  String get remoteBrowserSearchHint => 'Cari berkas dan folder...';
+
+  @override
+  String get remoteBrowserNoEntries =>
+      'Tidak ada berkas atau direktori yang cocok';
+
+  @override
+  String get remoteBrowserEmptyDirectory => 'Direktori ini kosong';
+
+  @override
+  String remoteBrowserSelectedCount(int count) {
+    return '$count item dipilih';
+  }
+
+  @override
+  String get remoteBrowserParentDirectory => 'Direktori Induk';
+
+  @override
+  String get remoteBrowserLibrariesTitle => 'Pustaka Media';
+
+  @override
+  String get remoteBrowserDisconnected =>
+      'Koneksi jarak jauh terputus atau tidak tersedia.';
+
+  @override
+  String get remoteBrowserTargetChanged =>
+      'Lingkungan target atau server aktif berubah.';
+
+  @override
+  String get remoteBrowserPathInvalid =>
+      'Jalur yang diminta tidak valid atau tidak dapat diakses.';
+
+  @override
+  String get remoteBrowserPathOutsideRoot =>
+      'Jalur yang diminta berada di luar direktori pangkal yang diizinkan.';
+
+  @override
+  String get remoteBrowserEntryUnavailable =>
+      'Entri yang dipilih tidak tersedia atau tidak valid.';
+
+  @override
+  String get nasBrowseUnavailable =>
+      'Layanan penjelajahan NAS saat ini tidak tersedia.';
+
+  @override
+  String get nasInvalidDirectoryEntry =>
+      'Entri direktori tidak valid ditemukan saat menjelajahi NAS.';
+
+  @override
+  String get nasInvalidLibraryResponse =>
+      'Respons pustaka media tidak valid atau salah bentuk.';
+
+  @override
+  String get nasScanFilterUnresolved =>
+      'Tidak dapat menyelesaikan jalur filter pemindaian.';
+
+  @override
+  String get nasSourceSaveIncomplete =>
+      'Penyimpanan sumber sebelumnya hanya tersimpan sebagian. Masukkan kembali kredensial dan simpan dengan sukses sebelum menjelajah.';
 }

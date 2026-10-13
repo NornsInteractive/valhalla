@@ -9,6 +9,78 @@ class AppLocalizationsTr extends AppLocalizations {
   AppLocalizationsTr([String locale = 'tr']) : super(locale);
 
   @override
+  String get nasPlaylistLoadFailed =>
+      'Çalma listeleri geçici olarak kullanılamıyor. Kayıtlı medya listesi hâlâ kullanılabilir. Yeniden denemek için yenileyin.';
+
+  @override
+  String get nasAllLibraries => 'Tüm kitaplıklar';
+
+  @override
+  String get nasDiagnosticsTitle => 'Medya kaynağı tanılama';
+
+  @override
+  String get nasDiagnosticsConnection => 'Bağlantı';
+
+  @override
+  String get nasDiagnosticsScan => 'Kitaplık taraması';
+
+  @override
+  String get nasDiagnosticsLastSuccess => 'Son başarılı bağlantı';
+
+  @override
+  String get nasDiagnosticsCredentials =>
+      'Kayıtlı kimlik bilgileri kontrol ediliyor';
+
+  @override
+  String get nasDiagnosticsFinalizing => 'Dizin tamamlanıyor';
+
+  @override
+  String get nasDiagnosticsNotChecked => 'Kontrol edilmedi';
+
+  @override
+  String get nasCacheLegacy => 'Eski küçük resimler (kaynak atanmamış)';
+
+  @override
+  String get nasCacheGlobalBudget => 'Küçük resim sınırı (tüm kaynaklar)';
+
+  @override
+  String get nasCacheNoSource =>
+      'Önbelleğini yönetmek için bir medya kaynağı seçin.';
+
+  @override
+  String get nasOfflineRecordedHint =>
+      'Bu değer ölçülen disk kullanımı değil, kaydedilen indirme baytlarıdır. Küçük resimleri temizlemek çevrimdışı dosyaları silmez.';
+
+  @override
+  String nasCacheClearConfirm(String scope) {
+    return '$scope için küçük resimler temizlensin mi? Çevrimdışı dosyalar ve uzak medya korunacak.';
+  }
+
+  @override
+  String nasOfflineRecordedBytes(String size) {
+    return 'Kaydedilen indirmeler: $size';
+  }
+
+  @override
+  String get nasDeployDockerTitle => 'Docker uygulaması';
+
+  @override
+  String get nasDeployDockerDesc =>
+      'Uygulama Merkezi’nde resmî Jellyfin uygulamasını açın. Yüklemeden önce yapılandırmasını inceleyin.';
+
+  @override
+  String get nasDeployNativeDesc =>
+      'Jellyfin’i resmî paketleriyle doğrudan bu sunucuya yükleyin. Mevcut kurulumlar değiştirilmez.';
+
+  @override
+  String get nasDeployEnableAppCenter =>
+      'Devam etmek için deneysel Uygulama Merkezi etkinleştirilsin mi? Menü düzeniniz değişmeyecek.';
+
+  @override
+  String get nasDeployCatalogUnavailable =>
+      'Resmî Jellyfin uygulaması kullanılamıyor. Resmî kaynağın etkin olduğunu kontrol edip yeniden deneyin.';
+
+  @override
   String get appName => 'Valhalla';
 
   @override
@@ -4449,4 +4521,956 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get nasThumbnailCacheOff => 'Kapalı';
+
+  @override
+  String get navAppCenter => 'Uygulama Merkezi';
+
+  @override
+  String get settingsExperimentalAppCenterTitle => 'Uygulama Merkezi (Docker)';
+
+  @override
+  String get settingsExperimentalAppCenterDesc =>
+      'Deneysel uygulama mağazası ve konteyner dağıtım yöneticisi';
+
+  @override
+  String get appCenterTitle => 'Uygulama Merkezi';
+
+  @override
+  String get appCenterTabStore => 'Mağaza';
+
+  @override
+  String get appCenterTabInstalled => 'Yüklü';
+
+  @override
+  String get appCenterTabTasks => 'Görevler';
+
+  @override
+  String get appCenterSources => 'Kaynaklar';
+
+  @override
+  String get appCenterManageSources => 'Kaynakları Yönet';
+
+  @override
+  String get appCenterAddSource => 'Kaynak Ekle';
+
+  @override
+  String get appCenterSourceName => 'Kaynak Adı';
+
+  @override
+  String get appCenterSourceUrl => 'Kaynak URL\'si (HTTPS)';
+
+  @override
+  String get appCenterDeleteSource => 'Kaynağı Sil';
+
+  @override
+  String get appCenterRefresh => 'Yenile';
+
+  @override
+  String get appCenterSearchHint => 'Uygulama ara...';
+
+  @override
+  String get appCenterFilterAllCategories => 'Tüm Kategoriler';
+
+  @override
+  String get appCenterFilterAllSources => 'Tüm Kaynaklar';
+
+  @override
+  String get appCenterNoApps => 'Uygulama bulunamadı';
+
+  @override
+  String get appCenterNoInstalled => 'Yüklü uygulama yok';
+
+  @override
+  String get appCenterNoTasks => 'Etkin veya son görev yok';
+
+  @override
+  String get appCenterInstall => 'Yükle';
+
+  @override
+  String get appCenterInstalledBadge => 'Yüklü';
+
+  @override
+  String get appCenterIncompatibleBadge => 'Uyumsuz';
+
+  @override
+  String get appCenterUpdateAvailable => 'Güncelleme Mevcut';
+
+  @override
+  String get appCenterArchitectureBlocker => 'Mimari desteklenmiyor';
+
+  @override
+  String get appCenterAppDetails => 'Uygulama Ayrıntıları';
+
+  @override
+  String get appCenterVersion => 'Sürüm';
+
+  @override
+  String get appCenterCategory => 'Kategori';
+
+  @override
+  String get appCenterSource => 'Kaynak';
+
+  @override
+  String get appCenterArchitectures => 'Desteklenen Mimariler';
+
+  @override
+  String get appCenterScreenshots => 'Ekran Görüntüleri';
+
+  @override
+  String get appCenterDescription => 'Açıklama';
+
+  @override
+  String appCenterWizardTitle(String appName) {
+    return '$appName Yükle';
+  }
+
+  @override
+  String appCenterConfigureTitle(String appName) {
+    return '$appName Yapılandır';
+  }
+
+  @override
+  String appCenterUpdateTitle(String appName) {
+    return '$appName Güncelle';
+  }
+
+  @override
+  String get appCenterStepEnvironment => 'Ortam';
+
+  @override
+  String get appCenterStepConfig => 'Yapılandırma';
+
+  @override
+  String get appCenterStepReview => 'Planı İncele';
+
+  @override
+  String get appCenterStepProgress => 'İlerleme';
+
+  @override
+  String get appCenterInstanceName => 'Örnek Adı';
+
+  @override
+  String get appCenterDataDirectory => 'Veri Dizini';
+
+  @override
+  String get appCenterBrowseDirectory => 'Dizine Göz At';
+
+  @override
+  String get appCenterNetworkAndPorts => 'Ağ ve Bağlantı Noktaları';
+
+  @override
+  String get appCenterBindAddress => 'Bağlama Adresi';
+
+  @override
+  String get appCenterBindLoopback =>
+      'Yalnızca Yerel Ana Bilgisayar (127.0.0.1)';
+
+  @override
+  String get appCenterBindAll => 'Tüm Arabirimler (0.0.0.0)';
+
+  @override
+  String get appCenterPortMapping => 'Bağlantı Noktası Eşlemeleri';
+
+  @override
+  String get appCenterMounts => 'Depolama Bağlantıları';
+
+  @override
+  String get appCenterMountSource => 'Ana Bilgisayar Yolu';
+
+  @override
+  String get appCenterMountTarget => 'Konteyner Yolu';
+
+  @override
+  String get appCenterMountReadOnly => 'Salt Okunur';
+
+  @override
+  String get appCenterVariables => 'Değişkenler';
+
+  @override
+  String get appCenterEnvironmentVariables => 'Ortam Değişkenleri';
+
+  @override
+  String get appCenterNext => 'İleri';
+
+  @override
+  String get appCenterBack => 'Geri';
+
+  @override
+  String get appCenterConfirmAndExecute => 'Planı Yürüt';
+
+  @override
+  String get appCenterPlanPreview => 'Dağıtım Planı Önizlemesi';
+
+  @override
+  String get appCenterPlanSanitizedNotice =>
+      'Yürütmeden önce oluşturulan dağıtım planını inceleyin:';
+
+  @override
+  String get appCenterEnvironmentCheck => 'Docker Ortamı';
+
+  @override
+  String get appCenterDockerFound => 'Docker kullanılabilir';
+
+  @override
+  String get appCenterDockerMissing => 'Docker yüklü değil';
+
+  @override
+  String get appCenterComposeFound => 'Docker Compose kullanılabilir';
+
+  @override
+  String get appCenterComposeMissing => 'Docker Compose yüklü değil';
+
+  @override
+  String get appCenterBootstrapPrompt =>
+      'Docker ve Compose bu sunucuya otomatik olarak kurulabilir. Root/sudo izni gereklidir.';
+
+  @override
+  String get appCenterBootstrapButton => 'Docker ve Compose Kur';
+
+  @override
+  String get appCenterSudoPassword =>
+      'Sudo Parolası (isteğe bağlı / gerekirse)';
+
+  @override
+  String get appCenterSudoPasswordHint =>
+      'Ayrıcalıklı işlemler için sudo parolasını girin';
+
+  @override
+  String get appCenterOpen => 'Web Arayüzünü Aç';
+
+  @override
+  String get appCenterStart => 'Başlat';
+
+  @override
+  String get appCenterStop => 'Durdur';
+
+  @override
+  String get appCenterRestart => 'Yeniden Başlat';
+
+  @override
+  String get appCenterLogs => 'Günlükler';
+
+  @override
+  String get appCenterConfig => 'Yapılandır';
+
+  @override
+  String get appCenterUpdate => 'Güncelle';
+
+  @override
+  String get appCenterRestore => 'Geri Yükle';
+
+  @override
+  String get appCenterUninstall => 'Kaldır';
+
+  @override
+  String appCenterUninstallConfirmTitle(String appName) {
+    return '$appName kaldırılsın mı?';
+  }
+
+  @override
+  String appCenterUninstallConfirmMessage(String appName) {
+    return '$appName uygulamasını kaldırmak istediğinizden emin misiniz? Konteynerler kaldırılacak, ancak uygulama veri dizininiz korunacaktır.';
+  }
+
+  @override
+  String get appCenterUninstallKeepData => 'Kaldır (Verileri Koru)';
+
+  @override
+  String get appCenterUninstallDeleteSelected => 'Kaldır ve Seçilenleri Sil';
+
+  @override
+  String get appCenterUninstallInspecting =>
+      'Uygulama veri dizinleri inceleniyor...';
+
+  @override
+  String get appCenterUninstallInspectionFailedWarning =>
+      'Veri temizleme incelemesi başarısız oldu. Tüm verileri güvenle koruyarak uygulama konteynerlerini yine de kaldırabilirsiniz.';
+
+  @override
+  String get appCenterUninstallDirectoriesTitle =>
+      'Veri dizinleri ve Docker birimleri';
+
+  @override
+  String get appCenterUninstallNoDirectories =>
+      'Bağlama noktası veri dizini algılanmadı. Veriler korunurken konteynerler kaldırılacaktır.';
+
+  @override
+  String get appCenterUninstallDefaultPreservedHint =>
+      'Varsayılan olarak tüm veriler korunur. Yalnızca kalıcı silmek istediğiniz dizin veya birimleri seçin.';
+
+  @override
+  String get appCenterUninstallPermanentLossWarning =>
+      'Seçilen veriler sunucudan kalıcı olarak silinecek. Geri dönüşüm kutusu yoktur.';
+
+  @override
+  String get appCenterUninstallSelectedPathsTitle =>
+      'Kalıcı silinecek veriler:';
+
+  @override
+  String get appCenterUninstallRiskAck =>
+      'Riskleri ve diğer uygulamalara etkilerini anlıyor ve bu verilerin kalıcı silinmesini onaylıyorum.';
+
+  @override
+  String get remoteBrowserAllFileTypes => 'Tüm biçimler';
+
+  @override
+  String get remoteBrowserDocuments => 'Metin ve belgeler';
+
+  @override
+  String get remoteBrowserFileFormat => 'Dosya biçimi';
+
+  @override
+  String get appCenterUninstallRiskSystem => 'Sistem yolu';
+
+  @override
+  String get appCenterUninstallRiskShared => 'Diğer uygulamalarla paylaşılıyor';
+
+  @override
+  String get appCenterUninstallRiskVolume => 'Docker birimi';
+
+  @override
+  String get appCenterCleanupVolumeDeleteFailed =>
+      'Docker birimi silinemedi. Diğer konteynerlerin kullanımını kaldırın, yeniden denetleyip deneyin.';
+
+  @override
+  String get appCenterCleanupPermissionDenied =>
+      'Erişim reddedildi. Verilere erişebilen bir hesap veya sudo kullanın.';
+
+  @override
+  String get appCenterCleanupCriticalPath =>
+      'Sunucu kökü ile sistem çalışma ve yönetim dizinleri uygulama kaldırılırken silinemez.';
+
+  @override
+  String appCenterUninstallTypeAppNameHint(String appName) {
+    return 'Kalıcı silmeyi onaylamak için tam uygulama adını yazın: $appName';
+  }
+
+  @override
+  String get appCenterUninstallRiskLegacy => 'Doğrulanmamış münhasır sahiplik';
+
+  @override
+  String get appCenterUninstallRiskExternal =>
+      'Uygulama veri kök dizini dışındaki yol';
+
+  @override
+  String get appCenterUninstallRiskMedia => 'Medya veya salt okunur yol';
+
+  @override
+  String get appCenterUninstallTargetBlocked => 'Korumalı dizin, silinemez';
+
+  @override
+  String get appCenterCleanupProtected =>
+      'Korumalı veya kaldırılması güvenli olmadığı için veri dizini korundu';
+
+  @override
+  String get appCenterCleanupUnavailable =>
+      'Temizleme denetimi kullanılamıyor; veriler korunarak normal kaldırma işlemi yapılabilir';
+
+  @override
+  String get appCenterCleanupChanged =>
+      'Dizin veya dağıtım hedefi değişti; lütfen yeniden inceleyin ve onaylayın';
+
+  @override
+  String get appCenterCleanupConfirmationRequired =>
+      'Lütfen seçilen dizinleri, riskleri ve tam uygulama adını yeniden onaylayın';
+
+  @override
+  String get appCenterCleanupRetryUnavailable =>
+      'Temizleme güvenli bir şekilde yeniden denenemiyor; görev ayrıntılarını inceleyin';
+
+  @override
+  String get appCenterCleanupAlreadyAbsent =>
+      'Dizin zaten mevcut değil; silme işlemi gerekmiyor';
+
+  @override
+  String get appCenterCleanupDeleteFailed =>
+      'Silme tamamlanamadı; bazı dosyalar zaten kaldırılmış olabilir. Kalan yolları inceleyin.';
+
+  @override
+  String get appCenterCleanupUnconfirmed =>
+      'Temizleme sonucu veya güvenliği doğrulanamadı; devam etmeden önce görevi inceleyin ve yeniden kontrol edin';
+
+  @override
+  String appCenterCleanupRetryTitle(String appName) {
+    return '$appName için kalan veri temizliğini yeniden dene?';
+  }
+
+  @override
+  String get appCenterCleanupRetryDescription =>
+      'Uygulama zaten kaldırıldı. Yalnızca tamamlanmamış veri dizinlerini seçin; yeniden deneme uygulamayı tekrar kaldırmaz.';
+
+  @override
+  String get appCenterCleanupRetrySelected => 'Seçilen kalan verileri sil';
+
+  @override
+  String get appCenterCleanupResultsTitle => 'Dizin temizleme sonuçları';
+
+  @override
+  String get appCenterCleanupPartialSummary =>
+      'Uygulama kaldırıldı; bazı veriler tamamen temizlenmedi.';
+
+  @override
+  String get appCenterCleanupPending => 'Tamamlandığı doğrulanmadı';
+
+  @override
+  String get appCenterCleanupRemoved => 'Kaldırıldı';
+
+  @override
+  String get appCenterCleanupRetained => 'Korundu';
+
+  @override
+  String get appCenterCleanupRetryAction =>
+      'Kalan veri temizliğini yeniden dene';
+
+  @override
+  String get appCenterJellyfinSoftwareTitle => 'Yazılımsal kod çözme modu';
+
+  @override
+  String get appCenterJellyfinSoftwareDesc =>
+      'GPU kod dönüştürmeyi devre dışı bırakır, incelenen GPU aygıt eşlemelerini kaldırır ve /Media dizinini salt okunur olarak bağlar.';
+
+  @override
+  String get appCenterJellyfinProfileUnavailable =>
+      'Yazılımsal kod çözme profili bu şablon için kullanılamıyor';
+
+  @override
+  String get appCenterJellyfinSoftwareChanges =>
+      'Uygulanan profil değişiklikleri:';
+
+  @override
+  String get nasNativeInstallTitle => 'Jellyfin’i yükle (yerel paket)';
+
+  @override
+  String get nasNativeStepVerifyRepo => 'İmzalı resmî depoyu doğrula';
+
+  @override
+  String get nasNativeStepPreventAutostart =>
+      'Yapılandırma tamamlanmadan otomatik hizmet başlangıcını engelle';
+
+  @override
+  String get nasNativeStepInstallPackages =>
+      'Sabit sürümlü imzalı paketleri yükle';
+
+  @override
+  String get nasNativeStepConfigureLoopback =>
+      'Dinlemeyi yalnızca localhost ile sınırla';
+
+  @override
+  String get nasNativeStageInstalling => 'Sabit sürümlü paketler yükleniyor';
+
+  @override
+  String get nasNativeStageStarting => 'systemd hizmeti başlatılıyor';
+
+  @override
+  String get nasNativeGuidanceMediaAccess =>
+      'Medya dosyalarının izinleri ve sahipliği değiştirilmez. Jellyfin hizmet kullanıcısının okuma iznine sahip olduğundan emin olun.';
+
+  @override
+  String get nasNativeGuidanceNoUpgrade =>
+      'Mevcut Jellyfin kurulumları devralınmaz, değiştirilmez veya yükseltilmez.';
+
+  @override
+  String get nasNativeSupportedRequirements =>
+      'Debian veya Ubuntu (amd64/arm64), systemd ve root erişimi ya da parolasız sudo gerektirir.';
+
+  @override
+  String get nasNativeExistingInstallTitle =>
+      'Mevcut Jellyfin kurulumu algılandı';
+
+  @override
+  String get nasNativeExistingInstallExplanation =>
+      'Bu sunucuda Jellyfin zaten kurulu. Valhalla kurulumu değiştirmez veya yeniden yüklemez. Bağlantısını doğrudan doğrulayın.';
+
+  @override
+  String get nasNativeCancelExplanation =>
+      'Bir sonraki güvenli kontrol noktasında iptal istendi. Devam eden paket işlemleri güvenli biçimde tamamlanacak.';
+
+  @override
+  String get nasNativeMediaPathLabel => 'Medya dizini yolu';
+
+  @override
+  String get nasNativeMediaPathHint =>
+      'Sunucuda mevcut mutlak yol (ör. /media/library). İzinler değiştirilmez.';
+
+  @override
+  String get nasNativeSudoRequired =>
+      'Sistem paketlerini yüklemek için root erişimi veya parolasız sudo gerekir';
+
+  @override
+  String appCenterLogsTitle(String appName) {
+    return '$appName Günlükleri';
+  }
+
+  @override
+  String get appCenterLogsEmpty => 'Bu dağıtım için kaydedilmiş günlük yok';
+
+  @override
+  String get appCenterLogsCopied => 'Günlükler panoya kopyalandı';
+
+  @override
+  String get appCenterTaskStageQueued => 'Kuyrukta';
+
+  @override
+  String get appCenterTaskStagePreparing => 'Hazırlanıyor';
+
+  @override
+  String get appCenterTaskStagePulling => 'İmajlar indiriliyor';
+
+  @override
+  String get appCenterTaskStageApplying => 'Yapılandırma uygulanıyor';
+
+  @override
+  String get appCenterTaskStageChecking => 'Durum doğrulanıyor';
+
+  @override
+  String get appCenterTaskStageSucceeded => 'Başarılı';
+
+  @override
+  String get appCenterTaskStageFailed => 'Başarısız';
+
+  @override
+  String get appCenterTaskStageCancelled => 'İptal edildi';
+
+  @override
+  String get appCenterTaskStageNeedsInspection => 'İnceleme Gerekli';
+
+  @override
+  String get appCenterCancelTask => 'Görevi İptal Et';
+
+  @override
+  String get appCenterCopyLog => 'Günlüğü Kopyala';
+
+  @override
+  String get appCenterErrorNotConnected => 'Sunucu bağlı değil';
+
+  @override
+  String get appCenterErrorEnvironmentRequired =>
+      'Docker ortam kontrolü gereklidir';
+
+  @override
+  String get appCenterErrorPlanExpired =>
+      'Dağıtım planının süresi doldu veya geçersiz';
+
+  @override
+  String get appCenterErrorTargetChanged =>
+      'Hedef sunucu değişti; işlem iptal edildi';
+
+  @override
+  String get appCenterErrorConfigInvalid => 'Geçersiz uygulama yapılandırması';
+
+  @override
+  String appCenterErrorPathInvalid(String field) {
+    return '$field kök dizin (/) dışında mutlak bir yol olmalı ve . veya .. bölümleri içeremez';
+  }
+
+  @override
+  String get appCenterErrorSourceInvalid =>
+      'Geçersiz uygulama mağazası kaynağı';
+
+  @override
+  String get appCenterErrorNoWebEntry =>
+      'Bu uygulama bir web arayüzü sağlamıyor';
+
+  @override
+  String get appCenterErrorHttpsDirectRequired =>
+      'HTTPS uç noktası SSH üzerinden tünellenemez; lütfen doğrudan açın';
+
+  @override
+  String get appCenterErrorOpenFailed => 'Uygulama URL\'si açılamadı';
+
+  @override
+  String appCenterErrorGeneric(String error) {
+    return 'Uygulama Merkezi hatası: $error';
+  }
+
+  @override
+  String get appCenterSourceCommunityHint => 'ör. Topluluk Mağazası';
+
+  @override
+  String get appCenterSourceUrlInvalidHttps =>
+      'Geçerli bir HTTPS URL\'si olmalıdır';
+
+  @override
+  String get appCenterDirectUrlLabel => 'Doğrudan URL';
+
+  @override
+  String get appCenterErrorSourceRemoved =>
+      'Uygulama kaynağı artık katalogda mevcut değil. Şablon güncellenemiyor.';
+
+  @override
+  String appCenterRestoreConfirmTitle(String appName) {
+    return '$appName geri yüklensin mi?';
+  }
+
+  @override
+  String appCenterRestoreConfirmMessage(String appName) {
+    return '$appName önceki dağıtım yapılandırmasına geri yüklensin mi?';
+  }
+
+  @override
+  String appCenterHostPortLabel(String target) {
+    return 'Ana Bilgisayar Bağlantı Noktası (-> $target)';
+  }
+
+  @override
+  String appCenterHostMountLabel(String target) {
+    return 'Ana Bilgisayar: $target';
+  }
+
+  @override
+  String get appCenterVersionLatest => 'en son';
+
+  @override
+  String get appCenterWaitingForLogs => 'Görev günlükleri bekleniyor...';
+
+  @override
+  String get appCenterNoPreviewAvailable => 'Önizleme mevcut değil';
+
+  @override
+  String get appCenterBlockerLocalDockerRequired =>
+      'Yerel Docker arka plan programı gereklidir (uzak DOCKER_HOST desteklenmez)';
+
+  @override
+  String get appCenterBlockerToolsRequired =>
+      'Sunucuda gerekli araçlar eksik (bash, setsid, flock, base64, realpath, ss, awk)';
+
+  @override
+  String get appCenterBlockerLinuxRequired =>
+      'Linux işletim sistemi gereklidir';
+
+  @override
+  String appCenterBlockerTemplateUnsupported(String feature) {
+    return 'Desteklenmeyen şablon özelliği: $feature';
+  }
+
+  @override
+  String get appCenterFieldRequired => 'Bu alan zorunludur';
+
+  @override
+  String get appCenterContinueInstall => 'Kuruluma Devam Et';
+
+  @override
+  String get appCenterOperation => 'İşlem';
+
+  @override
+  String get nasTabLibrary => 'Kitaplık';
+
+  @override
+  String get nasContinueWatching => 'İzlemeye Devam Et';
+
+  @override
+  String get nasRecentPhotos => 'Son Fotoğraflar';
+
+  @override
+  String get nasRecentVideos => 'Son Videolar';
+
+  @override
+  String get nasRecentMusic => 'Son Müzikler';
+
+  @override
+  String get nasDownloadPaused => 'Duraklatıldı';
+
+  @override
+  String get nasDownloadDeleteConfirmTitle => 'Çevrimdışı Dosyayı Sil';
+
+  @override
+  String get nasDownloadDeleteConfirmMessage =>
+      'Bu işlem indirilen yerel çevrimdışı dosyayı cihazınızdan siler. Uzak sunucudaki orijinal dosya silinmez.';
+
+  @override
+  String get nasDownloadDeleteConfirmButton => 'Çevrimdışı Kopyayı Sil';
+
+  @override
+  String get nasDownloadSourceChangedMessage =>
+      'İndirme başladığından bu yana uzak kaynak yapılandırması değişti. İndirmeyi baştan yeniden başlatmak ister misiniz?';
+
+  @override
+  String get nasDownloadRestartFromScratch => 'Baştan Yeniden Başlat';
+
+  @override
+  String get nasDownloadErrorSourceChanged => 'Kaynak yapılandırması değişti';
+
+  @override
+  String get nasDownloadErrorOfflineFileInvalid =>
+      'İndirilen dosya bozuk veya eksik';
+
+  @override
+  String get nasDownloadErrorStorageFailed => 'Depolamaya yazma başarısız oldu';
+
+  @override
+  String get nasDownloadErrorHlsUnsupported =>
+      'Akış formatları için çevrimdışı indirme desteklenmiyor';
+
+  @override
+  String get nasDownloadErrorPathInvalid => 'İndirme depolama yolu geçersiz';
+
+  @override
+  String get nasOpenInApp => 'Uygulamada Aç';
+
+  @override
+  String get nasOpenSystem => 'Sistemle Aç';
+
+  @override
+  String get sftpRecentDirectories => 'Son Dizinler';
+
+  @override
+  String get sftpNoRecentDirectories => 'Son kullanılan dizin yok';
+
+  @override
+  String get sftpRetryFailed => 'Başarısızları Yeniden Dene';
+
+  @override
+  String get appCenterDiskCheckFailed =>
+      'Sunucudaki kullanılabilir disk alanı doğrulanamadı';
+
+  @override
+  String get appCenterDiskFull => 'Sunucu diski dolu; işleme devam edilemiyor';
+
+  @override
+  String get appCenterHealthInvalid =>
+      'Kapsayıcı sağlık denetimi başarısız oldu veya geçersiz durum bildirildi';
+
+  @override
+  String get appCenterPreflightSummary => 'Ön Denetim Özeti';
+
+  @override
+  String get appCenterMeasuredAvailableSpace =>
+      'Ölçülen Kullanılabilir Disk Alanı';
+
+  @override
+  String get appCenterUpdateComparison => 'Güncelleme Karşılaştırması';
+
+  @override
+  String get appCenterNoChangesDetected => 'Yapısal bir değişiklik algılanmadı';
+
+  @override
+  String get appCenterSectionImage => 'Kapsayıcı İmajı';
+
+  @override
+  String get appCenterSectionPorts => 'Bağlantı Noktası Eşlemeleri';
+
+  @override
+  String get appCenterSectionVolumes => 'Depolama Bağlama Noktaları';
+
+  @override
+  String get appCenterSectionEnvironment => 'Ortam Değişkenleri';
+
+  @override
+  String get appCenterSectionHealthcheck => 'Sağlık Denetimi';
+
+  @override
+  String get appCenterSectionRestart => 'Yeniden Başlatma İlkesi';
+
+  @override
+  String get appCenterSectionServices => 'Hizmetler';
+
+  @override
+  String get appCenterHealthNoCheck => 'Sağlık denetimi yok';
+
+  @override
+  String get appCenterHealthHealthy => 'Sağlıklı';
+
+  @override
+  String get appCenterHealthUnhealthy => 'Sorunlu';
+
+  @override
+  String get appCenterHealthStarting => 'Başlatılıyor';
+
+  @override
+  String get appCenterNoSources => 'Etkin uygulama kaynağı yok';
+
+  @override
+  String get appCenterNoMatchingApps =>
+      'Arama veya filtrelerle eşleşen uygulama yok';
+
+  @override
+  String get appCenterClearFilters => 'Filtreleri Temizle';
+
+  @override
+  String get appCenterSourceLoadFailed => 'Uygulama kaynağı yüklenemedi';
+
+  @override
+  String get appCenterRetry => 'Yeniden dene';
+
+  @override
+  String get appCenterRecheck => 'Yeniden Denetle';
+
+  @override
+  String get appCenterRecheckTask => 'Görev Durumunu Yeniden Denetle';
+
+  @override
+  String get appCenterTaskNeedsInspectionTitle => 'Görev Durumu Doğrulanmadı';
+
+  @override
+  String get appCenterTaskNeedsInspectionMessage =>
+      'Sunucudaki görev sonucu bilinmiyor. Lütfen durumu yeniden denetleyin veya günlükleri inceleyin; işlemi körü körüne tekrarlamayın.';
+
+  @override
+  String appCenterStopConfirmTitle(String appName) {
+    return '$appName durdurulsun mu?';
+  }
+
+  @override
+  String appCenterStopConfirmMessage(String appName, String serverName) {
+    return '$appName uygulamasını $serverName sunucusunda durdurmak istediğinize emin misiniz? Çalışan kapsayıcılar durdurulacaktır.';
+  }
+
+  @override
+  String appCenterRestartConfirmTitle(String appName) {
+    return '$appName yeniden başlatılsın mı?';
+  }
+
+  @override
+  String appCenterRestartConfirmMessage(String appName, String serverName) {
+    return '$appName uygulamasını $serverName sunucusunda yeniden başlatmak istediğinize emin misiniz?';
+  }
+
+  @override
+  String get appCenterBrowseStore => 'Mağazaya Göz At';
+
+  @override
+  String get appCenterViewTasks => 'Görevleri Gör';
+
+  @override
+  String get appCenterViewInstalled => 'Yüklü Uygulamayı Gör';
+
+  @override
+  String get appCenterRunInBackground => 'Arka Planda Çalıştır';
+
+  @override
+  String get appCenterTaskDetails => 'Görev Ayrıntıları';
+
+  @override
+  String get appCenterTaskTarget => 'Hedef';
+
+  @override
+  String get appCenterTaskDirectory => 'Dizin';
+
+  @override
+  String get appCenterTaskCreatedAt => 'Oluşturulma Tarihi';
+
+  @override
+  String appCenterTaskExitCode(int code) {
+    return 'Çıkış kodu: $code';
+  }
+
+  @override
+  String get appCenterStatusRunning => 'Çalışıyor';
+
+  @override
+  String get appCenterStatusStopped => 'Durduruldu';
+
+  @override
+  String get appCenterStatusInstalling => 'Yükleniyor';
+
+  @override
+  String get appCenterStatusUnknown => 'Bilinmiyor';
+
+  @override
+  String get appCenterEnvReady => 'Docker ve Compose Ortamı Hazır';
+
+  @override
+  String get appCenterEnvNotReady => 'Docker Ortamı Hazır Değil';
+
+  @override
+  String get appCenterEnvInspecting => 'Docker ortamı denetleniyor...';
+
+  @override
+  String get appCenterUninstallWholeDataRoot => 'Tüm Veri Kök Dizini';
+
+  @override
+  String get appCenterUninstallWholeDataRootWarning =>
+      'Bu, uygulama veri kökü altında depolanan bağlanmamış dosyaları ve alt dizinleri içerir.';
+
+  @override
+  String get appCenterUninstallCoveredByParent =>
+      'Üst dizin tarafından kapsanıyor';
+
+  @override
+  String get appCenterContainerNameInvalid =>
+      'Örnek adı bir alfasayısal karakterle başlamalı ve yalnızca harfler, sayılar, alt çizgiler, noktalar ve tireler içermelidir (en fazla 120 karakter).';
+
+  @override
+  String get appCenterMainService => 'Ana Servis';
+
+  @override
+  String get appCenterContainerNamesPreview => 'Kapsayıcı adları önizlemesi';
+
+  @override
+  String get appCenterContainersRecreationNotice =>
+      'Örnek kapsayıcı adlarının değiştirilmesi mevcut uygulama kapsayıcılarını yeniden oluşturacaktır.';
+
+  @override
+  String get remoteBrowserTitle => 'Uzak Dosya Tarayıcısı';
+
+  @override
+  String get remoteBrowserSelectDirectory => 'Dizin Seç';
+
+  @override
+  String get remoteBrowserSelectCurrentDirectory => 'Mevcut Dizini Seç';
+
+  @override
+  String get remoteBrowserSearchHint => 'Dosya ve klasörlerde ara...';
+
+  @override
+  String get remoteBrowserNoEntries => 'Eşleşen dosya veya dizin bulunamadı';
+
+  @override
+  String get remoteBrowserEmptyDirectory => 'Bu dizin boş';
+
+  @override
+  String remoteBrowserSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count öğe seçildi',
+      one: '1 öğe seçildi',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get remoteBrowserParentDirectory => 'Üst Dizin';
+
+  @override
+  String get remoteBrowserLibrariesTitle => 'Medya Kitaplıkları';
+
+  @override
+  String get remoteBrowserDisconnected =>
+      'Uzak bağlantı kesildi veya kullanılamıyor.';
+
+  @override
+  String get remoteBrowserTargetChanged =>
+      'Hedef ortam veya etkin sunucu değişti.';
+
+  @override
+  String get remoteBrowserPathInvalid =>
+      'İstenen yol geçersiz veya erişilemiyor.';
+
+  @override
+  String get remoteBrowserPathOutsideRoot =>
+      'İstenen yol izin verilen kök dizinin dışında.';
+
+  @override
+  String get remoteBrowserEntryUnavailable =>
+      'Seçilen girdi kullanılamıyor veya geçersiz.';
+
+  @override
+  String get nasBrowseUnavailable =>
+      'NAS tarama hizmeti şu anda kullanılamıyor.';
+
+  @override
+  String get nasInvalidDirectoryEntry =>
+      'NAS taranırken geçersiz dizin girdisiyle karşılaşıldı.';
+
+  @override
+  String get nasInvalidLibraryResponse =>
+      'Geçersiz veya bozuk medya kitaplığı yanıtı.';
+
+  @override
+  String get nasScanFilterUnresolved => 'Tarama filtresi yolu çözümlenemiyor.';
+
+  @override
+  String get nasSourceSaveIncomplete =>
+      'Önceki kaynak kaydı yalnızca kısmen kalıcı oldu. Lütfen göz atmadan önce kimlik bilgilerini yeniden girin ve başarıyla kaydedin.';
 }

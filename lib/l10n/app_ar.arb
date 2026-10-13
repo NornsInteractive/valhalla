@@ -1,5 +1,55 @@
 {
   "@@locale": "ar",
+  "nasPlaylistLoadFailed": "قوائم التشغيل غير متاحة مؤقتًا. لا تزال قائمة الوسائط المحفوظة متاحة. حدّث لإعادة المحاولة.",
+  "nasAllLibraries": "كل المكتبات",
+  "nasNativeInstallTitle": "تثبيت Jellyfin (حزمة أصلية)",
+  "nasNativeStepVerifyRepo": "التحقق من المستودع الرسمي الموقّع",
+  "nasNativeStepPreventAutostart": "منع تشغيل الخدمة تلقائيًا قبل إعدادها",
+  "nasNativeStepInstallPackages": "تثبيت حزم موقّعة بإصدارات محددة",
+  "nasNativeStepConfigureLoopback": "إعداد الاستماع على localhost فقط",
+  "nasNativeStageInstalling": "جارٍ تثبيت حزم بإصدارات محددة",
+  "nasNativeStageStarting": "جارٍ بدء خدمة systemd",
+  "nasNativeGuidanceMediaAccess": "لن تتغير أذونات ملفات الوسائط أو ملكيتها. تأكد من أن مستخدم خدمة Jellyfin لديه صلاحية القراءة.",
+  "nasNativeGuidanceNoUpgrade": "لن تتم إدارة تثبيتات Jellyfin الحالية أو تعديلها أو ترقيتها.",
+  "nasNativeSupportedRequirements": "يتطلب Debian أو Ubuntu بمعمارية amd64 أو arm64، مع systemd وصلاحيات root أو sudo دون كلمة مرور.",
+  "nasNativeExistingInstallTitle": "تم اكتشاف تثبيت حالي لـ Jellyfin",
+  "nasNativeExistingInstallExplanation": "يوجد تثبيت لـ Jellyfin على هذا الخادم. لن يعدّله Valhalla أو يعيد تثبيته. تحقق من اتصاله مباشرة.",
+  "nasNativeCancelExplanation": "تم طلب الإلغاء عند نقطة توقف آمنة. ستُستكمل عمليات الحزم الجارية بأمان.",
+  "nasNativeMediaPathLabel": "مسار مجلد الوسائط",
+  "nasNativeMediaPathHint": "مسار مطلق موجود على الخادم (مثل /media/library). لن تتغير الأذونات.",
+  "nasNativeSudoRequired": "يتطلب تثبيت حزم النظام صلاحيات root أو sudo دون كلمة مرور",
+  "nasDiagnosticsTitle": "تشخيص مصدر الوسائط",
+  "nasDiagnosticsConnection": "الاتصال",
+  "nasDiagnosticsScan": "فحص المكتبة",
+  "nasDiagnosticsLastSuccess": "آخر اتصال ناجح",
+  "nasDiagnosticsCredentials": "جارٍ التحقق من بيانات الاعتماد المحفوظة",
+  "nasDiagnosticsFinalizing": "جارٍ إكمال الفهرس",
+  "nasDiagnosticsNotChecked": "لم يتم التحقق",
+  "nasCacheLegacy": "صور مصغّرة قديمة (غير مرتبطة بمصدر)",
+  "nasCacheGlobalBudget": "حد تخزين الصور المصغّرة (جميع المصادر)",
+  "nasCacheNoSource": "اختر مصدر وسائط لإدارة ذاكرته المؤقتة.",
+  "nasOfflineRecordedHint": "هذه أحجام التنزيلات المسجّلة بالبايت، وليست قياسًا لاستخدام القرص. لا يؤدي مسح الصور المصغّرة إلى حذف الملفات المتاحة دون اتصال.",
+  "nasCacheClearConfirm": "هل تريد مسح الصور المصغّرة الخاصة بـ {scope}؟ ستُحفظ الملفات المتاحة دون اتصال والوسائط البعيدة.",
+  "nasOfflineRecordedBytes": "التنزيلات المسجّلة: {size}",
+  "nasDeployDockerTitle": "تطبيق Docker",
+  "nasDeployDockerDesc": "افتح تطبيق Jellyfin الرسمي في مركز التطبيقات. راجع إعداداته قبل التثبيت.",
+  "nasDeployNativeDesc": "ثبّت Jellyfin مباشرة على هذا الخادم باستخدام حزمه الرسمية. لن تتغير التثبيتات الحالية.",
+  "nasDeployEnableAppCenter": "هل تريد تفعيل مركز التطبيقات التجريبي للمتابعة؟ لن يتغير ترتيب القائمة.",
+  "nasDeployCatalogUnavailable": "تطبيق Jellyfin الرسمي غير متاح. تأكد من تفعيل المصدر الرسمي ثم أعد المحاولة.",
+  "@nasCacheClearConfirm": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "@nasOfflineRecordedBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "appName": "Valhalla",
   "appSubtitle": "إدارة الخوادم والوكلاء المعتمدة على الذكاء الاصطناعي",
   "navAiChat": "عمليات الذكاء الاصطناعي",
@@ -1663,5 +1713,418 @@
   "nasThumbnailCacheBudget": "السعة المخصصة لذاكرة التخزين المؤقت",
   "nasThumbnailCacheClear": "مسح ذاكرة التخزين المؤقت",
   "nasThumbnailCacheCleared": "تم مسح ذاكرة التخزين المؤقت للصور المصغرة",
-  "nasThumbnailCacheOff": "إيقاف"
+  "nasThumbnailCacheOff": "إيقاف",
+  "navAppCenter": "مركز التطبيقات",
+  "settingsExperimentalAppCenterTitle": "مركز التطبيقات (Docker)",
+  "settingsExperimentalAppCenterDesc": "متجر تطبيقات تجريبي وإدارة نشر الحاويات",
+  "appCenterTitle": "مركز التطبيقات",
+  "appCenterTabStore": "المتجر",
+  "appCenterTabInstalled": "المثبتة",
+  "appCenterTabTasks": "المهام",
+  "appCenterSources": "المصادر",
+  "appCenterManageSources": "إدارة المصادر",
+  "appCenterAddSource": "إضافة مصدر",
+  "appCenterSourceName": "اسم المصدر",
+  "appCenterSourceUrl": "رابط المصدر (HTTPS)",
+  "appCenterDeleteSource": "حذف المصدر",
+  "appCenterRefresh": "تحديث",
+  "appCenterSearchHint": "البحث في التطبيقات...",
+  "appCenterFilterAllCategories": "جميع الفئات",
+  "appCenterFilterAllSources": "جميع المصادر",
+  "appCenterNoApps": "لم يتم العثور على تطبيقات",
+  "appCenterNoInstalled": "لا توجد تطبيقات مثبتة",
+  "appCenterNoTasks": "لا توجد مهام نشطة أو حديثة",
+  "appCenterInstall": "تثبيت",
+  "appCenterInstalledBadge": "مثبت",
+  "appCenterIncompatibleBadge": "غير متوافق",
+  "appCenterUpdateAvailable": "يتوفر تحديث",
+  "appCenterArchitectureBlocker": "المعمارية غير مدعومة",
+  "appCenterAppDetails": "تفاصيل التطبيق",
+  "appCenterVersion": "الإصدار",
+  "appCenterCategory": "الفئة",
+  "appCenterSource": "المصدر",
+  "appCenterArchitectures": "المعماريات المدعومة",
+  "appCenterScreenshots": "لقطات الشاشة",
+  "appCenterDescription": "الوصف",
+  "appCenterWizardTitle": "تثبيت {appName}",
+  "@appCenterWizardTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterConfigureTitle": "تكوين {appName}",
+  "@appCenterConfigureTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUpdateTitle": "تحديث {appName}",
+  "@appCenterUpdateTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStepEnvironment": "البيئة",
+  "appCenterStepConfig": "التكوين",
+  "appCenterStepReview": "مراجعة الخطة",
+  "appCenterStepProgress": "التقدم",
+  "appCenterInstanceName": "اسم المثيل",
+  "appCenterDataDirectory": "دليل البيانات",
+  "appCenterBrowseDirectory": "تصفح الدليل",
+  "appCenterNetworkAndPorts": "الشبكة والمنافذ",
+  "appCenterBindAddress": "عنوان الربط",
+  "appCenterBindLoopback": "المضيف المحلي فقط (127.0.0.1)",
+  "appCenterBindAll": "جميع الواجهات (0.0.0.0)",
+  "appCenterPortMapping": "تعيين المنافذ",
+  "appCenterMounts": "نقاط التوصيل",
+  "appCenterMountSource": "مسار المضيف",
+  "appCenterMountTarget": "مسار الحاوية",
+  "appCenterMountReadOnly": "للقراءة فقط",
+  "appCenterVariables": "المتغيرات",
+  "appCenterEnvironmentVariables": "متغيرات البيئة",
+  "appCenterNext": "التالي",
+  "appCenterBack": "السابق",
+  "appCenterConfirmAndExecute": "تنفيذ الخطة",
+  "appCenterPlanPreview": "معاينة خطة النشر",
+  "appCenterPlanSanitizedNotice": "راجع خطة النشر التي تم إنشاؤها قبل التنفيذ:",
+  "appCenterEnvironmentCheck": "بيئة Docker",
+  "appCenterDockerFound": "Docker متاح",
+  "appCenterDockerMissing": "Docker غير مثبت",
+  "appCenterComposeFound": "Docker Compose متاح",
+  "appCenterComposeMissing": "Docker Compose غير مثبت",
+  "appCenterBootstrapPrompt": "يمكن تثبيت Docker و Compose تلقائيًا على هذا الخادم. يتطلب إذن root/sudo.",
+  "appCenterBootstrapButton": "تثبيت Docker و Compose",
+  "appCenterSudoPassword": "كلمة مرور Sudo (اختياري / عند الحاجة)",
+  "appCenterSudoPasswordHint": "أدخل كلمة مرور sudo للعمليات ذات الصلاحيات",
+  "appCenterOpen": "فتح واجهة الويب",
+  "appCenterStart": "بدء",
+  "appCenterStop": "إيقاف",
+  "appCenterRestart": "إعادة التشغيل",
+  "appCenterLogs": "السجلات",
+  "appCenterConfig": "تكوين",
+  "appCenterUpdate": "تحديث",
+  "appCenterRestore": "استعادة",
+  "appCenterUninstall": "إلغاء التثبيت",
+  "appCenterUninstallConfirmTitle": "إلغاء تثبيت {appName}؟",
+  "@appCenterUninstallConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallConfirmMessage": "هل أنت متأكد من إلغاء تثبيت {appName}؟ ستتم إزالة الحاويات، ولكن سيتم الاحتفاظ بدليل بيانات التطبيق.",
+  "@appCenterUninstallConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallKeepData": "إلغاء التثبيت (الاحتفاظ بالبيانات)",
+  "appCenterUninstallDeleteSelected": "إلغاء التثبيت وحذف المحدد",
+  "appCenterUninstallInspecting": "جارٍ فحص دلائل بيانات التطبيق...",
+  "appCenterUninstallInspectionFailedWarning": "فشل فحص تنظيف البيانات. لا يزال بإمكانك إلغاء تثبيت حاويات التطبيق مع الاحتفاظ بجميع البيانات بأمان.",
+  "appCenterUninstallDirectoriesTitle": "مجلدات البيانات ووحدات Docker",
+  "appCenterUninstallNoDirectories": "لم يتم اكتشاف دلائل بيانات مرتبطة. ستتم إزالة الحاويات مع الاحتفاظ بالبيانات.",
+  "appCenterUninstallDefaultPreservedHint": "تُحفظ كل البيانات افتراضياً. حدد فقط المجلدات أو الوحدات التي تريد حذفها نهائياً.",
+  "appCenterUninstallPermanentLossWarning": "ستُحذف البيانات المحددة نهائياً من الخادم دون سلة محذوفات.",
+  "appCenterUninstallSelectedPathsTitle": "البيانات المطلوب حذفها نهائياً:",
+  "appCenterUninstallRiskAck": "أفهم المخاطر وتأثيرها على التطبيقات الأخرى وأؤكد الحذف النهائي لهذه البيانات.",
+  "remoteBrowserAllFileTypes": "كل الصيغ",
+  "remoteBrowserDocuments": "النصوص والمستندات",
+  "remoteBrowserFileFormat": "صيغة الملف",
+  "appCenterUninstallRiskSystem": "مسار النظام",
+  "appCenterUninstallRiskShared": "مشترك مع تطبيقات أخرى",
+  "appCenterUninstallRiskVolume": "وحدة تخزين Docker",
+  "appCenterCleanupVolumeDeleteFailed": "تعذر حذف وحدة تخزين Docker. أزل استخدامها من الحاويات الأخرى ثم أعد الفحص والمحاولة.",
+  "appCenterCleanupPermissionDenied": "تم رفض الوصول. استخدم حساباً يمكنه الوصول إلى البيانات أو sudo.",
+  "appCenterCleanupCriticalPath": "لا يمكن حذف جذر الخادم أو مجلدات تشغيل النظام وإدارته عند إزالة تطبيق.",
+  "appCenterUninstallTypeAppNameHint": "اكتب اسم التطبيق بدقة لتأكيد الحذف النهائي: {appName}",
+  "@appCenterUninstallTypeAppNameHint": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallRiskLegacy": "ملكية حصرية غير موثقة",
+  "appCenterUninstallRiskExternal": "خارج الدليل الجذري لبيانات التطبيق",
+  "appCenterUninstallRiskMedia": "مسار وسائط أو للقراءة فقط",
+  "appCenterUninstallTargetBlocked": "دليل محمي، لا يمكن حذفه",
+  "appCenterCleanupProtected": "تم الاحتفاظ بدليل البيانات لأنه محمي أو غير آمن للحذف",
+  "appCenterCleanupUnavailable": "فحص التنظيف غير متوفر؛ لا يزال من الممكن إلغاء التثبيت العادي مع الاحتفاظ بالبيانات",
+  "appCenterCleanupChanged": "تغير الدليل أو هدف النشر؛ يرجى الفحص والتأكيد مرة أخرى",
+  "appCenterCleanupConfirmationRequired": "يرجى تأكيد الدلائل المحددة والمخاطر واسم التطبيق الدقيق مرة أخرى",
+  "appCenterCleanupRetryUnavailable": "لا يمكن إعادة محاولة التنظيف بشكل آمن؛ تحقق من تفاصيل المهمة",
+  "appCenterCleanupAlreadyAbsent": "الدليل غير موجود بالفعل؛ لا يلزم الحذف",
+  "appCenterCleanupDeleteFailed": "الحذف غير مكتمل؛ ربما تمت إزالة بعض الملفات بالفعل. تحقق من المسارات المتبقية.",
+  "appCenterCleanupUnconfirmed": "تعذر تأكيد نتيجة التنظيف أو سلامته؛ افحص المهمة وأعد التحقق قبل المتابعة",
+  "appCenterCleanupRetryTitle": "إعادة محاولة تنظيف البيانات المتبقية لـ {appName}؟",
+  "@appCenterCleanupRetryTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterCleanupRetryDescription": "تم إلغاء تثبيت التطبيق بالفعل. حدد فقط دلائل البيانات غير المكتملة؛ لن تؤدي إعادة المحاولة إلى إلغاء تثبيته مرة أخرى.",
+  "appCenterCleanupRetrySelected": "حذف البيانات المتبقية المحددة",
+  "appCenterCleanupResultsTitle": "نتائج تنظيف الدلائل",
+  "appCenterCleanupPartialSummary": "تم إلغاء تثبيت التطبيق؛ لم يتم مسح بعض البيانات بالكامل.",
+  "appCenterCleanupPending": "لم يتم تأكيد اكتماله",
+  "appCenterCleanupRemoved": "تمت الإزالة",
+  "appCenterCleanupRetained": "تم الاحتفاظ به",
+  "appCenterCleanupRetryAction": "إعادة محاولة تنظيف البيانات المتبقية",
+  "appCenterJellyfinSoftwareTitle": "وضع فك التشفير البرمجي",
+  "appCenterJellyfinSoftwareDesc": "يعطل تحويل ترميز GPU، ويزيل تعيينات أجهزة GPU التي تمت مراجعتها، ويثبت /Media للقراءة فقط.",
+  "appCenterJellyfinProfileUnavailable": "ملف تعريف فك التشفير البرمجي غير متوفر لهذا القالب",
+  "appCenterJellyfinSoftwareChanges": "تغييرات ملف التعريف المطبقة:",
+  "appCenterLogsTitle": "سجلات {appName}",
+  "@appCenterLogsTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterLogsEmpty": "لا توجد سجلات مسجلة لهذا النشر",
+  "appCenterLogsCopied": "تم نسخ السجلات إلى الحافظة",
+  "appCenterTaskStageQueued": "في قائمة الانتظار",
+  "appCenterTaskStagePreparing": "جارٍ التحضير",
+  "appCenterTaskStagePulling": "جارٍ سحب الصور",
+  "appCenterTaskStageApplying": "جارٍ تطبيق التكوين",
+  "appCenterTaskStageChecking": "جارٍ التحقق من الصحة",
+  "appCenterTaskStageSucceeded": "نجح",
+  "appCenterTaskStageFailed": "فشل",
+  "appCenterTaskStageCancelled": "تم الإلغاء",
+  "appCenterTaskStageNeedsInspection": "يحتاج إلى فحص",
+  "appCenterCancelTask": "إلغاء المهمة",
+  "appCenterCopyLog": "نسخ السجل",
+  "appCenterErrorNotConnected": "الخادم غير متصل",
+  "appCenterErrorEnvironmentRequired": "فحص بيئة Docker مطلوب",
+  "appCenterErrorPlanExpired": "خطة النشر منتهية الصلاحية أو غير صالحة",
+  "appCenterErrorTargetChanged": "تغير الخادم الهدف؛ تم إلغاء العملية",
+  "appCenterErrorConfigInvalid": "تكوين التطبيق غير صالح",
+  "appCenterErrorPathInvalid": "يجب أن يكون {field} مسارًا مطلقًا غير الجذر (/)، ولا يمكن أن يحتوي على مقاطع . أو ..",
+  "@appCenterErrorPathInvalid": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterErrorSourceInvalid": "مصدر متجر التطبيقات غير صالح",
+  "appCenterErrorNoWebEntry": "هذا التطبيق لا يوفر واجهة ويب",
+  "appCenterErrorHttpsDirectRequired": "لا يمكن نفق نقطة نهاية HTTPS عبر SSH؛ يرجى الفتح مباشرة",
+  "appCenterErrorOpenFailed": "فشل تشغيل رابط التطبيق",
+  "appCenterErrorGeneric": "خطأ في مركز التطبيقات: {error}",
+  "@appCenterErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterSourceCommunityHint": "مثال: متجر المجتمع",
+  "appCenterSourceUrlInvalidHttps": "يجب أن يكون رابط HTTPS صالحاً",
+  "appCenterDirectUrlLabel": "الرابط المباشر",
+  "appCenterErrorSourceRemoved": "مصدر التطبيق لم يعد متوفراً في الدليل. يتعذر تحديث القالب.",
+  "appCenterRestoreConfirmTitle": "استعادة {appName}؟",
+  "@appCenterRestoreConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestoreConfirmMessage": "هل أنت متأكد من استعادة {appName} إلى تكوين النشر السابق؟",
+  "@appCenterRestoreConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostPortLabel": "منفذ المضيف (-> {target})",
+  "@appCenterHostPortLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostMountLabel": "المضيف: {target}",
+  "@appCenterHostMountLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterVersionLatest": "الأحدث",
+  "appCenterWaitingForLogs": "في انتظار سجلات المهمة...",
+  "appCenterNoPreviewAvailable": "لا توجد معاينة متاحة",
+  "appCenterBlockerLocalDockerRequired": "يلزم وجود خادم Docker محلي (لا يُدعم DOCKER_HOST البعيد)",
+  "appCenterBlockerToolsRequired": "أدوات مطلوبة مفقودة على الخادم (bash, setsid, flock, base64, realpath, ss, awk)",
+  "appCenterBlockerLinuxRequired": "نظام التشغيل Linux مطلوب",
+  "appCenterBlockerTemplateUnsupported": "ميزة قالب غير مدعومة: {feature}",
+  "@appCenterBlockerTemplateUnsupported": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterFieldRequired": "هذا الحقل مطلوب",
+  "appCenterContinueInstall": "متابعة التثبيت",
+  "appCenterOperation": "العملية",
+  "nasTabLibrary": "المكتبة",
+  "nasContinueWatching": "متابعة المشاهدة",
+  "nasRecentPhotos": "الصور الأخيرة",
+  "nasRecentVideos": "الفيديوهات الأخيرة",
+  "nasRecentMusic": "الموسيقى الأخيرة",
+  "nasDownloadPaused": "متوقف مؤقتاً",
+  "nasDownloadDeleteConfirmTitle": "حذف الملف غير المتصل",
+  "nasDownloadDeleteConfirmMessage": "سيؤدي هذا إلى حذف الملف المحلي المحمّل من جهازك. لن يتم حذف الملف الأصلي الموجود على الخادم البعيد.",
+  "nasDownloadDeleteConfirmButton": "حذف النسخة غير المتصلة",
+  "nasDownloadSourceChangedMessage": "تغيرت إعدادات المصدر البعيد منذ بدء التنزيل. هل ترغب في إعادة التنزيل من البداية؟",
+  "nasDownloadRestartFromScratch": "إعادة البدء من البداية",
+  "nasDownloadErrorSourceChanged": "تغيرت إعدادات المصدر",
+  "nasDownloadErrorOfflineFileInvalid": "الملف المحمّل تالف أو غير مكتمل",
+  "nasDownloadErrorStorageFailed": "فشلت الكتابة إلى وحدة التخزين",
+  "nasDownloadErrorHlsUnsupported": "التنزيل في وضع عدم الاتصال غير مدعوم لتدفقات البث",
+  "nasDownloadErrorPathInvalid": "مسار حفظ التنزيل غير صالح",
+  "nasOpenInApp": "فتح في التطبيق",
+  "nasOpenSystem": "فتح باستخدام النظام",
+  "sftpRecentDirectories": "المجلدات الأخيرة",
+  "sftpNoRecentDirectories": "لا توجد مجلدات أخيرة",
+  "sftpRetryFailed": "إعادة محاولة العمليات الفاشلة",
+  "appCenterDiskCheckFailed": "تعذر التحقق من المساحة المتوفرة على قرص الخادم",
+  "appCenterDiskFull": "قرص الخادم ممتلئ؛ لا يمكن متابعة العملية",
+  "appCenterHealthInvalid": "فشل فحص صحة الحاوية أو تم الإبلاغ عن حالة غير صالحة",
+  "appCenterPreflightSummary": "ملخص الفحص الأولي",
+  "appCenterMeasuredAvailableSpace": "المساحة المتاحة المقاسة على القرص",
+  "appCenterUpdateComparison": "مقارنة التحديث",
+  "appCenterNoChangesDetected": "لم يتم اكتشاف أي تغييرات هيكلية",
+  "appCenterSectionImage": "صورة الحاوية",
+  "appCenterSectionPorts": "تعيين المنافذ",
+  "appCenterSectionVolumes": "نقاط التثبيت",
+  "appCenterSectionEnvironment": "متغيرات البيئة",
+  "appCenterSectionHealthcheck": "فحص السلامة",
+  "appCenterSectionRestart": "سياسة إعادة التشغيل",
+  "appCenterSectionServices": "الخدمات",
+  "appCenterHealthNoCheck": "بدون فحص سلامة",
+  "appCenterHealthHealthy": "سليم",
+  "appCenterHealthUnhealthy": "غير سليم",
+  "appCenterHealthStarting": "قيد التشغيل",
+  "appCenterNoSources": "لا توجد مصادر تطبيقات مفعلة",
+  "appCenterNoMatchingApps": "لا توجد تطبيقات تطابق البحث أو الفلاتر",
+  "appCenterClearFilters": "مسح الفلاتر",
+  "appCenterSourceLoadFailed": "فشل تحميل مصدر التطبيقات",
+  "appCenterRetry": "إعادة المحاولة",
+  "appCenterRecheck": "إعادة الفحص",
+  "appCenterRecheckTask": "إعادة فحص حالة المهمة",
+  "appCenterTaskNeedsInspectionTitle": "حالة المهمة غير مؤكدة",
+  "appCenterTaskNeedsInspectionMessage": "نتيجة المهمة على الخادم غير معروفة. يرجى إعادة فحص الحالة أو مراجعة السجلات وتجنب إعادة التشغيل عشوائيًا.",
+  "appCenterStopConfirmTitle": "إيقاف {appName}؟",
+  "@appCenterStopConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStopConfirmMessage": "هل أنت متأكد من رغبتك في إيقاف {appName} على الخادم {serverName}؟ سيتم إيقاف الحاويات المشغلة.",
+  "@appCenterStopConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmTitle": "إعادة تشغيل {appName}؟",
+  "@appCenterRestartConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmMessage": "هل أنت متأكد من رغبتك في إعادة تشغيل {appName} على الخادم {serverName}؟",
+  "@appCenterRestartConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterBrowseStore": "تصفح المتجر",
+  "appCenterViewTasks": "عرض المهام",
+  "appCenterViewInstalled": "عرض التطبيق المثبت",
+  "appCenterRunInBackground": "تشغيل في الخلفية",
+  "appCenterTaskDetails": "تفاصيل المهمة",
+  "appCenterTaskTarget": "الهدف",
+  "appCenterTaskDirectory": "الدليل",
+  "appCenterTaskCreatedAt": "تاريخ الإنشاء",
+  "appCenterTaskExitCode": "رمز الخروج: {code}",
+  "@appCenterTaskExitCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "appCenterStatusRunning": "قيد التشغيل",
+  "appCenterStatusStopped": "متوقف",
+  "appCenterStatusInstalling": "قيد التثبيت",
+  "appCenterStatusUnknown": "غير معروف",
+  "appCenterEnvReady": "بيئة Docker و Compose جاهزة",
+  "appCenterEnvNotReady": "بيئة Docker غير جاهزة",
+  "appCenterEnvInspecting": "جارٍ فحص بيئة Docker للخادم...",
+  "appCenterUninstallWholeDataRoot": "جذر البيانات بالكامل",
+  "appCenterUninstallWholeDataRootWarning": "يتضمن ذلك الملفات غير المثبتة والأدلة الفرعية المخزنة تحت جذر بيانات التطبيق.",
+  "appCenterUninstallCoveredByParent": "مغطى بواسطة الدليل الأصل",
+  "appCenterContainerNameInvalid": "يجب أن يبدأ اسم المثيل بحرف أبجدي رقمي ويحتوي فقط على أحرف وأرقام وشرطات سفلية ونقاط وشرطات (حتى 120 حرفًا).",
+  "appCenterMainService": "الخدمة الرئيسية",
+  "appCenterContainerNamesPreview": "معاينة أسماء الحاويات",
+  "appCenterContainersRecreationNotice": "سيؤدي تغيير أسماء حاويات المثيل إلى إعادة إنشاء حاويات التطبيق الحالية.",
+  "remoteBrowserTitle": "متصفح الملفات البعيد",
+  "remoteBrowserSelectDirectory": "تحديد الدليل",
+  "remoteBrowserSelectCurrentDirectory": "تحديد الدليل الحالي",
+  "remoteBrowserSearchHint": "البحث في الملفات والمجلدات...",
+  "remoteBrowserNoEntries": "لم يتم العثور على ملفات أو أدلة مطابقة",
+  "remoteBrowserEmptyDirectory": "هذا الدليل فارغ",
+  "remoteBrowserSelectedCount": "{count, plural, =0{لم يتم تحديد أي عنصر} =1{تم تحديد عنصر واحد} =2{تم تحديد عنصرين} few{تم تحديد {count} عناصر} many{تم تحديد {count} عنصرًا} other{تم تحديد {count} عنصر}}",
+  "@remoteBrowserSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remoteBrowserParentDirectory": "الدليل الأصل",
+  "remoteBrowserLibrariesTitle": "مكتبات الوسائط",
+  "remoteBrowserDisconnected": "فُقد الاتصال عن بُعد أو أنه غير متاح.",
+  "remoteBrowserTargetChanged": "تغيرت البيئة المستهدفة أو الخادم النشط.",
+  "remoteBrowserPathInvalid": "المسار المطلوب غير صالح أو لا يمكن الوصول إليه.",
+  "remoteBrowserPathOutsideRoot": "المسار المطلوب خارج الدليل الجذر المسموح به.",
+  "remoteBrowserEntryUnavailable": "العنصر المحدد غير متاح أو غير صالح.",
+  "nasBrowseUnavailable": "خدمة تصفح NAS غير متاحة حاليًا.",
+  "nasInvalidDirectoryEntry": "تمت مصادفة إدخال دليل غير صالح أثناء تصفح NAS.",
+  "nasInvalidLibraryResponse": "استجابة مكتبة الوسائط غير صالحة أو مشوهة.",
+  "nasScanFilterUnresolved": "تعذر حل مسار مرشح الفحص.",
+  "nasSourceSaveIncomplete": "تم استمرار حفظ المصدر السابق جزئيًا فقط. يرجى إعادة إدخال بيانات الاعتماد والحفظ بنجاح قبل التصفح."
 }

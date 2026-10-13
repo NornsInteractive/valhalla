@@ -13,6 +13,7 @@ import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/data/models/nas_media.dart';
 import 'package:valhalla/data/models/nas_source.dart';
+import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/data/storage/secure_storage_service.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
@@ -31,6 +32,34 @@ class _SecureStorage extends SecureStorageService {
   @override
   Future<NasCredentials> getNasCredentials(String id) async =>
       const NasCredentials();
+}
+
+class _Servers extends ServerListNotifier {
+  @override
+  List<ServerProfile> build() => const [
+    ServerProfile(
+      id: 'source-server',
+      name: 'Source server',
+      host: 'source-before.invalid',
+      username: 'fixture',
+    ),
+    ServerProfile(
+      id: 'other-server',
+      name: 'Other server',
+      host: 'unrelated.invalid',
+      username: 'fixture',
+    ),
+  ];
+
+  void changeSourceTarget() {
+    state = [
+      for (final server in state)
+        if (server.id == 'source-server')
+          server.copyWith(host: 'source-after.invalid', username: 'replacement')
+        else
+          server,
+    ];
+  }
 }
 
 class _Executor extends Fake implements SshCommandExecutor {
@@ -89,13 +118,22 @@ void main() {
   late HttpServer remote;
   late ProviderContainer container;
   late NasSource source;
+  late NasSource otherSource;
   late _Executor executor;
   late _Connection connection;
+  Completer<void>? requestStarted;
+  Completer<void>? releaseResponse;
 
   setUp(() async {
+    requestStarted = null;
+    releaseResponse = null;
     remote = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     remote.listen((request) async {
       await request.drain<void>();
+      final started = requestStarted;
+      final release = releaseResponse;
+      if (started != null && !started.isCompleted) started.complete();
+      if (release != null) await release.future;
       request.response.statusCode = 207;
       request.response.headers.contentType = ContentType('application', 'xml');
       request.response.write('''<d:multistatus xmlns:d="DAV:"><d:response>
@@ -113,8 +151,18 @@ void main() {
       sshServerId: 'source-server',
       endpoint: 'http://127.0.0.1:${remote.port}/library/',
     );
+    otherSource = NasSource(
+      id: 'other-source',
+      name: 'Other source',
+      type: NasSourceType.webdav,
+      sshServerId: 'other-server',
+      endpoint: 'http://127.0.0.1:${remote.port}/library/',
+    );
     SharedPreferences.setMockInitialValues({
-      'valhalla_nas_sources_v1': jsonEncode([source.toJson()]),
+      'valhalla_nas_sources_v1': jsonEncode([
+        source.toJson(),
+        otherSource.toJson(),
+      ]),
     });
     executor = _Executor();
     container = ProviderContainer(
@@ -125,18 +173,91 @@ void main() {
         secureStorageServiceProvider.overrideWithValue(_SecureStorage()),
         sshCommandExecutorProvider.overrideWithValue(executor),
         serverConnectionProvider.overrideWith(_Connection.new),
+        serverListProvider.overrideWith(_Servers.new),
       ],
     );
     connection =
         container.read(serverConnectionProvider.notifier) as _Connection;
   });
   tearDown(() async {
+    final release = releaseResponse;
+    if (release != null && !release.isCompleted) release.complete();
     container.dispose();
     for (final client in executor.clients.values) {
       client.end();
     }
     await remote.close(force: true);
   });
+
+  test(
+    'editing the same SSH ID invalidates only that target diagnostic',
+    () async {
+      executor.clients['source-server'] = _Client();
+      executor.clients['other-server'] = _Client();
+      final notifier = container.read(nasSourcesProvider.notifier);
+      await notifier.probeSaved(source);
+      await notifier.probe(otherSource, const NasCredentials());
+      final before = container.read(nasSourcesProvider);
+      expect(before.diagnosticFor(source)?.stage, NasConnectionStage.ready);
+      final unrelated = before.diagnosticFor(otherSource);
+      expect(unrelated?.stage, NasConnectionStage.ready);
+      final originalTarget = container
+          .read(serverListProvider)
+          .first
+          .connectionKey;
+
+      (container.read(serverListProvider.notifier) as _Servers)
+          .changeSourceTarget();
+      await container.pump();
+
+      expect(
+        container.read(serverListProvider).first.connectionKey,
+        isNot(originalTarget),
+      );
+      final after = container.read(nasSourcesProvider);
+      expect(after.diagnosticFor(source), isNull);
+      expect(after.diagnosticFor(otherSource), same(unrelated));
+      expect(
+        after.sources.map((value) => value.toJson()).toList(),
+        before.sources.map((value) => value.toJson()).toList(),
+      );
+      expect(after.selectedId, before.selectedId);
+    },
+  );
+
+  test(
+    'a pending probe cannot publish success after its SSH target changes',
+    () async {
+      executor.clients['source-server'] = _Client();
+      requestStarted = Completer<void>();
+      releaseResponse = Completer<void>();
+      final notifier = container.read(nasSourcesProvider.notifier);
+      final probe = notifier.probeSaved(source);
+      await requestStarted!.future.timeout(const Duration(seconds: 5));
+      expect(
+        container.read(nasSourcesProvider).diagnosticFor(source)?.stage,
+        NasConnectionStage.checking,
+      );
+      final publishedAfterChange = <NasConnectionStage>[];
+      final subscription = container.listen(nasSourcesProvider, (_, next) {
+        final diagnostic = next.diagnosticFor(source);
+        if (diagnostic != null) publishedAfterChange.add(diagnostic.stage);
+      });
+      addTearDown(subscription.close);
+
+      (container.read(serverListProvider.notifier) as _Servers)
+          .changeSourceTarget();
+      await container.pump();
+      releaseResponse!.complete();
+      await probe.timeout(const Duration(seconds: 5));
+      await container.pump();
+
+      expect(publishedAfterChange, isNot(contains(NasConnectionStage.ready)));
+      expect(container.read(nasSourcesProvider).diagnosticFor(source), isNull);
+      expect(container.read(nasSourcesProvider).selectedId, source.id);
+      expect(container.read(nasSourcesProvider).sources, hasLength(2));
+    },
+  );
 
   test(
     'startup failure recovers after SSH connects without resaving source',

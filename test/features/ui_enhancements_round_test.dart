@@ -88,10 +88,14 @@ class _FakeNasNotifier extends NasNotifier {
   int get thumbnailCacheBudget => 128 * 1024 * 1024;
 
   @override
-  Future<Map<String, int>> thumbnailCacheUsage() async => {
-    'bytes': 0,
-    'count': 0,
-  };
+  Future<Map<String, Map<String, int>>> thumbnailCacheUsageBySource() async =>
+      {};
+
+  @override
+  Future<Map<String, int>> thumbnailCacheUsage({
+    String? sourceId,
+    bool legacyOnly = false,
+  }) async => {'bytes': 0, 'count': 0};
 }
 
 class _TestActiveServerNotifier extends ActiveServerNotifier {

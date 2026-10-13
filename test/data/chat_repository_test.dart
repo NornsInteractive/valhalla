@@ -111,6 +111,35 @@ Future<ChatRepository> _repositoryWithLargeToolOutput() async {
 }
 
 void main() {
+  test(
+    '10,000 messages load the latest bounded page and page back without gaps',
+    () async {
+      final repository = _repository(await _storage());
+      await repository.saveSession(
+        _session('large', messages: _messages(10000)),
+      );
+      final summaries = await repository.listSessions('srv-a');
+      expect(summaries.sessions.single.messages, isEmpty);
+      expect(summaries.sessions.single.totalMessageCount, 10000);
+      final latest = (await repository.loadSession('large'))!;
+      expect(latest.messages, hasLength(50));
+      expect(latest.messageOffset, 9950);
+      expect(latest.messages.first.id, 'm9950');
+      expect(latest.messages.last.id, 'm9999');
+      final previous = (await repository.loadSession(
+        'large',
+        before: latest.messageOffset,
+      ))!;
+      expect(previous.messageOffset, 9900);
+      expect(previous.messages.last.id, 'm9949');
+      expect(previous.messages.last.role, MessageRole.assistant);
+      expect(latest.messages.first.role, MessageRole.user);
+      expect({
+        ...previous.messages.map((m) => m.id),
+        ...latest.messages.map((m) => m.id),
+      }, hasLength(100));
+    },
+  );
   setUpAll(() {
     if (Platform.isLinux) {
       open.overrideFor(

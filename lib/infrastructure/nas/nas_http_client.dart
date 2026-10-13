@@ -247,12 +247,50 @@ class NasHttpClient {
     return decoded;
   }
 
+  /// Resolve fresh metadata specifically for durable original-file downloads.
+  Future<NasResource> downloadResource(
+    Uri uri, {
+    required String mimeType,
+  }) async {
+    NasHttpResponse? response;
+    int? size;
+    String? version;
+    final conditions = <String, String>{};
+    try {
+      response = await open('HEAD', uri);
+      final length = response.response.contentLength;
+      size = length >= 0 ? length : null;
+      final etag = response.headers.value(HttpHeaders.etagHeader);
+      final modified = response.headers.value(HttpHeaders.lastModifiedHeader);
+      if (etag != null && !etag.startsWith('W/') && etag.length <= 1024) {
+        version = 'etag:$etag';
+        conditions['If-Match'] = etag;
+      } else if (modified != null && modified.length <= 128 && size != null) {
+        version = 'modified:$size:$modified';
+        conditions['If-Unmodified-Since'] = modified;
+      }
+    } on NasHttpException catch (error) {
+      if (error.status != 405 && error.status != 501) rethrow;
+      // A source without fresh validators can download, but cannot resume.
+    } finally {
+      response?.close();
+    }
+    return NasResource(
+      sizeBytes: size,
+      mimeType: mimeType,
+      version: version,
+      read: (start, end, cancel) =>
+          readRange(uri, start, end, cancel, validationHeaders: conditions),
+    );
+  }
+
   Stream<List<int>> readRange(
     Uri uri,
     int start,
     int? end,
-    NasCancellation cancellation,
-  ) async* {
+    NasCancellation cancellation, {
+    Map<String, String> validationHeaders = const {},
+  }) async* {
     if (start < 0 || (end != null && end < start)) {
       throw RangeError('NAS_INVALID_RANGE');
     }
@@ -263,6 +301,7 @@ class NasHttpClient {
       uri,
       cancellation: cancellation,
       headers: {
+        ...validationHeaders,
         if (ranged) 'Range': 'bytes=$start-${end == null ? '' : end - 1}',
       },
     );

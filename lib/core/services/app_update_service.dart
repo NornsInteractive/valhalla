@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import '../../data/models/app_update.dart';
+import 'app_diagnostics.dart';
 
 class AppUpdateCheck {
   final AppUpdateRelease? release;
@@ -130,6 +131,8 @@ class AppUpdateService {
         cached?['_arch'] == arch &&
         cached?['_version_code'] == currentVersionCode;
     final client = clientFactory();
+    final elapsed = Stopwatch()..start();
+    var outcome = 'failed';
     try {
       final response = await _get(
         client,
@@ -140,6 +143,7 @@ class AppUpdateService {
         },
       );
       if (response.statusCode == 404) {
+        outcome = 'no_release';
         return const AppUpdateCheck(release: null);
       }
       if (response.statusCode == 401 || response.statusCode == 403) {
@@ -167,6 +171,7 @@ class AppUpdateService {
               data['current_version_code'] != currentVersionCode) {
         throw const FormatException('UPDATE_RELEASE_INVALID');
       }
+      outcome = 'completed';
       return AppUpdateCheck(
         release: parsed,
         etag:
@@ -183,6 +188,13 @@ class AppUpdateService {
       );
     } finally {
       client.close(force: true);
+      unawaited(
+        AppDiagnostics.instance.recordTiming(
+          'updates.check',
+          elapsed,
+          outcome: outcome,
+        ),
+      );
     }
   }
 
@@ -419,6 +431,9 @@ class AppUpdateService {
     _canceled = false;
     final client = clientFactory();
     _downloadClient = client;
+    final elapsed = Stopwatch()..start();
+    var outcome = 'failed';
+    var received = 0;
     final partial = File('$destination.part');
     final metadata = File('$destination.part.json');
     IOSink? sink;
@@ -435,6 +450,7 @@ class AppUpdateService {
         await partial.delete();
       }
       var offset = await partial.exists() ? await partial.length() : 0;
+      received = offset;
       await metadata.writeAsString(identity, flush: true);
       if (offset < artifact.size) {
         final response = await _get(
@@ -461,6 +477,7 @@ class AppUpdateService {
         )) {
           if (_canceled) throw StateError('UPDATE_DOWNLOAD_CANCELED');
           offset += chunk.length;
+          received = offset;
           if (offset > artifact.size) {
             throw StateError('UPDATE_DOWNLOAD_SIZE_MISMATCH');
           }
@@ -488,6 +505,7 @@ class AppUpdateService {
       }
       if (_canceled) throw StateError('UPDATE_DOWNLOAD_CANCELED');
       await partial.rename(destination);
+      outcome = 'completed';
       try {
         await metadata.delete();
       } on FileSystemException {
@@ -497,6 +515,14 @@ class AppUpdateService {
       await sink?.close();
       client.close(force: true);
       _downloadClient = null;
+      unawaited(
+        AppDiagnostics.instance.recordTiming(
+          'updates.download',
+          elapsed,
+          outcome: _canceled ? 'cancelled' : outcome,
+          count: received,
+        ),
+      );
     }
   }
 

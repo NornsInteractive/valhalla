@@ -20,6 +20,7 @@ import '../../widgets/context_inspector.dart';
 import '../../widgets/delete_server_dialog.dart';
 import '../../widgets/valhalla_app_icon.dart';
 import '../settings/widgets/diagnostics_view.dart';
+import '../app_center/application_center_view.dart';
 import '../chat/ai_chat_view.dart';
 import '../chat/cli_chat_view.dart';
 import '../commands/quick_commands_view.dart';
@@ -29,6 +30,7 @@ import '../files/sftp_file_view.dart';
 import '../../core/providers/nas_provider.dart';
 import '../../core/providers/nas_sources_provider.dart';
 import '../nas/nas_media_view.dart';
+import '../nas/widgets/nas_downloads_sheet.dart';
 import '../nas/widgets/nas_full_player_dialog.dart';
 import '../nas/widgets/nas_mini_player.dart';
 import '../nas/widgets/nas_source_dialog.dart';
@@ -50,6 +52,7 @@ int appSectionToViewIndex(AppSection section) => switch (section) {
   AppSection.settings => 7,
   AppSection.cliChat => 8,
   AppSection.nas => 9,
+  AppSection.appCenter => 10,
 };
 
 AppSection viewIndexToAppSection(int index) => switch (index) {
@@ -63,6 +66,7 @@ AppSection viewIndexToAppSection(int index) => switch (index) {
   7 => AppSection.settings,
   8 => AppSection.cliChat,
   9 => AppSection.nas,
+  10 => AppSection.appCenter,
   _ => AppSection.dashboard,
 };
 
@@ -81,6 +85,7 @@ IconData appSectionIcon(
   AppSection.settings => selected ? Icons.settings : Icons.settings_outlined,
   AppSection.cliChat => selected ? Icons.forum : Icons.forum_outlined,
   AppSection.nas => selected ? Icons.perm_media : Icons.perm_media_outlined,
+  AppSection.appCenter => selected ? Icons.apps : Icons.apps_outlined,
 };
 
 String localizedAppSectionName(BuildContext context, AppSection section) =>
@@ -95,6 +100,7 @@ String localizedAppSectionName(BuildContext context, AppSection section) =>
       AppSection.settings => context.l10n.navSettings,
       AppSection.cliChat => context.l10n.navCliChat,
       AppSection.nas => context.l10n.navNas,
+      AppSection.appCenter => context.l10n.navAppCenter,
     };
 
 class MainShell extends ConsumerStatefulWidget {
@@ -112,6 +118,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   int _currentIndex = 0;
   bool _isInspectorOpen = false;
   bool _globalMiniPlayerCommandInProgress = false;
+  bool _isNasDownloadsSheetOpen = false;
 
   /// 由「点传输完成通知」发起的跳转请求，供文件页消费一次。
   ///
@@ -132,6 +139,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   late final Widget _sftpView = SftpFileView(
     openTransfersRequest: _openTransfersRequest,
   );
+  Widget? _applicationCenterView;
 
   List<Widget> _buildViews(SettingsState settings) => [
     _dashboardView,
@@ -150,6 +158,12 @@ class _MainShellState extends ConsumerState<MainShell> {
       const NasMediaView()
     else
       const SizedBox.shrink(key: Key('nas_disabled_placeholder')),
+    // Default navigation must not start catalogue requests before first visit.
+    if (_currentIndex == appSectionToViewIndex(AppSection.appCenter) ||
+        _applicationCenterView != null)
+      _applicationCenterView ??= const ApplicationCenterView()
+    else
+      const SizedBox.shrink(key: Key('app_center_unvisited_placeholder')),
   ];
 
   void _unfocusContentScopeOnMobile() {
@@ -191,20 +205,63 @@ class _MainShellState extends ConsumerState<MainShell> {
       _openTransfersRequest.value++;
       return null;
     }
+    if (call.method == 'openNasDownloads') {
+      _handleOpenNasDownloads();
+      return null;
+    }
     throw MissingPluginException('Not implemented: ${call.method}');
   }
 
-  /// 冷启动时询问原生侧「这次是不是从通知点进来的」，是的话切到文件 tab。
+  void _handleOpenNasDownloads() {
+    if (!mounted) return;
+    final settings = ref.read(settingsProvider);
+    _unfocusContentScopeOnMobile();
+    if (settings.isSectionEnabled(AppSection.nas)) {
+      _navigateToSectionIndex(appSectionToViewIndex(AppSection.nas));
+      if (_isNasDownloadsSheetOpen) return;
+      _isNasDownloadsSheetOpen = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          _isNasDownloadsSheetOpen = false;
+          return;
+        }
+        NasDownloadsSheet.show(context).whenComplete(() {
+          _isNasDownloadsSheetOpen = false;
+        });
+      });
+    } else {
+      _navigateToSectionIndex(appSectionToViewIndex(AppSection.settings));
+    }
+  }
+
+  /// 冷启动时询问原生侧「这次是不是从通知点进来的」，是的话切到对应 tab。
   ///
   /// 原生侧是读后即清的，所以这里只可能拿到一次 `true`；拿不到实现
   /// （非 Android / 测试环境）时会静默返回 false，不影响正常启动。
   Future<void> _consumeLaunchAction() async {
     final service = ref.read(keepAliveServiceProvider);
-    final shouldOpen = await service.consumeOpenTransfersAction();
-    if (!mounted || !shouldOpen) return;
-    _unfocusContentScopeOnMobile();
-    setState(() => _currentIndex = _sftpTabIndex);
-    _openTransfersRequest.value++;
+    final shouldOpenTransfers = await service.consumeOpenTransfersAction();
+    if (shouldOpenTransfers) {
+      if (!mounted) return;
+      _unfocusContentScopeOnMobile();
+      setState(() => _currentIndex = _sftpTabIndex);
+      _openTransfersRequest.value++;
+      return;
+    }
+
+    try {
+      final shouldOpenNas = await _downloadsChannel.invokeMethod<bool>(
+        'getNasLaunchAction',
+      );
+      if (shouldOpenNas == true) {
+        if (!mounted) return;
+        _handleOpenNasDownloads();
+      }
+    } on PlatformException {
+      // Ignored for platform compatibility
+    } on MissingPluginException {
+      // Ignored for testing / non-Android platforms
+    }
   }
 
   @override
@@ -738,7 +795,9 @@ class _MainShellState extends ConsumerState<MainShell> {
                       ? const Key('drawer_cli_chat_tile')
                       : (section == AppSection.nas
                             ? const Key('drawer_nas_tile')
-                            : null),
+                            : (section == AppSection.appCenter
+                                  ? const Key('drawer_app_center_tile')
+                                  : null)),
                   leading: Icon(
                     appSectionIcon(section, selected: _currentIndex == idx),
                   ),

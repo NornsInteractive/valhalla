@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/services/nas_install_service.dart';
+import 'package:valhalla/core/services/nas_native_install_service.dart';
 import 'package:valhalla/core/utils/shell_quote.dart';
 import 'package:valhalla/data/models/nas_media.dart';
 import 'package:valhalla/data/models/nas_source.dart';
@@ -95,6 +96,106 @@ void main() {
       });
 
       tearDownAll(() => ssh.dispose());
+
+      test(
+        'native Jellyfin installs once and reconciles through a real SSH tunnel',
+        () async {
+          final key = NasNativeInstallService.serverKey(server);
+          Map<String, dynamic>? persisted;
+          NasNativeInstallService makeService({bool recover = false}) =>
+              NasNativeInstallService(
+                ssh,
+                currentServerKey: () => key,
+                recoveredTask: recover ? persisted : null,
+                persistTask: (value) async {
+                  persisted = Map<String, dynamic>.from(value);
+                },
+              );
+          var service = makeService();
+          addTearDown(() => service.dispose());
+          final plan = await service.prepare(
+            NasNativeInstallRequest.forServer(server, mediaPath: mediaPath),
+          );
+          expect(
+            plan.existingInstall,
+            isFalse,
+            reason:
+                'This opt-in test requires a fresh native Jellyfin fixture; '
+                'never remove or adopt an existing installation automatically.',
+          );
+          expect(plan.blockers, isEmpty);
+          expect(plan.canInstall, isTrue);
+          expect(plan.packageVersion, isNotEmpty);
+          await service.execute(plan.confirmationToken);
+          expect(persisted, isNotNull);
+          final taskId = service.state!.id;
+
+          // Recreate the client-side service while the detached worker continues.
+          service.dispose();
+          service = makeService(recover: true);
+          expect(service.state!.id, taskId);
+          final deadline = DateTime.now().add(const Duration(minutes: 15));
+          while (DateTime.now().isBefore(deadline)) {
+            await service.reconcile();
+            if (!service.state!.isBusy) {
+              break;
+            }
+            await Future<void>.delayed(const Duration(seconds: 2));
+          }
+          final task = service.state!;
+          expect(
+            task.stage,
+            NasNativeInstallStage.succeeded,
+            reason:
+                '${task.errorCode}\n${task.currentCommand}\n${task.logTail}',
+          );
+          expect(task.result!.healthy, isTrue);
+          expect(task.packageVersion, plan.packageVersion);
+          expect(task.id, taskId);
+
+          final previousHttpOverride = HttpOverrides.current;
+          HttpOverrides.global = null;
+          addTearDown(() => HttpOverrides.global = previousHttpOverride);
+          final tunnel = NasSshTunnelService(ssh);
+          addTearDown(tunnel.dispose);
+          final local = await tunnel.forward(
+            NasSource(
+              id: 'native-jellyfin-$taskId',
+              name: 'Native Jellyfin fixture',
+              type: NasSourceType.jellyfin,
+              endpoint: task.result!.endpoint.toString(),
+              sshServerId: server.id,
+            ),
+          );
+          final http = HttpClient();
+          addTearDown(() => http.close(force: true));
+          final response = await (await http.getUrl(
+            local.replace(path: '/health'),
+          )).close().timeout(const Duration(seconds: 20));
+          expect(response.statusCode, 200);
+          expect(await response.transform(utf8.decoder).join(), isNotEmpty);
+
+          // An existing installation must never acquire a new install approval.
+          final existing = await service.prepare(
+            NasNativeInstallRequest.forServer(server, mediaPath: mediaPath),
+          );
+          expect(existing.existingInstall, isTrue);
+          expect(existing.canInstall, isFalse);
+          expect(existing.blockers, contains('NAS_NATIVE_ALREADY_INSTALLED'));
+          expect(
+            (await command(
+              'systemctl is-active jellyfin.service',
+            )).stdout.trim(),
+            'active',
+          );
+          // Keep this loopback-only fixture and its task records for inspection.
+          // Do not silently purge APT packages, service state, or media after tests.
+        },
+        skip: Platform.environment['VALHALLA_NAS_NATIVE_VM'] != '1'
+            ? 'Requires explicit approval for native APT installation in the pinned VM.'
+            : false,
+        timeout: const Timeout(Duration(minutes: 20)),
+      );
 
       test(
         'device WebDAV source probes and scans through the actual SSH tunnel',

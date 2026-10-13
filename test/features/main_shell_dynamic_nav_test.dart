@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/extensions/context_extensions.dart';
+import 'package:valhalla/core/providers/application_center_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/settings_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
@@ -16,6 +17,11 @@ import 'package:valhalla/core/design/motion_widgets.dart';
 class _FakeSftpNotifier extends SftpNotifier {
   @override
   SftpState build() => const SftpState(currentPath: '/', isLoading: false);
+}
+
+class _IdleApplicationCenter extends ApplicationCenterNotifier {
+  @override
+  ApplicationCenterState build() => const ApplicationCenterState();
 }
 
 class _TestServerListNotifier extends ServerListNotifier {
@@ -56,6 +62,7 @@ Future<ProviderContainer> _pumpShell(
       serverListProvider.overrideWith(_TestServerListNotifier.new),
       activeServerProvider.overrideWith(_TestActiveServerNotifier.new),
       sftpProvider.overrideWith(_FakeSftpNotifier.new),
+      applicationCenterProvider.overrideWith(_IdleApplicationCenter.new),
       if (settingsState != null)
         settingsProvider.overrideWith(
           () => _CustomSettingsNotifier(settingsState),
@@ -80,6 +87,40 @@ Future<ProviderContainer> _pumpShell(
 
 void main() {
   group('MainShell Dynamic Bottom Navigation & Startup', () {
+    testWidgets(
+      'default bottom menu includes application center without opt-in',
+      (tester) async {
+        final container = await _pumpShell(tester);
+        final navBar = tester.widget<MainBottomNavigationBar>(
+          find.byType(MainBottomNavigationBar),
+        );
+        expect(navBar.sections, const [
+          AppSection.dashboard,
+          AppSection.aiChat,
+          AppSection.docker,
+          AppSection.files,
+          AppSection.appCenter,
+        ]);
+        expect(container.exists(applicationCenterProvider), isFalse);
+        final appsIcon = find.descendant(
+          of: find.byType(MainBottomNavigationBar),
+          matching: find.byIcon(Icons.apps_outlined),
+        );
+        await tester.tap(appsIcon);
+        await tester.pumpAndSettle();
+        expect(container.exists(applicationCenterProvider), isTrue);
+        expect(
+          tester
+              .widget<AnimatedIndexedStack>(
+                find.byType(AnimatedIndexedStack).first,
+              )
+              .index,
+          10,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets('starts with startupSection from settings', (tester) async {
       await _pumpShell(
         tester,
@@ -104,13 +145,13 @@ void main() {
     });
 
     testWidgets(
-      'renders all 10 sections in bottom navigation without overflow and allows tapping',
+      'renders all sections in bottom navigation without overflow and allows tapping',
       (tester) async {
         await _pumpShell(
           tester,
           settingsState: const SettingsState(
             bottomNavigationSections: AppSection.values,
-            // 显式开启实验特性：本用例断言全部 10 个条目可见。
+            // 显式开启实验特性：本用例断言全部页面可见。
             enabledExperimentalFeatures: {
               ExperimentalFeature.cliChat,
               ExperimentalFeature.nas,
@@ -122,7 +163,7 @@ void main() {
         expect(navBarFinder, findsOneWidget);
 
         final navBar = tester.widget<MainBottomNavigationBar>(navBarFinder);
-        expect(navBar.sections.length, 10);
+        expect(navBar.sections, AppSection.values);
         expect(tester.takeException(), isNull);
 
         // Scroll until settings icon is visible and tap
@@ -436,7 +477,7 @@ void main() {
 
         final railFinder = find.byType(NavigationRail);
         final rail = tester.widget<NavigationRail>(railFinder);
-        expect(rail.destinations.length, 10);
+        expect(rail.destinations.length, AppSection.values.length);
         expect(rail.scrollable, isTrue);
         expect(tester.takeException(), isNull);
 

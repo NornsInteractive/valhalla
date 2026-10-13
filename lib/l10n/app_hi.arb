@@ -1,5 +1,55 @@
 {
   "@@locale": "hi",
+  "nasPlaylistLoadFailed": "प्लेलिस्ट फ़िलहाल उपलब्ध नहीं हैं। सहेजी गई मीडिया सूची अभी भी उपलब्ध है। फिर से कोशिश करने के लिए रीफ़्रेश करें।",
+  "nasAllLibraries": "सभी लाइब्रेरी",
+  "nasNativeInstallTitle": "Jellyfin इंस्टॉल करें (नेटिव पैकेज)",
+  "nasNativeStepVerifyRepo": "आधिकारिक हस्ताक्षरित रिपॉज़िटरी की पुष्टि करें",
+  "nasNativeStepPreventAutostart": "सेवा को कॉन्फ़िगर करने से पहले अपने-आप शुरू होने से रोकें",
+  "nasNativeStepInstallPackages": "तय संस्करणों वाले हस्ताक्षरित पैकेज इंस्टॉल करें",
+  "nasNativeStepConfigureLoopback": "केवल localhost पर सुनने के लिए कॉन्फ़िगर करें",
+  "nasNativeStageInstalling": "तय संस्करणों वाले पैकेज इंस्टॉल हो रहे हैं",
+  "nasNativeStageStarting": "systemd सेवा शुरू हो रही है",
+  "nasNativeGuidanceMediaAccess": "मीडिया फ़ाइलों की अनुमतियाँ और स्वामित्व नहीं बदलेंगे। सुनिश्चित करें कि Jellyfin सेवा उपयोगकर्ता के पास पढ़ने की अनुमति है।",
+  "nasNativeGuidanceNoUpgrade": "मौजूदा Jellyfin इंस्टॉलेशन का प्रबंधन नहीं लिया जाएगा और उन्हें बदला या अपग्रेड नहीं किया जाएगा।",
+  "nasNativeSupportedRequirements": "Debian या Ubuntu (amd64/arm64), systemd और root या बिना पासवर्ड वाले sudo की अनुमति आवश्यक है।",
+  "nasNativeExistingInstallTitle": "मौजूदा Jellyfin इंस्टॉलेशन मिला",
+  "nasNativeExistingInstallExplanation": "इस सर्वर पर Jellyfin पहले से इंस्टॉल है। Valhalla उसे बदलेगा या दोबारा इंस्टॉल नहीं करेगा। सीधे उसका कनेक्शन जाँचें।",
+  "nasNativeCancelExplanation": "अगले सुरक्षित चरण पर रद्द करने का अनुरोध किया गया है। चल रहे पैकेज ऑपरेशन सुरक्षित रूप से पूरे होंगे।",
+  "nasNativeMediaPathLabel": "मीडिया डायरेक्टरी का पथ",
+  "nasNativeMediaPathHint": "सर्वर पर पहले से मौजूद पूर्ण पथ (जैसे /media/library)। अनुमतियाँ नहीं बदलेंगी।",
+  "nasNativeSudoRequired": "सिस्टम पैकेज इंस्टॉल करने के लिए root या बिना पासवर्ड वाले sudo की अनुमति आवश्यक है",
+  "nasDiagnosticsTitle": "मीडिया स्रोत की जाँच",
+  "nasDiagnosticsConnection": "कनेक्शन",
+  "nasDiagnosticsScan": "लाइब्रेरी स्कैन",
+  "nasDiagnosticsLastSuccess": "पिछला सफल कनेक्शन",
+  "nasDiagnosticsCredentials": "सहेजे गए लॉगिन विवरण जाँचे जा रहे हैं",
+  "nasDiagnosticsFinalizing": "इंडेक्स पूरा हो रहा है",
+  "nasDiagnosticsNotChecked": "जाँच नहीं हुई",
+  "nasCacheLegacy": "पुराने थंबनेल (किसी स्रोत से जुड़े नहीं)",
+  "nasCacheGlobalBudget": "थंबनेल संग्रहण सीमा (सभी स्रोत)",
+  "nasCacheNoSource": "कैश प्रबंधित करने के लिए कोई मीडिया स्रोत चुनें।",
+  "nasOfflineRecordedHint": "यह रिकॉर्ड किए गए डाउनलोड का बाइट आकार है, डिस्क उपयोग का माप नहीं। थंबनेल साफ़ करने से ऑफ़लाइन फ़ाइलें नहीं हटतीं।",
+  "nasCacheClearConfirm": "क्या {scope} के थंबनेल साफ़ करें? ऑफ़लाइन फ़ाइलें और रिमोट मीडिया सुरक्षित रहेंगे।",
+  "nasOfflineRecordedBytes": "रिकॉर्ड किए गए डाउनलोड: {size}",
+  "nasDeployDockerTitle": "Docker ऐप",
+  "nasDeployDockerDesc": "ऐप सेंटर में आधिकारिक Jellyfin ऐप खोलें। इंस्टॉल करने से पहले उसकी सेटिंग जाँचें।",
+  "nasDeployNativeDesc": "आधिकारिक पैकेजों से Jellyfin सीधे इस सर्वर पर इंस्टॉल करें। मौजूदा इंस्टॉलेशन नहीं बदलेंगे।",
+  "nasDeployEnableAppCenter": "आगे बढ़ने के लिए प्रयोगात्मक ऐप सेंटर सक्षम करें? आपके मेनू का लेआउट नहीं बदलेगा।",
+  "nasDeployCatalogUnavailable": "आधिकारिक Jellyfin ऐप उपलब्ध नहीं है। जाँचें कि आधिकारिक स्रोत सक्षम है, फिर दोबारा कोशिश करें।",
+  "@nasCacheClearConfirm": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "@nasOfflineRecordedBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "appName": "Valhalla",
   "appSubtitle": "AI-ने native सर्वर और एजेंट प्रबंधन",
   "navAiChat": "AI चैट",
@@ -1663,5 +1713,418 @@
   "nasThumbnailCacheBudget": "कैश बजट",
   "nasThumbnailCacheClear": "कैश साफ़ करें",
   "nasThumbnailCacheCleared": "थंबनेल कैश साफ़ किया गया",
-  "nasThumbnailCacheOff": "बंद"
+  "nasThumbnailCacheOff": "बंद",
+  "navAppCenter": "ऐप केंद्र",
+  "settingsExperimentalAppCenterTitle": "ऐप केंद्र (Docker)",
+  "settingsExperimentalAppCenterDesc": "प्रायोगिक एप्लिकेशन स्टोर और कंटेनर परिनियोजन प्रबंधक",
+  "appCenterTitle": "ऐप केंद्र",
+  "appCenterTabStore": "स्टोर",
+  "appCenterTabInstalled": "स्थापित",
+  "appCenterTabTasks": "कार्य",
+  "appCenterSources": "स्रोत",
+  "appCenterManageSources": "स्रोत प्रबंधित करें",
+  "appCenterAddSource": "स्रोत जोड़ें",
+  "appCenterSourceName": "स्रोत नाम",
+  "appCenterSourceUrl": "स्रोत URL (HTTPS)",
+  "appCenterDeleteSource": "स्रोत हटाएं",
+  "appCenterRefresh": "ताज़ा करें",
+  "appCenterSearchHint": "एप्लिकेशन खोजें...",
+  "appCenterFilterAllCategories": "सभी श्रेणियां",
+  "appCenterFilterAllSources": "सभी स्रोत",
+  "appCenterNoApps": "कोई एप्लिकेशन नहीं मिला",
+  "appCenterNoInstalled": "कोई एप्लिकेशन स्थापित नहीं है",
+  "appCenterNoTasks": "कोई सक्रिय या हालिया कार्य नहीं",
+  "appCenterInstall": "स्थापित करें",
+  "appCenterInstalledBadge": "स्थापित",
+  "appCenterIncompatibleBadge": "असंगत",
+  "appCenterUpdateAvailable": "अपडेट उपलब्ध है",
+  "appCenterArchitectureBlocker": "आर्किटेक्चर समर्थित नहीं है",
+  "appCenterAppDetails": "एप्लिकेशन विवरण",
+  "appCenterVersion": "संस्करण",
+  "appCenterCategory": "श्रेणी",
+  "appCenterSource": "स्रोत",
+  "appCenterArchitectures": "समर्थित आर्किटेक्चर",
+  "appCenterScreenshots": "स्क्रीनशॉट",
+  "appCenterDescription": "विवरण",
+  "appCenterWizardTitle": "{appName} स्थापित करें",
+  "@appCenterWizardTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterConfigureTitle": "{appName} कॉन्फ़िगर करें",
+  "@appCenterConfigureTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUpdateTitle": "{appName} अपडेट करें",
+  "@appCenterUpdateTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStepEnvironment": "वातावरण",
+  "appCenterStepConfig": "कॉन्फ़िगरेशन",
+  "appCenterStepReview": "योजना समीक्षा",
+  "appCenterStepProgress": "प्रगति",
+  "appCenterInstanceName": "इंस्टेंस नाम",
+  "appCenterDataDirectory": "डेटा निर्देशिका",
+  "appCenterBrowseDirectory": "निर्देशिका ब्राउज़ करें",
+  "appCenterNetworkAndPorts": "नेटवर्क और पोर्ट",
+  "appCenterBindAddress": "बाइंड पता",
+  "appCenterBindLoopback": "केवल लोकलहोस्ट (127.0.0.1)",
+  "appCenterBindAll": "सभी इंटरफेस (0.0.0.0)",
+  "appCenterPortMapping": "पोर्ट मैपिंग",
+  "appCenterMounts": "स्टोरेज माउंट",
+  "appCenterMountSource": "होस्ट पथ",
+  "appCenterMountTarget": "कंटेनर पथ",
+  "appCenterMountReadOnly": "केवल पढ़ने योग्य",
+  "appCenterVariables": "चर",
+  "appCenterEnvironmentVariables": "पर्यावरण चर",
+  "appCenterNext": "अगला",
+  "appCenterBack": "पिछला",
+  "appCenterConfirmAndExecute": "योजना निष्पादित करें",
+  "appCenterPlanPreview": "परिनियोजन योजना पूर्वावलोकन",
+  "appCenterPlanSanitizedNotice": "निष्पादन से पहले उत्पन्न परिनियोजन योजना की समीक्षा करें:",
+  "appCenterEnvironmentCheck": "Docker वातावरण",
+  "appCenterDockerFound": "Docker उपलब्ध है",
+  "appCenterDockerMissing": "Docker स्थापित नहीं है",
+  "appCenterComposeFound": "Docker Compose उपलब्ध है",
+  "appCenterComposeMissing": "Docker Compose स्थापित नहीं है",
+  "appCenterBootstrapPrompt": "इस सर्वर पर Docker और Compose स्वचालित रूप से बूटस्ट्रैप किए जा सकते हैं। Root/sudo अनुमति आवश्यक है।",
+  "appCenterBootstrapButton": "Docker और Compose स्थापित करें",
+  "appCenterSudoPassword": "Sudo पासवर्ड (वैकल्पिक / यदि आवश्यक हो)",
+  "appCenterSudoPasswordHint": "विशेषाधिकार प्राप्त कार्यों के लिए sudo पासवर्ड दर्ज करें",
+  "appCenterOpen": "वेब UI खोलें",
+  "appCenterStart": "प्रारंभ करें",
+  "appCenterStop": "रोकें",
+  "appCenterRestart": "पुनः प्रारंभ करें",
+  "appCenterLogs": "लॉग",
+  "appCenterConfig": "कॉन्फ़िगर करें",
+  "appCenterUpdate": "अपडेट करें",
+  "appCenterRestore": "पुनर्स्थापित करें",
+  "appCenterUninstall": "अनइंस्टॉल करें",
+  "appCenterUninstallConfirmTitle": "{appName} अनइंस्टॉल करें?",
+  "@appCenterUninstallConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallConfirmMessage": "क्या आप वाकई {appName} को अनइंस्टॉल करना चाहते हैं? कंटेनर हटा दिए जाएंगे, लेकिन आपकी एप्लिकेशन डेटा निर्देशिका सुरक्षित रहेगी।",
+  "@appCenterUninstallConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallKeepData": "अनइंस्टॉल करें (डेटा रखें)",
+  "appCenterUninstallDeleteSelected": "अनइंस्टॉल करें और चयनित हटाएं",
+  "appCenterUninstallInspecting": "एप्लिकेशन डेटा निर्देशिकाओं का निरीक्षण किया जा रहा है...",
+  "appCenterUninstallInspectionFailedWarning": "डेटा सफ़ाई निरीक्षण विफल रहा। आप अभी भी सभी डेटा को सुरक्षित रखते हुए एप्लिकेशन कंटेनर अनइंस्टॉल कर सकते हैं।",
+  "appCenterUninstallDirectoriesTitle": "डेटा फ़ोल्डर और Docker वॉल्यूम",
+  "appCenterUninstallNoDirectories": "कोई बाइंड माउंट डेटा निर्देशिका नहीं मिली। डेटा सुरक्षित रखते हुए कंटेनर हटा दिए जाएंगे।",
+  "appCenterUninstallDefaultPreservedHint": "डिफ़ॉल्ट रूप से सभी डेटा सुरक्षित रहता है। केवल स्थायी रूप से हटाने वाले फ़ोल्डर या वॉल्यूम चुनें।",
+  "appCenterUninstallPermanentLossWarning": "चुना हुआ डेटा सर्वर से स्थायी रूप से हटेगा। कोई रीसायकल बिन नहीं है।",
+  "appCenterUninstallSelectedPathsTitle": "स्थायी रूप से हटाने वाला डेटा:",
+  "appCenterUninstallRiskAck": "मैं जोखिमों और अन्य ऐप पर पड़ने वाले प्रभाव को समझता हूँ और इस डेटा को स्थायी रूप से हटाने की पुष्टि करता हूँ।",
+  "remoteBrowserAllFileTypes": "सभी प्रारूप",
+  "remoteBrowserDocuments": "टेक्स्ट और दस्तावेज़",
+  "remoteBrowserFileFormat": "फ़ाइल प्रारूप",
+  "appCenterUninstallRiskSystem": "सिस्टम पथ",
+  "appCenterUninstallRiskShared": "अन्य ऐप के साथ साझा",
+  "appCenterUninstallRiskVolume": "Docker वॉल्यूम",
+  "appCenterCleanupVolumeDeleteFailed": "Docker वॉल्यूम हटाया नहीं जा सका। अन्य कंटेनरों द्वारा इसका उपयोग समाप्त करें, फिर दोबारा जाँचकर प्रयास करें।",
+  "appCenterCleanupPermissionDenied": "पहुँच अस्वीकृत। डेटा तक पहुँच वाला खाता या sudo इस्तेमाल करें।",
+  "appCenterCleanupCriticalPath": "ऐप हटाते समय सर्वर रूट और सिस्टम के रनटाइम या प्रबंधन फ़ोल्डर नहीं हटाए जा सकते।",
+  "appCenterUninstallTypeAppNameHint": "स्थायी विलोपन की पुष्टि के लिए सटीक एप्लिकेशन नाम दर्ज करें: {appName}",
+  "@appCenterUninstallTypeAppNameHint": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterUninstallRiskLegacy": "अपुष्ट अनन्य स्वामित्व",
+  "appCenterUninstallRiskExternal": "एप्लिकेशन डेटा रूट के बाहर का पथ",
+  "appCenterUninstallRiskMedia": "मीडिया या केवल-पढ़ने योग्य पथ",
+  "appCenterUninstallTargetBlocked": "सुरक्षित निर्देशिका, हटाई नहीं जा सकती",
+  "appCenterCleanupProtected": "डेटा निर्देशिका सुरक्षित रखी गई क्योंकि यह संरक्षित है या हटाना असुरक्षित है",
+  "appCenterCleanupUnavailable": "सफ़ाई निरीक्षण अनुपलब्ध है; डेटा सुरक्षित रखते हुए सामान्य अनइंस्टॉल अभी भी संभव है",
+  "appCenterCleanupChanged": "निर्देशिका या परिनियोजन लक्ष्य बदल गया है; कृपया पुनः निरीक्षण करें और पुष्टि करें",
+  "appCenterCleanupConfirmationRequired": "कृपया चयनित निर्देशिकाओं, जोखिमों और सटीक ऐप नाम की पुनः पुष्टि करें",
+  "appCenterCleanupRetryUnavailable": "सफ़ाई को सुरक्षित रूप से पुनः प्रयास नहीं किया जा सकता; कार्य विवरण देखें",
+  "appCenterCleanupAlreadyAbsent": "निर्देशिका पहले से अनुपस्थित है; हटाने की आवश्यकता नहीं है",
+  "appCenterCleanupDeleteFailed": "हटाना अधूरा रहा; कुछ फ़ाइलें पहले ही हटाई जा चुकी हो सकती हैं। शेष पथों का निरीक्षण करें।",
+  "appCenterCleanupUnconfirmed": "सफ़ाई परिणाम या सुरक्षा की पुष्टि नहीं हो सकी; आगे बढ़ने से पहले कार्य का निरीक्षण करें और पुनः जांचें",
+  "appCenterCleanupRetryTitle": "{appName} के लिए शेष डेटा सफ़ाई का पुनः प्रयास करें?",
+  "@appCenterCleanupRetryTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterCleanupRetryDescription": "एप्लिकेशन पहले ही अनइंस्टॉल हो चुका है। केवल अधूरी डेटा निर्देशिकाएं चुनें; पुनः प्रयास इसे दोबारा अनइंस्टॉल नहीं करेगा।",
+  "appCenterCleanupRetrySelected": "चयनित शेष डेटा हटाएं",
+  "appCenterCleanupResultsTitle": "निर्देशिका सफ़ाई परिणाम",
+  "appCenterCleanupPartialSummary": "एप्लिकेशन अनइंस्टॉल हो गया; कुछ डेटा पूरी तरह साफ़ नहीं हुआ।",
+  "appCenterCleanupPending": "पूर्ण होने की पुष्टि नहीं",
+  "appCenterCleanupRemoved": "हटाया गया",
+  "appCenterCleanupRetained": "सुरक्षित रखा गया",
+  "appCenterCleanupRetryAction": "शेष डेटा सफ़ाई का पुनः प्रयास करें",
+  "appCenterJellyfinSoftwareTitle": "सॉफ़्टवेयर डिकोडिंग मोड",
+  "appCenterJellyfinSoftwareDesc": "GPU ट्रांसकोडिंग को अक्षम करता है, समीक्षित GPU डिवाइस मैपिंग को हटाता है, और /Media को केवल-पढ़ने योग्य के रूप में माउंट करता है।",
+  "appCenterJellyfinProfileUnavailable": "इस टेम्पलेट के लिए सॉफ़्टवेयर डिकोडिंग प्रोफ़ाइल अनुपलब्ध है",
+  "appCenterJellyfinSoftwareChanges": "लागू किए गए प्रोफ़ाइल परिवर्तन:",
+  "appCenterLogsTitle": "{appName} लॉग",
+  "@appCenterLogsTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterLogsEmpty": "इस परिनियोजन के लिए कोई लॉग दर्ज नहीं किया गया है",
+  "appCenterLogsCopied": "लॉग क्लिपबोर्ड पर कॉपी किए गए",
+  "appCenterTaskStageQueued": "कतारबद्ध",
+  "appCenterTaskStagePreparing": "तैयारी हो रही है",
+  "appCenterTaskStagePulling": "छवियां डाउनलोड की जा रही हैं",
+  "appCenterTaskStageApplying": "कॉन्फ़िगरेशन लागू किया जा रहा है",
+  "appCenterTaskStageChecking": "स्वास्थ्य जांच हो रही है",
+  "appCenterTaskStageSucceeded": "सफल",
+  "appCenterTaskStageFailed": "विफल",
+  "appCenterTaskStageCancelled": "रद्द",
+  "appCenterTaskStageNeedsInspection": "निरीक्षण की आवश्यकता है",
+  "appCenterCancelTask": "कार्य रद्द करें",
+  "appCenterCopyLog": "लॉग कॉपी करें",
+  "appCenterErrorNotConnected": "सर्वर कनेक्ट नहीं है",
+  "appCenterErrorEnvironmentRequired": "Docker वातावरण जांच आवश्यक है",
+  "appCenterErrorPlanExpired": "परिनियोजन योजना समाप्त या अमान्य हो गई है",
+  "appCenterErrorTargetChanged": "लक्ष्य सर्वर बदल गया; कार्रवाई रद्द कर दी गई",
+  "appCenterErrorConfigInvalid": "अमान्य एप्लिकेशन कॉन्फ़िगरेशन",
+  "appCenterErrorPathInvalid": "{field} रूट (/) के अलावा एक पूर्ण पथ होना चाहिए, और इसमें . या .. खंड नहीं हो सकते",
+  "@appCenterErrorPathInvalid": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterErrorSourceInvalid": "अमान्य ऐप स्टोर स्रोत",
+  "appCenterErrorNoWebEntry": "यह एप्लिकेशन वेब इंटरफ़ेस प्रदान नहीं करता है",
+  "appCenterErrorHttpsDirectRequired": "HTTPS एंडपॉइंट को SSH द्वारा टनल नहीं किया जा सकता; कृपया सीधे खोलें",
+  "appCenterErrorOpenFailed": "एप्लिकेशन URL खोलने में विफल",
+  "appCenterErrorGeneric": "ऐप केंद्र त्रुटि: {error}",
+  "@appCenterErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterSourceCommunityHint": "उदा. कम्युनिटी स्टोर",
+  "appCenterSourceUrlInvalidHttps": "एक वैध HTTPS URL होना चाहिए",
+  "appCenterDirectUrlLabel": "डायरेक्ट URL",
+  "appCenterErrorSourceRemoved": "एप्लिकेशन स्रोत अब कैटलॉग में उपलब्ध नहीं है। टेम्पलेट अपडेट नहीं किया जा सकता।",
+  "appCenterRestoreConfirmTitle": "{appName} को पुनर्स्थापित करें?",
+  "@appCenterRestoreConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestoreConfirmMessage": "क्या आप {appName} को इसके पिछले परिनियोजन कॉन्फ़िगरेशन पर पुनर्स्थापित करना चाहते हैं?",
+  "@appCenterRestoreConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostPortLabel": "होस्ट पोर्ट (-> {target})",
+  "@appCenterHostPortLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterHostMountLabel": "होस्ट: {target}",
+  "@appCenterHostMountLabel": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterVersionLatest": "नवीनतम",
+  "appCenterWaitingForLogs": "कार्य लॉग की प्रतीक्षा की जा रही है...",
+  "appCenterNoPreviewAvailable": "कोई पूर्वावलोकन उपलब्ध नहीं है",
+  "appCenterBlockerLocalDockerRequired": "स्थानीय डॉकर डेमॉन आवश्यक है (रिमोट DOCKER_HOST समर्थित नहीं है)",
+  "appCenterBlockerToolsRequired": "सर्वर पर आवश्यक उपकरण अनुपलब्ध हैं (bash, setsid, flock, base64, realpath, ss, awk)",
+  "appCenterBlockerLinuxRequired": "लिनक्स ऑपरेटिंग सिस्टम आवश्यक है",
+  "appCenterBlockerTemplateUnsupported": "असमर्थित टेम्पलेट सुविधा: {feature}",
+  "@appCenterBlockerTemplateUnsupported": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterFieldRequired": "यह फ़ील्ड आवश्यक है",
+  "appCenterContinueInstall": "इंस्टॉलेशन जारी रखें",
+  "appCenterOperation": "कार्रवाई",
+  "nasTabLibrary": "लाइब्रेरी",
+  "nasContinueWatching": "देखना जारी रखें",
+  "nasRecentPhotos": "हाल के फोटो",
+  "nasRecentVideos": "हाल के वीडियो",
+  "nasRecentMusic": "हाल का संगीत",
+  "nasDownloadPaused": "रोका गया",
+  "nasDownloadDeleteConfirmTitle": "ऑफ़लाइन फ़ाइल हटाएं",
+  "nasDownloadDeleteConfirmMessage": "यह आपके डिवाइस से डाउनलोड की गई स्थानीय ऑफ़लाइन फ़ाइल को हटा देगा। दूरस्थ सर्वर पर मूल फ़ाइल नहीं हटाई जाएगी।",
+  "nasDownloadDeleteConfirmButton": "ऑफ़लाइन प्रति हटाएं",
+  "nasDownloadSourceChangedMessage": "डाउनलोड शुरू होने के बाद से दूरस्थ स्रोत कॉन्फ़िगरेशन बदल गया है। क्या आप शुरुआत से दोबारा डाउनलोड करना चाहते हैं?",
+  "nasDownloadRestartFromScratch": "शुरुआत से पुनः प्रारंभ करें",
+  "nasDownloadErrorSourceChanged": "स्रोत कॉन्फ़िगरेशन बदला गया",
+  "nasDownloadErrorOfflineFileInvalid": "डाउनलोड की गई फ़ाइल दूषित या अधूरी है",
+  "nasDownloadErrorStorageFailed": "स्टोरेज में लिखने में विफल",
+  "nasDownloadErrorHlsUnsupported": "स्ट्रीमिंग धाराओं के लिए ऑफ़लाइन डाउनलोड समर्थित नहीं है",
+  "nasDownloadErrorPathInvalid": "डाउनलोड भंडारण पथ अमान्य है",
+  "nasOpenInApp": "ऐप में खोलें",
+  "nasOpenSystem": "सिस्टम के साथ खोलें",
+  "sftpRecentDirectories": "हाल की निर्देशिकाएं",
+  "sftpNoRecentDirectories": "कोई हाल की निर्देशिका नहीं",
+  "sftpRetryFailed": "विफल पुन: प्रयास करें",
+  "appCenterDiskCheckFailed": "सर्वर पर उपलब्ध डिस्क स्थान की पुष्टि नहीं की जा सकी",
+  "appCenterDiskFull": "सर्वर डिस्क पूरी भर गई है; संचालन जारी नहीं रखा जा सकता",
+  "appCenterHealthInvalid": "कंटेनर स्वास्थ्य जांच विफल रही या अमान्य स्थिति रिपोर्ट की गई",
+  "appCenterPreflightSummary": "पूर्व-जांच सारांश",
+  "appCenterMeasuredAvailableSpace": "मापा गया उपलब्ध डिस्क स्थान",
+  "appCenterUpdateComparison": "अद्यतन तुलना",
+  "appCenterNoChangesDetected": "कोई संरचनात्मक परिवर्तन नहीं मिला",
+  "appCenterSectionImage": "कंटेनर इमेज",
+  "appCenterSectionPorts": "पोर्ट मैपिंग",
+  "appCenterSectionVolumes": "स्टोरेज माउंट्स",
+  "appCenterSectionEnvironment": "पर्यावरण चर",
+  "appCenterSectionHealthcheck": "स्वास्थ्य जांच",
+  "appCenterSectionRestart": "पुनः आरंभ नीति",
+  "appCenterSectionServices": "सेवाएं",
+  "appCenterHealthNoCheck": "कोई स्वास्थ्य जांच नहीं",
+  "appCenterHealthHealthy": "स्वस्थ",
+  "appCenterHealthUnhealthy": "अस्वस्थ",
+  "appCenterHealthStarting": "शुरू हो रहा है",
+  "appCenterNoSources": "कोई ऐप स्रोत सक्षम नहीं है",
+  "appCenterNoMatchingApps": "खोज या फ़िल्टर से मेल खाने वाले कोई ऐप नहीं मिले",
+  "appCenterClearFilters": "फ़िल्टर हटाएं",
+  "appCenterSourceLoadFailed": "ऐप स्रोत लोड करने में विफल",
+  "appCenterRetry": "पुनः प्रयास करें",
+  "appCenterRecheck": "पुनः जांचें",
+  "appCenterRecheckTask": "कार्य स्थिति पुनः जांचें",
+  "appCenterTaskNeedsInspectionTitle": "कार्य स्थिति अपुष्ट है",
+  "appCenterTaskNeedsInspectionMessage": "सर्वर पर कार्य का परिणाम अज्ञात है। कृपया पुनः जांचें या लॉग देखें; बिना सोचे-समझे दोबारा न चलाएं।",
+  "appCenterStopConfirmTitle": "क्या {appName} को रोकें?",
+  "@appCenterStopConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterStopConfirmMessage": "क्या आप वाकई सर्वर {serverName} पर {appName} को रोकना चाहते हैं? चल रहे कंटेनर बंद हो जाएंगे।",
+  "@appCenterStopConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmTitle": "क्या {appName} को पुनः आरंभ करें?",
+  "@appCenterRestartConfirmTitle": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterRestartConfirmMessage": "क्या आप वाकई सर्वर {serverName} पर {appName} को पुनः आरंभ करना चाहते हैं?",
+  "@appCenterRestartConfirmMessage": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "appCenterBrowseStore": "ऐप स्टोर ब्राउज़ करें",
+  "appCenterViewTasks": "कार्य देखें",
+  "appCenterViewInstalled": "इंस्टॉल किए गए ऐप देखें",
+  "appCenterRunInBackground": "पृष्ठभूमि में चलाएं",
+  "appCenterTaskDetails": "कार्य विवरण",
+  "appCenterTaskTarget": "लक्ष्य",
+  "appCenterTaskDirectory": "निर्देशिका",
+  "appCenterTaskCreatedAt": "बनाने का समय",
+  "appCenterTaskExitCode": "निकास कोड: {code}",
+  "@appCenterTaskExitCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "appCenterStatusRunning": "चल रहा है",
+  "appCenterStatusStopped": "रुक गया",
+  "appCenterStatusInstalling": "इंस्टॉल हो रहा है",
+  "appCenterStatusUnknown": "अज्ञात",
+  "appCenterEnvReady": "Docker और Compose वातावरण तैयार है",
+  "appCenterEnvNotReady": "Docker वातावरण तैयार नहीं है",
+  "appCenterEnvInspecting": "Docker वातावरण की जांच की जा रही है...",
+  "appCenterUninstallWholeDataRoot": "संपूर्ण डेटा रूट",
+  "appCenterUninstallWholeDataRootWarning": "इसमें एप्लिकेशन डेटा रूट के अंतर्गत संग्रहीत अनमाउंट की गई फ़ाइलें और उप-निर्देशिकाएं शामिल हैं।",
+  "appCenterUninstallCoveredByParent": "मूल निर्देशिका द्वारा कवर किया गया",
+  "appCenterContainerNameInvalid": "इंस्टेंस नाम अक्षरांकीय वर्ण से शुरू होना चाहिए और इसमें केवल अक्षर, संख्याएं, अंडरस्कोर, बिंदु और हाइफ़न हो सकते हैं (अधिकतम 120 वर्ण)।",
+  "appCenterMainService": "मुख्य सेवा",
+  "appCenterContainerNamesPreview": "कंटेनर नामों का पूर्वावलोकन",
+  "appCenterContainersRecreationNotice": "इंस्टेंस कंटेनर नाम बदलने से मौजूदा एप्लिकेशन कंटेनर फिर से बन जाएंगे।",
+  "remoteBrowserTitle": "रिमोट फ़ाइल ब्राउज़र",
+  "remoteBrowserSelectDirectory": "निर्देशिका चुनें",
+  "remoteBrowserSelectCurrentDirectory": "वर्तमान निर्देशिका चुनें",
+  "remoteBrowserSearchHint": "फ़ाइलें और फ़ोल्डर खोजें...",
+  "remoteBrowserNoEntries": "कोई मेल खाने वाली फ़ाइल या निर्देशिका नहीं मिली",
+  "remoteBrowserEmptyDirectory": "यह निर्देशिका खाली है",
+  "remoteBrowserSelectedCount": "{count} आइटम चुने गए",
+  "@remoteBrowserSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remoteBrowserParentDirectory": "मूल निर्देशिका",
+  "remoteBrowserLibrariesTitle": "मीडिया लाइब्रेरी",
+  "remoteBrowserDisconnected": "रिमोट कनेक्शन टूट गया या अनुपलब्ध है।",
+  "remoteBrowserTargetChanged": "लक्षित वातावरण या सक्रिय सर्वर बदल गया।",
+  "remoteBrowserPathInvalid": "अनुरोधित पथ अमान्य है या उस तक नहीं पहुंचा जा सकता।",
+  "remoteBrowserPathOutsideRoot": "अनुरोधित पथ अनुमत रूट निर्देशिका से बाहर है।",
+  "remoteBrowserEntryUnavailable": "चयनित प्रविष्टि अनुपलब्ध या अमान्य है।",
+  "nasBrowseUnavailable": "NAS ब्राउज़ सेवा वर्तमान में अनुपलब्ध है।",
+  "nasInvalidDirectoryEntry": "NAS ब्राउज़ करते समय अमान्य निर्देशिका प्रविष्टि मिली।",
+  "nasInvalidLibraryResponse": "अमान्य या विकृत मीडिया लाइब्रेरी प्रतिक्रिया।",
+  "nasScanFilterUnresolved": "स्कैन फ़िल्टर पथ हल करने में असमर्थ।",
+  "nasSourceSaveIncomplete": "पिछला स्रोत सहेजना केवल आंशिक रूप से सहेजा गया था। कृपया ब्राउज़ करने से पहले क्रेडेंशियल पुनः दर्ज करें और सफलतापूर्वक सहेजें।"
 }

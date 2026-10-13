@@ -9,6 +9,78 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get nasPlaylistLoadFailed =>
+      'Danh sách phát tạm thời không khả dụng. Bạn vẫn có thể xem danh sách nội dung đã lưu. Hãy làm mới để thử lại.';
+
+  @override
+  String get nasAllLibraries => 'Tất cả thư viện';
+
+  @override
+  String get nasDiagnosticsTitle => 'Chẩn đoán nguồn phương tiện';
+
+  @override
+  String get nasDiagnosticsConnection => 'Kết nối';
+
+  @override
+  String get nasDiagnosticsScan => 'Quét thư viện';
+
+  @override
+  String get nasDiagnosticsLastSuccess => 'Lần kết nối thành công gần nhất';
+
+  @override
+  String get nasDiagnosticsCredentials =>
+      'Đang kiểm tra thông tin đăng nhập đã lưu';
+
+  @override
+  String get nasDiagnosticsFinalizing => 'Đang hoàn tất chỉ mục';
+
+  @override
+  String get nasDiagnosticsNotChecked => 'Chưa kiểm tra';
+
+  @override
+  String get nasCacheLegacy => 'Ảnh thu nhỏ cũ (chưa gán nguồn)';
+
+  @override
+  String get nasCacheGlobalBudget => 'Giới hạn ảnh thu nhỏ (mọi nguồn)';
+
+  @override
+  String get nasCacheNoSource =>
+      'Chọn nguồn phương tiện để quản lý bộ nhớ đệm của nguồn đó.';
+
+  @override
+  String get nasOfflineRecordedHint =>
+      'Đây là số byte tải xuống được ghi nhận, không phải dung lượng đĩa đo được. Xóa ảnh thu nhỏ không xóa tệp ngoại tuyến.';
+
+  @override
+  String nasCacheClearConfirm(String scope) {
+    return 'Xóa ảnh thu nhỏ của $scope? Các tệp ngoại tuyến và phương tiện từ xa vẫn được giữ lại.';
+  }
+
+  @override
+  String nasOfflineRecordedBytes(String size) {
+    return 'Dữ liệu tải xuống đã ghi nhận: $size';
+  }
+
+  @override
+  String get nasDeployDockerTitle => 'Ứng dụng Docker';
+
+  @override
+  String get nasDeployDockerDesc =>
+      'Mở ứng dụng Jellyfin chính thức trong Trung tâm ứng dụng. Kiểm tra cấu hình trước khi cài đặt.';
+
+  @override
+  String get nasDeployNativeDesc =>
+      'Cài Jellyfin trực tiếp trên máy chủ này bằng các gói chính thức. Các bản cài đặt hiện có không bị thay đổi.';
+
+  @override
+  String get nasDeployEnableAppCenter =>
+      'Bật Trung tâm ứng dụng thử nghiệm để tiếp tục? Bố cục menu của bạn sẽ không thay đổi.';
+
+  @override
+  String get nasDeployCatalogUnavailable =>
+      'Ứng dụng Jellyfin chính thức hiện không khả dụng. Kiểm tra xem nguồn chính thức đã được bật rồi thử lại.';
+
+  @override
   String get appName => 'Valhalla';
 
   @override
@@ -4451,4 +4523,954 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get nasThumbnailCacheOff => 'Tắt';
+
+  @override
+  String get navAppCenter => 'Trung tâm ứng dụng';
+
+  @override
+  String get settingsExperimentalAppCenterTitle =>
+      'Trung tâm ứng dụng (Docker)';
+
+  @override
+  String get settingsExperimentalAppCenterDesc =>
+      'Cửa hàng ứng dụng thử nghiệm và trình quản lý triển khai container';
+
+  @override
+  String get appCenterTitle => 'Trung tâm ứng dụng';
+
+  @override
+  String get appCenterTabStore => 'Cửa hàng';
+
+  @override
+  String get appCenterTabInstalled => 'Đã cài đặt';
+
+  @override
+  String get appCenterTabTasks => 'Tác vụ';
+
+  @override
+  String get appCenterSources => 'Nguồn';
+
+  @override
+  String get appCenterManageSources => 'Quản lý nguồn';
+
+  @override
+  String get appCenterAddSource => 'Thêm nguồn';
+
+  @override
+  String get appCenterSourceName => 'Tên nguồn';
+
+  @override
+  String get appCenterSourceUrl => 'URL nguồn (HTTPS)';
+
+  @override
+  String get appCenterDeleteSource => 'Xóa nguồn';
+
+  @override
+  String get appCenterRefresh => 'Làm mới';
+
+  @override
+  String get appCenterSearchHint => 'Tìm kiếm ứng dụng...';
+
+  @override
+  String get appCenterFilterAllCategories => 'Tất cả danh mục';
+
+  @override
+  String get appCenterFilterAllSources => 'Tất cả nguồn';
+
+  @override
+  String get appCenterNoApps => 'Không tìm thấy ứng dụng';
+
+  @override
+  String get appCenterNoInstalled => 'Chưa cài đặt ứng dụng nào';
+
+  @override
+  String get appCenterNoTasks => 'Không có tác vụ đang chạy hoặc gần đây';
+
+  @override
+  String get appCenterInstall => 'Cài đặt';
+
+  @override
+  String get appCenterInstalledBadge => 'Đã cài đặt';
+
+  @override
+  String get appCenterIncompatibleBadge => 'Không tương thích';
+
+  @override
+  String get appCenterUpdateAvailable => 'Có bản cập nhật';
+
+  @override
+  String get appCenterArchitectureBlocker => 'Kiến trúc không được hỗ trợ';
+
+  @override
+  String get appCenterAppDetails => 'Chi tiết ứng dụng';
+
+  @override
+  String get appCenterVersion => 'Phiên bản';
+
+  @override
+  String get appCenterCategory => 'Danh mục';
+
+  @override
+  String get appCenterSource => 'Nguồn';
+
+  @override
+  String get appCenterArchitectures => 'Kiến trúc hỗ trợ';
+
+  @override
+  String get appCenterScreenshots => 'Ảnh chụp màn hình';
+
+  @override
+  String get appCenterDescription => 'Mô tả';
+
+  @override
+  String appCenterWizardTitle(String appName) {
+    return 'Cài đặt $appName';
+  }
+
+  @override
+  String appCenterConfigureTitle(String appName) {
+    return 'Cấu hình $appName';
+  }
+
+  @override
+  String appCenterUpdateTitle(String appName) {
+    return 'Cập nhật $appName';
+  }
+
+  @override
+  String get appCenterStepEnvironment => 'Môi trường';
+
+  @override
+  String get appCenterStepConfig => 'Cấu hình';
+
+  @override
+  String get appCenterStepReview => 'Xem lại kế hoạch';
+
+  @override
+  String get appCenterStepProgress => 'Tiến độ';
+
+  @override
+  String get appCenterInstanceName => 'Tên phiên bản';
+
+  @override
+  String get appCenterDataDirectory => 'Thư mục dữ liệu';
+
+  @override
+  String get appCenterBrowseDirectory => 'Duyệt thư mục';
+
+  @override
+  String get appCenterNetworkAndPorts => 'Mạng & Cổng';
+
+  @override
+  String get appCenterBindAddress => 'Địa chỉ liên kết';
+
+  @override
+  String get appCenterBindLoopback => 'Chỉ máy cục bộ (127.0.0.1)';
+
+  @override
+  String get appCenterBindAll => 'Tất cả giao diện (0.0.0.0)';
+
+  @override
+  String get appCenterPortMapping => 'Ánh xạ cổng';
+
+  @override
+  String get appCenterMounts => 'Điểm gắn kết lưu trữ';
+
+  @override
+  String get appCenterMountSource => 'Đường dẫn máy chủ';
+
+  @override
+  String get appCenterMountTarget => 'Đường dẫn container';
+
+  @override
+  String get appCenterMountReadOnly => 'Chỉ đọc';
+
+  @override
+  String get appCenterVariables => 'Biến';
+
+  @override
+  String get appCenterEnvironmentVariables => 'Biến môi trường';
+
+  @override
+  String get appCenterNext => 'Tiếp theo';
+
+  @override
+  String get appCenterBack => 'Quay lại';
+
+  @override
+  String get appCenterConfirmAndExecute => 'Thực thi kế hoạch';
+
+  @override
+  String get appCenterPlanPreview => 'Xem trước kế hoạch triển khai';
+
+  @override
+  String get appCenterPlanSanitizedNotice =>
+      'Xem lại kế hoạch triển khai đã tạo trước khi thực thi:';
+
+  @override
+  String get appCenterEnvironmentCheck => 'Môi trường Docker';
+
+  @override
+  String get appCenterDockerFound => 'Docker khả dụng';
+
+  @override
+  String get appCenterDockerMissing => 'Docker chưa được cài đặt';
+
+  @override
+  String get appCenterComposeFound => 'Docker Compose khả dụng';
+
+  @override
+  String get appCenterComposeMissing => 'Docker Compose chưa được cài đặt';
+
+  @override
+  String get appCenterBootstrapPrompt =>
+      'Docker và Compose có thể được cài đặt tự động trên máy chủ này. Cần quyền root/sudo.';
+
+  @override
+  String get appCenterBootstrapButton => 'Cài đặt Docker & Compose';
+
+  @override
+  String get appCenterSudoPassword => 'Mật khẩu Sudo (tùy chọn / nếu cần)';
+
+  @override
+  String get appCenterSudoPasswordHint =>
+      'Nhập mật khẩu sudo cho các thao tác đặc quyền';
+
+  @override
+  String get appCenterOpen => 'Mở giao diện Web';
+
+  @override
+  String get appCenterStart => 'Khởi động';
+
+  @override
+  String get appCenterStop => 'Dừng';
+
+  @override
+  String get appCenterRestart => 'Khởi động lại';
+
+  @override
+  String get appCenterLogs => 'Nhật ký';
+
+  @override
+  String get appCenterConfig => 'Cấu hình';
+
+  @override
+  String get appCenterUpdate => 'Cập nhật';
+
+  @override
+  String get appCenterRestore => 'Khôi phục';
+
+  @override
+  String get appCenterUninstall => 'Gỡ cài đặt';
+
+  @override
+  String appCenterUninstallConfirmTitle(String appName) {
+    return 'Gỡ cài đặt $appName?';
+  }
+
+  @override
+  String appCenterUninstallConfirmMessage(String appName) {
+    return 'Bạn có chắc chắn muốn gỡ cài đặt $appName? Các container sẽ bị xóa, nhưng thư mục dữ liệu ứng dụng của bạn sẽ được giữ lại.';
+  }
+
+  @override
+  String get appCenterUninstallKeepData => 'Gỡ cài đặt (Giữ lại dữ liệu)';
+
+  @override
+  String get appCenterUninstallDeleteSelected => 'Gỡ cài đặt & Xóa mục đã chọn';
+
+  @override
+  String get appCenterUninstallInspecting =>
+      'Đang kiểm tra các thư mục dữ liệu ứng dụng...';
+
+  @override
+  String get appCenterUninstallInspectionFailedWarning =>
+      'Kiểm tra dọn dẹp dữ liệu thất bại. Bạn vẫn có thể gỡ cài đặt các container ứng dụng trong khi giữ an toàn toàn bộ dữ liệu.';
+
+  @override
+  String get appCenterUninstallDirectoriesTitle =>
+      'Thư mục dữ liệu và ổ Docker';
+
+  @override
+  String get appCenterUninstallNoDirectories =>
+      'Không phát hiện thư mục dữ liệu gắn kết nào. Các container sẽ bị xóa trong khi dữ liệu được giữ lại.';
+
+  @override
+  String get appCenterUninstallDefaultPreservedHint =>
+      'Mặc định giữ mọi dữ liệu. Chỉ chọn thư mục hoặc ổ muốn xóa vĩnh viễn.';
+
+  @override
+  String get appCenterUninstallPermanentLossWarning =>
+      'Dữ liệu đã chọn sẽ bị xóa vĩnh viễn khỏi máy chủ, không có thùng rác.';
+
+  @override
+  String get appCenterUninstallSelectedPathsTitle =>
+      'Dữ liệu sẽ bị xóa vĩnh viễn:';
+
+  @override
+  String get appCenterUninstallRiskAck =>
+      'Tôi hiểu các rủi ro và ảnh hưởng đến ứng dụng khác, đồng thời xác nhận xóa vĩnh viễn dữ liệu này.';
+
+  @override
+  String get remoteBrowserAllFileTypes => 'Mọi định dạng';
+
+  @override
+  String get remoteBrowserDocuments => 'Văn bản và tài liệu';
+
+  @override
+  String get remoteBrowserFileFormat => 'Định dạng tệp';
+
+  @override
+  String get appCenterUninstallRiskSystem => 'Đường dẫn hệ thống';
+
+  @override
+  String get appCenterUninstallRiskShared => 'Dùng chung với ứng dụng khác';
+
+  @override
+  String get appCenterUninstallRiskVolume => 'Ổ Docker';
+
+  @override
+  String get appCenterCleanupVolumeDeleteFailed =>
+      'Không thể xóa ổ Docker. Ngừng sử dụng ổ trong các container khác, kiểm tra lại rồi thử lại.';
+
+  @override
+  String get appCenterCleanupPermissionDenied =>
+      'Không có quyền truy cập. Hãy dùng tài khoản có quyền truy cập dữ liệu hoặc sudo.';
+
+  @override
+  String get appCenterCleanupCriticalPath =>
+      'Không thể xóa thư mục gốc máy chủ hoặc thư mục vận hành và quản lý hệ thống khi gỡ ứng dụng.';
+
+  @override
+  String appCenterUninstallTypeAppNameHint(String appName) {
+    return 'Nhập chính xác tên ứng dụng để xác nhận xóa vĩnh viễn: $appName';
+  }
+
+  @override
+  String get appCenterUninstallRiskLegacy =>
+      'Chưa xác minh quyền sở hữu độc quyền';
+
+  @override
+  String get appCenterUninstallRiskExternal =>
+      'Nằm ngoài thư mục gốc dữ liệu ứng dụng';
+
+  @override
+  String get appCenterUninstallRiskMedia =>
+      'Đường dẫn đa phương tiện hoặc chỉ đọc';
+
+  @override
+  String get appCenterUninstallTargetBlocked =>
+      'Thư mục được bảo vệ, không thể xóa';
+
+  @override
+  String get appCenterCleanupProtected =>
+      'Thư mục dữ liệu được giữ lại vì được bảo vệ hoặc không an toàn để xóa';
+
+  @override
+  String get appCenterCleanupUnavailable =>
+      'Kiểm tra dọn dẹp không khả dụng; vẫn có thể gỡ cài đặt thông thường và giữ lại dữ liệu';
+
+  @override
+  String get appCenterCleanupChanged =>
+      'Thư mục hoặc mục tiêu triển khai đã thay đổi; vui lòng kiểm tra và xác nhận lại';
+
+  @override
+  String get appCenterCleanupConfirmationRequired =>
+      'Vui lòng xác nhận lại các thư mục đã chọn, rủi ro và tên ứng dụng chính xác';
+
+  @override
+  String get appCenterCleanupRetryUnavailable =>
+      'Không thể thử lại dọn dẹp một cách an toàn; kiểm tra chi tiết tác vụ';
+
+  @override
+  String get appCenterCleanupAlreadyAbsent =>
+      'Thư mục đã không còn tồn tại; không cần xóa';
+
+  @override
+  String get appCenterCleanupDeleteFailed =>
+      'Xóa chưa hoàn tất; một số tệp có thể đã bị xóa. Hãy kiểm tra các đường dẫn còn lại.';
+
+  @override
+  String get appCenterCleanupUnconfirmed =>
+      'Không thể xác nhận kết quả hoặc tính an toàn của việc dọn dẹp; kiểm tra tác vụ trước khi tiếp tục';
+
+  @override
+  String appCenterCleanupRetryTitle(String appName) {
+    return 'Thử lại dọn dẹp dữ liệu còn lại cho $appName?';
+  }
+
+  @override
+  String get appCenterCleanupRetryDescription =>
+      'Ứng dụng đã được gỡ cài đặt. Chỉ chọn các thư mục dữ liệu chưa hoàn tất; thử lại sẽ không gỡ cài đặt lại ứng dụng.';
+
+  @override
+  String get appCenterCleanupRetrySelected => 'Xóa dữ liệu còn lại đã chọn';
+
+  @override
+  String get appCenterCleanupResultsTitle => 'Kết quả dọn dẹp thư mục';
+
+  @override
+  String get appCenterCleanupPartialSummary =>
+      'Ứng dụng đã được gỡ cài đặt; một số dữ liệu chưa được xóa hoàn toàn.';
+
+  @override
+  String get appCenterCleanupPending => 'Chưa xác nhận hoàn tất';
+
+  @override
+  String get appCenterCleanupRemoved => 'Đã xóa';
+
+  @override
+  String get appCenterCleanupRetained => 'Đã giữ lại';
+
+  @override
+  String get appCenterCleanupRetryAction => 'Thử lại dọn dẹp dữ liệu còn lại';
+
+  @override
+  String get appCenterJellyfinSoftwareTitle => 'Chế độ giải mã phần mềm';
+
+  @override
+  String get appCenterJellyfinSoftwareDesc =>
+      'Tắt chuyển mã GPU, xóa các ánh xạ thiết bị GPU đã xem xét và gắn kết /Media dưới dạng chỉ đọc.';
+
+  @override
+  String get appCenterJellyfinProfileUnavailable =>
+      'Hồ sơ giải mã phần mềm không khả dụng cho mẫu này';
+
+  @override
+  String get appCenterJellyfinSoftwareChanges =>
+      'Các thay đổi hồ sơ đã áp dụng:';
+
+  @override
+  String get nasNativeInstallTitle => 'Cài đặt Jellyfin (gói hệ thống)';
+
+  @override
+  String get nasNativeStepVerifyRepo => 'Xác minh kho chính thức có chữ ký';
+
+  @override
+  String get nasNativeStepPreventAutostart =>
+      'Ngăn dịch vụ tự khởi động trước khi cấu hình';
+
+  @override
+  String get nasNativeStepInstallPackages =>
+      'Cài các gói có chữ ký với phiên bản cố định';
+
+  @override
+  String get nasNativeStepConfigureLoopback =>
+      'Cấu hình chỉ lắng nghe trên localhost';
+
+  @override
+  String get nasNativeStageInstalling =>
+      'Đang cài các gói có phiên bản cố định';
+
+  @override
+  String get nasNativeStageStarting => 'Đang khởi động dịch vụ systemd';
+
+  @override
+  String get nasNativeGuidanceMediaAccess =>
+      'Quyền truy cập và chủ sở hữu tệp phương tiện không thay đổi. Hãy bảo đảm người dùng dịch vụ Jellyfin có quyền đọc.';
+
+  @override
+  String get nasNativeGuidanceNoUpgrade =>
+      'Không tiếp quản, sửa đổi hoặc nâng cấp các bản Jellyfin đã cài đặt.';
+
+  @override
+  String get nasNativeSupportedRequirements =>
+      'Yêu cầu Debian hoặc Ubuntu (amd64/arm64), systemd và quyền root hoặc sudo không cần mật khẩu.';
+
+  @override
+  String get nasNativeExistingInstallTitle =>
+      'Phát hiện Jellyfin đã được cài đặt';
+
+  @override
+  String get nasNativeExistingInstallExplanation =>
+      'Jellyfin đã được cài trên máy chủ này. Valhalla sẽ không sửa đổi hay cài đặt lại. Hãy kiểm tra kết nối trực tiếp.';
+
+  @override
+  String get nasNativeCancelExplanation =>
+      'Đã yêu cầu hủy tại điểm an toàn tiếp theo. Các thao tác gói đang chạy sẽ hoàn tất an toàn.';
+
+  @override
+  String get nasNativeMediaPathLabel => 'Đường dẫn thư mục phương tiện';
+
+  @override
+  String get nasNativeMediaPathHint =>
+      'Đường dẫn tuyệt đối đã tồn tại trên máy chủ (ví dụ: /media/library). Quyền truy cập không thay đổi.';
+
+  @override
+  String get nasNativeSudoRequired =>
+      'Cần quyền root hoặc sudo không cần mật khẩu để cài gói hệ thống';
+
+  @override
+  String appCenterLogsTitle(String appName) {
+    return 'Nhật ký $appName';
+  }
+
+  @override
+  String get appCenterLogsEmpty =>
+      'Chưa có nhật ký nào được ghi lại cho bản triển khai này';
+
+  @override
+  String get appCenterLogsCopied => 'Đã sao chép nhật ký vào khay nhớ tạm';
+
+  @override
+  String get appCenterTaskStageQueued => 'Đang chờ';
+
+  @override
+  String get appCenterTaskStagePreparing => 'Đang chuẩn bị';
+
+  @override
+  String get appCenterTaskStagePulling => 'Đang tải hình ảnh';
+
+  @override
+  String get appCenterTaskStageApplying => 'Đang áp dụng cấu hình';
+
+  @override
+  String get appCenterTaskStageChecking => 'Đang kiểm tra trạng thái';
+
+  @override
+  String get appCenterTaskStageSucceeded => 'Thành công';
+
+  @override
+  String get appCenterTaskStageFailed => 'Thất bại';
+
+  @override
+  String get appCenterTaskStageCancelled => 'Đã hủy';
+
+  @override
+  String get appCenterTaskStageNeedsInspection => 'Cần kiểm tra';
+
+  @override
+  String get appCenterCancelTask => 'Hủy tác vụ';
+
+  @override
+  String get appCenterCopyLog => 'Sao chép nhật ký';
+
+  @override
+  String get appCenterErrorNotConnected => 'Máy chủ chưa được kết nối';
+
+  @override
+  String get appCenterErrorEnvironmentRequired =>
+      'Cần kiểm tra môi trường Docker';
+
+  @override
+  String get appCenterErrorPlanExpired =>
+      'Kế hoạch triển khai đã hết hạn hoặc không hợp lệ';
+
+  @override
+  String get appCenterErrorTargetChanged =>
+      'Máy chủ đích đã thay đổi; thao tác bị hủy';
+
+  @override
+  String get appCenterErrorConfigInvalid => 'Cấu hình ứng dụng không hợp lệ';
+
+  @override
+  String appCenterErrorPathInvalid(String field) {
+    return '$field phải là đường dẫn tuyệt đối khác với gốc (/), và không được chứa các đoạn . hoặc ..';
+  }
+
+  @override
+  String get appCenterErrorSourceInvalid =>
+      'Nguồn cửa hàng ứng dụng không hợp lệ';
+
+  @override
+  String get appCenterErrorNoWebEntry =>
+      'Ứng dụng này không cung cấp giao diện web';
+
+  @override
+  String get appCenterErrorHttpsDirectRequired =>
+      'Điểm cuối HTTPS không thể tạo đường hầm qua SSH; vui lòng mở trực tiếp';
+
+  @override
+  String get appCenterErrorOpenFailed => 'Không thể mở liên kết ứng dụng';
+
+  @override
+  String appCenterErrorGeneric(String error) {
+    return 'Lỗi Trung tâm ứng dụng: $error';
+  }
+
+  @override
+  String get appCenterSourceCommunityHint => 'vd. Cửa hàng cộng đồng';
+
+  @override
+  String get appCenterSourceUrlInvalidHttps => 'Phải là URL HTTPS hợp lệ';
+
+  @override
+  String get appCenterDirectUrlLabel => 'URL trực tiếp';
+
+  @override
+  String get appCenterErrorSourceRemoved =>
+      'Nguồn ứng dụng không còn trong danh mục. Không thể cập nhật mẫu.';
+
+  @override
+  String appCenterRestoreConfirmTitle(String appName) {
+    return 'Khôi phục $appName?';
+  }
+
+  @override
+  String appCenterRestoreConfirmMessage(String appName) {
+    return 'Khôi phục $appName về cấu hình triển khai trước đó?';
+  }
+
+  @override
+  String appCenterHostPortLabel(String target) {
+    return 'Cổng máy chủ (-> $target)';
+  }
+
+  @override
+  String appCenterHostMountLabel(String target) {
+    return 'Máy chủ: $target';
+  }
+
+  @override
+  String get appCenterVersionLatest => 'mới nhất';
+
+  @override
+  String get appCenterWaitingForLogs => 'Đang đợi nhật ký tác vụ...';
+
+  @override
+  String get appCenterNoPreviewAvailable => 'Không có bản xem trước';
+
+  @override
+  String get appCenterBlockerLocalDockerRequired =>
+      'Cần có daemon Docker cục bộ (không hỗ trợ DOCKER_HOST từ xa)';
+
+  @override
+  String get appCenterBlockerToolsRequired =>
+      'Thiếu các công cụ bắt buộc trên máy chủ (bash, setsid, flock, base64, realpath, ss, awk)';
+
+  @override
+  String get appCenterBlockerLinuxRequired => 'Cần có hệ điều hành Linux';
+
+  @override
+  String appCenterBlockerTemplateUnsupported(String feature) {
+    return 'Tính năng mẫu không được hỗ trợ: $feature';
+  }
+
+  @override
+  String get appCenterFieldRequired => 'Trường này là bắt buộc';
+
+  @override
+  String get appCenterContinueInstall => 'Tiếp tục cài đặt';
+
+  @override
+  String get appCenterOperation => 'Thao tác';
+
+  @override
+  String get nasTabLibrary => 'Thư viện';
+
+  @override
+  String get nasContinueWatching => 'Tiếp tục xem';
+
+  @override
+  String get nasRecentPhotos => 'Ảnh gần đây';
+
+  @override
+  String get nasRecentVideos => 'Video gần đây';
+
+  @override
+  String get nasRecentMusic => 'Nhạc gần đây';
+
+  @override
+  String get nasDownloadPaused => 'Đã tạm dừng';
+
+  @override
+  String get nasDownloadDeleteConfirmTitle => 'Xóa tệp ngoại tuyến';
+
+  @override
+  String get nasDownloadDeleteConfirmMessage =>
+      'Thao tác này sẽ xóa tệp ngoại tuyến đã tải về khỏi thiết bị của bạn. Tệp gốc trên máy chủ từ xa sẽ không bị xóa.';
+
+  @override
+  String get nasDownloadDeleteConfirmButton => 'Xóa bản sao ngoại tuyến';
+
+  @override
+  String get nasDownloadSourceChangedMessage =>
+      'Cấu hình nguồn từ xa đã thay đổi kể từ khi quá trình tải về bắt đầu. Bạn có muốn bắt đầu lại từ đầu không?';
+
+  @override
+  String get nasDownloadRestartFromScratch => 'Bắt đầu lại từ đầu';
+
+  @override
+  String get nasDownloadErrorSourceChanged => 'Cấu hình nguồn đã thay đổi';
+
+  @override
+  String get nasDownloadErrorOfflineFileInvalid =>
+      'Tệp đã tải về bị hỏng hoặc không hoàn chỉnh';
+
+  @override
+  String get nasDownloadErrorStorageFailed => 'Ghi vào bộ nhớ thất bại';
+
+  @override
+  String get nasDownloadErrorHlsUnsupported =>
+      'Không hỗ trợ tải ngoại tuyến đối với luồng phát trực tiếp';
+
+  @override
+  String get nasDownloadErrorPathInvalid =>
+      'Đường dẫn lưu trữ tải về không hợp lệ';
+
+  @override
+  String get nasOpenInApp => 'Mở trong ứng dụng';
+
+  @override
+  String get nasOpenSystem => 'Mở bằng hệ thống';
+
+  @override
+  String get sftpRecentDirectories => 'Thư mục gần đây';
+
+  @override
+  String get sftpNoRecentDirectories => 'Không có thư mục gần đây';
+
+  @override
+  String get sftpRetryFailed => 'Thử lại mục thất bại';
+
+  @override
+  String get appCenterDiskCheckFailed =>
+      'Không thể kiểm tra dung lượng ổ đĩa còn trống trên máy chủ';
+
+  @override
+  String get appCenterDiskFull =>
+      'Ổ đĩa máy chủ đã đầy; không thể tiếp tục thao tác';
+
+  @override
+  String get appCenterHealthInvalid =>
+      'Kiểm tra tình trạng vùng chứa thất bại hoặc báo cáo trạng thái không hợp lệ';
+
+  @override
+  String get appCenterPreflightSummary => 'Tóm tắt kiểm tra sơ bộ';
+
+  @override
+  String get appCenterMeasuredAvailableSpace => 'Dung lượng đĩa trống đo được';
+
+  @override
+  String get appCenterUpdateComparison => 'So sánh bản cập nhật';
+
+  @override
+  String get appCenterNoChangesDetected =>
+      'Không phát hiện thay đổi cấu trúc nào';
+
+  @override
+  String get appCenterSectionImage => 'Ảnh vùng chứa';
+
+  @override
+  String get appCenterSectionPorts => 'Ánh xạ cổng';
+
+  @override
+  String get appCenterSectionVolumes => 'Điểm gắn kết lưu trữ';
+
+  @override
+  String get appCenterSectionEnvironment => 'Biến môi trường';
+
+  @override
+  String get appCenterSectionHealthcheck => 'Kiểm tra tình trạng';
+
+  @override
+  String get appCenterSectionRestart => 'Chính sách khởi động lại';
+
+  @override
+  String get appCenterSectionServices => 'Các dịch vụ';
+
+  @override
+  String get appCenterHealthNoCheck => 'Không có kiểm tra tình trạng';
+
+  @override
+  String get appCenterHealthHealthy => 'Khỏe mạnh';
+
+  @override
+  String get appCenterHealthUnhealthy => 'Không ổn định';
+
+  @override
+  String get appCenterHealthStarting => 'Đang khởi động';
+
+  @override
+  String get appCenterNoSources => 'Chưa bật nguồn ứng dụng nào';
+
+  @override
+  String get appCenterNoMatchingApps =>
+      'Không có ứng dụng nào khớp với tìm kiếm hoặc bộ lọc';
+
+  @override
+  String get appCenterClearFilters => 'Xóa bộ lọc';
+
+  @override
+  String get appCenterSourceLoadFailed => 'Tải nguồn ứng dụng thất bại';
+
+  @override
+  String get appCenterRetry => 'Thử lại';
+
+  @override
+  String get appCenterRecheck => 'Kiểm tra lại';
+
+  @override
+  String get appCenterRecheckTask => 'Kiểm tra lại trạng thái tác vụ';
+
+  @override
+  String get appCenterTaskNeedsInspectionTitle =>
+      'Chưa xác nhận trạng thái tác vụ';
+
+  @override
+  String get appCenterTaskNeedsInspectionMessage =>
+      'Kết quả tác vụ trên máy chủ không xác định. Vui lòng kiểm tra lại trạng thái hoặc xem nhật ký, không lặp lại thao tác tùy tiện.';
+
+  @override
+  String appCenterStopConfirmTitle(String appName) {
+    return 'Dừng $appName?';
+  }
+
+  @override
+  String appCenterStopConfirmMessage(String appName, String serverName) {
+    return 'Bạn có chắc chắn muốn dừng $appName trên máy chủ $serverName không? Các vùng chứa đang chạy sẽ bị dừng.';
+  }
+
+  @override
+  String appCenterRestartConfirmTitle(String appName) {
+    return 'Khởi động lại $appName?';
+  }
+
+  @override
+  String appCenterRestartConfirmMessage(String appName, String serverName) {
+    return 'Bạn có chắc chắn muốn khởi động lại $appName trên máy chủ $serverName không?';
+  }
+
+  @override
+  String get appCenterBrowseStore => 'Duyệt cửa hàng';
+
+  @override
+  String get appCenterViewTasks => 'Xem tác vụ';
+
+  @override
+  String get appCenterViewInstalled => 'Xem ứng dụng đã cài';
+
+  @override
+  String get appCenterRunInBackground => 'Chạy dưới nền';
+
+  @override
+  String get appCenterTaskDetails => 'Chi tiết tác vụ';
+
+  @override
+  String get appCenterTaskTarget => 'Mục tiêu';
+
+  @override
+  String get appCenterTaskDirectory => 'Thư mục';
+
+  @override
+  String get appCenterTaskCreatedAt => 'Thời gian tạo';
+
+  @override
+  String appCenterTaskExitCode(int code) {
+    return 'Mã thoát: $code';
+  }
+
+  @override
+  String get appCenterStatusRunning => 'Đang chạy';
+
+  @override
+  String get appCenterStatusStopped => 'Đã dừng';
+
+  @override
+  String get appCenterStatusInstalling => 'Đang cài đặt';
+
+  @override
+  String get appCenterStatusUnknown => 'Không xác định';
+
+  @override
+  String get appCenterEnvReady => 'Môi trường Docker & Compose đã sẵn sàng';
+
+  @override
+  String get appCenterEnvNotReady => 'Môi trường Docker chưa sẵn sàng';
+
+  @override
+  String get appCenterEnvInspecting => 'Đang kiểm tra môi trường Docker...';
+
+  @override
+  String get appCenterUninstallWholeDataRoot => 'Toàn bộ thư mục gốc dữ liệu';
+
+  @override
+  String get appCenterUninstallWholeDataRootWarning =>
+      'Bao gồm các tệp chưa gắn kết và thư mục con được lưu trữ dưới thư mục gốc dữ liệu ứng dụng.';
+
+  @override
+  String get appCenterUninstallCoveredByParent => 'Đã được thư mục cha bao gồm';
+
+  @override
+  String get appCenterContainerNameInvalid =>
+      'Tên phiên bản phải bắt đầu bằng ký tự chữ hoặc số và chỉ chứa chữ cái, số, dấu gạch dưới, dấu chấm và dấu gạch nối (tối đa 120 ký tự).';
+
+  @override
+  String get appCenterMainService => 'Dịch vụ chính';
+
+  @override
+  String get appCenterContainerNamesPreview => 'Xem trước tên vùng chứa';
+
+  @override
+  String get appCenterContainersRecreationNotice =>
+      'Thay đổi tên vùng chứa phiên bản sẽ tạo lại các vùng chứa ứng dụng hiện có.';
+
+  @override
+  String get remoteBrowserTitle => 'Trình duyệt tệp từ xa';
+
+  @override
+  String get remoteBrowserSelectDirectory => 'Chọn thư mục';
+
+  @override
+  String get remoteBrowserSelectCurrentDirectory => 'Chọn thư mục hiện tại';
+
+  @override
+  String get remoteBrowserSearchHint => 'Tìm kiếm tệp và thư mục...';
+
+  @override
+  String get remoteBrowserNoEntries =>
+      'Không tìm thấy tệp hoặc thư mục phù hợp';
+
+  @override
+  String get remoteBrowserEmptyDirectory => 'Thư mục này trống';
+
+  @override
+  String remoteBrowserSelectedCount(int count) {
+    return 'Đã chọn $count mục';
+  }
+
+  @override
+  String get remoteBrowserParentDirectory => 'Thư mục cha';
+
+  @override
+  String get remoteBrowserLibrariesTitle => 'Thư viện phương tiện';
+
+  @override
+  String get remoteBrowserDisconnected =>
+      'Kết nối từ xa bị mất hoặc không khả dụng.';
+
+  @override
+  String get remoteBrowserTargetChanged =>
+      'Môi trường đích hoặc máy chủ đang hoạt động đã thay đổi.';
+
+  @override
+  String get remoteBrowserPathInvalid =>
+      'Đường dẫn được yêu cầu không hợp lệ hoặc không thể truy cập.';
+
+  @override
+  String get remoteBrowserPathOutsideRoot =>
+      'Đường dẫn được yêu cầu nằm ngoài thư mục gốc cho phép.';
+
+  @override
+  String get remoteBrowserEntryUnavailable =>
+      'Mục đã chọn không khả dụng hoặc không hợp lệ.';
+
+  @override
+  String get nasBrowseUnavailable => 'Dịch vụ duyệt NAS hiện không khả dụng.';
+
+  @override
+  String get nasInvalidDirectoryEntry =>
+      'Gặp mục thư mục không hợp lệ khi duyệt NAS.';
+
+  @override
+  String get nasInvalidLibraryResponse =>
+      'Phản hồi thư viện phương tiện không hợp lệ hoặc bị lỗi.';
+
+  @override
+  String get nasScanFilterUnresolved =>
+      'Không thể phân giải đường dẫn bộ lọc quét.';
+
+  @override
+  String get nasSourceSaveIncomplete =>
+      'Lần lưu nguồn trước đó chỉ được lưu một phần. Vui lòng nhập lại thông tin xác thực và lưu thành công trước khi duyệt.';
 }

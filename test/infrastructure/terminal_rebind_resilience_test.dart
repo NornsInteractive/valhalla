@@ -35,6 +35,9 @@ class _FakeSshClient implements SSHClient {
 class _FakeSshSession implements SSHSession {
   bool closed = false;
   bool destroyed = false;
+  bool failResize = false;
+  int resizeCalls = 0;
+  final input = _RecordingSink();
   final _stdout = StreamController<Uint8List>();
   final _stderr = StreamController<Uint8List>();
 
@@ -42,7 +45,7 @@ class _FakeSshSession implements SSHSession {
   SSHChannel get channel => _FakeSshChannel(this);
 
   @override
-  StreamSink<Uint8List> get stdin => _RecordingSink();
+  StreamSink<Uint8List> get stdin => input;
 
   @override
   Stream<Uint8List> get stdout => _stdout.stream;
@@ -62,7 +65,10 @@ class _FakeSshSession implements SSHSession {
   }
 
   @override
-  void resizeTerminal(int width, int height, [int pw = 0, int ph = 0]) {}
+  void resizeTerminal(int width, int height, [int pw = 0, int ph = 0]) {
+    resizeCalls++;
+    if (failResize) throw StateError('closed resize');
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -82,8 +88,13 @@ class _FakeSshChannel implements SSHChannel {
 }
 
 class _RecordingSink implements StreamSink<Uint8List> {
+  bool failAdd = false;
+  int writes = 0;
   @override
-  void add(Uint8List data) {}
+  void add(Uint8List data) {
+    if (failAdd) throw StateError('closed input');
+    writes++;
+  }
 
   @override
   void addError(Object error, [StackTrace? stackTrace]) {}
@@ -113,6 +124,67 @@ class _ThrowingBridge extends TerminalSessionBridge {
 }
 
 void main() {
+  test(
+    'closed input is handled and marks only current session as failed',
+    () async {
+      final terminal = Terminal();
+      final client = _FakeSshClient();
+      final bridge = TerminalSessionBridge(
+        terminal: terminal,
+        sshClient: client,
+        serverName: 'fixture',
+      );
+      addTearDown(bridge.dispose);
+      await bridge.start();
+      client.lastSession!.input.failAdd = true;
+      expect(() => terminal.onOutput!('x'), returnsNormally);
+      expect(bridge.state, TerminalConnectionState.error);
+    },
+  );
+
+  test('delayed resize error is observed instead of escaping timer', () async {
+    final terminal = Terminal();
+    final client = _FakeSshClient();
+    final bridge = TerminalSessionBridge(
+      terminal: terminal,
+      sshClient: client,
+      serverName: 'fixture',
+    );
+    addTearDown(bridge.dispose);
+    await bridge.start();
+    client.lastSession!.failResize = true;
+    terminal.onResize!(110, 35, 0, 0);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    expect(bridge.state, TerminalConnectionState.error);
+  });
+
+  test(
+    'captured input and resize callbacks cannot affect replacement session',
+    () async {
+      final terminal = Terminal();
+      final client = _FakeSshClient();
+      final bridge = TerminalSessionBridge(
+        terminal: terminal,
+        sshClient: client,
+        serverName: 'fixture',
+      );
+      addTearDown(bridge.dispose);
+      await bridge.start();
+      final oldInput = terminal.onOutput!;
+      final oldResize = terminal.onResize!;
+      final oldSession = client.lastSession!;
+      final replacement = _FakeSshClient();
+      await bridge.rebind(replacement);
+      oldInput('stale');
+      oldResize(120, 40, 0, 0);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(oldSession.input.writes, 0);
+      expect(replacement.lastSession!.input.writes, 0);
+      expect(replacement.lastSession!.resizeCalls, 0);
+      expect(bridge.state, TerminalConnectionState.connected);
+    },
+  );
+
   test('第一个标签页 rebind 抛异常，后续标签页仍然被重挂', () async {
     final badTerminal = Terminal(maxLines: 100);
     final badBridge = _ThrowingBridge(badTerminal);

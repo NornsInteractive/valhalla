@@ -7,9 +7,10 @@ import 'package:valhalla/core/providers/cli_chat_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/data/models/agent_profile.dart';
 import 'package:valhalla/data/models/server_profile.dart';
+import 'package:valhalla/data/models/remote_browser.dart';
+import 'package:valhalla/core/services/remote_browser_service.dart';
 import 'package:valhalla/features/agents/agent_management_view.dart';
 import 'package:valhalla/features/chat/cli_chat_view.dart';
-import 'package:valhalla/core/providers/sftp_provider.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
 import 'package:valhalla/infrastructure/sftp/sftp_client_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
@@ -258,6 +259,32 @@ class _FakeSftpOps implements SftpOperations {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _DirectoryFactory extends RemoteBrowserFactory {
+  _DirectoryFactory(super.ref, this.operations);
+  final SftpOperations operations;
+
+  @override
+  Future<RemoteBrowserSource> agent({
+    required AgentProfile profile,
+    required bool Function() isCurrent,
+    String? initialPath,
+  }) async => sftpRemoteBrowser(
+    operations: operations,
+    targetKey: profile.id,
+    label: profile.name,
+    initialPath: initialPath ?? '/',
+    isCurrent: isCurrent,
+  );
+}
+
+Future<void> _settleBrowser(WidgetTester tester) async {
+  for (var i = 0; i < 6; i++) {
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump();
+  }
+  await tester.pumpAndSettle();
+}
+
 Future<void> _pumpTestApp(
   WidgetTester tester, {
   required _FakeCliChatNotifier cliNotifier,
@@ -287,7 +314,10 @@ Future<void> _pumpTestApp(
           () => _TestAgentRegistryNotifier(runtimeAgents),
         ),
         cliChatProvider.overrideWith(() => cliNotifier),
-        if (sftpOps != null) sftpOperationsProvider.overrideWithValue(sftpOps),
+        if (sftpOps != null)
+          remoteBrowserFactoryProvider.overrideWith(
+            (ref) => _DirectoryFactory(ref, sftpOps),
+          ),
         ...fixedTerminalSettingsOverrides(),
       ],
       child: MaterialApp(
@@ -1397,22 +1427,24 @@ void main() {
         final browseBtn = find.byKey(const Key('cli_draft_cwd_browse_button'));
         expect(browseBtn, findsOneWidget);
         await tester.tap(browseBtn);
-        await tester.pumpAndSettle();
+        await _settleBrowser(tester);
 
         // Verify dialog opens and lists subdirectories
-        expect(find.text(l10n.cliPickWorkingDirTitle), findsOneWidget);
+        expect(find.text(l10n.remoteBrowserSelectDirectory), findsOneWidget);
         expect(find.text('project'), findsOneWidget);
 
         // Navigate into project directory
         await tester.tap(find.text('project'));
-        await tester.pumpAndSettle();
+        await _settleBrowser(tester);
 
         expect(sftpOps.lastListedPath, '/home/user/project');
 
         // Click Select This Directory
-        final selectBtn = find.byKey(const Key('cli_dialog_select_dir_button'));
+        final selectBtn = find.byKey(
+          const Key('remote_browser_confirm_button'),
+        );
         await tester.tap(selectBtn);
-        await tester.pumpAndSettle();
+        await _settleBrowser(tester);
 
         // Verify draft working directory was updated
         expect(cliNotifier.lastDraftCwd, '/home/user/project');
@@ -1422,59 +1454,57 @@ void main() {
         final clearBtn = find.byKey(const Key('cli_draft_cwd_clear_button'));
         expect(clearBtn, findsOneWidget);
         await tester.tap(clearBtn);
-        await tester.pumpAndSettle();
+        await _settleBrowser(tester);
 
         expect(cliNotifier.lastDraftCwd, isNull);
         expect(find.text(l10n.cliDefaultWorkingDir), findsOneWidget);
       },
     );
 
-    testWidgets(
-      'working directory picker surfaces error state and retry works',
-      (tester) async {
-        final cliNotifier = _FakeCliChatNotifier(
-          CliChatState(
-            serverId: 'srv-1',
-            agents: [_agentCodex],
-            activeAgent: _agentCodex,
-            activeSession: null,
-            messages: const [],
-          ),
-        );
+    testWidgets('working directory picker surfaces error state and retry works', (
+      tester,
+    ) async {
+      final cliNotifier = _FakeCliChatNotifier(
+        CliChatState(
+          serverId: 'srv-1',
+          agents: [_agentCodex],
+          activeAgent: _agentCodex,
+          activeSession: null,
+          messages: const [],
+        ),
+      );
 
-        final sftpOps = _FakeSftpOps()..shouldThrow = true;
+      final sftpOps = _FakeSftpOps()..shouldThrow = true;
 
-        await _pumpTestApp(tester, cliNotifier: cliNotifier, sftpOps: sftpOps);
+      await _pumpTestApp(tester, cliNotifier: cliNotifier, sftpOps: sftpOps);
 
-        final browseBtn = find.byKey(const Key('cli_draft_cwd_browse_button'));
-        await tester.tap(browseBtn);
-        await tester.pumpAndSettle();
+      final browseBtn = find.byKey(const Key('cli_draft_cwd_browse_button'));
+      await tester.tap(browseBtn);
+      await _settleBrowser(tester);
 
-        // Error message should be displayed
-        expect(find.textContaining('Permission denied'), findsOneWidget);
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      // A localized error remains visible without exposing raw transport details.
+      expect(find.text(l10n.stateError), findsOneWidget);
+      final retryBtn = find.widgetWithText(OutlinedButton, l10n.stateRetry);
+      expect(retryBtn, findsOneWidget);
 
-        final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-        final retryBtn = find.widgetWithText(OutlinedButton, l10n.stateRetry);
-        expect(retryBtn, findsOneWidget);
+      // While in error state, select button should be disabled
+      final selectBtn = find.byKey(const Key('remote_browser_confirm_button'));
+      expect(tester.widget<FilledButton>(selectBtn).onPressed, isNull);
 
-        // While in error state, select button should be disabled
-        final selectBtn = find.byKey(const Key('cli_dialog_select_dir_button'));
-        expect(tester.widget<FilledButton>(selectBtn).onPressed, isNull);
+      // Turn off error and retry
+      sftpOps.shouldThrow = false;
+      await tester.tap(retryBtn);
+      await _settleBrowser(tester);
 
-        // Turn off error and retry
-        sftpOps.shouldThrow = false;
-        await tester.tap(retryBtn);
-        await tester.pumpAndSettle();
+      expect(find.text(l10n.stateError), findsNothing);
+      // After retry succeeds, select button should be enabled
+      expect(tester.widget<FilledButton>(selectBtn).onPressed, isNotNull);
 
-        expect(find.textContaining('Permission denied'), findsNothing);
-        // After retry succeeds, select button should be enabled
-        expect(tester.widget<FilledButton>(selectBtn).onPressed, isNotNull);
-
-        // Up button tooltip should be localized
-        final upBtnFinder = find.byTooltip(l10n.cliNavigateUp);
-        expect(upBtnFinder, findsOneWidget);
-      },
-    );
+      // Up button tooltip should be localized
+      final upBtnFinder = find.byTooltip(l10n.sftpUpDirectory);
+      expect(upBtnFinder, findsOneWidget);
+    });
 
     testWidgets(
       'working directory picker does not update draft if server changed while dialog was open',
@@ -1510,24 +1540,82 @@ void main() {
 
         final browseBtn = find.byKey(const Key('cli_draft_cwd_browse_button'));
         await tester.tap(browseBtn);
-        await tester.pumpAndSettle();
+        await _settleBrowser(tester);
 
         // Navigate to project directory
         await tester.tap(find.text('project'));
-        await tester.pumpAndSettle();
+        await _settleBrowser(tester);
 
         // Simulate server changed behind the dialog
         activeServerNotifier.selectServerId('srv-other');
         await tester.pump();
 
         // Tap select button
-        await tester.tap(find.byKey(const Key('cli_dialog_select_dir_button')));
-        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const Key('remote_browser_confirm_button')),
+        );
+        await _settleBrowser(tester);
 
         // Draft cwd should NOT have been set because server changed
         expect(cliNotifier.lastDraftCwd, isNull);
       },
     );
+
+    for (final change in ['container', 'user', 'session', 'draft-directory']) {
+      testWidgets(
+        'working directory result is discarded after $change changes',
+        (tester) async {
+          final profile = _agentCodex.copyWith(
+            executionTarget: 'docker',
+            containerReference: 'workspace',
+            containerUser: 'dev',
+          );
+          final snapshot = CliChatState(
+            serverId: 'srv-1',
+            agents: [profile],
+            activeAgent: profile,
+          );
+          final notifier = _FakeCliChatNotifier(snapshot);
+          await _pumpTestApp(
+            tester,
+            cliNotifier: notifier,
+            sftpOps: _FakeSftpOps(),
+          );
+          await tester.tap(
+            find.byKey(const Key('cli_draft_cwd_browse_button')),
+          );
+          await _settleBrowser(tester);
+          notifier.updateState(switch (change) {
+            'container' => snapshot.copyWith(
+              activeAgent: profile.copyWith(
+                containerReference: 'other-workspace',
+              ),
+            ),
+            'user' => snapshot.copyWith(
+              activeAgent: profile.copyWith(containerUser: 'root'),
+            ),
+            'session' => snapshot.copyWith(
+              activeSession: const NativeCliSession(
+                id: 'another',
+                title: 'Another',
+              ),
+            ),
+            _ => snapshot.copyWith(draftCwd: '/another-draft'),
+          });
+          await tester.pump();
+          final confirm = find.byKey(
+            const Key('remote_browser_confirm_button'),
+          );
+          if (confirm.evaluate().isNotEmpty) {
+            await tester.tap(confirm);
+            await _settleBrowser(tester);
+          }
+          expect(notifier.lastDraftCwd, isNull);
+          expect(notifier.drafted, isFalse);
+          expect(notifier.lastSentMessage, isNull);
+        },
+      );
+    }
 
     testWidgets(
       'places list at bottom when newly selected history window appears',

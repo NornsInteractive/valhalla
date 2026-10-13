@@ -22,19 +22,35 @@ class LocalStorageService {
     if (raw == null || raw.length > 256 * 1024) return null;
     final record = jsonDecode(raw) as Map<String, dynamic>;
     final savedAt = DateTime.tryParse(record['savedAt'] as String? ?? '');
-    if (savedAt == null || DateTime.now().difference(savedAt) > const Duration(days: 7)) return null;
+    if (savedAt == null ||
+        DateTime.now().difference(savedAt) > const Duration(days: 7)) {
+      return null;
+    }
     return record;
   }
 
-  Future<void> savePageCache(ServerProfile server, String page,
-      Map<String, dynamic> value) async {
+  Future<void> savePageCache(
+    ServerProfile server,
+    String page,
+    Map<String, dynamic> value,
+  ) async {
     final key = _pageCacheKey(server, page);
-    final encoded = jsonEncode({'savedAt': DateTime.now().toUtc().toIso8601String(),
-      'payload': value});
+    final encoded = jsonEncode({
+      'savedAt': DateTime.now().toUtc().toIso8601String(),
+      'payload': value,
+    });
     if (utf8.encode(encoded).length > 256 * 1024) return;
-    if (!await _prefs.setString(key, encoded)) throw const StorageException('CACHE_SAVE_FAILED');
-    final keys = _prefs.getKeys().where((k) => k.startsWith('valhalla_page_cache_v1::')).toList();
-    keys.sort((a, b) => (_prefs.getString(a) ?? '').compareTo(_prefs.getString(b) ?? ''));
+    if (!await _prefs.setString(key, encoded)) {
+      throw const StorageException('CACHE_SAVE_FAILED');
+    }
+    final keys = _prefs
+        .getKeys()
+        .where((k) => k.startsWith('valhalla_page_cache_v1::'))
+        .toList();
+    keys.sort(
+      (a, b) =>
+          (_prefs.getString(a) ?? '').compareTo(_prefs.getString(b) ?? ''),
+    );
     for (final expired in keys.take(keys.length > 12 ? keys.length - 12 : 0)) {
       await _prefs.remove(expired);
     }
@@ -42,7 +58,8 @@ class LocalStorageService {
 
   Future<void> clearServerPageCache(String serverId) async {
     final prefix = 'valhalla_page_cache_v1::$serverId::';
-    for (final key in _prefs.getKeys().where((k) => k.startsWith(prefix)).toList()) {
+    for (final key
+        in _prefs.getKeys().where((k) => k.startsWith(prefix)).toList()) {
       await _prefs.remove(key);
     }
   }
@@ -53,10 +70,16 @@ class LocalStorageService {
   List<Map<String, dynamic>> getTransferRecords(ServerProfile server) {
     final raw = _prefs.getString(_transferKey(server));
     if (raw == null || raw.length > 256 * 1024) return const [];
-    return (jsonDecode(raw) as List).take(100).cast<Map<String, dynamic>>().toList();
+    return (jsonDecode(raw) as List)
+        .take(100)
+        .cast<Map<String, dynamic>>()
+        .toList();
   }
 
-  Future<void> saveTransferRecords(ServerProfile server, List<Map<String, dynamic>> records) async {
+  Future<void> saveTransferRecords(
+    ServerProfile server,
+    List<Map<String, dynamic>> records,
+  ) async {
     final encoded = jsonEncode(records.take(100).toList());
     if (utf8.encode(encoded).length > 256 * 1024 ||
         !await _prefs.setString(_transferKey(server), encoded)) {
@@ -66,10 +89,12 @@ class LocalStorageService {
 
   Future<void> clearServerTransferRecords(String serverId) async {
     final prefix = 'valhalla_transfers_v1::$serverId::';
-    for (final key in _prefs.getKeys().where((key) => key.startsWith(prefix)).toList()) {
+    for (final key
+        in _prefs.getKeys().where((key) => key.startsWith(prefix)).toList()) {
       await _prefs.remove(key);
     }
   }
+
   List<String>? getTerminalPinnedKeys() =>
       _prefs.getStringList('valhalla_terminal_pinned_keys_v1');
 
@@ -80,19 +105,25 @@ class LocalStorageService {
     }
   }
 
-  bool getAutomaticUpdateCheck() => _prefs.getBool('valhalla_update_auto_v1') ?? true;
+  bool getAutomaticUpdateCheck() =>
+      _prefs.getBool('valhalla_update_auto_v1') ?? true;
   Future<void> setAutomaticUpdateCheck(bool value) async {
     if (!await _prefs.setBool('valhalla_update_auto_v1', value)) {
       await _prefs.reload();
       throw const FormatException('SETTINGS_SAVE_FAILED');
     }
   }
+
   Map<String, dynamic>? getUpdateCheckCache() {
     final value = _prefs.getString('valhalla_update_check_ygg_v2');
     return value == null ? null : jsonDecode(value) as Map<String, dynamic>;
   }
+
   Future<void> saveUpdateCheckCache(Map<String, dynamic> value) async {
-    if (!await _prefs.setString('valhalla_update_check_ygg_v2', jsonEncode(value))) {
+    if (!await _prefs.setString(
+      'valhalla_update_check_ygg_v2',
+      jsonEncode(value),
+    )) {
       throw const FormatException('SETTINGS_SAVE_FAILED');
     }
   }
@@ -103,7 +134,10 @@ class LocalStorageService {
   }
 
   Future<void> saveUpdateDownloadRecord(Map<String, dynamic> value) async {
-    if (!await _prefs.setString('valhalla_update_download_ygg_v2', jsonEncode(value))) {
+    if (!await _prefs.setString(
+      'valhalla_update_download_ygg_v2',
+      jsonEncode(value),
+    )) {
       throw const StorageException('UPDATE_RECORD_SAVE_FAILED');
     }
   }
@@ -115,7 +149,10 @@ class LocalStorageService {
   }
 
   Future<void> saveChatDraft(String key, Map<String, dynamic> value) async {
-    if (!await _prefs.setString('valhalla_chat_draft_v1::$key', jsonEncode(value))) {
+    if (!await _prefs.setString(
+      'valhalla_chat_draft_v1::$key',
+      jsonEncode(value),
+    )) {
       throw const StorageException('CHAT_DRAFT_SAVE_FAILED');
     }
   }
@@ -313,6 +350,8 @@ class LocalStorageService {
       ...preferences,
       if (preferences.containsKey(_keyBottomNavigation))
         'valhalla_navigation_acp_v2': true,
+      if (preferences.containsKey(_keyBottomNavigation))
+        'valhalla_navigation_app_center_v3': true,
     };
     // shortcut: rollback covers write failures, not process death; use a journal if crash-atomic imports are required.
     final snapshot = <String, Object?>{
@@ -482,6 +521,36 @@ class LocalStorageService {
     }
   }
 
+  Map<String, dynamic>? getNasNativeInstallTask(String serverKey) {
+    if (!RegExp(r'^[a-f0-9]{64}$').hasMatch(serverKey)) return null;
+    final raw = _prefs.getString('valhalla_nas_native_task_v1_$serverKey');
+    if (raw == null || raw.length > 128 * 1024) return null;
+    try {
+      final value = Map<String, dynamic>.from(jsonDecode(raw) as Map);
+      return value['serverKey'] == serverKey ? value : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> saveNasNativeInstallTask(
+    String serverKey,
+    Map<String, dynamic> summary,
+  ) async {
+    if (!RegExp(r'^[a-f0-9]{64}$').hasMatch(serverKey) ||
+        summary['serverKey'] != serverKey) {
+      throw StateError('Invalid native NAS installation target');
+    }
+    final encoded = jsonEncode(summary);
+    if (encoded.length > 128 * 1024 ||
+        !await _prefs.setString(
+          'valhalla_nas_native_task_v1_$serverKey',
+          encoded,
+        )) {
+      throw StateError('Could not persist native NAS installation state');
+    }
+  }
+
   Future<void> saveNasSources(List<NasSource> sources) => _prefs.setString(
     'valhalla_nas_sources_v1',
     jsonEncode(sources.map((e) => e.toJson()).toList()),
@@ -526,8 +595,10 @@ class LocalStorageService {
       _prefs.getInt(_keyNasThumbnailCacheBytes) ?? 256 * 1024 * 1024;
 
   Future<void> saveNasThumbnailCacheBytes(int value) async {
-    if (!await _prefs.setInt(_keyNasThumbnailCacheBytes,
-        value.clamp(0, 2 * 1024 * 1024 * 1024))) {
+    if (!await _prefs.setInt(
+      _keyNasThumbnailCacheBytes,
+      value.clamp(0, 2 * 1024 * 1024 * 1024),
+    )) {
       throw const StorageException('NAS_CACHE_SETTINGS_SAVE_FAILED');
     }
   }
@@ -603,6 +674,21 @@ class LocalStorageService {
 
   List<String> getFileBookmarks(String serverId) =>
       _prefs.getStringList('valhalla_file_bookmarks::$serverId') ?? [];
+
+  List<String> getRecentDirectories(String serverId) =>
+      _prefs.getStringList('valhalla_recent_directories::$serverId') ?? [];
+
+  Future<void> saveRecentDirectories(
+    String serverId,
+    List<String> paths,
+  ) async {
+    if (!await _prefs.setStringList(
+      'valhalla_recent_directories::$serverId',
+      paths.take(20).toList(),
+    )) {
+      throw StateError('FILE_RECENT_SAVE_FAILED');
+    }
+  }
 
   Future<void> saveFileBookmarks(String serverId, List<String> paths) async {
     try {
@@ -931,10 +1017,14 @@ class LocalStorageService {
   /// 缺键返回 null，以便上层区分「尚未配置」与用户明确选择空列表。
   List<String>? getBottomNavigationSections() {
     // Read-through migration: preserve the old value as a rollback source.
-    final raw = _prefs.getStringList(_keyBottomNavigation);
+    var raw = _prefs.getStringList(_keyBottomNavigation);
     if (_prefs.getBool('valhalla_navigation_acp_v2') != true &&
         raw?.join(',') == 'dashboard,cliChat,docker,files') {
-      return ['dashboard', 'aiChat', 'docker', 'files'];
+      raw = ['dashboard', 'aiChat', 'docker', 'files'];
+    }
+    if (_prefs.getBool('valhalla_navigation_app_center_v3') != true &&
+        raw?.join(',') == 'dashboard,aiChat,docker,files') {
+      return [...raw!, 'appCenter'];
     }
     return raw;
   }
@@ -942,6 +1032,7 @@ class LocalStorageService {
   Future<void> setBottomNavigationSections(List<String> sections) async {
     await _prefs.setStringList(_keyBottomNavigation, sections);
     await _prefs.setBool('valhalla_navigation_acp_v2', true);
+    await _prefs.setBool('valhalla_navigation_app_center_v3', true);
   }
 
   String? getStartupSection() => _prefs.getString(_keyStartupSection);
@@ -956,6 +1047,38 @@ class LocalStorageService {
   Future<void> setExperimentalFeatures(List<String> features) async {
     if (!await _prefs.setStringList(_keyExperimentalFeatures, features)) {
       throw StateError('Could not persist experimental features');
+    }
+  }
+
+  List<Map<String, dynamic>> getApplicationCenterRecords(
+    String kind,
+    String scope,
+  ) {
+    final raw = _prefs.getString('valhalla_app_center_v1::$kind::$scope');
+    if (raw == null) return [];
+    final decoded = jsonDecode(raw);
+    if (decoded is! List || decoded.length > 1000) {
+      throw const FormatException('APP_CENTER_CACHE_INVALID');
+    }
+    return decoded
+        .map((value) => Map<String, dynamic>.from(value as Map))
+        .toList();
+  }
+
+  bool hasApplicationCenterRecords(String kind, String scope) =>
+      _prefs.containsKey('valhalla_app_center_v1::$kind::$scope');
+
+  Future<void> saveApplicationCenterRecords(
+    String kind,
+    String scope,
+    List<Map<String, dynamic>> records,
+  ) async {
+    if (records.length > 1000 ||
+        !await _prefs.setString(
+          'valhalla_app_center_v1::$kind::$scope',
+          jsonEncode(records),
+        )) {
+      throw StateError('APP_CENTER_STATE_SAVE_FAILED');
     }
   }
 
@@ -984,6 +1107,25 @@ class LocalStorageService {
   String? getFileViewMode() {
     final value = _prefs.getString('valhalla_file_view_mode_v1');
     return value == 'list' || value == 'grid' ? value : null;
+  }
+
+  String? getApplicationStoreViewMode() {
+    final value = _prefs.getString('valhalla_app_store_view_mode_v1');
+    return value == 'list' || value == 'grid' ? value : null;
+  }
+
+  Future<void> setApplicationStoreViewMode(String value) async {
+    if (value != 'list' && value != 'grid') {
+      throw ArgumentError.value(value, 'value');
+    }
+    try {
+      if (!await _prefs.setString('valhalla_app_store_view_mode_v1', value)) {
+        throw const StorageException('APP_CENTER_VIEW_PREFERENCE_SAVE_FAILED');
+      }
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
+    }
   }
 
   Future<void> setFileViewMode(String value) async {

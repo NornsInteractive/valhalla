@@ -738,19 +738,29 @@ class AiChatNotifier extends Notifier<AiChatState> {
     _pendingDraftKey = key;
     _pendingDraftSave = () {
       return _draftSaveChain = _draftSaveChain.then((_) async {
-      try {
-        final saved = <ChatAttachment>[];
-        for (final item in attachments) {
-          saved.add(await store.save(item.name, item.mimeType, item.bytes, uri: item.uri));
+        try {
+          final saved = <ChatAttachment>[];
+          for (final item in attachments) {
+            saved.add(
+              await store.save(
+                item.name,
+                item.mimeType,
+                item.bytes,
+                uri: item.uri,
+              ),
+            );
+          }
+          await storage.saveChatDraft(key, {
+            'text': text,
+            'directory': directory,
+            'attachments': saved.map((a) => a.toJson()).toList(),
+          });
+        } catch (error, stack) {
+          unawaited(AppDiagnostics.instance.record('acp.draft', error, stack));
+          if (ref.mounted && key == _draftKey) {
+            state = state.copyWith(lastErrorCode: 'CHAT_SAVE_FAILED');
+          }
         }
-        await storage.saveChatDraft(key, {'text': text, 'directory': directory,
-          'attachments': saved.map((a) => a.toJson()).toList()});
-      } catch (error, stack) {
-        unawaited(AppDiagnostics.instance.record('acp.draft', error, stack));
-        if (ref.mounted && key == _draftKey) {
-          state = state.copyWith(lastErrorCode: 'CHAT_SAVE_FAILED');
-        }
-      }
       });
     };
     _draftSaveTimer = Timer(const Duration(milliseconds: 400), () {
@@ -2234,6 +2244,9 @@ class AiChatNotifier extends Notifier<AiChatState> {
     if (active == null || state.isLoadingMessages || state.isGenerating) return;
     if (!older && active.messages.isNotEmpty) return;
     if (older && active.messageOffset == 0) return;
+    final elapsed = Stopwatch()..start();
+    var outcome = 'failed';
+    int? count;
     final serverId = _activeServerId;
     final epoch = _requestEpoch;
     state = state.copyWith(isLoadingMessages: true);
@@ -2245,8 +2258,11 @@ class AiChatNotifier extends Notifier<AiChatState> {
           epoch != _requestEpoch ||
           state.activeSessionId != active.id ||
           _activeServerId != serverId) {
+        outcome = 'superseded';
         return;
       }
+      count = loaded?.messages.length ?? 0;
+      outcome = 'completed';
       if (loaded != null) {
         _updateSessionInState(
           older
@@ -2263,6 +2279,14 @@ class AiChatNotifier extends Notifier<AiChatState> {
         );
       }
     } finally {
+      unawaited(
+        AppDiagnostics.instance.recordTiming(
+          'acp.history',
+          elapsed,
+          outcome: outcome,
+          count: count,
+        ),
+      );
       if (ref.mounted && epoch == _requestEpoch) {
         state = state.copyWith(isLoadingMessages: false);
       }
@@ -2557,12 +2581,16 @@ class AiChatNotifier extends Notifier<AiChatState> {
         return;
       }
       final save = _draftSaveChain.then((_) async {
-        if (!ref.mounted || key != _draftKey || text != state.draftText ||
-            directory != _draftWorkingDirectory || !identical(pending, state.attachments)) {
+        if (!ref.mounted ||
+            key != _draftKey ||
+            text != state.draftText ||
+            directory != _draftWorkingDirectory ||
+            !identical(pending, state.attachments)) {
           return;
         }
         await storage.saveChatDraft(key, {
-          'text': text, 'directory': directory,
+          'text': text,
+          'directory': directory,
           'attachments': saved.map((a) => a.toJson()).toList(),
         });
       });
@@ -2679,6 +2707,8 @@ class AiChatNotifier extends Notifier<AiChatState> {
         state.activeSessionId == session.id &&
         state.activeAgentProfile?.id == profile.id;
     state = state.copyWith(recoveryStatus: SessionRecoveryStatus.syncing);
+    final elapsed = Stopwatch()..start();
+    var outcome = 'superseded';
     var incomplete = false;
     try {
       try {
@@ -2755,13 +2785,23 @@ class AiChatNotifier extends Notifier<AiChatState> {
             ? SessionRecoveryStatus.incomplete
             : SessionRecoveryStatus.idle,
       );
+      outcome = incomplete ? 'incomplete' : 'completed';
     } catch (error) {
+      outcome = 'failed';
       if (current()) {
         state = state.copyWith(
           recoveryStatus: SessionRecoveryStatus.failed,
           diagnostics: LogSanitizer.sanitize(error.toString()),
         );
       }
+    } finally {
+      unawaited(
+        AppDiagnostics.instance.recordTiming(
+          'acp.recovery',
+          elapsed,
+          outcome: outcome,
+        ),
+      );
     }
   }
 

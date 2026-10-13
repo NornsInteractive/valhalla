@@ -27,6 +27,7 @@ import 'package:valhalla/infrastructure/sftp/sftp_client_service.dart';
 import 'package:valhalla/infrastructure/system/system_metrics_sampler.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import 'package:valhalla/widgets/remote_browser_view.dart';
 
 // --- Test doubles ---
 
@@ -387,7 +388,7 @@ void main() {
         // 6. Context menu item interaction: tap more_vert on a file to verify download action
         final fileTile = find.ancestor(
           of: find.text('file_1.txt'),
-          matching: find.byType(ListTile),
+          matching: find.byType(RemoteBrowserEntryTile),
         );
         final moreBtn = find.descendant(
           of: fileTile,

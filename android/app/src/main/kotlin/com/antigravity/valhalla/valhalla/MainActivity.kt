@@ -16,6 +16,7 @@ class MainActivity : AudioServiceActivity() {
     companion object {
         private const val CHANNEL = "valhalla/keepalive"
         private const val NOTIFICATION_PERMISSION_REQUEST = 4202
+        const val EXTRA_OPEN_NAS_DOWNLOADS = "open_nas_downloads"
     }
 
     /**
@@ -28,6 +29,13 @@ class MainActivity : AudioServiceActivity() {
      * the user came back from the app switcher.
      */
     private var pendingOpenTransfers = false
+    private var pendingOpenNasDownloads = false
+
+    fun consumePendingOpenNasDownloads(): Boolean {
+        val pending = pendingOpenNasDownloads
+        pendingOpenNasDownloads = false
+        return pending
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -131,11 +139,23 @@ class MainActivity : AudioServiceActivity() {
         // it; the flag below is what Dart actually consumes.
         setIntent(intent)
         consumeLaunchExtras(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_NAS_DOWNLOADS, false)) {
+            DownloadChannel.notifyOpenNasDownloads {
+                pendingOpenNasDownloads = false
+            }
+        } else if (intent.getBooleanExtra(TransferNotifier.EXTRA_OPEN_TRANSFERS, false)) {
+            DownloadChannel.notifyOpenTransfers {
+                pendingOpenTransfers = false
+            }
+        }
     }
 
     private fun consumeLaunchExtras(intent: Intent?) {
         if (intent?.getBooleanExtra(TransferNotifier.EXTRA_OPEN_TRANSFERS, false) == true) {
             pendingOpenTransfers = true
+        }
+        if (intent?.getBooleanExtra(EXTRA_OPEN_NAS_DOWNLOADS, false) == true) {
+            pendingOpenNasDownloads = true
         }
     }
 

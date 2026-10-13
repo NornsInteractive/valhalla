@@ -200,15 +200,47 @@ void main() {
   ConnectionLifecycleCoordinator build({
     ReconnectController? withController,
     void Function(bool foreground)? onVisibilityChanged,
+    DateTime Function()? now,
   }) => ConnectionLifecycleCoordinator(
     sshManager: ssh,
     reconnectController: withController ?? controller,
     keepAlive: keepAlive,
     activeServer: () => active,
     onVisibilityChanged: onVisibilityChanged,
+    now: now,
   );
 
   group('回前台的探活', () {
+    for (final pause in [
+      const Duration(seconds: 10),
+      const Duration(minutes: 5),
+      const Duration(minutes: 30),
+    ]) {
+      test(
+        'background $pause revalidates once and concurrent resumes share it',
+        () async {
+          final server = _server('a');
+          active = server;
+          controller.start(server);
+          controller.markConnected();
+          ssh.recent = true;
+          ssh.holdProbes = true;
+          var clock = DateTime.utc(2026, 10, 11);
+          final lifecycle = build(now: () => clock);
+          await lifecycle.onPaused();
+          clock = clock.add(pause);
+          final first = lifecycle.onResumed();
+          final second = lifecycle.onResumed();
+          expect(second, same(first));
+          expect(ssh.verifyCalls, 1);
+          expect(controller.state.status, ReconnectStatus.connected);
+          ssh.release(true);
+          expect(await first, isTrue);
+          expect(scheduler.pendingCount, 0);
+          expect(ssh.disconnected, isEmpty);
+        },
+      );
+    }
     test('并发的 resumed 共用同一次复验', () async {
       final server = _server('a');
       active = server;
