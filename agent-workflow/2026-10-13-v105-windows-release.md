@@ -46,4 +46,35 @@ Windows App Certification Kit 未运行，最终商店认证由微软执行。
 分发平台现有 `1.0.5+6` 的 Windows/x86_64 目标为空，新增一个 ZIP 外链，
 包含准确大小和 SHA-256；不上传 R2，也不重建原 Android/Linux 分发包。
 
-GitHub、分发平台的最终回执待发布后补充。
+## 发布回执：2026-10-13
+
+已完成。[GitHub v1.0.5](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.5)
+保持公开、非预发布和原标签 `ce3ebe1323903030ae83ebfb648c28c04d969922`。
+Release 共 25 个唯一附件，本轮 11 个上传文件的服务端大小和 SHA-256 全部与
+本地冻结记录一致；14 个非本轮替换的原附件 ID、大小、哈希保持不变。
+公开下载的 `update.json` 和 `SHA256SUMS.txt` 与本地文件逐字节一致；
+原四条 Android/Linux 更新记录和七条非 update.json 校验记录均保留。
+
+| 文件 | 字节数 | SHA-256 |
+| --- | ---: | --- |
+| EXE | 30774490 | `8a6e1f668c7fcbaf2660f5aadc7a5948adc41caec4f9c05fa639cd594a79f8d3` |
+| ZIP | 41010914 | `a78e2089ae22eed1dce877cacbf0bc9c5e0b455127e58710031e1838fdc1dbf8` |
+| MSIX | 42227807 | `841e49c3c8b3079bc1a6bb681beaa951ae78785cce9985d1300ae454d5245a4d` |
+
+[分发平台](https://ygg.norns.cc.cd/d/com.norns.valhalla)的原版本
+`ver_mv6p1zi3nm7o` / `1.0.5+6` / code2006 / default 新增
+`pkg_mv6uhxuqebhu` / windows / x86_64。新记录的 `file_key` 为空、
+`use_proxy=false`，指向 GitHub ZIP 直链，包含准确大小和结构化 SHA-256。
+Windows 目标仅一条，当前版本共五个唯一目标；原有三个版本和全部九个
+Android/Linux 包记录 ID 与内容均保留，发布策略不变，仅补充本版更新日志。
+
+使用生产 `AppUpdateService` 查询公开 Windows API，正确选中 ZIP，并完整下载
+41010914 字节，SHA-256 与本地和服务端记录一致。下载验证使用本机已配置的
+系统代理；首次直连 CDN 停滞后终止，未将未完成下载计为成功。
+首次 Flutter 测试绑定默认模拟 HTTP 的尝试也未计入成功，后续关闭模拟网络，
+通过注入真实代理客户端执行公开检查、重定向和完整大小/哈希验证。
+
+临时分发凭据文件已移除，凭据未进入源码或包内。发布阶段 main 查询对应
+Actions 运行数为 0；没有构建 Android/Linux 或修改原正式签名。
+证据保留在 `build/windows-artifacts`：冻结清单、发布前后快照、分发新增回执、
+GitHub/分发校验 JSON、完整下载副本，以及全部构建、测试和安装日志。
