@@ -35,13 +35,13 @@ Windows 版支持单实例启动，重复打开时恢复现有窗口。顶部工
 
 ## 下载与安装
 
-Windows 版可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) 安装。v1.0.5 本地发布 Android 与 Linux 包，附件位于 [Release 的 Assets](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.5) 中；Windows 下载保留 v1.0.3，本次不更新。商店版本以 Microsoft Store 页面为准。
+Windows 版可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) 安装。v1.0.5 提供 Windows、Android 与 Linux 包，附件位于 [Release 的 Assets](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.5) 中。商店版本以 Microsoft Store 页面为准。
 
 | 平台 | 安装方式 / 架构 | 下载 |
 | --- | --- | --- |
 | Windows | x64 商店版 | [微软商店下载](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) |
-| Windows | x64 安装版，v1.0.3 | [EXE 安装程序](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.3/valhalla-1.0.3-windows-x64-setup.exe) |
-| Windows | x64 便携版，v1.0.3 | [ZIP 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.3/valhalla-1.0.3-windows-x64-portable.zip) |
+| Windows | x64 安装版，v1.0.5 | [EXE 安装程序](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.5/valhalla-1.0.5-windows-x64-setup.exe) |
+| Windows | x64 便携版，v1.0.5 | [ZIP 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.5/valhalla-v1.0.5-windows-x64.zip) |
 | Android | ARM64，多数现代手机，v1.0.5 | [arm64-v8a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.5/valhalla-v1.0.5-android-arm64-v8a-signed-6.apk) |
 | Android | 32 位 ARM，v1.0.5 | [armeabi-v7a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.5/valhalla-v1.0.5-android-armeabi-v7a-signed-6.apk) |
 | Android | x86_64 设备 / 模拟器，v1.0.5 | [x86_64 APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.5/valhalla-v1.0.5-android-x86_64-signed-6.apk) |
