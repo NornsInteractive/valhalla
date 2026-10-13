@@ -1,5 +1,10 @@
 # Gboard terminal modifier correction
 
+Publication follow-up: this fix was included in the verified same-version
+Android/Linux refresh on 2026-10-13 14:58 UTC. See the
+[v1.0.5 release receipt](2026-10-13-v105-refresh-release.md). The no-publication
+statements below describe the earlier device-validation scope, not current status.
+
 ## Evidence and cause
 
 User reported that tapping Ctrl/Shift followed by Gboard `c` still displayed
