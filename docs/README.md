@@ -1,5 +1,9 @@
 # Valhalla - 研发项目全生命周期文档体系
 
+本地正式打包、GitHub Release 上传与分发平台同步统一参见
+[本地发布与分发操作手册](04-testing-and-deployment/11-local-release-and-distribution-runbook.md)，
+包含新版本／同版本覆盖、固定签名、架构映射、下载校验和回滚边界。
+
 本轮主题、网络速率、关机与快捷入口的实施契约见 [2026-09-19 交接](handoffs/2026-09-19-theme-network-power-shortcuts.md)；自动化门禁与真实服务器验收结论分别记录，不能混为已发布状态。
 
 当前工作（2026-09-19）：[CLI、重启、容器反馈与性能 / 历史隔离设计](handoffs/2026-09-19-cli-reboot-performance.md)，真实环境验收与已验证源码必须区分。
@@ -64,6 +68,7 @@ docs/
 | **Windows 构建** | [03-windows-github-actions.md](04-testing-and-deployment/03-windows-github-actions.md) | Actions 自动/手动打包、完整 ZIP 下载与运行 | 开发、发布、用户 |
 | **多平台构建** | [04-multi-platform-github-actions.md](04-testing-and-deployment/04-multi-platform-github-actions.md) | Android / Windows / Linux / macOS / iOS 自动编译及版本发布 | 开发、发布、用户 |
 | **Android 签名** | [05-android-release-signing.md](04-testing-and-deployment/05-android-release-signing.md) | 固定发布密钥、Secrets、签名校验与备份 | 发布、仓库管理员 |
+| **本地发布操作** | [11-local-release-and-distribution-runbook.md](04-testing-and-deployment/11-local-release-and-distribution-runbook.md) | 本地构建 → GitHub Releases → Ygg 分发，覆盖更新与下载闭环 | 开发、发布、后续接手代理 |
 | **v1.0.3 发布** | [08-v1.0.3-release.md](04-testing-and-deployment/08-v1.0.3-release.md) | Android / Linux 本地构建、产物校验及本次发布状态 | 发布、用户 |
 
 ---
