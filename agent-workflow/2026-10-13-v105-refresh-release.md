@@ -16,10 +16,13 @@ This supersedes the prior no-publication boundary for this release only.
   before replacing exactly those filenames. Upload binaries/checksums before the
   update manifest. Retain old artifacts and verify new remote sizes and hashes.
 - Refresh the existing Yggdrasil com.norns.valhalla 1.0.5+6 version and four
-  platform/architecture package records in place, including SHA256 and size.
-  Do not create duplicate versions or delete historical records.
-- OpenCode confirmed-free models own new validation/build/packaging; previous
-  direct-build exceptions do not automatically carry over. No UI changes.
+  platform/architecture packages, including SHA256 and size. The MCP API cannot
+  modify existing package hashes. User explicitly authorized backing up and
+  re-registering these four external records only; IDs change and package
+  download counters may reset. Preserve all other versions and records.
+- MiMo and Big Pickle returned rate limits; Step 5 returned endpoint unavailable,
+  before executing any build. User explicitly authorized the main agent to
+  complete validation/build/packaging and this release only. No UI changes.
 - Verify original certificate, version/ABI, fresh release payloads, complete
   Linux archive, unchanged sources/lock, checksums and credential exclusion.
   Test-signed device APK must never be uploaded as a formal release.
