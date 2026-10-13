@@ -224,6 +224,9 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(MethodChannel(name), (call) async {
           methodCalls.add(call);
+          if (name == _downloadsChannel && call.method == 'runtimeInfo') {
+            return {'storeInstall': false, 'baseBuildNumber': 1};
+          }
           return value;
         });
   }
@@ -242,6 +245,7 @@ void main() {
       .toList();
 
   setUp(() async {
+    methodCalls.clear();
     temp = Directory.systemTemp.createTempSync('valhalla_update_provider');
     service = _FakeUpdateService();
     SharedPreferences.setMockInitialValues({});
@@ -414,6 +418,7 @@ void main() {
         packages: [
           updatePackage(
             version: '9.9.9',
+            platform: Platform.operatingSystem,
             hash: sha256.convert(bytes).toString(),
           ),
         ],
@@ -440,7 +445,14 @@ void main() {
       final second = notifier.openDownloaded();
       expect(second, same(first));
       await first;
-      expect(launcherPlatform.launched, hasLength(1));
+      if (Platform.isWindows) {
+        expect(
+          methodCalls.where((call) => call.method == 'revealFile'),
+          hasLength(1),
+        );
+      } else {
+        expect(launcherPlatform.launched, hasLength(1));
+      }
     },
   );
 
