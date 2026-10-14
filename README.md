@@ -15,7 +15,7 @@ Valhalla 是基于 Flutter 开发的远程服务器管理客户端，主要面�
 | 功能 | 说明 |
 | --- | --- |
 | 服务器连接 | 管理 SSH 连接配置，校验主机密钥，使用安全存储保存凭据 |
-| SSH 终端 | 多标签终端、移动端辅助按键、可选 tmux 会话与 Mosh 连接 |
+| SSH 终端 | 独立新终端、可重命名标签、显式历史恢复与启动默认项、移动端辅助按键、可选 tmux 与 Mosh |
 | 远程文件 | SFTP 文件浏览、编辑、上传与下载，紧凑路径导航、隐藏文件开关与目录符号链接；Windows 支持定位已下载文件 |
 | 系统运维 | 查看 CPU、内存、磁盘、负载和运行时间，管理进程、systemd 服务及快捷命令 |
 | 容器管理 | 通过 Docker CLI 查看容器状态、日志及容器终端 |
@@ -35,17 +35,17 @@ Windows 版支持单实例启动，重复打开时恢复现有窗口。顶部工
 
 ## 下载与安装
 
-Windows 版可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) 安装。v1.0.5 提供 Windows、Android 与 Linux 包，附件位于 [Release 的 Assets](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.5) 中。商店版本以 Microsoft Store 页面为准。
+最新 Android／Linux 包为 [v1.0.6](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.6)，也可通过[分发平台](https://ygg.norns.cc.cd/d/com.norns.valhalla)按平台和架构下载。Windows 保留 v1.0.5，可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) 安装；商店版本以 Microsoft Store 页面为准。
 
 | 平台 | 安装方式 / 架构 | 下载 |
 | --- | --- | --- |
 | Windows | x64 商店版 | [微软商店下载](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) |
 | Windows | x64 安装版，v1.0.5 | [EXE 安装程序](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.5/valhalla-1.0.5-windows-x64-setup.exe) |
 | Windows | x64 便携版，v1.0.5 | [ZIP 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.5/valhalla-v1.0.5-windows-x64.zip) |
-| Android | ARM64，多数现代手机，v1.0.5 | [arm64-v8a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.5/valhalla-v1.0.5-android-arm64-v8a-signed-6.apk) |
-| Android | 32 位 ARM，v1.0.5 | [armeabi-v7a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.5/valhalla-v1.0.5-android-armeabi-v7a-signed-6.apk) |
-| Android | x86_64 设备 / 模拟器，v1.0.5 | [x86_64 APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.5/valhalla-v1.0.5-android-x86_64-signed-6.apk) |
-| Linux | x64 完整目录包，v1.0.5 | [tar.gz 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.5/valhalla-v1.0.5-linux-x64.tar.gz) |
+| Android | ARM64，多数现代手机，v1.0.6 | [arm64-v8a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.6/valhalla-v1.0.6-android-arm64-v8a-signed-7.apk) |
+| Android | 32 位 ARM，v1.0.6 | [armeabi-v7a APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.6/valhalla-v1.0.6-android-armeabi-v7a-signed-7.apk) |
+| Android | x86_64 设备 / 模拟器，v1.0.6 | [x86_64 APK](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.6/valhalla-v1.0.6-android-x86_64-signed-7.apk) |
+| Linux | x64 完整目录包，v1.0.6 | [tar.gz 压缩包](https://github.com/NornsInteractive/valhalla/releases/download/v1.0.6/valhalla-v1.0.6-linux-x64.tar.gz) |
 
 ### Windows
 
@@ -69,7 +69,7 @@ AAB 是分发用文件，不能直接安装。本版 APK 沿用原正式证书�
 
 完整解压 tar.gz 后进入 `valhalla` 目录，运行 `./valhalla`，不要只复制可执行文件。保留同目录的 `lib`、`data`、许可声明和 BUILD-INFO。本版在 Debian 12 x64 构建，需要图形会话及 GTK 3、libsecret、`libmpv.so.2` 等系统依赖，并非通用静态包；尚未完成 Linux 桌面运行验收。
 
-本次产物、签名和验收边界见 [v1.0.5 发布记录](docs/04-testing-and-deployment/10-v1.0.5-release.md)；旧 Windows 包见 [v1.0.3 发布记录](docs/04-testing-and-deployment/08-v1.0.3-release.md)。
+本次产物、签名和验收边界见 [v1.0.6 发布记录](agent-workflow/2026-10-14-v106-release.md)；Windows v1.0.5 见 [Windows 发布记录](agent-workflow/2026-10-13-v105-windows-release.md)。
 
 其他平台的构建方式见 [多平台构建与发布指南](docs/04-testing-and-deployment/04-multi-platform-github-actions.md)，可下载产物以各版本的 Release 附件为准。
 

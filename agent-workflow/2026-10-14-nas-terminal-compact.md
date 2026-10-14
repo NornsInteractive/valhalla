@@ -1,5 +1,9 @@
 # NAS, terminal history and compact browsing — implementation contract
 
+Follow-up delivery: the user subsequently authorized a new build, ADB acceptance
+and publication. See [v1.0.6+7 delivery](2026-10-14-v106-release.md). The no-build
+statements below describe this earlier implementation stage, not current release status.
+
 Status: implementation and source verification complete. No build, ADB install,
 version bump, push or publication was performed in this round. Do not confuse
 source verification with an installed/published APK.

@@ -1,7 +1,10 @@
 # Valhalla - 研发项目全生命周期文档体系
 
-当前实施（2026-10-14）：[NAS 重绘、终端历史与紧凑浏览](../agent-workflow/2026-10-14-nas-terminal-compact.md)。
-此契约区分已批准需求、源码进度与实际验证；尚未打包、安装或发布。
+最新交付（2026-10-14）：[1.0.6+7 发布与 ADB 验收](../agent-workflow/2026-10-14-v106-release.md)。
+Android／Linux 已发布到 GitHub 与分发平台，同测试签名包已保留数据安装；
+Windows 保留 1.0.5。真实 SSH 恢复、在线媒体播放等未验项在记录中单独列出。
+[NAS 重绘、终端历史与紧凑浏览契约](../agent-workflow/2026-10-14-nas-terminal-compact.md)
+保留前一源码阶段的范围、进度与验证历史，不代表最新发布状态。
 
 本地正式打包、GitHub Release 上传与分发平台同步统一参见
 [本地发布与分发操作手册](04-testing-and-deployment/11-local-release-and-distribution-runbook.md)，
@@ -72,6 +75,7 @@ docs/
 | **多平台构建** | [04-multi-platform-github-actions.md](04-testing-and-deployment/04-multi-platform-github-actions.md) | Android / Windows / Linux / macOS / iOS 自动编译及版本发布 | 开发、发布、用户 |
 | **Android 签名** | [05-android-release-signing.md](04-testing-and-deployment/05-android-release-signing.md) | 固定发布密钥、Secrets、签名校验与备份 | 发布、仓库管理员 |
 | **本地发布操作** | [11-local-release-and-distribution-runbook.md](04-testing-and-deployment/11-local-release-and-distribution-runbook.md) | 本地构建 → GitHub Releases → Ygg 分发，覆盖更新与下载闭环 | 开发、发布、后续接手代理 |
+| **v1.0.6 发布** | [2026-10-14-v106-release.md](../agent-workflow/2026-10-14-v106-release.md) | 正式 Android／Linux 包、保留数据装机、分发与真实验收边界 | 发布、用户 |
 | **v1.0.3 发布** | [08-v1.0.3-release.md](04-testing-and-deployment/08-v1.0.3-release.md) | Android / Linux 本地构建、产物校验及本次发布状态 | 发布、用户 |
 
 ---

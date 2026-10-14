@@ -1,6 +1,6 @@
 # 本地构建 → GitHub Releases → 分发平台操作手册
 
-最后核对：2026-10-13。适用于已获批准的 **Android 三架构 APK／AAB + Linux x64** 本地发布。
+最后核对：2026-10-14。适用于已获批准的 **Android 三架构 APK／AAB + Linux x64** 本地发布。
 本文是可复用操作方法，不是执行授权；新版本、同版本覆盖、其他平台和 ADB 安装须按当轮要求决定。
 不依赖历史 `/tmp` 发布脚本，不在本文存放密码、Token 或私钥。
 
@@ -210,6 +210,10 @@ gh release create "$valhalla_tag" --repo "$valhalla_repo" \
   --notes-file "$valhalla_work/release-notes.md"
 ```
 
+草稿阶段标签可能尚未建立，按标签查询 Release 可能返回 404；这不等于创建失败。
+先用已认证的 releases 列表按唯一 `tag_name`／`draft`／`target_commitish` 找到 ID，
+再按 ID 查询并核对。不要因为此 404 重建草稿，公开后再核对真实 Git 标签。
+
 只上传冻结清单中的文件。先上传二进制、BUILD-INFO 及其 sidecar，再上传 SHA256SUMS、
 update.json.sha256，最后 update.json。逐个调用的命令形式如下（文件名从冻结清单取值）：
 
@@ -311,6 +315,8 @@ curl --fail-with-body --silent --show-error 'https://ygg.norns.cc.cd/api/mcp' \
 
 **当前接口陷阱（2026-10-13 已验证）：** `ygg_publish_version` 自动创建主包，但不接受主包 SHA256；
 `ygg_add_version_package` 是新增，不是 upsert；`ygg_update_version` 不支持包的 size/hash。
+2026-10-14 补验：即使创建版本时省略主包 URL，仍会生成无 URL／文件／哈希的占位记录，
+不能靠省略 URL 避开此问题。发现后保持暂存渠道并隐藏该版本，再核对和申请准确替换范围。
 先检查自动生成的主包，避免无哈希或重复架构。若须替换，只能在已获相应授权后，
 备份并核实它确属本轮新建暂存版本、`file_key` 为空、未被用户下载，再补齐哈希重建。
 未获替换授权则停留暂存渠道，不带缺失哈希上线。
@@ -379,6 +385,7 @@ curl --fail --silent --show-error --get 'https://ygg.norns.cc.cd/api/v1/app/late
 已实际成功的对照记录：
 
 - [首次 v1.0.5 发布](10-v1.0.5-release.md)：新版本流程。
+- [v1.0.6 本地发布与 ADB 验收](../../agent-workflow/2026-10-14-v106-release.md)：新标签、隐藏占位处理、四架构与旧 Windows 分流。
 - [v1.0.5 同版本覆盖](../../agent-workflow/2026-10-13-v105-refresh-release.md)：原标签保留、正式包替换及四架构重新登记。
 - [更新清单生成器](../../tool/generate_update_manifest.py)、[生成器回归](../../tool/test_generate_update_manifest.py)。
 
