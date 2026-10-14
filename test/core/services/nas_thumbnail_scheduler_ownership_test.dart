@@ -21,6 +21,7 @@ class _StubAdapter extends NasSourceAdapter {
       const NasSource(id: 'nas-1', name: 'nas-1', type: NasSourceType.smb);
 
   final calls = <String>[];
+  final entered = Completer<void>();
   Completer<void>? gate;
 
   @override
@@ -41,6 +42,7 @@ class _StubAdapter extends NasSourceAdapter {
   @override
   Future<NasResource?> thumbnail(NasMediaItem item) async {
     calls.add(item.path);
+    if (!entered.isCompleted) entered.complete();
     final wait = gate;
     if (wait == null) return null;
     await wait.future;
@@ -123,7 +125,7 @@ void main() {
 
       // The blocker occupies the pump, so the next tile stays queued.
       cache.thumbnail(blocker, owner: 'grid-1');
-      await pumpEventQueue();
+      await adapter.entered.future;
       expect(adapter.calls, ['/media/blocker.mkv']);
 
       final first = cache.thumbnail(queued, owner: 'grid-1');
@@ -135,6 +137,7 @@ void main() {
       );
 
       adapter.gate!.complete();
+      await Future.wait([first, second]);
       await pumpEventQueue();
 
       expect(
@@ -160,7 +163,7 @@ void main() {
 
       final first = cache.thumbnail(item, owner: 'grid-1');
       cache.thumbnail(item, owner: 'grid-2');
-      await pumpEventQueue();
+      await adapter.entered.future;
       expect(adapter.calls, ['/media/shared.mkv']);
 
       var settled = false;

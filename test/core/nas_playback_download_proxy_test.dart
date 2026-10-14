@@ -1235,7 +1235,7 @@ void main() {
       try {
         await service.open(_item('offline.mp3'));
         expect(service.current?.path, 'offline.mp3');
-        expect(native.opened, [local.path]);
+        expect(native.opened, [local.path.replaceAll('\\', '/')]);
         expect(native.headers.single, isEmpty);
         expect(service.state.error, isNull);
       } finally {
