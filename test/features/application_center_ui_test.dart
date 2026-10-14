@@ -632,7 +632,7 @@ void main() {
   }
 
   for (final width in [320.0, 360.0, 390.0, 430.0]) {
-    testWidgets('store grid has two vertical cards at ${width.toInt()}dp', (
+    testWidgets('store grid has two compact cards at ${width.toInt()}dp', (
       tester,
     ) async {
       final notifier = _Center(empty: true);
@@ -661,9 +661,19 @@ void main() {
           .first;
       final icon = find.descendant(of: card, matching: find.byIcon(Icons.apps));
       expect(icon, findsOneWidget);
+      expect(tester.getSize(icon).width, lessThanOrEqualTo(32));
+      final titleBounds = tester.getRect(first);
+      final iconBounds = tester.getRect(icon);
+      expect(titleBounds.top, lessThan(iconBounds.bottom));
       expect(
-        tester.getBottomLeft(icon).dy,
-        lessThan(tester.getTopLeft(first).dy),
+        titleBounds.bottom,
+        greaterThan(iconBounds.top),
+        reason: 'icon and title must share a row, even when the title wraps',
+      );
+      expect(tester.getSize(card).height, inInclusiveRange(112, 128));
+      expect(
+        tester.getTopLeft(first).dx,
+        greaterThan(tester.getTopLeft(icon).dx),
       );
       expect(tester.takeException(), isNull);
     });
@@ -681,6 +691,34 @@ void main() {
     expect(storeDescendant(find.byType(GridView)), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  for (final scale in [1.5, 2.0]) {
+    testWidgets('compact store fits long title and status at ${scale}x', (
+      tester,
+    ) async {
+      final notifier = _Center(empty: true);
+      await host(
+        tester,
+        notifier,
+        fullView: true,
+        width: 320,
+        scale: scale,
+        locale: const Locale('vi'),
+      );
+      notifier.setCatalog([
+        CatalogApplication.fromJson({
+          ...catalog(1).single.toJson(),
+          'title':
+              'Very long two line application name requiring measured height',
+          'architectures': ['incompatible-fixture-architecture'],
+        }),
+      ]);
+      await tester.pumpAndSettle();
+      await toggleStore(tester);
+      expect(storeDescendant(find.byType(GridView)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('store grid bounds long version metadata at narrow large text', (
     tester,

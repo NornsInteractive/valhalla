@@ -755,12 +755,15 @@ class NasNotifier extends Notifier<NasState> {
     }
   }
 
-  Future<void> setFilter(NasMediaKind? value) async {
+  Future<void> setFilter(
+    NasMediaKind? value, {
+    bool favoritesOnly = false,
+  }) async {
     state = state.copyWith(
       filter: value,
       clearFilter: value == null,
       clearScope: true,
-      favoritesOnly: false,
+      favoritesOnly: favoritesOnly,
       items: [],
       galleryWindowEnabled: value == NasMediaKind.image && state.galleryWindowEnabled,
     );
@@ -1094,6 +1097,18 @@ class NasNotifier extends Notifier<NasState> {
             }
           : null,
     );
+  }
+
+  Future<void> addToQueue(NasMediaItem item) async {
+    final source = ref.read(nasSourcesProvider).sources
+        .where((source) => source.id == item.serverId).firstOrNull;
+    if (source == null) throw StateError('NAS_SOURCE_NOT_FOUND');
+    final player = await ref.read(nasMediaPlayerProvider.future);
+    if (!ref.mounted ||
+        !ref.read(nasSourcesProvider).sources.contains(source)) {
+      throw StateError('NAS_SOURCE_CHANGED');
+    }
+    await player.addToQueue(item);
   }
 
   String openExternal(NasMediaItem item) =>

@@ -8,6 +8,7 @@ import '../../../core/design/tokens.dart';
 import '../../../data/models/nas_media.dart';
 import 'nas_cast_sheet.dart';
 import 'nas_localizations.dart';
+import 'nas_thumbnail_image.dart';
 
 /// 全局迷你播放条: 玻璃质感圆角条 + 底部实时进度线 + 上滑入场。
 class NasMiniPlayer extends StatelessWidget {
@@ -38,7 +39,7 @@ class NasMiniPlayer extends StatelessWidget {
       offset: const Offset(0, 24),
       child: Container(
         key: const Key('nas_mini_player'),
-        height: 62,
+        constraints: const BoxConstraints(minHeight: 62),
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerHighest.withValues(
@@ -61,101 +62,99 @@ class NasMiniPlayer extends StatelessWidget {
                 borderRadius: BorderRadius.circular(VRadius.card),
                 onTap: onExpand,
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Row(
-                          children: [
-                            Container(
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: SizedBox(
                               width: 38,
                               height: 38,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withValues(
-                                  alpha: 0.15,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                isVideo
+                              child: NasThumbnailImage(
+                                item: item,
+                                fit: BoxFit.cover,
+                                fallbackIcon: isVideo
                                     ? Icons.movie_outlined
                                     : Icons.music_note_rounded,
-                                color: theme.colorScheme.primary,
-                                size: 20,
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.name,
-                                    style: theme.textTheme.titleSmall,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    item.path,
-                                    style: monoTextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w400,
-                                      color: theme.colorScheme.outline,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (player != null)
-                              StreamBuilder<bool>(
-                                stream: player!.stream.playing,
-                                initialData: player!.state.playing,
-                                builder: (context, snapshot) {
-                                  final active = snapshot.data ?? isPlaying;
-                                  return IconButton(
-                                    key: const Key(
-                                      'nas_mini_player_play_pause',
-                                    ),
-                                    icon: Icon(
-                                      active
-                                          ? Icons.pause_circle_filled
-                                          : Icons.play_circle_filled,
-                                      size: 28,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                    onPressed: onPlayPause,
-                                  );
-                                },
-                              )
-                            else
-                              IconButton(
-                                key: const Key('nas_mini_player_play_pause'),
-                                icon: Icon(
-                                  isPlaying
-                                      ? Icons.pause_circle_filled
-                                      : Icons.play_circle_filled,
-                                  size: 28,
-                                  color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.name,
+                                  style: theme.textTheme.titleSmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                onPressed: onPlayPause,
+                                Text(
+                                  item.path,
+                                  style: monoTextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w400,
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (player != null)
+                            StreamBuilder<bool>(
+                              stream: player!.stream.playing,
+                              initialData: player!.state.playing,
+                              builder: (context, snapshot) {
+                                final active = snapshot.data ?? isPlaying;
+                                return IconButton(
+                                  key: const Key('nas_mini_player_play_pause'),
+                                  icon: Icon(
+                                    active
+                                        ? Icons.pause_circle_filled
+                                        : Icons.play_circle_filled,
+                                    size: 28,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  onPressed: onPlayPause,
+                                );
+                              },
+                            )
+                          else
+                            IconButton(
+                              key: const Key('nas_mini_player_play_pause'),
+                              icon: Icon(
+                                isPlaying
+                                    ? Icons.pause_circle_filled
+                                    : Icons.play_circle_filled,
+                                size: 28,
+                                color: theme.colorScheme.primary,
                               ),
-                            IconButton(
-                              key: const Key('nas_mini_player_cast_button'),
-                              icon: const Icon(Icons.cast, size: 18),
-                              tooltip: context.nasCast,
-                              onPressed: () =>
-                                  NasCastSheet.show(context, item: item),
+                              onPressed: onPlayPause,
                             ),
-                            IconButton(
-                              key: const Key('nas_mini_player_close'),
-                              icon: const Icon(Icons.close, size: 18),
-                              onPressed: onClose,
-                            ),
-                          ],
-                        ),
+                          IconButton(
+                            key: const Key('nas_mini_player_cast_button'),
+                            icon: const Icon(Icons.cast, size: 18),
+                            tooltip: context.nasCast,
+                            onPressed: () =>
+                                NasCastSheet.show(context, item: item),
+                          ),
+                          IconButton(
+                            key: const Key('nas_mini_player_close'),
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: onClose,
+                          ),
+                        ],
                       ),
                     ),
                     _MiniPlayerProgressLine(player: player),

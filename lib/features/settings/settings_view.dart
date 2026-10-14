@@ -22,7 +22,9 @@ import 'widgets/clear_credentials_dialog.dart';
 import 'widgets/configuration_migration_dialog.dart';
 import 'widgets/default_agent_dialog.dart';
 import 'widgets/trusted_hosts_dialog.dart';
+import '../../core/providers/terminal_provider.dart';
 import '../terminal/widgets/customize_pinned_keys_dialog.dart';
+import '../terminal/widgets/terminal_history_drawer.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -759,6 +761,7 @@ class SettingsView extends ConsumerWidget {
     final count = keepAlive.activeCount;
     final hasActive = keepAlive.hasActiveSessions;
     final terminalSettings = ref.watch(terminalSettingsProvider);
+    final terminalState = ref.watch(terminalProvider);
     final trustedHosts = ref.watch(trustedHostsProvider);
 
     return Card(
@@ -825,6 +828,22 @@ class SettingsView extends ConsumerWidget {
             value: terminalSettings.useTmux,
             onChanged: (val) =>
                 ref.read(terminalSettingsProvider.notifier).setUseTmux(val),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            key: const Key('settingsTerminalStartupSessionRow'),
+            dense: true,
+            leading: const Icon(Icons.play_circle_outline),
+            title: Text(
+              context.l10n.terminalStartupSession,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              getStartupSessionLabel(context, terminalState),
+              style: const TextStyle(fontSize: 11),
+            ),
+            trailing: const Icon(Icons.chevron_right, size: 18),
+            onTap: () => showStartupSessionDialog(context, ref),
           ),
           const Divider(height: 1),
           ListTile(

@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dartssh2/dartssh2.dart';
+import 'package:valhalla/app/theme.dart';
 import 'package:valhalla/core/errors/app_exceptions.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/sftp_provider.dart';
@@ -18,6 +20,7 @@ import 'package:valhalla/infrastructure/ssh/ssh_host_key_verifier.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 import 'package:valhalla/widgets/remote_browser_toolbar.dart';
 import 'package:valhalla/widgets/remote_browser_view.dart';
+import '../support/acp_chat_widget_harness.dart' show loadRealTextFonts;
 
 /// 视图模式持久化用例要让真实的 `SftpNotifier.build()` 跑起来，它会向
 /// `sshClientManagerProvider` 要客户端；这里给一个永远不连接的空壳。
@@ -348,10 +351,14 @@ Widget _buildTestApp({
       sftpProvider.overrideWith(() => notif),
       serverConnectionProvider.overrideWith(_TestServerConnectionNotifier.new),
     ],
-    child: const MaterialApp(
+    child: MaterialApp(
+      theme: AppTheme.buildTheme(
+        brightness: Brightness.light,
+        seedColor: Colors.green,
+      ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: SftpFileView()),
+      home: const Scaffold(body: SftpFileView()),
     ),
   );
 }
@@ -370,6 +377,7 @@ SftpFileItem _makeItem(
   bool isDirectory = false,
   int size = 100,
   String? path,
+  String modified = '2026-09-16 12:00',
 }) {
   return SftpFileItem(
     name: name,
@@ -378,12 +386,16 @@ SftpFileItem _makeItem(
     sizeBytes: size,
     formattedSize: '$size B',
     permissions: isDirectory ? 'drwxr-xr-x' : '-rw-r--r--',
-    modified: '2026-09-16 12:00',
+    modified: modified,
   );
 }
 
 void main() {
   setUpAll(() async {
+    await loadRealTextFonts();
+    final mono = FontLoader('JetBrains Mono')
+      ..addFont(rootBundle.load('assets/fonts/JetBrainsMono-400.ttf'));
+    await mono.load();
     SharedPreferences.setMockInitialValues({});
     _storage = await LocalStorageService.init();
   });
@@ -1389,7 +1401,7 @@ void main() {
     });
 
     for (final width in [320.0, 360.0, 390.0, 430.0]) {
-      testWidgets('shared file grid has two vertical cards at $width dp', (
+      testWidgets('shared file grid has two compact cards at $width dp', (
         tester,
       ) async {
         tester.view.physicalSize = Size(width, 850);
@@ -1418,7 +1430,26 @@ void main() {
           tester.getTopLeft(beta).dx,
           greaterThan(tester.getTopLeft(alpha).dx),
         );
-        expect(tester.getSize(alpha).height, greaterThan(100));
+        final alphaTitle = find.descendant(
+          of: alpha,
+          matching: find.text('alpha.txt'),
+        );
+        final alphaIcon = find.descendant(
+          of: alpha,
+          matching: find.byType(Icon),
+        );
+        expect(alphaIcon, findsWidgets);
+        expect(
+          tester.getTopLeft(alphaTitle).dy,
+          closeTo(tester.getTopLeft(alphaIcon.first).dy, 6),
+          reason: 'icon and title must share a row in the compact grid',
+        );
+        expect(
+          tester.getTopLeft(alphaTitle).dx,
+          greaterThan(tester.getTopLeft(alphaIcon.first).dx),
+        );
+        expect(tester.getSize(alpha).height, lessThan(120));
+        expect(tester.getSize(alpha).height, greaterThan(80));
         expect(
           tester.getTopLeft(find.byKey(const Key('sftp_search_field'))).dy,
           lessThan(
@@ -1456,6 +1487,69 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    for (final mode in [SftpViewMode.list, SftpViewMode.grid]) {
+      for (final scale in [1.0, 1.3, 2.0]) {
+        testWidgets(
+          '${mode.name} paints complete date and minutes at 320dp ${scale}x',
+          (tester) async {
+            tester.view.physicalSize = const Size(320, 850);
+            tester.view.devicePixelRatio = 1;
+            tester.platformDispatcher.textScaleFactorTestValue = scale;
+            addTearDown(tester.view.reset);
+            addTearDown(
+              tester.platformDispatcher.clearTextScaleFactorTestValue,
+            );
+            final state = SftpState(
+              currentPath: '/var/www',
+              viewMode: mode,
+              files: [_makeItem('alpha.txt', modified: '2026-09-16 09:45')],
+            );
+            await tester.pumpWidget(_buildTestApp(state: state));
+            await tester.pumpAndSettle();
+            final label = find.text('2026-09-16 09:45');
+            expect(label, findsOneWidget);
+            final rich = find.descendant(
+              of: label,
+              matching: find.byType(RichText),
+            );
+            final paragraph = tester.renderObject<RenderParagraph>(rich);
+            expect(paragraph.didExceedMaxLines, isFalse);
+            final boxes = paragraph.getBoxesForSelection(
+              const TextSelection(baseOffset: 14, extentOffset: 16),
+            );
+            expect(
+              boxes,
+              isNotEmpty,
+              reason: 'the final minute digits must be painted',
+            );
+            final tile = tester
+                .getRect(
+                  find.byKey(const ValueKey('sftp_file_/var/www/alpha.txt')),
+                )
+                .inflate(0.5);
+            for (final box in boxes) {
+              final bounds = box.toRect().shift(
+                paragraph.localToGlobal(Offset.zero),
+              );
+              expect(
+                tile.contains(bounds.topLeft),
+                isTrue,
+                reason:
+                    'minute glyph bounds $bounds must be inside file tile $tile',
+              );
+              expect(
+                tile.contains(bounds.bottomRight),
+                isTrue,
+                reason:
+                    'minute glyph bounds $bounds must be inside file tile $tile',
+              );
+            }
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+
     testWidgets(
       'view toggle keeps the visible entry, not old per-view offset',
       (tester) async {
@@ -1480,7 +1574,18 @@ void main() {
               ),
             )
             .position
-            .jumpTo(12 + 20 * 72);
+            .jumpTo(
+              12 +
+                  20 *
+                      tester
+                          .widget<ListView>(
+                            find.descendant(
+                              of: find.byType(RemoteBrowserEntriesView),
+                              matching: find.byType(ListView),
+                            ),
+                          )
+                          .itemExtent!,
+            );
         await tester.pump();
         await tester.tap(find.byKey(const Key('sftpToggleViewModeButton')));
         await tester.pumpAndSettle();

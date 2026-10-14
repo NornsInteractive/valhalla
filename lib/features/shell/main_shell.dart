@@ -144,7 +144,9 @@ class _MainShellState extends ConsumerState<MainShell> {
   List<Widget> _buildViews(SettingsState settings) => [
     _dashboardView,
     const AiChatView(),
-    const SshTerminalView(),
+    SshTerminalView(
+      active: _currentIndex == appSectionToViewIndex(AppSection.terminal),
+    ),
     _sftpView,
     const DockerView(),
     const SystemView(),

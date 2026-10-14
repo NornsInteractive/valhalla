@@ -3,10 +3,14 @@ import 'dart:async';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import 'package:xterm/xterm.dart';
 
+import '../../data/models/server_profile.dart';
+import '../../data/models/terminal_history.dart';
 import '../security/agent_command_validator.dart';
 import '../services/app_diagnostics.dart';
+import '../utils/tmux_session_planner.dart';
 import '../../infrastructure/mosh/mosh_bridge_adapter.dart';
 import '../../infrastructure/mosh/mosh_providers.dart';
 import '../../infrastructure/mosh/mosh_session_service.dart';
@@ -15,6 +19,8 @@ import '../../infrastructure/terminal/terminal_session_bridge.dart';
 import 'server_provider.dart';
 import 'storage_providers.dart';
 import 'terminal_settings_provider.dart';
+
+export '../../data/models/terminal_history.dart';
 
 /// 远端缺 tmux 时给 UI 的安装询问契约。不含任何展示文案。
 class TmuxInstallOffer {
@@ -58,6 +64,9 @@ class TerminalTab {
     required this.terminal,
     required this.bridge,
   });
+
+  TerminalTab withTitle(String value) =>
+      TerminalTab(id: id, title: value, terminal: terminal, bridge: bridge);
 }
 
 class SshTerminalState {
@@ -72,6 +81,14 @@ class SshTerminalState {
 
   /// 当前激活的服务器是否开启了 Mosh (true 时新建会话入口出现 Mosh 选项)。
   final bool moshAvailable;
+  final List<TerminalHistoryRecord> history;
+  final Map<String, TerminalHistoryStatus> historyStatuses;
+  final String? defaultHistoryId;
+  final bool isInitialized;
+  final bool isInitializing;
+  final bool isHistoryLoading;
+  final String? errorCode;
+  final String? noticeCode;
 
   SshTerminalState({
     required this.tabs,
@@ -80,6 +97,14 @@ class SshTerminalState {
     this.isAltActive = false,
     this.tmuxInstallOffer,
     this.moshAvailable = false,
+    this.history = const [],
+    this.historyStatuses = const {},
+    this.defaultHistoryId,
+    this.isInitialized = false,
+    this.isInitializing = false,
+    this.isHistoryLoading = false,
+    this.errorCode,
+    this.noticeCode,
   });
 
   TerminalTab? get activeTab =>
@@ -95,6 +120,17 @@ class SshTerminalState {
     TmuxInstallOffer? tmuxInstallOffer,
     bool clearTmuxInstallOffer = false,
     bool? moshAvailable,
+    List<TerminalHistoryRecord>? history,
+    Map<String, TerminalHistoryStatus>? historyStatuses,
+    String? defaultHistoryId,
+    bool clearDefaultHistory = false,
+    bool? isInitialized,
+    bool? isInitializing,
+    bool? isHistoryLoading,
+    String? errorCode,
+    bool clearError = false,
+    String? noticeCode,
+    bool clearNotice = false,
   }) {
     return SshTerminalState(
       tabs: tabs ?? this.tabs,
@@ -105,47 +141,311 @@ class SshTerminalState {
           ? null
           : (tmuxInstallOffer ?? this.tmuxInstallOffer),
       moshAvailable: moshAvailable ?? this.moshAvailable,
+      history: history ?? this.history,
+      historyStatuses: historyStatuses ?? this.historyStatuses,
+      defaultHistoryId: clearDefaultHistory
+          ? null
+          : (defaultHistoryId ?? this.defaultHistoryId),
+      isInitialized: isInitialized ?? this.isInitialized,
+      isInitializing: isInitializing ?? this.isInitializing,
+      isHistoryLoading: isHistoryLoading ?? this.isHistoryLoading,
+      errorCode: clearError ? null : (errorCode ?? this.errorCode),
+      noticeCode: clearNotice ? null : (noticeCode ?? this.noticeCode),
     );
   }
 }
 
+class _TerminalWorkspace {
+  ServerProfile server;
+  final String targetKey;
+  SshTerminalState value;
+  bool requested = false;
+  bool startupApplied = false;
+  bool historyReadable = true;
+  Future<void>? initializing;
+  Future<void>? refreshing;
+  Future<void>? rebinding;
+  Future<void> saveTail = Future<void>.value();
+  final Map<String, Future<void>> starting = {};
+  final Map<String, VoidCallback> listeners = {};
+  int connectionEpoch = 0;
+  int interactionEpoch = 0;
+
+  _TerminalWorkspace(this.server, this.targetKey, this.value);
+}
+
 class TerminalNotifier extends Notifier<SshTerminalState> {
+  final Map<String, _TerminalWorkspace> _workspaces = {};
+  _TerminalWorkspace? _current;
+  static const _uuid = Uuid();
+
+  @override
+  bool updateShouldNotify(SshTerminalState previous, SshTerminalState next) {
+    _current?.value = next;
+    return !identical(previous, next);
+  }
+
   @override
   SshTerminalState build() {
-    ref.watch(activeServerProvider.select((server) => server?.connectionKey));
-    final activeServer = ref.read(activeServerProvider);
-    final sshManager = ref.watch(sshClientManagerProvider);
-    final connState = ref.read(serverConnectionProvider);
-    final serverName = activeServer?.name ?? 'No Server';
-    final sshClient = (activeServer != null && connState.isConnected)
-        ? sshManager.getClient(activeServer.id)
-        : null;
-
-    ref.listen(serverConnectionProvider, (prev, next) {
-      if (next.isConnected && prev?.isConnected != true) {
-        unawaited(rebindAfterReconnect());
+    ref.listen(activeServerProvider, (_, next) => _activate(next));
+    ref.listen(serverListProvider, (_, next) {
+      final ids = next.map((server) => server.id).toSet();
+      for (final workspace in _workspaces.values.toList()) {
+        if (!ids.contains(workspace.server.id)) {
+          _workspaces.remove(workspace.targetKey);
+          _disposeWorkspace(workspace);
+        }
       }
     });
+    ref.listen(serverConnectionProvider, (prev, next) {
+      if (next.isConnected &&
+          (prev?.isConnected != true ||
+              prev?.activeServerId != next.activeServerId)) {
+        unawaited(rebindAfterReconnect());
+      } else if (!next.isConnected) {
+        final workspace = _current;
+        if (workspace != null) {
+          workspace.connectionEpoch++;
+          state = state.copyWith(
+            historyStatuses: {
+              for (final record in state.history)
+                record.id: TerminalHistoryStatus.unknown,
+            },
+          );
+        }
+      }
+    });
+    ref.onDispose(() {
+      for (final workspace in _workspaces.values) {
+        _disposeWorkspace(workspace);
+      }
+      _workspaces.clear();
+    });
+    final server = ref.read(activeServerProvider);
+    _current = server == null ? null : _workspaceFor(server);
+    return _current?.value ?? SshTerminalState(tabs: const []);
+  }
 
-    final initialTab = _createTab(
-      'main [bash]',
-      serverName: serverName,
-      serverId: activeServer?.id ?? '',
-      terminalId: '0',
-      sshClient: sshClient,
-      preferTmux: ref.read(terminalSettingsProvider).useTmux,
-    );
+  _TerminalWorkspace _workspaceFor(ServerProfile server) {
+    final key = TerminalHistoryRecord.targetFor(server);
+    final existing = _workspaces[key];
+    if (existing != null) {
+      existing.server = server;
+      existing.value = existing.value.copyWith(
+        moshAvailable: server.moshEnabled,
+      );
+      return existing;
+    }
+    var snapshot = const TerminalHistorySnapshot();
+    String? errorCode;
+    try {
+      snapshot = ref
+          .read(localStorageServiceProvider)
+          .getTerminalHistory(server.id, key);
+    } catch (error, stack) {
+      errorCode = 'TERMINAL_HISTORY_LOAD_FAILED';
+      unawaited(
+        AppDiagnostics.instance.record('terminal.history.load', error, stack),
+      );
+    }
+    final workspace = _TerminalWorkspace(
+      server,
+      key,
+      SshTerminalState(
+        tabs: const [],
+        moshAvailable: server.moshEnabled,
+        history: snapshot.records,
+        defaultHistoryId: snapshot.defaultRecordId,
+        errorCode: errorCode,
+      ),
+    )..historyReadable = errorCode == null;
+    _workspaces[key] = workspace;
+    return workspace;
+  }
+
+  void _activate(ServerProfile? server) {
+    final previous = _current;
+    final sameConnection =
+        previous != null &&
+        server != null &&
+        previous.server.hasSameConnectionSettings(server);
+    if (previous != null && !sameConnection) previous.connectionEpoch++;
+    _current = server == null ? null : _workspaceFor(server);
+    state = _current?.value ?? SshTerminalState(tabs: const []);
+    final workspace = _current;
+    if (!sameConnection &&
+        workspace != null &&
+        workspace.requested &&
+        _clientFor(workspace) != null) {
+      // Let the connection controller invalidate a replaced endpoint first.
+      unawaited(
+        Future<void>.microtask(() async {
+          if (_isCurrent(workspace)) await rebindAfterReconnect();
+        }),
+      );
+    }
+  }
+
+  bool _valid(_TerminalWorkspace workspace) =>
+      ref.mounted && identical(_workspaces[workspace.targetKey], workspace);
+
+  bool _isCurrent(_TerminalWorkspace workspace) =>
+      _valid(workspace) && identical(_current, workspace);
+
+  void _publish(_TerminalWorkspace workspace, SshTerminalState next) {
+    if (!_valid(workspace)) return;
+    workspace.value = next;
+    if (identical(_current, workspace)) state = next;
+  }
+
+  SSHClient? _clientFor(_TerminalWorkspace workspace) {
+    if (!_isCurrent(workspace)) return null;
+    if (!(ref
+            .read(activeServerProvider)
+            ?.hasSameConnectionSettings(workspace.server) ??
+        false)) {
+      return null;
+    }
+    final connection = ref.read(serverConnectionProvider);
+    if (!connection.isConnected ||
+        (connection.activeServerId != null &&
+            connection.activeServerId != workspace.server.id)) {
+      return null;
+    }
+    final client = ref
+        .read(sshClientManagerProvider)
+        .getClient(workspace.server.id);
+    return client?.isClosed == false ? client : null;
+  }
+
+  void _disposeWorkspace(_TerminalWorkspace workspace) {
+    workspace.connectionEpoch++;
+    for (final tab in workspace.value.tabs) {
+      final listener = workspace.listeners.remove(tab.id);
+      if (listener != null) tab.bridge.stateListenable.removeListener(listener);
+      tab.bridge.dispose();
+    }
+  }
+
+  /// Explicit entry point: merely observing this provider never opens a PTY.
+  Future<void> ensureInitialized() {
+    final workspace = _current;
+    if (workspace == null) return Future<void>.value();
+    workspace.requested = true;
+    if (workspace.value.tabs.isNotEmpty) return Future<void>.value();
+    if (workspace.initializing case final Future<void> pending) return pending;
+    final epoch = workspace.connectionEpoch;
+    final pending = _initialize(workspace).whenComplete(() {
+      workspace.initializing = null;
+    });
+    workspace.initializing = pending;
+    return pending.then((_) async {
+      if (_isCurrent(workspace) &&
+          epoch != workspace.connectionEpoch &&
+          workspace.value.tabs.isEmpty &&
+          _clientFor(workspace) != null) {
+        await ensureInitialized();
+      }
+    });
+  }
+
+  Future<void> _initialize(_TerminalWorkspace workspace) async {
+    if (_clientFor(workspace) == null) return;
+    _publish(workspace, workspace.value.copyWith(isInitializing: true));
+    try {
+      final defaultId = workspace.startupApplied
+          ? null
+          : workspace.value.defaultHistoryId;
+      if (defaultId != null) {
+        final record = workspace.value.history
+            .where((item) => item.id == defaultId)
+            .firstOrNull;
+        if (record != null) {
+          await _restore(workspace, record, isStartup: true);
+          return;
+        }
+        await _saveHistory(
+          workspace,
+          (current) => TerminalHistorySnapshot(records: current.records),
+        );
+        if (!_isCurrent(workspace)) return;
+        _publish(
+          workspace,
+          workspace.value.copyWith(noticeCode: 'TERMINAL_DEFAULT_MISSING'),
+        );
+      }
+      if (_isCurrent(workspace) && workspace.value.tabs.isEmpty) {
+        await _addFresh(workspace);
+      }
+    } catch (error, stack) {
+      _report(workspace, 'TERMINAL_START_FAILED', error, stack);
+    } finally {
+      if (_valid(workspace)) {
+        _publish(workspace, workspace.value.copyWith(isInitializing: false));
+      }
+    }
+  }
+
+  void _report(
+    _TerminalWorkspace workspace,
+    String code,
+    Object error,
+    StackTrace stack,
+  ) {
     unawaited(
-      initialTab.bridge.start().then((_) {
-        if (ref.mounted) _syncTmuxOffer();
-      }),
+      AppDiagnostics.instance.record('terminal.operation', error, stack),
     );
+    if (_valid(workspace)) {
+      _publish(workspace, workspace.value.copyWith(errorCode: code));
+    }
+  }
 
-    return SshTerminalState(
-      tabs: [initialTab],
-      activeTabIndex: 0,
-      moshAvailable: activeServer?.moshEnabled ?? false,
-    );
+  void clearNotice() =>
+      state = state.copyWith(clearNotice: true, clearError: true);
+
+  Future<void> _saveHistory(
+    _TerminalWorkspace workspace,
+    TerminalHistorySnapshot Function(TerminalHistorySnapshot) update,
+  ) {
+    final pending = workspace.saveTail.then((_) async {
+      if (!_valid(workspace)) return;
+      if (!workspace.historyReadable) {
+        throw StateError('TERMINAL_HISTORY_LOAD_FAILED');
+      }
+      final snapshot = update(
+        TerminalHistorySnapshot(
+          records: workspace.value.history,
+          defaultRecordId: workspace.value.defaultHistoryId,
+        ),
+      );
+      await ref
+          .read(localStorageServiceProvider)
+          .saveTerminalHistory(
+            workspace.server.id,
+            workspace.targetKey,
+            snapshot,
+          );
+      if (!_valid(workspace)) return;
+      final records = [...snapshot.records]
+        ..sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
+      final titles = {for (final record in records) record.id: record.title};
+      _publish(
+        workspace,
+        workspace.value.copyWith(
+          history: List.unmodifiable(records),
+          tabs: [
+            for (final tab in workspace.value.tabs)
+              titles.containsKey(tab.id) ? tab.withTitle(titles[tab.id]!) : tab,
+          ],
+          defaultHistoryId: snapshot.defaultRecordId,
+          clearDefaultHistory: snapshot.defaultRecordId == null,
+        ),
+      );
+    });
+    workspace.saveTail = pending.catchError((Object error, StackTrace stack) {
+      _report(workspace, 'TERMINAL_HISTORY_SAVE_FAILED', error, stack);
+    });
+    return pending;
   }
 
   void _syncTmuxOffer() {
@@ -163,20 +463,22 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
 
   /// 用户拒绝安装：当前标签页走普通 SSH PTY。
   Future<void> skipTmuxInstall() async {
+    final workspace = _current;
     final tab = state.activeTab;
-    if (tab == null) return;
+    if (workspace == null || tab == null) return;
     await tab.bridge.proceedWithoutTmux();
-    _syncTmuxOffer();
+    if (_isCurrent(workspace)) _syncTmuxOffer();
   }
 
   /// 用户确认安装。命令来自 [TmuxInstallOffer.installCommand]。
   ///
   /// 不在这里弹出 UI。失败只写稳定 [TmuxInstallOffer.errorCode]。
   Future<void> confirmTmuxInstall() async {
+    final workspace = _current;
     final offer = state.tmuxInstallOffer;
     final tab = state.activeTab;
     final server = ref.read(activeServerProvider);
-    if (offer == null || tab == null) return;
+    if (workspace == null || offer == null || tab == null) return;
 
     final command = offer.installCommand;
     if (command == null || command.trim().isEmpty) {
@@ -214,18 +516,27 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
           timeout: const Duration(minutes: 5),
         );
 
+    if (!_isCurrent(workspace) ||
+        !workspace.value.tabs.any(
+          (item) => identical(item.bridge, tab.bridge),
+        )) {
+      return;
+    }
+
     if (!result.isSuccess) {
-      state = state.copyWith(
-        tmuxInstallOffer: offer.copyWith(
-          isInstalling: false,
-          errorCode: 'TMUX_INSTALL_FAILED',
-        ),
-      );
+      if (state.activeTab?.id == tab.id) {
+        state = state.copyWith(
+          tmuxInstallOffer: offer.copyWith(
+            isInstalling: false,
+            errorCode: 'TMUX_INSTALL_FAILED',
+          ),
+        );
+      }
       return;
     }
 
     await tab.bridge.retryAfterTmuxInstall();
-    _syncTmuxOffer();
+    if (_isCurrent(workspace)) _syncTmuxOffer();
   }
 
   TerminalTab _createTab(
@@ -233,23 +544,26 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     required String serverName,
     required String serverId,
     required String terminalId,
-    dynamic sshClient,
+    SSHClient? sshClient,
     required bool preferTmux,
+    String? targetKey,
+    TerminalSessionIntent sessionIntent = TerminalSessionIntent.createFresh,
+    String? tmuxSessionName,
   }) {
     final terminal = Terminal(maxLines: 1500);
     final bridge = TerminalSessionBridge(
       terminal: terminal,
       sshClient: sshClient,
       serverName: serverName,
-      // serverId + terminalId 决定 tmux 会话名。不传的话所有标签页
-      // 都会落到同一个会话上，第二个标签页会直接接管第一个的会话。
       serverId: serverId,
-      terminalId: terminalId,
+      terminalId: targetKey == null ? terminalId : '${targetKey}_$terminalId',
       preferTmux: preferTmux,
+      sessionIntent: sessionIntent,
+      tmuxSessionName: tmuxSessionName,
     );
 
     return TerminalTab(
-      id: 'tab-${DateTime.now().millisecondsSinceEpoch}-${title.hashCode}',
+      id: terminalId,
       title: title,
       terminal: terminal,
       bridge: bridge,
@@ -258,42 +572,538 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
 
   void selectTab(int index) {
     if (index >= 0 && index < state.tabs.length) {
+      _current?.interactionEpoch++;
       state = state.copyWith(activeTabIndex: index);
+      _syncTmuxOffer();
+      final workspace = _current;
+      if (workspace != null) {
+        unawaited(_rememberTab(workspace, state.tabs[index]));
+      }
     }
   }
 
-  void addNewTab([String? customTitle]) {
-    final activeServer = ref.read(activeServerProvider);
-    final sshManager = ref.read(sshClientManagerProvider);
-    final serverName = activeServer?.name ?? 'localhost';
-    final sshClient = activeServer != null
-        ? sshManager.getClient(activeServer.id)
-        : null;
+  Future<void> addNewTab([String? customTitle]) async {
+    final workspace = _current;
+    if (workspace == null) return;
+    workspace.interactionEpoch++;
+    workspace.requested = true;
+    workspace.startupApplied = true;
+    try {
+      await _addFresh(workspace, customTitle);
+    } catch (error, stack) {
+      _report(workspace, 'TERMINAL_START_FAILED', error, stack);
+    }
+  }
 
-    final index = state.tabs.length + 1;
-    final title = customTitle ?? 'bash #$index';
+  Future<void> _addFresh(
+    _TerminalWorkspace workspace, [
+    String? customTitle,
+  ]) async {
+    if (!_isCurrent(workspace)) return;
+    final title = TerminalHistoryRecord.validateTitle(
+      customTitle ?? 'bash #${workspace.value.tabs.length + 1}',
+    );
     final tab = _createTab(
       title,
-      serverName: serverName,
-      serverId: activeServer?.id ?? '',
-      // 用「第几个标签页」而不是标题做 id：标题可以被用户改成一样，
-      // 那样两个标签页会共用一个 tmux 会话。
-      terminalId: '$index',
-      sshClient: sshClient,
-      // 开关只对之后新建的标签页生效；已在运行的标签页保持原有模式，
-      // 重建会清掉它们的回滚缓冲，还可能掐断远端的前台进程。
+      serverName: workspace.server.name,
+      serverId: workspace.server.id,
+      terminalId: _uuid.v4(),
+      targetKey: workspace.targetKey,
+      sshClient: _clientFor(workspace),
       preferTmux: ref.read(terminalSettingsProvider).useTmux,
     );
-    unawaited(
-      tab.bridge.start().then((_) {
-        if (ref.mounted) _syncTmuxOffer();
-      }),
-    );
+    workspace.startupApplied = true;
+    _appendTab(workspace, tab);
+    await _startTab(workspace, tab);
+  }
 
-    state = state.copyWith(
-      tabs: [...state.tabs, tab],
-      activeTabIndex: state.tabs.length,
+  void _appendTab(_TerminalWorkspace workspace, TerminalTab tab) {
+    _publish(
+      workspace,
+      workspace.value.copyWith(
+        tabs: [...workspace.value.tabs, tab],
+        activeTabIndex: workspace.value.tabs.length,
+        isInitialized: true,
+      ),
     );
+    void listener() {
+      if (!_valid(workspace)) return;
+      if (tab.bridge.state == TerminalConnectionState.connected) {
+        unawaited(_rememberTab(workspace, tab));
+      } else if (workspace.value.history.any((record) => record.id == tab.id)) {
+        _publish(
+          workspace,
+          workspace.value.copyWith(
+            noticeCode: tab.bridge.remoteSessionMissing
+                ? 'TERMINAL_SESSION_MISSING'
+                : null,
+            historyStatuses: {
+              ...workspace.value.historyStatuses,
+              tab.id: tab.bridge.remoteSessionMissing
+                  ? TerminalHistoryStatus.ended
+                  : TerminalHistoryStatus.unknown,
+            },
+          ),
+        );
+        if (tab.bridge.remoteSessionMissing &&
+            workspace.value.defaultHistoryId == tab.id) {
+          unawaited(
+            _saveHistory(
+              workspace,
+              (current) => current.defaultRecordId == tab.id
+                  ? TerminalHistorySnapshot(records: current.records)
+                  : current,
+            ).catchError((Object error, StackTrace stack) {
+              _report(workspace, 'TERMINAL_DEFAULT_SAVE_FAILED', error, stack);
+            }),
+          );
+        }
+      }
+    }
+
+    workspace.listeners[tab.id] = listener;
+    tab.bridge.stateListenable.addListener(listener);
+  }
+
+  Future<void> _startTab(_TerminalWorkspace workspace, TerminalTab tab) {
+    final pending = tab.bridge.start();
+    workspace.starting[tab.id] = pending;
+    return pending.whenComplete(() {
+      workspace.starting.remove(tab.id);
+      if (_isCurrent(workspace)) _syncTmuxOffer();
+    });
+  }
+
+  Future<void> _rememberTab(
+    _TerminalWorkspace workspace,
+    TerminalTab tab,
+  ) async {
+    final name = tab.bridge.activeTmuxSessionName;
+    if (!_valid(workspace) ||
+        name == null ||
+        tab.bridge.state != TerminalConnectionState.connected ||
+        !workspace.value.tabs.any((item) => item.id == tab.id)) {
+      return;
+    }
+    try {
+      await _saveHistory(workspace, (current) {
+        final liveTab = workspace.value.tabs
+            .where((item) => item.id == tab.id)
+            .firstOrNull;
+        final existing = current.records
+            .where((item) => item.id == tab.id)
+            .firstOrNull;
+        final now = DateTime.now().toUtc();
+        final record =
+            existing?.copyWith(lastUsedAt: now, isLegacy: false) ??
+            TerminalHistoryRecord(
+              id: tab.id,
+              serverId: workspace.server.id,
+              targetKey: workspace.targetKey,
+              remoteSessionName: name,
+              title: liveTab?.title ?? tab.title,
+              createdAt: now,
+              lastUsedAt: now,
+            );
+        return TerminalHistorySnapshot(
+          records: [
+            record,
+            ...current.records.where((item) => item.id != tab.id),
+          ],
+          defaultRecordId: current.defaultRecordId,
+        );
+      });
+      if (_valid(workspace) &&
+          workspace.value.tabs.any(
+            (item) =>
+                item.id == tab.id &&
+                item.bridge.state == TerminalConnectionState.connected,
+          )) {
+        _publish(
+          workspace,
+          workspace.value.copyWith(
+            historyStatuses: {
+              ...workspace.value.historyStatuses,
+              tab.id: TerminalHistoryStatus.open,
+            },
+          ),
+        );
+      }
+    } catch (error, stack) {
+      _report(workspace, 'TERMINAL_HISTORY_SAVE_FAILED', error, stack);
+    }
+  }
+
+  Future<void> refreshHistory() {
+    final workspace = _current;
+    if (workspace == null) return Future<void>.value();
+    if (workspace.refreshing case final Future<void> pending) return pending;
+    final pending = _refreshHistory(workspace);
+    workspace.refreshing = pending;
+    return pending.whenComplete(() => workspace.refreshing = null);
+  }
+
+  Future<void> _refreshHistory(_TerminalWorkspace workspace) async {
+    final client = _clientFor(workspace);
+    if (client == null) {
+      _publish(
+        workspace,
+        workspace.value.copyWith(
+          historyStatuses: {
+            for (final item in workspace.value.history)
+              item.id: TerminalHistoryStatus.unknown,
+          },
+          errorCode: 'SSH_DISCONNECTED',
+        ),
+      );
+      return;
+    }
+    final epoch = workspace.connectionEpoch;
+    _publish(
+      workspace,
+      workspace.value.copyWith(isHistoryLoading: true, clearError: true),
+    );
+    try {
+      final sessions = await TerminalSessionBridge.discoverTmuxSessions(
+        client,
+        serverId: workspace.server.id,
+      );
+      if (!_isCurrent(workspace) || epoch != workspace.connectionEpoch) return;
+      final allowLegacy = await ref
+          .read(localStorageServiceProvider)
+          .claimLegacyTerminalTarget(workspace.server.id, workspace.targetKey);
+      if (!_isCurrent(workspace) ||
+          epoch != workspace.connectionEpoch ||
+          !identical(client, _clientFor(workspace))) {
+        return;
+      }
+      final names = sessions.map((session) => session.name).toSet();
+      final records = [
+        ...workspace.value.history.where(
+          (record) =>
+              !record.isLegacy || names.contains(record.remoteSessionName),
+        ),
+      ];
+      final known = records.map((record) => record.remoteSessionName).toSet();
+      final legacyPrefix = TmuxSessionPlanner.sessionName(
+        workspace.server.id,
+        '',
+      );
+      final scopedPrefix = '$legacyPrefix${workspace.targetKey}_';
+      for (final session in sessions) {
+        if (known.contains(session.name)) continue;
+        final scopedId = session.name.startsWith(scopedPrefix)
+            ? session.name.substring(scopedPrefix.length)
+            : null;
+        final scoped =
+            scopedId != null &&
+            RegExp(
+              r'^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$',
+            ).hasMatch(scopedId);
+        final legacyId = session.name.startsWith(legacyPrefix)
+            ? session.name.substring(legacyPrefix.length)
+            : '';
+        final legacy =
+            allowLegacy &&
+            RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(workspace.server.id) &&
+            RegExp(r'^\d{1,12}$').hasMatch(legacyId);
+        if (scoped || legacy) {
+          records.add(
+            TerminalHistoryRecord(
+              id: scoped
+                  ? scopedId
+                  : 'legacy-${workspace.targetKey}-${session.name}',
+              serverId: workspace.server.id,
+              targetKey: workspace.targetKey,
+              remoteSessionName: session.name,
+              title: scoped ? 'bash' : 'bash #$legacyId',
+              createdAt: session.createdAt,
+              lastUsedAt: session.createdAt,
+              isLegacy: true,
+            ),
+          );
+        }
+      }
+      records.sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
+      _publish(
+        workspace,
+        workspace.value.copyWith(
+          history: List.unmodifiable(records),
+          historyStatuses: {
+            for (final record in records)
+              record.id: !names.contains(record.remoteSessionName)
+                  ? TerminalHistoryStatus.ended
+                  : workspace.value.tabs.any(
+                      (tab) =>
+                          tab.id == record.id &&
+                          tab.bridge.state == TerminalConnectionState.connected,
+                    )
+                  ? TerminalHistoryStatus.open
+                  : TerminalHistoryStatus.available,
+          },
+        ),
+      );
+    } catch (error, stack) {
+      if (_isCurrent(workspace) && epoch == workspace.connectionEpoch) {
+        _publish(
+          workspace,
+          workspace.value.copyWith(
+            historyStatuses: {
+              for (final record in workspace.value.history)
+                record.id: TerminalHistoryStatus.unknown,
+            },
+          ),
+        );
+        _report(workspace, 'TERMINAL_HISTORY_REFRESH_FAILED', error, stack);
+      }
+    } finally {
+      if (_valid(workspace)) {
+        _publish(workspace, workspace.value.copyWith(isHistoryLoading: false));
+      }
+    }
+  }
+
+  Future<void> restoreHistory(String id) async {
+    final workspace = _current;
+    if (workspace == null) return;
+    final record = workspace.value.history
+        .where((item) => item.id == id)
+        .firstOrNull;
+    if (record == null) return;
+    workspace.interactionEpoch++;
+    workspace.requested = true;
+    try {
+      await _restore(workspace, record);
+    } catch (error, stack) {
+      _report(workspace, 'TERMINAL_RESTORE_FAILED', error, stack);
+    }
+  }
+
+  Future<void> _restore(
+    _TerminalWorkspace workspace,
+    TerminalHistoryRecord record, {
+    bool isStartup = false,
+  }) async {
+    if (!_isCurrent(workspace) ||
+        record.targetKey != workspace.targetKey ||
+        record.serverId != workspace.server.id) {
+      return;
+    }
+    final openIndex = workspace.value.tabs.indexWhere(
+      (tab) => tab.id == record.id,
+    );
+    if (openIndex >= 0) {
+      selectTab(openIndex);
+      final tab = workspace.value.tabs[openIndex];
+      if (tab.bridge.state != TerminalConnectionState.connected) {
+        await _retryHistoryTab(workspace, tab, record);
+      }
+      return;
+    }
+    final client = _clientFor(workspace);
+    if (client == null) throw StateError('SSH_DISCONNECTED');
+    final epoch = workspace.connectionEpoch;
+    final exists = await TerminalSessionBridge.tmuxSessionExists(
+      client,
+      record.remoteSessionName,
+    );
+    if (!_isCurrent(workspace) ||
+        epoch != workspace.connectionEpoch ||
+        !identical(client, _clientFor(workspace))) {
+      return;
+    }
+    if (!exists) {
+      await _handleMissing(workspace, record, isStartup: isStartup);
+      return;
+    }
+    // A concurrent click may already have opened this record during discovery.
+    final alreadyOpen = workspace.value.tabs.indexWhere(
+      (tab) => tab.id == record.id,
+    );
+    if (alreadyOpen >= 0) {
+      selectTab(alreadyOpen);
+      return;
+    }
+    if (isStartup && workspace.value.tabs.isNotEmpty) return;
+    final tab = _createTab(
+      record.title,
+      serverName: workspace.server.name,
+      serverId: workspace.server.id,
+      terminalId: record.id,
+      sshClient: client,
+      preferTmux: true,
+      sessionIntent: TerminalSessionIntent.restoreExisting,
+      tmuxSessionName: record.remoteSessionName,
+    );
+    workspace.startupApplied = true;
+    _appendTab(workspace, tab);
+    await _startTab(workspace, tab);
+    if (!_isCurrent(workspace)) return;
+    if (tab.bridge.remoteSessionMissing) {
+      // The process can exit between the read-only existence check and attach.
+      _removeTab(workspace, tab.id);
+      await _handleMissing(workspace, record, isStartup: isStartup);
+    } else if (tab.bridge.state != TerminalConnectionState.connected) {
+      _publish(
+        workspace,
+        workspace.value.copyWith(errorCode: 'TERMINAL_RESTORE_FAILED'),
+      );
+    }
+  }
+
+  Future<void> _handleMissing(
+    _TerminalWorkspace workspace,
+    TerminalHistoryRecord record, {
+    required bool isStartup,
+  }) async {
+    if (!_valid(workspace)) return;
+    _publish(
+      workspace,
+      workspace.value.copyWith(
+        historyStatuses: {
+          ...workspace.value.historyStatuses,
+          record.id: TerminalHistoryStatus.ended,
+        },
+        noticeCode: isStartup
+            ? 'TERMINAL_DEFAULT_MISSING'
+            : 'TERMINAL_SESSION_MISSING',
+      ),
+    );
+    if (workspace.value.defaultHistoryId == record.id) {
+      await _saveHistory(
+        workspace,
+        (current) => current.defaultRecordId == record.id
+            ? TerminalHistorySnapshot(records: current.records)
+            : current,
+      );
+    }
+    if (isStartup && _isCurrent(workspace) && workspace.value.tabs.isEmpty) {
+      await _addFresh(workspace);
+    }
+  }
+
+  Future<void> _retryHistoryTab(
+    _TerminalWorkspace workspace,
+    TerminalTab tab,
+    TerminalHistoryRecord record,
+  ) async {
+    if (workspace.starting[tab.id] case final Future<void> pending) {
+      await pending;
+      return;
+    }
+    final client = _clientFor(workspace);
+    if (client == null) throw StateError('SSH_DISCONNECTED');
+    final pending = tab.bridge.rebind(client);
+    workspace.starting[tab.id] = pending;
+    await pending.whenComplete(() => workspace.starting.remove(tab.id));
+    if (!_isCurrent(workspace)) return;
+    if (tab.bridge.remoteSessionMissing) {
+      await _handleMissing(workspace, record, isStartup: false);
+    } else if (tab.bridge.state != TerminalConnectionState.connected) {
+      _publish(
+        workspace,
+        workspace.value.copyWith(errorCode: 'TERMINAL_RESTORE_FAILED'),
+      );
+    } else {
+      _publish(workspace, workspace.value.copyWith(clearError: true));
+    }
+  }
+
+  Future<void> setDefaultHistory(String? id) async {
+    final workspace = _current;
+    if (workspace == null) return;
+    try {
+      await _saveHistory(workspace, (current) {
+        if (id != null) {
+          final record = current.records
+              .where((item) => item.id == id)
+              .firstOrNull;
+          if (record == null ||
+              workspace.value.historyStatuses[id] ==
+                  TerminalHistoryStatus.ended) {
+            throw StateError('TERMINAL_SESSION_MISSING');
+          }
+          if (record.isLegacy &&
+              workspace.value.historyStatuses[id] !=
+                  TerminalHistoryStatus.available &&
+              workspace.value.historyStatuses[id] !=
+                  TerminalHistoryStatus.open) {
+            throw StateError('TERMINAL_HISTORY_UNVERIFIED');
+          }
+        }
+        return TerminalHistorySnapshot(
+          records: [
+            for (final record in current.records)
+              record.id == id ? record.copyWith(isLegacy: false) : record,
+          ],
+          defaultRecordId: id,
+        );
+      });
+      if (_valid(workspace) &&
+          id != null &&
+          workspace.value.defaultHistoryId == id &&
+          workspace.value.historyStatuses[id] == TerminalHistoryStatus.ended) {
+        final record = workspace.value.history
+            .where((item) => item.id == id)
+            .first;
+        await _handleMissing(workspace, record, isStartup: false);
+        throw StateError('TERMINAL_SESSION_MISSING');
+      }
+    } catch (error, stack) {
+      _report(workspace, 'TERMINAL_DEFAULT_SAVE_FAILED', error, stack);
+      rethrow;
+    }
+  }
+
+  Future<void> renameTab(String id, String title) async {
+    final workspace = _current;
+    if (workspace == null) return;
+    final validTitle = TerminalHistoryRecord.validateTitle(title);
+    if (!workspace.value.tabs.any((tab) => tab.id == id)) return;
+    await workspace.saveTail;
+    if (!_isCurrent(workspace)) return;
+    if (workspace.value.history.any((record) => record.id == id)) {
+      await renameHistory(id, validTitle);
+      return;
+    }
+    if (workspace.value.tabs.any(
+      (tab) => tab.id == id && tab.bridge.activeTmuxSessionName != null,
+    )) {
+      throw StateError('TERMINAL_HISTORY_SAVE_FAILED');
+    }
+    _publish(
+      workspace,
+      workspace.value.copyWith(
+        tabs: [
+          for (final tab in workspace.value.tabs)
+            tab.id == id ? tab.withTitle(validTitle) : tab,
+        ],
+      ),
+    );
+  }
+
+  Future<void> renameHistory(String id, String title) async {
+    final workspace = _current;
+    if (workspace == null) return;
+    final validTitle = TerminalHistoryRecord.validateTitle(title);
+    if (!workspace.value.history.any((record) => record.id == id)) return;
+    try {
+      await _saveHistory(
+        workspace,
+        (current) => TerminalHistorySnapshot(
+          records: [
+            for (final record in current.records)
+              record.id == id
+                  ? record.copyWith(title: validTitle, isLegacy: false)
+                  : record,
+          ],
+          defaultRecordId: current.defaultRecordId,
+        ),
+      );
+    } catch (error, stack) {
+      _report(workspace, 'TERMINAL_HISTORY_SAVE_FAILED', error, stack);
+      rethrow;
+    }
   }
 
   /// 新建一个 Mosh 会话标签页。
@@ -302,6 +1112,11 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
   /// SSH 标签页。bootstrap 参数取当前激活服务器的 Mosh 配置；缺省字段
   /// 落到 MoshBootstrapRequest 的内置默认 (`mosh-server` / `60000:61000`)。
   void addMoshTab([String? sessionTag]) {
+    final workspace = _current;
+    if (workspace == null) return;
+    workspace.interactionEpoch++;
+    workspace.requested = true;
+    workspace.startupApplied = true;
     final activeServer = ref.read(activeServerProvider);
     final index = state.tabs.length + 1;
     final tag = sessionTag ?? 'mosh';
@@ -325,21 +1140,17 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       serverId: activeServer?.id ?? '',
     );
     final tab = TerminalTab(
-      id: 'tab-${DateTime.now().millisecondsSinceEpoch}-mosh-$index',
+      id: _uuid.v4(),
       title: 'bash #$index ($tag)',
       terminal: terminal,
       bridge: bridge,
     );
 
+    _appendTab(workspace, tab);
     unawaited(
-      tab.bridge.start().then((_) {
-        if (ref.mounted) _syncTmuxOffer();
+      _startTab(workspace, tab).catchError((Object error, StackTrace stack) {
+        _report(workspace, 'TERMINAL_START_FAILED', error, stack);
       }),
-    );
-
-    state = state.copyWith(
-      tabs: [...state.tabs, tab],
-      activeTabIndex: state.tabs.length,
     );
   }
 
@@ -347,26 +1158,48 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     if (state.tabs.length <= 1 || index < 0 || index >= state.tabs.length) {
       return; // 保留至少一个 Tab
     }
-    final tabToClose = state.tabs[index];
+    final workspace = _current;
+    workspace?.interactionEpoch++;
+    if (workspace != null) _removeTab(workspace, state.tabs[index].id);
+  }
+
+  void _removeTab(_TerminalWorkspace workspace, String id) {
+    final index = workspace.value.tabs.indexWhere((tab) => tab.id == id);
+    if (index < 0) return;
+    final tabToClose = workspace.value.tabs[index];
+    final listener = workspace.listeners.remove(id);
+    if (listener != null) {
+      tabToClose.bridge.stateListenable.removeListener(listener);
+    }
     tabToClose.bridge.dispose();
 
-    final newTabs = [...state.tabs]..removeAt(index);
-    final activeClosed = index == state.activeTabIndex;
+    final newTabs = [...workspace.value.tabs]..removeAt(index);
+    final activeClosed = index == workspace.value.activeTabIndex;
     final int newActive;
-    if (index < state.activeTabIndex) {
-      newActive = state.activeTabIndex - 1;
-    } else if (state.activeTabIndex >= newTabs.length) {
-      newActive = newTabs.length - 1;
+    if (index < workspace.value.activeTabIndex) {
+      newActive = workspace.value.activeTabIndex - 1;
+    } else if (workspace.value.activeTabIndex >= newTabs.length) {
+      newActive = newTabs.isEmpty ? 0 : newTabs.length - 1;
     } else {
-      newActive = state.activeTabIndex;
+      newActive = workspace.value.activeTabIndex;
     }
 
-    state = state.copyWith(
-      tabs: newTabs,
-      activeTabIndex: newActive,
-      clearTmuxInstallOffer: activeClosed,
+    _publish(
+      workspace,
+      workspace.value.copyWith(
+        tabs: newTabs,
+        activeTabIndex: newActive,
+        clearTmuxInstallOffer: activeClosed,
+        historyStatuses: {
+          ...workspace.value.historyStatuses,
+          if (workspace.value.history.any((record) => record.id == id))
+            id: tabToClose.bridge.remoteSessionMissing
+                ? TerminalHistoryStatus.ended
+                : TerminalHistoryStatus.unknown,
+        },
+      ),
     );
-    if (activeClosed) _syncTmuxOffer();
+    if (activeClosed && _isCurrent(workspace)) _syncTmuxOffer();
   }
 
   void toggleCtrl() {
@@ -400,9 +1233,43 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
   }
 
   void sendCommand(String cmd) {
-    final activeTab = state.activeTab;
-    if (activeTab != null) {
-      activeTab.bridge.sendCommand(cmd);
+    final workspace = _current;
+    if (workspace == null) return;
+    unawaited(_sendCommand(workspace, cmd));
+  }
+
+  Future<void> _sendCommand(
+    _TerminalWorkspace workspace,
+    String command,
+  ) async {
+    final client = _clientFor(workspace);
+    final epoch = workspace.connectionEpoch;
+    final interactionEpoch = workspace.interactionEpoch;
+    try {
+      if (client == null) throw StateError('SSH_DISCONNECTED');
+      await ensureInitialized();
+      if (!_isCurrent(workspace) ||
+          epoch != workspace.connectionEpoch ||
+          interactionEpoch != workspace.interactionEpoch ||
+          !identical(client, _clientFor(workspace))) {
+        return;
+      }
+      final tab = workspace.value.activeTab;
+      if (tab == null) throw StateError('TERMINAL_NOT_READY');
+      await workspace.starting[tab.id];
+      if (!_isCurrent(workspace) ||
+          epoch != workspace.connectionEpoch ||
+          interactionEpoch != workspace.interactionEpoch ||
+          !identical(client, _clientFor(workspace)) ||
+          workspace.value.activeTab?.id != tab.id) {
+        return;
+      }
+      if (tab.bridge.state != TerminalConnectionState.connected) {
+        throw StateError('TERMINAL_NOT_READY');
+      }
+      tab.bridge.sendCommand(command);
+    } catch (error, stack) {
+      _report(workspace, 'TERMINAL_COMMAND_FAILED', error, stack);
     }
   }
 
@@ -425,18 +1292,72 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
   /// 所以这里不需要（也不应该）重建 [Terminal] 实例 —— 重建会把
   /// 回滚缓冲全部丢掉，用户就看不到断线前的输出了。
   Future<void> rebindAfterReconnect() async {
-    final activeServer = ref.read(activeServerProvider);
-    if (activeServer == null) return;
+    final workspace = _current;
+    if (workspace == null || !workspace.requested) return;
+    if (workspace.rebinding case final Future<void> pending) {
+      final requestedClient = _clientFor(workspace);
+      await pending;
+      if (_isCurrent(workspace) &&
+          requestedClient != null &&
+          identical(requestedClient, _clientFor(workspace)) &&
+          workspace.value.tabs.any(
+            (tab) =>
+                tab.bridge is! MoshBridgeAdapter &&
+                !identical(tab.bridge.sshClient, requestedClient),
+          )) {
+        await rebindAfterReconnect();
+      }
+      return;
+    }
+    final pending = _rebindWorkspace(workspace).catchError((
+      Object error,
+      StackTrace stack,
+    ) {
+      _report(workspace, 'TERMINAL_RESTORE_FAILED', error, stack);
+    });
+    workspace.rebinding = pending;
+    await pending.whenComplete(() => workspace.rebinding = null);
+  }
 
-    final sshManager = ref.read(sshClientManagerProvider);
-    final sshClient = sshManager.getClient(activeServer.id);
-    if (sshClient == null) return;
-
-    await rebindTabsAfterReconnect(state.tabs, sshClient);
-
-    // 重连会重新走一遍 tmux 决策，awaitingTmuxDecision 可能从 false 变 true
-    // （或反之）。不同步的话弹窗会滞留或该出现时不出现。
-    _syncTmuxOffer();
+  Future<void> _rebindWorkspace(_TerminalWorkspace workspace) async {
+    final client = _clientFor(workspace);
+    if (client == null) return;
+    if (workspace.value.tabs.isEmpty) {
+      await ensureInitialized();
+      return;
+    }
+    final epoch = workspace.connectionEpoch;
+    for (final tab in List.of(workspace.value.tabs)) {
+      if (!_isCurrent(workspace) ||
+          epoch != workspace.connectionEpoch ||
+          !identical(client, _clientFor(workspace))) {
+        return;
+      }
+      if (!workspace.value.tabs.any((item) => item.id == tab.id)) continue;
+      try {
+        await workspace.starting[tab.id];
+      } catch (error, stack) {
+        _report(workspace, 'TERMINAL_RESTORE_FAILED', error, stack);
+        continue;
+      }
+      if (!_isCurrent(workspace) || epoch != workspace.connectionEpoch) return;
+      await rebindTabsAfterReconnect([tab], client);
+      if (!_isCurrent(workspace) || epoch != workspace.connectionEpoch) return;
+      if (tab.bridge.plainSessionInterrupted) {
+        _publish(
+          workspace,
+          workspace.value.copyWith(noticeCode: 'TERMINAL_PLAIN_INTERRUPTED'),
+        );
+      } else if (tab.bridge.remoteSessionMissing) {
+        final record = workspace.value.history
+            .where((item) => item.id == tab.id)
+            .firstOrNull;
+        if (record != null) {
+          await _handleMissing(workspace, record, isStartup: false);
+        }
+      }
+    }
+    if (_isCurrent(workspace)) _syncTmuxOffer();
   }
 }
 

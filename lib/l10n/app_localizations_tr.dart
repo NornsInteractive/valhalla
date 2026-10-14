@@ -5473,4 +5473,109 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       'Önceki kaynak kaydı yalnızca kısmen kalıcı oldu. Lütfen göz atmadan önce kimlik bilgilerini yeniden girin ve başarıyla kaydedin.';
+
+  @override
+  String get terminalHistoryTitle => 'Oturum Geçmişi';
+
+  @override
+  String get terminalHistoryButton => 'Oturum Geçmişi';
+
+  @override
+  String get terminalHistoryEmpty =>
+      'Oturum geçmişi yok. Kalıcı oturumlar uzak sunucuda tmux gerektirir.';
+
+  @override
+  String get terminalHistoryRefresh => 'Geçmişi Yenile';
+
+  @override
+  String get terminalStartupSession => 'Başlangıç Oturumu';
+
+  @override
+  String get terminalStartupSessionSubtitle =>
+      'Terminal başlatıldığında hangi oturumun açılacağını seçin';
+
+  @override
+  String get terminalStartupSessionFresh => 'Yeni Oturum (Varsayılan)';
+
+  @override
+  String get terminalStatusOpen => 'Açık';
+
+  @override
+  String get terminalStatusAvailable => 'Kullanılabilir';
+
+  @override
+  String get terminalStatusEnded => 'Sonlandı';
+
+  @override
+  String get terminalStatusOffline => 'Çevrimdışı';
+
+  @override
+  String get terminalDefaultBadge => 'Varsayılan';
+
+  @override
+  String get terminalLegacyBadge => 'İçe aktarılmadı';
+
+  @override
+  String get terminalRestoreSession => 'Oturumu Geri Yükle';
+
+  @override
+  String get terminalSetDefault => 'Varsayılan Yap';
+
+  @override
+  String get terminalClearDefault => 'Varsayılanı Temizle';
+
+  @override
+  String get terminalRename => 'Oturumu Yeniden Adlandır';
+
+  @override
+  String get terminalRenameDialogTitle => 'Oturumu Yeniden Adlandır';
+
+  @override
+  String get terminalRenameInputLabel => 'Oturum Adı';
+
+  @override
+  String get terminalTitleInvalid =>
+      'Başlık kontrol karakterleri olmadan 1 ile 64 karakter arasında olmalıdır';
+
+  @override
+  String get terminalErrorHistoryLoadFailed => 'Terminal geçmişi yüklenemedi';
+
+  @override
+  String get terminalErrorHistorySaveFailed => 'Terminal geçmişi kaydedilemedi';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed =>
+      'Terminal geçmişi yenilenemedi';
+
+  @override
+  String get terminalErrorStartFailed => 'Terminal oturumu başlatılamadı';
+
+  @override
+  String get terminalErrorRestoreFailed => 'Terminal oturumu geri yüklenemedi';
+
+  @override
+  String get terminalErrorDefaultSaveFailed =>
+      'Varsayılan başlangıç oturumu kaydedilemedi';
+
+  @override
+  String get terminalErrorCommandFailed => 'Terminal komutu yürütülemedi';
+
+  @override
+  String get terminalErrorTitleInvalid =>
+      'Geçersiz oturum başlığı (1–64 karakter gerekli)';
+
+  @override
+  String get terminalErrorSshDisconnected => 'SSH bağlantısı kesildi';
+
+  @override
+  String get terminalNoticeDefaultMissing =>
+      'Varsayılan başlangıç oturumu eksikti veya sonlandı; yeni terminal açıldı';
+
+  @override
+  String get terminalNoticeSessionMissing =>
+      'İstenen tmux oturumu uzak sunucuda artık mevcut değil';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      'Bağlantı kesildi. tmux dışı kabuk işlemleri sürdürülemedi';
 }

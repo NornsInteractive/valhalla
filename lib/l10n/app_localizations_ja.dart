@@ -5263,4 +5263,103 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       '以前のソース保存が一部しか永続化されていません。資格情報を再入力して正常に保存してから参照してください。';
+
+  @override
+  String get terminalHistoryTitle => 'セッション履歴';
+
+  @override
+  String get terminalHistoryButton => 'セッション履歴';
+
+  @override
+  String get terminalHistoryEmpty =>
+      'セッション履歴がありません。永続セッションにはリモートサーバーでの tmux が必要です。';
+
+  @override
+  String get terminalHistoryRefresh => '履歴を更新';
+
+  @override
+  String get terminalStartupSession => '起動セッション';
+
+  @override
+  String get terminalStartupSessionSubtitle => 'ターミナル起動時に開くセッションを選択';
+
+  @override
+  String get terminalStartupSessionFresh => '新規セッション（デフォルト）';
+
+  @override
+  String get terminalStatusOpen => 'オープン中';
+
+  @override
+  String get terminalStatusAvailable => '利用可能';
+
+  @override
+  String get terminalStatusEnded => '終了済み';
+
+  @override
+  String get terminalStatusOffline => 'オフライン';
+
+  @override
+  String get terminalDefaultBadge => 'デフォルト';
+
+  @override
+  String get terminalLegacyBadge => '未インポート';
+
+  @override
+  String get terminalRestoreSession => 'セッションを復元';
+
+  @override
+  String get terminalSetDefault => 'デフォルトに設定';
+
+  @override
+  String get terminalClearDefault => 'デフォルトを解除';
+
+  @override
+  String get terminalRename => 'セッション名を変更';
+
+  @override
+  String get terminalRenameDialogTitle => 'セッション名を変更';
+
+  @override
+  String get terminalRenameInputLabel => 'セッション名';
+
+  @override
+  String get terminalTitleInvalid => 'タイトルは制御文字を除く1〜64文字である必要があります';
+
+  @override
+  String get terminalErrorHistoryLoadFailed => 'ターミナル履歴の読み込みに失敗しました';
+
+  @override
+  String get terminalErrorHistorySaveFailed => 'ターミナル履歴の保存に失敗しました';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed => 'ターミナル履歴の更新に失敗しました';
+
+  @override
+  String get terminalErrorStartFailed => 'ターミナルセッションの開始に失敗しました';
+
+  @override
+  String get terminalErrorRestoreFailed => 'ターミナルセッションの復元に失敗しました';
+
+  @override
+  String get terminalErrorDefaultSaveFailed => 'デフォルト起動セッションの保存に失敗しました';
+
+  @override
+  String get terminalErrorCommandFailed => 'ターミナルコマンドの実行に失敗しました';
+
+  @override
+  String get terminalErrorTitleInvalid => '無効なセッションタイトル（1〜64文字が必要）';
+
+  @override
+  String get terminalErrorSshDisconnected => 'SSH 接続が切断されました';
+
+  @override
+  String get terminalNoticeDefaultMissing =>
+      'デフォルト起動セッションが見つからないか終了していたため、新しいターミナルを開きました';
+
+  @override
+  String get terminalNoticeSessionMissing => '要求された tmux セッションはリモートサーバーに存在しません';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      '接続が切断されました。非 tmux シェルプロセスは再開できませんでした';
 }

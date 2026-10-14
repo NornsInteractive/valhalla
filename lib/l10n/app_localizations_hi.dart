@@ -5469,4 +5469,112 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       'पिछला स्रोत सहेजना केवल आंशिक रूप से सहेजा गया था। कृपया ब्राउज़ करने से पहले क्रेडेंशियल पुनः दर्ज करें और सफलतापूर्वक सहेजें।';
+
+  @override
+  String get terminalHistoryTitle => 'सत्र इतिहास';
+
+  @override
+  String get terminalHistoryButton => 'सत्र इतिहास';
+
+  @override
+  String get terminalHistoryEmpty =>
+      'कोई सत्र इतिहास नहीं। स्थायी सत्रों के लिए रिमोट सर्वर पर tmux आवश्यक है।';
+
+  @override
+  String get terminalHistoryRefresh => 'इतिहास रीफ्रेश करें';
+
+  @override
+  String get terminalStartupSession => 'स्टार्टअप सत्र';
+
+  @override
+  String get terminalStartupSessionSubtitle =>
+      'टर्मिनल लॉन्च करते समय खुलने वाला सत्र चुनें';
+
+  @override
+  String get terminalStartupSessionFresh => 'नया सत्र (डिफ़ॉल्ट)';
+
+  @override
+  String get terminalStatusOpen => 'खुला है';
+
+  @override
+  String get terminalStatusAvailable => 'उपलब्ध';
+
+  @override
+  String get terminalStatusEnded => 'समाप्त';
+
+  @override
+  String get terminalStatusOffline => 'ऑफ़लाइन';
+
+  @override
+  String get terminalDefaultBadge => 'डिफ़ॉल्ट';
+
+  @override
+  String get terminalLegacyBadge => 'आयात नहीं किया गया';
+
+  @override
+  String get terminalRestoreSession => 'सत्र पुनर्स्थापित करें';
+
+  @override
+  String get terminalSetDefault => 'डिफ़ॉल्ट के रूप में सेट करें';
+
+  @override
+  String get terminalClearDefault => 'डिफ़ॉल्ट हटाएं';
+
+  @override
+  String get terminalRename => 'सत्र का नाम बदलें';
+
+  @override
+  String get terminalRenameDialogTitle => 'सत्र का नाम बदलें';
+
+  @override
+  String get terminalRenameInputLabel => 'सत्र का नाम';
+
+  @override
+  String get terminalTitleInvalid =>
+      'शीर्षक नियंत्रण वर्णों के बिना 1 से 64 वर्णों का होना चाहिए';
+
+  @override
+  String get terminalErrorHistoryLoadFailed =>
+      'टर्मिनल इतिहास लोड करने में विफल';
+
+  @override
+  String get terminalErrorHistorySaveFailed => 'टर्मिनल इतिहास सहेजने में विफल';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed =>
+      'टर्मिनल इतिहास रीफ्रेश करने में विफल';
+
+  @override
+  String get terminalErrorStartFailed => 'टर्मिनल सत्र प्रारंभ करने में विफल';
+
+  @override
+  String get terminalErrorRestoreFailed =>
+      'टर्मिनल सत्र पुनर्स्थापित करने में विफल';
+
+  @override
+  String get terminalErrorDefaultSaveFailed =>
+      'डिफ़ॉल्ट स्टार्टअप सत्र सहेजने में विफल';
+
+  @override
+  String get terminalErrorCommandFailed =>
+      'टर्मिनल कमांड निष्पादित करने में विफल';
+
+  @override
+  String get terminalErrorTitleInvalid =>
+      'अमान्य सत्र शीर्षक (1–64 वर्ण आवश्यक)';
+
+  @override
+  String get terminalErrorSshDisconnected => 'SSH कनेक्शन टूट गया';
+
+  @override
+  String get terminalNoticeDefaultMissing =>
+      'डिफ़ॉल्ट स्टार्टअप सत्र गायब या समाप्त हो गया था; इसके बजाय एक नया टर्मिनल खोला गया';
+
+  @override
+  String get terminalNoticeSessionMissing =>
+      'अनुरोधित tmux सत्र अब रिमोट सर्वर पर मौजूद नहीं है';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      'कनेक्शन टूट गया। गैर-tmux शेल प्रक्रियाओं को फिर से शुरू नहीं किया जा सका';
 }

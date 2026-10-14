@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:valhalla/app/theme.dart';
 import 'package:valhalla/core/providers/nas_provider.dart';
 import 'package:valhalla/core/services/nas_image_cache_service.dart';
 import 'package:valhalla/data/models/nas_media.dart';
 import 'package:valhalla/features/nas/widgets/nas_thumbnail_image.dart';
+import 'package:valhalla/features/nas/widgets/nas_mini_player.dart';
+import 'package:valhalla/l10n/app_localizations.dart';
+import '../support/acp_chat_widget_harness.dart' show loadRealTextFonts;
 
 class _FakeNasImageCacheService extends NasImageCacheService {
   final events = <String>[];
@@ -48,6 +52,122 @@ Widget _host(ProviderContainer container, Widget body) =>
     );
 
 void main() {
+  setUpAll(loadRealTextFonts);
+
+  testWidgets('mini player keeps its cover and controls at 320dp and 2x RTL', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final cache = _FakeNasImageCacheService();
+    final container = ProviderContainer(
+      overrides: [nasImageCacheProvider.overrideWithValue(cache)],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.buildTheme(
+            brightness: Brightness.dark,
+            seedColor: Colors.blue,
+          ),
+          locale: const Locale('ar'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: const TextScaler.linear(2),
+              disableAnimations: true,
+            ),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: NasMiniPlayer(
+              item: NasMediaItem(
+                serverId: 'audio-source',
+                path: '/music/An exceptionally long track name.mp3',
+                kind: NasMediaKind.audio,
+                sizeBytes: 1000,
+                modifiedEpoch: 100,
+              ),
+              isPlaying: true,
+              onPlayPause: () {},
+              onClose: () {},
+              onExpand: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(NasThumbnailImage), findsOneWidget);
+    for (final key in [
+      'nas_mini_player_play_pause',
+      'nas_mini_player_close',
+      'nas_mini_player_cast_button',
+    ]) {
+      expect(find.byKey(Key(key)).hitTestable(), findsOneWidget);
+    }
+  });
+
+  testWidgets(
+    'mini player updates real cover ownership without losing controls',
+    (tester) async {
+      final cache = _FakeNasImageCacheService();
+      final container = ProviderContainer(
+        overrides: [nasImageCacheProvider.overrideWithValue(cache)],
+      );
+      addTearDown(container.dispose);
+      await tester.binding.setSurfaceSize(const Size(390, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      var play = 0;
+      var close = 0;
+      var expand = 0;
+      Future<void> pumpTrack(String path) => tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: NasMiniPlayer(
+                item: NasMediaItem(
+                  serverId: 'audio-source',
+                  path: path,
+                  kind: NasMediaKind.audio,
+                  sizeBytes: 1000,
+                  modifiedEpoch: 100,
+                ),
+                isPlaying: false,
+                onPlayPause: () => play++,
+                onClose: () => close++,
+                onExpand: () => expand++,
+              ),
+            ),
+          ),
+        ),
+      );
+      await pumpTrack('/music/first.mp3');
+      await tester.pumpAndSettle();
+      expect(cache.thumbnailCalls.single.$1.path, '/music/first.mp3');
+      expect(find.byType(NasThumbnailImage), findsOneWidget);
+      await tester.tap(find.byKey(const Key('nas_mini_player_play_pause')));
+      await tester.tap(find.byKey(const Key('nas_mini_player_close')));
+      await tester.tap(find.byType(NasThumbnailImage));
+      expect((play, close, expand), (1, 1, 1));
+      await pumpTrack('/music/second.mp3');
+      await tester.pumpAndSettle();
+      expect(cache.thumbnailCalls, hasLength(2));
+      expect(cache.thumbnailCalls.last.$1.path, '/music/second.mp3');
+      expect(cache.releaseCalls.single.$1.path, '/music/first.mp3');
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(cache.releaseCalls.last.$1.path, '/music/second.mp3');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('unrelated rebuild does not start another thumbnail fetch', (
     tester,
   ) async {

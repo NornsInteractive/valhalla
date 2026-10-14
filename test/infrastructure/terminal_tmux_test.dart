@@ -7,6 +7,7 @@ import 'package:dartssh2/dartssh2.dart';
 // ignore: implementation_imports
 import 'package:dartssh2/src/ssh_channel.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:valhalla/core/errors/app_exceptions.dart';
 import 'package:valhalla/core/utils/tmux_install_planner.dart';
 import 'package:valhalla/core/utils/tmux_session_planner.dart';
 import 'package:valhalla/infrastructure/terminal/terminal_session_bridge.dart';
@@ -14,7 +15,13 @@ import 'package:xterm/xterm.dart';
 
 /// 假的 SSH 客户端，只实现 bridge 用到的方法。
 class _FakeSshClient implements SSHClient {
-  _FakeSshClient({this.tmuxPath, this.packageManager = 'none'});
+  _FakeSshClient({
+    this.tmuxPath,
+    this.packageManager = 'none',
+    this.hasTmuxSession = false,
+  });
+
+  bool hasTmuxSession;
 
   /// 非 null 时 `command -v tmux` 返回它；null 表示未安装（空输出）。
   String? tmuxPath;
@@ -25,6 +32,7 @@ class _FakeSshClient implements SSHClient {
   /// 记录 `run` 收到的命令。
   final List<String> runCommands = [];
   final List<String> executedCommands = [];
+  final List<String> queryCommands = [];
 
   /// 让探测抛错，验证降级路径。
   bool failDetect = false;
@@ -37,6 +45,11 @@ class _FakeSshClient implements SSHClient {
 
   /// 让 `execute`（tmux attach 路径）挂起，用来验证 PTY 分配预算。
   Completer<SSHSession>? gateExecute;
+
+  /// 可选的 SSH exec 响应脚本，用于 list/has tmux 查询断言。
+  ///
+  /// 参数是 execute 收到的完整命令（通常以 `LC_ALL=C` 开头）。
+  SSHSession Function(String command, SSHPtyConfig? pty)? executeFactory;
 
   /// 记录最后一次 shell 请求的 PTY 尺寸。
   int? lastPtyWidth;
@@ -84,10 +97,38 @@ class _FakeSshClient implements SSHClient {
     SSHX11Config? x11,
     Map<String, String>? environment,
   }) async {
+    if (pty == null) {
+      queryCommands.add(command);
+      if (command == 'LC_ALL=C ${TmuxSessionPlanner.detectCommand}') {
+        if (failDetect) throw StateError('detect failed');
+        return _FakeSshSession(
+          scriptedExitCode: tmuxPath == null ? 1 : 0,
+          scriptedStdout: utf8.encode(tmuxPath ?? ''),
+          completeDone: true,
+        );
+      }
+      if (executeFactory != null) return executeFactory!(command, pty);
+      if (command.contains('has-session')) {
+        return _FakeSshSession(
+          scriptedExitCode: hasTmuxSession ? 0 : 1,
+          scriptedStderr: hasTmuxSession
+              ? null
+              : utf8.encode('no server running on /tmp/tmux-1000/valhalla'),
+          completeDone: true,
+        );
+      }
+      throw StateError('Unexpected query: $command');
+    }
     executedCommands.add(command);
-    lastPtyWidth = pty?.width;
-    lastPtyHeight = pty?.height;
+    lastPtyWidth = pty.width;
+    lastPtyHeight = pty.height;
+    if (executeFactory != null) {
+      final session = executeFactory!(command, pty);
+      lastSession = session as _FakeSshSession;
+      return session;
+    }
     final session = _FakeSshSession();
+    if (command.contains('new-session')) hasTmuxSession = true;
     lastSession = session;
     return gateExecute == null ? session : await gateExecute!.future;
   }
@@ -105,14 +146,42 @@ class _ClosedSshClient extends _FakeSshClient {
 }
 
 class _FakeSshSession implements SSHSession {
+  _FakeSshSession({
+    this.scriptedExitCode = 0,
+    this.scriptedStdout,
+    this.scriptedStderr,
+    this.completeDone = false,
+  }) {
+    if (completeDone) {
+      Future.microtask(() {
+        if (scriptedStdout != null) {
+          _stdout.add(Uint8List.fromList(scriptedStdout!));
+        }
+        _stdout.close();
+        if (scriptedStderr != null) {
+          _stderr.add(Uint8List.fromList(scriptedStderr!));
+        }
+        _stderr.close();
+        _doneCompleter.complete();
+      });
+    }
+  }
+
+  final int scriptedExitCode;
+  final List<int>? scriptedStdout;
+  final List<int>? scriptedStderr;
+  final bool completeDone;
+
+  final Completer<void> _doneCompleter = Completer<void>();
+
   bool closed = false;
   bool destroyed = false;
   @override
   SSHChannel get channel => _FakeSshChannel(this);
   final sizes = <(int, int, int, int)>[];
   final _RecordingSink _stdin = _RecordingSink();
-  final _stdout = StreamController<Uint8List>();
-  final _stderr = StreamController<Uint8List>();
+  final StreamController<Uint8List> _stdout = StreamController<Uint8List>();
+  final StreamController<Uint8List> _stderr = StreamController<Uint8List>();
 
   /// 便于断言写入内容的访问器。
   _RecordingSink get sink => _stdin;
@@ -127,10 +196,10 @@ class _FakeSshSession implements SSHSession {
   Stream<Uint8List> get stderr => _stderr.stream;
 
   @override
-  Future<void> get done => Completer<void>().future;
+  Future<void> get done => _doneCompleter.future;
 
   @override
-  int? get exitCode => 0;
+  int? get exitCode => completeDone ? scriptedExitCode : 0;
 
   @override
   void close() {
@@ -302,7 +371,8 @@ void main() {
 
       expect(client.lastSession?.sink.text, isEmpty);
       expect(client.executedCommands.single, contains('-L valhalla'));
-      expect(client.executedCommands.single, contains('new-session -A'));
+      expect(client.executedCommands.single, contains('new-session -s'));
+      expect(client.executedCommands.single, isNot(contains(' -A')));
       expect(client.executedCommands.single, contains('valhalla_srv-1_tab-1'));
     });
 
@@ -449,7 +519,7 @@ void main() {
       expect(bridge.mode, TerminalSessionMode.plain);
     });
 
-    test('重建 bridge 后附着到同一个 tmux 会话（断线重连能接回内容）', () async {
+    test('只有显式恢复意图才能重建 bridge 并附着到旧会话', () async {
       // 这是 tmux 保活的真实契约：同一个 serverId + terminalId 必须生成
       // 同一个会话名，否则「重连」只会开出一个空的新会话。
       final client1 = _FakeSshClient(tmuxPath: '/usr/bin/tmux');
@@ -467,7 +537,10 @@ void main() {
       final firstCommand = client1.executedCommands.single;
 
       // 模拟断线后重建 bridge。
-      final client2 = _FakeSshClient(tmuxPath: '/usr/bin/tmux');
+      final client2 = _FakeSshClient(
+        tmuxPath: '/usr/bin/tmux',
+        hasTmuxSession: true,
+      );
       final second = TerminalSessionBridge(
         terminal: _terminal(),
         sshClient: client2,
@@ -475,14 +548,19 @@ void main() {
         serverId: 'srv-1',
         terminalId: 'tab-1',
         preferTmux: true,
+        sessionIntent: TerminalSessionIntent.restoreExisting,
       );
       addTearDown(second.dispose);
       await second.start();
       await Future<void>.delayed(Duration.zero);
       final secondCommand = client2.executedCommands.single;
 
-      expect(secondCommand, firstCommand, reason: '同名会话 + -A 才能 attach 回原来的内容');
-      expect(secondCommand, contains('-s valhalla_srv-1_tab-1'));
+      expect(firstCommand, contains('new-session -s'));
+      expect(
+        secondCommand,
+        contains("attach-session -t '=valhalla_srv-1_tab-1'"),
+      );
+      expect(secondCommand, isNot(contains('new-session')));
     });
 
     test('开关 ON 且缺 tmux：PTY 可用、状态 connected，绝不卡在 connecting', () async {
@@ -584,12 +662,19 @@ void main() {
       // 断线前的输出必须留着 —— 用户靠它看上下文。
       terminal.write('marker-before-drop');
 
-      final second = _FakeSshClient(tmuxPath: '/usr/bin/tmux');
+      final second = _FakeSshClient(
+        tmuxPath: '/usr/bin/tmux',
+        hasTmuxSession: true,
+      );
       await bridge.rebind(second);
       await Future<void>.delayed(Duration.zero);
 
       expect(bridge.mode, TerminalSessionMode.tmux);
-      expect(second.executedCommands.single, before, reason: '要 attach 回原会话');
+      expect(before, contains('new-session -s'));
+      expect(
+        second.executedCommands.single,
+        contains("attach-session -t '=valhalla_srv-1_tab-1'"),
+      );
       expect(bridge.sshClient, same(second), reason: '必须换成新的客户端');
       expect(
         terminal.buffer.getText(),
@@ -617,7 +702,8 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(bridge.mode, TerminalSessionMode.tmuxUnavailable);
-      expect(bridge.state, TerminalConnectionState.connected);
+      expect(bridge.state, TerminalConnectionState.disconnected);
+      expect(bridge.plainSessionInterrupted, isTrue);
       expect(bridge.awaitingTmuxDecision, isTrue);
     });
 
@@ -676,7 +762,10 @@ void main() {
       await bridge.start(initialWidth: 132, initialHeight: 43);
       await Future<void>.delayed(Duration.zero);
 
-      final client2 = _FakeSshClient(tmuxPath: '/usr/bin/tmux');
+      final client2 = _FakeSshClient(
+        tmuxPath: '/usr/bin/tmux',
+        hasTmuxSession: true,
+      );
       await bridge.rebind(client2);
       await Future<void>.delayed(Duration.zero);
 
@@ -751,16 +840,19 @@ void main() {
     test('rebind 路径同样受 PTY 分配预算约束', () async {
       final bridge = TerminalSessionBridge(
         terminal: _terminal(),
-        sshClient: _FakeSshClient(),
+        sshClient: _FakeSshClient(tmuxPath: '/usr/bin/tmux'),
         serverName: 'prod',
+        preferTmux: true,
         ptyAllocateTimeout: const Duration(milliseconds: 200),
       );
       addTearDown(bridge.dispose);
       await bridge.start();
       expect(bridge.state, TerminalConnectionState.connected);
 
-      // 模拟重连后拿到一个半开连接：shell() 永远不返回。
-      final zombie = _FakeSshClient()..gateShell = Completer<SSHSession>();
+      final zombie = _FakeSshClient(
+        tmuxPath: '/usr/bin/tmux',
+        hasTmuxSession: true,
+      )..gateExecute = Completer<SSHSession>();
       await bridge.rebind(zombie);
 
       expect(bridge.sshClient, same(zombie));
@@ -785,6 +877,427 @@ void main() {
 
       expect(bridge.state, TerminalConnectionState.error);
       expect(client.executedCommands, isNotEmpty, reason: '走到了 tmux attach');
+    });
+  });
+  group('TerminalSessionBridge tmux 静态查询', () {
+    test('discover 区分 tmux 服务器缺失与查询失败', () async {
+      final missingClient = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+        ..executeFactory = (command, _) {
+          if (command.contains('list-sessions')) {
+            return _FakeSshSession(
+              scriptedExitCode: 1,
+              scriptedStderr: utf8.encode(
+                'no server running on /tmp/tmux-1000/valhalla',
+              ),
+              completeDone: true,
+            );
+          }
+          return _FakeSshSession();
+        };
+      expect(
+        await TerminalSessionBridge.discoverTmuxSessions(
+          missingClient,
+          serverId: 'srv-1',
+        ),
+        isEmpty,
+      );
+
+      final queryErrorClient = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+        ..executeFactory = (command, _) {
+          if (command.contains('list-sessions')) {
+            return _FakeSshSession(
+              scriptedExitCode: 2,
+              scriptedStderr: utf8.encode('permission denied'),
+              completeDone: true,
+            );
+          }
+          return _FakeSshSession();
+        };
+      await expectLater(
+        TerminalSessionBridge.discoverTmuxSessions(
+          queryErrorClient,
+          serverId: 'srv-1',
+        ),
+        throwsA(isA<SSHConnectionException>()),
+      );
+    });
+
+    test('discover 解析 Valhalla 会话且拒绝坏响应', () async {
+      final client = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+        ..executeFactory = (command, _) {
+          if (command.contains('list-sessions')) {
+            final sessionName = TmuxSessionPlanner.sessionName(
+              'srv-1',
+              'tab-1',
+            );
+            return _FakeSshSession(
+              scriptedExitCode: 0,
+              scriptedStdout: utf8.encode(
+                '$sessionName\t1700000000\t1\n'
+                'main\t1700000000\t1\n',
+              ),
+              completeDone: true,
+            );
+          }
+          return _FakeSshSession();
+        };
+      final sessions = await TerminalSessionBridge.discoverTmuxSessions(
+        client,
+        serverId: 'srv-1',
+      );
+      expect(sessions, hasLength(1));
+      expect(
+        sessions.single.name,
+        TmuxSessionPlanner.sessionName('srv-1', 'tab-1'),
+      );
+
+      final malformed = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+        ..executeFactory = (command, _) {
+          if (command.contains('list-sessions')) {
+            return _FakeSshSession(
+              scriptedExitCode: 0,
+              scriptedStdout: utf8.encode(
+                'valhalla_srv-1_bad-line-without-tabs',
+              ),
+              completeDone: true,
+            );
+          }
+          return _FakeSshSession();
+        };
+      await expectLater(
+        TerminalSessionBridge.discoverTmuxSessions(
+          malformed,
+          serverId: 'srv-1',
+        ),
+        throwsA(isA<SSHConnectionException>()),
+      );
+    });
+
+    test('exists 区分缺失与查询失败', () async {
+      final name = TmuxSessionPlanner.sessionName('srv-1', 'tab-1');
+      final missing = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+        ..executeFactory = (command, _) {
+          if (command.contains('has-session')) {
+            return _FakeSshSession(
+              scriptedExitCode: 1,
+              scriptedStderr: utf8.encode("can't find session: =$name"),
+              completeDone: true,
+            );
+          }
+          return _FakeSshSession();
+        };
+      expect(
+        await TerminalSessionBridge.tmuxSessionExists(missing, name),
+        isFalse,
+      );
+
+      final failed = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+        ..executeFactory = (command, _) {
+          if (command.contains('has-session')) {
+            return _FakeSshSession(
+              scriptedExitCode: 2,
+              scriptedStderr: utf8.encode('transport closed'),
+              completeDone: true,
+            );
+          }
+          return _FakeSshSession();
+        };
+      await expectLater(
+        TerminalSessionBridge.tmuxSessionExists(failed, name),
+        throwsA(isA<SSHConnectionException>()),
+      );
+
+      final present = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+        ..executeFactory = (command, _) {
+          if (command.contains('has-session')) {
+            return _FakeSshSession(scriptedExitCode: 0, completeDone: true);
+          }
+          return _FakeSshSession();
+        };
+      expect(
+        await TerminalSessionBridge.tmuxSessionExists(present, name),
+        isTrue,
+      );
+    });
+  });
+
+  group('TerminalSessionBridge 恢复/碰撞/中断', () {
+    test('新建终端发现已有同名 tmux 会话时拒绝附着', () async {
+      final client = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+        ..executeFactory = (command, _) {
+          if (command.contains('has-session')) {
+            return _FakeSshSession(scriptedExitCode: 0, completeDone: true);
+          }
+          return _FakeSshSession();
+        };
+      final bridge = TerminalSessionBridge(
+        terminal: _terminal(),
+        sshClient: client,
+        serverName: 'prod',
+        serverId: 'srv-1',
+        terminalId: 'tab-1',
+        preferTmux: true,
+        sessionIntent: TerminalSessionIntent.createFresh,
+      );
+      addTearDown(bridge.dispose);
+
+      await bridge.start();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bridge.state, TerminalConnectionState.error);
+      expect(bridge.remoteSessionMissing, isFalse);
+      expect(bridge.lastError, isA<SSHConnectionException>());
+      expect(client.executedCommands, isNot(contains(contains('new-session'))));
+      expect(
+        client.executedCommands,
+        isNot(contains(contains('attach-session'))),
+      );
+      await bridge.rebind(client);
+      await bridge.start();
+      expect(
+        client.executedCommands,
+        isEmpty,
+        reason: 'A rejected create must never turn into attach on retry',
+      );
+    });
+
+    test(
+      'failed create process cannot attach an older session on retry',
+      () async {
+        final client = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+          ..executeFactory = (command, pty) => _FakeSshSession(
+            scriptedExitCode: 1,
+            scriptedStderr: utf8.encode(
+              pty == null
+                  ? 'no server running on /tmp/tmux-1000/valhalla'
+                  : 'duplicate session: valhalla_srv-1_tab-1',
+            ),
+            completeDone: true,
+          );
+        final bridge = TerminalSessionBridge(
+          terminal: _terminal(),
+          sshClient: client,
+          serverName: 'fixture',
+          serverId: 'srv-1',
+          terminalId: 'tab-1',
+          preferTmux: true,
+        );
+        addTearDown(bridge.dispose);
+        await bridge.start();
+        await Future<void>.delayed(Duration.zero);
+        expect(bridge.state, TerminalConnectionState.error);
+        expect(bridge.activeTmuxSessionName, isNull);
+        expect(bridge.lastError.toString(), contains('TMUX_CREATE_FAILED'));
+        final replacement = _FakeSshClient(
+          tmuxPath: '/usr/bin/tmux',
+          hasTmuxSession: true,
+        );
+        await bridge.rebind(replacement);
+        await bridge.start();
+        expect(replacement.executedCommands, isEmpty);
+        expect(replacement.queryCommands, isEmpty);
+      },
+    );
+
+    test(
+      'missing tmux executable during restore never becomes plain shell',
+      () async {
+        final client = _FakeSshClient();
+        final bridge = TerminalSessionBridge(
+          terminal: _terminal(),
+          sshClient: client,
+          serverName: 'fixture',
+          serverId: 'srv-1',
+          terminalId: 'tab-1',
+          sessionIntent: TerminalSessionIntent.restoreExisting,
+        );
+        addTearDown(bridge.dispose);
+        await bridge.start();
+        expect(bridge.state, TerminalConnectionState.error);
+        expect(bridge.remoteSessionMissing, isFalse);
+        expect(bridge.awaitingTmuxDecision, isFalse);
+        expect(client.lastSession, isNull);
+        expect(client.executedCommands, isEmpty);
+      },
+    );
+
+    test(
+      'rebind missing tmux keeps buffer but never recreates its identity',
+      () async {
+        final terminal = _terminal();
+        final bridge = TerminalSessionBridge(
+          terminal: terminal,
+          sshClient: _FakeSshClient(tmuxPath: '/usr/bin/tmux'),
+          serverName: 'fixture',
+          serverId: 'srv-1',
+          terminalId: 'tab-1',
+          preferTmux: true,
+        );
+        addTearDown(bridge.dispose);
+        await bridge.start();
+        terminal.write('preserved-before-loss');
+        final replacement = _FakeSshClient(tmuxPath: '/usr/bin/tmux');
+        await bridge.rebind(replacement);
+        expect(bridge.remoteSessionMissing, isTrue);
+        expect(bridge.state, TerminalConnectionState.error);
+        expect(terminal.buffer.getText(), contains('preserved-before-loss'));
+        expect(replacement.executedCommands, isEmpty);
+        expect(replacement.lastSession, isNull);
+      },
+    );
+
+    test('tmux rebind does not replay a launch command', () async {
+      final first = _FakeSshClient(tmuxPath: '/usr/bin/tmux');
+      final bridge = TerminalSessionBridge(
+        terminal: _terminal(),
+        sshClient: first,
+        serverName: 'fixture',
+        serverId: 'srv-1',
+        terminalId: 'tab-1',
+        preferTmux: true,
+        launchCommand: 'echo first',
+      );
+      addTearDown(bridge.dispose);
+      await bridge.start();
+      expect(first.lastSession!.sink.text, 'echo first\n');
+      final second = _FakeSshClient(
+        tmuxPath: '/usr/bin/tmux',
+        hasTmuxSession: true,
+      );
+      await bridge.rebind(second);
+      expect(bridge.state, TerminalConnectionState.connected);
+      expect(second.lastSession!.sink.text, isEmpty);
+    });
+
+    test('explicit exec stays plain without tmux discovery', () async {
+      final client = _FakeSshClient(tmuxPath: '/usr/bin/tmux');
+      final bridge = TerminalSessionBridge(
+        terminal: _terminal(),
+        sshClient: client,
+        serverName: 'fixture',
+        preferTmux: true,
+        remoteExecCommand: 'docker exec -it app /bin/sh',
+      );
+      addTearDown(bridge.dispose);
+      await bridge.start();
+      expect(bridge.mode, TerminalSessionMode.plain);
+      expect(client.runCommands, isEmpty);
+      expect(client.queryCommands, isEmpty);
+      expect(client.executedCommands.single, 'docker exec -it app /bin/sh');
+    });
+
+    test(
+      'late history probe after disposal cannot allocate a terminal',
+      () async {
+        final query = _FakeSshSession();
+        final client = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+          ..executeFactory = (_, _) => query;
+        final bridge = TerminalSessionBridge(
+          terminal: _terminal(),
+          sshClient: client,
+          serverName: 'fixture',
+          serverId: 'srv-1',
+          terminalId: 'tab-1',
+          sessionIntent: TerminalSessionIntent.restoreExisting,
+        );
+        final pending = bridge.start();
+        await Future<void>.delayed(Duration.zero);
+        bridge.dispose();
+        query._stdout.close();
+        query._stderr.close();
+        query._doneCompleter.complete();
+        await pending;
+        expect(client.executedCommands, isEmpty);
+        expect(query.destroyed, isTrue);
+      },
+    );
+
+    test('恢复历史时 tmux 会话缺失抛出 missing，不附着', () async {
+      final name = TmuxSessionPlanner.sessionName('srv-1', 'tab-1');
+      final client = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+        ..executeFactory = (command, _) {
+          if (command.contains('has-session')) {
+            return _FakeSshSession(
+              scriptedExitCode: 1,
+              scriptedStderr: utf8.encode("can't find session: =$name"),
+              completeDone: true,
+            );
+          }
+          return _FakeSshSession();
+        };
+      final bridge = TerminalSessionBridge(
+        terminal: _terminal(),
+        sshClient: client,
+        serverName: 'prod',
+        serverId: 'srv-1',
+        terminalId: 'tab-1',
+        preferTmux: true,
+        sessionIntent: TerminalSessionIntent.restoreExisting,
+        tmuxSessionName: name,
+      );
+      addTearDown(bridge.dispose);
+
+      await bridge.start();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bridge.state, TerminalConnectionState.error);
+      expect(bridge.remoteSessionMissing, isTrue);
+      expect(bridge.lastError, isA<TerminalSessionMissingException>());
+    });
+
+    test('恢复历史时 tmux 查询失败传播失败，不伪装缺失', () async {
+      final name = TmuxSessionPlanner.sessionName('srv-1', 'tab-1');
+      final client = _FakeSshClient(tmuxPath: '/usr/bin/tmux')
+        ..executeFactory = (command, _) {
+          if (command.contains('has-session')) {
+            return _FakeSshSession(
+              scriptedExitCode: 2,
+              scriptedStderr: utf8.encode('connection reset'),
+              completeDone: true,
+            );
+          }
+          return _FakeSshSession();
+        };
+      final bridge = TerminalSessionBridge(
+        terminal: _terminal(),
+        sshClient: client,
+        serverName: 'prod',
+        serverId: 'srv-1',
+        terminalId: 'tab-1',
+        preferTmux: true,
+        sessionIntent: TerminalSessionIntent.restoreExisting,
+        tmuxSessionName: name,
+      );
+      addTearDown(bridge.dispose);
+
+      await bridge.start();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bridge.state, TerminalConnectionState.error);
+      expect(bridge.remoteSessionMissing, isFalse);
+      expect(bridge.lastError, isA<SSHConnectionException>());
+    });
+
+    test('plain 会话断线重连报告中断且不尝试 PTY 恢复', () async {
+      final bridge = TerminalSessionBridge(
+        terminal: _terminal(),
+        sshClient: _FakeSshClient(),
+        serverName: 'prod',
+        serverId: 'srv-1',
+        terminalId: 'tab-1',
+        preferTmux: false,
+      );
+      addTearDown(bridge.dispose);
+      await bridge.start();
+      expect(bridge.mode, TerminalSessionMode.plain);
+      expect(bridge.state, TerminalConnectionState.connected);
+
+      await bridge.rebind(_FakeSshClient());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bridge.plainSessionInterrupted, isTrue);
+      expect(bridge.state, TerminalConnectionState.disconnected);
+      expect(bridge.lastError, isA<TerminalSessionInterruptedException>());
     });
   });
 }

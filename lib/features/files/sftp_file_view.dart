@@ -1264,6 +1264,7 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
         return RemoteBrowserEntriesView(
           entries: _browserEntries,
           viewMode: mode,
+          detailedMetadata: true,
           locationKey: 'sftp_files_${serverConnectionKey}_${state.currentPath}',
           itemBuilder: (context, entry) => _buildFileListItem(
             context,
@@ -1371,23 +1372,194 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
       );
     }
 
+    final isGrid = viewMode == RemoteBrowserViewMode.grid;
+
+    Widget buildPopupMenu() => PopupMenuButton<String>(
+      tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+      icon: isGrid ? null : const Icon(Icons.more_vert, size: 18),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+      child: isGrid
+          ? const SizedBox(
+              width: 44,
+              height: 44,
+              child: Center(child: Icon(Icons.more_vert, size: 18)),
+            )
+          : null,
+      onSelected: (action) {
+        if (!ref.read(serverConnectionProvider).isConnected) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(context.l10n.stateOffline)));
+          return;
+        }
+        if (action == 'rename') {
+          _showRenameDialog(item);
+        } else if (action == 'delete') {
+          _showDeleteConfirmDialog(item);
+        } else if (action == 'open') {
+          _openFileEditor(item);
+        } else if (action == 'download') {
+          final ro = context.findRenderObject();
+          final box = ro is RenderBox ? ro : null;
+          final offset = box != null && box.hasSize
+              ? box.localToGlobal(
+                  Offset(box.size.width / 2, box.size.height / 2),
+                )
+              : null;
+          _handleDownload(item, offset);
+        }
+      },
+      itemBuilder: (context) {
+        final isConnected = ref.read(serverConnectionProvider).isConnected;
+        return [
+          // 仅纯文本 / 代码可预览编辑（目录与二进制不出现 Open）
+          if (notifier.canPreview(item))
+            PopupMenuItem(
+              value: 'open',
+              child: Row(
+                children: [
+                  const Icon(Icons.edit_note, size: 18),
+                  const SizedBox(width: 8),
+                  Text(context.l10n.sftpOpen),
+                ],
+              ),
+            ),
+          if (!item.isDirectory && item.linkTargetErrorCode == null)
+            PopupMenuItem(
+              value: 'download',
+              child: Row(
+                children: [
+                  const Icon(Icons.download, size: 18),
+                  const SizedBox(width: 8),
+                  Text(context.l10n.sftpDownload),
+                ],
+              ),
+            ),
+          if (state.cachedAt == null && isConnected) ...[
+            PopupMenuItem(
+              value: 'rename',
+              child: Row(
+                children: [
+                  const Icon(Icons.drive_file_rename_outline, size: 18),
+                  const SizedBox(width: 8),
+                  Text(context.l10n.rename),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  Icon(Icons.delete, color: context.vDanger, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    context.l10n.delete,
+                    style: TextStyle(color: context.vDanger),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ];
+      },
+    );
+
     final Widget leadingWidget;
-    if (_isSelectionMode && !isSpecialNav) {
-      leadingWidget = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Checkbox(
-            value: isSelected,
-            onChanged: (_) => _toggleSelect(item),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-          ),
-          const SizedBox(width: 4),
-          fileIconWidget,
-        ],
+    final Widget? trailingWidget;
+    if (isGrid) {
+      leadingWidget = fileIconWidget;
+      if (_isSelectionMode && !isSpecialNav) {
+        trailingWidget = Checkbox(
+          value: isSelected,
+          onChanged: (_) => _toggleSelect(item),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+        );
+      } else if (!isSpecialNav) {
+        trailingWidget = buildPopupMenu();
+      } else {
+        trailingWidget = const SizedBox.shrink();
+      }
+    } else {
+      if (_isSelectionMode && !isSpecialNav) {
+        leadingWidget = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Checkbox(
+              value: isSelected,
+              onChanged: (_) => _toggleSelect(item),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+            const SizedBox(width: 4),
+            fileIconWidget,
+          ],
+        );
+      } else {
+        leadingWidget = fileIconWidget;
+      }
+      trailingWidget = (isSpecialNav || _isSelectionMode)
+          ? const SizedBox.shrink()
+          : buildPopupMenu();
+    }
+
+    final Widget metadataWidget;
+    if (isSpecialNav) {
+      metadataWidget = const SizedBox.shrink();
+    } else if (isGrid) {
+      metadataWidget = Text(
+        item.isDirectory
+            ? context.l10n.appCenterTaskDirectory
+            : item.formattedSize,
+        style: monoTextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w400,
+          color: context.colorScheme.onSurfaceVariant,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       );
     } else {
-      leadingWidget = fileIconWidget;
+      // Main file LIST: name first, permissions/size second, full yyyy-MM-dd HH:mm third
+      metadataWidget = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 2),
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  item.permissions,
+                  style: monoTextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                item.formattedSize,
+                style: monoTextStyle(fontSize: 11, fontWeight: FontWeight.w400),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            item.modified,
+            style: monoTextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+              color: context.colorScheme.outline,
+            ),
+            maxLines: 2,
+            softWrap: true,
+            overflow: TextOverflow.visible,
+          ),
+        ],
+      );
     }
 
     return RemoteBrowserEntryTile(
@@ -1396,127 +1568,10 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
       viewMode: viewMode,
       selected: _isSelectionMode && isSelected,
       leading: leadingWidget,
-      metadata: isSpecialNav
-          ? const SizedBox.shrink()
-          : Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    item.permissions,
-                    style: monoTextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  item.formattedSize,
-                  style: monoTextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    item.modified,
-                    style: monoTextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                      color: context.colorScheme.outline,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-      trailing: (isSpecialNav || _isSelectionMode)
-          ? const SizedBox.shrink()
-          : PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, size: 18),
-              onSelected: (action) {
-                if (!ref.read(serverConnectionProvider).isConnected) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.l10n.stateOffline)),
-                  );
-                  return;
-                }
-                if (action == 'rename') {
-                  _showRenameDialog(item);
-                } else if (action == 'delete') {
-                  _showDeleteConfirmDialog(item);
-                } else if (action == 'open') {
-                  _openFileEditor(item);
-                } else if (action == 'download') {
-                  final ro = context.findRenderObject();
-                  final box = ro is RenderBox ? ro : null;
-                  final offset = box != null && box.hasSize
-                      ? box.localToGlobal(
-                          Offset(box.size.width / 2, box.size.height / 2),
-                        )
-                      : null;
-                  _handleDownload(item, offset);
-                }
-              },
-              itemBuilder: (context) {
-                final isConnected = ref
-                    .read(serverConnectionProvider)
-                    .isConnected;
-                return [
-                  // 仅纯文本 / 代码可预览编辑（目录与二进制不出现 Open）
-                  if (notifier.canPreview(item))
-                    PopupMenuItem(
-                      value: 'open',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.edit_note, size: 18),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.sftpOpen),
-                        ],
-                      ),
-                    ),
-                  if (!item.isDirectory && item.linkTargetErrorCode == null)
-                    PopupMenuItem(
-                      value: 'download',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.download, size: 18),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.sftpDownload),
-                        ],
-                      ),
-                    ),
-                  if (state.cachedAt == null && isConnected) ...[
-                    PopupMenuItem(
-                      value: 'rename',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.drive_file_rename_outline, size: 18),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.rename),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, color: context.vDanger, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            context.l10n.delete,
-                            style: TextStyle(color: context.vDanger),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ];
-              },
-            ),
+      metadata: metadataWidget,
+      date: isSpecialNav ? null : item.modified,
+      isThreeLine: !isSpecialNav && !isGrid,
+      trailing: trailingWidget,
       onLongPress: (!isSpecialNav && !_isSelectionMode)
           ? () {
               setState(() {

@@ -27,7 +27,8 @@ Future<void> _host(WidgetTester tester, RemoteBrowserSource source) async {
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(_app(source));
   await tester.pumpAndSettle();
-  await tester.tap(find.byIcon(Icons.grid_view));
+  // Only gallery renders thumbnails; the compact grid intentionally does not.
+  await tester.tap(find.byIcon(Icons.image));
   await tester.pump();
   await tester.pump();
 }

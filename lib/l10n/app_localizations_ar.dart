@@ -5421,4 +5421,108 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       'تم استمرار حفظ المصدر السابق جزئيًا فقط. يرجى إعادة إدخال بيانات الاعتماد والحفظ بنجاح قبل التصفح.';
+
+  @override
+  String get terminalHistoryTitle => 'سجل الجلسات';
+
+  @override
+  String get terminalHistoryButton => 'سجل الجلسات';
+
+  @override
+  String get terminalHistoryEmpty =>
+      'لا يوجد سجل جلسات. تتطلب الجلسات الدائمة وجود tmux على الخادم البعيد.';
+
+  @override
+  String get terminalHistoryRefresh => 'تحديث السجل';
+
+  @override
+  String get terminalStartupSession => 'جلسة بدء التشغيل';
+
+  @override
+  String get terminalStartupSessionSubtitle =>
+      'اختر الجلسة التي تفتح عند تشغيل الطرفية';
+
+  @override
+  String get terminalStartupSessionFresh => 'جلسة جديدة (افتراضي)';
+
+  @override
+  String get terminalStatusOpen => 'مفتوحة';
+
+  @override
+  String get terminalStatusAvailable => 'متاحة';
+
+  @override
+  String get terminalStatusEnded => 'منتهية';
+
+  @override
+  String get terminalStatusOffline => 'غير متصل';
+
+  @override
+  String get terminalDefaultBadge => 'افتراضي';
+
+  @override
+  String get terminalLegacyBadge => 'غير مستورد';
+
+  @override
+  String get terminalRestoreSession => 'استعادة الجلسة';
+
+  @override
+  String get terminalSetDefault => 'تعيين كافتراضي';
+
+  @override
+  String get terminalClearDefault => 'إلغاء الافتراضي';
+
+  @override
+  String get terminalRename => 'إعادة تسمية الجلسة';
+
+  @override
+  String get terminalRenameDialogTitle => 'إعادة تسمية الجلسة';
+
+  @override
+  String get terminalRenameInputLabel => 'اسم الجلسة';
+
+  @override
+  String get terminalTitleInvalid =>
+      'يجب أن يتراوح العنوان بين 1 و64 حرفًا دون أحرف تحكم';
+
+  @override
+  String get terminalErrorHistoryLoadFailed => 'فشل تحميل سجل الطرفية';
+
+  @override
+  String get terminalErrorHistorySaveFailed => 'فشل حفظ سجل الطرفية';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed => 'فشل تحديث سجل الطرفية';
+
+  @override
+  String get terminalErrorStartFailed => 'فشل بدء جلسة الطرفية';
+
+  @override
+  String get terminalErrorRestoreFailed => 'فشل استعادة جلسة الطرفية';
+
+  @override
+  String get terminalErrorDefaultSaveFailed =>
+      'فشل حفظ جلسة بدء التشغيل الافتراضية';
+
+  @override
+  String get terminalErrorCommandFailed => 'فشل تنفيذ أمر الطرفية';
+
+  @override
+  String get terminalErrorTitleInvalid =>
+      'عنوان الجلسة غير صالح (يلزم من 1 إلى 64 حرفًا)';
+
+  @override
+  String get terminalErrorSshDisconnected => 'تم فقد اتصال SSH';
+
+  @override
+  String get terminalNoticeDefaultMissing =>
+      'جلسة بدء التشغيل الافتراضية مفقودة أو منتهية؛ تم فتح طرفية جديدة';
+
+  @override
+  String get terminalNoticeSessionMissing =>
+      'جلسة tmux المطلوبة لم تعد موجودة على الخادم البعيد';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      'انقطع الاتصال. تعذر استئناف عمليات الصدفة غير المستندة إلى tmux';
 }

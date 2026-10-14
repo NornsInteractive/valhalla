@@ -890,6 +890,28 @@ extension NasLocalizations on BuildContext {
     if (str.contains('NAS_DOWNLOAD_FAILED')) {
       return nasDownloadFailed;
     }
+    if (str.contains('NAS_QUEUE_BUSY')) {
+      return nasQueueBusy;
+    }
+    if (str.contains('NAS_QUEUE_CHANGED')) {
+      return nasQueueChanged;
+    }
+    if (str.contains('NAS_QUEUE_AUDIO_ONLY')) {
+      return nasQueueAudioOnly;
+    }
+    if (str.contains('NAS_QUEUE_SOURCE_MISMATCH')) {
+      return nasQueueSourceMismatch;
+    }
+    if (str.contains('NAS_QUEUE_FULL')) {
+      return nasQueueFull;
+    }
+    if (str.contains('NAS_PLAYER_CLOSED') || str.contains('NAS_PLAYER_EMPTY')) {
+      return nasPlayerEmpty;
+    }
+    if (str.contains('NAS_SOURCE_NOT_FOUND') ||
+        str.contains('NAS_SOURCE_CHANGED')) {
+      return nasSourceUnreachable;
+    }
     if (str.contains('NAS_SOURCE_UNREACHABLE') ||
         str.contains('SocketException') ||
         str.contains('Connection refused')) {
@@ -1256,4 +1278,381 @@ extension NasLocalizations on BuildContext {
       _ => 'Duration',
     };
   }
+
+  String get nasAddToQueue {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '加入佇列' : '添加到队列',
+      'de' => 'Zur Warteschlange hinzufügen',
+      'fr' => 'Ajouter à la file d\'attente',
+      'es' => 'Añadir a la cola',
+      'pt' => 'Adicionar à fila',
+      'it' => 'Aggiungi alla coda',
+      'id' => 'Tambahkan ke Antrean',
+      'ja' => 'キューに追加',
+      'ko' => '대기열에 추가',
+      'ru' => 'В очередь',
+      'ar' => 'إضافة إلى قائمة الانتظار',
+      'hi' => 'कतार में जोड़ें',
+      'tr' => 'Kuyruğa Ekle',
+      'vi' => 'Thêm vào hàng đợi',
+      'th' => 'เพิ่มในคิว',
+      _ => 'Add to Queue',
+    };
+  }
+
+  String get nasAddedToQueue {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '已加入佇列' : '已添加到队列',
+      'de' => 'Zur Warteschlange hinzugefügt',
+      'fr' => 'Ajouté à la file d\'attente',
+      'es' => 'Añadido a la cola',
+      'pt' => 'Adicionado à fila',
+      'it' => 'Aggiunto alla coda',
+      'id' => 'Ditambahkan ke antrean',
+      'ja' => 'キューに追加しました',
+      'ko' => '대기열에 추가됨',
+      'ru' => 'Добавлено в очередь',
+      'ar' => 'تمت الإضافة إلى قائمة الانتظار',
+      'hi' => 'कतार में जोड़ा गया',
+      'tr' => 'Kuyruğa eklendi',
+      'vi' => 'Đã thêm vào hàng đợi',
+      'th' => 'เพิ่มในคิวแล้ว',
+      _ => 'Added to queue',
+    };
+  }
+
+  String get nasQueueBusy {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '播放佇列繁忙' : '播放队列繁忙',
+      'de' => 'Warteschlange ist ausgelastet',
+      'fr' => 'File d\'attente occupée',
+      'es' => 'Cola ocupada',
+      'pt' => 'Fila ocupada',
+      'it' => 'Coda occupata',
+      'id' => 'Antrean sedang sibuk',
+      'ja' => 'キューがビジーです',
+      'ko' => '대기열이 사용 중입니다',
+      'ru' => 'Очередь занята',
+      'ar' => 'قائمة الانتظار مشغولة',
+      'hi' => 'कतार व्यस्त है',
+      'tr' => 'Kuyruk meşgul',
+      'vi' => 'Hàng đợi bận',
+      'th' => 'คิวไม่ว่าง',
+      _ => 'Playback queue is busy',
+    };
+  }
+
+  String get nasQueueChanged {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '播放佇列已更改' : '播放队列已更改',
+      'de' => 'Warteschlange geändert',
+      'fr' => 'File d\'attente modifiée',
+      'es' => 'Cola modificada',
+      'pt' => 'Fila alterada',
+      'it' => 'Coda modificata',
+      'id' => 'Antrean telah berubah',
+      'ja' => 'キューが変更されました',
+      'ko' => '대기열이 변경되었습니다',
+      'ru' => 'Очередь изменилась',
+      'ar' => 'تم تغيير قائمة الانتظار',
+      'hi' => 'कतार बदल गई है',
+      'tr' => 'Kuyruk değişti',
+      'vi' => 'Hàng đợi đã thay đổi',
+      'th' => 'คิวมีการเปลี่ยนแปลง',
+      _ => 'Playback queue changed',
+    };
+  }
+
+  String get nasQueueAudioOnly {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '播放佇列僅支援音訊曲目' : '播放队列仅支持音频曲目',
+      'de' => 'Warteschlange unterstützt nur Audiotitel',
+      'fr' => 'La file d\'attente prend en charge uniquement l\'audio',
+      'es' => 'La cola solo admite pistas de audio',
+      'pt' => 'A fila suporta apenas faixas de áudio',
+      'it' => 'La coda supporta solo tracce audio',
+      'id' => 'Antrean hanya mendukung trek audio',
+      'ja' => 'キューは音声トラックのみをサポートします',
+      'ko' => '대기열은 오디오 트랙만 지원합니다',
+      'ru' => 'Очередь поддерживает только аудио',
+      'ar' => 'قائمة الانتظار تدعم المسارات الصوتية فقط',
+      'hi' => 'कतार केवल ऑडियो ट्रैक का समर्थन करती है',
+      'tr' => 'Kuyruk yalnızca ses parçalarını destekler',
+      'vi' => 'Hàng đợi chỉ hỗ trợ bản âm thanh',
+      'th' => 'คิวรองรับเฉพาะแทร็กเสียงเท่านั้น',
+      _ => 'Queue only supports audio tracks',
+    };
+  }
+
+  String get nasQueueSourceMismatch {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '無法將不同來源的媒體加入同一佇列' : '无法将不同来源的媒体加入同一队列',
+      'de' =>
+        'Titel aus verschiedenen Quellen können nicht in dieselbe Warteschlange aufgenommen werden',
+      'fr' =>
+        'Impossible d\'ajouter des éléments de sources différentes à la même file d\'attente',
+      'es' =>
+        'No se pueden añadir elementos de diferentes fuentes a la misma cola',
+      'pt' =>
+        'Não é possível adicionar itens de fontes diferentes à mesma fila',
+      'it' =>
+        'Impossibile aggiungere elementi da sorgenti diverse alla stessa coda',
+      'id' =>
+        'Tidak dapat menambahkan item dari sumber berbeda ke antrean yang sama',
+      'ja' => '異なるソースのアイテムを同じキューに追加することはできません',
+      'ko' => '서로 다른 소스의 항목을 같은 대기열에 추가할 수 없습니다',
+      'ru' => 'Нельзя добавлять элементы из разных источников в одну очередь',
+      'ar' => 'لا يمكن إضافة عناصر من مصادر مختلفة إلى نفس قائمة الانتظار',
+      'hi' => 'विभिन्न स्रोतों से आइटम एक ही कतार में नहीं जोड़े जा सकते',
+      'tr' => 'Farklı kaynaklardan öğeler aynı kuyruğa eklenemez',
+      'vi' => 'Không thể thêm các mục từ nguồn khác nhau vào cùng hàng đợi',
+      'th' => 'ไม่สามารถเพิ่มรายการจากแหล่งอื่นในคิวเดียวกันได้',
+      _ => 'Cannot queue items from different sources',
+    };
+  }
+
+  String get nasQueueFull {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '播放佇列已滿（上限600首）' : '播放队列已满（上限600首）',
+      'de' => 'Warteschlange ist voll (max. 600 Titel)',
+      'fr' => 'File d\'attente pleine (max 600 pistes)',
+      'es' => 'Cola llena (máximo 600 pistas)',
+      'pt' => 'Fila cheia (máx. 600 faixas)',
+      'it' => 'Coda piena (max 600 tracce)',
+      'id' => 'Antrean penuh (maks. 600 trek)',
+      'ja' => 'キューが満杯です（最大600曲）',
+      'ko' => '대기열이 가득 찼습니다 (최대 600개)',
+      'ru' => 'Очередь заполнена (макс. 600 треков)',
+      'ar' => 'قائمة الانتظار ممتلئة (الحد الأقصى 600 مقطع)',
+      'hi' => 'कतार भरी है (अधिकतम 600 ट्रैक)',
+      'tr' => 'Kuyruk dolu (en fazla 600 parça)',
+      'vi' => 'Hàng đợi đã đầy (tối đa 600 bài)',
+      'th' => 'คิวเต็มแล้ว (สูงสุด 600 แทร็ก)',
+      _ => 'Playback queue is full (max 600 items)',
+    };
+  }
+
+  String get nasPlayerEmpty {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '播放器為空或未啟動' : '播放器为空或未启动',
+      'de' => 'Player ist leer oder geschlossen',
+      'fr' => 'Le lecteur est vide ou fermé',
+      'es' => 'El reproductor está vacío o cerrado',
+      'pt' => 'O reprodutor está vazio ou fechado',
+      'it' => 'Il lettore è vuoto o chiuso',
+      'id' => 'Pemutar kosong atau tertutup',
+      'ja' => 'プレーヤーが空または閉じられています',
+      'ko' => '플레이어가 비어 있거나 닫혀 있습니다',
+      'ru' => 'Плеер пуст или закрыт',
+      'ar' => 'المشغل فارغ أو مغلق',
+      'hi' => 'प्लेयर खाली या बंद है',
+      'tr' => 'Oynatıcı boş veya kapalı',
+      'vi' => 'Trình phát trống hoặc đã đóng',
+      'th' => 'เครื่องเล่นว่างเปล่าหรือปิดอยู่',
+      _ => 'Player is empty or closed',
+    };
+  }
+
+  String get nasDeletePlaylistConfirmTitle {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '刪除播放清單' : '删除播放列表',
+      'de' => 'Wiedergabeliste löschen',
+      'fr' => 'Supprimer la playlist',
+      'es' => 'Eliminar lista de reproducción',
+      'pt' => 'Excluir playlist',
+      'it' => 'Elimina playlist',
+      'id' => 'Hapus Daftar Putar',
+      'ja' => 'プレイリストを削除',
+      'ko' => '재생목록 삭제',
+      'ru' => 'Удалить плейлист',
+      'ar' => 'حذف قائمة التشغيل',
+      'hi' => 'प्लेलिस्ट हटाएं',
+      'tr' => 'Çalma Listesini Sil',
+      'vi' => 'Xóa danh sách phát',
+      'th' => 'ลบเพลย์ลิสต์',
+      _ => 'Delete Playlist',
+    };
+  }
+
+  String nasDeletePlaylistConfirmDesc(String name) {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' =>
+        loc.contains('Hant')
+            ? '確定要刪除播放清單「$name」嗎？此操作僅移除清單參照，儲存空間上的原始媒體檔案絕不會被刪除。'
+            : '确定要删除播放列表“$name”吗？此操作仅移除列表引用，存储上的原始媒体文件绝不会被删除。',
+      'de' =>
+        'Möchten Sie die Wiedergabeliste „$name“ wirklich löschen? Nur die Wiedergabelisten-Referenzen werden entfernt; Originaldateien auf Ihrem Speicher werden niemals gelöscht.',
+      'fr' =>
+        'Voulez-vous vraiment supprimer la playlist « $name » ? Seules les références de la playlist seront supprimées ; les fichiers originaux sur votre stockage ne seront jamais supprimés.',
+      'es' =>
+        '¿Seguro que deseas eliminar la lista «$name»? Solo se eliminarán las referencias; los archivos originales nunca se borrarán.',
+      'pt' =>
+        'Tem certeza de que deseja excluir a playlist "$name"? Apenas as referências serão removidas; os arquivos originais nunca serão excluídos.',
+      'it' =>
+        'Eliminare la playlist "$name"? Verranno rimosse solo le voci della playlist; i file originali rimarranno intatti.',
+      'id' =>
+        'Yakin ingin menghapus daftar putar "$name"? Hanya referensi daftar putar yang akan dihapus; berkas asli tidak akan terhapus.',
+      'ja' =>
+        'プレイリスト「$name」を削除してもよろしいですか？プレイリストの参照のみが削除され、ストレージ上の元のファイルは削除されません。',
+      'ko' => '재생목록 "$name"을(를) 삭제하시겠습니까? 재생목록 참조만 삭제되며 원본 파일은 삭제되지 않습니다.',
+      'ru' =>
+        'Удалить плейлист «$name»? Будут удалены только ссылки; исходные файлы на сервере останутся нетронутыми.',
+      'ar' =>
+        'هل أنت متأكد من حذف قائمة التشغيل "$name"؟ ستتم إزالة مراجع القائمة فقط؛ ولن يتم حذف الملفات الأصلية أبداً.',
+      'hi' =>
+        'क्या आप वास्तव में प्लेलिस्ट "$name" हटाना चाहते हैं? केवल प्लेलिस्ट संदर्भ हटाए जाएंगे; मूल फाइलें कभी नहीं हटाई जाएंगी।',
+      'tr' =>
+        '"$name" çalma listesini silmek istediğinizden emin misiniz? Yalnızca referanslar kaldırılır; orijinal dosyalarınız asla silinmez.',
+      'vi' =>
+        'Bạn có chắc chắn muốn xóa danh sách phát "$name"? Chỉ tham chiếu danh sách phát bị xóa; tệp gốc trên bộ lưu trữ không bao giờ bị xóa.',
+      'th' =>
+        'คุณแน่ใจหรือไม่ว่าต้องการลบเพลย์ลิสต์ "$name"? จะลบเฉพาะรายการอ้างอิงเท่านั้น ไฟล์ต้นฉบับจะไม่ถูกลบ',
+      _ =>
+        'Are you sure you want to delete "$name"? Only playlist references will be removed; original files on your storage are never deleted.',
+    };
+  }
+
+  String get nasPhotoTimeline {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '時間線' : '时间线',
+      'de' => 'Zeitleiste',
+      'fr' => 'Chronologie',
+      'es' => 'Cronología',
+      'pt' => 'Linha do tempo',
+      'it' => 'Sequenza temporale',
+      'id' => 'Linimasa',
+      'ja' => 'タイムライン',
+      'ko' => '타임라인',
+      'ru' => 'Хроника',
+      'ar' => 'الجدول الزمني',
+      'hi' => 'टाइमलाइन',
+      'tr' => 'Zaman Çizelgesi',
+      'vi' => 'Dòng thời gian',
+      'th' => 'ไทม์ไลน์',
+      _ => 'Timeline',
+    };
+  }
+
+  String get nasPhotoAlbums {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '相簿' : '相册',
+      'de' => 'Alben',
+      'fr' => 'Albums',
+      'es' => 'Álbumes',
+      'pt' => 'Álbuns',
+      'it' => 'Album',
+      'id' => 'Album',
+      'ja' => 'アルバム',
+      'ko' => '앨범',
+      'ru' => 'Альбомы',
+      'ar' => 'الألبومات',
+      'hi' => 'एल्बम',
+      'tr' => 'Albümler',
+      'vi' => 'Album',
+      'th' => 'อัลบั้ม',
+      _ => 'Albums',
+    };
+  }
+
+  String get nasViewGrid {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '網格' : '网格',
+      'de' => 'Raster',
+      'fr' => 'Grille',
+      'es' => 'Cuadrícula',
+      'pt' => 'Grade',
+      'it' => 'Griglia',
+      'id' => 'Kisi',
+      'ja' => 'グリッド',
+      'ko' => '그리드',
+      'ru' => 'Сетка',
+      'ar' => 'شبكة',
+      'hi' => 'ग्रिड',
+      'tr' => 'Izgara',
+      'vi' => 'Lưới',
+      'th' => 'ตาราง',
+      _ => 'Grid',
+    };
+  }
+
+  String get nasViewList {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '清單' : '列表',
+      'de' => 'Liste',
+      'fr' => 'Liste',
+      'es' => 'Lista',
+      'pt' => 'Lista',
+      'it' => 'Elenco',
+      'id' => 'Daftar',
+      'ja' => 'リスト',
+      'ko' => '목록',
+      'ru' => 'Список',
+      'ar' => 'قائمة',
+      'hi' => 'सूची',
+      'tr' => 'Liste',
+      'vi' => 'Danh sách',
+      'th' => 'รายการ',
+      _ => 'List',
+    };
+  }
+
+  String get nasManageLibrary {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '管理' : '管理',
+      'de' => 'Verwalten',
+      'fr' => 'Gérer',
+      'es' => 'Gestionar',
+      'pt' => 'Gerenciar',
+      'it' => 'Gestisci',
+      'id' => 'Kelola',
+      'ja' => '管理',
+      'ko' => '관리',
+      'ru' => 'Управление',
+      'ar' => 'إدارة',
+      'hi' => 'प्रबंधन',
+      'tr' => 'Yönet',
+      'vi' => 'Quản lý',
+      'th' => 'จัดการ',
+      _ => 'Manage',
+    };
+  }
+
+  String get nasPhotoDensity {
+    final loc = _loc.localeName;
+    return switch (loc.split('_').first) {
+      'zh' => loc.contains('Hant') ? '欄數' : '列数',
+      'de' => 'Spalten',
+      'fr' => 'Colonnes',
+      'es' => 'Columnas',
+      'pt' => 'Colunas',
+      'it' => 'Colonne',
+      'id' => 'Kolom',
+      'ja' => '列数',
+      'ko' => '열 수',
+      'ru' => 'Колонки',
+      'ar' => 'الأعمدة',
+      'hi' => 'कॉलम',
+      'tr' => 'Sütunlar',
+      'vi' => 'Số cột',
+      'th' => 'คอลัมน์',
+      _ => 'Columns',
+    };
+  }
+
+  String get nasFilterAll => _loc.dockerFilterAll;
 }

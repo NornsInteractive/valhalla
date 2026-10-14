@@ -11,9 +11,79 @@ import '../models/chat_run_settings.dart';
 import '../models/chat_launch_preference.dart';
 import '../models/nas_media.dart';
 import '../models/nas_source.dart';
+import '../models/terminal_history.dart';
 
 /// 本地持久化服务 (SharedPreferences 快速存取)
 class LocalStorageService {
+  Future<bool> claimLegacyTerminalTarget(
+    String serverId,
+    String targetKey,
+  ) async {
+    final key = 'valhalla_terminal_legacy_target_v1::$serverId';
+    final existing = _prefs.getString(key);
+    if (existing != null) return existing == targetKey;
+    final historyPrefix = 'valhalla_terminal_history_v1::$serverId::';
+    if (_prefs.getKeys().any(
+      (saved) =>
+          saved.startsWith(historyPrefix) &&
+          saved != _terminalHistoryKey(serverId, targetKey),
+    )) {
+      return false;
+    }
+    try {
+      if (!await _prefs.setString(key, targetKey)) {
+        throw const StorageException('TERMINAL_HISTORY_SAVE_FAILED');
+      }
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
+    }
+    return true;
+  }
+
+  String _terminalHistoryKey(String serverId, String targetKey) =>
+      'valhalla_terminal_history_v1::$serverId::$targetKey';
+
+  TerminalHistorySnapshot getTerminalHistory(
+    String serverId,
+    String targetKey,
+  ) {
+    final raw = _prefs.getString(_terminalHistoryKey(serverId, targetKey));
+    if (raw == null) return const TerminalHistorySnapshot();
+    final snapshot = TerminalHistorySnapshot.fromJson(
+      Map<String, dynamic>.from(jsonDecode(raw) as Map),
+    );
+    if (snapshot.records.any(
+      (record) => record.serverId != serverId || record.targetKey != targetKey,
+    )) {
+      throw const FormatException('TERMINAL_HISTORY_INVALID');
+    }
+    return snapshot;
+  }
+
+  Future<void> saveTerminalHistory(
+    String serverId,
+    String targetKey,
+    TerminalHistorySnapshot snapshot,
+  ) async {
+    if (snapshot.records.any(
+      (record) => record.serverId != serverId || record.targetKey != targetKey,
+    )) {
+      throw const FormatException('TERMINAL_HISTORY_INVALID');
+    }
+    try {
+      if (!await _prefs.setString(
+        _terminalHistoryKey(serverId, targetKey),
+        jsonEncode(snapshot.toJson()),
+      )) {
+        throw const StorageException('TERMINAL_HISTORY_SAVE_FAILED');
+      }
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
+    }
+  }
+
   String _pageCacheKey(ServerProfile server, String page) =>
       'valhalla_page_cache_v1::${server.id}::${sha256.convert(utf8.encode(server.connectionKey.toString()))}::$page';
 

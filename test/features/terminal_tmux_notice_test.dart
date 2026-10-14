@@ -8,6 +8,7 @@ import 'package:valhalla/features/terminal/terminal_view.dart';
 import 'package:valhalla/infrastructure/terminal/terminal_session_bridge.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 import 'package:xterm/xterm.dart';
+import '../support/seeded_terminal_notifier.dart';
 
 class _FakeBridge extends TerminalSessionBridge {
   _FakeBridge({
@@ -42,15 +43,11 @@ class _FakeBridge extends TerminalSessionBridge {
   }
 }
 
-class _MockTerminalNotifier extends TerminalNotifier {
-  final SshTerminalState _initial;
+class _MockTerminalNotifier extends SeededTerminalNotifier {
   bool skipCalled = false;
   bool confirmCalled = false;
 
-  _MockTerminalNotifier(this._initial);
-
-  @override
-  SshTerminalState build() => _initial;
+  _MockTerminalNotifier(super.initial);
 
   @override
   Future<void> skipTmuxInstall() async {
@@ -96,6 +93,7 @@ Widget _buildTestApp({
 
   return ProviderScope(
     overrides: [
+      ...terminalWorkspaceOverrides(),
       terminalProvider.overrideWith(() => actualNotifier),
       terminalSettingsProvider.overrideWith(_FixedTerminalSettingsNotifier.new),
     ],
@@ -144,7 +142,7 @@ void main() {
       (tester) async {
         final bridge = _FakeBridge(
           initialMode: TerminalSessionMode.tmux,
-          initialState: TerminalConnectionState.disconnected,
+          initialState: TerminalConnectionState.connected,
         );
 
         await tester.pumpWidget(_buildTestApp(bridge: bridge));
@@ -155,7 +153,9 @@ void main() {
           findsNothing,
         );
 
-        // Transition to connected
+        // This is a reconnect, not a fresh terminal's first connection.
+        bridge.setTestState(TerminalConnectionState.disconnected);
+        await tester.pump();
         bridge.setTestState(TerminalConnectionState.connected);
         await tester.pump();
 

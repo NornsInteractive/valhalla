@@ -98,6 +98,7 @@ class NasMediaPlayerService {
   Future<List<NasMediaItem>> Function()? _restartQueue;
   bool _queueExhausted = false;
   final _shuffleVisited = <(String, String, String?)>{};
+  final _manuallyQueued = <(String, String)>{};
   _QueueLease? _queueLease;
 
   NasMediaPlayerService(
@@ -283,6 +284,7 @@ class NasMediaPlayerService {
       if (!keepQueueState) {
         _queueExhausted = false;
         _shuffleVisited.clear();
+        _manuallyQueued.clear();
       }
       if (_shuffle) _shuffleVisited.add(_queueKey(item));
       if (quality != null) _quality = quality;
@@ -541,6 +543,37 @@ class NasMediaPlayerService {
     _emit();
   }
 
+  /// Append to the loaded music window without restarting its current item.
+  Future<void> addToQueue(NasMediaItem item) async {
+    if (_disposed) throw StateError('NAS_PLAYER_CLOSED');
+    if (_nextOperation != null) throw StateError('NAS_QUEUE_BUSY');
+    final epoch = _epoch;
+    await _operations;
+    if (_disposed) throw StateError('NAS_PLAYER_CLOSED');
+    if (!_valid(epoch)) throw StateError('NAS_QUEUE_CHANGED');
+    if (_nextOperation != null) throw StateError('NAS_QUEUE_BUSY');
+    final active = current;
+    if (active == null) throw StateError('NAS_PLAYER_EMPTY');
+    if (item.kind != NasMediaKind.audio || active.kind != NasMediaKind.audio) {
+      throw StateError('NAS_QUEUE_AUDIO_ONLY');
+    }
+    if (item.serverId != active.serverId) {
+      throw StateError('NAS_QUEUE_SOURCE_MISMATCH');
+    }
+    if (_queue.any((entry) =>
+        entry.serverId == item.serverId && entry.path == item.path)) {
+      return;
+    }
+    if (_queue.length >= 600 || _manuallyQueued.length >= 600) {
+      throw StateError('NAS_QUEUE_FULL');
+    }
+    _queue.add(item);
+    if (_loadMore != null && !_queueExhausted) {
+      _manuallyQueued.add((item.serverId, item.path));
+    }
+    _emit();
+  }
+
   /// Reflect an acknowledged library change without reopening playback.
   void applyFavorite(String sourceId, String path, bool value) {
     if (_disposed) return;
@@ -592,20 +625,26 @@ class NasMediaPlayerService {
     }
     final loader = _loadMore;
     var target = _nextIndex();
-    if (target < 0 && loader != null && !_queueExhausted) {
+    while (target < 0 && loader != null && !_queueExhausted) {
       final more = await loader();
       if (!_valid(epoch)) return;
       if (more.isEmpty) {
         _queueExhausted = true;
-      } else if (_shuffle) {
+        break;
+      }
+      // Explicit additions must not play twice when their indexed page arrives.
+      final entries = more.take(200).where((item) =>
+          !_manuallyQueued.remove((item.serverId, item.path))).toList();
+      if (entries.isEmpty) continue;
+      if (_shuffle) {
         // Shuffle one bounded page at a time; every page is reachable without
         // retaining or randomly sorting an entire remote music library.
-        _queue = [current!, ...more.take(200)];
+        _queue = [current!, ...entries];
         _index = 0;
         _shuffleVisited.retainAll(_queue.map(_queueKey));
       } else {
         final removed = max(0, _index - 99);
-        _queue = [..._queue.skip(removed), ...more.take(200)];
+        _queue = [..._queue.skip(removed), ...entries];
         _index -= removed;
       }
       target = _nextIndex();
@@ -624,7 +663,10 @@ class NasMediaPlayerService {
             ? entries
             : entries.take(200).toList();
         _shuffleVisited.clear();
-        if (restart != null) _queueExhausted = false;
+        if (restart != null) {
+          _queueExhausted = false;
+          _manuallyQueued.clear();
+        }
         await _requestOpen(
           firstPage[_shuffle ? Random().nextInt(firstPage.length) : 0],
           queue: firstPage,
@@ -779,6 +821,7 @@ class NasMediaPlayerService {
     _loadMore = null;
     _restartQueue = null;
     _shuffleVisited.clear();
+    _manuallyQueued.clear();
     _queueExhausted = false;
     _closeLease(lease);
   }

@@ -1,3 +1,5 @@
+import 'shell_quote.dart';
+
 /// 终端会话在 tmux 中的命名与命令构造（纯逻辑）。
 ///
 /// 抽成独立单元有两个理由：
@@ -25,16 +27,18 @@ abstract final class TmuxSessionPlanner {
   }
 
   /// 是否应把某个会话名视为本应用创建。
-  static bool isOwnSession(String name) => name.startsWith('${sessionPrefix}_');
+  static bool isOwnSession(String name) =>
+      RegExp(r'^valhalla_[A-Za-z0-9_-]+$').hasMatch(name);
 
-  /// 构造「附着或新建」命令。
-  ///
-  /// `new-session -A -s <name>`：存在就 attach，不存在就创建 —— 正是
-  /// 「断线重连后终端内容还在」的关键。
-  ///
-  /// [initialWidth]/[initialHeight] 只作用于新建的会话；attach 已有会话时
-  /// tmux 会沿用该会话自己的尺寸。
-  static String attachOrCreateCommand(
+  static bool isSessionForServer(String name, String serverId) {
+    final prefix = sessionName(serverId, '');
+    return isOwnSession(name) &&
+        name.startsWith(prefix) &&
+        name.length > prefix.length;
+  }
+
+  /// 新建不能复用同名会话；名称由调用方的独立 UUID 生成。
+  static String createCommand(
     String serverId,
     String terminalId, {
     int initialWidth = 80,
@@ -43,9 +47,26 @@ abstract final class TmuxSessionPlanner {
     final name = sessionName(serverId, terminalId);
     final width = initialWidth > 0 ? initialWidth : 80;
     final height = initialHeight > 0 ? initialHeight : 24;
-    // -L 必须在最前，且与子命令之间用空格分隔。
-    return 'tmux -L $socketName new-session -A -s $name '
+    return 'tmux -L $socketName new-session -s ${cliShellQuote(name)} '
         '-x $width -y $height';
+  }
+
+  /// 只附着精确名称，不创建、不分离其他客户端。
+  static String attachCommand(String name) {
+    _validateName(name);
+    return 'tmux -L $socketName attach-session -t ${cliShellQuote('=$name')}';
+  }
+
+  static String hasSessionCommand(String name) {
+    _validateName(name);
+    return 'tmux -L $socketName has-session -t ${cliShellQuote('=$name')}';
+  }
+
+  static const listSessionsCommand =
+      "tmux -L $socketName list-sessions -F '#{session_name}\t#{session_created}\t#{session_attached}'";
+
+  static void _validateName(String name) {
+    if (!isOwnSession(name)) throw ArgumentError('TMUX_INVALID_SESSION_NAME');
   }
 
   /// 仅检测 tmux 是否存在（不安装、不改动任何会话）。
@@ -57,6 +78,6 @@ abstract final class TmuxSessionPlanner {
   static bool isTmuxAvailable(String? detectOutput) {
     final path = detectOutput?.trim() ?? '';
     if (path.isEmpty) return false;
-    return path.startsWith('/');
+    return path.startsWith('/') && !RegExp(r'[\r\n\x00]').hasMatch(path);
   }
 }

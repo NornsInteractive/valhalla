@@ -5173,6 +5173,102 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get nasSourceSaveIncomplete => '先前的数据源保存仅部分持久化。请重新输入凭据并成功保存后再进行浏览。';
+
+  @override
+  String get terminalHistoryTitle => '会话历史';
+
+  @override
+  String get terminalHistoryButton => '会话历史';
+
+  @override
+  String get terminalHistoryEmpty => '暂无会话历史。持久会话需要在远端服务器安装 tmux。';
+
+  @override
+  String get terminalHistoryRefresh => '刷新历史';
+
+  @override
+  String get terminalStartupSession => '启动会话';
+
+  @override
+  String get terminalStartupSessionSubtitle => '选择进入终端时默认打开的会话';
+
+  @override
+  String get terminalStartupSessionFresh => '新建会话（默认）';
+
+  @override
+  String get terminalStatusOpen => '已打开';
+
+  @override
+  String get terminalStatusAvailable => '可用';
+
+  @override
+  String get terminalStatusEnded => '已结束';
+
+  @override
+  String get terminalStatusOffline => '离线';
+
+  @override
+  String get terminalDefaultBadge => '默认';
+
+  @override
+  String get terminalLegacyBadge => '未导入';
+
+  @override
+  String get terminalRestoreSession => '恢复会话';
+
+  @override
+  String get terminalSetDefault => '设为默认';
+
+  @override
+  String get terminalClearDefault => '清除默认';
+
+  @override
+  String get terminalRename => '重命名会话';
+
+  @override
+  String get terminalRenameDialogTitle => '重命名会话';
+
+  @override
+  String get terminalRenameInputLabel => '会话名称';
+
+  @override
+  String get terminalTitleInvalid => '标题长度须为 1 至 64 个字符且不含控制字符';
+
+  @override
+  String get terminalErrorHistoryLoadFailed => '加载终端历史记录失败';
+
+  @override
+  String get terminalErrorHistorySaveFailed => '保存终端历史记录失败';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed => '刷新终端历史记录失败';
+
+  @override
+  String get terminalErrorStartFailed => '启动终端会话失败';
+
+  @override
+  String get terminalErrorRestoreFailed => '恢复终端会话失败';
+
+  @override
+  String get terminalErrorDefaultSaveFailed => '保存默认启动会话失败';
+
+  @override
+  String get terminalErrorCommandFailed => '执行终端命令失败';
+
+  @override
+  String get terminalErrorTitleInvalid => '会话标题无效（需 1–64 个字符）';
+
+  @override
+  String get terminalErrorSshDisconnected => 'SSH 连接已断开';
+
+  @override
+  String get terminalNoticeDefaultMissing => '默认启动会话不存在或已结束，已新建终端会话';
+
+  @override
+  String get terminalNoticeSessionMissing => '请求的 tmux 会话在远端服务器上已不存在';
+
+  @override
+  String get terminalNoticePlainInterrupted => '连接中断，非 tmux 命令行进程无法继续恢复';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -10345,4 +10441,100 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get nasSourceSaveIncomplete => '先前儲存的來源僅部分保存。請重新輸入憑證並成功儲存後再進行瀏覽。';
+
+  @override
+  String get terminalHistoryTitle => '工作階段歷史';
+
+  @override
+  String get terminalHistoryButton => '工作階段歷史';
+
+  @override
+  String get terminalHistoryEmpty => '暫無工作階段歷史。持久工作階段需要在遠端伺服器安裝 tmux。';
+
+  @override
+  String get terminalHistoryRefresh => '重新整理歷史';
+
+  @override
+  String get terminalStartupSession => '啟動工作階段';
+
+  @override
+  String get terminalStartupSessionSubtitle => '選擇進入終端機時預設開啟的工作階段';
+
+  @override
+  String get terminalStartupSessionFresh => '新建工作階段（預設）';
+
+  @override
+  String get terminalStatusOpen => '已開啟';
+
+  @override
+  String get terminalStatusAvailable => '可用';
+
+  @override
+  String get terminalStatusEnded => '已結束';
+
+  @override
+  String get terminalStatusOffline => '離線';
+
+  @override
+  String get terminalDefaultBadge => '預設';
+
+  @override
+  String get terminalLegacyBadge => '未匯入';
+
+  @override
+  String get terminalRestoreSession => '復原工作階段';
+
+  @override
+  String get terminalSetDefault => '設為預設';
+
+  @override
+  String get terminalClearDefault => '清除預設';
+
+  @override
+  String get terminalRename => '重新命名工作階段';
+
+  @override
+  String get terminalRenameDialogTitle => '重新命名工作階段';
+
+  @override
+  String get terminalRenameInputLabel => '工作階段名稱';
+
+  @override
+  String get terminalTitleInvalid => '標題長度須為 1 至 64 個字元且不含控制字元';
+
+  @override
+  String get terminalErrorHistoryLoadFailed => '載入終端機歷史記錄失敗';
+
+  @override
+  String get terminalErrorHistorySaveFailed => '儲存終端機歷史記錄失敗';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed => '重新整理終端機歷史記錄失敗';
+
+  @override
+  String get terminalErrorStartFailed => '啟動終端機工作階段失敗';
+
+  @override
+  String get terminalErrorRestoreFailed => '復原終端機工作階段失敗';
+
+  @override
+  String get terminalErrorDefaultSaveFailed => '儲存預設啟動工作階段失敗';
+
+  @override
+  String get terminalErrorCommandFailed => '執行終端機命令失敗';
+
+  @override
+  String get terminalErrorTitleInvalid => '工作階段標題無效（需 1–64 個字元）';
+
+  @override
+  String get terminalErrorSshDisconnected => 'SSH 連線已中斷';
+
+  @override
+  String get terminalNoticeDefaultMissing => '預設啟動工作階段不存在或已結束，已開啟全新終端機';
+
+  @override
+  String get terminalNoticeSessionMissing => '請求的 tmux 工作階段在遠端伺服器上已不存在';
+
+  @override
+  String get terminalNoticePlainInterrupted => '連線中斷，非 tmux 命令列處理程序無法繼續復原';
 }

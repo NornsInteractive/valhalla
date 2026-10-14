@@ -5473,4 +5473,109 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       'Lần lưu nguồn trước đó chỉ được lưu một phần. Vui lòng nhập lại thông tin xác thực và lưu thành công trước khi duyệt.';
+
+  @override
+  String get terminalHistoryTitle => 'Lịch sử phiên';
+
+  @override
+  String get terminalHistoryButton => 'Lịch sử phiên';
+
+  @override
+  String get terminalHistoryEmpty =>
+      'Không có lịch sử phiên. Các phiên liên tục yêu cầu tmux trên máy chủ từ xa.';
+
+  @override
+  String get terminalHistoryRefresh => 'Làm mới lịch sử';
+
+  @override
+  String get terminalStartupSession => 'Phiên khởi động';
+
+  @override
+  String get terminalStartupSessionSubtitle =>
+      'Chọn phiên mở ra khi khởi chạy terminal';
+
+  @override
+  String get terminalStartupSessionFresh => 'Phiên mới (Mặc định)';
+
+  @override
+  String get terminalStatusOpen => 'Đang mở';
+
+  @override
+  String get terminalStatusAvailable => 'Khả dụng';
+
+  @override
+  String get terminalStatusEnded => 'Đã kết thúc';
+
+  @override
+  String get terminalStatusOffline => 'Ngoại tuyến';
+
+  @override
+  String get terminalDefaultBadge => 'Mặc định';
+
+  @override
+  String get terminalLegacyBadge => 'Chưa nhập';
+
+  @override
+  String get terminalRestoreSession => 'Khôi phục phiên';
+
+  @override
+  String get terminalSetDefault => 'Đặt làm mặc định';
+
+  @override
+  String get terminalClearDefault => 'Xóa mặc định';
+
+  @override
+  String get terminalRename => 'Đổi tên phiên';
+
+  @override
+  String get terminalRenameDialogTitle => 'Đổi tên phiên';
+
+  @override
+  String get terminalRenameInputLabel => 'Tên phiên';
+
+  @override
+  String get terminalTitleInvalid =>
+      'Tiêu đề phải từ 1 đến 64 ký tự và không chứa ký tự điều khiển';
+
+  @override
+  String get terminalErrorHistoryLoadFailed => 'Không thể tải lịch sử terminal';
+
+  @override
+  String get terminalErrorHistorySaveFailed => 'Không thể lưu lịch sử terminal';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed =>
+      'Không thể làm mới lịch sử terminal';
+
+  @override
+  String get terminalErrorStartFailed => 'Không thể khởi động phiên terminal';
+
+  @override
+  String get terminalErrorRestoreFailed => 'Không thể khôi phục phiên terminal';
+
+  @override
+  String get terminalErrorDefaultSaveFailed =>
+      'Không thể lưu phiên khởi động mặc định';
+
+  @override
+  String get terminalErrorCommandFailed => 'Không thể thực thi lệnh terminal';
+
+  @override
+  String get terminalErrorTitleInvalid =>
+      'Tiêu đề phiên không hợp lệ (cần 1–64 ký tự)';
+
+  @override
+  String get terminalErrorSshDisconnected => 'Mất kết nối SSH';
+
+  @override
+  String get terminalNoticeDefaultMissing =>
+      'Phiên khởi động mặc định bị thiếu hoặc đã kết thúc; đã mở terminal mới';
+
+  @override
+  String get terminalNoticeSessionMissing =>
+      'Phiên tmux được yêu cầu không còn tồn tại trên máy chủ từ xa';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      'Mất kết nối. Không thể tiếp tục các tiến trình shell không dùng tmux';
 }

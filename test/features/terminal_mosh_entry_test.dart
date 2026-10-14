@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/terminal_provider.dart';
 import 'package:valhalla/core/providers/terminal_settings_provider.dart';
 import 'package:valhalla/data/models/server_profile.dart';
@@ -15,6 +14,7 @@ import 'package:valhalla/infrastructure/mosh/mosh_session_service.dart';
 import 'package:valhalla/infrastructure/terminal/terminal_session_bridge.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 import 'package:xterm/xterm.dart';
+import '../support/seeded_terminal_notifier.dart';
 
 const _key = 'AAECAwQFBgcICQoLDA0ODw';
 
@@ -90,22 +90,8 @@ class _FakeMoshService implements MoshSessionService {
   }
 }
 
-class _FakeActiveServerNotifier extends ActiveServerNotifier {
-  _FakeActiveServerNotifier(this._server);
-
-  final ServerProfile? _server;
-
-  @override
-  ServerProfile? build() => _server;
-}
-
-class _MockTerminalNotifier extends TerminalNotifier {
-  _MockTerminalNotifier(this._initial);
-
-  final SshTerminalState _initial;
-
-  @override
-  SshTerminalState build() => _initial;
+class _MockTerminalNotifier extends SeededTerminalNotifier {
+  _MockTerminalNotifier(super.initial);
 }
 
 /// 画布会 watch 字号；这些用例不测字号，给固定值以免整棵树去读还没初始化的
@@ -123,11 +109,11 @@ Widget _buildTestApp({
 }) {
   return ProviderScope(
     overrides: [
+      ...terminalWorkspaceOverrides(
+        server: activeServer ?? terminalFixtureServer,
+      ),
       terminalProvider.overrideWith(() => notifier),
       terminalSettingsProvider.overrideWith(_FixedTerminalSettingsNotifier.new),
-      activeServerProvider.overrideWith(
-        () => _FakeActiveServerNotifier(activeServer),
-      ),
       moshSessionServiceProvider.overrideWithValue(moshService),
     ],
     child: MaterialApp(

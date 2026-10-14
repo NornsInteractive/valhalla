@@ -5436,4 +5436,111 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       'A previous source save only partially persisted. Please re-enter credentials and save successfully before browsing.';
+
+  @override
+  String get terminalHistoryTitle => 'Session History';
+
+  @override
+  String get terminalHistoryButton => 'Session History';
+
+  @override
+  String get terminalHistoryEmpty =>
+      'No session history. Persistent sessions require tmux on the remote server.';
+
+  @override
+  String get terminalHistoryRefresh => 'Refresh History';
+
+  @override
+  String get terminalStartupSession => 'Startup Session';
+
+  @override
+  String get terminalStartupSessionSubtitle =>
+      'Choose which session opens when launching the terminal';
+
+  @override
+  String get terminalStartupSessionFresh => 'New Session (Default)';
+
+  @override
+  String get terminalStatusOpen => 'Open';
+
+  @override
+  String get terminalStatusAvailable => 'Available';
+
+  @override
+  String get terminalStatusEnded => 'Ended';
+
+  @override
+  String get terminalStatusOffline => 'Offline';
+
+  @override
+  String get terminalDefaultBadge => 'Default';
+
+  @override
+  String get terminalLegacyBadge => 'Unimported';
+
+  @override
+  String get terminalRestoreSession => 'Restore Session';
+
+  @override
+  String get terminalSetDefault => 'Set as Default';
+
+  @override
+  String get terminalClearDefault => 'Clear Default';
+
+  @override
+  String get terminalRename => 'Rename Session';
+
+  @override
+  String get terminalRenameDialogTitle => 'Rename Session';
+
+  @override
+  String get terminalRenameInputLabel => 'Session Name';
+
+  @override
+  String get terminalTitleInvalid =>
+      'Title must be 1 to 64 characters without control characters';
+
+  @override
+  String get terminalErrorHistoryLoadFailed =>
+      'Failed to load terminal history';
+
+  @override
+  String get terminalErrorHistorySaveFailed =>
+      'Failed to save terminal history';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed =>
+      'Failed to refresh terminal history';
+
+  @override
+  String get terminalErrorStartFailed => 'Failed to start terminal session';
+
+  @override
+  String get terminalErrorRestoreFailed => 'Failed to restore terminal session';
+
+  @override
+  String get terminalErrorDefaultSaveFailed =>
+      'Failed to save default startup session';
+
+  @override
+  String get terminalErrorCommandFailed => 'Failed to execute terminal command';
+
+  @override
+  String get terminalErrorTitleInvalid =>
+      'Invalid session title (1–64 characters required)';
+
+  @override
+  String get terminalErrorSshDisconnected => 'SSH connection lost';
+
+  @override
+  String get terminalNoticeDefaultMissing =>
+      'Default startup session was missing or ended; opened a new terminal instead';
+
+  @override
+  String get terminalNoticeSessionMissing =>
+      'The requested tmux session no longer exists on the remote server';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      'Connection lost. Non-tmux shell processes could not be resumed';
 }

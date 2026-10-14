@@ -4,24 +4,76 @@ import 'package:valhalla/core/utils/tmux_session_planner.dart';
 
 void main() {
   group('TmuxSessionPlanner 命令构造', () {
-    test('attach 命令使用独立 socket', () {
-      final command = TmuxSessionPlanner.attachOrCreateCommand('s1', 'tab-1');
+    test('create 命令使用独立 socket 且不复用旧会话', () {
+      final command = TmuxSessionPlanner.createCommand('s1', 'tab-1');
 
       expect(command, startsWith('tmux -L ${TmuxSessionPlanner.socketName} '));
       expect(command, contains('-L valhalla'));
+      expect(command, contains("new-session -s 'valhalla_s1_tab-1'"));
+      expect(command, isNot(contains('new-session -A')));
+      expect(command, isNot(contains('-A')));
     });
 
-    test('attach 使用 -A 以复用已有会话', () {
-      final command = TmuxSessionPlanner.attachOrCreateCommand('s1', 'tab-1');
+    test('attach 使用精确名称，不创建、不分离其他客户端', () {
+      final command = TmuxSessionPlanner.attachCommand('valhalla_s1_tab-1');
 
-      // -A 是「存在则 attach，不存在则创建」的核心，缺了它就变成
-      // 每次新建，断线重连也就拿不回原来的内容。
-      expect(command, contains('new-session -A'));
-      expect(command, contains('-s valhalla_s1_tab-1'));
+      expect(command, startsWith('tmux -L ${TmuxSessionPlanner.socketName} '));
+      expect(command, contains("attach-session -t '=valhalla_s1_tab-1'"));
+      expect(command, isNot(contains('-A')));
+      expect(command, isNot(contains(' -d')));
     });
+
+    test('has-session 查询精确名称', () {
+      final command = TmuxSessionPlanner.hasSessionCommand('valhalla_s1_tab-1');
+
+      expect(command, startsWith('tmux -L ${TmuxSessionPlanner.socketName} '));
+      expect(command, contains("has-session -t '=valhalla_s1_tab-1'"));
+    });
+
+    test('restore rejects foreign names and shell or tmux target syntax', () {
+      for (final name in [
+        'main',
+        'valhalla_s1_tab:1',
+        'valhalla_s1_tab\n',
+        "valhalla_s1_x'; id",
+        'valhalla_s1_\u0000',
+      ]) {
+        expect(
+          () => TmuxSessionPlanner.attachCommand(name),
+          throwsArgumentError,
+        );
+        expect(
+          () => TmuxSessionPlanner.hasSessionCommand(name),
+          throwsArgumentError,
+        );
+      }
+    });
+
+    test(
+      'history listing is isolated and keeps machine-readable separators',
+      () {
+        expect(
+          TmuxSessionPlanner.listSessionsCommand,
+          startsWith('tmux -L valhalla list-sessions -F '),
+        );
+        expect(TmuxSessionPlanner.listSessionsCommand, contains('\t'));
+        expect(
+          TmuxSessionPlanner.isSessionForServer('valhalla_s1_0', 's1'),
+          isTrue,
+        );
+        expect(
+          TmuxSessionPlanner.isSessionForServer('valhalla_s2_0', 's1'),
+          isFalse,
+        );
+        expect(
+          TmuxSessionPlanner.isSessionForServer('valhalla_s1_', 's1'),
+          isFalse,
+        );
+      },
+    );
 
     test('带上初始尺寸', () {
-      final command = TmuxSessionPlanner.attachOrCreateCommand(
+      final command = TmuxSessionPlanner.createCommand(
         's1',
         'tab-1',
         initialWidth: 120,
@@ -33,7 +85,7 @@ void main() {
     });
 
     test('非法尺寸回退到 80x24', () {
-      final command = TmuxSessionPlanner.attachOrCreateCommand(
+      final command = TmuxSessionPlanner.createCommand(
         's1',
         'tab-1',
         initialWidth: 0,
@@ -58,23 +110,20 @@ void main() {
     });
 
     test('生成的命令里绝不出现裸 tmux 调用（必须始终带 -L）', () {
-      // 自我防护回归：默认 socket 上是用户自己的 tmux 会话，
-      // 任何不带 -L 的调用都可能影响它。
       final names = ['s1', 'prod; rm -rf /', r'$(id)', 'a b'];
       for (final name in names) {
-        final command = TmuxSessionPlanner.attachOrCreateCommand(name, 'tab-1');
+        final command = TmuxSessionPlanner.createCommand(name, 'tab-1');
         expect(
           command,
           isNot(matches(RegExp(r'(?<!-L )\btmux (kill|attach|new)'))),
           reason: '命令 "$command" 缺少 -L socket 隔离',
         );
-        // 更强的断言：命令里唯一的 tmux 调用必须紧跟 -L。
         expect(command, contains('tmux -L '));
       }
     });
 
     test('绝不生成 kill-server 或 kill-session', () {
-      final command = TmuxSessionPlanner.attachOrCreateCommand('s1', 'tab-1');
+      final command = TmuxSessionPlanner.createCommand('s1', 'tab-1');
 
       expect(command, isNot(contains('kill-server')));
       expect(command, isNot(contains('kill-session')));
@@ -113,12 +162,15 @@ void main() {
     });
 
     test('shell 错误信息不被误判为可用', () {
-      // `command -v` 失败时会打印到 stderr，某些配置下也可能混进 stdout。
       expect(
         TmuxSessionPlanner.isTmuxAvailable('bash: tmux: command not found'),
         isFalse,
       );
       expect(TmuxSessionPlanner.isTmuxAvailable('tmux'), isFalse);
+      expect(
+        TmuxSessionPlanner.isTmuxAvailable('/usr/bin/tmux\n/bin/other'),
+        isFalse,
+      );
     });
   });
 

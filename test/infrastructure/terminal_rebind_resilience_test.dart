@@ -159,7 +159,7 @@ void main() {
   });
 
   test(
-    'captured input and resize callbacks cannot affect replacement session',
+    'captured input and resize callbacks cannot restart an interrupted plain shell',
     () async {
       final terminal = Terminal();
       final client = _FakeSshClient();
@@ -179,9 +179,9 @@ void main() {
       oldResize(120, 40, 0, 0);
       await Future<void>.delayed(const Duration(milliseconds: 100));
       expect(oldSession.input.writes, 0);
-      expect(replacement.lastSession!.input.writes, 0);
-      expect(replacement.lastSession!.resizeCalls, 0);
-      expect(bridge.state, TerminalConnectionState.connected);
+      expect(replacement.lastSession, isNull);
+      expect(bridge.state, TerminalConnectionState.disconnected);
+      expect(bridge.plainSessionInterrupted, isTrue);
     },
   );
 

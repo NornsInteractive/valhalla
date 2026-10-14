@@ -9878,6 +9878,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A previous source save only partially persisted. Please re-enter credentials and save successfully before browsing.'**
   String get nasSourceSaveIncomplete;
+
+  /// No description provided for @terminalHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Session History'**
+  String get terminalHistoryTitle;
+
+  /// No description provided for @terminalHistoryButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Session History'**
+  String get terminalHistoryButton;
+
+  /// No description provided for @terminalHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No session history. Persistent sessions require tmux on the remote server.'**
+  String get terminalHistoryEmpty;
+
+  /// No description provided for @terminalHistoryRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh History'**
+  String get terminalHistoryRefresh;
+
+  /// No description provided for @terminalStartupSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Startup Session'**
+  String get terminalStartupSession;
+
+  /// No description provided for @terminalStartupSessionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which session opens when launching the terminal'**
+  String get terminalStartupSessionSubtitle;
+
+  /// No description provided for @terminalStartupSessionFresh.
+  ///
+  /// In en, this message translates to:
+  /// **'New Session (Default)'**
+  String get terminalStartupSessionFresh;
+
+  /// No description provided for @terminalStatusOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get terminalStatusOpen;
+
+  /// No description provided for @terminalStatusAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get terminalStatusAvailable;
+
+  /// No description provided for @terminalStatusEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get terminalStatusEnded;
+
+  /// No description provided for @terminalStatusOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get terminalStatusOffline;
+
+  /// No description provided for @terminalDefaultBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get terminalDefaultBadge;
+
+  /// No description provided for @terminalLegacyBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Unimported'**
+  String get terminalLegacyBadge;
+
+  /// No description provided for @terminalRestoreSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Session'**
+  String get terminalRestoreSession;
+
+  /// No description provided for @terminalSetDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as Default'**
+  String get terminalSetDefault;
+
+  /// No description provided for @terminalClearDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Default'**
+  String get terminalClearDefault;
+
+  /// No description provided for @terminalRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Session'**
+  String get terminalRename;
+
+  /// No description provided for @terminalRenameDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Session'**
+  String get terminalRenameDialogTitle;
+
+  /// No description provided for @terminalRenameInputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Session Name'**
+  String get terminalRenameInputLabel;
+
+  /// No description provided for @terminalTitleInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Title must be 1 to 64 characters without control characters'**
+  String get terminalTitleInvalid;
+
+  /// No description provided for @terminalErrorHistoryLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load terminal history'**
+  String get terminalErrorHistoryLoadFailed;
+
+  /// No description provided for @terminalErrorHistorySaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save terminal history'**
+  String get terminalErrorHistorySaveFailed;
+
+  /// No description provided for @terminalErrorHistoryRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to refresh terminal history'**
+  String get terminalErrorHistoryRefreshFailed;
+
+  /// No description provided for @terminalErrorStartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start terminal session'**
+  String get terminalErrorStartFailed;
+
+  /// No description provided for @terminalErrorRestoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to restore terminal session'**
+  String get terminalErrorRestoreFailed;
+
+  /// No description provided for @terminalErrorDefaultSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save default startup session'**
+  String get terminalErrorDefaultSaveFailed;
+
+  /// No description provided for @terminalErrorCommandFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to execute terminal command'**
+  String get terminalErrorCommandFailed;
+
+  /// No description provided for @terminalErrorTitleInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid session title (1–64 characters required)'**
+  String get terminalErrorTitleInvalid;
+
+  /// No description provided for @terminalErrorSshDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'SSH connection lost'**
+  String get terminalErrorSshDisconnected;
+
+  /// No description provided for @terminalNoticeDefaultMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Default startup session was missing or ended; opened a new terminal instead'**
+  String get terminalNoticeDefaultMissing;
+
+  /// No description provided for @terminalNoticeSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The requested tmux session no longer exists on the remote server'**
+  String get terminalNoticeSessionMissing;
+
+  /// No description provided for @terminalNoticePlainInterrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost. Non-tmux shell processes could not be resumed'**
+  String get terminalNoticePlainInterrupted;
 }
 
 class _AppLocalizationsDelegate

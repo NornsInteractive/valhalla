@@ -5478,4 +5478,111 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       'Penyimpanan sumber sebelumnya hanya tersimpan sebagian. Masukkan kembali kredensial dan simpan dengan sukses sebelum menjelajah.';
+
+  @override
+  String get terminalHistoryTitle => 'Riwayat Sesi';
+
+  @override
+  String get terminalHistoryButton => 'Riwayat Sesi';
+
+  @override
+  String get terminalHistoryEmpty =>
+      'Tidak ada riwayat sesi. Sesi persisten membutuhkan tmux di server remote.';
+
+  @override
+  String get terminalHistoryRefresh => 'Segarkan Riwayat';
+
+  @override
+  String get terminalStartupSession => 'Sesi Awal';
+
+  @override
+  String get terminalStartupSessionSubtitle =>
+      'Pilih sesi yang terbuka saat meluncurkan terminal';
+
+  @override
+  String get terminalStartupSessionFresh => 'Sesi Baru (Default)';
+
+  @override
+  String get terminalStatusOpen => 'Terbuka';
+
+  @override
+  String get terminalStatusAvailable => 'Tersedia';
+
+  @override
+  String get terminalStatusEnded => 'Berakhir';
+
+  @override
+  String get terminalStatusOffline => 'Offline';
+
+  @override
+  String get terminalDefaultBadge => 'Default';
+
+  @override
+  String get terminalLegacyBadge => 'Belum diimpor';
+
+  @override
+  String get terminalRestoreSession => 'Pulihkan Sesi';
+
+  @override
+  String get terminalSetDefault => 'Atur sebagai Default';
+
+  @override
+  String get terminalClearDefault => 'Hapus Default';
+
+  @override
+  String get terminalRename => 'Ganti Nama Sesi';
+
+  @override
+  String get terminalRenameDialogTitle => 'Ganti Nama Sesi';
+
+  @override
+  String get terminalRenameInputLabel => 'Nama Sesi';
+
+  @override
+  String get terminalTitleInvalid =>
+      'Judul harus berisi 1 hingga 64 karakter tanpa karakter kontrol';
+
+  @override
+  String get terminalErrorHistoryLoadFailed => 'Gagal memuat riwayat terminal';
+
+  @override
+  String get terminalErrorHistorySaveFailed =>
+      'Gagal menyimpan riwayat terminal';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed =>
+      'Gagal menyegarkan riwayat terminal';
+
+  @override
+  String get terminalErrorStartFailed => 'Gagal memulai sesi terminal';
+
+  @override
+  String get terminalErrorRestoreFailed => 'Gagal memulihkan sesi terminal';
+
+  @override
+  String get terminalErrorDefaultSaveFailed =>
+      'Gagal menyimpan sesi awal default';
+
+  @override
+  String get terminalErrorCommandFailed =>
+      'Gagal menjalankan perintah terminal';
+
+  @override
+  String get terminalErrorTitleInvalid =>
+      'Judul sesi tidak valid (harus 1–64 karakter)';
+
+  @override
+  String get terminalErrorSshDisconnected => 'Koneksi SSH terputus';
+
+  @override
+  String get terminalNoticeDefaultMissing =>
+      'Sesi awal default hilang atau berakhir; membuka terminal baru sebagai gantinya';
+
+  @override
+  String get terminalNoticeSessionMissing =>
+      'Sesi tmux yang diminta sudah tidak ada di server remote';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      'Koneksi terputus. Proses shell non-tmux tidak dapat dilanjutkan';
 }

@@ -463,7 +463,7 @@ void main() {
       ),
     );
     await _frames(tester);
-    await tester.tap(find.byIcon(Icons.grid_view));
+    await tester.tap(find.byIcon(Icons.image));
     await _frames(tester);
     expect(oldRequests, 1);
 
@@ -719,6 +719,122 @@ void _presentationTests() {
     expect(find.byType(ListView), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('compact grid paints icon and title on the same row', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final source = _source(list: (_) => Stream.value(const [_file, _folder]));
+    await _open(tester, source, mode: RemoteBrowserMode.file);
+    await tester.tap(find.byIcon(Icons.grid_view));
+    await _frames(tester);
+    final title = find.text('notes.txt');
+    final icon = find.byIcon(Icons.insert_drive_file);
+    expect(title, findsWidgets);
+    expect(icon, findsWidgets);
+    expect(
+      tester.getTopLeft(title.first).dy,
+      closeTo(tester.getTopLeft(icon.first).dy, 6),
+      reason: 'icon and title must share a row in the compact grid',
+    );
+    expect(
+      tester.getTopLeft(title.first).dx,
+      greaterThan(tester.getTopLeft(icon.first).dx),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('compact grid does not download unseen image previews', (
+    tester,
+  ) async {
+    var previews = 0;
+    final source = _source(
+      list: (_) => Stream.value(const [_photo, _folder]),
+      preview: (_, _) async {
+        previews++;
+        return null;
+      },
+    );
+    await _open(tester, source, mode: RemoteBrowserMode.file);
+    await tester.tap(find.byIcon(Icons.grid_view));
+    await _frames(tester);
+    expect(previews, 0);
+    await tester.tap(find.byIcon(Icons.image));
+    await _frames(tester);
+    expect(previews, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'compact grid keeps two columns at 320-430dp and one at 2x text',
+    (tester) async {
+      for (final width in [320.0, 360.0, 390.0, 430.0]) {
+        tester.view.physicalSize = Size(width, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final source = _source(
+          list: (_) => Stream.value(const [_file, _folder]),
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _open(tester, source, mode: RemoteBrowserMode.file);
+        await tester.tap(find.byIcon(Icons.grid_view));
+        await _frames(tester);
+        final cards = tester.widget<GridView>(find.byType(GridView));
+        expect(
+          (cards.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount)
+              .crossAxisCount,
+          2,
+        );
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      }
+      tester.view.physicalSize = const Size(320, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final rtlSource = _source(
+        list: (_) => Stream.value(const [_file, _folder]),
+      );
+      // Drop the previous Navigator's still-open dialog before the RTL host.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpWidget(
+        _app(
+          Directionality(
+            textDirection: TextDirection.rtl,
+            child: RemoteBrowserDialog(
+              source: rtlSource,
+              mode: RemoteBrowserMode.file,
+            ),
+          ),
+          scale: 2,
+        ),
+      );
+      await _frames(tester);
+      await tester.tap(find.byIcon(Icons.grid_view));
+      await _frames(tester);
+      final rtlTitle = find.text('notes.txt');
+      final rtlIcon = find.byIcon(Icons.insert_drive_file);
+      final grid = tester.widget<GridView>(find.byType(GridView));
+      expect(
+        (grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount)
+            .crossAxisCount,
+        1,
+      );
+      final titleBounds = tester.getRect(rtlTitle.first);
+      final iconBounds = tester.getRect(rtlIcon.first);
+      expect(titleBounds.top, lessThan(iconBounds.bottom));
+      expect(titleBounds.bottom, greaterThan(iconBounds.top));
+      expect(
+        tester.getTopLeft(rtlTitle.first).dx,
+        lessThan(tester.getTopLeft(rtlIcon.first).dx),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('large text uses one vertical card without footer overflow', (
     tester,

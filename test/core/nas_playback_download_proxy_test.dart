@@ -180,6 +180,303 @@ NasMediaItem _item(String name, {int size = 10}) => NasMediaItem(
 );
 
 void main() {
+  group('append current music queue', () {
+    late Directory directory;
+    late NasIndexRepository repository;
+    late _Player native;
+    late _Adapter adapter;
+    late NasMediaProxyService proxy;
+    late NasMediaPlayerService service;
+
+    Matcher errorCode(String code) => throwsA(
+      isA<StateError>().having((error) => error.message, 'message', code),
+    );
+
+    setUp(() async {
+      directory = await Directory.systemTemp.createTemp('nas-queue-append-');
+      repository = NasIndexRepository('${directory.path}/index.sqlite');
+      await repository.initialize();
+      native = _Player();
+      adapter = _Adapter();
+      proxy = NasMediaProxyService(_Ssh());
+      service = NasMediaPlayerService(
+        proxy,
+        repository,
+        player: native,
+        adapterFor: (_) async => adapter,
+      );
+    });
+
+    tearDown(() async {
+      await service.dispose();
+      await proxy.dispose();
+      await directory.delete(recursive: true);
+    });
+
+    test(
+      'append is idempotent and preserves position, pause and lease',
+      () async {
+        await expectLater(
+          service.addToQueue(_item('extra.mp3')),
+          errorCode('NAS_PLAYER_EMPTY'),
+        );
+        expect(native.opened, isEmpty);
+        var closed = 0;
+        await service.open(
+          _item('first.mp3'),
+          queue: [_item('first.mp3'), _item('second.mp3')],
+          disposeQueue: () => closed++,
+        );
+        await service.seek(const Duration(seconds: 42));
+        await service.pause();
+        await service.addToQueue(_item('extra.mp3'));
+        await service.addToQueue(_item('extra.mp3'));
+        expect(service.state.queue.map((item) => item.path), [
+          'first.mp3',
+          'second.mp3',
+          'extra.mp3',
+        ]);
+        expect(service.state.index, 0);
+        expect(service.state.position, const Duration(seconds: 42));
+        expect(service.state.playing, isFalse);
+        expect(native.opened, hasLength(1));
+        expect(closed, 0);
+        await service.stop();
+        expect(closed, 1);
+      },
+    );
+
+    test('rejects cross-source, non-audio, full and closed queues', () async {
+      await service.open(_item('first.mp3'));
+      await expectLater(
+        service.addToQueue(
+          const NasMediaItem(
+            serverId: 'another-source',
+            path: 'foreign.mp3',
+            kind: NasMediaKind.audio,
+            sizeBytes: 1,
+            modifiedEpoch: 1,
+          ),
+        ),
+        errorCode('NAS_QUEUE_SOURCE_MISMATCH'),
+      );
+      await expectLater(
+        service.addToQueue(
+          const NasMediaItem(
+            serverId: 'source-a',
+            path: 'video.mp4',
+            kind: NasMediaKind.video,
+            sizeBytes: 1,
+            modifiedEpoch: 1,
+          ),
+        ),
+        errorCode('NAS_QUEUE_AUDIO_ONLY'),
+      );
+      final queue = List.generate(600, (index) => _item('$index.mp3'));
+      await service.open(queue.first, queue: queue);
+      await expectLater(
+        service.addToQueue(_item('overflow.mp3')),
+        errorCode('NAS_QUEUE_FULL'),
+      );
+      await service.addToQueue(queue.last);
+      expect(service.state.queue, hasLength(600));
+      expect(service.current?.path, '0.mp3');
+      await service.dispose();
+      await expectLater(
+        service.addToQueue(_item('closed.mp3')),
+        errorCode('NAS_PLAYER_CLOSED'),
+      );
+    });
+
+    test(
+      'skips prequeued pages without removing real playlist duplicates',
+      () async {
+        final pages = [
+          [_item('early-one.mp3')],
+          [_item('early-two.mp3')],
+          [
+            _item('repeat.mp3').copyWith(playlistEntryId: 'member-1'),
+            _item('repeat.mp3').copyWith(playlistEntryId: 'member-2'),
+          ],
+          <NasMediaItem>[],
+        ];
+        var loaded = 0;
+        await service.open(
+          _item('first.mp3'),
+          loadMore: () async => pages[loaded++],
+        );
+        await service.addToQueue(_item('early-one.mp3'));
+        await service.addToQueue(_item('early-two.mp3'));
+        await service.next();
+        expect(service.current?.path, 'early-one.mp3');
+        await service.next();
+        expect(service.current?.path, 'early-two.mp3');
+        expect(loaded, 0);
+        await service.next();
+        expect(loaded, 3);
+        expect(service.current?.playlistEntryId, 'member-1');
+        await service.next();
+        expect(service.current?.playlistEntryId, 'member-2');
+        expect(service.state.queue.map((item) => item.path), [
+          'first.mp3',
+          'early-one.mp3',
+          'early-two.mp3',
+          'repeat.mp3',
+          'repeat.mp3',
+        ]);
+        await service.next();
+        expect(loaded, 4);
+        expect(service.state.playing, isFalse);
+      },
+    );
+
+    test(
+      'shuffle keeps additions and repeat restores the indexed queue',
+      () async {
+        var page = 0, restarted = 0;
+        var repeated = false;
+        final first = [_item('first.mp3'), _item('second.mp3')];
+        await service.open(
+          first.first,
+          queue: first,
+          loadMore: () async =>
+              page++ == 0 ? [_item('extra.mp3'), _item('last.mp3')] : [],
+          restartQueue: () async {
+            restarted++;
+            page = 0;
+            repeated = true;
+            return first;
+          },
+        );
+        service.setShuffle(true);
+        service.setRepeat(NasRepeat.all);
+        await service.addToQueue(_item('extra.mp3'));
+        final visited = <String>{service.current!.path};
+        for (var i = 0; i < 3; i++) {
+          await service.next();
+          expect(visited.add(service.current!.path), isTrue);
+        }
+        expect(visited, {'first.mp3', 'second.mp3', 'extra.mp3', 'last.mp3'});
+        expect(repeated, isFalse);
+        await service.next();
+        expect(restarted, 1);
+        final replayed = <String>{service.current!.path};
+        for (var i = 0; i < 3; i++) {
+          await service.next();
+          expect(replayed.add(service.current!.path), isTrue);
+        }
+        expect(replayed, visited);
+      },
+    );
+
+    test(
+      'pending pagination rejects append without changing its cursor',
+      () async {
+        final began = Completer<void>(), gate = Completer<List<NasMediaItem>>();
+        await service.open(
+          _item('first.mp3'),
+          loadMore: () {
+            began.complete();
+            return gate.future;
+          },
+        );
+        final next = service.next();
+        await began.future;
+        try {
+          await expectLater(
+            service.addToQueue(_item('extra.mp3')),
+            errorCode('NAS_QUEUE_BUSY'),
+          );
+        } finally {
+          gate.complete([_item('next.mp3')]);
+          await next;
+        }
+        expect(service.current?.path, 'next.mp3');
+        expect(service.state.queue.map((item) => item.path), [
+          'first.mp3',
+          'next.mp3',
+        ]);
+      },
+    );
+
+    test(
+      'stop during pending open cancels append instead of reviving queue',
+      () async {
+        await service.open(_item('first.mp3'));
+        final began = Completer<void>(), gate = Completer<void>();
+        adapter.onResolve = (item) async {
+          began.complete();
+          await gate.future;
+          return NasResource(
+            uri: Uri.parse('http://media.invalid/${item.path}'),
+          );
+        };
+        final opening = service.open(_item('second.mp3'));
+        await began.future;
+        final adding = expectLater(
+          service.addToQueue(_item('extra.mp3')),
+          errorCode('NAS_QUEUE_CHANGED'),
+        );
+        final stopping = service.stop();
+        gate.complete();
+        await opening;
+        await adding;
+        await stopping;
+        expect(service.state.queue, isEmpty);
+        expect(service.current, isNull);
+        expect(native.opened, hasLength(1));
+      },
+    );
+
+    test(
+      'append waits for an in-flight open without reopening its item',
+      () async {
+        final began = Completer<void>(), gate = Completer<void>();
+        adapter.onResolve = (item) async {
+          began.complete();
+          await gate.future;
+          return NasResource(
+            uri: Uri.parse('http://media.invalid/${item.path}'),
+          );
+        };
+        final opening = service.open(_item('first.mp3'));
+        await began.future;
+        final adding = service.addToQueue(_item('extra.mp3'));
+        expect(service.state.queue.map((item) => item.path), ['first.mp3']);
+        gate.complete();
+        await opening;
+        await adding;
+        expect(native.opened, hasLength(1));
+        expect(service.current?.path, 'first.mp3');
+        expect(service.state.queue.map((item) => item.path), [
+          'first.mp3',
+          'extra.mp3',
+        ]);
+      },
+    );
+
+    test(
+      'new queue clears prequeued suppression from its predecessor',
+      () async {
+        final extra = _item('extra.mp3');
+        await service.open(_item('old.mp3'), loadMore: () async => [extra]);
+        await service.addToQueue(extra);
+        var page = 0;
+        await service.open(
+          _item('new.mp3'),
+          loadMore: () async => page++ == 0 ? [extra] : [],
+        );
+        await service.next();
+        expect(service.current?.path, 'extra.mp3');
+        expect(page, 1);
+        expect(service.state.queue.map((item) => item.path), [
+          'new.mp3',
+          'extra.mp3',
+        ]);
+      },
+    );
+  });
+
   test(
     'native video output failure becomes an explicit playback error',
     () async {

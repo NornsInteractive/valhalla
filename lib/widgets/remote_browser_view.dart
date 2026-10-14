@@ -32,6 +32,7 @@ class RemoteBrowserEntriesView extends StatefulWidget {
   final Widget Function(BuildContext, RemoteBrowserEntry) itemBuilder;
   final ScrollController? controller;
   final String? locationKey;
+  final bool detailedMetadata;
 
   const RemoteBrowserEntriesView({
     super.key,
@@ -40,6 +41,7 @@ class RemoteBrowserEntriesView extends StatefulWidget {
     required this.itemBuilder,
     this.controller,
     this.locationKey,
+    this.detailedMetadata = false,
   });
 
   @override
@@ -59,9 +61,9 @@ class _RemoteBrowserEntriesViewState extends State<RemoteBrowserEntriesView> {
 
   ScrollController get _controller => widget.controller ?? _ownedController;
 
-  void _captureAnchor(List<RemoteBrowserEntry> entries) {
+  void _captureAnchor(List<RemoteBrowserEntry> entries, double pad) {
     if (!_controller.hasClients || entries.isEmpty) return;
-    final rows = math.max(0.0, _controller.offset - 12) / _rowExtent;
+    final rows = math.max(0.0, _controller.offset - pad) / _rowExtent;
     final index = (rows.ceil() * _columns).clamp(0, entries.length - 1);
     _anchorId = entries[index].id;
     _anchorFraction = rows - rows.ceil();
@@ -77,7 +79,8 @@ class _RemoteBrowserEntriesViewState extends State<RemoteBrowserEntriesView> {
       _anchorId = null;
       _restoreOffset = _locations[widget.locationKey] ?? 0;
     } else if (oldWidget.viewMode != widget.viewMode) {
-      _captureAnchor(oldWidget.entries);
+      final oldList = oldWidget.viewMode == RemoteBrowserViewMode.list;
+      _captureAnchor(oldWidget.entries, oldList ? 12.0 : 8.0);
     }
   }
 
@@ -91,9 +94,10 @@ class _RemoteBrowserEntriesViewState extends State<RemoteBrowserEntriesView> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
-      final large = scale >= 1.6;
+      final large = scale >= 1.35;
       final list = widget.viewMode == RemoteBrowserViewMode.list;
       final gallery = widget.viewMode == RemoteBrowserViewMode.gallery;
+      final pad = list ? 12.0 : 8.0;
       final columns = list
           ? 1
           : constraints.maxWidth < LayoutBreakpoints.compactMax
@@ -103,12 +107,16 @@ class _RemoteBrowserEntriesViewState extends State<RemoteBrowserEntriesView> {
               ((constraints.maxWidth - 24) / (large ? 420 : 240)).floor(),
             );
       final rowExtent = list
-          ? math.max(72.0, 40 + 32 * scale)
-          : (gallery ? 192.0 : 140.0) + math.max(0, scale - 1) * 68 + 8;
+          ? (widget.detailedMetadata
+                ? math.max(86.0, 20.0 + 72.0 * scale)
+                : math.max(72.0, 40.0 + 32.0 * scale))
+          : (gallery
+                ? 192.0 + math.max(0, scale - 1) * 64 + 8
+                : 112.0 + math.max(0, scale - 1) * 72 + 8);
       if ((_columns != columns || _rowExtent != rowExtent) &&
           _anchorId == null &&
           _restoreOffset == null) {
-        _captureAnchor(widget.entries);
+        _captureAnchor(widget.entries, pad);
       }
       _columns = columns;
       _rowExtent = rowExtent;
@@ -120,7 +128,7 @@ class _RemoteBrowserEntriesViewState extends State<RemoteBrowserEntriesView> {
             _restoreOffset ??
             (index < 0
                 ? 0.0
-                : 12 + (index ~/ columns + _anchorFraction) * rowExtent);
+                : pad + (index ~/ columns + _anchorFraction) * rowExtent);
         _anchorId = null;
         _restoreOffset = null;
         final generation = ++_layoutGeneration;
@@ -140,7 +148,7 @@ class _RemoteBrowserEntriesViewState extends State<RemoteBrowserEntriesView> {
         return ListView.builder(
           key: key,
           controller: _controller,
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(pad),
           itemExtent: rowExtent,
           itemCount: widget.entries.length,
           itemBuilder: (context, index) =>
@@ -150,7 +158,7 @@ class _RemoteBrowserEntriesViewState extends State<RemoteBrowserEntriesView> {
       return GridView.builder(
         key: key,
         controller: _controller,
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(pad),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: columns,
           mainAxisExtent: rowExtent - 8,
@@ -177,6 +185,8 @@ class RemoteBrowserEntryTile extends StatelessWidget {
   final Widget? leading;
   final Widget? trailing;
   final Widget? metadata;
+  final String? date;
+  final bool isThreeLine;
 
   const RemoteBrowserEntryTile({
     super.key,
@@ -191,6 +201,8 @@ class RemoteBrowserEntryTile extends StatelessWidget {
     this.leading,
     this.trailing,
     this.metadata,
+    this.date,
+    this.isThreeLine = false,
   });
 
   @override
@@ -213,11 +225,14 @@ class RemoteBrowserEntryTile extends StatelessWidget {
         : entry.mimeType?.startsWith('video/') == true
         ? Icons.movie
         : Icons.insert_drive_file;
+    final iconSize = (viewMode == RemoteBrowserViewMode.grid && !flat)
+        ? 22.0
+        : 28.0;
     final visual =
         leading ??
         Icon(
           icon,
-          size: 28,
+          size: iconSize,
           color: (entry.selectable ? colors.primary : colors.outline)
               .withValues(alpha: hidden ? 0.62 : 1),
         );
@@ -231,7 +246,7 @@ class RemoteBrowserEntryTile extends StatelessWidget {
               : entry.sizeBytes == null
               ? ''
               : _formatBytes(entry.sizeBytes!),
-          maxLines: 2,
+          maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: colors.onSurfaceVariant.withValues(alpha: hidden ? 0.62 : 1),
@@ -252,6 +267,7 @@ class RemoteBrowserEntryTile extends StatelessWidget {
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           dense: true,
+          isThreeLine: isThreeLine,
           leading: visual,
           title: Text(
             entry.name,
@@ -278,6 +294,12 @@ class RemoteBrowserEntryTile extends StatelessWidget {
               cacheHeight: gallery ? 512 : 128,
               errorBuilder: (_, _, _) => visual,
             );
+      final dateStr =
+          date ??
+          (entry.modifiedEpoch != null && entry.modifiedEpoch! > 0
+              ? _formatEpoch(entry.modifiedEpoch!)
+              : null);
+
       content = ValhallaCard(
         margin: EdgeInsets.zero,
         highlight: selected,
@@ -286,11 +308,12 @@ class RemoteBrowserEntryTile extends StatelessWidget {
           onDoubleTap: onDoubleTap,
           onLongPress: onLongPress,
           child: Padding(
-            padding: const EdgeInsets.all(10),
+            padding: EdgeInsets.all(gallery ? 10 : 6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                if (gallery)
+                if (gallery) ...[
                   Expanded(
                     child: Stack(
                       children: [
@@ -304,36 +327,73 @@ class RemoteBrowserEntryTile extends StatelessWidget {
                           Positioned(top: 0, right: 0, child: end),
                       ],
                     ),
-                  )
-                else
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    entry.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: titleColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  meta,
+                ] else ...[
+                  // Ordinary compact file grid: 22–24dp icon + filename SAME ROW
                   Row(
                     children: [
-                      if (leading != null && previewBytes == null)
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: leading!,
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Center(
+                          child: SizedBox(width: 24, height: 24, child: visual),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Semantics(
+                          label: entry.name,
+                          child: Text(
+                            entry.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: titleColor,
+                            ),
                           ),
-                        )
-                      else
-                        SizedBox(width: 32, height: 32, child: image),
-                      if (leading == null || previewBytes != null)
-                        const Spacer(),
-                      ?end,
+                        ),
+                      ),
                     ],
                   ),
-                const SizedBox(height: 8),
-                Text(
-                  entry.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: titleColor,
+                  const SizedBox(height: 2),
+                  // Compact metadata / action region below
+                  Row(
+                    children: [
+                      Expanded(child: meta),
+                      if (end != null) ...[const SizedBox(width: 4), end],
+                    ],
                   ),
-                ),
-                const SizedBox(height: 4),
-                if (gallery) meta else Flexible(child: meta),
+                  // Full modification date/time on its own line
+                  if (dateStr != null && dateStr.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      dateStr,
+                      maxLines: 2,
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 11,
+                        color: colors.outline.withValues(
+                          alpha: hidden ? 0.62 : 1,
+                        ),
+                        fontFamily: 'JetBrains Mono',
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
@@ -341,6 +401,18 @@ class RemoteBrowserEntryTile extends StatelessWidget {
       );
     }
     return content;
+  }
+
+  static String _formatEpoch(int epoch) {
+    if (epoch <= 0) return '';
+    final dt = DateTime.fromMillisecondsSinceEpoch(
+      epoch > 100000000000 ? epoch : epoch * 1000,
+    );
+    final month = dt.month.toString().padLeft(2, '0');
+    final day = dt.day.toString().padLeft(2, '0');
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    return '${dt.year}-$month-$day $hour:$minute';
   }
 
   static String _formatBytes(int bytes) {
@@ -977,7 +1049,7 @@ class RemoteBrowserViewState extends State<RemoteBrowserView> {
                   locationKey:
                       '${widget.source.targetKey}:$_currentPath:$_searchQuery:$_sortField:$_sortAscending:$_showHidden:$_fileFormat',
                   itemBuilder: (context, entry) {
-                    if (_viewMode != RemoteBrowserViewMode.list) {
+                    if (_viewMode == RemoteBrowserViewMode.gallery) {
                       _fetchPreview(entry);
                     }
                     return RemoteBrowserEntryTile(

@@ -100,6 +100,136 @@ Future<void> _until(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
+    'typed favorites query the full index and reset pages without changing old filter calls',
+    () async {
+      const source = NasSource(
+        id: 'favorites',
+        name: 'Favorites',
+        type: NasSourceType.sftp,
+      );
+      SharedPreferences.setMockInitialValues({
+        'valhalla_nas_sources_v1': jsonEncode([source.toJson()]),
+      });
+      final storage = await LocalStorageService.init();
+      final directory = await Directory.systemTemp.createTemp('nas-favorites');
+      final repository = NasIndexRepository('${directory.path}/index.sqlite');
+      await repository.initialize();
+      await repository.replaceServerItems(source.id, [
+        for (var i = 0; i < 240; i++)
+          NasMediaItem(
+            serverId: source.id,
+            path: '/a/${i.toString().padLeft(4, '0')}.jpg',
+            kind: NasMediaKind.image,
+            sizeBytes: 10,
+            modifiedEpoch: 1,
+            isFavorite: true,
+          ),
+        for (var i = 0; i < 3; i++)
+          NasMediaItem(
+            serverId: source.id,
+            path: '/y/favorite-$i.mp4',
+            kind: NasMediaKind.video,
+            sizeBytes: 10,
+            modifiedEpoch: 1,
+            isFavorite: true,
+          ),
+        for (var i = 0; i < 5; i++)
+          _item(source.id, '/z/favorite-$i.mp3').copyWith(isFavorite: true),
+        _item(source.id, '/z/other.mp3'),
+      ]);
+      final container = ProviderContainer(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(storage),
+          nasIndexRepositoryProvider.overrideWith((ref) async => repository),
+          nasSourceAdapterProvider(
+            source.id,
+          ).overrideWith((ref) async => _Adapter(source)),
+        ],
+      );
+      try {
+        await _until(
+          container,
+          (state) => state.items.isNotEmpty && !state.isLoading,
+        );
+        final notifier = container.read(nasProvider.notifier);
+        await notifier.selectCategory('favorites', favoritesOnly: true);
+        await notifier.setSort(NasSortKey.name, ascending: true);
+        expect(container.read(nasProvider).items.length, 200);
+        expect(
+          container
+              .read(nasProvider)
+              .items
+              .every((item) => item.kind == NasMediaKind.image),
+          true,
+        );
+        await notifier.loadMore();
+        expect(container.read(nasProvider).hasPrevious, true);
+
+        await notifier.setFilter(NasMediaKind.audio, favoritesOnly: true);
+        var filtered = container.read(nasProvider);
+        expect(filtered.browseCategory, 'favorites');
+        expect(filtered.filter, NasMediaKind.audio);
+        expect(filtered.favoritesOnly, true);
+        expect(filtered.matchingCount, 5);
+        expect(filtered.items.length, 5);
+        expect(filtered.items.every((item) => item.isFavorite), true);
+        expect(
+          filtered.items.every((item) => item.kind == NasMediaKind.audio),
+          true,
+        );
+        expect(
+          filtered.items.map((item) => item.path),
+          isNot(contains('/z/other.mp3')),
+        );
+        expect(filtered.hasPrevious, false);
+        expect(filtered.hasMore, false);
+
+        await notifier.setFilter(NasMediaKind.image, favoritesOnly: true);
+        filtered = container.read(nasProvider);
+        expect(filtered.matchingCount, 240);
+        expect(filtered.items.length, 200);
+        expect(filtered.hasPrevious, false);
+        expect(filtered.hasMore, true);
+        await notifier.loadMore();
+        expect(container.read(nasProvider).items.length, 40);
+        expect(container.read(nasProvider).hasPrevious, true);
+
+        await notifier.setFilter(NasMediaKind.video, favoritesOnly: true);
+        filtered = container.read(nasProvider);
+        expect(filtered.matchingCount, 3);
+        expect(filtered.items.length, 3);
+        expect(filtered.hasPrevious, false);
+        expect(filtered.hasMore, false);
+        expect(filtered.items.every((item) => item.isFavorite), true);
+
+        await notifier.setFilter(null, favoritesOnly: true);
+        filtered = container.read(nasProvider);
+        expect(filtered.filter, isNull);
+        expect(filtered.favoritesOnly, true);
+        expect(filtered.matchingCount, 248);
+        expect(filtered.items.length, 200);
+        expect(filtered.hasPrevious, false);
+        expect(filtered.hasMore, true);
+
+        // Existing non-favorites callers keep their previous behavior.
+        await notifier.setFilter(NasMediaKind.audio);
+        filtered = container.read(nasProvider);
+        expect(filtered.favoritesOnly, false);
+        expect(filtered.matchingCount, 6);
+        expect(filtered.items.length, 6);
+        expect(
+          filtered.items.map((item) => item.path),
+          contains('/z/other.mp3'),
+        );
+        expect(filtered.hasPrevious, false);
+      } finally {
+        container.dispose();
+        await directory.delete(recursive: true);
+      }
+    },
+  );
+
+  test(
     'independent sources preserve their index and cancel never prunes existing items',
     () async {
       const sources = [

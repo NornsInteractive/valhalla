@@ -10,6 +10,7 @@ import 'package:valhalla/l10n/app_localizations.dart';
 import 'package:xterm/xterm.dart';
 
 import '../support/fixed_terminal_settings.dart';
+import '../support/seeded_terminal_notifier.dart';
 
 class _Bridge extends TerminalSessionBridge {
   _Bridge() : super(terminal: Terminal(), serverName: 'test');
@@ -23,13 +24,8 @@ class _Bridge extends TerminalSessionBridge {
   }
 }
 
-class _Notifier extends TerminalNotifier {
-  _Notifier(this.initial);
-
-  final SshTerminalState initial;
-
-  @override
-  SshTerminalState build() => initial;
+class _Notifier extends SeededTerminalNotifier {
+  _Notifier(super.initial);
 }
 
 TerminalTab _tab(String id) {
@@ -46,6 +42,7 @@ Future<void> _pump(WidgetTester tester, _Notifier notifier) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        ...terminalWorkspaceOverrides(),
         terminalProvider.overrideWith(() => notifier),
         terminalSettingsProvider.overrideWith(
           FixedTerminalSettingsNotifier.new,
@@ -75,6 +72,7 @@ Future<void> _pumpNarrow(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        ...terminalWorkspaceOverrides(),
         terminalProvider.overrideWith(() => notifier),
         terminalSettingsProvider.overrideWith(
           FixedTerminalSettingsNotifier.new,

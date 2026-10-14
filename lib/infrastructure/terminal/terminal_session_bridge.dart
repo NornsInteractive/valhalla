@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart';
 
 import '../../core/utils/tmux_install_planner.dart';
+import '../../core/errors/app_exceptions.dart';
 import '../../core/services/app_diagnostics.dart';
 import '../../core/utils/tmux_session_planner.dart';
 import '../../core/security/agent_command_validator.dart';
@@ -14,9 +15,33 @@ import '../../core/utils/terminal_keys.dart';
 
 enum TerminalConnectionState { connecting, connected, disconnected, error }
 
+enum TerminalSessionIntent { createFresh, restoreExisting }
+
+class TerminalSessionMissingException extends SSHConnectionException {
+  const TerminalSessionMissingException() : super('TMUX_SESSION_MISSING');
+}
+
+class TerminalSessionInterruptedException extends SSHConnectionException {
+  const TerminalSessionInterruptedException()
+    : super('TERMINAL_PLAIN_SESSION_INTERRUPTED');
+}
+
+@immutable
+class TmuxSessionInfo {
+  const TmuxSessionInfo({
+    required this.name,
+    required this.createdAt,
+    required this.attachedClients,
+  });
+
+  final String name;
+  final DateTime createdAt;
+  final int attachedClients;
+}
+
 /// 终端会话是否运行在 tmux 中。
 enum TerminalSessionMode {
-  /// 直接开一个普通 PTY。断线后终端内容丢失。
+  /// 普通 PTY；断线后保留本地画面，但不能恢复原进程。
   plain,
 
   /// 附着到 tmux 会话。断线重连后内容仍在。
@@ -24,7 +49,7 @@ enum TerminalSessionMode {
 
   /// 期望用 tmux，但远端没有安装，已降级为 [plain]。
   ///
-  /// 单独列出来是因为用户需要知道「这次断线内容会丢」。
+  /// 单独列出来是因为用户需要知道本次会话无法持久恢复。
   tmuxUnavailable,
 }
 
@@ -52,6 +77,28 @@ class TerminalSessionBridge {
   /// 终端标识（通常是 tab id），用于区分同一服务器上的多个终端。
   final String terminalId;
 
+  final TerminalSessionIntent sessionIntent;
+  final String? tmuxSessionName;
+  String get remoteSessionName =>
+      tmuxSessionName ?? TmuxSessionPlanner.sessionName(serverId, terminalId);
+  String? get activeTmuxSessionName =>
+      _mode == TerminalSessionMode.tmux &&
+          _hasOpenedTmuxSession &&
+          !_tmuxCreateRejected
+      ? remoteSessionName
+      : null;
+
+  Object? _lastError;
+  Object? get lastError => _lastError;
+  bool get remoteSessionMissing =>
+      _lastError is TerminalSessionMissingException;
+  bool get plainSessionInterrupted =>
+      _lastError is TerminalSessionInterruptedException;
+  bool _hasOpenedSession = false;
+  bool _hasOpenedTmuxSession = false;
+  bool _tmuxStartAttempted = false;
+  bool _tmuxCreateRejected = false;
+
   /// 是否优先使用 tmux 保存会话。
   ///
   /// 默认 false：tmux 是 opt-in 能力，由设置页开关决定。忘了显式传参时
@@ -67,7 +114,7 @@ class TerminalSessionBridge {
   /// 用户已明确拒绝安装，本会话走普通 SSH PTY。
   bool _skipTmuxThisSession = false;
 
-  /// 远端缺 tmux，正在等 UI 询问用户是否安装。此时还没有打开 PTY。
+  /// 新建时缺 tmux，普通 PTY 已开放，另由 UI 询问是否安装。
   bool _awaitingTmuxDecision = false;
   bool get awaitingTmuxDecision => _awaitingTmuxDecision;
 
@@ -117,11 +164,22 @@ class TerminalSessionBridge {
     required this.serverName,
     this.serverId = '',
     this.terminalId = '0',
+    this.sessionIntent = TerminalSessionIntent.createFresh,
+    this.tmuxSessionName,
     this.preferTmux = false,
     this.launchCommand,
     this.remoteExecCommand,
     this.ptyAllocateTimeout = defaultPtyAllocateTimeout,
   }) {
+    if (tmuxSessionName != null &&
+        (!TmuxSessionPlanner.isSessionForServer(tmuxSessionName!, serverId) ||
+            sessionIntent != TerminalSessionIntent.restoreExisting)) {
+      throw ArgumentError('TMUX_INVALID_SESSION_NAME');
+    }
+    if (sessionIntent == TerminalSessionIntent.restoreExisting &&
+        (launchCommand != null || remoteExecCommand != null)) {
+      throw ArgumentError('TMUX_RESTORE_CANNOT_RUN_COMMAND');
+    }
     if (launchCommand != null) AgentCommandValidator.validate(launchCommand!);
     if (remoteExecCommand != null) {
       AgentCommandValidator.validate(remoteExecCommand!);
@@ -130,6 +188,12 @@ class TerminalSessionBridge {
 
   Future<void> start({int initialWidth = 80, int initialHeight = 24}) async {
     if (_disposed) return;
+    if (_tmuxCreateRejected) return;
+    if (_hasOpenedSession || _tmuxStartAttempted) {
+      final client = sshClient;
+      if (client != null) await rebind(client);
+      return;
+    }
     terminal.eraseDisplay();
     terminal.setCursor(0, 0);
     _lastWidth = initialWidth > 0 ? initialWidth : 80;
@@ -144,6 +208,10 @@ class TerminalSessionBridge {
 
   /// 用户拒绝安装 tmux：立即打开普通 SSH PTY。
   Future<void> proceedWithoutTmux() async {
+    if (sessionIntent == TerminalSessionIntent.restoreExisting ||
+        _tmuxStartAttempted) {
+      return;
+    }
     _skipTmuxThisSession = true;
     _awaitingTmuxDecision = false;
     proposedInstallCommand = null;
@@ -160,7 +228,7 @@ class TerminalSessionBridge {
     await _startRealSshSession(_lastWidth, _lastHeight);
   }
 
-  /// 用户确认且远端安装命令已执行成功后，重新探测并尝试附着 tmux。
+  /// 用户确认安装成功后重新探测；新建仍不得附着同名旧终端。
   Future<void> retryAfterTmuxInstall() async {
     _tmuxPath = null;
     _skipTmuxThisSession = false;
@@ -170,6 +238,7 @@ class TerminalSessionBridge {
       _showDisconnectedNotice();
       return;
     }
+    _disposeSession();
     await _startRealSshSession(_lastWidth, _lastHeight);
   }
 
@@ -179,24 +248,185 @@ class TerminalSessionBridge {
   /// 用户就再也看不到断线之前的输出了。tmux 模式下新会话会自动 attach
   /// 回原来的 tmux session，所以历史输出还能接着往下走。
   Future<void> rebind(SSHClient client) async {
+    if (_disposed) return;
     if (identical(sshClient, client) && _isSessionOpen) return;
 
     _disposeSession();
     sshClient = client;
+    if (_tmuxCreateRejected) {
+      _setState(TerminalConnectionState.error);
+      return;
+    }
 
     if (client.isClosed) {
       _showDisconnectedNotice();
       return;
     }
 
-    // tmux 路径已探测过就不必再探测：同一台服务器上 tmux 的存在性
-    // 不会因为断线而改变。
+    if (_hasOpenedSession &&
+        _mode != TerminalSessionMode.tmux &&
+        !_tmuxStartAttempted) {
+      _lastError = const TerminalSessionInterruptedException();
+      _setState(TerminalConnectionState.disconnected);
+      return;
+    }
+
+    // Restores revalidate the executable and exact session; failures never
+    // silently become a new ordinary shell.
     _tmuxPath = _mode == TerminalSessionMode.tmux ? _tmuxPath : null;
     await _startRealSshSession(
       _lastWidth,
       _lastHeight,
       preserveScrollback: true,
     );
+  }
+
+  /// Queries only Valhalla's isolated socket; no shell input or shared client
+  /// is closed by these short-lived inspection channels.
+  static Future<List<TmuxSessionInfo>> discoverTmuxSessions(
+    SSHClient client, {
+    required String serverId,
+  }) async {
+    final path = await _queryTmuxPath(client);
+    final result = await _runTmuxQuery(
+      client,
+      TmuxSessionPlanner.listSessionsCommand.replaceFirst(
+        'tmux ',
+        '${cliShellQuote(path)} ',
+      ),
+    );
+    if (result.exitCode != 0) {
+      if (result.exitCode == 1 && _isMissingTmuxServer(result.stderr)) {
+        return const [];
+      }
+      throw SSHConnectionException(
+        'TMUX_HISTORY_QUERY_FAILED',
+        result.exitCode,
+      );
+    }
+    final sessions = <TmuxSessionInfo>[];
+    for (final line in const LineSplitter().convert(result.stdout)) {
+      final fields = line.split('\t');
+      if (fields.isEmpty ||
+          !TmuxSessionPlanner.isSessionForServer(fields.first, serverId)) {
+        continue;
+      }
+      if (fields.length != 3) {
+        throw const SSHConnectionException('TMUX_HISTORY_INVALID_RESPONSE');
+      }
+      final created = int.tryParse(fields[1]);
+      final attached = int.tryParse(fields[2]);
+      if (created == null ||
+          created < 0 ||
+          created > 8640000000000 ||
+          attached == null ||
+          attached < 0) {
+        throw const SSHConnectionException('TMUX_HISTORY_INVALID_RESPONSE');
+      }
+      sessions.add(
+        TmuxSessionInfo(
+          name: fields[0],
+          createdAt: DateTime.fromMillisecondsSinceEpoch(
+            created * 1000,
+            isUtc: true,
+          ),
+          attachedClients: attached,
+        ),
+      );
+    }
+    return List.unmodifiable(sessions);
+  }
+
+  static Future<bool> tmuxSessionExists(
+    SSHClient client,
+    String name, {
+    String? tmuxPath,
+  }) async {
+    final command = TmuxSessionPlanner.hasSessionCommand(name);
+    final path = tmuxPath ?? await _queryTmuxPath(client);
+    final result = await _runTmuxQuery(
+      client,
+      command.replaceFirst('tmux ', '${cliShellQuote(path)} '),
+    );
+    if (result.exitCode == 0) return true;
+    if (result.exitCode == 1 &&
+        (_isMissingTmuxServer(result.stderr) ||
+            result.stderr.trim() == "can't find session: $name" ||
+            result.stderr.trim() == "can't find session: =$name" ||
+            result.stderr.trim() == "session not found: $name" ||
+            result.stderr.trim() == "session not found: =$name")) {
+      return false;
+    }
+    throw SSHConnectionException('TMUX_SESSION_CHECK_FAILED', result.exitCode);
+  }
+
+  static bool _isMissingTmuxServer(String error) {
+    final text = error.trim();
+    return text == 'no sessions' ||
+        text.startsWith('no server running on ') ||
+        (text.startsWith('error connecting to ') &&
+            text.endsWith('(No such file or directory)')) ||
+        text == 'failed to connect to server: No such file or directory';
+  }
+
+  static Future<String> _queryTmuxPath(SSHClient client) async {
+    final result = await _runTmuxQuery(
+      client,
+      TmuxSessionPlanner.detectCommand,
+    );
+    final path = result.stdout.trim();
+    if (result.exitCode == 1 && path.isEmpty) {
+      throw const SSHConnectionException('TMUX_UNAVAILABLE');
+    }
+    if (result.exitCode != 0 || !TmuxSessionPlanner.isTmuxAvailable(path)) {
+      throw const SSHConnectionException('TMUX_DETECTION_FAILED');
+    }
+    return path;
+  }
+
+  static Future<({int? exitCode, String stdout, String stderr})> _runTmuxQuery(
+    SSHClient client,
+    String command,
+  ) async {
+    if (client.isClosed) throw const SSHConnectionException('SSH_DISCONNECTED');
+    const timeout = Duration(seconds: 10);
+    final allocation = client.execute('LC_ALL=C $command');
+    SSHSession session;
+    try {
+      session = await allocation.timeout(timeout);
+    } on TimeoutException {
+      unawaited(allocation.then(_releaseSession, onError: (Object _) {}));
+      rethrow;
+    }
+    var received = 0;
+    Future<String> read(Stream<List<int>> stream) async {
+      final bytes = <int>[];
+      await for (final chunk in stream) {
+        received += chunk.length;
+        if (received > 1024 * 1024) {
+          throw const SSHConnectionException('TMUX_HISTORY_RESPONSE_TOO_LARGE');
+        }
+        bytes.addAll(chunk);
+      }
+      return utf8.decode(bytes, allowMalformed: true);
+    }
+
+    try {
+      final stdout = read(session.stdout);
+      final stderr = read(session.stderr);
+      await Future.wait<Object?>([
+        stdout,
+        stderr,
+        session.done,
+      ], eagerError: true).timeout(timeout);
+      return (
+        exitCode: session.exitCode,
+        stdout: await stdout,
+        stderr: await stderr,
+      );
+    } finally {
+      _releaseSession(session);
+    }
   }
 
   /// 探测远端是否装了 tmux。
@@ -252,7 +482,7 @@ class TerminalSessionBridge {
     int height, {
     bool preserveScrollback = false,
   }) async {
-    if (_disposed) return;
+    if (_disposed || _tmuxCreateRejected) return;
     final epoch = ++_sessionEpoch;
     final client = sshClient;
     bool current() =>
@@ -262,54 +492,78 @@ class TerminalSessionBridge {
     _lastWidth = width > 0 ? width : 80;
     _lastHeight = height > 0 ? height : 24;
 
+    _lastError = null;
     _setState(TerminalConnectionState.connecting);
     terminal.write(
       '\x1b[36m[Connecting to $serverName SSH Shell...]\x1b[0m\r\n',
     );
 
-    final wantTmux = preferTmux && !_skipTmuxThisSession;
-    final tmuxPath = wantTmux ? await _detectTmux() : null;
-    if (!current()) return;
-    final useTmux = tmuxPath != null;
-
-    // 想用 tmux 但远端没有（或探测失败）。这里**不能** return：以前那样做会
-    // 让终端停在 connecting 且没有 PTY，调用方（例如 codex login 弹窗）就会
-    // 一直转圈、命令永远发不出去。现在照常开一个普通 PTY 保底，同时把
-    // awaitingTmuxDecision 置起来让 UI 询问是否安装。
-    final needsInstallDecision = wantTmux && !useTmux;
-
-    _awaitingTmuxDecision = needsInstallDecision;
-    _mode = useTmux
-        ? TerminalSessionMode.tmux
-        : (needsInstallDecision
-              ? TerminalSessionMode.tmuxUnavailable
-              : TerminalSessionMode.plain);
-
-    if (useTmux) {
-      terminal.write(
-        '\x1b[90m[Attaching tmux session '
-        '${TmuxSessionPlanner.sessionName(serverId, terminalId)}]\x1b[0m\r\n',
-      );
-    }
-
     try {
+      if (client == null || client.isClosed) {
+        throw const SSHConnectionException('SSH_DISCONNECTED');
+      }
+      final restoring =
+          sessionIntent == TerminalSessionIntent.restoreExisting ||
+          _tmuxStartAttempted;
+      final wantTmux =
+          remoteExecCommand == null &&
+          (restoring || (preferTmux && !_skipTmuxThisSession));
+      final tmuxPath = wantTmux
+          ? (restoring ? await _queryTmuxPath(client) : await _detectTmux())
+          : null;
+      if (!current()) return;
+      final useTmux = tmuxPath != null;
+      if (useTmux) {
+        final exists = await tmuxSessionExists(
+          client,
+          remoteSessionName,
+          tmuxPath: tmuxPath,
+        );
+        if (!current()) return;
+        if (restoring && !exists) {
+          throw const TerminalSessionMissingException();
+        }
+        if (!restoring && exists) {
+          _tmuxCreateRejected = true;
+          throw const SSHConnectionException('TMUX_SESSION_NAME_COLLISION');
+        }
+      }
+
+      // Only a fresh terminal may fall back to plain PTY when tmux is absent.
+      final needsInstallDecision = wantTmux && !useTmux;
+
+      _awaitingTmuxDecision = needsInstallDecision;
+      _mode = useTmux
+          ? TerminalSessionMode.tmux
+          : (needsInstallDecision
+                ? TerminalSessionMode.tmuxUnavailable
+                : TerminalSessionMode.plain);
+
+      if (useTmux) {
+        terminal.write('\x1b[90m[tmux: $remoteSessionName]\x1b[0m\r\n');
+      }
+
       final pty = SSHPtyConfig(
         type: 'xterm-256color',
         width: _lastWidth,
         height: _lastHeight,
       );
       final tmuxCommand = useTmux
-          ? TmuxSessionPlanner.attachOrCreateCommand(
-              serverId,
-              terminalId,
-              initialWidth: width,
-              initialHeight: height,
-            ).replaceFirst('tmux ', '${cliShellQuote(tmuxPath)} ')
+          ? (restoring
+                    ? TmuxSessionPlanner.attachCommand(remoteSessionName)
+                    : TmuxSessionPlanner.createCommand(
+                        serverId,
+                        terminalId,
+                        initialWidth: width,
+                        initialHeight: height,
+                      ))
+                .replaceFirst('tmux ', '${cliShellQuote(tmuxPath)} ')
           : null;
       final command = remoteExecCommand ?? tmuxCommand;
+      if (useTmux) _tmuxStartAttempted = true;
       final allocation = command == null
-          ? client!.shell(pty: pty)
-          : client!.execute(command, pty: pty);
+          ? client.shell(pty: pty)
+          : client.execute(command, pty: pty);
       SSHSession session;
       try {
         // 半开连接上 shell()/execute() 会永远挂着；不加超时的话重连后
@@ -335,6 +589,8 @@ class TerminalSessionBridge {
       _sshSession = session;
 
       _isSessionOpen = true;
+      _hasOpenedSession = true;
+      if (useTmux) _hasOpenedTmuxSession = true;
       _setState(TerminalConnectionState.connected);
 
       // 重连时刻意不清屏：回滚缓冲里是断线前的输出，正是用户最需要的
@@ -356,6 +612,7 @@ class TerminalSessionBridge {
                 '\r\n\x1b[31m[SSH Session Error: $err]\x1b[0m\r\n',
               );
               _isSessionOpen = false;
+              _lastError = err;
               _setState(TerminalConnectionState.error);
             },
             onDone: () {
@@ -364,7 +621,11 @@ class TerminalSessionBridge {
                 '\r\n\x1b[33m[SSH Connection Closed by Remote Host]\x1b[0m\r\n',
               );
               _isSessionOpen = false;
-              _setState(TerminalConnectionState.disconnected);
+              _setState(
+                remoteSessionMissing || _tmuxCreateRejected
+                    ? TerminalConnectionState.error
+                    : TerminalConnectionState.disconnected,
+              );
             },
           );
 
@@ -380,9 +641,21 @@ class TerminalSessionBridge {
                 AppDiagnostics.instance.record('terminal.stderr', error, stack),
               );
               _isSessionOpen = false;
+              _lastError = error;
               _setState(TerminalConnectionState.error);
             },
           );
+
+      if (useTmux) {
+        unawaited(
+          _checkClosedTmuxSession(
+            client,
+            session,
+            current,
+            createdHere: !restoring,
+          ),
+        );
+      }
 
       terminal.onOutput = (String data) {
         if (current() && identical(_sshSession, session) && _isSessionOpen) {
@@ -393,6 +666,7 @@ class TerminalSessionBridge {
               AppDiagnostics.instance.record('terminal.input', error, stack),
             );
             _isSessionOpen = false;
+            _lastError = error;
             _setState(TerminalConnectionState.error);
           }
         }
@@ -418,16 +692,15 @@ class TerminalSessionBridge {
                 AppDiagnostics.instance.record('terminal.resize', error, stack),
               );
               _isSessionOpen = false;
+              _lastError = error;
               _setState(TerminalConnectionState.error);
             }
           }
         });
       };
 
-      // tmux 必须在一个交互式 shell 里启动：`new-session -A` 是前台进程，
-      // 直接作为 exec 命令会让 PTY 在没有 shell 的情况下运行，
-      // 用户的 shell 配置（PATH/别名）就全没了。
-      if (launchCommand != null) {
+      // Reattaching a session must never replay a command in its running shell.
+      if (launchCommand != null && !restoring) {
         _sshSession!.stdin.add(utf8.encode('$launchCommand\n'));
       }
 
@@ -439,10 +712,42 @@ class TerminalSessionBridge {
       }
     } catch (e) {
       if (!current()) return;
+      _lastError = e;
       _setState(TerminalConnectionState.error);
       terminal.write(
         '\r\n\x1b[31m[Failed to allocate remote PTY: $e]\x1b[0m\r\n',
       );
+    }
+  }
+
+  Future<void> _checkClosedTmuxSession(
+    SSHClient client,
+    SSHSession session,
+    bool Function() current, {
+    required bool createdHere,
+  }) async {
+    try {
+      await session.done;
+      if (!current()) return;
+      if (createdHere && session.exitCode != null && session.exitCode != 0) {
+        _tmuxCreateRejected = true;
+        _isSessionOpen = false;
+        _lastError = SSHConnectionException(
+          'TMUX_CREATE_FAILED',
+          session.exitCode,
+        );
+        _setState(TerminalConnectionState.error);
+        return;
+      }
+      if (client.isClosed) return;
+      final exists = await tmuxSessionExists(client, remoteSessionName);
+      if (!current() || exists) return;
+      _isSessionOpen = false;
+      _lastError = const TerminalSessionMissingException();
+      _setState(TerminalConnectionState.error);
+    } catch (error) {
+      if (current()) _lastError = error;
+      // A failed probe cannot prove that the remote process has ended.
     }
   }
 
@@ -528,7 +833,7 @@ class TerminalSessionBridge {
     stateListenable.dispose();
   }
 
-  void _releaseSession(SSHSession session) {
+  static void _releaseSession(SSHSession session) {
     try {
       // close() sends only EOF. Destroy releases the PTY even when its foreground
       // process does not read stdin; tmux detaches its client and keeps its server.

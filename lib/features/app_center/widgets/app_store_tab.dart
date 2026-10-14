@@ -129,19 +129,8 @@ class _AppStoreTabState extends ConsumerState<AppStoreTab>
 
     final titlePainter = TextPainter(
       text: TextSpan(
-        text: 'Title Sample',
+        text: 'Title Line 1\nTitle Line 2',
         style: typography.titleStyle,
-        locale: typography.locale,
-      ),
-      textDirection: typography.direction,
-      textScaler: typography.textScaler,
-      maxLines: 1,
-    )..layout();
-
-    final summaryPainter = TextPainter(
-      text: TextSpan(
-        text: 'Line 1\nLine 2',
-        style: typography.summaryStyle,
         locale: typography.locale,
       ),
       textDirection: typography.direction,
@@ -149,9 +138,20 @@ class _AppStoreTabState extends ConsumerState<AppStoreTab>
       maxLines: 2,
     )..layout();
 
+    final summaryPainter = TextPainter(
+      text: TextSpan(
+        text: 'Summary',
+        style: typography.summaryStyle,
+        locale: typography.locale,
+      ),
+      textDirection: typography.direction,
+      textScaler: typography.textScaler,
+      maxLines: 1,
+    )..layout();
+
     final sourcePainter = TextPainter(
       text: TextSpan(
-        text: 'Source v1.0.0',
+        text: 'Source',
         style: typography.sourceStyle,
         locale: typography.locale,
       ),
@@ -171,27 +171,30 @@ class _AppStoreTabState extends ConsumerState<AppStoreTab>
       maxLines: 1,
     )..layout();
 
-    final badgeSlotHeight = math.max(18.0, badgePainter.height + 4.0);
-    const iconHeight = 44.0;
-    const paddingHeight = 24.0;
+    const paddingHeight = 20.0;
+    const iconHeight = 32.0;
+    final titleRowHeight = math.max(iconHeight, titlePainter.height);
+    final footerHeight = math.max(
+      sourcePainter.height,
+      badgePainter.height + 3.0,
+    );
+    const gap1 = 6.0;
+    const gap2 = 6.0;
+
     final totalHeight =
         paddingHeight +
-        iconHeight +
-        8.0 +
-        titlePainter.height +
-        4.0 +
-        badgeSlotHeight +
-        4.0 +
+        titleRowHeight +
+        gap1 +
         summaryPainter.height +
-        6.0 +
-        sourcePainter.height;
+        gap2 +
+        footerHeight;
 
     titlePainter.dispose();
     badgePainter.dispose();
     summaryPainter.dispose();
     sourcePainter.dispose();
 
-    return math.max(184.0, totalHeight.ceilToDouble());
+    return math.max(116.0, totalHeight.ceilToDouble());
   }
 
   List<CatalogApplication> _getFilteredCatalog() {
@@ -791,8 +794,8 @@ class _AppStoreTabState extends ConsumerState<AppStoreTab>
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: layout.crossAxisCount,
                           mainAxisExtent: layout.gridCardExtent,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
                         ),
                         itemCount: filtered.length,
                         itemBuilder: (ctx, idx) {
@@ -828,7 +831,7 @@ class AppStoreGridLayout {
     required this.listCardExtent,
   });
 
-  double get gridRowStride => gridCardExtent + 12.0;
+  double get gridRowStride => gridCardExtent + 8.0;
   double get listItemExtent => listCardExtent + 8.0;
 
   static AppStoreGridLayout compute(BuildContext context, double width) {
@@ -1031,80 +1034,45 @@ class _CatalogItemCard extends StatelessWidget {
           onNavigateToTab: onNavigateToTab,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(VRadius.card),
-                child: SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: AppCachedImage(
-                    url: app.iconUrl,
-                    revision: app.contentHash,
-                    sourceId: app.sourceId,
-                    fit: BoxFit.cover,
-                    errorWidget: const Icon(Icons.apps, size: 28),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(VRadius.card),
+                    child: SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: AppCachedImage(
+                        url: app.iconUrl,
+                        revision: app.contentHash,
+                        sourceId: app.sourceId,
+                        fit: BoxFit.cover,
+                        errorWidget: const Icon(Icons.apps, size: 20),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      app.title,
+                      style: typography.titleStyle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
-                app.title,
-                style: typography.titleStyle,
+                app.summary.isNotEmpty ? app.summary : app.category,
+                style: typography.summaryStyle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-              ),
-              if (isInstalled) ...[
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: context.vSuccess.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(VRadius.pill),
-                  ),
-                  child: Text(
-                    l10n.appCenterInstalledBadge,
-                    style: typography.badgeStyle.copyWith(
-                      color: context.vSuccess,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ] else if (!isCompatible) ...[
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: context.vDanger.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(VRadius.pill),
-                  ),
-                  child: Text(
-                    l10n.appCenterIncompatibleBadge,
-                    style: typography.badgeStyle.copyWith(
-                      color: context.vDanger,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 4),
-              Expanded(
-                child: Text(
-                  app.summary.isNotEmpty ? app.summary : app.category,
-                  style: typography.summaryStyle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
               ),
               const SizedBox(height: 6),
               Row(
@@ -1118,15 +1086,50 @@ class _CatalogItemCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (app.version.isNotEmpty) ...[
-                    const SizedBox(width: 6),
+                  if (isInstalled) ...[
+                    const SizedBox(width: 4),
                     Flexible(
                       flex: 2,
-                      child: Text(
-                        'v${app.version}',
-                        style: typography.versionStyle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.vSuccess.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(VRadius.pill),
+                        ),
+                        child: Text(
+                          l10n.appCenterInstalledBadge,
+                          style: typography.badgeStyle.copyWith(
+                            color: context.vSuccess,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ] else if (!isCompatible) ...[
+                    const SizedBox(width: 4),
+                    Flexible(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.vDanger.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(VRadius.pill),
+                        ),
+                        child: Text(
+                          l10n.appCenterIncompatibleBadge,
+                          style: typography.badgeStyle.copyWith(
+                            color: context.vDanger,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
                   ],

@@ -5514,4 +5514,114 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       'Предыдущее сохранение источника выполнено лишь частично. Введите учетные данные заново и сохраните их перед обзором.';
+
+  @override
+  String get terminalHistoryTitle => 'История сессий';
+
+  @override
+  String get terminalHistoryButton => 'История сессий';
+
+  @override
+  String get terminalHistoryEmpty =>
+      'Нет истории сессий. Для постоянных сессий требуется tmux на удаленном сервере.';
+
+  @override
+  String get terminalHistoryRefresh => 'Обновить историю';
+
+  @override
+  String get terminalStartupSession => 'Начальная сессия';
+
+  @override
+  String get terminalStartupSessionSubtitle =>
+      'Выберите, какая сессия открывается при запуске терминала';
+
+  @override
+  String get terminalStartupSessionFresh => 'Новая сессия (По умолчанию)';
+
+  @override
+  String get terminalStatusOpen => 'Открыта';
+
+  @override
+  String get terminalStatusAvailable => 'Доступна';
+
+  @override
+  String get terminalStatusEnded => 'Завершена';
+
+  @override
+  String get terminalStatusOffline => 'Офлайн';
+
+  @override
+  String get terminalDefaultBadge => 'По умолчанию';
+
+  @override
+  String get terminalLegacyBadge => 'Не импортирована';
+
+  @override
+  String get terminalRestoreSession => 'Восстановить сессию';
+
+  @override
+  String get terminalSetDefault => 'Сделать по умолчанию';
+
+  @override
+  String get terminalClearDefault => 'Сбросить по умолчанию';
+
+  @override
+  String get terminalRename => 'Переименовать сессию';
+
+  @override
+  String get terminalRenameDialogTitle => 'Переименовать сессию';
+
+  @override
+  String get terminalRenameInputLabel => 'Название сессии';
+
+  @override
+  String get terminalTitleInvalid =>
+      'Название должно содержать от 1 до 64 символов без управляющих символов';
+
+  @override
+  String get terminalErrorHistoryLoadFailed =>
+      'Не удалось загрузить историю терминала';
+
+  @override
+  String get terminalErrorHistorySaveFailed =>
+      'Не удалось сохранить историю терминала';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed =>
+      'Не удалось обновить историю терминала';
+
+  @override
+  String get terminalErrorStartFailed =>
+      'Не удалось запустить сессию терминала';
+
+  @override
+  String get terminalErrorRestoreFailed =>
+      'Не удалось восстановить сессию терминала';
+
+  @override
+  String get terminalErrorDefaultSaveFailed =>
+      'Не удалось сохранить начальную сессию по умолчанию';
+
+  @override
+  String get terminalErrorCommandFailed =>
+      'Не удалось выполнить команду терминала';
+
+  @override
+  String get terminalErrorTitleInvalid =>
+      'Недопустимое название сессии (требуется 1–64 символа)';
+
+  @override
+  String get terminalErrorSshDisconnected => 'SSH-соединение разорвано';
+
+  @override
+  String get terminalNoticeDefaultMissing =>
+      'Начальная сессия по умолчанию отсутствовала или завершена; открыт новый терминал';
+
+  @override
+  String get terminalNoticeSessionMissing =>
+      'Запрошенная сессия tmux больше не существует на удаленном сервере';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      'Соединение потеряно. Процессы оболочки без tmux невозможно возобновить';
 }

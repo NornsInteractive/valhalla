@@ -5255,4 +5255,102 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       '이전 소스 저장이 일부만 유지되었습니다. 탐색하기 전에 자격 증명을 다시 입력하고 정상적으로 저장하세요.';
+
+  @override
+  String get terminalHistoryTitle => '세션 기록';
+
+  @override
+  String get terminalHistoryButton => '세션 기록';
+
+  @override
+  String get terminalHistoryEmpty => '세션 기록이 없습니다. 지속 세션은 원격 서버에 tmux가 필요합니다.';
+
+  @override
+  String get terminalHistoryRefresh => '기록 새로고침';
+
+  @override
+  String get terminalStartupSession => '시작 세션';
+
+  @override
+  String get terminalStartupSessionSubtitle => '터미널 실행 시 열릴 기본 세션 선택';
+
+  @override
+  String get terminalStartupSessionFresh => '새 세션 (기본값)';
+
+  @override
+  String get terminalStatusOpen => '열림';
+
+  @override
+  String get terminalStatusAvailable => '사용 가능';
+
+  @override
+  String get terminalStatusEnded => '종료됨';
+
+  @override
+  String get terminalStatusOffline => '오프라인';
+
+  @override
+  String get terminalDefaultBadge => '기본';
+
+  @override
+  String get terminalLegacyBadge => '가져오지 않음';
+
+  @override
+  String get terminalRestoreSession => '세션 복원';
+
+  @override
+  String get terminalSetDefault => '기본값으로 설정';
+
+  @override
+  String get terminalClearDefault => '기본값 해제';
+
+  @override
+  String get terminalRename => '세션 이름 변경';
+
+  @override
+  String get terminalRenameDialogTitle => '세션 이름 변경';
+
+  @override
+  String get terminalRenameInputLabel => '세션 이름';
+
+  @override
+  String get terminalTitleInvalid => '제목은 제어 문자 없이 1~64자여야 합니다';
+
+  @override
+  String get terminalErrorHistoryLoadFailed => '터미널 기록 로드 실패';
+
+  @override
+  String get terminalErrorHistorySaveFailed => '터미널 기록 저장 실패';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed => '터미널 기록 새로고침 실패';
+
+  @override
+  String get terminalErrorStartFailed => '터미널 세션 시작 실패';
+
+  @override
+  String get terminalErrorRestoreFailed => '터미널 세션 복원 실패';
+
+  @override
+  String get terminalErrorDefaultSaveFailed => '기본 시작 세션 저장 실패';
+
+  @override
+  String get terminalErrorCommandFailed => '터미널 명령어 실행 실패';
+
+  @override
+  String get terminalErrorTitleInvalid => '유효하지 않은 세션 제목 (1~64자 필요)';
+
+  @override
+  String get terminalErrorSshDisconnected => 'SSH 연결이 끊어졌습니다';
+
+  @override
+  String get terminalNoticeDefaultMissing => '기본 시작 세션이 없거나 종료되어 새 터미널을 열었습니다';
+
+  @override
+  String get terminalNoticeSessionMissing =>
+      '요청한 tmux 세션이 원격 서버에 더 이상 존재하지 않습니다';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      '연결이 끊어졌습니다. 일반 셸 프로세스는 다시 시작할 수 없습니다';
 }

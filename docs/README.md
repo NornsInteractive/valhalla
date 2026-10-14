@@ -1,5 +1,8 @@
 # Valhalla - 研发项目全生命周期文档体系
 
+当前实施（2026-10-14）：[NAS 重绘、终端历史与紧凑浏览](../agent-workflow/2026-10-14-nas-terminal-compact.md)。
+此契约区分已批准需求、源码进度与实际验证；尚未打包、安装或发布。
+
 本地正式打包、GitHub Release 上传与分发平台同步统一参见
 [本地发布与分发操作手册](04-testing-and-deployment/11-local-release-and-distribution-runbook.md)，
 包含新版本／同版本覆盖、固定签名、架构映射、下载校验和回滚边界。

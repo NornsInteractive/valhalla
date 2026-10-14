@@ -5452,4 +5452,109 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       'การบันทึกแหล่งที่มาก่อนหน้านี้คงอยู่เพียงบางส่วนเท่านั้น โปรดป้อนข้อมูลรับรองอีกครั้งและบันทึกให้สำเร็จก่อนเรียกดู';
+
+  @override
+  String get terminalHistoryTitle => 'ประวัติเซสชัน';
+
+  @override
+  String get terminalHistoryButton => 'ประวัติเซสชัน';
+
+  @override
+  String get terminalHistoryEmpty =>
+      'ไม่มีประวัติเซสชัน เซสชันถาวรต้องใช้ tmux บนเซิร์ฟเวอร์ระยะไกล';
+
+  @override
+  String get terminalHistoryRefresh => 'รีเฟรชประวัติ';
+
+  @override
+  String get terminalStartupSession => 'เซสชันเริ่มต้น';
+
+  @override
+  String get terminalStartupSessionSubtitle =>
+      'เลือกเซสชันที่จะเปิดเมื่อเริ่มใช้งานเทอร์มินัล';
+
+  @override
+  String get terminalStartupSessionFresh => 'เซสชันใหม่ (ค่าเริ่มต้น)';
+
+  @override
+  String get terminalStatusOpen => 'เปิดอยู่';
+
+  @override
+  String get terminalStatusAvailable => 'พร้อมใช้งาน';
+
+  @override
+  String get terminalStatusEnded => 'สิ้นสุดแล้ว';
+
+  @override
+  String get terminalStatusOffline => 'ออฟไลน์';
+
+  @override
+  String get terminalDefaultBadge => 'ค่าเริ่มต้น';
+
+  @override
+  String get terminalLegacyBadge => 'ยังไม่ได้นำเข้า';
+
+  @override
+  String get terminalRestoreSession => 'กู้คืนเซสชัน';
+
+  @override
+  String get terminalSetDefault => 'ตั้งเป็นค่าเริ่มต้น';
+
+  @override
+  String get terminalClearDefault => 'ล้างค่าเริ่มต้น';
+
+  @override
+  String get terminalRename => 'เปลี่ยนชื่อเซสชัน';
+
+  @override
+  String get terminalRenameDialogTitle => 'เปลี่ยนชื่อเซสชัน';
+
+  @override
+  String get terminalRenameInputLabel => 'ชื่อเซสชัน';
+
+  @override
+  String get terminalTitleInvalid =>
+      'ชื่อเรื่องต้องมีความยาว 1 ถึง 64 ตัวอักษรและไม่มีอักขระควบคุม';
+
+  @override
+  String get terminalErrorHistoryLoadFailed => 'โหลดประวัติเทอร์มินัลไม่สำเร็จ';
+
+  @override
+  String get terminalErrorHistorySaveFailed =>
+      'บันทึกประวัติเทอร์มินัลไม่สำเร็จ';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed =>
+      'รีเฟรชประวัติเทอร์มินัลไม่สำเร็จ';
+
+  @override
+  String get terminalErrorStartFailed => 'เริ่มเซสชันเทอร์มินัลไม่สำเร็จ';
+
+  @override
+  String get terminalErrorRestoreFailed => 'กู้คืนเซสชันเทอร์มินัลไม่สำเร็จ';
+
+  @override
+  String get terminalErrorDefaultSaveFailed => 'บันทึกเซสชันเริ่มต้นไม่สำเร็จ';
+
+  @override
+  String get terminalErrorCommandFailed => 'ดำเนินการคำสั่งเทอร์มินัลไม่สำเร็จ';
+
+  @override
+  String get terminalErrorTitleInvalid =>
+      'ชื่อเซสชันไม่ถูกต้อง (ต้องมี 1–64 ตัวอักษร)';
+
+  @override
+  String get terminalErrorSshDisconnected => 'การเชื่อมต่อ SSH ขาดหาย';
+
+  @override
+  String get terminalNoticeDefaultMissing =>
+      'เซสชันเริ่มต้นหายไปหรือสิ้นสุดแล้ว เปิดเทอร์มินัลใหม่แทน';
+
+  @override
+  String get terminalNoticeSessionMissing =>
+      'เซสชัน tmux ที่ร้องขอไม่มีอยู่บนเซิร์ฟเวอร์ระยะไกลอีกต่อไป';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      'การเชื่อมต่อขาดหาย ไม่สามารถดำเนินการกระบวนการเชลล์ที่ไม่ใช่ tmux ต่อได้';
 }

@@ -14,6 +14,7 @@ import '../../../data/models/nas_source.dart';
 import 'nas_cast_sheet.dart';
 import 'nas_localizations.dart';
 import 'nas_queue_sheet.dart';
+import 'nas_thumbnail_image.dart';
 
 class NasFullPlayerDialog extends ConsumerStatefulWidget {
   final NasMediaItem item;
@@ -579,22 +580,18 @@ class _NasFullPlayerDialogState extends ConsumerState<NasFullPlayerDialog> {
                           : const Center(child: CircularProgressIndicator())),
               )
             else
-              Container(
-                height: 140,
-                width: 140,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(
-                    alpha: 0.3,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: SizedBox(
+                  height: 140,
+                  width: 140,
+                  child: NasThumbnailImage(
+                    item: currentItem,
+                    fit: BoxFit.cover,
+                    fallbackIcon: isVideo
+                        ? Icons.movie
+                        : Icons.music_note_rounded,
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Icon(
-                  isVideo ? Icons.movie : Icons.music_note_rounded,
-                  size: 64,
-                  color: theme.colorScheme.primary,
                 ),
               ),
             const SizedBox(height: 16),

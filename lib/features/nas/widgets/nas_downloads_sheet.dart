@@ -115,12 +115,81 @@ class NasDownloadsSheet extends ConsumerWidget {
         ),
       );
     } else {
-      final list = ListView.separated(
+      final activeTasks = tasks
+          .where((t) => t.status != NasDownloadStatus.completed)
+          .toList();
+      final completedTasks = tasks
+          .where((t) => t.status == NasDownloadStatus.completed)
+          .toList();
+
+      final rowItems = <_DownloadRowItem>[];
+      if (activeTasks.isNotEmpty) {
+        rowItems.add(
+          _DownloadHeaderItem(isActive: true, count: activeTasks.length),
+        );
+        for (final t in activeTasks) {
+          rowItems.add(_DownloadTaskItem(t));
+        }
+      }
+      if (activeTasks.isNotEmpty && completedTasks.isNotEmpty) {
+        rowItems.add(_DownloadSpacerItem());
+      }
+      if (completedTasks.isNotEmpty) {
+        rowItems.add(
+          _DownloadHeaderItem(isActive: false, count: completedTasks.length),
+        );
+        for (final t in completedTasks) {
+          rowItems.add(_DownloadTaskItem(t));
+        }
+      }
+
+      final list = ListView.builder(
         key: const Key('nas_downloads_list'),
         padding: isModal ? null : const EdgeInsets.symmetric(vertical: 8),
-        itemCount: tasks.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
-        itemBuilder: (ctx, index) => _buildTaskTile(ctx, ref, tasks[index]),
+        itemCount: rowItems.length,
+        itemBuilder: (context, index) {
+          final item = rowItems[index];
+          return switch (item) {
+            _DownloadHeaderItem(:final isActive, :final count) => Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Row(
+                children: [
+                  Icon(
+                    isActive ? Icons.downloading : Icons.offline_pin_outlined,
+                    size: 16,
+                    color: isActive
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.secondary,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      isActive
+                          ? '${context.nasTabDownloads} ($count)'
+                          : '${context.nasDownloadCompleted} ($count)',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isActive
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.secondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _DownloadTaskItem(:final task) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTaskTile(context, ref, task),
+                const Divider(height: 1),
+              ],
+            ),
+            _DownloadSpacerItem() => const SizedBox(height: 8),
+          };
+        },
       );
 
       final listWithWarning = downloadsAsync.hasError
@@ -835,3 +904,18 @@ class NasDownloadsSheet extends ConsumerWidget {
     }
   }
 }
+
+sealed class _DownloadRowItem {}
+
+class _DownloadHeaderItem extends _DownloadRowItem {
+  final bool isActive;
+  final int count;
+  _DownloadHeaderItem({required this.isActive, required this.count});
+}
+
+class _DownloadTaskItem extends _DownloadRowItem {
+  final NasDownloadTask task;
+  _DownloadTaskItem(this.task);
+}
+
+class _DownloadSpacerItem extends _DownloadRowItem {}

@@ -5531,4 +5531,113 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       'O salvamento anterior da fonte persistiu apenas parcialmente. Digite as credenciais novamente e salve com sucesso antes de navegar.';
+
+  @override
+  String get terminalHistoryTitle => 'Histórico de sessões';
+
+  @override
+  String get terminalHistoryButton => 'Histórico de sessões';
+
+  @override
+  String get terminalHistoryEmpty =>
+      'Nenhum histórico de sessões. Sessões persistentes requerem tmux no servidor remoto.';
+
+  @override
+  String get terminalHistoryRefresh => 'Atualizar histórico';
+
+  @override
+  String get terminalStartupSession => 'Sessão de inicialização';
+
+  @override
+  String get terminalStartupSessionSubtitle =>
+      'Escolha qual sessão abre ao iniciar o terminal';
+
+  @override
+  String get terminalStartupSessionFresh => 'Nova sessão (Padrão)';
+
+  @override
+  String get terminalStatusOpen => 'Aberta';
+
+  @override
+  String get terminalStatusAvailable => 'Disponível';
+
+  @override
+  String get terminalStatusEnded => 'Encerrada';
+
+  @override
+  String get terminalStatusOffline => 'Offline';
+
+  @override
+  String get terminalDefaultBadge => 'Padrão';
+
+  @override
+  String get terminalLegacyBadge => 'Não importada';
+
+  @override
+  String get terminalRestoreSession => 'Restaurar sessão';
+
+  @override
+  String get terminalSetDefault => 'Definir como padrão';
+
+  @override
+  String get terminalClearDefault => 'Limpar padrão';
+
+  @override
+  String get terminalRename => 'Renomear sessão';
+
+  @override
+  String get terminalRenameDialogTitle => 'Renomear sessão';
+
+  @override
+  String get terminalRenameInputLabel => 'Nome da sessão';
+
+  @override
+  String get terminalTitleInvalid =>
+      'O título deve ter de 1 a 64 caracteres sem caracteres de controle';
+
+  @override
+  String get terminalErrorHistoryLoadFailed =>
+      'Falha ao carregar histórico do terminal';
+
+  @override
+  String get terminalErrorHistorySaveFailed =>
+      'Falha ao salvar histórico do terminal';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed =>
+      'Falha ao atualizar histórico do terminal';
+
+  @override
+  String get terminalErrorStartFailed => 'Falha ao iniciar sessão do terminal';
+
+  @override
+  String get terminalErrorRestoreFailed =>
+      'Falha ao restaurar sessão do terminal';
+
+  @override
+  String get terminalErrorDefaultSaveFailed =>
+      'Falha ao salvar sessão de inicialização padrão';
+
+  @override
+  String get terminalErrorCommandFailed =>
+      'Falha ao executar comando no terminal';
+
+  @override
+  String get terminalErrorTitleInvalid =>
+      'Título de sessão inválido (necessário 1–64 caracteres)';
+
+  @override
+  String get terminalErrorSshDisconnected => 'Conexão SSH perdida';
+
+  @override
+  String get terminalNoticeDefaultMissing =>
+      'A sessão padrão estava ausente ou encerrada; um novo terminal foi aberto';
+
+  @override
+  String get terminalNoticeSessionMissing =>
+      'A sessão tmux solicitada não existe mais no servidor remoto';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      'Conexão perdida. Processos de shell sem tmux não puderam ser retomados';
 }

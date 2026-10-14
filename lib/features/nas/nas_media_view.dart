@@ -44,7 +44,7 @@ enum NasMediaTab {
   downloads,
 }
 
-enum NasLibrarySection { folders, favorites, playlists, downloads }
+enum NasLibrarySection { folders, favorites, playlists, downloads, manage }
 
 class NasMediaView extends ConsumerStatefulWidget {
   const NasMediaView({super.key});
@@ -56,6 +56,7 @@ class NasMediaView extends ConsumerStatefulWidget {
 class _NasMediaViewState extends ConsumerState<NasMediaView> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _photoFolderScrollController = ScrollController();
   Timer? _searchDebounce;
 
   NasMediaTab _currentTab = NasMediaTab.home;
@@ -68,7 +69,23 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
   final Map<String, double> _scrollOffsets = {};
   final Map<String, NasMediaTab> _sourceTabMemory = {};
   final Map<String, NasLibrarySection> _sourceLibrarySectionMemory = {};
+  final Map<String, NasSource> _sourceOrigins = {};
   NasOpenPolicy _openPolicy = NasOpenPolicy.external;
+
+  final Map<String, int> _photoDensityBySource = {};
+  bool _photoAlbumsMode = false;
+  double _photoAlbumsScrollOffset = 0.0;
+  String? _photoAlbumsPreDrillFolder;
+  NasSource? _photoAlbumsPreDrillSource;
+  bool _photoAlbumsDrilledDown = false;
+  List<NasIndexGroupCount> _photoFolderGroups = [];
+  int _photoFolderPageIndex = 0;
+  final List<String?> _photoFolderCursorHistory = [null];
+  bool _hasMorePhotoFolderGroups = false;
+  bool _loadingPhotoFolders = false;
+  int _photoGroupGeneration = 0;
+
+  bool _videoGridView = true;
 
   @override
   void initState() {
@@ -115,6 +132,12 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         });
       }
     }
+    final initialSource = ref.read(nasSourcesProvider).selected;
+    if (initialSource != null) {
+      _sourceOrigins[initialSource.id] = initialSource;
+      _sourceTabMemory[initialSource.id] = _currentTab;
+      _sourceLibrarySectionMemory[initialSource.id] = _librarySection;
+    }
   }
 
   String _categoryForTab(NasMediaTab tab, NasLibrarySection section) {
@@ -124,6 +147,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         NasLibrarySection.favorites => 'favorites',
         NasLibrarySection.playlists => 'playlists',
         NasLibrarySection.downloads => 'downloads',
+        NasLibrarySection.manage => 'manage',
       };
     }
     return switch (tab) {
@@ -583,6 +607,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
     _searchDebounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
+    _photoFolderScrollController.dispose();
     super.dispose();
   }
 
@@ -982,11 +1007,18 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         ..clear()
         ..add(null);
       _hasMoreMusicGroups = false;
+      _photoGroupGeneration++;
+      _loadingPhotoFolders = false;
+      _photoAlbumsDrilledDown = false;
+      _photoAlbumsPreDrillFolder = null;
+      _photoAlbumsPreDrillSource = null;
+      _photoAlbumsScrollOffset = 0.0;
     });
 
     if (activeSource != null) {
       _sourceTabMemory[activeSource.id] = targetTab;
       _sourceLibrarySectionMemory[activeSource.id] = targetSection;
+      _sourceOrigins[activeSource.id] = activeSource;
     }
 
     final navGen = ++_navigationGeneration;
@@ -1080,6 +1112,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
       NasLibrarySection.favorites => 'favorites',
       NasLibrarySection.playlists => 'playlists',
       NasLibrarySection.downloads => 'downloads',
+      NasLibrarySection.manage => 'manage',
     };
 
     setState(() {
@@ -1208,6 +1241,279 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
     _loadFolderGroupsPage();
   }
 
+  void _setPhotoDensity(int newDensity) {
+    final currentSource = ref.read(nasSourcesProvider).selected?.id ?? '';
+    final currentDensity = _photoDensityBySource[currentSource] ?? 4;
+    if (currentDensity == newDensity) return;
+
+    final oldAnchor = _captureVisibleAnchor();
+    setState(() {
+      _photoDensityBySource[currentSource] = newDensity;
+    });
+
+    if (oldAnchor != null) {
+      final openGen = _pagingGeneration;
+      final openNavGen = _navigationGeneration;
+      final openSource = ref.read(nasSourcesProvider).selected;
+      final openCategory = _currentCategory;
+      final capturedUserSeq = _userScrollSequence;
+      final targetRevision = ++_anchorRevision;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted ||
+            openGen != _pagingGeneration ||
+            openNavGen != _navigationGeneration ||
+            _anchorRevision != targetRevision ||
+            _userScrollSequence != capturedUserSeq ||
+            ref.read(nasSourcesProvider).selected != openSource ||
+            _currentCategory != openCategory ||
+            !_scrollController.hasClients) {
+          return;
+        }
+        final layout = _lastGalleryLayout;
+        if (layout == null) return;
+        final restoreKey = '${oldAnchor.serverId}:${oldAnchor.path}';
+        final rowIndex = layout.itemToRowIndex[restoreKey];
+        if (rowIndex != null && rowIndex < layout.prefixOffsets.length) {
+          final rowOffset = layout.prefixOffsets[rowIndex];
+          final targetOffset = (rowOffset - oldAnchor.viewportDy).clamp(
+            0.0,
+            _scrollController.position.maxScrollExtent,
+          );
+          _restoringAnchor = true;
+          _scrollController.jumpTo(targetOffset);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _restoringAnchor = false;
+          });
+        }
+      });
+    }
+  }
+
+  Future<void> _loadPhotoFolderGroupsPage() async {
+    final gen = ++_photoGroupGeneration;
+    final capturedSource = ref.read(nasSourcesProvider).selected;
+    final capturedNavGen = _navigationGeneration;
+    final capturedCat = _currentCategory;
+    final capturedTab = _currentTab;
+
+    setState(() {
+      _loadingPhotoFolders = true;
+      _hasMorePhotoFolderGroups = false;
+    });
+
+    try {
+      final after = _photoFolderCursorHistory[_photoFolderPageIndex];
+      final groups = await ref
+          .read(nasProvider.notifier)
+          .groups(
+            NasIndexGroup.byFolder,
+            kind: NasMediaKind.image,
+            after: after,
+          );
+      if (!mounted ||
+          gen != _photoGroupGeneration ||
+          _navigationGeneration != capturedNavGen ||
+          _currentCategory != capturedCat ||
+          _currentTab != capturedTab ||
+          !_photoAlbumsMode ||
+          ref.read(nasSourcesProvider).selected != capturedSource ||
+          ref.read(nasSourcesProvider).selected?.endpoint !=
+              capturedSource?.endpoint) {
+        return;
+      }
+      setState(() {
+        _photoFolderGroups = groups;
+        _hasMorePhotoFolderGroups = groups.length >= 200;
+        _loadingPhotoFolders = false;
+      });
+      if (_photoFolderScrollController.hasClients) {
+        _photoFolderScrollController.jumpTo(0);
+      }
+    } catch (_) {
+      if (mounted &&
+          gen == _photoGroupGeneration &&
+          _navigationGeneration == capturedNavGen &&
+          _currentCategory == capturedCat &&
+          _currentTab == capturedTab &&
+          ref.read(nasSourcesProvider).selected == capturedSource) {
+        setState(() => _loadingPhotoFolders = false);
+      }
+    }
+  }
+
+  void _nextPhotoFolderGroupsPage() {
+    if (!_hasMorePhotoFolderGroups ||
+        _photoFolderGroups.isEmpty ||
+        _loadingPhotoFolders) {
+      return;
+    }
+    final lastCursor = _photoFolderGroups.last.key;
+    _photoFolderPageIndex++;
+    if (_photoFolderCursorHistory.length <= _photoFolderPageIndex) {
+      _photoFolderCursorHistory.add(lastCursor);
+    } else {
+      _photoFolderCursorHistory[_photoFolderPageIndex] = lastCursor;
+    }
+    _photoAlbumsScrollOffset = 0.0;
+    if (_photoFolderScrollController.hasClients) {
+      _photoFolderScrollController.jumpTo(0);
+    }
+    _loadPhotoFolderGroupsPage();
+  }
+
+  void _previousPhotoFolderGroupsPage() {
+    if (_photoFolderPageIndex <= 0 || _loadingPhotoFolders) {
+      return;
+    }
+    _photoFolderPageIndex--;
+    _photoAlbumsScrollOffset = 0.0;
+    if (_photoFolderScrollController.hasClients) {
+      _photoFolderScrollController.jumpTo(0);
+    }
+    _loadPhotoFolderGroupsPage();
+  }
+
+  Future<void> _addToQueue(NasMediaItem item) async {
+    try {
+      await ref.read(nasProvider.notifier).addToQueue(item);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.nasAddedToQueue),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.nasSanitizedError(e)),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _confirmDeletePlaylist(BuildContext context, NasPlaylist playlist) {
+    final capturedSource = ref.read(nasSourcesProvider).selected;
+    final capturedServerId = ref.read(nasProvider).serverId;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.nasDeletePlaylistConfirmTitle),
+        content: Text(
+          dialogContext.nasDeletePlaylistConfirmDesc(playlist.name),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(dialogContext.l10n.cancel),
+          ),
+          FilledButton(
+            key: const Key('nas_confirm_delete_playlist'),
+            style: FilledButton.styleFrom(
+              backgroundColor: dialogContext.vDanger,
+            ),
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final currentSource = ref.read(nasSourcesProvider).selected;
+              final currentServerId = ref.read(nasProvider).serverId;
+
+              if (currentSource == null ||
+                  capturedSource == null ||
+                  !identical(currentSource, capturedSource) ||
+                  currentSource.endpoint != capturedSource.endpoint ||
+                  currentServerId != capturedServerId ||
+                  playlist.serverId != currentServerId ||
+                  playlist.serverId != currentSource.id) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(context.nasSourceChangedError),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  );
+                }
+                return;
+              }
+
+              try {
+                await ref
+                    .read(nasProvider.notifier)
+                    .deletePlaylist(playlist.id);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(context.nasSanitizedError(e)),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text(dialogContext.l10n.delete),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openLibrarySettings(BuildContext context, NasState state) {
+    final currentSource = ref.read(nasSourcesProvider).selected;
+    final videoPolicy = _getOpenPolicy(NasMediaKind.video);
+    final audioPolicy = _getOpenPolicy(NasMediaKind.audio);
+    final imagePolicy = _getOpenPolicy(NasMediaKind.image);
+
+    NasLibrarySettingsDialog.show(
+      context,
+      source: currentSource,
+      sourceId: currentSource?.id ?? state.serverId,
+      currentPolicy: _getOpenPolicy(switch (_currentTab) {
+        NasMediaTab.photos => NasMediaKind.image,
+        NasMediaTab.videos => NasMediaKind.video,
+        NasMediaTab.music => NasMediaKind.audio,
+        _ => NasMediaKind.video,
+      }),
+      onPolicyChanged: (policy) {
+        _openPolicy = policy;
+        switch (_currentTab) {
+          case NasMediaTab.photos:
+            _setOpenPolicy(NasMediaKind.image, policy);
+            break;
+          case NasMediaTab.videos:
+            _setOpenPolicy(NasMediaKind.video, policy);
+            break;
+          case NasMediaTab.music:
+            _setOpenPolicy(NasMediaKind.audio, policy);
+            break;
+          default:
+            _setOpenPolicy(NasMediaKind.video, policy);
+            _setOpenPolicy(NasMediaKind.audio, policy);
+            _setOpenPolicy(NasMediaKind.image, policy);
+            break;
+        }
+      },
+      kindPolicies: {
+        NasMediaKind.video: videoPolicy,
+        NasMediaKind.audio: audioPolicy,
+        NasMediaKind.image: imagePolicy,
+      },
+      onKindPolicyChanged: (kind, policy) {
+        _setOpenPolicy(kind, policy);
+      },
+      scanConfig: state.config,
+      onSaveScanConfig: (cfg) => ref.read(nasProvider.notifier).saveConfig(cfg),
+      isScanning: state.isScanning,
+      onScan: () => ref.read(nasProvider.notifier).scan(),
+      onCancelScan: () => ref.read(nasProvider.notifier).cancelScan(),
+    );
+  }
+
   void _selectMusicGroup(NasIndexGroup group) {
     setState(() {
       _musicPageIndex = 0;
@@ -1298,9 +1604,11 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
       prevSource,
       nextSource,
     ) {
-      if (prevSource != nextSource) {
+      if (prevSource != nextSource ||
+          prevSource?.endpoint != nextSource?.endpoint) {
         _searchDebounce?.cancel();
         _groupLoadGeneration++;
+        _photoGroupGeneration++;
         final navGen = ++_navigationGeneration;
         _pagingGeneration++;
         _lastGalleryLayout = null;
@@ -1311,18 +1619,36 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         _previousEdgeFailed = false;
         _nextEdgeFailed = false;
         if (mounted) {
+          final isSameIdentity =
+              nextSource != null &&
+              _sourceOrigins[nextSource.id] == nextSource &&
+              _sourceOrigins[nextSource.id]?.endpoint == nextSource.endpoint;
+
+          if (!isSameIdentity && nextSource != null) {
+            _sourceTabMemory.remove(nextSource.id);
+            _sourceLibrarySectionMemory.remove(nextSource.id);
+            _sourceOrigins.remove(nextSource.id);
+            _scrollOffsets.removeWhere(
+              (k, _) => k.startsWith('${nextSource.id}:'),
+            );
+          }
+
           if (prevSource != null) {
-            _sourceTabMemory[prevSource.id] = _currentTab;
-            _sourceLibrarySectionMemory[prevSource.id] = _librarySection;
-            if (_scrollController.hasClients) {
-              _scrollOffsets['${prevSource.id}:$_currentCategory'] =
-                  _scrollController.offset;
+            if (prevSource.id != nextSource?.id) {
+              _sourceTabMemory[prevSource.id] = _currentTab;
+              _sourceLibrarySectionMemory[prevSource.id] = _librarySection;
+              _sourceOrigins[prevSource.id] = prevSource;
+              if (_scrollController.hasClients) {
+                _scrollOffsets['${prevSource.id}:$_currentCategory'] =
+                    _scrollController.offset;
+              }
             }
           }
-          final restoredTab = nextSource != null
+
+          final restoredTab = isSameIdentity
               ? _sourceTabMemory[nextSource.id] ?? NasMediaTab.home
               : NasMediaTab.home;
-          final restoredSection = nextSource != null
+          final restoredSection = isSameIdentity
               ? _sourceLibrarySectionMemory[nextSource.id] ??
                     NasLibrarySection.folders
               : NasLibrarySection.folders;
@@ -1330,6 +1656,12 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             restoredTab,
             restoredSection,
           );
+
+          if (nextSource != null) {
+            _sourceOrigins[nextSource.id] = nextSource;
+            _sourceTabMemory[nextSource.id] = restoredTab;
+            _sourceLibrarySectionMemory[nextSource.id] = restoredSection;
+          }
 
           setState(() {
             _selectionMode = false;
@@ -1349,6 +1681,18 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
               ..clear()
               ..add(null);
             _hasMoreMusicGroups = false;
+            _photoFolderGroups = [];
+            _photoFolderPageIndex = 0;
+            _photoFolderCursorHistory
+              ..clear()
+              ..add(null);
+            _hasMorePhotoFolderGroups = false;
+            _loadingPhotoFolders = false;
+            _photoAlbumsMode = false;
+            _photoAlbumsScrollOffset = 0.0;
+            _photoAlbumsPreDrillFolder = null;
+            _photoAlbumsPreDrillSource = null;
+            _photoAlbumsDrilledDown = false;
           });
           _searchController.text = ref.read(nasProvider).search;
           final savedOffset =
@@ -1454,6 +1798,49 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
 
     final inShell = context.findAncestorWidgetOfExactType<MainShell>() != null;
 
+    final isDesktop = MediaQuery.sizeOf(context).width >= 600;
+
+    final mainContent = Column(
+      children: [
+        if (state.isScanning)
+          const LinearProgressIndicator(
+            key: Key('nas_scanning_indicator'),
+            minHeight: 2,
+          ),
+
+        // Search Bar Row (collapsible, explicit toggle)
+        if (_searchOpen ||
+            _searchController.text.isNotEmpty ||
+            state.search.isNotEmpty) ...[
+          Entrance(index: 1, child: _buildSearchBar(context, state)),
+          const Divider(height: 1),
+        ],
+
+        // Active Scope Breadcrumbs (if folder, artist, album, albumKey, or playlist is set)
+        if (state.folder != null ||
+            state.artist != null ||
+            state.album != null ||
+            state.albumKey != null ||
+            state.playlistId != null)
+          Entrance(index: 2, child: _buildScopeBreadcrumbs(context, state)),
+
+        // Media Center Tabs (Mobile only; desktop uses sidebar rail)
+        if (!isDesktop) ...[
+          Entrance(index: 3, child: _buildTabBar(context, state)),
+          const Divider(height: 1),
+        ],
+
+        // Error Banner (if any)
+        if (state.errorCode != null)
+          _buildErrorBanner(context, state.errorCode!),
+
+        // Body content
+        Expanded(child: _buildSurfaceContent(context, state, sourcesState)),
+
+        if (_selectionMode) _buildBatchBottomBar(context, state),
+      ],
+    );
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -1463,41 +1850,19 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
               index: 0,
               child: _buildTopBar(context, state, sourcesState, activeSource),
             ),
-            if (state.isScanning)
-              const LinearProgressIndicator(
-                key: Key('nas_scanning_indicator'),
-                minHeight: 2,
-              ),
             const Divider(height: 1),
 
-            // Search Bar Row (collapsible, explicit toggle)
-            if (_searchOpen ||
-                _searchController.text.isNotEmpty ||
-                state.search.isNotEmpty) ...[
-              Entrance(index: 1, child: _buildSearchBar(context, state)),
-              const Divider(height: 1),
-            ],
-
-            // Active Scope Breadcrumbs (if folder, artist, album, albumKey, or playlist is set)
-            if (state.folder != null ||
-                state.artist != null ||
-                state.album != null ||
-                state.albumKey != null ||
-                state.playlistId != null)
-              Entrance(index: 2, child: _buildScopeBreadcrumbs(context, state)),
-
-            // Media Center Tabs
-            Entrance(index: 3, child: _buildTabBar(context, state)),
-            const Divider(height: 1),
-
-            // Error Banner (if any)
-            if (state.errorCode != null)
-              _buildErrorBanner(context, state.errorCode!),
-
-            // Body content
-            Expanded(child: _buildSurfaceContent(context, state, sourcesState)),
-
-            if (_selectionMode) _buildBatchBottomBar(context, state),
+            Expanded(
+              child: isDesktop
+                  ? Row(
+                      children: [
+                        _buildDesktopRail(context, state),
+                        const VerticalDivider(width: 1),
+                        Expanded(child: mainContent),
+                      ],
+                    )
+                  : mainContent,
+            ),
 
             // Persistent Mini Player (only standalone, MainShell hosts global mini player)
             if (activeItem != null && !inShell)
@@ -1595,7 +1960,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                   ),
                   const SizedBox(width: 6),
                   ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: isNarrow ? 90 : 120),
+                    constraints: BoxConstraints(maxWidth: isNarrow ? 76 : 120),
                     child: Text(
                       currentSource?.name ?? context.nasSources,
                       style: theme.textTheme.labelMedium?.copyWith(
@@ -1884,6 +2249,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             key: const ValueKey('nas-sort'),
             icon: const Icon(Icons.sort, size: 18),
             tooltip: context.nasSort,
+            padding: EdgeInsets.zero,
             onSelected: (val) {
               ref.read(nasProvider.notifier).setSort(val.$1, ascending: val.$2);
             },
@@ -2022,33 +2388,122 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
     );
 
     if (isNarrow) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        color: theme.colorScheme.surfaceContainerLow,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
+      final moreMenuBtn = PopupMenuButton<String>(
+        key: const Key('nas_mobile_more_button'),
+        icon: const Icon(Icons.more_vert, size: 20),
+        tooltip: context.l10n.navMore,
+        padding: EdgeInsets.zero,
+        onSelected: (val) {
+          switch (val) {
+            case 'scan':
+              if (state.isScanning) {
+                ref.read(nasProvider.notifier).cancelScan();
+              } else {
+                ref.invalidate(nasHomeProvider);
+                ref.read(nasProvider.notifier).scan();
+              }
+              break;
+            case 'selection':
+              setState(() {
+                _selectionMode = !_selectionMode;
+                if (!_selectionMode) _selectedItems.clear();
+              });
+              break;
+            case 'downloads':
+              NasDownloadsSheet.show(context);
+              break;
+            case 'config':
+              final currentSource = ref.read(nasSourcesProvider).selected;
+              NasScanConfigDialog.show(
+                context,
+                source: currentSource,
+                sourceId: currentSource?.id ?? state.serverId,
+                initialConfig: state.config,
+                onSave: (cfg) => ref.read(nasProvider.notifier).saveConfig(cfg),
+              );
+              break;
+            case 'settings':
+              _openLibrarySettings(context, state);
+              break;
+          }
+        },
+        itemBuilder: (ctx) => [
+          PopupMenuItem(
+            value: 'scan',
+            child: Row(
               children: [
-                sourceWidget,
+                Icon(
+                  state.isScanning ? Icons.stop : Icons.sync,
+                  size: 18,
+                  color: state.isScanning ? ctx.vDanger : null,
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: statusWidget),
-                const SizedBox(width: 4),
-                scanBtn,
+                Text(
+                  state.isScanning ? ctx.l10n.nasCancelScan : ctx.l10n.nasScan,
+                ),
               ],
             ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+          ),
+          PopupMenuItem(
+            value: 'selection',
+            child: Row(
               children: [
-                searchToggleBtn,
-                ?sortBtn,
-                selectModeBtn,
-                downloadsBtn,
-                configBtn,
-                settingsBtn,
+                Icon(
+                  _selectionMode
+                      ? Icons.check_circle
+                      : Icons.checklist_outlined,
+                  size: 18,
+                  color: _selectionMode ? theme.colorScheme.primary : null,
+                ),
+                const SizedBox(width: 8),
+                Text(ctx.nasSelectMode),
               ],
             ),
+          ),
+          PopupMenuItem(
+            value: 'downloads',
+            child: Row(
+              children: [
+                const Icon(Icons.download_outlined, size: 18),
+                const SizedBox(width: 8),
+                Text('${ctx.nasTabDownloads} ($activeDownloads)'),
+              ],
+            ),
+          ),
+          PopupMenuItem(
+            value: 'config',
+            child: Row(
+              children: [
+                const Icon(Icons.tune, size: 18),
+                const SizedBox(width: 8),
+                Text(ctx.l10n.nasConfigure),
+              ],
+            ),
+          ),
+          PopupMenuItem(
+            value: 'settings',
+            child: Row(
+              children: [
+                const Icon(Icons.settings_outlined, size: 18),
+                const SizedBox(width: 8),
+                Text(ctx.l10n.nasLibrarySettings),
+              ],
+            ),
+          ),
+        ],
+      );
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        color: theme.colorScheme.surfaceContainerLow,
+        child: Row(
+          children: [
+            sourceWidget,
+            const SizedBox(width: 8),
+            Expanded(child: statusWidget),
+            searchToggleBtn,
+            ?sortBtn,
+            moreMenuBtn,
           ],
         ),
       );
@@ -2158,34 +2613,188 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
       icon = Icons.filter_list;
     }
 
+    final showPlayAll =
+        state.items.isNotEmpty && _currentTab != NasMediaTab.photos;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: theme.colorScheme.primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              title,
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 16, color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              overflow: TextOverflow.ellipsis,
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (showPlayAll)
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      icon: const Icon(Icons.play_arrow, size: 16),
+                      label: Text(context.nasPlayAll),
+                      onPressed: () => _openInApp(state.items.first),
+                    ),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    icon: const Icon(Icons.close, size: 14),
+                    label: Text(context.nasClearScope),
+                    onPressed: () {
+                      _photoAlbumsDrilledDown = false;
+                      _photoAlbumsPreDrillFolder = null;
+                      _photoAlbumsPreDrillSource = null;
+                      ref.read(nasProvider.notifier).setScope();
+                    },
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDesktopRail(BuildContext context, NasState state) {
+    final theme = Theme.of(context);
+    final tabs = [
+      (
+        NasMediaTab.home,
+        context.l10n.nasTabHome,
+        Icons.home_outlined,
+        Icons.home,
+      ),
+      (
+        NasMediaTab.photos,
+        context.l10n.nasFilterImages,
+        Icons.image_outlined,
+        Icons.image,
+      ),
+      (
+        NasMediaTab.videos,
+        context.l10n.nasFilterVideos,
+        Icons.movie_outlined,
+        Icons.movie,
+      ),
+      (
+        NasMediaTab.music,
+        context.l10n.nasTabMusic,
+        Icons.music_note_outlined,
+        Icons.music_note,
+      ),
+      (
+        NasMediaTab.library,
+        context.nasTabLibrary,
+        Icons.video_library_outlined,
+        Icons.video_library,
+      ),
+    ];
+
+    int? getTabCount(NasMediaTab tab) => switch (tab) {
+      NasMediaTab.photos => state.totals.images,
+      NasMediaTab.videos => state.totals.videos,
+      NasMediaTab.music => state.totals.audio,
+      _ => null,
+    };
+
+    return Container(
+      width: 80,
+      color: theme.colorScheme.surfaceContainerLow,
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          for (final tabInfo in tabs) ...[
+            Builder(
+              builder: (ctx) {
+                final isSelected = _currentTab == tabInfo.$1;
+                final count = getTabCount(tabInfo.$1);
+                return Tooltip(
+                  message: count != null && count > 0
+                      ? '${tabInfo.$2} ($count)'
+                      : tabInfo.$2,
+                  child: InkWell(
+                    key: Key('nas_tab_${tabInfo.$1.name}'),
+                    onTap: () => _selectTab(tabInfo.$1),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 68,
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: isSelected
+                            ? Border.all(
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.4,
+                                ),
+                              )
+                            : null,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isSelected ? tabInfo.$4 : tabInfo.$3,
+                            size: 20,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            tabInfo.$2,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-          ),
-          if (state.items.isNotEmpty)
-            TextButton.icon(
-              icon: const Icon(Icons.play_arrow, size: 16),
-              label: Text(context.nasPlayAll),
-              onPressed: () => _openInApp(state.items.first),
-            ),
-          const SizedBox(width: 4),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.close, size: 14),
-            label: Text(context.nasClearScope),
-            onPressed: () => ref.read(nasProvider.notifier).setScope(),
-          ),
+          ],
         ],
       ),
     );
@@ -2316,8 +2925,8 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
     final errorText = playlistUnavailable
         ? context.l10n.nasPlaylistLoadFailed
         : errorCode == 'NAS_SCAN_CANCELLED'
-            ? context.l10n.nasScanCancelled
-            : context.l10n.nasScanFailed(errorCode);
+        ? context.l10n.nasScanCancelled
+        : context.l10n.nasScanFailed(errorCode);
 
     return Container(
       width: double.infinity,
@@ -2502,6 +3111,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
     if (_librarySection == NasLibrarySection.downloads) {
       return const NasDownloadsSheet();
     }
+    if (_librarySection == NasLibrarySection.manage) {
+      return _buildLibraryManagementSurface(context, state, sourcesState);
+    }
 
     // Online subsections require at least one configured media source
     if (sourcesState.sources.isEmpty) {
@@ -2514,6 +3126,8 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
     switch (_librarySection) {
       case NasLibrarySection.downloads:
         return const NasDownloadsSheet();
+      case NasLibrarySection.manage:
+        return _buildLibraryManagementSurface(context, state, sourcesState);
       case NasLibrarySection.playlists:
         return _buildPlaylistsSurface(context, state);
       case NasLibrarySection.folders:
@@ -2527,6 +3141,228 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         }
         return _buildFavoritesSurface(context, state);
     }
+  }
+
+  Widget _buildLibraryManagementSurface(
+    BuildContext context,
+    NasState state,
+    NasSourcesState sourcesState,
+  ) {
+    final theme = Theme.of(context);
+    final currentSource = sourcesState.selected;
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      children: [
+        // Sources Card
+        Card(
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(VRadius.card),
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  child: Icon(
+                    Icons.dns_outlined,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                title: Text(
+                  context.l10n.nasSources,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  currentSource != null
+                      ? '${currentSource.name} (${currentSource.type.name.toUpperCase()})'
+                      : context.l10n.nasNoSources,
+                  style: monoTextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.outline,
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right, size: 20),
+                onTap: () => NasSourceDialog.show(context),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Row(
+                  children: [
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.add, size: 16),
+                      label: Text(context.l10n.nasAddSource),
+                      onPressed: () => NasSourceDialog.show(context),
+                    ),
+                    const SizedBox(width: 8),
+                    if (currentSource != null)
+                      TextButton.icon(
+                        icon: const Icon(Icons.edit_outlined, size: 16),
+                        label: Text(context.l10n.nasEditSource),
+                        onPressed: () => NasSourceDialog.show(
+                          context,
+                          source: currentSource,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Scan & Indexing
+        Card(
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(VRadius.card),
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: theme.colorScheme.secondaryContainer,
+              child: Icon(
+                Icons.sync_rounded,
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+            ),
+            title: Text(
+              context.l10n.nasConfigureScanDirs,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              state.config.includePaths.isEmpty
+                  ? context.l10n.nasEmptyConfigTitle
+                  : '${state.config.includePaths.length} ${context.l10n.nasIncludePaths.toLowerCase()}',
+              style: monoTextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.outline,
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: () {
+              NasScanConfigDialog.show(
+                context,
+                source: currentSource,
+                sourceId: currentSource?.id ?? state.serverId,
+                initialConfig: state.config,
+                onSave: (cfg) => ref.read(nasProvider.notifier).saveConfig(cfg),
+              );
+            },
+          ),
+        ),
+
+        // Open Behavior & Library Settings
+        Card(
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(VRadius.card),
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              child: Icon(Icons.tune_rounded, color: theme.colorScheme.primary),
+            ),
+            title: Text(
+              context.l10n.nasLibrarySettings,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              context.nasManageLibrary,
+              style: monoTextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.outline,
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: () => _openLibrarySettings(context, state),
+          ),
+        ),
+
+        // Diagnostics
+        if (currentSource != null)
+          Card(
+            elevation: 0,
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(VRadius.card),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+              ),
+            ),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                child: Icon(
+                  Icons.health_and_safety_outlined,
+                  color: theme.colorScheme.tertiary,
+                ),
+              ),
+              title: Text(
+                context.l10n.nasDiagnosticsTitle,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(
+                currentSource.name,
+                style: monoTextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right, size: 20),
+              onTap: () =>
+                  NasDiagnosticsDialog.show(context, source: currentSource),
+            ),
+          ),
+
+        // Media Server Deployment
+        Card(
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(VRadius.card),
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              child: Icon(
+                Icons.rocket_launch_outlined,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            title: Text(
+              context.l10n.nasInstallTitle,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              context.l10n.nasDeployDockerTitle,
+              style: monoTextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.outline,
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: () => NasDeploymentChooser.show(context),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildEmptyConfigGuidance(BuildContext context, NasState state) {
@@ -2603,6 +3439,12 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         context.nasTabDownloads,
         Icons.download_outlined,
         'nas_tab_downloads',
+      ),
+      (
+        NasLibrarySection.manage,
+        context.nasManageLibrary,
+        Icons.settings_suggest_outlined,
+        'nas_tab_manage',
       ),
     ];
 
@@ -2703,12 +3545,10 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
     final homeSections = homeSectionsAsync.asData?.value;
     final homePlaybackByPath = homeSections?.playbackByPath;
 
-    final continueWatching = homeSections != null
-        ? homeSections.continueWatching
-        : state.items
-              .where((i) => i.kind == NasMediaKind.video)
-              .take(4)
-              .toList();
+    final continueWatching =
+        homeSections?.continueWatching ?? const <NasMediaItem>[];
+    final continueListening =
+        homeSections?.continueListening ?? const <NasMediaItem>[];
     final photoItems = homeSections != null
         ? homeSections.photos
         : state.items.where((i) => i.kind == NasMediaKind.image).toList();
@@ -2721,6 +3561,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
 
     final hasShelves =
         continueWatching.isNotEmpty ||
+        continueListening.isNotEmpty ||
         videoItems.isNotEmpty ||
         photoItems.isNotEmpty ||
         musicItems.isNotEmpty ||
@@ -2741,7 +3582,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
               child: LinearProgressIndicator(minHeight: 2),
             ),
 
-          // Shelf 1: Continue Watching (Videos with duration/progress or recent)
+          // Shelf 1: Continue Watching (Videos with explicit progress)
           if (continueWatching.isNotEmpty) ...[
             Entrance(
               index: 0,
@@ -2790,10 +3631,119 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
             const SizedBox(height: 20),
           ],
 
-          // Shelf 2: Recent Photos
-          if (photoItems.isNotEmpty || totals.images > 0) ...[
+          // Shelf 2: Continue Listening (Audio tracks with explicit progress)
+          if (continueListening.isNotEmpty) ...[
             Entrance(
               index: 1,
+              child: _buildHomeSectionHeader(
+                context,
+                title: context.nasContinueListening,
+                color: theme.colorScheme.tertiary,
+                count: continueListening.length,
+                onTapAll: () => _selectTab(NasMediaTab.music),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              child: Row(
+                children: continueListening.take(6).map((item) {
+                  final savedPlayback = homePlaybackByPath?[item.path];
+                  final progress =
+                      (savedPlayback != null &&
+                          savedPlayback.duration != null &&
+                          savedPlayback.duration!.inMilliseconds > 0)
+                      ? (savedPlayback.position.inMilliseconds /
+                                savedPlayback.duration!.inMilliseconds)
+                            .clamp(0.0, 1.0)
+                      : null;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: InkWell(
+                      key: Key('nas_home_listening_${item.name}'),
+                      borderRadius: BorderRadius.circular(VRadius.card),
+                      onTap: () => _openInApp(item),
+                      child: Container(
+                        width: 140,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(VRadius.card),
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant.withValues(
+                              alpha: 0.35,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: AspectRatio(
+                                aspectRatio: 1.0,
+                                child: Stack(
+                                  children: [
+                                    Positioned.fill(
+                                      child: NasThumbnailImage(
+                                        item: item,
+                                        fit: BoxFit.cover,
+                                        fallbackIcon: Icons.music_note_rounded,
+                                      ),
+                                    ),
+                                    if (progress != null && progress > 0)
+                                      Positioned(
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        child: LinearProgressIndicator(
+                                          value: progress,
+                                          minHeight: 3,
+                                          backgroundColor: Colors.black38,
+                                          valueColor: AlwaysStoppedAnimation(
+                                            theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              item.title ?? item.name,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (item.artist != null && item.artist!.isNotEmpty)
+                              Text(
+                                item.artist!,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.outline,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // Shelf 3: Recent Photos
+          if (photoItems.isNotEmpty || totals.images > 0) ...[
+            Entrance(
+              index: 2,
               child: _buildHomeSectionHeader(
                 context,
                 title: context.nasRecentPhotos,
@@ -2860,7 +3810,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           // Shelf 3: Recent Videos
           if (videoItems.isNotEmpty || totals.videos > 0) ...[
             Entrance(
-              index: 2,
+              index: 3,
               child: _buildHomeSectionHeader(
                 context,
                 title: context.nasRecentVideos,
@@ -2875,46 +3825,33 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                   ? Wrap(
                       spacing: 12,
                       runSpacing: 12,
-                      children:
-                          (homeSections != null
-                                  ? videoItems
-                                  : videoItems.skip(
-                                      videoItems.length > 4 ? 4 : 0,
-                                    ))
-                              .take(6)
-                              .map(
-                                (item) => _buildHomeVideoCard(
-                                  context,
-                                  item,
-                                  isDesktop,
-                                  playbackByPath: homePlaybackByPath,
-                                ),
-                              )
-                              .toList(),
+                      children: videoItems
+                          .take(6)
+                          .map(
+                            (item) => _buildHomeVideoCard(
+                              context,
+                              item,
+                              isDesktop,
+                              playbackByPath: homePlaybackByPath,
+                            ),
+                          )
+                          .toList(),
                     )
                   : SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       clipBehavior: Clip.none,
                       child: Row(
-                        children:
-                            (homeSections != null
-                                    ? videoItems
-                                    : videoItems.skip(
-                                        videoItems.length > 4 ? 4 : 0,
-                                      ))
-                                .take(6)
-                                .map((item) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 12),
-                                    child: _buildHomeVideoCard(
-                                      context,
-                                      item,
-                                      isDesktop,
-                                      playbackByPath: homePlaybackByPath,
-                                    ),
-                                  );
-                                })
-                                .toList(),
+                        children: videoItems.take(6).map((item) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: _buildHomeVideoCard(
+                              context,
+                              item,
+                              isDesktop,
+                              playbackByPath: homePlaybackByPath,
+                            ),
+                          );
+                        }).toList(),
                       ),
                     )
             else
@@ -2945,7 +3882,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           // Shelf 4: Recent Music
           if (musicItems.isNotEmpty || totals.audio > 0) ...[
             Entrance(
-              index: 3,
+              index: 4,
               child: _buildHomeSectionHeader(
                 context,
                 title: context.nasRecentMusic,
@@ -2991,7 +3928,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           ],
 
           // Shelf 5: Library Quick Access
-          Entrance(index: 4, child: _buildHomeLibrarySection(context, state)),
+          Entrance(index: 5, child: _buildHomeLibrarySection(context, state)),
           const SizedBox(height: 16),
           if (state.isLoading)
             Padding(
@@ -4176,7 +5113,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
     final textDirection = Directionality.of(context);
     final textHeightBehavior = DefaultTextHeightBehavior.maybeOf(context);
     final contentWidth = (maxWidth - 24.0).clamp(1.0, double.infinity);
-    final columns = (contentWidth / 180.0).ceil().clamp(2, 8);
+    final currentSource = ref.watch(nasSourcesProvider).selected?.id ?? '';
+    final density = _photoDensityBySource[currentSource] ?? 4;
+    final columns = maxWidth < 320 ? 2 : density.clamp(3, 5);
     final spacing = 8.0;
     final itemSize = (contentWidth - (columns - 1) * spacing) / columns;
     final rowHeight = itemSize + spacing;
@@ -4254,6 +5193,39 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
     );
   }
 
+  Widget _buildPhotoFolderGroupsPaginationFooter(BuildContext context) {
+    if (_photoFolderPageIndex == 0 && !_hasMorePhotoFolderGroups) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: _photoFolderPageIndex > 0 && !_loadingPhotoFolders
+                ? _previousPhotoFolderGroupsPage
+                : null,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              '${_photoFolderPageIndex + 1}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: _hasMorePhotoFolderGroups && !_loadingPhotoFolders
+                ? _nextPhotoFolderGroupsPage
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPhotosSurface(BuildContext context, NasState state) {
     final images = state.items
         .where((i) => i.kind == NasMediaKind.image)
@@ -4261,151 +5233,452 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
 
     _pruneTileKeys(images);
 
-    if (images.isEmpty && !state.isLoading) {
-      return Center(
-        child: Column(
+    final currentSource = ref.watch(nasSourcesProvider).selected?.id ?? '';
+    final currentDensity = _photoDensityBySource[currentSource] ?? 4;
+
+    final densityButton = PopupMenuButton<int>(
+      tooltip: context.nasPhotoDensity,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(VRadius.input),
+          border: Border.all(
+            color: Theme.of(
+              context,
+            ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.photo_library_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.outline,
+              Icons.view_column_outlined,
+              size: 14,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(width: 4),
             Text(
-              context.l10n.nasNoSearchResults,
-              style: Theme.of(context).textTheme.titleMedium,
+              '$currentDensity',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
+            const Icon(Icons.arrow_drop_down, size: 16),
           ],
         ),
+      ),
+      onSelected: (d) => _setPhotoDensity(d),
+      itemBuilder: (ctx) => [
+        for (final d in [3, 4, 5])
+          PopupMenuItem(
+            value: d,
+            child: Row(
+              children: [
+                if (d == currentDensity)
+                  const Icon(Icons.check, size: 16)
+                else
+                  const SizedBox(width: 16),
+                const SizedBox(width: 8),
+                Text('$d ${ctx.nasPhotoDensity}'),
+              ],
+            ),
+          ),
+      ],
+    );
+
+    final photosHeader = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ChoiceChip(
+              selected: !_photoAlbumsMode,
+              showCheckmark: false,
+              avatar: const Icon(Icons.grid_on, size: 14),
+              label: Text(
+                context.nasPhotoTimeline,
+                style: const TextStyle(fontSize: 12),
+              ),
+              onSelected: (val) {
+                if (val) {
+                  if (_photoFolderScrollController.hasClients) {
+                    _photoAlbumsScrollOffset =
+                        _photoFolderScrollController.offset;
+                  }
+                  setState(() => _photoAlbumsMode = false);
+                }
+              },
+            ),
+            const SizedBox(width: 8),
+            ChoiceChip(
+              selected: _photoAlbumsMode,
+              showCheckmark: false,
+              avatar: const Icon(Icons.folder_outlined, size: 14),
+              label: Text(
+                context.nasPhotoAlbums,
+                style: const TextStyle(fontSize: 12),
+              ),
+              onSelected: (val) async {
+                if (val) {
+                  if (_photoAlbumsDrilledDown) {
+                    _photoAlbumsDrilledDown = false;
+                    final preDrill = _photoAlbumsPreDrillFolder;
+                    final preDrillSource = _photoAlbumsPreDrillSource;
+                    final capturedNavGen = _navigationGeneration;
+                    _photoAlbumsPreDrillFolder = null;
+                    _photoAlbumsPreDrillSource = null;
+                    if (ref.read(nasProvider).folder != preDrill) {
+                      await ref
+                          .read(nasProvider.notifier)
+                          .setScope(folder: preDrill);
+                    }
+                    if (!mounted ||
+                        _navigationGeneration != capturedNavGen ||
+                        (preDrillSource != null &&
+                            ref.read(nasSourcesProvider).selected?.id !=
+                                preDrillSource.id)) {
+                      return;
+                    }
+                  }
+                  setState(() {
+                    _photoAlbumsMode = true;
+                    if (_photoFolderGroups.isEmpty) {
+                      _loadPhotoFolderGroupsPage();
+                    }
+                  });
+                  final targetOffset = _photoAlbumsScrollOffset;
+                  final capturedNavGen = _navigationGeneration;
+                  final capturedSource = ref.read(nasSourcesProvider).selected;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted ||
+                        !_photoAlbumsMode ||
+                        _navigationGeneration != capturedNavGen ||
+                        ref.read(nasSourcesProvider).selected?.id !=
+                            capturedSource?.id) {
+                      return;
+                    }
+                    if (_photoFolderScrollController.hasClients) {
+                      final maxScroll =
+                          _photoFolderScrollController.position.maxScrollExtent;
+                      final effectiveOffset = maxScroll > 0
+                          ? targetOffset.clamp(0.0, maxScroll)
+                          : targetOffset;
+                      _photoFolderScrollController.jumpTo(effectiveOffset);
+                    }
+                  });
+                }
+              },
+            ),
+            if (!_photoAlbumsMode) ...[const SizedBox(width: 8), densityButton],
+          ],
+        ),
+      ),
+    );
+
+    if (_photoAlbumsMode) {
+      if (_loadingPhotoFolders && _photoFolderGroups.isEmpty) {
+        return Column(
+          children: [
+            photosHeader,
+            const Divider(height: 1),
+            Expanded(child: _buildSkeletonList()),
+          ],
+        );
+      }
+      if (_photoFolderGroups.isEmpty) {
+        return Column(
+          children: [
+            photosHeader,
+            const Divider(height: 1),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.folder_off_outlined,
+                      size: 56,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      context.l10n.nasNoSearchResults,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+      return Column(
+        children: [
+          photosHeader,
+          const Divider(height: 1),
+          Expanded(
+            child: GridView.builder(
+              controller: _photoFolderScrollController,
+              padding: const EdgeInsets.all(12),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: MediaQuery.sizeOf(context).width >= 600 ? 4 : 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 0.9,
+              ),
+              itemCount: _photoFolderGroups.length,
+              itemBuilder: (ctx, index) {
+                final group = _photoFolderGroups[index];
+                return Card(
+                  elevation: 0,
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(VRadius.card),
+                    side: BorderSide(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outlineVariant.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      _photoAlbumsScrollOffset =
+                          _photoFolderScrollController.hasClients
+                          ? _photoFolderScrollController.offset
+                          : 0.0;
+                      _photoAlbumsPreDrillFolder = ref.read(nasProvider).folder;
+                      _photoAlbumsPreDrillSource = ref
+                          .read(nasSourcesProvider)
+                          .selected;
+                      _photoAlbumsDrilledDown = true;
+                      ref
+                          .read(nasProvider.notifier)
+                          .setScope(folder: group.key);
+                      setState(() => _photoAlbumsMode = false);
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: group.representative != null
+                              ? NasThumbnailImage(
+                                  item: group.representative!,
+                                  fit: BoxFit.cover,
+                                  fallbackIcon: Icons.folder,
+                                )
+                              : Container(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                                  child: Icon(
+                                    Icons.folder,
+                                    size: 40,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                group.name.isEmpty ? '/' : group.name,
+                                style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                context.l10n.nasItemCount(group.count),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outline,
+                                      fontSize: 10.5,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          _buildPhotoFolderGroupsPaginationFooter(context),
+        ],
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final layout = _buildGalleryLayout(
-          context,
-          images,
-          constraints.maxWidth,
-        );
-        _lastGalleryLayout = layout;
-
-        return Column(
-          children: [
-            if (_previousEdgeFailed)
-              Container(
-                color: Theme.of(
-                  context,
-                ).colorScheme.errorContainer.withValues(alpha: 0.5),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 6,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        context.l10n.nasOperationFailed,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed:
-                          (!state.isLoading &&
-                              !_edgeLoading &&
-                              !_isViewerOpen &&
-                              (!state.galleryWindowEnabled || _nearLeadingEdge))
-                          ? () {
-                              setState(() => _previousEdgeFailed = false);
-                              _loadPreviousPage();
-                            }
-                          : null,
-                      child: Text(context.l10n.stateRetry),
-                    ),
-                  ],
-                ),
-              ),
-            Expanded(
-              child: NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  if (_restoringAnchor) return false;
-                  if (notification is UserScrollNotification) {
-                    if (notification.direction != ScrollDirection.idle) {
-                      _userScrollSequence++;
-                    }
-                  } else if (notification is ScrollUpdateNotification) {
-                    if (notification.dragDetails != null) {
-                      _userScrollSequence++;
-                    }
-                  }
-                  return false;
-                },
-                child: CustomScrollView(
-                  key: const Key('nas_image_grid'),
-                  controller: _scrollController,
-                  slivers: [
-                    SliverVariedExtentList.builder(
-                      itemCount: layout.rows.length,
-                      itemExtentBuilder: (index, _) =>
-                          layout.rows[index].extent,
-                      itemBuilder: (context, index) {
-                        final row = layout.rows[index];
-                        if (row is _GalleryHeaderRow) {
-                          return _buildGalleryHeaderRow(context, row);
-                        } else if (row is _GalleryItemRow) {
-                          return _buildGalleryItemRow(
-                            context,
-                            row,
-                            images,
-                            layout.columns,
-                            layout.itemSize,
-                          );
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
+    if (images.isEmpty && !state.isLoading) {
+      return Column(
+        children: [
+          photosHeader,
+          const Divider(height: 1),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.photo_library_outlined,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    context.l10n.nasNoSearchResults,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
               ),
             ),
-            if (_nextEdgeFailed)
-              Container(
-                color: Theme.of(
-                  context,
-                ).colorScheme.errorContainer.withValues(alpha: 0.5),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 6,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        context.l10n.nasOperationFailed,
-                        style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        photosHeader,
+        const Divider(height: 1),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final layout = _buildGalleryLayout(
+                context,
+                images,
+                constraints.maxWidth,
+              );
+              _lastGalleryLayout = layout;
+
+              return Column(
+                children: [
+                  if (_previousEdgeFailed)
+                    Container(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.errorContainer.withValues(alpha: 0.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              context.l10n.nasOperationFailed,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed:
+                                (!state.isLoading &&
+                                    !_edgeLoading &&
+                                    !_isViewerOpen &&
+                                    (!state.galleryWindowEnabled ||
+                                        _nearLeadingEdge))
+                                ? () {
+                                    setState(() => _previousEdgeFailed = false);
+                                    _loadPreviousPage();
+                                  }
+                                : null,
+                            child: Text(context.l10n.stateRetry),
+                          ),
+                        ],
                       ),
                     ),
-                    TextButton(
-                      onPressed:
-                          (!state.isLoading &&
-                              !_edgeLoading &&
-                              !_isViewerOpen &&
-                              (!state.galleryWindowEnabled ||
-                                  _nearTrailingEdge))
-                          ? () {
-                              setState(() => _nextEdgeFailed = false);
-                              _loadNextPage();
-                            }
-                          : null,
-                      child: Text(context.l10n.stateRetry),
+                  Expanded(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (_restoringAnchor) return false;
+                        if (notification is UserScrollNotification) {
+                          if (notification.direction != ScrollDirection.idle) {
+                            _userScrollSequence++;
+                          }
+                        } else if (notification is ScrollUpdateNotification) {
+                          if (notification.dragDetails != null) {
+                            _userScrollSequence++;
+                          }
+                        }
+                        return false;
+                      },
+                      child: CustomScrollView(
+                        key: const Key('nas_image_grid'),
+                        controller: _scrollController,
+                        slivers: [
+                          SliverVariedExtentList.builder(
+                            itemCount: layout.rows.length,
+                            itemExtentBuilder: (index, _) =>
+                                layout.rows[index].extent,
+                            itemBuilder: (context, index) {
+                              final row = layout.rows[index];
+                              if (row is _GalleryHeaderRow) {
+                                return _buildGalleryHeaderRow(context, row);
+                              } else if (row is _GalleryItemRow) {
+                                return _buildGalleryItemRow(
+                                  context,
+                                  row,
+                                  images,
+                                  layout.columns,
+                                  layout.itemSize,
+                                );
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            _buildPaginationFooter(context, state),
-          ],
-        );
-      },
+                  ),
+                  if (_nextEdgeFailed)
+                    Container(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.errorContainer.withValues(alpha: 0.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              context.l10n.nasOperationFailed,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed:
+                                (!state.isLoading &&
+                                    !_edgeLoading &&
+                                    !_isViewerOpen &&
+                                    (!state.galleryWindowEnabled ||
+                                        _nearTrailingEdge))
+                                ? () {
+                                    setState(() => _nextEdgeFailed = false);
+                                    _loadNextPage();
+                                  }
+                                : null,
+                            child: Text(context.l10n.stateRetry),
+                          ),
+                        ],
+                      ),
+                    ),
+                  _buildPaginationFooter(context, state),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -4614,29 +5887,105 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
   }
 
   Widget _buildVideosSurface(BuildContext context, NasState state) {
+    final theme = Theme.of(context);
+    final isDesktop = MediaQuery.sizeOf(context).width >= 600;
     final videos = state.items
         .where((i) => i.kind == NasMediaKind.video)
         .toList();
 
     return Column(
       children: [
-        Expanded(
-          child: ListView.builder(
-            key: const Key('nas_media_list'),
-            controller: _scrollController,
-            padding: const EdgeInsets.all(8),
-            itemCount: videos.length,
-            itemBuilder: (context, index) {
-              return _buildVideoCard(context, videos[index]);
-            },
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Row(
+            children: [
+              Text(
+                context.l10n.nasItemCount(videos.length),
+                style: monoTextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                key: const Key('nas_video_view_toggle_button'),
+                icon: Icon(
+                  _videoGridView
+                      ? Icons.view_list_rounded
+                      : Icons.grid_view_rounded,
+                  size: 20,
+                ),
+                tooltip: _videoGridView
+                    ? context.nasViewList
+                    : context.nasViewGrid,
+                onPressed: () =>
+                    setState(() => _videoGridView = !_videoGridView),
+              ),
+            ],
           ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: videos.isEmpty
+              ? Center(
+                  child: Text(
+                    context.l10n.nasNoSearchResults,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                )
+              : Builder(
+                  builder: (context) {
+                    final isLargeFont =
+                        MediaQuery.textScalerOf(context).scale(1) > 1.3;
+                    final showGrid = _videoGridView && !isLargeFont;
+                    return showGrid
+                        ? GridView.builder(
+                            key: const Key('nas_media_list'),
+                            controller: _scrollController,
+                            padding: const EdgeInsets.all(8),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: isDesktop ? 3 : 2,
+                                  childAspectRatio: isDesktop ? 0.90 : 0.74,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                ),
+                            itemCount: videos.length,
+                            itemBuilder: (context, index) {
+                              return _buildVideoCard(
+                                context,
+                                videos[index],
+                                isGrid: true,
+                              );
+                            },
+                          )
+                        : ListView.builder(
+                            key: const Key('nas_media_list'),
+                            controller: _scrollController,
+                            padding: const EdgeInsets.all(8),
+                            itemCount: videos.length,
+                            itemBuilder: (context, index) {
+                              return _buildMediaListItem(
+                                context,
+                                videos[index],
+                              );
+                            },
+                          );
+                  },
+                ),
         ),
         _buildPaginationFooter(context, state),
       ],
     );
   }
 
-  Widget _buildVideoCard(BuildContext context, NasMediaItem item) {
+  Widget _buildVideoCard(
+    BuildContext context,
+    NasMediaItem item, {
+    bool isGrid = false,
+  }) {
     final theme = Theme.of(context);
     final ext = item.name.contains('.')
         ? item.name.split('.').last.toUpperCase()
@@ -4678,7 +6027,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
 
     return Card(
       key: Key('nas_item_${item.name}'),
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      margin: isGrid
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(VRadius.card),
@@ -4803,125 +6154,315 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title ?? item.name,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${SftpFileItem.formatBytes(item.sizeBytes)} · ${_formatEpoch(item.modifiedEpoch)}',
-                          style: monoTextStyle(
-                            fontSize: 11,
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      item.isFavorite ? Icons.favorite : Icons.favorite_border,
-                      size: 20,
-                      color: item.isFavorite ? context.vDanger : null,
-                    ),
-                    tooltip: context.l10n.nasTabFavorites,
-                    onPressed: () => _toggleFavorite(item),
-                  ),
-                  PopupMenuButton<String>(
-                    key: Key('nas_item_overflow_${item.name}'),
-                    icon: const Icon(Icons.more_vert, size: 20),
-                    tooltip: context.l10n.navMore,
-                    onSelected: (action) {
-                      switch (action) {
-                        case 'info':
-                          _showItemMetadataDialog(item);
-                          break;
-                        case 'download':
-                          ref.read(nasProvider.notifier).download(item);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(context.nasDownloading(item.name)),
+            Expanded(
+              child: Padding(
+                padding: isGrid
+                    ? const EdgeInsets.fromLTRB(8, 4, 8, 6)
+                    : const EdgeInsets.all(10),
+                child: isGrid
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            item.title ?? item.name,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
                             ),
-                          );
-                          break;
-                        case 'cast':
-                          NasCastSheet.show(context, item: item);
-                          break;
-                        case 'external':
-                          _openExternal(item);
-                          break;
-                        case 'playlist':
-                          _showAddToPlaylistDialog(item);
-                          break;
-                      }
-                    },
-                    itemBuilder: (ctx) => [
-                      PopupMenuItem(
-                        key: const ValueKey('nas-metadata-action'),
-                        value: 'info',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.info_outline, size: 18),
-                            const SizedBox(width: 8),
-                            Text(ctx.nasMediaDetails),
-                          ],
-                        ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  durStr ??
+                                      SftpFileItem.formatBytes(item.sizeBytes),
+                                  style: monoTextStyle(
+                                    fontSize: 10,
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  item.isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  size: 16,
+                                  color: item.isFavorite
+                                      ? context.vDanger
+                                      : null,
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 26,
+                                  minHeight: 26,
+                                ),
+                                visualDensity: VisualDensity.compact,
+                                tooltip: context.l10n.nasTabFavorites,
+                                onPressed: () => _toggleFavorite(item),
+                              ),
+                              PopupMenuButton<String>(
+                                key: Key('nas_item_overflow_${item.name}'),
+                                icon: const Icon(Icons.more_vert, size: 16),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 22,
+                                  minHeight: 26,
+                                ),
+                                tooltip: context.l10n.navMore,
+                                onSelected: (action) {
+                                  switch (action) {
+                                    case 'info':
+                                      _showItemMetadataDialog(item);
+                                      break;
+                                    case 'download':
+                                      ref
+                                          .read(nasProvider.notifier)
+                                          .download(item);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            context.nasDownloading(item.name),
+                                          ),
+                                        ),
+                                      );
+                                      break;
+                                    case 'cast':
+                                      NasCastSheet.show(context, item: item);
+                                      break;
+                                    case 'external':
+                                      _openExternal(item);
+                                      break;
+                                    case 'playlist':
+                                      _showAddToPlaylistDialog(item);
+                                      break;
+                                  }
+                                },
+                                itemBuilder: (ctx) => [
+                                  PopupMenuItem(
+                                    key: const ValueKey('nas-metadata-action'),
+                                    value: 'info',
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.info_outline,
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            ctx.nasMediaDetails,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'download',
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.download_outlined,
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            ctx.nasTabDownloads,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'cast',
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.cast, size: 18),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            ctx.nasCast,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'external',
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.open_in_new, size: 18),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            ctx.l10n.nasOpenPolicyExternal,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'playlist',
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.playlist_add,
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            ctx.nasAddToPlaylist,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.title ?? item.name,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${SftpFileItem.formatBytes(item.sizeBytes)} · ${_formatEpoch(item.modifiedEpoch)}',
+                                  style: monoTextStyle(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              item.isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              size: 20,
+                              color: item.isFavorite ? context.vDanger : null,
+                            ),
+                            tooltip: context.l10n.nasTabFavorites,
+                            onPressed: () => _toggleFavorite(item),
+                          ),
+                          PopupMenuButton<String>(
+                            key: Key('nas_item_overflow_${item.name}'),
+                            icon: const Icon(Icons.more_vert, size: 20),
+                            tooltip: context.l10n.navMore,
+                            onSelected: (action) {
+                              switch (action) {
+                                case 'info':
+                                  _showItemMetadataDialog(item);
+                                  break;
+                                case 'download':
+                                  ref.read(nasProvider.notifier).download(item);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        context.nasDownloading(item.name),
+                                      ),
+                                    ),
+                                  );
+                                  break;
+                                case 'cast':
+                                  NasCastSheet.show(context, item: item);
+                                  break;
+                                case 'external':
+                                  _openExternal(item);
+                                  break;
+                                case 'playlist':
+                                  _showAddToPlaylistDialog(item);
+                                  break;
+                              }
+                            },
+                            itemBuilder: (ctx) => [
+                              PopupMenuItem(
+                                key: const ValueKey('nas-metadata-action'),
+                                value: 'info',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.info_outline, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(ctx.nasMediaDetails),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 'download',
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.download_outlined,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(ctx.nasTabDownloads),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 'cast',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.cast, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(ctx.nasCast),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 'external',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.open_in_new, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(ctx.l10n.nasOpenPolicyExternal),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 'playlist',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.playlist_add, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(ctx.nasAddToPlaylist),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      PopupMenuItem(
-                        value: 'download',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.download_outlined, size: 18),
-                            const SizedBox(width: 8),
-                            Text(ctx.nasTabDownloads),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'cast',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.cast, size: 18),
-                            const SizedBox(width: 8),
-                            Text(ctx.nasCast),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'external',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.open_in_new, size: 18),
-                            const SizedBox(width: 8),
-                            Text(ctx.l10n.nasOpenPolicyExternal),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'playlist',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.playlist_add, size: 18),
-                            const SizedBox(width: 8),
-                            Text(ctx.nasAddToPlaylist),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ),
             ),
           ],
@@ -5129,49 +6670,180 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                     : Column(
                         children: [
                           Expanded(
-                            child: ListView.builder(
-                              controller: _scrollController,
-                              padding: const EdgeInsets.all(8),
-                              itemCount: _musicGroups.length,
-                              itemBuilder: (context, index) {
-                                final g = _musicGroups[index];
-                                return Card(
-                                  child: ListTile(
-                                    leading: Icon(
-                                      _musicGroup == NasIndexGroup.byArtist
-                                          ? Icons.person
-                                          : Icons.album,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                    title: Text(g.name),
-                                    subtitle: Text(
-                                      context.l10n.nasItemCount(g.count),
-                                    ),
-                                    onTap: () {
-                                      if (_musicGroup ==
-                                          NasIndexGroup.byArtist) {
-                                        ref
-                                            .read(nasProvider.notifier)
-                                            .setScope(
-                                              artist: g.key.isEmpty
-                                                  ? ''
-                                                  : g.name,
-                                            );
-                                      } else if (_musicGroup ==
-                                          NasIndexGroup.byFolder) {
-                                        ref
-                                            .read(nasProvider.notifier)
-                                            .setScope(folder: g.key);
-                                      } else {
-                                        ref
-                                            .read(nasProvider.notifier)
-                                            .setScope(albumKey: g.key);
-                                      }
+                            child: _musicGroup == NasIndexGroup.byAlbum
+                                ? GridView.builder(
+                                    controller: _scrollController,
+                                    padding: const EdgeInsets.all(12),
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount:
+                                              MediaQuery.sizeOf(
+                                                    context,
+                                                  ).width >=
+                                                  600
+                                              ? 4
+                                              : 2,
+                                          crossAxisSpacing: 10,
+                                          mainAxisSpacing: 10,
+                                          childAspectRatio:
+                                              MediaQuery.sizeOf(
+                                                    context,
+                                                  ).width >=
+                                                  600
+                                              ? 0.78
+                                              : 0.70,
+                                        ),
+                                    itemCount: _musicGroups.length,
+                                    itemBuilder: (context, index) {
+                                      final g = _musicGroups[index];
+                                      return Card(
+                                        key: Key('nas_album_${g.key}'),
+                                        elevation: 0,
+                                        clipBehavior: Clip.antiAlias,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            VRadius.card,
+                                          ),
+                                          side: BorderSide(
+                                            color: theme
+                                                .colorScheme
+                                                .outlineVariant
+                                                .withValues(alpha: 0.4),
+                                          ),
+                                        ),
+                                        child: InkWell(
+                                          onTap: () {
+                                            ref
+                                                .read(nasProvider.notifier)
+                                                .setScope(albumKey: g.key);
+                                          },
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
+                                            children: [
+                                              AspectRatio(
+                                                aspectRatio: 1,
+                                                child: g.representative != null
+                                                    ? NasThumbnailImage(
+                                                        item: g.representative!,
+                                                        fit: BoxFit.cover,
+                                                        fallbackIcon:
+                                                            Icons.album_rounded,
+                                                      )
+                                                    : Container(
+                                                        color: theme
+                                                            .colorScheme
+                                                            .surfaceContainerHighest,
+                                                        child: Icon(
+                                                          Icons.album_rounded,
+                                                          size: 40,
+                                                          color: theme
+                                                              .colorScheme
+                                                              .primary,
+                                                        ),
+                                                      ),
+                                              ),
+                                              Expanded(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                        8,
+                                                        6,
+                                                        8,
+                                                        6,
+                                                      ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Text(
+                                                        g.name,
+                                                        style: theme
+                                                            .textTheme
+                                                            .titleSmall
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              fontSize: 12,
+                                                            ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                        context.l10n
+                                                            .nasItemCount(
+                                                              g.count,
+                                                            ),
+                                                        style: monoTextStyle(
+                                                          fontSize: 10,
+                                                          color: theme
+                                                              .colorScheme
+                                                              .outline,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : ListView.builder(
+                                    controller: _scrollController,
+                                    padding: const EdgeInsets.all(8),
+                                    itemCount: _musicGroups.length,
+                                    itemBuilder: (context, index) {
+                                      final g = _musicGroups[index];
+                                      return Card(
+                                        child: ListTile(
+                                          leading: Icon(
+                                            Icons.person,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                          title: Text(
+                                            g.name.isEmpty
+                                                ? context.l10n.hardwareUnknown
+                                                : g.name,
+                                          ),
+                                          subtitle: Text(
+                                            context.l10n.nasItemCount(g.count),
+                                          ),
+                                          trailing: const Icon(
+                                            Icons.chevron_right,
+                                            size: 18,
+                                          ),
+                                          onTap: () {
+                                            if (_musicGroup ==
+                                                NasIndexGroup.byArtist) {
+                                              ref
+                                                  .read(nasProvider.notifier)
+                                                  .setScope(
+                                                    artist: g.key.isEmpty
+                                                        ? ''
+                                                        : g.name,
+                                                  );
+                                            } else {
+                                              ref
+                                                  .read(nasProvider.notifier)
+                                                  .setScope(folder: g.key);
+                                            }
+                                          },
+                                        ),
+                                      );
                                     },
                                   ),
-                                );
-                              },
-                            ),
                           ),
                           _buildMusicGroupsPaginationFooter(context),
                         ],
@@ -5401,40 +7073,111 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
   }
 
   Widget _buildFavoritesSurface(BuildContext context, NasState state) {
-    final favItems = state.items.where((i) => i.isFavorite).toList();
-
-    if (favItems.isEmpty && !state.hasPrevious && !state.hasMore) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.favorite_outline,
-              size: 56,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              context.l10n.nasNoFavorites,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+    final favItems = state.items;
 
     return Column(
       children: [
-        Expanded(
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(8),
-            itemCount: favItems.length,
-            itemBuilder: (context, index) =>
-                _buildMediaListItem(context, favItems[index]),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                ChoiceChip(
+                  key: const Key('nas_fav_filter_all'),
+                  showCheckmark: false,
+                  label: Text(context.nasFilterAll),
+                  selected: state.filter == null,
+                  onSelected: (selected) {
+                    if (selected) {
+                      ref
+                          .read(nasProvider.notifier)
+                          .setFilter(null, favoritesOnly: true);
+                    }
+                  },
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  key: const Key('nas_fav_filter_photos'),
+                  showCheckmark: false,
+                  avatar: const Icon(Icons.photo_outlined, size: 14),
+                  label: Text(context.l10n.nasTabPhotos),
+                  selected: state.filter == NasMediaKind.image,
+                  onSelected: (selected) {
+                    ref
+                        .read(nasProvider.notifier)
+                        .setFilter(
+                          selected ? NasMediaKind.image : null,
+                          favoritesOnly: true,
+                        );
+                  },
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  key: const Key('nas_fav_filter_videos'),
+                  showCheckmark: false,
+                  avatar: const Icon(Icons.movie_outlined, size: 14),
+                  label: Text(context.l10n.nasTabVideos),
+                  selected: state.filter == NasMediaKind.video,
+                  onSelected: (selected) {
+                    ref
+                        .read(nasProvider.notifier)
+                        .setFilter(
+                          selected ? NasMediaKind.video : null,
+                          favoritesOnly: true,
+                        );
+                  },
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  key: const Key('nas_fav_filter_music'),
+                  showCheckmark: false,
+                  avatar: const Icon(Icons.music_note_outlined, size: 14),
+                  label: Text(context.l10n.nasTabMusic),
+                  selected: state.filter == NasMediaKind.audio,
+                  onSelected: (selected) {
+                    ref
+                        .read(nasProvider.notifier)
+                        .setFilter(
+                          selected ? NasMediaKind.audio : null,
+                          favoritesOnly: true,
+                        );
+                  },
+                ),
+              ],
+            ),
           ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: favItems.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.favorite_outline,
+                        size: 56,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        context.l10n.nasNoFavorites,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  key: const Key('nas_media_list'),
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(8),
+                  itemCount: favItems.length,
+                  itemBuilder: (context, index) =>
+                      _buildMediaListItem(context, favItems[index]),
+                ),
         ),
         _buildPaginationFooter(context, state),
       ],
@@ -5528,9 +7271,8 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                               key: Key('nas_delete_playlist_${playlist.id}'),
                               icon: const Icon(Icons.delete_outline, size: 20),
                               tooltip: context.l10n.delete,
-                              onPressed: () => ref
-                                  .read(nasProvider.notifier)
-                                  .deletePlaylist(playlist.id),
+                              onPressed: () =>
+                                  _confirmDeletePlaylist(context, playlist),
                             ),
                           ],
                         ),
@@ -5716,11 +7458,17 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 value: _isItemSelected(item),
                 onChanged: (_) => _toggleSelection(item),
               )
-            : CircleAvatar(
-                backgroundColor: theme.colorScheme.primary.withValues(
-                  alpha: 0.15,
+            : ClipRRect(
+                borderRadius: BorderRadius.circular(VRadius.input),
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: NasThumbnailImage(
+                    item: item,
+                    fit: BoxFit.cover,
+                    fallbackIcon: icon,
+                  ),
                 ),
-                child: Icon(icon, color: theme.colorScheme.primary, size: 18),
               ),
         title: Text(
           item.title ?? item.name,
@@ -5728,19 +7476,54 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        subtitle: Text(
-          '${SftpFileItem.formatBytes(item.sizeBytes)} · ${_formatEpoch(item.modifiedEpoch)}',
-          style: monoTextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w400,
-            color: theme.colorScheme.outline,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        subtitle: Builder(
+          builder: (context) {
+            final audioDetails = <String>[];
+            if (item.kind == NasMediaKind.audio) {
+              if (item.artist != null && item.artist!.isNotEmpty) {
+                audioDetails.add(item.artist!);
+              }
+              if (item.album != null && item.album!.isNotEmpty) {
+                audioDetails.add(item.album!);
+              }
+              if (item.durationMillis != null && item.durationMillis! > 0) {
+                audioDetails.add(
+                  _formatDuration(Duration(milliseconds: item.durationMillis!)),
+                );
+              }
+            }
+            audioDetails.add(SftpFileItem.formatBytes(item.sizeBytes));
+
+            final text = item.kind == NasMediaKind.audio
+                ? audioDetails.join(' · ')
+                : '${SftpFileItem.formatBytes(item.sizeBytes)} · ${_formatEpoch(item.modifiedEpoch)}';
+
+            return Text(
+              text,
+              style: monoTextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: theme.colorScheme.outline,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            );
+          },
         ),
         trailing: Builder(
           builder: (context) {
             final isNarrow = MediaQuery.sizeOf(context).width < 480;
+            final playbackSnapshot = ref
+                .watch(nasPlaybackProvider)
+                .asData
+                ?.value;
+            final canAddToQueue =
+                item.kind == NasMediaKind.audio &&
+                playbackSnapshot != null &&
+                playbackSnapshot.queue.isNotEmpty &&
+                playbackSnapshot.current?.kind == NasMediaKind.audio &&
+                playbackSnapshot.current?.serverId == item.serverId;
+
             if (isNarrow) {
               return PopupMenuButton<String>(
                 key: Key('nas_item_overflow_${item.name}'),
@@ -5753,6 +7536,9 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                       break;
                     case 'favorite':
                       _toggleFavorite(item);
+                      break;
+                    case 'queue':
+                      if (canAddToQueue) _addToQueue(item);
                       break;
                     case 'download':
                       ref.read(nasProvider.notifier).download(item);
@@ -5781,7 +7567,12 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                       children: [
                         const Icon(Icons.info_outline, size: 18),
                         const SizedBox(width: 8),
-                        Text(ctx.nasMediaDetails),
+                        Expanded(
+                          child: Text(
+                            ctx.nasMediaDetails,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -5795,17 +7586,51 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                           color: isFav ? ctx.vDanger : null,
                         ),
                         const SizedBox(width: 8),
-                        Text(ctx.l10n.nasTabFavorites),
+                        Expanded(
+                          child: Text(
+                            ctx.l10n.nasTabFavorites,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ),
+                  if (item.kind == NasMediaKind.audio)
+                    PopupMenuItem(
+                      value: 'queue',
+                      enabled: canAddToQueue,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.queue_music,
+                            size: 18,
+                            color: canAddToQueue ? null : theme.disabledColor,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              ctx.nasAddToQueue,
+                              overflow: TextOverflow.ellipsis,
+                              style: canAddToQueue
+                                  ? null
+                                  : TextStyle(color: theme.disabledColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   PopupMenuItem(
                     value: 'download',
                     child: Row(
                       children: [
                         const Icon(Icons.download_outlined, size: 18),
                         const SizedBox(width: 8),
-                        Text(ctx.nasTabDownloads),
+                        Expanded(
+                          child: Text(
+                            ctx.nasTabDownloads,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -5815,7 +7640,12 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                       children: [
                         const Icon(Icons.cast, size: 18),
                         const SizedBox(width: 8),
-                        Text(ctx.nasCast),
+                        Expanded(
+                          child: Text(
+                            ctx.nasCast,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -5825,7 +7655,12 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                       children: [
                         const Icon(Icons.open_in_new, size: 18),
                         const SizedBox(width: 8),
-                        Text(ctx.l10n.nasOpenPolicyExternal),
+                        Expanded(
+                          child: Text(
+                            ctx.l10n.nasOpenPolicyExternal,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -5835,7 +7670,12 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                       children: [
                         const Icon(Icons.playlist_add, size: 18),
                         const SizedBox(width: 8),
-                        Text(ctx.l10n.nasTabPlaylists),
+                        Expanded(
+                          child: Text(
+                            ctx.l10n.nasTabPlaylists,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -5861,6 +7701,12 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                   tooltip: context.l10n.nasTabFavorites,
                   onPressed: () => _toggleFavorite(item),
                 ),
+                if (item.kind == NasMediaKind.audio)
+                  IconButton(
+                    icon: const Icon(Icons.queue_music, size: 18),
+                    tooltip: context.nasAddToQueue,
+                    onPressed: canAddToQueue ? () => _addToQueue(item) : null,
+                  ),
                 IconButton(
                   icon: const Icon(Icons.download_outlined, size: 18),
                   tooltip: context.nasTabDownloads,

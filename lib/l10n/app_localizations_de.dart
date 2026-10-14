@@ -5530,4 +5530,114 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get nasSourceSaveIncomplete =>
       'Ein vorheriges Speichern der Quelle wurde nur teilweise übernommen. Bitte Anmeldedaten erneut eingeben und erfolgreich speichern vor dem Durchsuchen.';
+
+  @override
+  String get terminalHistoryTitle => 'Sitzungsverlauf';
+
+  @override
+  String get terminalHistoryButton => 'Sitzungsverlauf';
+
+  @override
+  String get terminalHistoryEmpty =>
+      'Kein Sitzungsverlauf. Dauerhafte Sitzungen erfordern tmux auf dem Remote-Server.';
+
+  @override
+  String get terminalHistoryRefresh => 'Verlauf aktualisieren';
+
+  @override
+  String get terminalStartupSession => 'Startsitzung';
+
+  @override
+  String get terminalStartupSessionSubtitle =>
+      'Wählen Sie, welche Sitzung beim Starten des Terminals geöffnet wird';
+
+  @override
+  String get terminalStartupSessionFresh => 'Neue Sitzung (Standard)';
+
+  @override
+  String get terminalStatusOpen => 'Geöffnet';
+
+  @override
+  String get terminalStatusAvailable => 'Verfügbar';
+
+  @override
+  String get terminalStatusEnded => 'Beendet';
+
+  @override
+  String get terminalStatusOffline => 'Offline';
+
+  @override
+  String get terminalDefaultBadge => 'Standard';
+
+  @override
+  String get terminalLegacyBadge => 'Nicht importiert';
+
+  @override
+  String get terminalRestoreSession => 'Sitzung wiederherstellen';
+
+  @override
+  String get terminalSetDefault => 'Als Standard festlegen';
+
+  @override
+  String get terminalClearDefault => 'Standard zurücksetzen';
+
+  @override
+  String get terminalRename => 'Sitzung umbenennen';
+
+  @override
+  String get terminalRenameDialogTitle => 'Sitzung umbenennen';
+
+  @override
+  String get terminalRenameInputLabel => 'Sitzungsname';
+
+  @override
+  String get terminalTitleInvalid =>
+      'Titel muss 1 bis 64 Zeichen lang sein und darf keine Steuerzeichen enthalten';
+
+  @override
+  String get terminalErrorHistoryLoadFailed =>
+      'Laden des Terminalverlaufs fehlgeschlagen';
+
+  @override
+  String get terminalErrorHistorySaveFailed =>
+      'Speichern des Terminalverlaufs fehlgeschlagen';
+
+  @override
+  String get terminalErrorHistoryRefreshFailed =>
+      'Aktualisieren des Terminalverlaufs fehlgeschlagen';
+
+  @override
+  String get terminalErrorStartFailed =>
+      'Starten der Terminalsitzung fehlgeschlagen';
+
+  @override
+  String get terminalErrorRestoreFailed =>
+      'Wiederherstellen der Terminalsitzung fehlgeschlagen';
+
+  @override
+  String get terminalErrorDefaultSaveFailed =>
+      'Speichern der Standard-Startsitzung fehlgeschlagen';
+
+  @override
+  String get terminalErrorCommandFailed =>
+      'Ausführen des Terminalbefehls fehlgeschlagen';
+
+  @override
+  String get terminalErrorTitleInvalid =>
+      'Ungültiger Sitzungstitel (1–64 Zeichen erforderlich)';
+
+  @override
+  String get terminalErrorSshDisconnected => 'SSH-Verbindung getrennt';
+
+  @override
+  String get terminalNoticeDefaultMissing =>
+      'Standard-Startsitzung fehlte oder wurde beendet; neues Terminal geöffnet';
+
+  @override
+  String get terminalNoticeSessionMissing =>
+      'Die angeforderte tmux-Sitzung existiert nicht mehr auf dem Remote-Server';
+
+  @override
+  String get terminalNoticePlainInterrupted =>
+      'Verbindung verloren. Nicht-tmux-Shellprozesse konnten nicht fortgesetzt werden';
 }
