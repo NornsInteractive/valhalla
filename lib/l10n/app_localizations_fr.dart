@@ -133,7 +133,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get switchAgent => 'Changer d\'agent';
 
   @override
-  String get agentClaudeCode => 'Claude CodeX';
+  String get agentClaudeCode => 'Claude Code';
 
   @override
   String get agentCodex => 'OpenAI Codex';
@@ -416,7 +416,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsResetDefault => 'Restaurer les valeurs par défaut';
 
   @override
-  String get settingsTerminalUseTmux => 'Sessions persistantes (tmux)';
+  String get settingsTerminalUseTmux => 'Mode de nouveau terminal manuel';
 
   @override
   String get settingsTerminalUseTmuxSubtitle =>
@@ -424,7 +424,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settingsTerminalUseTmuxDescription =>
-      'Conserve la sortie de votre terminal après une déconnexion. Nécessite tmux sur le serveur distant. S\'applique aux nouveaux onglets de terminal.';
+      'S\'applique uniquement aux terminaux créés manuellement. Les nouveaux terminaux automatiques utilisent toujours le SSH standard sans historique récupérable ; lorsque tmux est activé, les sessions créées manuellement peuvent être restaurées après déconnexion (requiert tmux distant). La restauration de l\'historique existant n\'est pas affectée.';
 
   @override
   String get settingsTerminalFontSize => 'Taille de police du terminal';
@@ -1402,6 +1402,16 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get transferFailedDownload => 'Échec du téléchargement';
+
+  @override
+  String get transferPhasePreparing => 'Préparation...';
+
+  @override
+  String get transferPhaseVerifyingPartial =>
+      'Vérification du fichier partiel...';
+
+  @override
+  String get transferPhaseVerifying => 'Vérification de l\'intégrité...';
 
   @override
   String get stopGeneration => 'Arrêter';
@@ -4378,6 +4388,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get updateDownloadCompleted => 'Téléchargement terminé et vérifié';
 
   @override
+  String get updatePhaseResolving => 'Connexion au serveur de mise à jour...';
+
+  @override
+  String get updatePhaseVerifying => 'Vérification du paquet de mise à jour...';
+
+  @override
+  String get updateOpeningInstaller => 'Préparation de l\'installation...';
+
+  @override
   String get updateInstall => 'Installer la mise à jour';
 
   @override
@@ -5666,4 +5685,271 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get terminalNoticePlainInterrupted =>
       'Connexion perdue. Les processus shell hors tmux n\'ont pas pu être repris';
+
+  @override
+  String get terminalHistoryDeleteDialogTitle =>
+      'Supprimer l\'historique de session';
+
+  @override
+  String get terminalHistoryTerminateRemote =>
+      'Terminer également la session sur le serveur distant';
+
+  @override
+  String get terminalHistoryTerminateConfirmTitle =>
+      'Terminer la session distante ?';
+
+  @override
+  String get terminalHistoryTerminateConfirmMessage =>
+      'Cette action mettra fin à la session tmux distante et arrêtera tous les processus en cours d\'exécution.';
+
+  @override
+  String get terminalErrorHistoryDeleteFailed =>
+      'Échec de la suppression de l\'historique du terminal';
+
+  @override
+  String get terminalErrorHistoryTerminateFailed =>
+      'Échec de l\'arrêt de la session distante';
+
+  @override
+  String get terminalErrorTargetChanged =>
+      'Le serveur cible a changé. Veuillez rouvrir la session sur le serveur actuel.';
+
+  @override
+  String get terminalModeStandard =>
+      'Terminal SSH standard (par défaut, sans historique)';
+
+  @override
+  String get terminalModeTmux =>
+      'Terminal tmux (conserve la session distante et l\'historique)';
+
+  @override
+  String get terminalModeSaveFailed =>
+      'Échec de l\'enregistrement du mode terminal, veuillez réessayer';
+
+  @override
+  String get sftpNew => 'Nouveau';
+
+  @override
+  String get terminalHistorySearchHint => 'Rechercher un nom de session…';
+
+  @override
+  String get configMigrationBoundaryNote =>
+      'Configuration locale de l\'appareil uniquement. Les données des serveurs distants ne sont pas modifiées.';
+
+  @override
+  String get configMigrationSubtitle =>
+      'Exporter ou importer les paramètres locaux et les profils de serveur';
+
+  @override
+  String get installAppId => 'Identifiant de l\'application';
+
+  @override
+  String get installArchitecture => 'Architecture';
+
+  @override
+  String get installPlatform => 'Plateforme';
+
+  @override
+  String get settingsAboutPrivacyDesc =>
+      'Version, licences open source et politique de confidentialité';
+
+  @override
+  String get settingsAccentColorDesc =>
+      'Personnaliser la couleur d\'accentuation du thème';
+
+  @override
+  String get settingsSearchHint => 'Rechercher dans les paramètres…';
+
+  @override
+  String get settingsSearchNoResults => 'Aucun paramètre correspondant trouvé';
+
+  @override
+  String get settingsSecurityDesc =>
+      'Hôtes connus, identifiants et actions de sécurité';
+
+  @override
+  String get agentExpandDetails => 'Détails';
+
+  @override
+  String get agentCollapseDetails => 'Réduire';
+
+  @override
+  String get transferPauseAll => 'Tout suspendre';
+
+  @override
+  String get transferResumePaused => 'Reprendre les transferts';
+
+  @override
+  String get transferFilterAll => 'Tous';
+
+  @override
+  String get transferFilterActive => 'En cours';
+
+  @override
+  String get transferFilterFailed => 'Échoués';
+
+  @override
+  String get transferFilterCompleted => 'Terminés';
+
+  @override
+  String get transferPauseReasonUser => 'Suspendu par l\'utilisateur';
+
+  @override
+  String get transferPauseReasonNetwork =>
+      'Suspendu suite à une déconnexion réseau';
+
+  @override
+  String get transferPauseReasonAppRestart =>
+      'Suspendu après le redémarrage de l\'application';
+
+  @override
+  String get transferRemotePath => 'Chemin distant';
+
+  @override
+  String get transferLocalPath => 'Chemin local';
+
+  @override
+  String get transferErrorDetail => 'Détail de l\'erreur';
+
+  @override
+  String get chatFailureKindAuth => 'Authentification requise';
+
+  @override
+  String get chatFailureKindModelUnavailable => 'Modèle indisponible';
+
+  @override
+  String get chatFailureKindConnection => 'Échec de connexion';
+
+  @override
+  String get chatFailureKindHistory => 'Échec de l\'historique';
+
+  @override
+  String get chatFailureKindOther => 'Échec de la requête';
+
+  @override
+  String get chatFailureActionLogin => 'Se connecter';
+
+  @override
+  String get chatFailureActionRunSettings => 'Paramètres du modèle';
+
+  @override
+  String get chatFailureActionReconnect => 'Reconnecter';
+
+  @override
+  String get chatFailureActionReloadHistory => 'Réessayer';
+
+  @override
+  String get chatFailureActionDetails => 'Détails';
+
+  @override
+  String get sftpConfigureToolbar => 'Configurer la barre d\'outils';
+
+  @override
+  String get sftpConfigureToolbarDesc =>
+      'Choisissez les actions à épingler directement à la barre d\'outils. Les autres actions apparaîtront dans le menu Plus.';
+
+  @override
+  String get sftpToolbarPreferenceSaveFailed =>
+      'Échec de l\'enregistrement des préférences de la barre d\'outils';
+
+  @override
+  String get sftpToolbarActionView => 'Changer de vue';
+
+  @override
+  String agentUpdateNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mises à jour d\'agent disponibles',
+      one: '1 mise à jour d\'agent disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agentUpdateViewAction => 'Voir';
+
+  @override
+  String get agentUpdateCheckAll => 'Vérifier les mises à jour';
+
+  @override
+  String get agentUpdateCheck => 'Vérifier la mise à jour';
+
+  @override
+  String get agentUpdateChecking => 'Vérification...';
+
+  @override
+  String get agentUpdateAvailable => 'Mise à jour disponible';
+
+  @override
+  String get agentUpdateUpToDate => 'À jour';
+
+  @override
+  String get agentUpdateDialogTitle => 'Mettre à jour l\'agent';
+
+  @override
+  String get agentUpdateConfirmButton => 'Confirmer et mettre à jour';
+
+  @override
+  String get agentUpdateCancelButton => 'Annuler';
+
+  @override
+  String get agentUpdateTargetServer => 'Serveur';
+
+  @override
+  String get agentUpdateTargetEnvironment => 'Environnement';
+
+  @override
+  String get agentUpdateTargetIdentity => 'Identité';
+
+  @override
+  String get agentUpdateCommandPreview => 'Aperçu de la commande';
+
+  @override
+  String get agentUpdateClaudeMigrationNotice =>
+      'Cette mise à jour migre l\'ancien adaptateur Claude (claude-code-acp) vers l\'adaptateur officiel claude-agent-acp. L\'historique et les identifiants existants sont conservés.';
+
+  @override
+  String get agentUpdateAgyNotice =>
+      'La CLI AgY se met à jour via son canal de distribution stable officiel. La version installée peut être plus récente que l\'aperçu affiché lors de la confirmation.';
+
+  @override
+  String get agentUpdateLogs => 'Journaux de mise à jour';
+
+  @override
+  String get agentUpdateCopyLog => 'Copier le journal';
+
+  @override
+  String get agentUpdateLogCopied =>
+      'Journal de mise à jour copié dans le presse-papiers';
+
+  @override
+  String get agentUpdateSuccess => 'Agent mis à jour avec succès';
+
+  @override
+  String get agentUpdateFailed => 'Échec de la mise à jour';
+
+  @override
+  String get agentUpdateInterrupted =>
+      'La mise à jour a été interrompue ou la connexion a été perdue. Veuillez vérifier la version réelle avant de réessayer ; les nouvelles tentatives automatiques sont désactivées par sécurité.';
+
+  @override
+  String get agentUpdateInProgress =>
+      'Une mise à jour est en cours sur ce serveur.';
+
+  @override
+  String get agentUpdateBusy =>
+      'Le serveur ou l\'agent est occupé. Veuillez attendre la fin des tâches actives.';
+
+  @override
+  String get agentUpdateVersionUnknown => 'Inconnu';
+
+  @override
+  String get agentUpdateSource => 'Source';
+
+  @override
+  String get agentUpdateLastChecked => 'Dernière vérification';
+
+  @override
+  String get agentUpdateNeverChecked => 'Jamais vérifié';
 }

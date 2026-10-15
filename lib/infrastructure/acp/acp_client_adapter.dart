@@ -401,7 +401,8 @@ class ACPClientAdapter {
       await _ensureSession();
     } catch (error) {
       if (_isAuthRequired(error)) _emitAuthRequired();
-      _lastFailedOperation = _sessionOperation ?? 'session/prepare';
+      _lastFailedOperation =
+          _sessionOperation ?? _lastFailedOperation ?? 'session/prepare';
       if (error is RpcError && error.code == -32603) {
         throw StateError(
           'ACP_SESSION_PREPARE_FAILED: $_lastFailedOperation: ${LogSanitizer.sanitize(error.toString())}',
@@ -521,6 +522,9 @@ class ACPClientAdapter {
         }
         _earlyAccountUpdates.clear();
         outcome = 'completed';
+      } catch (_) {
+        _lastFailedOperation = 'initialize';
+        rethrow;
       } finally {
         unawaited(
           AppDiagnostics.instance.recordTiming(
@@ -670,6 +674,7 @@ class ACPClientAdapter {
       _handleStopReason(result.stopReason);
       _complete();
     } catch (e) {
+      _lastFailedOperation = stage;
       if (_isAuthRequired(e)) {
         // 认证要求是可恢复的协议态，交由 UI 引导用户选择方式，而非报错终止。
         _emitAuthRequired();
@@ -1038,7 +1043,14 @@ class ACPClientAdapter {
     // before tearing down the RPC transport (microtasks precede this event).
     unawaited(
       Future<void>(() async {
-        await _connection?.close();
+        final connection = _connection;
+        if (connection != null) {
+          await connection.close();
+        } else {
+          // A superseded factory can return before initialize creates an RPC
+          // connection. It still owns a live SSH process that must be closed.
+          await transport.close();
+        }
       }),
     );
     _authMethods = const [];

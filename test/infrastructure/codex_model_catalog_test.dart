@@ -320,12 +320,12 @@ void main() {
       final command = client.commands.single;
       expect(
         command,
-        startsWith(
-          'docker exec -i --user \'codex\' \'val-codex\' /bin/sh -lc ',
-        ),
+        startsWith('docker exec -i --user \'codex\' \'val-codex\' /bin/sh -c '),
         reason: '容器目标必须沿用同一容器引用与执行用户',
       );
       expect(command, contains('app-server'));
+      expect(command, contains(r'exec "$CODEX_PATH" app-server'));
+      expect(command, contains('exec 3>&1 1>&2;'));
       expect(command, contains('codex'));
       expect(command, contains('/bin/bash'), reason: '优先使用 bash 以保留 PATH');
       expect(session.closeCount, 1);
@@ -557,10 +557,12 @@ void main() {
       final command = client.commands.single;
       expect(
         command,
-        startsWith("docker exec -i --user 'codex' 'val-codex' /bin/sh -lc "),
+        startsWith("docker exec -i --user 'codex' 'val-codex' /bin/sh -c "),
         reason: '容器目标必须沿用同一容器引用与执行用户',
       );
       expect(command, contains('app-server'));
+      expect(command, contains(r'exec "$CODEX_PATH" app-server'));
+      expect(command, contains('exec 3>&1 1>&2;'));
       expect(session.closeCount, 1);
     });
 

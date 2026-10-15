@@ -6,7 +6,6 @@ import '../../data/models/native_cli_session.dart';
 import '../../data/models/chat_run_settings.dart';
 import '../../data/models/agent_composer_item.dart';
 import '../../data/models/agent_profile.dart';
-import '../../core/utils/shell_quote.dart';
 import 'agent_execution_target.dart';
 
 /// Codex omits the JSON-RPC version header. Correlation remains owned by acpd.
@@ -120,24 +119,19 @@ class CodexNativeClient {
     AgentProfile profile,
     Future<T> Function(CodexNativeClient) read,
   ) async {
-    final script = 'exec ${cliShellQuote(profile.cliCommand)} app-server';
+    final script =
+        '${agentCodexExecutableScript(profile)}'
+        'exec "\$CODEX_PATH" app-server';
     var openingExpired = false;
-    final opening = ssh
-        .execute(
-          agentTargetCommand(
-            profile,
-            profile.executionTarget == 'docker'
-                ? script
-                : 'bash -l -c ${cliShellQuote(script)}',
-          ),
-        )
-        .then((session) {
-          // A timed-out SSH channel can still arrive later; do not orphan it.
-          if (openingExpired) {
-            session.close();
-          }
-          return session;
-        });
+    final opening = ssh.execute(agentCodexTargetCommand(profile, script)).then((
+      session,
+    ) {
+      // A timed-out SSH channel can still arrive later; do not orphan it.
+      if (openingExpired) {
+        session.close();
+      }
+      return session;
+    });
     final SSHSession process;
     try {
       process = await opening.timeout(const Duration(seconds: 15));

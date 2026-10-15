@@ -87,7 +87,11 @@ void main() {
               ? _defaultCatalog
               : (profile, _) => modelQuery(profile),
         ),
-        acpTransportFactoryProvider.overrideWithValue((_, _) async {
+        acpTransportFactoryProvider.overrideWithValue((
+          _,
+          _, {
+          String? initialModelId,
+        }) async {
           final pair = newPair(capabilities: capabilities);
           pair.remoteSessions = remoteSessions;
           configurePair?.call(pair);
@@ -261,7 +265,7 @@ void main() {
           activeServerProvider.overrideWith(_StubActiveServer.new),
           sshClientManagerProvider.overrideWithValue(_FakeSshManager(storage)),
           acpTransportFactoryProvider.overrideWithValue(
-            (_, _) async => newPair().client,
+            (_, _, {String? initialModelId}) async => newPair().client,
           ),
         ],
       );
@@ -626,8 +630,10 @@ class _FakeSshManager extends SSHClientManager {
   _FakeSshManager(LocalStorageService storage)
     : super(SSHHostKeyVerifier(storage));
 
+  final Map<String, SSHClient> _clients = <String, SSHClient>{};
+
   @override
-  SSHClient? getClient(String serverId) => _FakeSshClient();
+  SSHClient? getClient(String serverId) => _clients.putIfAbsent(serverId, () => _FakeSshClient());
 }
 
 class _FakeSshClient implements SSHClient {

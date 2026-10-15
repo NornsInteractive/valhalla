@@ -55,9 +55,9 @@ class BuiltinAgentPreset {
 /// 命令来源核实记录（2026-09-14，通过 `npm view <pkg> version/bin`、`npm pack`
 /// 解包读 README，以及官方文档核实）：
 ///
-/// - `@anthropic-ai/claude-code` 存在；`@zed-industries/claude-code-acp`（0.16.2）
-///   提供 `claude-code-acp` 可执行文件。其 README 的启动方式为
-///   `ANTHROPIC_API_KEY=sk-... claude-code-acp`——**没有 `--stdio` 参数**。
+/// - 2026-10-15：旧 `@zed-industries/claude-code-acp` 已弃用，新预设使用
+///   官方 `@agentclientprotocol/claude-agent-acp` / `claude-agent-acp`。
+///   已安装的旧适配器仅在用户确认升级并验证新版本后迁移，保留认证和历史。
 /// - `@openai/codex` 存在；`@zed-industries/codex-acp`（0.16.0）提供 `codex-acp`
 ///   可执行文件。其 README 的启动方式为 `OPENAI_API_KEY=sk-... codex-acp`——
 ///   **没有 `--stdio` 参数**（早期版本曾误加，会报
@@ -73,12 +73,12 @@ class BuiltinAgentPreset {
 const Map<String, BuiltinAgentPreset> kBuiltinAgentPresets = {
   'builtin-claude-code': BuiltinAgentPreset(
     id: 'builtin-claude-code',
-    name: 'Claude CodeX',
+    name: 'Claude Code',
     description: 'Anthropic ACP Protocol · High Reasoning',
     cliCommand: 'claude',
-    acpCommand: 'claude-code-acp',
+    acpCommand: 'claude-agent-acp',
     cliInstallCommand: 'npm install -g @anthropic-ai/claude-code',
-    acpInstallCommand: 'npm install -g @zed-industries/claude-code-acp',
+    acpInstallCommand: 'npm install -g @agentclientprotocol/claude-agent-acp',
     loginCheckCommand: 'claude auth status --json',
     loginCommand: 'claude auth login',
   ),

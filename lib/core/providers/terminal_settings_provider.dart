@@ -122,9 +122,8 @@ class TerminalSettingsNotifier extends Notifier<TerminalSettings> {
       setPinnedKeys(TerminalSettings.defaultPinnedKeys);
 
   Future<void> setUseTmux(bool enabled) async {
-    // 先改内存再落盘：开关必须立刻响应，写盘失败不该把 UI 卡在旧值上。
-    state = state.copyWith(useTmux: enabled);
     await ref.read(localStorageServiceProvider).setUseTmuxForTerminal(enabled);
+    if (ref.mounted) state = state.copyWith(useTmux: enabled);
   }
 
   /// 设置终端字体大小。越界值夹回 [minFontSize, maxFontSize] 再生效，

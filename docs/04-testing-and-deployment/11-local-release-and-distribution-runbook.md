@@ -10,8 +10,8 @@
 | --- | --- |
 | GitHub 仓库 | `NornsInteractive/valhalla` |
 | 团队显示名称 | `Norns Interactive` |
-| Android applicationId | `com.antigravity.valhalla.valhalla` |
-| 分发平台 app_id | `com.norns.valhalla`，**不是** Android applicationId |
+| 当前源码 Android applicationId | `com.norns.valhalla`（已发布 1.0.6 仍是旧身份） |
+| 分发平台 app_id | `com.norns.valhalla`，分发项目保持不变 |
 | 分发入口 | <https://ygg.norns.cc.cd/d/com.norns.valhalla> |
 | MCP | `https://ygg.norns.cc.cd/api/mcp`，Streamable HTTP |
 | 公开检查／下载 | `/api/v1/app/latest`、`/api/v1/app/download` |
@@ -23,6 +23,20 @@
 本流程不启动 Actions、不修改服务器业务数据、不卸载设备应用或清数据。
 不将旧平台包混入新版本；AAB 只作为 Release 附件，不能登记为直接安装的 APK。
 正式签名包不能覆盖测试签名安装，不能通过卸载用户应用来绕过签名不一致。
+
+### 应用标识迁移（未发布）
+
+2026-10-14 当前源码将 Android、iOS、macOS、Linux 统一为 `com.norns.valhalla`，
+Windows 商店身份不变，正式签名证书不变。历史 1.0.6 APK 的
+`com.antigravity.valhalla.valhalla` 仍是当时真实身份；不篡改历史附件、标签或验证清单。
+包名变化不能视作普通覆盖升级：Android 新旧应用并存，`adb install -r` 不能把
+旧包私有数据迁移到新包；不得卸载旧包或清数据来绕过。发布前必须明示这一点，
+并先让用户从旧应用导出配置，在新应用导入。现有配置备份不含凭据、私钥、
+会话内容、终端历史、下载文件或 NAS 索引；凭据需重新配置。自定义 OAuth
+scheme 保持 `valhalla`，新旧应用共存时回调可能需要用户选择目标应用。
+新包清单生成器只接受新身份；同版本覆盖发布旧身份包的历史命令不可直接套用。
+Apple 新 Bundle ID 还需匹配相应签名／配置描述，Linux 新 application-id 的
+桌面集成需单独验证。本轮仅做 Android 编译检查，不代表已经发布或完成迁移。
 
 ## 2. 先确认版本和源码，再构建
 

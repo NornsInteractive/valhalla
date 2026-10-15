@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +14,10 @@ import 'package:valhalla/data/models/agent_profile.dart';
 import 'package:valhalla/data/models/chat_run_settings.dart';
 import 'package:valhalla/data/models/chat_session.dart';
 import 'package:valhalla/data/models/server_profile.dart';
+import 'package:valhalla/data/repositories/chat_repository.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
+import 'package:valhalla/infrastructure/acp/acp_attachment_store.dart';
+import 'package:valhalla/infrastructure/acp/acp_client_adapter.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_host_key_verifier.dart';
@@ -85,6 +89,32 @@ class _AllReadyRegistry extends _FakeRegistry {
   );
 }
 
+class _CachedHistoryRepository extends ChatRepository {
+  _CachedHistoryRepository(super.storage, this.sessions);
+
+  final List<ChatSession> sessions;
+  final loads = <(String, int?)>[];
+
+  @override
+  Future<ChatSessionPage> listSessions(
+    String serverId, {
+    String? agentId,
+    String query = '',
+    int offset = 0,
+    int limit = 30,
+  }) async => ChatSessionPage(sessions, false);
+
+  @override
+  Future<ChatSession?> loadSession(
+    String id, {
+    int? before,
+    int limit = 50,
+  }) async {
+    loads.add((id, before));
+    throw StateError('fixture page failure');
+  }
+}
+
 Future<ProviderContainer> _container({
   List<AgentProfile> profiles = const [],
   bool connected = false,
@@ -99,7 +129,11 @@ Future<ProviderContainer> _container({
       serverConnectionProvider.overrideWith(
         () => _StaticConnection(connected: connected),
       ),
-      acpTransportFactoryProvider.overrideWithValue((_, _) {
+      acpTransportFactoryProvider.overrideWithValue((
+        _,
+        _, {
+        String? initialModelId,
+      }) {
         throw StateError('transport must not be created in this test');
       }),
     ],
@@ -147,6 +181,109 @@ Future<List<ChatSession>> _storedSessions(ProviderContainer container) async {
 
 void main() {
   test(
+    'selectSession clears only the previous session global failure',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage = LocalStorageService(
+        await SharedPreferences.getInstance(),
+      );
+      final now = DateTime.utc(2026, 10, 15);
+      final failedMessage = ChatMessage(
+        id: 'failed-message-a',
+        agentId: 'builtin-codex',
+        role: MessageRole.assistant,
+        content: 'partial answer',
+        status: ChatTurnStatus.failed,
+        failureCode: 'ACP_TRANSPORT_FAILURE: connection reset',
+        createdAt: now,
+      );
+      final sessions = [
+        for (final id in ['session-a', 'session-b'])
+          ChatSession(
+            id: id,
+            title: id,
+            serverId: 'srv-1',
+            agentId: 'builtin-codex',
+            createdAt: now,
+            updatedAt: now,
+            messageOffset: 50,
+            totalMessageCount: 51,
+            messages: [
+              if (id == 'session-a')
+                failedMessage
+              else
+                ChatMessage(
+                  id: 'cached-message-b',
+                  agentId: 'builtin-codex',
+                  role: MessageRole.assistant,
+                  content: 'cached answer',
+                  createdAt: now,
+                ),
+            ],
+          ),
+      ];
+      final repository = _CachedHistoryRepository(storage, sessions);
+      final container = ProviderContainer(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(storage),
+          chatRepositoryProvider.overrideWithValue(repository),
+          agentRegistryProvider.overrideWith(
+            () => _FakeRegistry([_profile('builtin-codex')]),
+          ),
+          activeServerProvider.overrideWith(_StubActiveServer.new),
+          serverConnectionProvider.overrideWith(
+            () => _StaticConnection(connected: false),
+          ),
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) {
+            throw StateError('selecting cached history must not start ACP');
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(aiChatProvider.notifier);
+      await _awaitHistoryLoad(container);
+      expect(container.read(aiChatProvider).activeSessionId, 'session-a');
+      notifier.updateDraftText('unsent draft A');
+      await notifier.loadOlderMessages();
+      final failed = container.read(aiChatProvider);
+      expect(failed.lastErrorCode, startsWith('CHAT_MESSAGES_LOAD_FAILED:'));
+
+      await notifier.selectSession('session-a');
+      expect(
+        container.read(aiChatProvider).lastErrorCode,
+        failed.lastErrorCode,
+      );
+      expect(repository.loads, [('session-a', 50)]);
+
+      await notifier.selectSession('session-b');
+      final selected = container.read(aiChatProvider);
+      expect(selected.activeSessionId, 'session-b');
+      expect(selected.activeSession, same(sessions.last));
+      expect(selected.lastErrorCode, isNull);
+      expect(repository.loads, [
+        ('session-a', 50),
+      ], reason: 'no B history retry');
+      expect(selected.sessions.first.messages.single, same(failedMessage));
+      expect(
+        selected.sessions.first.messages.single.failureCode,
+        failedMessage.failureCode,
+      );
+
+      await notifier.selectSession('session-a');
+      expect(container.read(aiChatProvider).draftText, 'unsent draft A');
+      expect(
+        container.read(aiChatProvider).activeSession!.messages.single,
+        same(failedMessage),
+      );
+      expect(repository.loads, [('session-a', 50)]);
+    },
+  );
+
+  test(
     'sharing is server scoped and carries text without sharing remote IDs',
     () async {
       SharedPreferences.setMockInitialValues({});
@@ -168,7 +305,11 @@ void main() {
           ),
           activeServerProvider.overrideWith(_StubActiveServer.new),
           sshClientManagerProvider.overrideWithValue(_FakeSshManager(storage)),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             final pair = FakeAcpPair(sessionId: 'remote-${pairs.length}');
             pairs.add(pair);
             return pair.client;
@@ -238,7 +379,11 @@ void main() {
           ),
           activeServerProvider.overrideWith(_StubActiveServer.new),
           sshClientManagerProvider.overrideWithValue(_FakeSshManager(storage)),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             throw StateError('unbound sessions must not start ACP');
           }),
         ],
@@ -279,7 +424,11 @@ void main() {
           ),
           activeServerProvider.overrideWith(_StubActiveServer.new),
           sshClientManagerProvider.overrideWithValue(_FakeSshManager(storage)),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             final pair = FakeAcpPair(sessionId: 'remote-${pairs.length}');
             pairs.add(pair);
             return pair.client;
@@ -330,7 +479,11 @@ void main() {
           ),
           activeServerProvider.overrideWith(_StubActiveServer.new),
           sshClientManagerProvider.overrideWithValue(_FakeSshManager(storage)),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             throw StateError('transport unavailable');
           }),
         ],
@@ -479,7 +632,11 @@ void main() {
         serverConnectionProvider.overrideWith(
           () => _StaticConnection(connected: false),
         ),
-        acpTransportFactoryProvider.overrideWithValue((_, _) {
+        acpTransportFactoryProvider.overrideWithValue((
+          _,
+          _, {
+          String? initialModelId,
+        }) {
           throw StateError('transport must not be created in this test');
         }),
       ],
@@ -520,7 +677,11 @@ void main() {
           serverConnectionProvider.overrideWith(
             () => _StaticConnection(connected: false),
           ),
-          acpTransportFactoryProvider.overrideWithValue((_, _) {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) {
             throw StateError('transport must not be created in this test');
           }),
         ],
@@ -582,7 +743,11 @@ void main() {
           // sendMessage requires an active server AND a connected state before
           // it will look up an SSH client.
           activeServerProvider.overrideWith(_StubActiveServer.new),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             pair = FakeAcpPair();
             configurePair?.call(pair);
             return pair.client;
@@ -842,6 +1007,11 @@ void main() {
         reason: 'host 侧曾静默显示「已中断」，这里就是它的回归点',
       );
       expect(state.lastErrorCode, AiChatNotifier.authRequiredCode);
+      expect(
+        assistant.failureCode,
+        AiChatNotifier.authRequiredCode,
+        reason: '等待认证的占位消息必须自带与顶栏相同的原因',
+      );
       expect(state.authChallenge, isNotNull);
     });
 
@@ -858,10 +1028,11 @@ void main() {
       await _sendAndSettle(container, 'hi');
       final challenged = container.read(aiChatProvider);
       expect(challenged.authChallenge, isNotNull);
-      expect(
-        challenged.activeSession!.messages.last.status,
-        ChatTurnStatus.awaitingAuthentication,
-      );
+      final challengedAssistant = challenged.activeSession!.messages.last;
+      expect(challengedAssistant.status, ChatTurnStatus.awaitingAuthentication);
+      // 显式重试必须复用这条占位助手消息：先记下它的 id 与失败原因。
+      final challengedAssistantId = challengedAssistant.id;
+      expect(challengedAssistant.failureCode, AiChatNotifier.authRequiredCode);
 
       // 用户在应用外完成登录后，显式重发同一条消息。
       // 复用同一个 adapter（不会新建 pair），所以两处都要改。
@@ -899,11 +1070,72 @@ void main() {
       final assistant = messages.last;
       expect(assistant.role, MessageRole.assistant);
       expect(
+        assistant.id,
+        challengedAssistantId,
+        reason: '显式重试复用同一条助手占位，而不是补写第二条',
+      );
+      expect(
         assistant.status,
         ChatTurnStatus.completed,
         reason: '成功重试后是 completed，不保留认证/中断标签',
       );
+      expect(assistant.failureCode, isNull, reason: '成功重试必须清掉占位消息上的认证失败原因');
       expect(assistant.content, contains('host is up'));
+    });
+
+    test('远端报错只落 failureCode，不污染助手正文；随后成功一轮也不清旧原因', () async {
+      configurePair = (p) {
+        p.promptUpdates = [
+          {
+            'sessionUpdate': 'agent_message_chunk',
+            'messageId': 'a1',
+            'content': {'type': 'text', 'text': 'partial answer'},
+          },
+        ];
+        // 先流一段正文，再报一个非认证的普通远端错误。
+        p.failPrompt = true;
+        p.promptErrorCode = -32603;
+      };
+      final container = await authContainer(connected: true);
+      addTearDown(container.dispose);
+
+      await _sendAndSettle(container, 'diagnose the host');
+
+      final failed = container.read(aiChatProvider);
+      final assistant = failed.activeSession!.messages.last;
+      expect(assistant.role, MessageRole.assistant);
+      expect(assistant.status, ChatTurnStatus.failed);
+      expect(assistant.content, 'partial answer', reason: '远端错误文案绝不能拼进助手正文');
+      expect(assistant.content, isNot(contains('Error')));
+      expect(assistant.content, isNot(contains('Rpc')));
+      expect(assistant.failureCode, isNotNull);
+      expect(
+        assistant.failureCode,
+        failed.lastErrorCode,
+        reason: '消息失败原因与顶栏必须来自同一来源',
+      );
+      final failedMessageId = assistant.id;
+      final failedCode = assistant.failureCode;
+
+      // 下一轮成功：上一轮已经记下的失败原因不得被抹掉。
+      configurePair = (p) {
+        p.failPrompt = false;
+        p.promptUpdates = const [];
+      };
+      pair.failPrompt = false;
+      pair.promptUpdates = const [];
+      await _sendAndSettle(container, 'again');
+
+      final after = container.read(aiChatProvider);
+      final oldMessage = after.activeSession!.messages.firstWhere(
+        (m) => m.id == failedMessageId,
+      );
+      expect(
+        oldMessage.failureCode,
+        failedCode,
+        reason: '后续成功的一轮不能清除上一轮消息的失败原因',
+      );
+      expect(oldMessage.status, ChatTurnStatus.failed);
     });
 
     test('同一 Agent 的连续两次发送复用同一个 transport（不再每个进程重启）', () async {
@@ -926,7 +1158,11 @@ void main() {
             () => _StaticConnection(connected: true),
           ),
           activeServerProvider.overrideWith(_StubActiveServer.new),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             transportCreations++;
             pair = FakeAcpPair(sessionId: 'stable-session');
             return pair.client;
@@ -967,7 +1203,11 @@ void main() {
             () => _StaticConnection(connected: true),
           ),
           activeServerProvider.overrideWith(_StubActiveServer.new),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             transportCreations++;
             return FakeAcpPair().client;
           }),
@@ -1028,7 +1268,11 @@ void main() {
             () => _StaticConnection(connected: true),
           ),
           activeServerProvider.overrideWith(_StubActiveServer.new),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             pair = FakeAcpPair(sessionId: 'restored-session');
             // 模拟远端接受 session/load，即会话被复用。
             pair.failSessionLoad = false;
@@ -1091,7 +1335,11 @@ void main() {
             () => _StaticConnection(connected: true),
           ),
           activeServerProvider.overrideWith(_StubActiveServer.new),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             pair = FakeAcpPair(sessionId: 'brand-new');
             pair.failSessionLoad = true;
             pair.failSessionResume = true;
@@ -1135,7 +1383,11 @@ void main() {
             () => _StaticConnection(connected: true),
           ),
           activeServerProvider.overrideWith(_StubActiveServer.new),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             // 没有历史会话 id，首次建会话即新建，restoredExistingSession=false。
             final pair = FakeAcpPair(sessionId: 'fresh');
             pair.failSessionLoad = true;
@@ -1175,7 +1427,11 @@ void main() {
             () => _StaticConnection(connected: true),
           ),
           activeServerProvider.overrideWith(_StubActiveServer.new),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             final pair = FakeAcpPair(sessionId: 'brand-new');
             pair.failSessionLoad = true;
             pair.failSessionResume = true;
@@ -1226,6 +1482,7 @@ void main() {
       // 模型目录只来自独立查询接口，与 session config 无关；显式注入以免
       // 这层测试隐式依赖 Agent 的 CLI 类型判定。
       _CatalogQuery? modelQuery,
+      AcpAttachmentStore? attachmentStore,
     }) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -1236,6 +1493,8 @@ void main() {
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
           tempChatRepositoryOverride(),
+          if (attachmentStore != null)
+            acpAttachmentStoreProvider.overrideWithValue(attachmentStore),
           agentRegistryProvider.overrideWith(
             () => _FakeRegistry([_profile('builtin-codex')]),
           ),
@@ -1249,7 +1508,11 @@ void main() {
                 ? _emptyCatalog
                 : (profile, _) => modelQuery(profile),
           ),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             final next = FakeAcpPair(sessionId: 'stable-session');
             next.configOptions = configOptions;
             // 审批用例需要在 prompt 未结束时插入 session/request_permission。
@@ -1346,6 +1609,42 @@ void main() {
 
       pair.finishHeldPrompt();
       await heldTurn;
+      await pumpEventQueue();
+
+      // 已完成的助手消息对象必须继续被下一轮流式与结束复用（同一引用），
+      // 否则渲染层会把上一轮整条重建。
+      final completed = container
+          .read(aiChatProvider)
+          .activeSession!
+          .messages
+          .last;
+      expect(completed.status, ChatTurnStatus.completed);
+
+      pair.resetPromptReceived();
+      await startHeldTurn(container);
+      await pumpEventQueue();
+      expect(
+        container
+            .read(aiChatProvider)
+            .activeSession!
+            .messages
+            .where((m) => identical(m, completed)),
+        hasLength(1),
+        reason: '下一轮流式不得重建上一轮已完成的消息',
+      );
+
+      pair.finishHeldPrompt();
+      await heldTurn;
+      await pumpEventQueue();
+      expect(
+        container
+            .read(aiChatProvider)
+            .activeSession!
+            .messages
+            .where((m) => identical(m, completed)),
+        hasLength(1),
+        reason: '下一轮结束不得重建上一轮已完成的消息',
+      );
     });
 
     test('旧 bool 入口只匹配 once，绝不升级为 always', () async {
@@ -1482,6 +1781,202 @@ void main() {
         hasLength(promptsBefore),
         reason: '刷新不得触发对话',
       );
+    });
+
+    test(
+      'reconnectCurrentAgent replaces draft transport without a session',
+      () async {
+        final container = await acpContainer(
+          attachmentStore: _MemoryAttachmentStore(),
+          configurePair: (target) => target.agentCapabilities = {
+            'promptCapabilities': {'image': true},
+          },
+        );
+        final notifier = container.read(aiChatProvider.notifier);
+        await _awaitHistoryLoad(container);
+        notifier.setDraftWorkingDirectory('/work/draft');
+        notifier.updateDraftText('unsent draft');
+        expect(await notifier.prepareRunSettings(), isTrue);
+        notifier.addAttachment(
+          AcpPromptAttachment(
+            name: 'draft.png',
+            mimeType: 'image/png',
+            bytes: Uint8List.fromList([1, 2, 3]),
+          ),
+        );
+        final before = container.read(aiChatProvider);
+        final oldPair = pair;
+        final oldFrames = List<String>.of(oldPair.sentToAgent);
+
+        expect(await notifier.reconnectCurrentAgent(), isTrue);
+        await pumpEventQueue();
+
+        final after = container.read(aiChatProvider);
+        expect(createdPairs, hasLength(2));
+        expect(pair, isNot(same(oldPair)));
+        expect(_wireMethods(pair), ['initialize']);
+        expect(oldPair.sentToAgent, oldFrames, reason: 'no cancel or prompt');
+        expect(pair.newSessionCwds, isEmpty);
+        expect(pair.loadRequests, isEmpty);
+        expect(pair.resumeRequests, isEmpty);
+        expect(pair.authenticateCallCount, 0);
+        expect(after.activeSessionId, isNull);
+        expect(after.sessions, same(before.sessions));
+        expect(after.draftWorkingDirectory, '/work/draft');
+        expect(after.draftText, 'unsent draft');
+        expect(after.attachments, same(before.attachments));
+        expect(after.attachments.single.bytes, [1, 2, 3]);
+      },
+    );
+
+    test(
+      'reconnectCurrentAgent preserves failed history and unsent draft',
+      () async {
+        final container = await acpContainer(
+          attachmentStore: _MemoryAttachmentStore(),
+          configurePair: (target) {
+            target.failPrompt = true;
+            target.promptErrorCode = -32603;
+            target.agentCapabilities = {
+              'promptCapabilities': {'image': true},
+            };
+          },
+        );
+        final notifier = container.read(aiChatProvider.notifier);
+        await _awaitHistoryLoad(container);
+        notifier.setDraftWorkingDirectory('/work/history');
+        await _sendAndSettle(container, 'failed question');
+        notifier.updateDraftText('keep for explicit send');
+        notifier.addAttachment(
+          AcpPromptAttachment(
+            name: 'unsent.png',
+            mimeType: 'image/png',
+            bytes: Uint8List.fromList([4, 5]),
+          ),
+        );
+        final before = container.read(aiChatProvider);
+        final failed = before.activeSession!.messages.last;
+        expect(failed.status, ChatTurnStatus.failed);
+        expect(failed.failureCode, isNotEmpty);
+        final oldPair = pair;
+        final oldFrames = List<String>.of(oldPair.sentToAgent);
+
+        expect(await notifier.reconnectCurrentAgent(), isTrue);
+        await pumpEventQueue();
+
+        final after = container.read(aiChatProvider);
+        expect(createdPairs, hasLength(2));
+        expect(_wireMethods(pair), ['initialize']);
+        expect(oldPair.sentToAgent, oldFrames);
+        expect(after.activeSessionId, before.activeSessionId);
+        expect(after.sessions, same(before.sessions));
+        expect(
+          after.activeSession!.messages,
+          same(before.activeSession!.messages),
+        );
+        expect(after.activeSession!.messages.last, same(failed));
+        expect(
+          after.activeSession!.messages.last.failureCode,
+          failed.failureCode,
+        );
+        expect(after.activeSession!.workingDirectory, '/work/history');
+        expect(after.draftWorkingDirectory, before.draftWorkingDirectory);
+        expect(after.draftText, 'keep for explicit send');
+        expect(after.attachments, same(before.attachments));
+        expect(after.runSettings, same(before.runSettings));
+      },
+    );
+
+    test(
+      'reconnectCurrentAgent refuses a held turn and pending permission',
+      () async {
+        final container = await acpContainer(holdPrompt: true);
+        final notifier = container.read(aiChatProvider.notifier);
+        await startHeldTurn(container);
+        final oldPair = pair;
+        try {
+          expect(await notifier.reconnectCurrentAgent(), isFalse);
+          expect(createdPairs, hasLength(1));
+          expect(container.read(aiChatProvider).isGenerating, isTrue);
+
+          deliverPermission(oldPair);
+          await pumpEventQueue();
+          final before = container.read(aiChatProvider);
+          expect(before.pendingPermission, isNotNull);
+          expect(before.permissionCompleter!.isCompleted, isFalse);
+          final oldFrames = List<String>.of(oldPair.sentToAgent);
+
+          expect(await notifier.reconnectCurrentAgent(), isFalse);
+          await pumpEventQueue();
+
+          final after = container.read(aiChatProvider);
+          expect(createdPairs, hasLength(1));
+          expect(pair, same(oldPair));
+          expect(after.pendingPermission, same(before.pendingPermission));
+          expect(after.permissionCompleter, same(before.permissionCompleter));
+          expect(after.permissionCompleter!.isCompleted, isFalse);
+          expect(oldPair.sentToAgent, oldFrames);
+          expect(
+            oldPair.sentToAgent.where(
+              (line) =>
+                  (jsonDecode(line) as Map<String, dynamic>)['id'] == 'perm-1',
+            ),
+            isEmpty,
+          );
+        } finally {
+          notifier.respondPermission('reject-once');
+          oldPair.finishHeldPrompt();
+          await heldTurn;
+        }
+      },
+    );
+
+    test('reconnectCurrentAgent ignores a superseded catalog result', () async {
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      var holdCatalog = false;
+      final container = await acpContainer(
+        modelQuery: (_) async {
+          if (holdCatalog) {
+            entered.complete();
+            await release.future;
+          }
+          return const AgentRuntimeCapabilities();
+        },
+      );
+      final notifier = container.read(aiChatProvider.notifier);
+      await _awaitHistoryLoad(container);
+      notifier.setDraftWorkingDirectory('/work/old');
+      await _sendAndSettle(container, 'old conversation');
+      final oldSessionId = container.read(aiChatProvider).activeSessionId;
+      holdCatalog = true;
+      final reconnect = notifier.reconnectCurrentAgent();
+      try {
+        await entered.future.timeout(const Duration(seconds: 5));
+        expect(
+          await notifier.reconnectCurrentAgent(),
+          isFalse,
+          reason: 'a second click must not start another transport',
+        );
+        expect(createdPairs, hasLength(2));
+        await notifier.createNewSession();
+        notifier.setDraftWorkingDirectory('/work/new');
+        notifier.updateDraftText('new target draft');
+      } finally {
+        release.complete();
+      }
+      expect(await reconnect, isFalse);
+      await pumpEventQueue();
+      final after = container.read(aiChatProvider);
+      expect(after.activeSessionId, isNull);
+      expect(
+        after.sessions.any((session) => session.id == oldSessionId),
+        isTrue,
+      );
+      expect(after.draftWorkingDirectory, '/work/new');
+      expect(after.draftText, 'new target draft');
+      expect(after.isLoadingSettings, isFalse);
+      expect(_wireMethods(createdPairs.last), ['initialize']);
     });
 
     test('model_config 不作为 thought_level 推理兜底', () async {
@@ -1730,7 +2225,11 @@ void main() {
             () => _StaticConnection(connected: true),
           ),
           // 认证只发现方法：任何一次真正拉起 transport 都直接失败。
-          acpTransportFactoryProvider.overrideWithValue((_, _) {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) {
             throw StateError('transport must not be created in this test');
           }),
           aiChatProvider.overrideWith(() => notifier),
@@ -1809,6 +2308,28 @@ void main() {
   });
 }
 
+List<String> _wireMethods(FakeAcpPair pair) => pair.sentToAgent
+    .map((line) => jsonDecode(line) as Map<String, dynamic>)
+    .map((frame) => frame['method'])
+    .whereType<String>()
+    .toList();
+
+class _MemoryAttachmentStore extends AcpAttachmentStore {
+  @override
+  Future<ChatAttachment> save(
+    String name,
+    String mimeType,
+    Uint8List bytes, {
+    String? uri,
+  }) async => ChatAttachment(
+    id: name,
+    name: name,
+    mimeType: mimeType,
+    sizeBytes: bytes.length,
+    uri: uri,
+  );
+}
+
 /// 拦下 `switchAgent`，让测试能把「管理路由已经销毁」的窗口撑开。
 class _AuthSpyNotifier extends AiChatNotifier {
   _AuthSpyNotifier({this.gate});
@@ -1837,8 +2358,10 @@ class _FakeSshManager extends SSHClientManager {
   _FakeSshManager(LocalStorageService storage)
     : super(SSHHostKeyVerifier(storage));
 
+  final Map<String, SSHClient> _clients = <String, SSHClient>{};
+
   @override
-  SSHClient? getClient(String serverId) => _FakeSshClient();
+  SSHClient? getClient(String serverId) => _clients.putIfAbsent(serverId, () => _FakeSshClient());
 }
 
 class _FakeSshClient implements SSHClient {

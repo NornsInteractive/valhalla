@@ -4,14 +4,17 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design/motion.dart';
 import '../../core/design/motion_widgets.dart';
 import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
+import '../../core/logging/sanitizer.dart';
 import '../../core/providers/agent_registry_provider.dart';
 import '../../core/providers/ai_chat_provider.dart';
+import '../../core/providers/security_settings_provider.dart';
 import '../../core/providers/server_provider.dart';
 import '../../core/providers/storage_providers.dart';
 import '../../data/models/chat_session.dart';
@@ -24,6 +27,8 @@ import '../agents/interactive_login_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/chat_launch_preference.dart';
+import '../../data/models/chat_run_settings.dart'
+    show AgentRuntimeCapabilities, ChatRunSettings;
 import '../../infrastructure/acp/acp_client_adapter.dart'
     show AcpRemoteSession, AcpSlashCommand;
 import '../../infrastructure/acp/acp_oauth_request.dart';
@@ -648,53 +653,100 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     }
   }
 
-  bool _isErrorInlinedInLastAssistantMessage(AiChatState state) {
-    final lastMessage = state.activeSession?.messages.lastOrNull;
-    if (lastMessage == null || lastMessage.role != MessageRole.assistant) {
-      return false;
-    }
-    final code = state.lastErrorCode;
-    if (code == null || code.isEmpty) {
-      return false;
-    }
-    return lastMessage.content.endsWith('**Error:** $code');
-  }
-
   Widget _buildErrorBanner(String errorCode) {
-    final message = _resolveErrorMessage(errorCode);
+    return Consumer(
+      builder: (bannerCtx, bannerRef, _) {
+        final retryMeta = bannerRef.watch(
+          aiChatProvider.select((s) {
+            final session = s.activeSession;
+            return (
+              activeSessionId: s.activeSessionId,
+              targetAgentId: s.activeAgentProfile?.id,
+              targetSessionId: session?.id,
+              messageCount: session?.messages.length ?? 0,
+              messageOffset: session?.messageOffset ?? 0,
+              isBusy:
+                  s.isGenerating ||
+                  s.isLoadingSessions ||
+                  s.isLoadingMessages ||
+                  s.isAuthenticating ||
+                  s.isLoadingSettings ||
+                  s.isApplyingSettings,
+            );
+          }),
+        );
+        final targetServerKey = bannerRef.watch(
+          activeServerProvider.select((s) => s?.connectionKey),
+        );
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: context.colorScheme.errorContainer.withValues(alpha: 0.8),
-      child: Row(
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 18,
-            color: context.colorScheme.onErrorContainer,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: context.textTheme.bodySmall?.copyWith(
-                color: context.colorScheme.onErrorContainer,
-              ),
-            ),
-          ),
-          if (errorCode == AiChatNotifier.notReadyCode)
-            TextButton(
-              onPressed: _showManageAgentsModal,
-              child: Text(
-                context.l10n.manageAgents,
-                style: context.textTheme.labelMedium?.copyWith(
-                  color: context.colorScheme.onErrorContainer,
-                ),
-              ),
-            ),
-        ],
-      ),
+        final bool canRetry;
+        if (retryMeta.isBusy) {
+          canRetry = false;
+        } else if (errorCode.contains('CHAT_HISTORY_LOAD_FAILED')) {
+          canRetry = true;
+        } else if (errorCode.contains('CHAT_MESSAGES_LOAD_FAILED')) {
+          final hasTarget =
+              retryMeta.activeSessionId != null ||
+              retryMeta.targetSessionId != null;
+          canRetry =
+              hasTarget &&
+              (retryMeta.messageCount == 0 || retryMeta.messageOffset > 0);
+        } else {
+          canRetry = false;
+        }
+
+        final capturedServerKey = targetServerKey;
+        final capturedAgentId = retryMeta.targetAgentId;
+        final capturedSessionId =
+            retryMeta.targetSessionId ?? retryMeta.activeSessionId;
+        final capturedErrorCode = errorCode;
+
+        final VoidCallback? onReload = canRetry
+            ? () async {
+                final currentChat = bannerRef.read(aiChatProvider);
+                final currentServer = bannerRef.read(activeServerProvider);
+                if (currentChat.lastErrorCode != capturedErrorCode) return;
+                if (currentServer?.connectionKey != capturedServerKey) return;
+                if (currentChat.activeAgentProfile?.id != capturedAgentId) {
+                  return;
+                }
+                final isCurrentBusy =
+                    currentChat.isGenerating ||
+                    currentChat.isLoadingSessions ||
+                    currentChat.isLoadingMessages ||
+                    currentChat.isAuthenticating ||
+                    currentChat.isLoadingSettings ||
+                    currentChat.isApplyingSettings;
+                if (isCurrentBusy) return;
+
+                if (capturedErrorCode.contains('CHAT_HISTORY_LOAD_FAILED')) {
+                  await bannerRef
+                      .read(aiChatProvider.notifier)
+                      .searchSessions(_sessionSearchController.text);
+                } else if (capturedErrorCode.contains(
+                  'CHAT_MESSAGES_LOAD_FAILED',
+                )) {
+                  if (capturedSessionId == null) return;
+                  if (currentChat.activeSessionId != capturedSessionId) return;
+                  final session = currentChat.activeSession;
+                  if (session == null || session.messages.isEmpty) {
+                    await bannerRef
+                        .read(aiChatProvider.notifier)
+                        .selectSession(capturedSessionId);
+                  } else if (session.messageOffset > 0) {
+                    await bannerRef
+                        .read(aiChatProvider.notifier)
+                        .loadOlderMessages();
+                  }
+                }
+              }
+            : null;
+
+        return _ChatErrorBanner(
+          errorCode: errorCode,
+          onReloadHistory: onReload,
+        );
+      },
     );
   }
 
@@ -865,47 +917,133 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     });
 
     final isDesktop = context.isDesktop;
-    final chatState = ref.watch(aiChatProvider);
 
     return Scaffold(
       drawer: !isDesktop
-          ? Drawer(child: _buildSessionsDrawer(chatState, isDesktop))
+          ? Drawer(child: _buildSessionsDrawer(isDesktop))
           : null,
       body: Row(
         children: [
           if (isDesktop) ...[
-            SizedBox(
-              width: 320,
-              child: _buildSessionsDrawer(chatState, isDesktop),
-            ),
+            SizedBox(width: 320, child: _buildSessionsDrawer(isDesktop)),
             const VerticalDivider(width: 1),
           ],
           Expanded(
             child: Column(
               children: [
-                _buildHeaderBar(chatState, isDesktop),
+                Consumer(
+                  builder: (ctx, ref, _) {
+                    ref.watch(
+                      aiChatProvider.select(
+                        (s) => (
+                          s.activeAgentProfile != null,
+                          s.activeAgentProfile?.id,
+                          s.activeAgentProfile?.name,
+                          s.shareAgentSessions,
+                          s.isGenerating,
+                        ),
+                      ),
+                    );
+                    return _buildHeaderBar(ref.read(aiChatProvider), isDesktop);
+                  },
+                ),
                 const Divider(height: 1),
-                if (chatState.lastErrorCode != null &&
-                    chatState.lastErrorCode !=
-                        AiChatNotifier.disconnectedCode &&
-                    chatState.lastErrorCode !=
-                        AiChatNotifier.authRequiredCode &&
-                    chatState.authChallenge == null &&
-                    chatState.authError == null &&
-                    !_isErrorInlinedInLastAssistantMessage(chatState))
-                  _buildErrorBanner(chatState.lastErrorCode!),
-                Expanded(child: _buildMessageList(chatState)),
-                if (chatState.pendingPermission != null)
-                  _buildPermissionCard(chatState.pendingPermission!),
-                if (chatState.authChallenge != null &&
-                    !_hasAuthChallengeRenderedInMessages(chatState))
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: _buildAuthChallengeCard(chatState.authChallenge!),
-                    ),
-                  ),
+                Consumer(
+                  builder: (ctx, ref, _) {
+                    final bannerCode = ref.watch(
+                      aiChatProvider.select((s) {
+                        final code = s.lastErrorCode;
+                        if (code == null ||
+                            code == AiChatNotifier.disconnectedCode ||
+                            code == AiChatNotifier.authRequiredCode ||
+                            s.authChallenge != null ||
+                            s.authError != null) {
+                          return null;
+                        }
+                        final hasMessageError =
+                            s.activeSession?.messages.any(
+                              (m) =>
+                                  m.failureCode == code ||
+                                  (m.role == MessageRole.assistant &&
+                                      m.content.endsWith('**Error:** $code')),
+                            ) ??
+                            false;
+                        if (hasMessageError) {
+                          return null;
+                        }
+                        return code;
+                      }),
+                    );
+                    if (bannerCode == null) return const SizedBox.shrink();
+                    return _buildErrorBanner(bannerCode);
+                  },
+                ),
+                Expanded(child: _buildMessageList()),
+                Consumer(
+                  builder: (ctx, ref, _) {
+                    final pendingPermission = ref.watch(
+                      aiChatProvider.select((s) => s.pendingPermission),
+                    );
+                    if (pendingPermission == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return _buildPermissionCard(pendingPermission, ref);
+                  },
+                ),
+                Consumer(
+                  builder: (ctx, ref, _) {
+                    final showFallback = ref.watch(
+                      aiChatProvider.select(
+                        (s) =>
+                            s.authChallenge != null &&
+                            !_hasAuthChallengeRenderedInMessages(s),
+                      ),
+                    );
+                    if (!showFallback) return const SizedBox.shrink();
+                    final challenge = ref.read(aiChatProvider).authChallenge;
+                    if (challenge == null) return const SizedBox.shrink();
+                    return Flexible(
+                      child: SingleChildScrollView(
+                        child: _buildAuthChallengeCard(challenge, cardRef: ref),
+                      ),
+                    );
+                  },
+                ),
                 const Divider(height: 1),
-                _buildInputArea(chatState),
+                Consumer(
+                  builder: (ctx, ref, _) {
+                    ref.watch(
+                      aiChatProvider.select(
+                        (s) => _InputAreaProjection(
+                          hasActiveAgent: s.activeAgentProfile != null,
+                          activeAgentId: s.activeAgentProfile?.id,
+                          activeSessionId: s.activeSessionId,
+                          hasActiveSession: s.activeSession != null,
+                          workingDirectory: s.activeSession?.workingDirectory,
+                          draftWorkingDirectory: s.draftWorkingDirectory,
+                          isGenerating: s.isGenerating,
+                          isAuthenticating: s.isAuthenticating,
+                          isLoadingSettings: s.isLoadingSettings,
+                          isApplyingSettings: s.isApplyingSettings,
+                          isLoadingSessions: s.isLoadingSessions,
+                          isLoadingMessages: s.isLoadingMessages,
+                          recoveryStatus: s.recoveryStatus,
+                          runSettings: s.runSettings,
+                          capabilities: s.capabilities,
+                          supportsImages: s.supportsImages,
+                          supportsTextAttachments: s.supportsTextAttachments,
+                          attachmentCount: s.attachments.length,
+                          hasAccountOrDiagnostics:
+                              s.activeAgentProfile != null ||
+                              s.usage != null ||
+                              s.diagnostics.isNotEmpty ||
+                              s.account != null,
+                        ),
+                      ),
+                    );
+                    return _buildInputArea(ref.read(aiChatProvider), ref);
+                  },
+                ),
               ],
             ),
           ),
@@ -1005,444 +1143,498 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     );
   }
 
-  Widget _buildSessionsDrawer(AiChatState state, bool isDesktop) {
-    final notifier = ref.read(aiChatProvider.notifier);
-    final serverId = ref.watch(activeServerProvider)?.id;
-    final agentId = state.activeAgentProfile?.id;
-    ChatLaunchPreference preference = const ChatLaunchPreference();
-    String? defaultAgentId;
-    if (serverId != null) {
-      try {
-        final storage = ref.watch(localStorageServiceProvider);
-        defaultAgentId = storage.getDefaultAgentId(serverId, cli: false);
-        if (agentId != null) {
-          preference = storage.getChatLaunchPreference(
-            serverId,
-            agentId,
-            cli: false,
-          );
+  Widget _buildSessionsDrawer(bool isDesktop) {
+    return Consumer(
+      builder: (drawerContext, drawerRef, _) {
+        final projection = drawerRef.watch(
+          aiChatProvider.select(
+            (s) => _SessionsDrawerProjection(
+              activeSessionId: s.activeSessionId,
+              activeAgentId: s.activeAgentProfile?.id,
+              activeAgentName: s.activeAgentProfile?.name,
+              shareAgentSessions: s.shareAgentSessions,
+              isGenerating: s.isGenerating,
+              hasMoreSessions: s.hasMoreSessions,
+              isLoadingSessions: s.isLoadingSessions,
+              sessions: s.sessions
+                  .map((e) => _SessionEntryMeta(e.id, e.title))
+                  .toList(growable: false),
+            ),
+          ),
+        );
+        final notifier = drawerRef.read(aiChatProvider.notifier);
+        final serverId = drawerRef.watch(
+          activeServerProvider.select((s) => s?.id),
+        );
+        final defaultAgentId = drawerRef.watch(
+          defaultAgentSettingsProvider.select((m) => m['acp']),
+        );
+        ChatLaunchPreference preference = const ChatLaunchPreference();
+        if (serverId != null && projection.activeAgentId != null) {
+          try {
+            final storage = drawerRef.read(localStorageServiceProvider);
+            preference = storage.getChatLaunchPreference(
+              serverId,
+              projection.activeAgentId!,
+              cli: false,
+            );
+          } catch (_) {}
         }
-      } catch (_) {}
-    }
-    final isDefaultAgent =
-        state.activeAgentProfile != null &&
-        state.activeAgentProfile!.id == defaultAgentId;
+        final isDefaultAgent =
+            projection.activeAgentId != null &&
+            projection.activeAgentId == defaultAgentId;
 
-    // Material 而非 Container: ListTile/SwitchListTile 的 ink 必须落在
-    // 直接的 Material 上, 否则 debug 断言判定 ink 被不透明装饰遮挡。
-    return Material(
-      color: context.colorScheme.surfaceContainerLowest,
-      child: SafeArea(
-        child: Column(
-          children: [
-            Entrance(
-              index: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(40),
+        // Material 而非 Container: ListTile/SwitchListTile 的 ink 必须落在
+        // 直接的 Material 上, 否则 debug 断言判定 ink 被不透明装饰遮挡。
+        return Material(
+          color: context.colorScheme.surfaceContainerLowest,
+          child: SafeArea(
+            child: Column(
+              children: [
+                Entrance(
+                  index: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size.fromHeight(40),
+                            ),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: Text(context.l10n.newSession),
+                            onPressed: () {
+                              notifier.createNewSession();
+                              if (!isDesktop) {
+                                Navigator.pop(context);
+                              }
+                            },
+                          ),
                         ),
-                        icon: const Icon(Icons.add, size: 18),
-                        label: Text(context.l10n.newSession),
-                        onPressed: () {
-                          notifier.createNewSession();
+                        const SizedBox(width: 8),
+                        Tooltip(
+                          message: context.l10n.chatRemoteSessions,
+                          child: SizedBox(
+                            height: 40,
+                            child: OutlinedButton.icon(
+                              key: const Key('chat_remote_sessions_button'),
+                              icon: const Icon(Icons.cloud_outlined, size: 16),
+                              label: Text(context.l10n.chatRemoteSessions),
+                              onPressed: () =>
+                                  _showRemoteSessionsDialog(context),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Divider(height: 1),
+                if (projection.activeAgentId != null) ...[
+                  Entrance(
+                    index: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isDefaultAgent ? Icons.star : Icons.star_border,
+                            size: 16,
+                            color: isDefaultAgent
+                                ? context.colorScheme.primary
+                                : context.colorScheme.outline,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${context.l10n.defaultAgentTitle}: ${projection.activeAgentName ?? ""}',
+                              style: context.textTheme.bodySmall?.copyWith(
+                                color: context.colorScheme.onSurface,
+                                fontWeight: isDefaultAgent
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isDefaultAgent)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: context.colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(
+                                  VRadius.pill,
+                                ),
+                              ),
+                              child: Text(
+                                context.l10n.defaultBadge,
+                                style: context.textTheme.labelSmall?.copyWith(
+                                  color: context.colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                            )
+                          else
+                            TextButton(
+                              key: const Key('ai_set_default_agent_button'),
+                              style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                              ),
+                              onPressed: () => notifier.setDefaultAgent(
+                                projection.activeAgentId!,
+                              ),
+                              child: Text(
+                                context.l10n.setDefaultAgent,
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Entrance(
+                    index: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            context.l10n.sessionLaunchMode,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: context.colorScheme.outline,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: DropdownButton<ChatLaunchMode>(
+                              key: const Key('ai_chat_launch_mode_selector'),
+                              value: preference.mode,
+                              isDense: true,
+                              isExpanded: true,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: context.colorScheme.onSurface,
+                              ),
+                              underline: const SizedBox.shrink(),
+                              items: [
+                                DropdownMenuItem(
+                                  value: ChatLaunchMode.rememberLast,
+                                  child: Text(
+                                    context.l10n.chatLaunchRememberLast,
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: ChatLaunchMode.fixed,
+                                  child: Text(
+                                    context.l10n.chatLaunchFixedSession,
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: ChatLaunchMode.blankDraft,
+                                  child: Text(
+                                    context.l10n.chatLaunchBlankDraft,
+                                  ),
+                                ),
+                              ],
+                              onChanged: (mode) {
+                                if (mode != null) {
+                                  notifier.setLaunchPreference(
+                                    ChatLaunchPreference(
+                                      mode: mode,
+                                      sessionId: mode == ChatLaunchMode.fixed
+                                          ? (projection.activeSessionId ??
+                                                projection
+                                                    .sessions
+                                                    .firstOrNull
+                                                    ?.id)
+                                          : null,
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                ],
+                Entrance(
+                  index: 3,
+                  child: SwitchListTile.adaptive(
+                    key: const Key('shareAgentSessionsSwitch'),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    dense: true,
+                    title: Text(
+                      context.l10n.shareAgentSessionsTitle,
+                      style: context.textTheme.titleSmall,
+                    ),
+                    subtitle: Text(
+                      context.l10n.shareAgentSessionsSubtitle,
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colorScheme.outline,
+                      ),
+                    ),
+                    value: projection.shareAgentSessions,
+                    onChanged: projection.isGenerating
+                        ? null
+                        : (val) => notifier.setShareAgentSessions(val),
+                  ),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  child: TextField(
+                    key: const Key('chat_session_search_input'),
+                    controller: _sessionSearchController,
+                    decoration: InputDecoration(
+                      hintText: context.l10n.chatSearchSessionsHint,
+                      hintStyle: const TextStyle(fontSize: 12),
+                      prefixIcon: const Icon(Icons.search, size: 16),
+                      suffixIcon: _sessionSearchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 14),
+                              onPressed: () {
+                                _sessionSearchController.clear();
+                                notifier.searchSessions('');
+                                setState(() {});
+                              },
+                            )
+                          : null,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(VRadius.input),
+                      ),
+                    ),
+                    onChanged: (val) {
+                      notifier.searchSessions(val);
+                      setState(() {});
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount:
+                        projection.sessions.length +
+                        (projection.hasMoreSessions ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == projection.sessions.length) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 16,
+                          ),
+                          child: Center(
+                            child: projection.isLoadingSessions
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : TextButton.icon(
+                                    key: const Key(
+                                      'chat_load_more_sessions_button',
+                                    ),
+                                    icon: const Icon(
+                                      Icons.expand_more,
+                                      size: 16,
+                                    ),
+                                    label: Text(
+                                      context.l10n.chatLoadMoreSessions,
+                                    ),
+                                    onPressed: () =>
+                                        notifier.loadMoreSessions(),
+                                  ),
+                          ),
+                        );
+                      }
+                      final session = projection.sessions[index];
+                      final isSelected =
+                          session.id == projection.activeSessionId;
+                      final isFixedDefault =
+                          preference.mode == ChatLaunchMode.fixed &&
+                          preference.sessionId == session.id;
+
+                      return ListTile(
+                        selected: isSelected,
+                        selectedTileColor: context.colorScheme.primaryContainer
+                            .withValues(alpha: 0.2),
+                        leading: Icon(
+                          Icons.chat_bubble_outline,
+                          size: 18,
+                          color: isSelected
+                              ? context.colorScheme.primary
+                              : null,
+                        ),
+                        title: Text(
+                          session.title,
+                          style: context.textTheme.bodyMedium?.copyWith(
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isFixedDefault)
+                              Tooltip(
+                                message: context.l10n.isDefaultSession,
+                                child: Icon(
+                                  Icons.push_pin,
+                                  key: Key(
+                                    'default_session_badge_${session.id}',
+                                  ),
+                                  size: 16,
+                                  color: context.colorScheme.primary,
+                                ),
+                              ),
+                            PopupMenuButton<String>(
+                              key: Key('session_more_menu_${session.id}'),
+                              icon: const Icon(Icons.more_vert, size: 18),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 24,
+                                minHeight: 24,
+                              ),
+                              onSelected: (val) {
+                                switch (val) {
+                                  case 'set_default':
+                                    notifier.setLaunchPreference(
+                                      ChatLaunchPreference(
+                                        mode: ChatLaunchMode.fixed,
+                                        sessionId: session.id,
+                                      ),
+                                    );
+                                    break;
+                                  case 'rename':
+                                    _showRenameSessionDialog(
+                                      context,
+                                      session.id,
+                                      session.title,
+                                    );
+                                    break;
+                                  case 'export':
+                                    _exportSession(
+                                      context,
+                                      session.id,
+                                      session.title,
+                                    );
+                                    break;
+                                  case 'delete':
+                                    _confirmAndDeleteSession(
+                                      context,
+                                      session.id,
+                                      session.title,
+                                    );
+                                    break;
+                                }
+                              },
+                              itemBuilder: (ctx) => [
+                                if (preference.mode == ChatLaunchMode.fixed)
+                                  PopupMenuItem<String>(
+                                    key: Key(
+                                      'set_default_session_${session.id}',
+                                    ),
+                                    value: 'set_default',
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.push_pin_outlined,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(context.l10n.setAsDefaultSession),
+                                      ],
+                                    ),
+                                  ),
+                                PopupMenuItem<String>(
+                                  key: Key('rename_session_${session.id}'),
+                                  value: 'rename',
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.edit_outlined, size: 16),
+                                      const SizedBox(width: 8),
+                                      Text(context.l10n.rename),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem<String>(
+                                  key: Key('export_session_${session.id}'),
+                                  value: 'export',
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.download_outlined,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(context.l10n.chatExportSession),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem<String>(
+                                  key: Key('delete_session_${session.id}'),
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outline,
+                                        size: 16,
+                                        color: ctx.vDanger,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        context.l10n.delete,
+                                        style: TextStyle(color: ctx.vDanger),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          notifier.selectSession(session.id);
                           if (!isDesktop) {
                             Navigator.pop(context);
                           }
                         },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Tooltip(
-                      message: context.l10n.chatRemoteSessions,
-                      child: SizedBox(
-                        height: 40,
-                        child: OutlinedButton.icon(
-                          key: const Key('chat_remote_sessions_button'),
-                          icon: const Icon(Icons.cloud_outlined, size: 16),
-                          label: Text(context.l10n.chatRemoteSessions),
-                          onPressed: () => _showRemoteSessionsDialog(context),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const Divider(height: 1),
-            if (state.activeAgentProfile != null) ...[
-              Entrance(
-                index: 1,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isDefaultAgent ? Icons.star : Icons.star_border,
-                        size: 16,
-                        color: isDefaultAgent
-                            ? context.colorScheme.primary
-                            : context.colorScheme.outline,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '${context.l10n.defaultAgentTitle}: ${state.activeAgentProfile!.name}',
-                          style: context.textTheme.bodySmall?.copyWith(
-                            color: context.colorScheme.onSurface,
-                            fontWeight: isDefaultAgent
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (isDefaultAgent)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: context.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(VRadius.pill),
-                          ),
-                          child: Text(
-                            context.l10n.defaultBadge,
-                            style: context.textTheme.labelSmall?.copyWith(
-                              color: context.colorScheme.onPrimaryContainer,
-                            ),
-                          ),
-                        )
-                      else
-                        TextButton(
-                          key: const Key('ai_set_default_agent_button'),
-                          style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                          ),
-                          onPressed: () => notifier.setDefaultAgent(
-                            state.activeAgentProfile!.id,
-                          ),
-                          child: Text(
-                            context.l10n.setDefaultAgent,
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              Entrance(
-                index: 2,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        context.l10n.sessionLaunchMode,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: context.colorScheme.outline,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: DropdownButton<ChatLaunchMode>(
-                          key: const Key('ai_chat_launch_mode_selector'),
-                          value: preference.mode,
-                          isDense: true,
-                          isExpanded: true,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.colorScheme.onSurface,
-                          ),
-                          underline: const SizedBox.shrink(),
-                          items: [
-                            DropdownMenuItem(
-                              value: ChatLaunchMode.rememberLast,
-                              child: Text(context.l10n.chatLaunchRememberLast),
-                            ),
-                            DropdownMenuItem(
-                              value: ChatLaunchMode.fixed,
-                              child: Text(context.l10n.chatLaunchFixedSession),
-                            ),
-                            DropdownMenuItem(
-                              value: ChatLaunchMode.blankDraft,
-                              child: Text(context.l10n.chatLaunchBlankDraft),
-                            ),
-                          ],
-                          onChanged: (mode) {
-                            if (mode != null) {
-                              notifier.setLaunchPreference(
-                                ChatLaunchPreference(
-                                  mode: mode,
-                                  sessionId: mode == ChatLaunchMode.fixed
-                                      ? (state.activeSessionId ??
-                                            state.sessions.firstOrNull?.id)
-                                      : null,
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const Divider(height: 1),
-            ],
-            Entrance(
-              index: 3,
-              child: SwitchListTile.adaptive(
-                key: const Key('shareAgentSessionsSwitch'),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                dense: true,
-                title: Text(
-                  context.l10n.shareAgentSessionsTitle,
-                  style: context.textTheme.titleSmall,
-                ),
-                subtitle: Text(
-                  context.l10n.shareAgentSessionsSubtitle,
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: context.colorScheme.outline,
-                  ),
-                ),
-                value: state.shareAgentSessions,
-                onChanged: state.isGenerating
-                    ? null
-                    : (val) => notifier.setShareAgentSessions(val),
-              ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: TextField(
-                key: const Key('chat_session_search_input'),
-                controller: _sessionSearchController,
-                decoration: InputDecoration(
-                  hintText: context.l10n.chatSearchSessionsHint,
-                  hintStyle: const TextStyle(fontSize: 12),
-                  prefixIcon: const Icon(Icons.search, size: 16),
-                  suffixIcon: _sessionSearchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 14),
-                          onPressed: () {
-                            _sessionSearchController.clear();
-                            notifier.searchSessions('');
-                            setState(() {});
-                          },
-                        )
-                      : null,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(VRadius.input),
-                  ),
-                ),
-                onChanged: (val) {
-                  notifier.searchSessions(val);
-                  setState(() {});
-                },
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount:
-                    state.sessions.length + (state.hasMoreSessions ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == state.sessions.length) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 16,
-                      ),
-                      child: Center(
-                        child: state.isLoadingSessions
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : TextButton.icon(
-                                key: const Key(
-                                  'chat_load_more_sessions_button',
-                                ),
-                                icon: const Icon(Icons.expand_more, size: 16),
-                                label: Text(context.l10n.chatLoadMoreSessions),
-                                onPressed: () => notifier.loadMoreSessions(),
-                              ),
-                      ),
-                    );
-                  }
-                  final session = state.sessions[index];
-                  final isSelected = session.id == state.activeSessionId;
-                  final isFixedDefault =
-                      preference.mode == ChatLaunchMode.fixed &&
-                      preference.sessionId == session.id;
-
-                  return ListTile(
-                    selected: isSelected,
-                    selectedTileColor: context.colorScheme.primaryContainer
-                        .withValues(alpha: 0.2),
-                    leading: Icon(
-                      Icons.chat_bubble_outline,
-                      size: 18,
-                      color: isSelected ? context.colorScheme.primary : null,
-                    ),
-                    title: Text(
-                      session.title,
-                      style: context.textTheme.bodyMedium?.copyWith(
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isFixedDefault)
-                          Tooltip(
-                            message: context.l10n.isDefaultSession,
-                            child: Icon(
-                              Icons.push_pin,
-                              key: Key('default_session_badge_${session.id}'),
-                              size: 16,
-                              color: context.colorScheme.primary,
-                            ),
-                          ),
-                        PopupMenuButton<String>(
-                          key: Key('session_more_menu_${session.id}'),
-                          icon: const Icon(Icons.more_vert, size: 18),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 24,
-                            minHeight: 24,
-                          ),
-                          onSelected: (val) {
-                            switch (val) {
-                              case 'set_default':
-                                notifier.setLaunchPreference(
-                                  ChatLaunchPreference(
-                                    mode: ChatLaunchMode.fixed,
-                                    sessionId: session.id,
-                                  ),
-                                );
-                                break;
-                              case 'rename':
-                                _showRenameSessionDialog(
-                                  context,
-                                  session.id,
-                                  session.title,
-                                );
-                                break;
-                              case 'export':
-                                _exportSession(
-                                  context,
-                                  session.id,
-                                  session.title,
-                                );
-                                break;
-                              case 'delete':
-                                _confirmAndDeleteSession(
-                                  context,
-                                  session.id,
-                                  session.title,
-                                );
-                                break;
-                            }
-                          },
-                          itemBuilder: (ctx) => [
-                            if (preference.mode == ChatLaunchMode.fixed)
-                              PopupMenuItem<String>(
-                                key: Key('set_default_session_${session.id}'),
-                                value: 'set_default',
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.push_pin_outlined,
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(context.l10n.setAsDefaultSession),
-                                  ],
-                                ),
-                              ),
-                            PopupMenuItem<String>(
-                              key: Key('rename_session_${session.id}'),
-                              value: 'rename',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.edit_outlined, size: 16),
-                                  const SizedBox(width: 8),
-                                  Text(context.l10n.rename),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem<String>(
-                              key: Key('export_session_${session.id}'),
-                              value: 'export',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.download_outlined, size: 16),
-                                  const SizedBox(width: 8),
-                                  Text(context.l10n.chatExportSession),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem<String>(
-                              key: Key('delete_session_${session.id}'),
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.delete_outline,
-                                    size: 16,
-                                    color: ctx.vDanger,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    context.l10n.delete,
-                                    style: TextStyle(color: ctx.vDanger),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    onTap: () {
-                      notifier.selectSession(session.id);
-                      if (!isDesktop) {
-                        Navigator.pop(context);
-                      }
+                      );
                     },
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -1450,190 +1642,270 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     return context.l10n.chatLoadOlderMessages;
   }
 
-  Widget _buildMessageList(AiChatState state) {
-    final session = state.activeSession;
-    final messages = session?.messages ?? [];
+  Widget _buildMessageList() {
+    return Consumer(
+      builder: (listContext, listRef, _) {
+        final frame = listRef.watch(
+          aiChatProvider.select((s) {
+            final session = s.activeSession;
+            return _MessageListFrameProjection(
+              activeSessionId: s.activeSessionId,
+              messageOffset: session?.messageOffset ?? 0,
+              messageCount: session?.messages.length ?? 0,
+              isGenerating: s.isGenerating,
+              isLoadingMessages: s.isLoadingMessages,
+              hasActiveAgent: s.activeAgentProfile != null,
+              recoveryStatus: s.recoveryStatus,
+            );
+          }),
+        );
 
-    if (messages.isEmpty) {
-      final registry = ref.watch(agentRegistryProvider);
-      final hasUnreadyAgents = registry.agents.any(
-        (a) =>
-            a.status.kind == AgentEnvironmentStatusKind.cliMissing ||
-            a.status.kind == AgentEnvironmentStatusKind.acpMissing ||
-            a.status.kind == AgentEnvironmentStatusKind.notLoggedIn,
-      );
-      final singleCandidate = _getSingleInstallableCandidate(registry);
-      final isConnected = ref.watch(serverConnectionProvider).isConnected;
-      final isRecovering =
-          state.recoveryStatus == SessionRecoveryStatus.reconnecting ||
-          state.recoveryStatus == SessionRecoveryStatus.syncing;
+        if (frame.messageCount == 0) {
+          final registry = listRef.watch(agentRegistryProvider);
+          final hasUnreadyAgents = registry.agents.any(
+            (a) =>
+                a.status.kind == AgentEnvironmentStatusKind.cliMissing ||
+                a.status.kind == AgentEnvironmentStatusKind.acpMissing ||
+                a.status.kind == AgentEnvironmentStatusKind.notLoggedIn,
+          );
+          final singleCandidate = _getSingleInstallableCandidate(registry);
+          final isConnected = listRef.watch(
+            serverConnectionProvider.select((c) => c.isConnected),
+          );
+          final isRecovering =
+              frame.recoveryStatus == SessionRecoveryStatus.reconnecting ||
+              frame.recoveryStatus == SessionRecoveryStatus.syncing;
 
-      return Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Entrance(
-                index: 0,
-                child: Icon(
-                  Icons.smart_toy_outlined,
-                  size: 54,
-                  color: context.colorScheme.primary.withValues(alpha: 0.5),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Entrance(
-                index: 1,
-                child: Text(
-                  context.l10n.aiOpsAgentTitle,
-                  style: context.textTheme.titleMedium,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                context.l10n.aiOpsEmptySubtitle,
-                style: context.textTheme.bodySmall?.copyWith(
-                  color: context.colorScheme.outline,
-                ),
-              ),
-              if (state.activeAgentProfile == null) ...[
-                const SizedBox(height: 16),
-                if (hasUnreadyAgents) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Text(
-                      context.l10n.agentNeedsInstallOrReadyPrompt,
-                      textAlign: TextAlign.center,
-                      style: context.textTheme.bodyMedium?.copyWith(
-                        color: context.colorScheme.outline,
-                      ),
+          return Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Entrance(
+                    index: 0,
+                    child: Icon(
+                      Icons.smart_toy_outlined,
+                      size: 54,
+                      color: context.colorScheme.primary.withValues(alpha: 0.5),
                     ),
                   ),
                   const SizedBox(height: 12),
-                ],
-                Entrance(
-                  index: 2,
-                  child: singleCandidate != null
-                      ? (singleCandidate.isInstalling
-                            ? Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    context.l10n.agentStatusInstalling,
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ],
-                              )
-                            : FilledButton.icon(
-                                icon: const Icon(Icons.download, size: 16),
-                                label: Text(
-                                  context.l10n.agentActionAutoInstall,
-                                ),
-                                onPressed: (!isConnected || isRecovering)
-                                    ? null
-                                    : () => _oneClickInstall(singleCandidate),
-                              ))
-                      : FilledButton.tonalIcon(
-                          icon: const Icon(Icons.settings_outlined, size: 16),
-                          label: Text(context.l10n.manageAgents),
-                          onPressed: _showManageAgentsModal,
+                  Entrance(
+                    index: 1,
+                    child: Text(
+                      context.l10n.aiOpsAgentTitle,
+                      style: context.textTheme.titleMedium,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    context.l10n.aiOpsEmptySubtitle,
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: context.colorScheme.outline,
+                    ),
+                  ),
+                  if (!frame.hasActiveAgent) ...[
+                    const SizedBox(height: 16),
+                    if (hasUnreadyAgents) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          context.l10n.agentNeedsInstallOrReadyPrompt,
+                          textAlign: TextAlign.center,
+                          style: context.textTheme.bodyMedium?.copyWith(
+                            color: context.colorScheme.outline,
+                          ),
                         ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      );
-    }
-
-    final hasOlder = (session?.messageOffset ?? 0) > 0;
-    final topCount = hasOlder ? 1 : 0;
-
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: topCount + messages.length + (state.isGenerating ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (hasOlder && index == 0) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: TextButton.icon(
-                key: const Key('acp_load_older_messages_button'),
-                icon: state.isLoadingMessages
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.arrow_upward, size: 16),
-                label: Text(
-                  state.isLoadingMessages
-                      ? context.l10n.cliLoadingOlderMessages
-                      : _resolveLoadOlderMessagesLabel(context),
-                ),
-                onPressed: state.isLoadingMessages
-                    ? null
-                    : () =>
-                          ref.read(aiChatProvider.notifier).loadOlderMessages(),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    Entrance(
+                      index: 2,
+                      child: singleCandidate != null
+                          ? (singleCandidate.isInstalling
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        context.l10n.agentStatusInstalling,
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    ],
+                                  )
+                                : FilledButton.icon(
+                                    icon: const Icon(Icons.download, size: 16),
+                                    label: Text(
+                                      context.l10n.agentActionAutoInstall,
+                                    ),
+                                    onPressed: (!isConnected || isRecovering)
+                                        ? null
+                                        : () =>
+                                              _oneClickInstall(singleCandidate),
+                                  ))
+                          : FilledButton.tonalIcon(
+                              icon: const Icon(
+                                Icons.settings_outlined,
+                                size: 16,
+                              ),
+                              label: Text(context.l10n.manageAgents),
+                              onPressed: _showManageAgentsModal,
+                            ),
+                    ),
+                  ],
+                ],
               ),
             ),
           );
         }
 
-        final messageIndex = hasOlder ? index - 1 : index;
+        final hasOlder = frame.messageOffset > 0;
+        final topCount = hasOlder ? 1 : 0;
+        final sessionId = frame.activeSessionId ?? '';
+        final currentMessages =
+            listRef.read(aiChatProvider).activeSession?.messages ?? const [];
 
-        if (messageIndex == messages.length) {
-          return Padding(
-            key: const Key('acp_receiving_indicator'),
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    semanticsLabel: context.l10n.acpStreaming,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Text(
-                    context.l10n.acpStreaming,
-                    style: context.textTheme.bodySmall?.copyWith(
-                      color: context.colorScheme.outline,
+        return ListView.builder(
+          key: ValueKey('message_list_$sessionId'),
+          controller: _scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          findChildIndexCallback: (Key key) {
+            if (key is ValueKey<String>) {
+              final val = key.value;
+              if (hasOlder && val == 'acp_load_older_messages_header') {
+                return 0;
+              }
+              if (val == 'acp_receiving_indicator') {
+                return frame.isGenerating
+                    ? topCount + frame.messageCount
+                    : null;
+              }
+              String id = val;
+              if (val.startsWith('user_msg_')) {
+                id = val.substring('user_msg_'.length);
+              } else if (val.startsWith('assistant_msg_')) {
+                id = val.substring('assistant_msg_'.length);
+              } else if (val.startsWith('system_msg_')) {
+                id = val.substring('system_msg_'.length);
+              }
+              final idx = currentMessages.indexWhere((m) => m.id == id);
+              return idx >= 0 && idx < frame.messageCount
+                  ? idx + topCount
+                  : null;
+            }
+            if (key == const Key('acp_receiving_indicator')) {
+              return frame.isGenerating ? topCount + frame.messageCount : null;
+            }
+            return null;
+          },
+          itemCount:
+              topCount + frame.messageCount + (frame.isGenerating ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (hasOlder && index == 0) {
+              return Center(
+                key: const ValueKey('acp_load_older_messages_header'),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: TextButton.icon(
+                    key: const Key('acp_load_older_messages_button'),
+                    icon: frame.isLoadingMessages
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.arrow_upward, size: 16),
+                    label: Text(
+                      frame.isLoadingMessages
+                          ? context.l10n.cliLoadingOlderMessages
+                          : _resolveLoadOlderMessagesLabel(context),
                     ),
-                    overflow: TextOverflow.ellipsis,
+                    onPressed: frame.isLoadingMessages
+                        ? null
+                        : () => ref
+                              .read(aiChatProvider.notifier)
+                              .loadOlderMessages(),
                   ),
                 ),
-              ],
-            ),
-          );
-        }
-        final msg = messages[messageIndex];
-        if (msg.role == MessageRole.user) {
-          return KeyedSubtree(
-            key: ValueKey('user_msg_${msg.id}'),
-            child: _buildUserBubble(msg),
-          );
-        } else if (msg.role == MessageRole.system) {
-          return KeyedSubtree(
-            key: ValueKey('system_msg_${msg.id}'),
-            child: _buildSystemBubble(msg),
-          );
-        }
-        return KeyedSubtree(
-          key: ValueKey('assistant_msg_${msg.id}'),
-          child: _buildAssistantBubble(msg, state),
+              );
+            }
+
+            final messageIndex = hasOlder ? index - 1 : index;
+
+            if (messageIndex == frame.messageCount) {
+              return Padding(
+                key: const Key('acp_receiving_indicator'),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        semanticsLabel: context.l10n.acpStreaming,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        context.l10n.acpStreaming,
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: context.colorScheme.outline,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            final msg = currentMessages.length > messageIndex
+                ? currentMessages[messageIndex]
+                : null;
+            if (msg == null) return const SizedBox.shrink();
+
+            if (msg.role == MessageRole.user) {
+              return KeyedSubtree(
+                key: ValueKey('user_msg_${msg.id}'),
+                child: _AiChatMessageItem(
+                  key: ValueKey('${sessionId}_user_msg_${msg.id}'),
+                  viewState: this,
+                  sessionId: sessionId,
+                  messageId: msg.id,
+                  role: msg.role,
+                ),
+              );
+            } else if (msg.role == MessageRole.system) {
+              return KeyedSubtree(
+                key: ValueKey('system_msg_${msg.id}'),
+                child: _AiChatMessageItem(
+                  key: ValueKey('${sessionId}_system_msg_${msg.id}'),
+                  viewState: this,
+                  sessionId: sessionId,
+                  messageId: msg.id,
+                  role: msg.role,
+                ),
+              );
+            }
+            return KeyedSubtree(
+              key: ValueKey('assistant_msg_${msg.id}'),
+              child: _AiChatMessageItem(
+                key: ValueKey('${sessionId}_assistant_msg_${msg.id}'),
+                viewState: this,
+                sessionId: sessionId,
+                messageId: msg.id,
+                role: msg.role,
+              ),
+            );
+          },
         );
       },
     );
@@ -1836,7 +2108,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     );
   }
 
-  Widget _buildUserBubble(ChatMessage msg) {
+  Widget _buildUserBubble(ChatMessage msg, [String? sessionId]) {
     return Align(
       alignment: Alignment.centerRight,
       child: Container(
@@ -1898,12 +2170,14 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ),
             ] else if (msg.status == ChatTurnStatus.awaitingAuthentication) ...[
               const SizedBox(height: 4),
-              Builder(
-                builder: (context) {
-                  final chatState = ref.watch(aiChatProvider);
-                  final isConfirmed =
-                      chatState.authenticationConfirmed &&
-                      chatState.authChallenge == null;
+              Consumer(
+                builder: (context, ref, _) {
+                  final isConfirmed = ref.watch(
+                    aiChatProvider.select(
+                      (s) =>
+                          s.authenticationConfirmed && s.authChallenge == null,
+                    ),
+                  );
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1936,14 +2210,25 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 },
               ),
             ],
+            if (msg.failureCode != null && msg.failureCode!.isNotEmpty)
+              _MessageFailureCard(
+                message: msg,
+                sessionId: sessionId ?? '',
+                onLogin: () => _handleMessageFailureLogin(sessionId ?? '', msg),
+                onRunSettings: () =>
+                    _handleMessageFailureRunSettings(sessionId ?? '', msg),
+                onReconnect: () =>
+                    _handleMessageFailureReconnect(sessionId ?? '', msg),
+                onReloadHistory: () =>
+                    _handleMessageFailureReloadHistory(sessionId ?? '', msg),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildAssistantBubble(ChatMessage msg, [AiChatState? chatState]) {
-    final AiChatState currentState = chatState ?? ref.watch(aiChatProvider);
+  Widget _buildAssistantBubble(ChatMessage msg, [String? sessionId]) {
     final toolsById = {for (final tool in msg.toolExecutions) tool.id: tool};
 
     return Align(
@@ -2139,78 +2424,117 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ),
             ] else if (msg.status == ChatTurnStatus.awaitingAuthentication) ...[
               const SizedBox(height: 6),
-              Container(
-                key: const Key('chat_status_awaiting_auth_badge'),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      (currentState.authenticationConfirmed &&
-                          currentState.authChallenge == null)
-                      ? context.colorScheme.primaryContainer.withValues(
-                          alpha: 0.3,
-                        )
-                      : context.vWarning.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(VRadius.card),
-                  border: Border.all(
-                    color:
-                        (currentState.authenticationConfirmed &&
-                            currentState.authChallenge == null)
-                        ? context.colorScheme.primary.withValues(alpha: 0.4)
-                        : context.vWarning.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      (currentState.authenticationConfirmed &&
-                              currentState.authChallenge == null)
-                          ? Icons.check_circle_outline
-                          : Icons.lock_outline,
-                      size: 16,
-                      color:
-                          (currentState.authenticationConfirmed &&
-                              currentState.authChallenge == null)
-                          ? context.colorScheme.primary
-                          : context.vWarning,
+              Consumer(
+                builder: (authContext, authRef, _) {
+                  final isConfirmed = authRef.watch(
+                    aiChatProvider.select(
+                      (s) =>
+                          s.authenticationConfirmed && s.authChallenge == null,
                     ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        (currentState.authenticationConfirmed &&
-                                currentState.authChallenge == null)
-                            ? context.l10n.agentAuthRetryHint
-                            : _chatStatusAwaitingAuthLabel(context),
-                        style: context.textTheme.labelMedium?.copyWith(
-                          color:
-                              (currentState.authenticationConfirmed &&
-                                  currentState.authChallenge == null)
-                              ? context.colorScheme.primary
-                              : context.vWarning,
-                          fontWeight: FontWeight.w600,
+                  );
+                  final currentChallenge = authRef.watch(
+                    aiChatProvider.select((s) => s.authChallenge),
+                  );
+                  final hasChallenge =
+                      currentChallenge != null &&
+                      _isAuthChallengeTargetMessage(
+                        msg,
+                        authRef.read(aiChatProvider),
+                      );
+                  final showDiscovery = authRef.watch(
+                    aiChatProvider.select(
+                      (s) =>
+                          s.authChallenge == null &&
+                          !s.authenticationConfirmed &&
+                          _isLatestAwaitingAuthMessage(msg, s),
+                    ),
+                  );
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        key: const Key('chat_status_awaiting_auth_badge'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isConfirmed
+                              ? context.colorScheme.primaryContainer.withValues(
+                                  alpha: 0.3,
+                                )
+                              : context.vWarning.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(VRadius.card),
+                          border: Border.all(
+                            color: isConfirmed
+                                ? context.colorScheme.primary.withValues(
+                                    alpha: 0.4,
+                                  )
+                                : context.vWarning.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isConfirmed
+                                  ? Icons.check_circle_outline
+                                  : Icons.lock_outline,
+                              size: 16,
+                              color: isConfirmed
+                                  ? context.colorScheme.primary
+                                  : context.vWarning,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                isConfirmed
+                                    ? context.l10n.agentAuthRetryHint
+                                    : _chatStatusAwaitingAuthLabel(context),
+                                style: context.textTheme.labelMedium?.copyWith(
+                                  color: isConfirmed
+                                      ? context.colorScheme.primary
+                                      : context.vWarning,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      if (hasChallenge) ...[
+                        const SizedBox(height: 10),
+                        _buildAuthChallengeCard(
+                          currentChallenge,
+                          margin: EdgeInsets.zero,
+                          cardRef: authRef,
+                        ),
+                      ] else if (showDiscovery) ...[
+                        const SizedBox(height: 10),
+                        _buildAwaitingAuthDiscoveryAction(
+                          authRef.read(aiChatProvider),
+                          authRef,
+                        ),
+                      ],
+                    ],
+                  );
+                },
               ),
-              if (currentState.authChallenge != null &&
-                  _isAuthChallengeTargetMessage(msg, currentState)) ...[
-                const SizedBox(height: 10),
-                _buildAuthChallengeCard(
-                  currentState.authChallenge!,
-                  margin: EdgeInsets.zero,
-                ),
-              ] else if (currentState.authChallenge == null &&
-                  !currentState.authenticationConfirmed &&
-                  _isLatestAwaitingAuthMessage(msg, currentState)) ...[
-                const SizedBox(height: 10),
-                _buildAwaitingAuthDiscoveryAction(currentState),
-              ],
             ],
+            if (msg.failureCode != null && msg.failureCode!.isNotEmpty)
+              _MessageFailureCard(
+                message: msg,
+                sessionId: sessionId ?? '',
+                onLogin: () => _handleMessageFailureLogin(sessionId ?? '', msg),
+                onRunSettings: () =>
+                    _handleMessageFailureRunSettings(sessionId ?? '', msg),
+                onReconnect: () =>
+                    _handleMessageFailureReconnect(sessionId ?? '', msg),
+                onReloadHistory: () =>
+                    _handleMessageFailureReloadHistory(sessionId ?? '', msg),
+              ),
             if (msg.attachments.isNotEmpty)
               _buildMessageAttachments(msg.attachments),
           ],
@@ -2246,15 +2570,17 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     );
   }
 
-  Widget _buildPermissionCard(PermissionRequest req) {
-    final notifier = ref.read(aiChatProvider.notifier);
+  Widget _buildPermissionCard(PermissionRequest req, WidgetRef cardRef) {
+    final notifier = cardRef.read(aiChatProvider.notifier);
     final danger = context.vDanger;
-    final connState = ref.watch(serverConnectionProvider);
-    final recoveryStatus = ref.watch(
+    final isConnected = cardRef.watch(
+      serverConnectionProvider.select((c) => c.isConnected),
+    );
+    final recoveryStatus = cardRef.watch(
       aiChatProvider.select((s) => s.recoveryStatus),
     );
     final canRespond =
-        connState.isConnected &&
+        isConnected &&
         recoveryStatus != SessionRecoveryStatus.reconnecting &&
         recoveryStatus != SessionRecoveryStatus.syncing;
 
@@ -2419,17 +2745,38 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         }
       }
 
-      final sshClient = ref
-          .read(sshClientManagerProvider)
-          .getClient(currentServer!.id);
-      final result = await ref.read(interactiveLoginLauncherProvider)(
-        context: context,
-        agentName: currentProfile.name,
-        command: currentProfile.loginCommand!,
-        serverName: currentServer.name,
-        sshClient: sshClient,
-        remoteExecCommand: remoteExecCommand,
-      );
+      final registry = ref.read(agentRegistryProvider.notifier);
+      final loginToken = registry.beginInteractiveLogin(currentProfile.id);
+      if (loginToken == null) {
+        if (mounted) {
+          final runtime =
+              ref.read(agentRegistryProvider).findRuntime(currentProfile.id);
+          final errorMsg = runtime?.errorMessage == 'AGENT_UPDATE_IN_PROGRESS'
+              ? context.l10n.agentUpdateInProgress
+              : (runtime?.errorMessage ?? context.l10n.agentAuthRetryHint);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg)),
+          );
+        }
+        return;
+      }
+
+      bool? result;
+      try {
+        final sshClient = ref
+            .read(sshClientManagerProvider)
+            .getClient(currentServer!.id);
+        result = await ref.read(interactiveLoginLauncherProvider)(
+          context: context,
+          agentName: currentProfile.name,
+          command: currentProfile.loginCommand!,
+          serverName: currentServer.name,
+          sshClient: sshClient,
+          remoteExecCommand: remoteExecCommand,
+        );
+      } finally {
+        registry.endInteractiveLogin(currentProfile.id, loginToken);
+      }
       if (!mounted || result != true) return;
 
       final postServer = ref.read(activeServerProvider);
@@ -3378,14 +3725,26 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     return false;
   }
 
-  Widget _buildAwaitingAuthDiscoveryAction(AiChatState state) {
-    final connState = ref.watch(serverConnectionProvider);
+  Widget _buildAwaitingAuthDiscoveryAction(
+    AiChatState state,
+    WidgetRef actionRef,
+  ) {
+    final connState = actionRef.watch(serverConnectionProvider);
     final isConnected = connState.isConnected;
+    final isLoadingSettings = actionRef.watch(
+      aiChatProvider.select((s) => s.isLoadingSettings),
+    );
+    final isGenerating = actionRef.watch(
+      aiChatProvider.select((s) => s.isGenerating),
+    );
+    final isAuthenticating = actionRef.watch(
+      aiChatProvider.select((s) => s.isAuthenticating),
+    );
+    final authError = actionRef.watch(
+      aiChatProvider.select((s) => s.authError),
+    );
     final isBusy =
-        !isConnected ||
-        state.isLoadingSettings ||
-        state.isGenerating ||
-        state.isAuthenticating;
+        !isConnected || isLoadingSettings || isGenerating || isAuthenticating;
     final warning = context.vWarning;
 
     return Container(
@@ -3411,10 +3770,10 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ),
             ],
           ),
-          if (state.authError != null) ...[
+          if (authError != null) ...[
             const SizedBox(height: 8),
             Text(
-              _resolveAuthErrorMessage(context, state.authError!),
+              _resolveAuthErrorMessage(context, authError),
               style: context.textTheme.bodySmall?.copyWith(
                 color: context.vDanger,
               ),
@@ -3425,7 +3784,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             alignment: Alignment.centerRight,
             child: FilledButton.icon(
               key: const Key('chat_retry_auth_discovery_button'),
-              icon: state.isLoadingSettings
+              icon: isLoadingSettings
                   ? const SizedBox(
                       width: 14,
                       height: 14,
@@ -3439,7 +3798,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ),
               onPressed: isBusy
                   ? null
-                  : () => ref
+                  : () => actionRef
                         .read(aiChatProvider.notifier)
                         .requestAuthentication(),
             ),
@@ -3452,33 +3811,51 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   Widget _buildAuthChallengeCard(
     AuthChallenge challenge, {
     EdgeInsetsGeometry? margin,
+    required WidgetRef cardRef,
   }) {
-    final notifier = ref.read(aiChatProvider.notifier);
-    final connState = ref.watch(serverConnectionProvider);
-    final isConnected = connState.isConnected;
-    final recoveryStatus = ref.watch(
+    final notifier = cardRef.read(aiChatProvider.notifier);
+    final isConnected = cardRef.watch(
+      serverConnectionProvider.select((c) => c.isConnected),
+    );
+    final recoveryStatus = cardRef.watch(
       aiChatProvider.select((s) => s.recoveryStatus),
     );
     final isRecovering =
         recoveryStatus == SessionRecoveryStatus.reconnecting ||
         recoveryStatus == SessionRecoveryStatus.syncing;
-    final chatState = ref.watch(aiChatProvider);
-    final isAuthenticating = chatState.isAuthenticating;
-    final authRequest = chatState.authRequest;
+    final currentChallenge =
+        cardRef.watch(aiChatProvider.select((s) => s.authChallenge)) ??
+        challenge;
+    final authInfo = cardRef.watch(
+      aiChatProvider.select(
+        (s) => (
+          s.isAuthenticating,
+          s.authRequest,
+          s.activeAgentProfile,
+          s.authError,
+        ),
+      ),
+    );
+    final isAuthenticating = authInfo.$1;
+    final authRequest = authInfo.$2;
+    final activeProfile = authInfo.$3;
+    final authError = authInfo.$4;
 
-    final registry = ref.watch(agentRegistryProvider);
+    final registry = cardRef.watch(agentRegistryProvider);
     final profile =
-        registry.findRuntime(challenge.agentId)?.profile ??
-        chatState.activeAgentProfile;
-    final agentName = profile?.name ?? challenge.agentId;
+        registry.findRuntime(currentChallenge.agentId)?.profile ??
+        activeProfile;
+    final agentName = profile?.name ?? currentChallenge.agentId;
 
     final String? defaultMethodId =
-        challenge.methods.any((m) => m.id == 'oauth-personal')
+        currentChallenge.methods.any((m) => m.id == 'oauth-personal')
         ? 'oauth-personal'
-        : (challenge.methods.isNotEmpty ? challenge.methods.first.id : null);
+        : (currentChallenge.methods.isNotEmpty
+              ? currentChallenge.methods.first.id
+              : null);
     final String? selectedMethodId =
         (_selectedAuthMethodId != null &&
-            challenge.methods.any((m) => m.id == _selectedAuthMethodId))
+            currentChallenge.methods.any((m) => m.id == _selectedAuthMethodId))
         ? _selectedAuthMethodId
         : defaultMethodId;
     final warning = context.vWarning;
@@ -3567,7 +3944,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   icon: const Icon(Icons.open_in_browser, size: 16),
                   label: Text(context.l10n.chatAuthReopenBrowser),
                   onPressed: () {
-                    final cur = ref.read(aiChatProvider);
+                    final cur = cardRef.read(aiChatProvider);
                     if (cur.authRequest != authRequest ||
                         !cur.isAuthenticating ||
                         cur.authError != null) {
@@ -3581,7 +3958,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   icon: const Icon(Icons.copy, size: 16),
                   label: Text(context.l10n.chatAuthCopyLink),
                   onPressed: () async {
-                    final cur = ref.read(aiChatProvider);
+                    final cur = cardRef.read(aiChatProvider);
                     if (cur.authRequest != authRequest ||
                         !cur.isAuthenticating) {
                       return;
@@ -3609,7 +3986,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   icon: const Icon(Icons.vpn_key_outlined, size: 16),
                   label: Text(context.l10n.chatAuthManualCallback),
                   onPressed: () {
-                    final cur = ref.read(aiChatProvider);
+                    final cur = cardRef.read(aiChatProvider);
                     if (cur.authRequest != authRequest ||
                         !cur.isAuthenticating) {
                       return;
@@ -3651,7 +4028,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ),
             ),
           ],
-          if (chatState.authError != null) ...[
+          if (authError != null) ...[
             const SizedBox(height: 8),
             Container(
               width: double.infinity,
@@ -3672,7 +4049,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _resolveAuthErrorMessage(context, chatState.authError!),
+                      _resolveAuthErrorMessage(context, authError),
                       style: context.textTheme.bodySmall?.copyWith(
                         color: context.colorScheme.onErrorContainer,
                       ),
@@ -3683,7 +4060,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             ),
           ],
           const SizedBox(height: 8),
-          if (challenge.methods.isEmpty) ...[
+          if (currentChallenge.methods.isEmpty) ...[
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(10),
@@ -3712,7 +4089,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 ],
               ),
             ),
-          ] else if (challenge.methods.length == 1) ...[
+          ] else if (currentChallenge.methods.length == 1) ...[
             Text(
               context.l10n.agentAuthMethodLabel,
               style: context.textTheme.labelMedium,
@@ -3732,16 +4109,20 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    challenge.methods.first.name,
+                    currentChallenge.methods.first.name,
                     style: context.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (challenge.methods.first.description != null &&
-                      challenge.methods.first.description!.isNotEmpty) ...[
+                  if (currentChallenge.methods.first.description != null &&
+                      currentChallenge
+                          .methods
+                          .first
+                          .description!
+                          .isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
-                      challenge.methods.first.description!,
+                      currentChallenge.methods.first.description!,
                       style: context.textTheme.bodySmall?.copyWith(
                         color: context.colorScheme.outline,
                       ),
@@ -3778,7 +4159,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                           final picked = await showAuthMethodPickerDialog(
                             context: context,
                             agentName: agentName,
-                            methods: challenge.methods,
+                            methods: currentChallenge.methods,
                           );
                           if (picked != null && mounted) {
                             setState(() => _selectedAuthMethodId = picked);
@@ -3805,7 +4186,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   border: Border.all(color: context.colorScheme.outlineVariant),
                 ),
                 child: Column(
-                  children: challenge.methods.map((method) {
+                  children: currentChallenge.methods.map((method) {
                     final isSelected = (selectedMethodId == method.id);
                     return InkWell(
                       onTap: isAuthenticating
@@ -3883,7 +4264,10 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   ),
                   onPressed: (!isConnected || isRecovering || isAuthenticating)
                       ? null
-                      : () => _handleProceedAuth(selectedMethodId, challenge),
+                      : () => _handleProceedAuth(
+                          selectedMethodId,
+                          currentChallenge,
+                        ),
                   child: Text(context.l10n.agentAuthProceedButton),
                 ),
               ),
@@ -3894,9 +4278,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     );
   }
 
-  Widget _buildInputArea(AiChatState state) {
+  Widget _buildInputArea(AiChatState state, WidgetRef inputRef) {
     final hasActiveAgent = state.activeAgentProfile != null;
-    final registry = ref.watch(agentRegistryProvider);
+    final registry = inputRef.watch(agentRegistryProvider);
     final hasUnreadyAgents = registry.agents.any(
       (a) =>
           a.status.kind == AgentEnvironmentStatusKind.cliMissing ||
@@ -3904,7 +4288,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           a.status.kind == AgentEnvironmentStatusKind.notLoggedIn,
     );
     final singleCandidate = _getSingleInstallableCandidate(registry);
-    final isConnected = ref.watch(serverConnectionProvider).isConnected;
+    final isConnected = inputRef.watch(
+      serverConnectionProvider.select((c) => c.isConnected),
+    );
     final isRecovering =
         state.recoveryStatus == SessionRecoveryStatus.reconnecting ||
         state.recoveryStatus == SessionRecoveryStatus.syncing;
@@ -4502,6 +4888,931 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _handleMessageFailureLogin(String sessionId, ChatMessage message) {
+    final curChat = ref.read(aiChatProvider);
+    final curServer = ref.read(activeServerProvider);
+    if (curChat.activeSessionId != sessionId) return;
+    final messageAgentId =
+        message.agentId ??
+        (curChat.shareAgentSessions ? null : curChat.activeSession?.agentId);
+    if (messageAgentId == null ||
+        messageAgentId != curChat.activeAgentProfile?.id) {
+      return;
+    }
+    if (curChat.activeSession?.serverId != null &&
+        curChat.activeSession?.serverId != curServer?.id) {
+      return;
+    }
+
+    final isBusy =
+        curChat.isGenerating ||
+        curChat.isAuthenticating ||
+        curChat.isLoadingSettings ||
+        curChat.isApplyingSettings ||
+        curChat.isLoadingSessions ||
+        curChat.isLoadingMessages ||
+        curChat.pendingPermission != null;
+    if (isBusy) return;
+
+    final profile = curChat.activeAgentProfile;
+    if (profile != null && usesAntigravityAcp(profile)) {
+      ref.read(aiChatProvider.notifier).requestAuthentication();
+    } else {
+      _showManageAgentsModal();
+    }
+  }
+
+  void _handleMessageFailureRunSettings(String sessionId, ChatMessage message) {
+    final curChat = ref.read(aiChatProvider);
+    final curServer = ref.read(activeServerProvider);
+    if (curChat.activeSessionId != sessionId) return;
+    final messageAgentId =
+        message.agentId ??
+        (curChat.shareAgentSessions ? null : curChat.activeSession?.agentId);
+    if (messageAgentId == null ||
+        messageAgentId != curChat.activeAgentProfile?.id) {
+      return;
+    }
+    if (curChat.activeSession?.serverId != null &&
+        curChat.activeSession?.serverId != curServer?.id) {
+      return;
+    }
+
+    final isBusy =
+        curChat.isGenerating ||
+        curChat.isAuthenticating ||
+        curChat.isLoadingSettings ||
+        curChat.isApplyingSettings ||
+        curChat.isLoadingSessions ||
+        curChat.isLoadingMessages ||
+        curChat.pendingPermission != null;
+    if (isBusy) return;
+
+    _openRunSettings(refresh: true);
+  }
+
+  Future<void> _handleMessageFailureReconnect(
+    String sessionId,
+    ChatMessage message,
+  ) async {
+    final curChat = ref.read(aiChatProvider);
+    final curServer = ref.read(activeServerProvider);
+    if (curChat.activeSessionId != sessionId) return;
+    final messageAgentId =
+        message.agentId ??
+        (curChat.shareAgentSessions ? null : curChat.activeSession?.agentId);
+    if (messageAgentId == null ||
+        messageAgentId != curChat.activeAgentProfile?.id) {
+      return;
+    }
+    if (curChat.activeSession?.serverId != null &&
+        curChat.activeSession?.serverId != curServer?.id) {
+      return;
+    }
+
+    final isBusy =
+        curChat.isGenerating ||
+        curChat.isAuthenticating ||
+        curChat.isLoadingSettings ||
+        curChat.isApplyingSettings ||
+        curChat.isLoadingSessions ||
+        curChat.isLoadingMessages ||
+        curChat.pendingPermission != null;
+    if (isBusy) return;
+
+    final targetServerKey = curServer?.connectionKey;
+    final targetAgentId = curChat.activeAgentProfile?.id;
+    final targetSessionId = sessionId;
+
+    final curConn = ref.read(serverConnectionProvider);
+    if (!curConn.isConnected) {
+      final connected = await ref
+          .read(serverConnectionProvider.notifier)
+          .connect();
+      if (!connected || !mounted) return;
+      final afterChat = ref.read(aiChatProvider);
+      final afterServer = ref.read(activeServerProvider);
+      if (afterServer?.connectionKey != targetServerKey) return;
+      if (afterChat.activeSessionId != targetSessionId) return;
+      if (afterChat.activeAgentProfile?.id != targetAgentId) return;
+      if (afterChat.activeSession?.serverId != null &&
+          afterChat.activeSession?.serverId != afterServer?.id) {
+        return;
+      }
+      if (!ref.read(serverConnectionProvider).isConnected) return;
+    }
+
+    await ref.read(aiChatProvider.notifier).reconnectCurrentAgent();
+  }
+
+  Future<void> _handleMessageFailureReloadHistory(
+    String sessionId,
+    ChatMessage message,
+  ) async {
+    final curChat = ref.read(aiChatProvider);
+    final curServer = ref.read(activeServerProvider);
+    if (curChat.activeSessionId != sessionId) return;
+    final messageAgentId =
+        message.agentId ??
+        (curChat.shareAgentSessions ? null : curChat.activeSession?.agentId);
+    if (messageAgentId == null ||
+        messageAgentId != curChat.activeAgentProfile?.id) {
+      return;
+    }
+    if (curChat.activeSession?.serverId != null &&
+        curChat.activeSession?.serverId != curServer?.id) {
+      return;
+    }
+
+    final isBusy =
+        curChat.isGenerating ||
+        curChat.isAuthenticating ||
+        curChat.isLoadingSettings ||
+        curChat.isApplyingSettings ||
+        curChat.isLoadingSessions ||
+        curChat.isLoadingMessages ||
+        curChat.pendingPermission != null;
+    if (isBusy) return;
+
+    final failure = message.failureCode ?? '';
+    if (failure.contains('CHAT_HISTORY_LOAD_FAILED')) {
+      await ref
+          .read(aiChatProvider.notifier)
+          .searchSessions(_sessionSearchController.text);
+    } else if (failure.contains('CHAT_MESSAGES_LOAD_FAILED')) {
+      final session = curChat.activeSession;
+      if (session == null) return;
+      if (session.messages.isEmpty) {
+        await ref.read(aiChatProvider.notifier).selectSession(sessionId);
+      } else if (session.messageOffset > 0) {
+        await ref.read(aiChatProvider.notifier).loadOlderMessages();
+      }
+    }
+  }
+}
+
+class _SessionEntryMeta {
+  final String id;
+  final String title;
+
+  const _SessionEntryMeta(this.id, this.title);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _SessionEntryMeta &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          title == other.title;
+
+  @override
+  int get hashCode => Object.hash(id, title);
+}
+
+class _SessionsDrawerProjection {
+  final String? activeSessionId;
+  final String? activeAgentId;
+  final String? activeAgentName;
+  final bool shareAgentSessions;
+  final bool isGenerating;
+  final bool hasMoreSessions;
+  final bool isLoadingSessions;
+  final List<_SessionEntryMeta> sessions;
+
+  const _SessionsDrawerProjection({
+    required this.activeSessionId,
+    required this.activeAgentId,
+    required this.activeAgentName,
+    required this.shareAgentSessions,
+    required this.isGenerating,
+    required this.hasMoreSessions,
+    required this.isLoadingSessions,
+    required this.sessions,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! _SessionsDrawerProjection ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    return activeSessionId == other.activeSessionId &&
+        activeAgentId == other.activeAgentId &&
+        activeAgentName == other.activeAgentName &&
+        shareAgentSessions == other.shareAgentSessions &&
+        isGenerating == other.isGenerating &&
+        hasMoreSessions == other.hasMoreSessions &&
+        isLoadingSessions == other.isLoadingSessions &&
+        listEquals(sessions, other.sessions);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    activeSessionId,
+    activeAgentId,
+    activeAgentName,
+    shareAgentSessions,
+    isGenerating,
+    hasMoreSessions,
+    isLoadingSessions,
+    Object.hashAll(sessions),
+  );
+}
+
+class _MessageListFrameProjection {
+  final String? activeSessionId;
+  final int messageOffset;
+  final int messageCount;
+  final bool isGenerating;
+  final bool isLoadingMessages;
+  final bool hasActiveAgent;
+  final SessionRecoveryStatus recoveryStatus;
+
+  const _MessageListFrameProjection({
+    required this.activeSessionId,
+    required this.messageOffset,
+    required this.messageCount,
+    required this.isGenerating,
+    required this.isLoadingMessages,
+    required this.hasActiveAgent,
+    required this.recoveryStatus,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _MessageListFrameProjection &&
+          runtimeType == other.runtimeType &&
+          activeSessionId == other.activeSessionId &&
+          messageOffset == other.messageOffset &&
+          messageCount == other.messageCount &&
+          isGenerating == other.isGenerating &&
+          isLoadingMessages == other.isLoadingMessages &&
+          hasActiveAgent == other.hasActiveAgent &&
+          recoveryStatus == other.recoveryStatus;
+
+  @override
+  int get hashCode => Object.hash(
+    activeSessionId,
+    messageOffset,
+    messageCount,
+    isGenerating,
+    isLoadingMessages,
+    hasActiveAgent,
+    recoveryStatus,
+  );
+}
+
+class _InputAreaProjection {
+  final bool hasActiveAgent;
+  final String? activeAgentId;
+  final String? activeSessionId;
+  final bool hasActiveSession;
+  final String? workingDirectory;
+  final String? draftWorkingDirectory;
+  final bool isGenerating;
+  final bool isAuthenticating;
+  final bool isLoadingSettings;
+  final bool isApplyingSettings;
+  final bool isLoadingSessions;
+  final bool isLoadingMessages;
+  final SessionRecoveryStatus recoveryStatus;
+  final ChatRunSettings runSettings;
+  final AgentRuntimeCapabilities capabilities;
+  final bool supportsImages;
+  final bool supportsTextAttachments;
+  final int attachmentCount;
+  final bool hasAccountOrDiagnostics;
+
+  const _InputAreaProjection({
+    required this.hasActiveAgent,
+    required this.activeAgentId,
+    required this.activeSessionId,
+    required this.hasActiveSession,
+    required this.workingDirectory,
+    required this.draftWorkingDirectory,
+    required this.isGenerating,
+    required this.isAuthenticating,
+    required this.isLoadingSettings,
+    required this.isApplyingSettings,
+    required this.isLoadingSessions,
+    required this.isLoadingMessages,
+    required this.recoveryStatus,
+    required this.runSettings,
+    required this.capabilities,
+    required this.supportsImages,
+    required this.supportsTextAttachments,
+    required this.attachmentCount,
+    required this.hasAccountOrDiagnostics,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _InputAreaProjection &&
+          runtimeType == other.runtimeType &&
+          hasActiveAgent == other.hasActiveAgent &&
+          activeAgentId == other.activeAgentId &&
+          activeSessionId == other.activeSessionId &&
+          hasActiveSession == other.hasActiveSession &&
+          workingDirectory == other.workingDirectory &&
+          draftWorkingDirectory == other.draftWorkingDirectory &&
+          isGenerating == other.isGenerating &&
+          isAuthenticating == other.isAuthenticating &&
+          isLoadingSettings == other.isLoadingSettings &&
+          isApplyingSettings == other.isApplyingSettings &&
+          isLoadingSessions == other.isLoadingSessions &&
+          isLoadingMessages == other.isLoadingMessages &&
+          recoveryStatus == other.recoveryStatus &&
+          runSettings == other.runSettings &&
+          capabilities == other.capabilities &&
+          supportsImages == other.supportsImages &&
+          supportsTextAttachments == other.supportsTextAttachments &&
+          attachmentCount == other.attachmentCount &&
+          hasAccountOrDiagnostics == other.hasAccountOrDiagnostics;
+
+  @override
+  int get hashCode => Object.hashAll([
+    hasActiveAgent,
+    activeAgentId,
+    activeSessionId,
+    hasActiveSession,
+    workingDirectory,
+    draftWorkingDirectory,
+    isGenerating,
+    isAuthenticating,
+    isLoadingSettings,
+    isApplyingSettings,
+    isLoadingSessions,
+    isLoadingMessages,
+    recoveryStatus,
+    runSettings,
+    capabilities,
+    supportsImages,
+    supportsTextAttachments,
+    attachmentCount,
+    hasAccountOrDiagnostics,
+  ]);
+}
+
+class _AiChatMessageItem extends ConsumerWidget {
+  final _AiChatViewState viewState;
+  final String sessionId;
+  final String messageId;
+  final MessageRole role;
+
+  const _AiChatMessageItem({
+    super.key,
+    required this.viewState,
+    required this.sessionId,
+    required this.messageId,
+    required this.role,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final message = ref.watch(
+      aiChatProvider.select((state) {
+        final session = state.sessions
+            .where((entry) => entry.id == sessionId)
+            .firstOrNull;
+        return session?.messages
+            .where((entry) => entry.id == messageId)
+            .firstOrNull;
+      }),
+    );
+
+    if (message == null) return const SizedBox.shrink();
+
+    if (role == MessageRole.user) {
+      return viewState._buildUserBubble(message, sessionId);
+    } else if (role == MessageRole.system) {
+      return viewState._buildSystemBubble(message);
+    }
+    return viewState._buildAssistantBubble(message, sessionId);
+  }
+}
+
+class _MessageFailureCard extends ConsumerStatefulWidget {
+  final ChatMessage message;
+  final String sessionId;
+  final VoidCallback onLogin;
+  final VoidCallback onRunSettings;
+  final VoidCallback onReconnect;
+  final VoidCallback onReloadHistory;
+
+  const _MessageFailureCard({
+    required this.message,
+    required this.sessionId,
+    required this.onLogin,
+    required this.onRunSettings,
+    required this.onReconnect,
+    required this.onReloadHistory,
+  });
+
+  @override
+  ConsumerState<_MessageFailureCard> createState() =>
+      _MessageFailureCardState();
+}
+
+class _MessageFailureCardState extends ConsumerState<_MessageFailureCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final failureCode = widget.message.failureCode;
+    final isAwaitingAuth =
+        widget.message.status == ChatTurnStatus.awaitingAuthentication;
+    final presentation = classifyChatFailure(
+      failureCode,
+      authenticationRequired: isAwaitingAuth,
+    );
+
+    if (presentation == null) return const SizedBox.shrink();
+
+    final activeSessionId = ref.watch(
+      aiChatProvider.select((s) => s.activeSessionId),
+    );
+    final activeAgentId = ref.watch(
+      aiChatProvider.select((s) => s.activeAgentProfile?.id),
+    );
+    final activeSessionServerId = ref.watch(
+      aiChatProvider.select((s) => s.activeSession?.serverId),
+    );
+    final activeServerId = ref.watch(activeServerProvider.select((s) => s?.id));
+    final isBusy = ref.watch(
+      aiChatProvider.select(
+        (s) =>
+            s.isGenerating ||
+            s.isAuthenticating ||
+            s.isLoadingSettings ||
+            s.isApplyingSettings ||
+            s.isLoadingSessions ||
+            s.isLoadingMessages ||
+            s.pendingPermission != null,
+      ),
+    );
+
+    final shareAgentSessions = ref.watch(
+      aiChatProvider.select((s) => s.shareAgentSessions),
+    );
+    final messageAgentId =
+        widget.message.agentId ??
+        (shareAgentSessions
+            ? null
+            : ref.watch(
+                aiChatProvider.select((s) => s.activeSession?.agentId),
+              ));
+
+    final matchesSession =
+        activeSessionId != null && activeSessionId == widget.sessionId;
+    final matchesAgent =
+        messageAgentId != null &&
+        activeAgentId != null &&
+        messageAgentId == activeAgentId;
+    final matchesServer =
+        activeSessionServerId == null ||
+        (activeServerId != null && activeSessionServerId == activeServerId);
+    final matchesTarget =
+        matchesSession && matchesAgent && matchesServer && !isBusy;
+
+    ChatFailureAction effectiveAction = presentation.suggestedAction;
+
+    if (!matchesTarget) {
+      effectiveAction = ChatFailureAction.details;
+    } else if (effectiveAction == ChatFailureAction.reloadHistory) {
+      final code = failureCode ?? '';
+      if (code.contains('CHAT_HISTORY_LOAD_FAILED')) {
+        // Can retry search
+      } else if (code.contains('CHAT_MESSAGES_LOAD_FAILED')) {
+        final (offset, count) = ref.watch(
+          aiChatProvider.select(
+            (s) => (
+              s.activeSession?.messageOffset ?? 0,
+              s.activeSession?.messages.length ?? 0,
+            ),
+          ),
+        );
+        if (count == 0) {
+          // Can retry selectSession
+        } else if (offset > 0) {
+          // Can load older messages
+        } else {
+          // offset == 0 with existing messages: loadOlderMessages will early return!
+          effectiveAction = ChatFailureAction.details;
+        }
+      } else {
+        effectiveAction = ChatFailureAction.details;
+      }
+    }
+
+    final l10n = context.l10n;
+    final kindTitle = switch (presentation.kind) {
+      ChatFailureKind.auth => l10n.chatFailureKindAuth,
+      ChatFailureKind.modelUnavailable => l10n.chatFailureKindModelUnavailable,
+      ChatFailureKind.connection => l10n.chatFailureKindConnection,
+      ChatFailureKind.history => l10n.chatFailureKindHistory,
+      ChatFailureKind.other => l10n.chatFailureKindOther,
+    };
+
+    final actionLabel = switch (effectiveAction) {
+      ChatFailureAction.login => l10n.chatFailureActionLogin,
+      ChatFailureAction.runSettings => l10n.chatFailureActionRunSettings,
+      ChatFailureAction.reconnect => l10n.chatFailureActionReconnect,
+      ChatFailureAction.reloadHistory => l10n.chatFailureActionReloadHistory,
+      ChatFailureAction.details => l10n.chatFailureActionDetails,
+    };
+
+    final sanitizedError = LogSanitizer.sanitize(failureCode ?? '');
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final isNarrow = MediaQuery.sizeOf(context).width < 360 || textScale > 1.3;
+
+    final actionWidget = TextButton(
+      key: Key('chat_failure_action_${widget.message.id}'),
+      style: TextButton.styleFrom(
+        visualDensity: VisualDensity.standard,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: const Size(44, 44),
+      ),
+      onPressed: () {
+        switch (effectiveAction) {
+          case ChatFailureAction.login:
+            widget.onLogin();
+            break;
+          case ChatFailureAction.runSettings:
+            widget.onRunSettings();
+            break;
+          case ChatFailureAction.reconnect:
+            widget.onReconnect();
+            break;
+          case ChatFailureAction.reloadHistory:
+            widget.onReloadHistory();
+            break;
+          case ChatFailureAction.details:
+            break;
+        }
+      },
+      child: Text(
+        actionLabel,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: context.colorScheme.primary,
+        ),
+      ),
+    );
+
+    final detailsToggleWidget = IconButton(
+      key: Key('chat_failure_details_toggle_${widget.message.id}'),
+      icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more, size: 16),
+      tooltip: l10n.chatFailureActionDetails,
+      visualDensity: VisualDensity.standard,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+      onPressed: () {
+        setState(() {
+          _expanded = !_expanded;
+        });
+      },
+    );
+
+    return Container(
+      key: Key('chat_message_failure_card_${widget.message.id}'),
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: context.vDanger.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(VRadius.card),
+        border: Border.all(color: context.vDanger.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isNarrow) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: context.vDanger,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    kindTitle,
+                    style: context.textTheme.labelMedium?.copyWith(
+                      color: context.vDanger,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Wrap(
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 4,
+                runSpacing: 4,
+                children: [
+                  if (effectiveAction != ChatFailureAction.details)
+                    actionWidget,
+                  detailsToggleWidget,
+                ],
+              ),
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Icon(Icons.error_outline, size: 16, color: context.vDanger),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    kindTitle,
+                    style: context.textTheme.labelMedium?.copyWith(
+                      color: context.vDanger,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (effectiveAction != ChatFailureAction.details) actionWidget,
+                detailsToggleWidget,
+              ],
+            ),
+          ],
+          if (_expanded && sanitizedError.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(8),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: context.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: SelectableText(
+                      sanitizedError,
+                      style: monoTextStyle(
+                        fontSize: 11,
+                        color: context.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    key: Key('chat_failure_copy_${widget.message.id}'),
+                    icon: const Icon(Icons.copy, size: 14),
+                    tooltip: l10n.copy,
+                    visualDensity: VisualDensity.standard,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: sanitizedError));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(l10n.updateErrorCopied),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ChatErrorBanner extends StatefulWidget {
+  final String errorCode;
+  final VoidCallback? onReloadHistory;
+
+  const _ChatErrorBanner({required this.errorCode, this.onReloadHistory});
+
+  @override
+  State<_ChatErrorBanner> createState() => _ChatErrorBannerState();
+}
+
+class _ChatErrorBannerState extends State<_ChatErrorBanner> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final presentation = classifyChatFailure(widget.errorCode);
+    final l10n = context.l10n;
+
+    final String kindTitle;
+    if (widget.errorCode.startsWith('CHAT_SESSION_IDENTITY_MISMATCH')) {
+      kindTitle = l10n.chatSessionIdentityMismatch;
+    } else if (widget.errorCode == AiChatNotifier.notReadyCode ||
+        widget.errorCode.startsWith('AGENT_NOT_READY')) {
+      kindTitle = l10n.agentNotReadyError;
+    } else if (presentation != null) {
+      kindTitle = switch (presentation.kind) {
+        ChatFailureKind.auth => l10n.chatFailureKindAuth,
+        ChatFailureKind.modelUnavailable =>
+          l10n.chatFailureKindModelUnavailable,
+        ChatFailureKind.connection => l10n.chatFailureKindConnection,
+        ChatFailureKind.history => l10n.chatFailureKindHistory,
+        ChatFailureKind.other => l10n.chatFailureKindOther,
+      };
+    } else {
+      kindTitle = l10n.chatFailureKindOther;
+    }
+
+    final sanitizedError = LogSanitizer.sanitize(widget.errorCode);
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final isNarrow = MediaQuery.sizeOf(context).width < 360 || textScale > 1.3;
+
+    Widget? actionButton;
+    if (widget.errorCode == AiChatNotifier.notReadyCode ||
+        widget.errorCode.startsWith('AGENT_NOT_READY')) {
+      actionButton = TextButton(
+        style: TextButton.styleFrom(
+          visualDensity: VisualDensity.standard,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          minimumSize: const Size(44, 44),
+        ),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AgentManagementView()),
+          );
+        },
+        child: Text(
+          l10n.manageAgents,
+          style: context.textTheme.labelMedium?.copyWith(
+            color: context.colorScheme.onErrorContainer,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    } else if (presentation?.suggestedAction ==
+            ChatFailureAction.reloadHistory &&
+        widget.onReloadHistory != null) {
+      actionButton = TextButton(
+        style: TextButton.styleFrom(
+          visualDensity: VisualDensity.standard,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          minimumSize: const Size(44, 44),
+        ),
+        onPressed: widget.onReloadHistory,
+        child: Text(
+          l10n.chatFailureActionReloadHistory,
+          style: context.textTheme.labelMedium?.copyWith(
+            color: context.colorScheme.onErrorContainer,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    final detailsButton = IconButton(
+      icon: Icon(
+        _expanded ? Icons.expand_less : Icons.expand_more,
+        size: 16,
+        color: context.colorScheme.onErrorContainer,
+      ),
+      tooltip: l10n.chatFailureActionDetails,
+      visualDensity: VisualDensity.standard,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+      onPressed: () => setState(() => _expanded = !_expanded),
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: context.colorScheme.errorContainer.withValues(alpha: 0.8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isNarrow) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(
+                    Icons.error_outline,
+                    size: 18,
+                    color: context.colorScheme.onErrorContainer,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    kindTitle,
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: context.colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Wrap(
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 4,
+                runSpacing: 4,
+                children: [?actionButton, detailsButton],
+              ),
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 18,
+                  color: context.colorScheme.onErrorContainer,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    kindTitle,
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: context.colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                ?actionButton,
+                detailsButton,
+              ],
+            ),
+          ],
+          if (_expanded && sanitizedError.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(8),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: context.colorScheme.surface.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: SelectableText(
+                      sanitizedError,
+                      style: monoTextStyle(
+                        fontSize: 11,
+                        color: context.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 14),
+                    tooltip: l10n.copy,
+                    visualDensity: VisualDensity.standard,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: sanitizedError));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(l10n.updateErrorCopied),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

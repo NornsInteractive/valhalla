@@ -106,17 +106,22 @@ class FixedActiveServerNotifier extends ActiveServerNotifier {
 }
 
 class FixedAgentRegistryNotifier extends AgentRegistryNotifier {
+  FixedAgentRegistryNotifier({this.hasAgent = true});
+
+  final bool hasAgent;
+
   @override
   AgentRegistryState build() => AgentRegistryState(
     serverId: _serverId,
     agents: [
-      AgentRuntimeState(
-        profile: _codexAgent,
-        status: AgentEnvironmentStatus(
-          kind: AgentEnvironmentStatusKind.ready,
-          checkedAt: DateTime.utc(2026, 9, 30),
+      if (hasAgent)
+        AgentRuntimeState(
+          profile: _codexAgent,
+          status: AgentEnvironmentStatus(
+            kind: AgentEnvironmentStatusKind.ready,
+            checkedAt: DateTime.utc(2026, 9, 30),
+          ),
         ),
-      ),
     ],
   );
 }
@@ -125,9 +130,12 @@ class FixedAgentRegistryNotifier extends AgentRegistryNotifier {
 Future<(ProviderContainer, FakeSshExecutor, DrivenConnectionNotifier)>
 pumpRealNotifier({
   ConnectionStateEnum initial = ConnectionStateEnum.disconnected,
+  bool hasAgent = true,
+  bool cliEnabled = false,
 }) async {
   SharedPreferences.setMockInitialValues({});
   final storage = await LocalStorageService.init();
+  if (cliEnabled) await storage.setExperimentalFeatures(['cliChat']);
   final executor = FakeSshExecutor();
   final connection = DrivenConnectionNotifier(initial);
   final container = ProviderContainer(
@@ -135,7 +143,9 @@ pumpRealNotifier({
       localStorageServiceProvider.overrideWithValue(storage),
       activeServerProvider.overrideWith(FixedActiveServerNotifier.new),
       serverConnectionProvider.overrideWith(() => connection),
-      agentRegistryProvider.overrideWith(FixedAgentRegistryNotifier.new),
+      agentRegistryProvider.overrideWith(
+        () => FixedAgentRegistryNotifier(hasAgent: hasAgent),
+      ),
       sshCommandExecutorProvider.overrideWithValue(executor),
     ],
   );
@@ -192,6 +202,52 @@ class ViewNotifier extends CliChatNotifier {
 
 void main() {
   group('CliChatNotifier - recovery never invents remote work', () {
+    for (final cliEnabled in [false, true]) {
+      test(
+        'SSH reconnect with ${cliEnabled ? 'empty agent registry' : 'CLI disabled'} does not invent CLI recovery',
+        () async {
+          final (container, executor, connection) = await pumpRealNotifier(
+            initial: ConnectionStateEnum.connected,
+            hasAgent: !cliEnabled,
+            cliEnabled: cliEnabled,
+          );
+          final notifier = container.read(cliChatProvider.notifier);
+          await settle();
+          expect(container.read(cliChatProvider).activeAgent, isNull);
+          expect(
+            container.read(cliChatProvider).agents,
+            hasLength(cliEnabled ? 0 : 1),
+          );
+          notifier.setDraftWorkingDirectory('/fixture');
+
+          // The shell reconnect action moves connected -> connecting -> connected.
+          connection.set(ConnectionStateEnum.connecting);
+          await settle();
+          expect(
+            container.read(cliChatProvider).recoveryStatus,
+            SessionRecoveryStatus.idle,
+            reason: 'there is no selected CLI target to recover',
+          );
+          connection.set(ConnectionStateEnum.connected);
+          await settle();
+          await notifier.recoverConnection();
+
+          final state = container.read(cliChatProvider);
+          expect(state.recoveryStatus, SessionRecoveryStatus.idle);
+          expect(state.activeAgent, isNull);
+          expect(state.activeSession, isNull);
+          expect(state.sessions, isEmpty);
+          expect(state.messages, isEmpty);
+          expect(state.approvals, isEmpty);
+          expect(state.draftCwd, '/fixture');
+          expect(state.isSending, isFalse);
+          expect(state.isLoading, isFalse);
+          expect(executor.loginShellCalls, 0);
+          expect(executor.streamingCalls, 0);
+        },
+      );
+    }
+
     test(
       'a disconnected chat refuses to send and touches no remote command',
       () async {

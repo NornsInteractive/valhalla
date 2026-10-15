@@ -115,6 +115,13 @@ class _FakeSshManager implements SSHClientManager {
     gates.clear();
   }
 
+  /// 只放行最早那一次挂起的探活，用来制造「旧代次先结束」的时序。
+  bool releaseFirst(bool alive) {
+    if (gates.isEmpty) return false;
+    gates.removeAt(0).complete(alive);
+    return true;
+  }
+
   @override
   void disconnect(String serverId, {bool notifyDeath = false}) {
     disconnected.add(serverId);
@@ -426,6 +433,134 @@ void main() {
       expect(visibility, [false, true]);
       expect(ssh.backgroundCalls, [true, false]);
       expect(lifecycle.inBackground, isFalse);
+    });
+  });
+
+  group('目标身份与恢复合并', () {
+    test('A 探活未结束时切到 B，B 必须独立探活', () async {
+      final serverA = _server('a');
+      final serverB = _server('b');
+      active = serverA;
+      controller.start(serverA);
+      controller.markConnected();
+      ssh.holdProbes = true;
+      final lifecycle = build();
+
+      final pendingA = lifecycle.onResumed();
+      await Future<void>.delayed(Duration.zero);
+      expect(ssh.probed, ['a'], reason: '第一代先探 A');
+
+      // A 的探活还挂在半空，用户切到了 B：A 的 Future 借不得给 B。
+      active = serverB;
+      controller.start(serverB);
+      final pendingB = lifecycle.onResumed();
+
+      expect(identical(pendingA, pendingB), isFalse, reason: '目标变了必须另起一代恢复');
+      await Future<void>.delayed(Duration.zero);
+      expect(ssh.verifyCalls, 2, reason: 'B 必须独立探活，不能借 A 的结果');
+      expect(ssh.probed, ['a', 'b']);
+
+      // A 先结束：结果属于旧目标，也不许清掉 B 还在进行的请求。
+      expect(ssh.releaseFirst(true), isTrue);
+      expect(await pendingA, isFalse, reason: 'A 的结果已被目标校验丢弃');
+      expect(
+        controller.state.isReconnecting,
+        isFalse,
+        reason: '旧目标收尾不得把 B 翻成重连中',
+      );
+      expect(scheduler.pendingCount, 0);
+
+      final again = lifecycle.onResumed();
+      expect(
+        identical(again, pendingB),
+        isTrue,
+        reason: '旧完成不能清掉新目标的 pending 请求',
+      );
+      expect(ssh.verifyCalls, 2, reason: '复用 B 的请求，不许再补探一次');
+
+      ssh.release(true);
+      expect(await pendingB, isTrue);
+      expect(await again, isTrue);
+      expect(controller.serverId, 'b');
+      expect(controller.state.isConnected, isTrue);
+      expect(ssh.verifyCalls, 2);
+    });
+
+    test('同 ID 换 host 不合并，新配置必须重新探活', () async {
+      final server = _server('a');
+      active = server;
+      controller.start(server);
+      controller.markConnected();
+      ssh.holdProbes = true;
+      final lifecycle = build();
+
+      final first = lifecycle.onResumed();
+      await Future<void>.delayed(Duration.zero);
+      expect(ssh.verifyCalls, 1);
+
+      // 同一台服务器换了 host：连接身份变了，旧的 pending 请求不再算数。
+      active = server.copyWith(host: '10.0.0.2');
+      final second = lifecycle.onResumed();
+
+      expect(identical(first, second), isFalse, reason: '连接配置变化必须新建恢复');
+      await Future<void>.delayed(Duration.zero);
+      expect(ssh.verifyCalls, 2, reason: '新配置必须独立探活');
+      expect(ssh.probed, ['a', 'a'], reason: '还是同一个 id，但配置不同');
+
+      ssh.release(true);
+      expect(await first, isFalse, reason: '旧配置的结果已被目标校验丢弃');
+      expect(await second, isTrue, reason: '新配置必须走完自己的探活');
+      expect(ssh.verifyCalls, 2);
+    });
+
+    test('同连接配置只改名称仍合并同一次探活', () async {
+      final server = _server('a');
+      active = server;
+      controller.start(server);
+      controller.markConnected();
+      ssh.holdProbes = true;
+      final lifecycle = build();
+
+      final first = lifecycle.onResumed();
+      await Future<void>.delayed(Duration.zero);
+      expect(ssh.verifyCalls, 1);
+
+      // 只改显示名：连接身份没变，仍在同一代里合并。
+      active = server.copyWith(name: 'renamed');
+      final second = lifecycle.onResumed();
+
+      expect(identical(first, second), isTrue, reason: '名称变化不改变连接身份');
+      expect(ssh.verifyCalls, 1, reason: '合并的请求不许多探一次');
+
+      ssh.release(true);
+      expect(await first, isTrue);
+      expect(await second, isTrue);
+      expect(ssh.verifyCalls, 1);
+    });
+
+    test('dispose 后旧探测结果不得触发新恢复', () async {
+      final server = _server('a');
+      active = server;
+      controller.start(server);
+      controller.markConnected();
+      ssh.holdProbes = true;
+      final lifecycle = build();
+
+      final resuming = lifecycle.onResumed();
+      await Future<void>.delayed(Duration.zero);
+      expect(ssh.verifyCalls, 1);
+
+      lifecycle.dispose();
+      ssh.release(false);
+
+      expect(await resuming, isFalse, reason: 'dispose 后探活结果只如实收尾');
+      expect(
+        controller.state.isReconnecting,
+        isFalse,
+        reason: '过期的探测结果不得改动状态机',
+      );
+      expect(scheduler.pendingCount, 0);
+      expect(ssh.disconnected, isEmpty);
     });
   });
 

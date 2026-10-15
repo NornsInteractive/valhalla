@@ -5,8 +5,10 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../logging/sanitizer.dart';
+import '../utils/app_runtime_identity.dart';
 
 /// Local, bounded diagnostics. Never uploads logs or stores connection profiles.
 class AppDiagnostics {
@@ -146,13 +148,29 @@ class AppDiagnostics {
     );
   }
 
+  /// Includes installation identity even after the startup log has rotated out.
+  Future<String> report({int maxBytes = 256 * 1024}) async {
+    Map<String, String> identity;
+    try {
+      identity = appRuntimeIdentity(await PackageInfo.fromPlatform());
+    } catch (_) {
+      identity = {
+        'platform': Platform.operatingSystem,
+        'architecture': applicationArchitectures().first,
+      };
+    }
+    return LogSanitizer.sanitize(
+      '[application] ${jsonEncode(identity)}\n${await read(maxBytes: maxBytes)}',
+    );
+  }
+
   Future<String?> export() async => (await FilePicker.saveFile(
     fileName: 'valhalla-diagnostics.txt',
     type: FileType.custom,
     allowedExtensions: ['txt'],
     mimeType: 'text/plain',
     bytes: Uint8List.fromList(
-      utf8.encode(await read(maxBytes: 3 * maxFileBytes)),
+      utf8.encode(await report(maxBytes: 3 * maxFileBytes)),
     ),
   ))?.toString();
 }

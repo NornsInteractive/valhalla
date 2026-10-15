@@ -239,6 +239,109 @@ void main() {
     });
   });
 
+  group('ChatMessage.failureCode 契约', () {
+    ChatMessage failed({
+      String id = 'f1',
+      String content = 'partial answer',
+      String? failureCode = 'ACP_REMOTE_ERROR: RpcError(-32603)',
+      ChatTurnStatus status = ChatTurnStatus.failed,
+    }) => ChatMessage(
+      id: id,
+      role: MessageRole.assistant,
+      content: content,
+      status: status,
+      failureCode: failureCode,
+      createdAt: DateTime.utc(2026, 10, 15),
+    );
+
+    test('failureCode 非 null 才写入 JSON，且完整往返', () {
+      final message = failed();
+      final json = message.toJson();
+
+      expect(json.containsKey('failureCode'), isTrue);
+      expect(json['failureCode'], 'ACP_REMOTE_ERROR: RpcError(-32603)');
+
+      final restored = ChatMessage.fromJson(
+        Map<String, dynamic>.from(jsonDecode(jsonEncode(json)) as Map),
+      );
+      expect(restored.failureCode, 'ACP_REMOTE_ERROR: RpcError(-32603)');
+      expect(restored.status, ChatTurnStatus.failed);
+      expect(restored.content, 'partial answer');
+      expect(
+        restored.toJson()['content'],
+        'partial answer',
+        reason: '错误原因留在独立字段，不写进正文',
+      );
+    });
+
+    test('没有失败原因时 JSON 里根本不写这个键', () {
+      final message = failed(
+        failureCode: null,
+        status: ChatTurnStatus.completed,
+      );
+      expect(message.toJson().containsKey('failureCode'), isFalse);
+    });
+
+    test('旧 JSON 缺字段或字段非字符串都读成 null', () {
+      final base = {
+        'id': 'legacy',
+        'role': 'assistant',
+        'content': 'x',
+        'createdAt': DateTime.utc(2026).toIso8601String(),
+      };
+
+      expect(ChatMessage.fromJson(base).failureCode, isNull);
+
+      expect(
+        ChatMessage.fromJson({...base, 'failureCode': 42}).failureCode,
+        isNull,
+        reason: '非字符串不得当错误码读入',
+      );
+      expect(
+        ChatMessage.fromJson({
+          ...base,
+          'failureCode': {'code': 'boom'},
+        }).failureCode,
+        isNull,
+      );
+      expect(
+        ChatMessage.fromJson({...base, 'failureCode': true}).failureCode,
+        isNull,
+      );
+    });
+
+    test('copyWith 默认保留失败原因，只有 clearFailure 清除', () {
+      final message = failed();
+
+      expect(message.copyWith(content: 'more').failureCode, isNotNull);
+      expect(
+        message.copyWith(status: ChatTurnStatus.streaming).failureCode,
+        'ACP_REMOTE_ERROR: RpcError(-32603)',
+        reason: '转回 streaming 不等于错误已消失',
+      );
+      expect(
+        message.copyWith(failureCode: 'OTHER_CODE').failureCode,
+        'OTHER_CODE',
+      );
+
+      expect(
+        message.copyWith(clearFailure: true).failureCode,
+        isNull,
+        reason: '只有显式清除才能让失败原因消失',
+      );
+      final overridden = message.copyWith(
+        failureCode: 'OTHER_CODE',
+        clearFailure: true,
+      );
+      expect(overridden.failureCode, isNull, reason: 'clearFailure 优先于新传入的原因');
+      expect(
+        message.copyWith(clearFailure: true).content,
+        'partial answer',
+        reason: '清除失败原因不改正文',
+      );
+    });
+  });
+
   group('ChatSession 多 Agent 上下文往返', () {
     test('agentRunSettings / agentContexts / participantAgentIds 完整往返', () {
       final session = ChatSession(

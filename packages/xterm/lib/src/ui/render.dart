@@ -85,6 +85,7 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
     if (attached) _terminal.addListener(_onTerminalChange);
     _resizeTerminalIfNeeded();
     markNeedsLayout();
+    markNeedsPaint();
   }
 
   TerminalController _controller;
@@ -94,6 +95,7 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
     _controller = controller;
     if (attached) _controller.addListener(_onControllerUpdate);
     markNeedsLayout();
+    markNeedsPaint();
   }
 
   ViewportOffset _offset;
@@ -194,11 +196,13 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
 
   void _onTerminalChange() {
     markNeedsLayout();
+    markNeedsPaint();
     _notifyEditableRect();
   }
 
   void _onControllerUpdate() {
     markNeedsLayout();
+    markNeedsPaint();
   }
 
   @override

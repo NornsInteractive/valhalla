@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +8,7 @@ import '../../infrastructure/acp/agent_environment_service.dart';
 import '../errors/app_exceptions.dart';
 import '../logging/sanitizer.dart';
 import 'infrastructure_providers.dart';
+import 'agent_update_lock_provider.dart';
 import 'server_provider.dart';
 import 'storage_providers.dart';
 
@@ -102,11 +104,13 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
   Future<void>? _refreshing;
   int? _refreshEpoch;
   final Map<(int, String), Future<void>> _agentChecks = {};
+  final Map<String, Object> _loginLeases = {};
   static const disconnectedCode = 'SSH_DISCONNECTED';
 
   @override
   AgentRegistryState build() {
     _environmentEpoch++;
+    _loginLeases.clear();
     ref.watch(activeServerProvider.select((s) => s?.connectionKey));
     final server = ref.read(activeServerProvider);
     final repo = ref.watch(agentRepositoryProvider);
@@ -252,9 +256,9 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
           epoch == _environmentEpoch &&
           identical(state.findRuntime(agentId)?.profile, runtime.profile)) {
         _replace(
-          runtime.copyWith(
-            errorMessage: LogSanitizer.sanitize(error.toString()),
-          ),
+          state
+              .findRuntime(agentId)!
+              .copyWith(errorMessage: LogSanitizer.sanitize(error.toString())),
         );
       }
       return;
@@ -323,6 +327,9 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
         current.isLoggingIn) {
       throw const ValidationException('AGENT_EDIT_UNAVAILABLE');
     }
+    if (isAgentUpdateLocked(ref, profile)) {
+      throw const ValidationException('AGENT_UPDATE_IN_PROGRESS');
+    }
     _environmentEpoch++;
     await ref.read(agentRepositoryProvider).save(profile);
     if (!ref.mounted || state.serverId != profile.serverId) return;
@@ -339,11 +346,50 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
   Future<void> deleteAgent(String agentId) async {
     final serverId = state.serverId;
     if (serverId == null) return;
+    final runtime = state.findRuntime(agentId);
+    if (runtime != null && isAgentUpdateLocked(ref, runtime.profile)) {
+      throw const ValidationException('AGENT_UPDATE_IN_PROGRESS');
+    }
     await ref.read(agentRepositoryProvider).delete(serverId, agentId);
     if (!ref.mounted || state.serverId != serverId) return;
     state = state.copyWith(
       agents: state.agents.where((a) => a.profile.id != agentId).toList(),
     );
+  }
+
+  /// The update service calls this only after verifying the newly installed
+  /// official adapter. It cannot be used to edit unrelated profile fields.
+  Future<void> commitVerifiedAdapterMigration(
+    AgentProfile original,
+    AgentProfile updated,
+  ) async {
+    Map<String, dynamic> comparable(AgentProfile profile) => profile.toJson()
+      ..remove('createdAt')
+      ..remove('updatedAt');
+    final current = state.findRuntime(original.id);
+    final expected = original.copyWith(
+      acpCommand: 'claude-agent-acp',
+      acpInstallCommand: 'npm install -g @agentclientprotocol/claude-agent-acp',
+    );
+    if (state.serverId != original.serverId ||
+        current == null ||
+        !isAgentUpdateLocked(ref, original) ||
+        original.acpCommand != 'claude-code-acp' ||
+        original.acpInstallCommand !=
+            'npm install -g @zed-industries/claude-code-acp' ||
+        jsonEncode(comparable(current.profile)) !=
+            jsonEncode(comparable(original)) ||
+        jsonEncode(comparable(updated)) != jsonEncode(comparable(expected))) {
+      throw const ValidationException('AGENT_UPDATE_TARGET_CHANGED');
+    }
+    final epoch = ++_environmentEpoch;
+    await ref.read(agentRepositoryProvider).save(updated);
+    if (!ref.mounted ||
+        epoch != _environmentEpoch ||
+        state.serverId != original.serverId) {
+      return;
+    }
+    _replace(current.copyWith(profile: updated));
   }
 
   /// 仅由 UI 确认后调用；执行安装命令并重新检测。
@@ -364,6 +410,11 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
     final serverId = state.serverId;
     final runtime = state.findRuntime(agentId);
     if (serverId == null || runtime == null) return;
+
+    if (isAgentUpdateLocked(ref, runtime.profile)) {
+      _replace(runtime.copyWith(errorMessage: 'AGENT_UPDATE_IN_PROGRESS'));
+      return;
+    }
 
     if (!_isConnected) {
       _replace(runtime.copyWith(errorMessage: disconnectedCode));
@@ -441,6 +492,33 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
     }
 
     await refreshAgent(agentId);
+  }
+
+  /// Marks an interactive login before its terminal/browser can be opened.
+  /// The token prevents a late dialog close from clearing a newer login.
+  Object? beginInteractiveLogin(String agentId) {
+    final runtime = state.findRuntime(agentId);
+    if (runtime == null) return null;
+    if (!_isConnected) {
+      _replace(runtime.copyWith(errorMessage: disconnectedCode));
+      return null;
+    }
+    if (isAgentUpdateLocked(ref, runtime.profile)) {
+      _replace(runtime.copyWith(errorMessage: 'AGENT_UPDATE_IN_PROGRESS'));
+      return null;
+    }
+    if (runtime.isInstalling || runtime.isLoggingIn) return null;
+    final token = Object();
+    _loginLeases[agentId] = token;
+    _replace(runtime.copyWith(isLoggingIn: true, clearError: true));
+    return token;
+  }
+
+  void endInteractiveLogin(String agentId, Object token) {
+    if (!ref.mounted || !identical(_loginLeases[agentId], token)) return;
+    _loginLeases.remove(agentId);
+    final runtime = state.findRuntime(agentId);
+    if (runtime != null) _replace(runtime.copyWith(isLoggingIn: false));
   }
 
   void _markAllDisconnected() {

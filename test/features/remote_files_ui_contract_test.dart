@@ -282,7 +282,7 @@ void main() {
     setSurface(tester, const Size(1080, 2400), 3);
     final notifier = _UiTestSftpNotifier(
       SftpState(
-        currentPath: '/avery/bvery/cvery/dvery/every/deep',
+        currentPath: '/averylongsegment/bverylongsegment/deep',
         files: [_uiItem('alpha')],
       ),
     );
@@ -292,13 +292,16 @@ void main() {
       of: find.byKey(const Key('sftp_breadcrumb_seg_0')),
       matching: find.byType(Scrollable),
     );
+    final position = tester.state<ScrollableState>(scroll).position;
+    expect(position.maxScrollExtent, greaterThan(0));
     await tester.drag(scroll, const Offset(200, 0));
     await tester.pumpAndSettle();
-    // 末尾段被推出视口，之后 refresh 不应再强滚回去。
+    final userOffset = position.pixels;
+    expect(userOffset, lessThan(position.maxScrollExtent));
+    // 三段路径仍可滚动；refresh 不应覆盖用户选择的位置。
     notifier.bumpFiles();
     await tester.pumpAndSettle();
-    final deep = tester.getRect(find.text('deep'));
-    expect(deep.left, greaterThan(360));
+    expect(position.pixels, closeTo(userOffset, 0.01));
   });
 
   testWidgets('RTL 下路径保持 LTR', (tester) async {
@@ -334,8 +337,12 @@ void main() {
       _app(state: notifier.build(), notifier: notifier, connected: false),
     );
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sftpMoreButton')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('sftpToggleHiddenButton')));
-    await tester.pump();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sftpMoreButton')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('sftpToggleHiddenButton')));
     await tester.pump();
     expect(notifier.setHiddenCalls.length, 1, reason: 'pending 中第二次点击必须被忽略');
@@ -344,7 +351,7 @@ void main() {
     expect(notifier.setHiddenCalls, [true]);
   });
 
-  testWidgets('捕获的 onPressed 先调两次再重建帧不重复提交', (tester) async {
+  testWidgets('捕获的 onSelected 先调两次再重建帧不重复提交', (tester) async {
     setSurface(tester, const Size(1080, 2400), 3);
     final notifier = _UiTestSftpNotifier(
       SftpState(currentPath: '/var', files: [_uiItem('.secret')]),
@@ -355,11 +362,13 @@ void main() {
     );
     await tester.pumpAndSettle();
     final captured = tester
-        .widget<IconButton>(find.byKey(const Key('sftpToggleHiddenButton')))
-        .onPressed!;
+        .widget<PopupMenuButton<String>>(
+          find.byKey(const Key('sftpMoreButton')),
+        )
+        .onSelected!;
     // 同一个闭包在 rebuild 之前被调用两次：必须只触发一次保存。
-    captured();
-    captured();
+    captured('hidden');
+    captured('hidden');
     await tester.pumpAndSettle();
     expect(notifier.setHiddenCalls.length, 1);
     notifier.hideToggleGate!.complete();
@@ -374,7 +383,14 @@ void main() {
     await tester.pumpWidget(_app(state: notifier.build(), notifier: notifier));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('sftp_search_field')), findsOneWidget);
-    expect(find.byKey(const Key('sftpToggleHiddenButton')), findsOneWidget);
+    final more = find.byKey(const Key('sftpMoreButton'));
+    expect(more, findsOneWidget);
+    expect(
+      tester.getTopLeft(more).dy,
+      greaterThan(
+        tester.getBottomLeft(find.byKey(const Key('sftp_search_field'))).dy,
+      ),
+    );
   });
 
   testWidgets('compact breadcrumbs stay tight yet touchable and exact', (

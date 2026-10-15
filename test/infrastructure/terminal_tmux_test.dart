@@ -683,7 +683,7 @@ void main() {
       );
     });
 
-    test('重连后 mode 仍为 tmuxUnavailable 时不假装能恢复', () async {
+    test('tmux unavailable fallback reconnects to a new plain shell', () async {
       final bridge = TerminalSessionBridge(
         terminal: _terminal(),
         sshClient: _FakeSshClient(),
@@ -702,8 +702,8 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(bridge.mode, TerminalSessionMode.tmuxUnavailable);
-      expect(bridge.state, TerminalConnectionState.disconnected);
-      expect(bridge.plainSessionInterrupted, isTrue);
+      expect(bridge.state, TerminalConnectionState.connected);
+      expect(bridge.plainSessionInterrupted, isFalse);
       expect(bridge.awaitingTmuxDecision, isTrue);
     });
 
@@ -1278,26 +1278,53 @@ void main() {
       expect(bridge.lastError, isA<SSHConnectionException>());
     });
 
-    test('plain 会话断线重连报告中断且不尝试 PTY 恢复', () async {
+    test(
+      'plain reconnect opens a new shell and preserves old output',
+      () async {
+        final terminal = _terminal();
+        final bridge = TerminalSessionBridge(
+          terminal: terminal,
+          sshClient: _FakeSshClient(),
+          serverName: 'prod',
+          serverId: 'srv-1',
+          terminalId: 'tab-1',
+          preferTmux: false,
+        );
+        addTearDown(bridge.dispose);
+        await bridge.start();
+        expect(bridge.mode, TerminalSessionMode.plain);
+        expect(bridge.state, TerminalConnectionState.connected);
+
+        terminal.write('marker-before-drop\r\n');
+        final nextClient = _FakeSshClient();
+        await bridge.rebind(nextClient);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bridge.plainSessionInterrupted, isFalse);
+        expect(bridge.state, TerminalConnectionState.connected);
+        expect(bridge.lastError, isNull);
+        expect(terminal.buffer.getText(), contains('marker-before-drop'));
+        final session = nextClient.lastSession;
+        expect(session, isNotNull);
+        await bridge.rebind(nextClient);
+        expect(nextClient.lastSession, same(session));
+      },
+    );
+
+    test('plain CLI launch is not replayed on reconnect', () async {
       final bridge = TerminalSessionBridge(
         terminal: _terminal(),
         sshClient: _FakeSshClient(),
-        serverName: 'prod',
-        serverId: 'srv-1',
-        terminalId: 'tab-1',
-        preferTmux: false,
+        serverName: 'fixture',
+        launchCommand: 'codex',
       );
       addTearDown(bridge.dispose);
       await bridge.start();
-      expect(bridge.mode, TerminalSessionMode.plain);
-      expect(bridge.state, TerminalConnectionState.connected);
-
-      await bridge.rebind(_FakeSshClient());
-      await Future<void>.delayed(Duration.zero);
-
+      final nextClient = _FakeSshClient();
+      await bridge.rebind(nextClient);
+      expect(nextClient.lastSession, isNull);
       expect(bridge.plainSessionInterrupted, isTrue);
       expect(bridge.state, TerminalConnectionState.disconnected);
-      expect(bridge.lastError, isA<TerminalSessionInterruptedException>());
     });
   });
 }

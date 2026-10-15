@@ -7,6 +7,7 @@ import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/app_update_provider.dart';
 import '../../../data/models/app_update.dart';
 import '../../../widgets/valhalla_app_icon.dart';
+import '../../../core/utils/app_runtime_identity.dart';
 import 'app_update_dialog.dart';
 import 'privacy_policy_view.dart';
 import 'license_view.dart';
@@ -78,6 +79,46 @@ class _AboutPrivacyCardState extends ConsumerState<AboutPrivacyCard> {
                 );
               },
             ),
+          ),
+          const Divider(height: 1),
+          FutureBuilder<PackageInfo>(
+            future: _packageInfo,
+            builder: (context, snapshot) {
+              final info = snapshot.data;
+              if (info == null) return const SizedBox.shrink();
+              final identity = appRuntimeIdentity(info);
+              return ExpansionTile(
+                key: const Key('settings_install_details_tile'),
+                leading: const Icon(Icons.info_outline),
+                title: Text(
+                  identity['applicationId'] ?? info.packageName,
+                  style: context.textTheme.bodyMedium,
+                ),
+                subtitle: Text(
+                  '${identity['platform']} · ${identity['architecture']} · v${identity['version']} (${identity['buildNumber']})',
+                  style: context.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                children: [
+                  ListTile(
+                    dense: true,
+                    title: Text(context.l10n.installAppId),
+                    subtitle: SelectableText(identity['applicationId'] ?? ''),
+                  ),
+                  ListTile(
+                    dense: true,
+                    title: Text(context.l10n.installArchitecture),
+                    subtitle: SelectableText(identity['architecture'] ?? ''),
+                  ),
+                  ListTile(
+                    dense: true,
+                    title: Text(context.l10n.installPlatform),
+                    subtitle: SelectableText(identity['platform'] ?? ''),
+                  ),
+                ],
+              );
+            },
           ),
           const Divider(height: 1),
           FutureBuilder<PackageInfo>(
@@ -186,7 +227,8 @@ class _AboutPrivacyCardState extends ConsumerState<AboutPrivacyCard> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 );
-              } else if (updateState.updateAvailable && updateState.error == null) {
+              } else if (updateState.updateAvailable &&
+                  updateState.error == null) {
                 trailingWidget = FilledButton.tonal(
                   key: const Key('settings_view_update_button'),
                   onPressed: () => AppUpdateDialog.show(context),
@@ -211,9 +253,10 @@ class _AboutPrivacyCardState extends ConsumerState<AboutPrivacyCard> {
                 trailing: trailingWidget,
                 onTap: updateState.checking
                     ? null
-                    : (updateState.updateAvailable || updateState.release != null
-                        ? () => AppUpdateDialog.show(context)
-                        : () => _handleManualCheck(context)),
+                    : (updateState.updateAvailable ||
+                              updateState.release != null
+                          ? () => AppUpdateDialog.show(context)
+                          : () => _handleManualCheck(context)),
               );
             },
           ),

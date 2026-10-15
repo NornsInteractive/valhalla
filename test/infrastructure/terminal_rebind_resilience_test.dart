@@ -13,6 +13,7 @@ import 'package:xterm/xterm.dart';
 /// 最小可用的假 SSH 客户端：plain 模式下 bridge 只需要 `shell()`。
 class _FakeSshClient implements SSHClient {
   _FakeSshSession? lastSession;
+  Completer<void>? allocationGate;
 
   @override
   bool get isClosed => false;
@@ -23,6 +24,7 @@ class _FakeSshClient implements SSHClient {
     SSHX11Config? x11,
     Map<String, String>? environment,
   }) async {
+    await allocationGate?.future;
     final session = _FakeSshSession();
     lastSession = session;
     return session;
@@ -37,6 +39,7 @@ class _FakeSshSession implements SSHSession {
   bool destroyed = false;
   bool failResize = false;
   int resizeCalls = 0;
+  (int, int)? lastResize;
   final input = _RecordingSink();
   final _stdout = StreamController<Uint8List>();
   final _stderr = StreamController<Uint8List>();
@@ -67,6 +70,7 @@ class _FakeSshSession implements SSHSession {
   @override
   void resizeTerminal(int width, int height, [int pw = 0, int ph = 0]) {
     resizeCalls++;
+    lastResize = (width, height);
     if (failResize) throw StateError('closed resize');
   }
 
@@ -125,6 +129,26 @@ class _ThrowingBridge extends TerminalSessionBridge {
 
 void main() {
   test(
+    'layout completed during PTY allocation is sent without opening IME',
+    () async {
+      final terminal = Terminal();
+      final client = _FakeSshClient()..allocationGate = Completer<void>();
+      final bridge = TerminalSessionBridge(
+        terminal: terminal,
+        sshClient: client,
+        serverName: 'fixture',
+      );
+      addTearDown(bridge.dispose);
+      final starting = bridge.start();
+      terminal.resize(42, 30);
+      client.allocationGate!.complete();
+      await starting;
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(client.lastSession!.lastResize, (42, 30));
+      expect(client.lastSession!.input.writes, 0);
+    },
+  );
+  test(
     'closed input is handled and marks only current session as failed',
     () async {
       final terminal = Terminal();
@@ -158,32 +182,35 @@ void main() {
     expect(bridge.state, TerminalConnectionState.error);
   });
 
-  test(
-    'captured input and resize callbacks cannot restart an interrupted plain shell',
-    () async {
-      final terminal = Terminal();
-      final client = _FakeSshClient();
-      final bridge = TerminalSessionBridge(
-        terminal: terminal,
-        sshClient: client,
-        serverName: 'fixture',
-      );
-      addTearDown(bridge.dispose);
-      await bridge.start();
-      final oldInput = terminal.onOutput!;
-      final oldResize = terminal.onResize!;
-      final oldSession = client.lastSession!;
-      final replacement = _FakeSshClient();
-      await bridge.rebind(replacement);
-      oldInput('stale');
-      oldResize(120, 40, 0, 0);
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      expect(oldSession.input.writes, 0);
-      expect(replacement.lastSession, isNull);
-      expect(bridge.state, TerminalConnectionState.disconnected);
-      expect(bridge.plainSessionInterrupted, isTrue);
-    },
-  );
+  test('stale callbacks cannot affect replacement plain shell', () async {
+    final terminal = Terminal();
+    final client = _FakeSshClient();
+    final bridge = TerminalSessionBridge(
+      terminal: terminal,
+      sshClient: client,
+      serverName: 'fixture',
+    );
+    addTearDown(bridge.dispose);
+    await bridge.start();
+    final oldInput = terminal.onOutput!;
+    final oldResize = terminal.onResize!;
+    final oldSession = client.lastSession!;
+    final replacement = _FakeSshClient();
+    await bridge.rebind(replacement);
+    final replacementResizeCalls = replacement.lastSession!.resizeCalls;
+    oldInput('stale');
+    oldResize(120, 40, 0, 0);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    expect(replacement.lastSession, isNotNull);
+    expect(bridge.state, TerminalConnectionState.connected);
+    expect(bridge.plainSessionInterrupted, isFalse);
+    expect(oldSession.input.writes, 0);
+    expect(replacement.lastSession!.resizeCalls, replacementResizeCalls);
+    expect(replacement.lastSession!.input.writes, 0);
+    terminal.onOutput!('new');
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    expect(replacement.lastSession!.input.writes, 1);
+  });
 
   test('第一个标签页 rebind 抛异常，后续标签页仍然被重挂', () async {
     final badTerminal = Terminal(maxLines: 100);

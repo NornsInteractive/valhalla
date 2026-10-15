@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
+import '../../data/models/remote_file_toolbar_action.dart';
 import '../localization/app_locales.dart';
 import 'storage_providers.dart';
 
 export '../../app/theme.dart' show AppThemeMode, AppAccentColor;
+export '../../data/models/remote_file_toolbar_action.dart';
 
 /// App 中可导航的稳定页面标识。持久化使用 [name]，不要存位置下标。
 enum AppSection {
@@ -101,6 +103,7 @@ class SettingsState {
   final Locale locale;
   final List<AppSection> bottomNavigationSections;
   final List<AppSection> dashboardQuickSections;
+  final List<RemoteFileToolbarAction> remoteFileToolbarActions;
   final AppSection startupSection;
   final int cliHistoryPageSize;
   final Set<ExperimentalFeature> enabledExperimentalFeatures;
@@ -114,6 +117,7 @@ class SettingsState {
     this.locale = const Locale('system'),
     this.bottomNavigationSections = defaultBottomNavigationSections,
     this.dashboardQuickSections = defaultDashboardQuickSections,
+    this.remoteFileToolbarActions = defaultRemoteFileToolbarActions,
     this.startupSection = AppSection.dashboard,
     this.cliHistoryPageSize = defaultCliHistoryPageSize,
     this.enabledExperimentalFeatures = const {},
@@ -128,6 +132,7 @@ class SettingsState {
     Locale? locale,
     List<AppSection>? bottomNavigationSections,
     List<AppSection>? dashboardQuickSections,
+    List<RemoteFileToolbarAction>? remoteFileToolbarActions,
     AppSection? startupSection,
     int? cliHistoryPageSize,
     Set<ExperimentalFeature>? enabledExperimentalFeatures,
@@ -143,6 +148,8 @@ class SettingsState {
           bottomNavigationSections ?? this.bottomNavigationSections,
       dashboardQuickSections:
           dashboardQuickSections ?? this.dashboardQuickSections,
+      remoteFileToolbarActions:
+          remoteFileToolbarActions ?? this.remoteFileToolbarActions,
       startupSection: startupSection ?? this.startupSection,
       cliHistoryPageSize: cliHistoryPageSize ?? this.cliHistoryPageSize,
       enabledExperimentalFeatures:
@@ -240,6 +247,9 @@ class SettingsNotifier extends Notifier<SettingsState> {
       ),
       dashboardQuickSections: dashboardQuickSectionsFromStorage(
         storage.getDashboardQuickSections(),
+      ),
+      remoteFileToolbarActions: remoteFileToolbarActionsFromStorage(
+        storage.getRemoteFileToolbarActions(),
       ),
       startupSection:
           appSectionFromStorage(storage.getStartupSection() ?? '') ??
@@ -373,6 +383,18 @@ class SettingsNotifier extends Notifier<SettingsState> {
     await ref.read(localStorageServiceProvider).setStartupSection(section.name);
   }
 
+  Future<void> setRemoteFileToolbarActions(
+    Iterable<RemoteFileToolbarAction> actions,
+  ) async {
+    final next = remoteFileToolbarActionsFromStorage(
+      actions.map((action) => action.name).toList(),
+    );
+    await ref
+        .read(localStorageServiceProvider)
+        .setRemoteFileToolbarActions(next.map((action) => action.name).toList());
+    state = state.copyWith(remoteFileToolbarActions: next);
+  }
+
   Future<void> setExperimentalFeature(
     ExperimentalFeature feature,
     bool enabled,
@@ -405,8 +427,11 @@ class SettingsNotifier extends Notifier<SettingsState> {
 
   Future<void> resetDefaults() async {
     const defaults = SettingsState();
-    state = defaults;
     final storage = ref.read(localStorageServiceProvider);
+    await storage.setRemoteFileToolbarActions(
+      defaults.remoteFileToolbarActions.map((action) => action.name).toList(),
+    );
+    state = defaults;
     await storage.setThemeMode(defaults.themeMode.name);
     await storage.setAccentColor(defaults.accentColor.name);
     for (final mode in [

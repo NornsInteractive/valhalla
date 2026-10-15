@@ -1,7 +1,7 @@
 import 'chat_run_settings.dart';
 
 enum AgentType {
-  claudeCode('Claude CodeX', 'Anthropic ACP Protocol · High Reasoning'),
+  claudeCode('Claude Code', 'Anthropic ACP Protocol · High Reasoning'),
   codex('OpenAI Codex', 'OpenAI ACP Agent · Coding & Scripting'),
   openCode('OpenCode ACP', 'Open-Source Native ACP Agent · Multi-model');
 
@@ -354,6 +354,9 @@ class ChatMessage {
   final String? remoteMessageId;
   final List<ChatAttachment> attachments;
   final ChatTurnStatus status;
+
+  /// Sanitized diagnostics, kept outside text sent back as conversation context.
+  final String? failureCode;
   final String? agentId;
   final String id;
   final MessageRole role;
@@ -369,6 +372,7 @@ class ChatMessage {
     this.remoteMessageId,
     this.attachments = const [],
     this.status = ChatTurnStatus.completed,
+    this.failureCode,
     this.agentId,
     required this.id,
     required this.role,
@@ -385,6 +389,8 @@ class ChatMessage {
     String? remoteMessageId,
     List<ChatAttachment>? attachments,
     ChatTurnStatus? status,
+    String? failureCode,
+    bool clearFailure = false,
     String? agentId,
     String? id,
     MessageRole? role,
@@ -400,6 +406,7 @@ class ChatMessage {
       remoteMessageId: remoteMessageId ?? this.remoteMessageId,
       attachments: attachments ?? this.attachments,
       status: status ?? this.status,
+      failureCode: clearFailure ? null : failureCode ?? this.failureCode,
       agentId: agentId ?? this.agentId,
       id: id ?? this.id,
       role: role ?? this.role,
@@ -417,6 +424,7 @@ class ChatMessage {
     'remoteMessageId': remoteMessageId,
     'attachments': attachments.map((a) => a.toJson()).toList(),
     'status': status.name,
+    if (failureCode != null) 'failureCode': failureCode,
     'agentId': agentId,
     'id': id,
     'role': role.name,
@@ -447,6 +455,9 @@ class ChatMessage {
             .where((s) => s.name == json['status'])
             .firstOrNull ??
         ChatTurnStatus.completed,
+    failureCode: json['failureCode'] is String
+        ? json['failureCode'] as String
+        : null,
     agentId: json['agentId'] as String?,
     id: json['id'] as String,
     role: MessageRole.values.firstWhere(

@@ -94,6 +94,7 @@ class _FakeUpdateService implements AppUpdateService {
     AppUpdateArtifact artifact,
     String destination, {
     required void Function(int) onProgress,
+    void Function(AppUpdateDownloadPhase)? onPhase,
   }) async {
     // Acknowledge the entry (a pre-registered request if the test made one) so
     // the caller can assert this writer exists without polling the loop.
@@ -254,7 +255,7 @@ void main() {
 
     PackageInfo.setMockInitialValues(
       appName: 'Valhalla',
-      packageName: 'com.antigravity.valhalla.valhalla',
+      packageName: 'com.norns.valhalla',
       version: '1.0.0',
       buildNumber: '1',
       buildSignature: '',
@@ -266,7 +267,7 @@ void main() {
       _packageInfoChannel,
       value: {
         'appName': 'Valhalla',
-        'packageName': 'com.antigravity.valhalla.valhalla',
+        'packageName': 'com.norns.valhalla',
         'version': '1.0.0',
         'buildNumber': '1',
         'buildSignature': '',
@@ -444,7 +445,9 @@ void main() {
       final first = notifier.openDownloaded();
       final second = notifier.openDownloaded();
       expect(second, same(first));
+      expect(currentState().opening, isTrue);
       await first;
+      expect(currentState().opening, isFalse);
       if (Platform.isWindows) {
         expect(
           methodCalls.where((call) => call.method == 'revealFile'),

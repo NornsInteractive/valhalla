@@ -8,7 +8,7 @@
 PRODUCT_NAME = Valhalla
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.antigravity.valhalla.valhalla
+PRODUCT_BUNDLE_IDENTIFIER = com.norns.valhalla
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.antigravity.valhalla. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Norns Interactive. All rights reserved.

@@ -18,6 +18,7 @@ import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/services/configuration_backup_service.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
+import 'package:valhalla/infrastructure/terminal/terminal_session_bridge.dart';
 
 const _server = ServerProfile(
   id: 'fixture',
@@ -122,6 +123,7 @@ class _Client implements SSHClient {
   bool closed = false;
   bool failQuery = false;
   bool failAttach = false;
+  bool failKill = false;
   Completer<void>? checkGate;
   String? gatedName;
   @override
@@ -158,6 +160,14 @@ class _Client implements SSHClient {
         return _Session.result(
           remoteNames.map((name) => '$name\t1730000000\t0\n').join(),
         );
+      }
+      if (command.contains('kill-session')) {
+        final name = RegExp("-t '=([^']+)'").firstMatch(command)!.group(1)!;
+        if (failKill) {
+          return _Session.result('', error: 'fixture kill refused', code: 1);
+        }
+        remoteNames.remove(name);
+        return _Session.result('');
       }
       throw StateError('Unexpected query: $command');
     }
@@ -277,12 +287,12 @@ class _Harness {
   }
 
   static Future<_Harness> create({
-    bool tmux = true,
+    bool? tmux = true,
     _Storage? storage,
     _Client? client,
   }) async {
     storage ??= _Storage(await SharedPreferences.getInstance());
-    await storage.setUseTmuxForTerminal(tmux);
+    if (tmux != null) await storage.setUseTmuxForTerminal(tmux);
     client ??= _Client();
     final manager = _Manager({'fixture': client, 'second': _Client()});
     final container = ProviderContainer(
@@ -304,10 +314,274 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test(
-    'a replacement arriving during live rebind is applied after the stale attempt',
+    'absent preference opens plain shells with no recoverable history',
+    () async {
+      final h = await _Harness.create(tmux: null);
+      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
+      await h.drain();
+      expect(h.container.read(terminalSettingsProvider).useTmux, isFalse);
+      expect(h.state.tabs, hasLength(2));
+      expect(
+        h.state.tabs.map((tab) => tab.bridge.mode),
+        everyElement(TerminalSessionMode.plain),
+      );
+      expect(h.state.history, isEmpty);
+      expect(h.client.commands, ['SHELL', 'SHELL']);
+      expect(h.client.remoteNames, isEmpty);
+      final firstSession = h.client.ptys.first;
+      h.notifier.closeTab(0);
+      expect(firstSession.closed, isTrue);
+    },
+  );
+
+  test(
+    'automatic entry stays plain while manual creation honors tmux preference',
     () async {
       final h = await _Harness.create();
       await h.notifier.ensureInitialized();
+      await h.drain();
+      final first = h.state.tabs.single;
+      first.terminal.write('keep automatic output');
+      expect(first.bridge.mode, TerminalSessionMode.plain);
+      expect(h.client.commands, ['SHELL']);
+      expect(h.client.remoteNames, isEmpty);
+      expect(h.state.history, isEmpty);
+
+      await h.notifier.ensureInitialized();
+      expect(h.state.tabs.single, same(first));
+      expect(h.client.commands, ['SHELL']);
+
+      await h.notifier.addNewTab();
+      await h.drain();
+      final manual = h.state.tabs.last;
+      expect(manual.bridge.mode, TerminalSessionMode.tmux);
+      expect(h.state.history.single.id, manual.id);
+      expect(h.state.tabs.first, same(first));
+      expect(
+        first.terminal.buffer.getText(),
+        contains('keep automatic output'),
+      );
+
+      h.notifier.closeTab(1);
+      await h.notifier.ensureInitialized();
+      await h.drain();
+      expect(h.state.tabs.single, same(first));
+      expect(h.state.tabs.single.bridge.mode, TerminalSessionMode.plain);
+      expect(h.state.history.single.id, manual.id);
+      expect(h.client.remoteNames, {manual.bridge.activeTmuxSessionName});
+      expect(h.client.commands.where((cmd) => cmd == 'SHELL'), hasLength(1));
+    },
+  );
+
+  test(
+    'automatic plain terminal stays plain on transport replacement with tmux enabled',
+    () async {
+      final h = await _Harness.create();
+      await h.notifier.ensureInitialized();
+      final tab = h.state.activeTab!;
+      tab.terminal.write('keep output across reconnect');
+      final connection =
+          h.container.read(serverConnectionProvider.notifier) as _Connection;
+      connection.set(false, _server.id);
+      final replacement = _Client();
+      h.manager.clients[_server.id] = replacement;
+      connection.set(true, _server.id);
+      await h.drain();
+      expect(h.state.activeTab!.id, tab.id);
+      expect(h.state.activeTab!.terminal, same(tab.terminal));
+      expect(
+        tab.terminal.buffer.getText(),
+        contains('keep output across reconnect'),
+      );
+      expect(h.state.activeTab!.bridge.mode, TerminalSessionMode.plain);
+      expect(
+        h.state.activeTab!.bridge.state,
+        TerminalConnectionState.connected,
+      );
+      expect(replacement.commands, ['SHELL']);
+      expect(replacement.remoteNames, isEmpty);
+      expect(h.state.history, isEmpty);
+    },
+  );
+
+  test(
+    'new-terminal mode changes only subsequent tabs without losing output',
+    () async {
+      final h = await _Harness.create(tmux: null);
+      await h.notifier.ensureInitialized();
+      final first = h.state.tabs.single;
+      first.terminal.write('keep this plain terminal');
+      await h.container
+          .read(terminalSettingsProvider.notifier)
+          .setUseTmux(true);
+      await h.notifier.addNewTab();
+      await h.drain();
+      final tmux = h.state.tabs.last;
+      expect(tmux.bridge.mode, TerminalSessionMode.tmux);
+      expect(h.state.history.single.id, tmux.id);
+      expect(h.state.tabs.first, same(first));
+      expect(
+        first.terminal.buffer.getText(),
+        contains('keep this plain terminal'),
+      );
+      await h.container
+          .read(terminalSettingsProvider.notifier)
+          .setUseTmux(false);
+      await h.notifier.addNewTab();
+      await h.drain();
+      expect(h.state.tabs.last.bridge.mode, TerminalSessionMode.plain);
+      expect(h.state.history.single.id, tmux.id);
+      expect(h.client.remoteNames, {tmux.bridge.activeTmuxSessionName});
+    },
+  );
+
+  test(
+    'local history deletion preserves running shell, clears default and suppresses rediscovery',
+    () async {
+      final h = await _Harness.create();
+      await h.notifier.addNewTab();
+      await h.drain();
+      final record = h.state.history.single;
+      await h.notifier.setDefaultHistory(record.id);
+      final commands = h.client.commands.length;
+      await h.notifier.deleteHistory(
+        record.id,
+        expectedTargetKey: record.targetKey,
+      );
+      expect(h.client.commands.length, commands);
+      expect(h.state.history, isEmpty);
+      expect(h.state.defaultHistoryId, isNull);
+      expect(h.state.tabs, hasLength(1));
+      expect(h.client.remoteNames, contains(record.remoteSessionName));
+      await h.notifier.refreshHistory();
+      expect(h.state.history, isEmpty);
+      final stored = h.storage.getTerminalHistory(_server.id, record.targetKey);
+      expect(stored.forgottenSessionNames, contains(record.remoteSessionName));
+    },
+  );
+
+  test(
+    'confirmed termination targets only the exact dedicated-socket session',
+    () async {
+      final h = await _Harness.create();
+      await h.notifier.addNewTab();
+      await h.drain();
+      final record = h.state.history.single;
+      h.client.remoteNames.add('unrelated');
+      await h.notifier.deleteHistory(
+        record.id,
+        terminateRemote: true,
+        expectedTargetKey: record.targetKey,
+      );
+      final kill = h.client.commands.singleWhere(
+        (c) => c.contains('kill-session'),
+      );
+      expect(kill, contains('-L valhalla'));
+      expect(kill, contains("-t '=${record.remoteSessionName}'"));
+      expect(h.client.remoteNames, {'unrelated'});
+      expect(h.state.history, isEmpty);
+      expect(h.state.tabs, isEmpty);
+    },
+  );
+
+  test('failed termination preserves history and live tab', () async {
+    final h = await _Harness.create();
+    await h.notifier.addNewTab();
+    await h.drain();
+    final record = h.state.history.single;
+    h.client.failKill = true;
+    await expectLater(
+      h.notifier.deleteHistory(
+        record.id,
+        terminateRemote: true,
+        expectedTargetKey: record.targetKey,
+      ),
+      throwsA(anything),
+    );
+    expect(h.state.history.single.id, record.id);
+    expect(h.state.tabs, hasLength(1));
+    expect(h.client.remoteNames, contains(record.remoteSessionName));
+  });
+
+  test('stale dialog target cannot delete or terminate history', () async {
+    final h = await _Harness.create();
+    await h.notifier.addNewTab();
+    await h.drain();
+    final record = h.state.history.single;
+    final commands = h.client.commands.length;
+    await expectLater(
+      h.notifier.deleteHistory(
+        record.id,
+        terminateRemote: true,
+        expectedTargetKey: 'not-current',
+      ),
+      throwsA(isA<StateError>()),
+    );
+    expect(h.state.history.single.id, record.id);
+    expect(h.client.commands.length, commands);
+  });
+
+  test('server switch during existence query aborts before kill', () async {
+    final h = await _Harness.create();
+    await h.notifier.addNewTab();
+    await h.drain();
+    final record = h.state.history.single;
+    h.client.checkGate = Completer<void>();
+    final deleting = h.notifier.deleteHistory(
+      record.id,
+      terminateRemote: true,
+      expectedTargetKey: record.targetKey,
+    );
+    final failure = expectLater(deleting, throwsA(isA<StateError>()));
+    await h.drain();
+    (h.container.read(activeServerProvider.notifier) as _Active).select(
+      _second,
+    );
+    h.container.read(terminalProvider);
+    h.client.checkGate!.complete();
+    await failure;
+    expect(h.client.commands.where((c) => c.contains('kill-session')), isEmpty);
+    expect(
+      h.storage
+          .getTerminalHistory(_server.id, record.targetKey)
+          .records
+          .single
+          .id,
+      record.id,
+    );
+  });
+
+  test(
+    'failed local save does not hide history or suppress future refresh',
+    () async {
+      final h = await _Harness.create();
+      await h.notifier.addNewTab();
+      await h.drain();
+      final record = h.state.history.single;
+      h.storage.failSave = true;
+      await expectLater(
+        h.notifier.deleteHistory(
+          record.id,
+          expectedTargetKey: record.targetKey,
+        ),
+        throwsA(anything),
+      );
+      expect(h.state.history.single.id, record.id);
+      expect(
+        h.storage
+            .getTerminalHistory(_server.id, record.targetKey)
+            .forgottenSessionNames,
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'a replacement arriving during live rebind is applied after the stale attempt',
+    () async {
+      final h = await _Harness.create();
+      await h.notifier.addNewTab();
       await h.drain();
       final record = h.state.history.single;
       final connection =
@@ -341,7 +615,7 @@ void main() {
     'a default ending during its disk write is not retained as the default',
     () async {
       final h = await _Harness.create();
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       await h.drain();
       final record = h.state.history.single;
       h.storage.saveGate = Completer<void>();
@@ -400,7 +674,7 @@ void main() {
     'queued default selection rechecks an ended session before committing',
     () async {
       final h = await _Harness.create();
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       await h.notifier.addNewTab();
       await h.drain();
       final first = h.state.history.first;
@@ -484,7 +758,7 @@ void main() {
     'queued writes to two workspaces keep target-local title and default',
     () async {
       final h = await _Harness.create();
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       await h.drain();
       final a = h.state.history.single;
       h.storage.saveGate = Completer<void>();
@@ -496,7 +770,7 @@ void main() {
       connection.set(false, _server.id);
       active.select(_second);
       connection.set(true, _second.id);
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       final bId = h.state.activeTab!.id;
       h.storage.saveGate!.complete();
       await Future.wait([saveA, defaultA]);
@@ -523,7 +797,7 @@ void main() {
     'retrying an already-open failed history reuses its terminal and exact session',
     () async {
       final first = await _Harness.create();
-      await first.notifier.ensureInitialized();
+      await first.notifier.addNewTab();
       await first.drain();
       final record = first.state.history.single;
       await first.notifier.setDefaultHistory(record.id);
@@ -550,7 +824,7 @@ void main() {
     'replacement transport retries a pending default probe without creating',
     () async {
       final first = await _Harness.create();
-      await first.notifier.ensureInitialized();
+      await first.notifier.addNewTab();
       await first.drain();
       final record = first.state.history.single;
       await first.notifier.setDefaultHistory(record.id);
@@ -600,7 +874,7 @@ void main() {
       await h.drain();
       expect(h.state.tabs.last.id, isNot(old.id));
       expect(h.state.tabs.last.terminal, isNot(same(old.terminal)));
-      expect(h.client.remoteNames, hasLength(3));
+      expect(h.client.remoteNames, hasLength(2));
       expect(
         h.client.remoteNames.every(
           (name) => name.contains(TerminalHistoryRecord.targetFor(_server)),
@@ -611,13 +885,13 @@ void main() {
         h.client.commands.any((command) => command.contains(' -A ')),
         isFalse,
       );
-      expect(h.state.history, hasLength(3));
+      expect(h.state.history, hasLength(2));
     },
   );
 
   test('explicit plus does not attach the selected default', () async {
     final h = await _Harness.create();
-    await h.notifier.ensureInitialized();
+    await h.notifier.addNewTab();
     await h.drain();
     final first = h.state.history.single;
     await h.notifier.setDefaultHistory(first.id);
@@ -633,7 +907,7 @@ void main() {
     'cold entry restores default while tmux creation switch is off',
     () async {
       final first = await _Harness.create();
-      await first.notifier.ensureInitialized();
+      await first.notifier.addNewTab();
       await first.drain();
       final record = first.state.history.single;
       await first.notifier.setDefaultHistory(record.id);
@@ -661,31 +935,41 @@ void main() {
     },
   );
 
-  test('no default means a new terminal after app restart', () async {
-    final first = await _Harness.create();
-    await first.notifier.ensureInitialized();
-    await first.drain();
-    final id = first.state.activeTab!.id;
-    first.container.dispose();
-    final h = await _Harness.create(
-      storage: first.storage,
-      client: first.client,
-    );
-    await h.notifier.ensureInitialized();
-    expect(h.state.activeTab!.id, isNot(id));
-    expect(h.client.remoteNames, hasLength(2));
-  });
+  test(
+    'history without a default still opens plain after app restart',
+    () async {
+      final first = await _Harness.create();
+      await first.notifier.addNewTab();
+      await first.drain();
+      final record = first.state.history.single;
+      first.container.dispose();
+      first.client.commands.clear();
+      final h = await _Harness.create(
+        storage: first.storage,
+        client: first.client,
+      );
+      await h.notifier.ensureInitialized();
+      await h.drain();
+      expect(h.state.activeTab!.id, isNot(record.id));
+      expect(h.state.activeTab!.bridge.mode, TerminalSessionMode.plain);
+      expect(h.client.remoteNames, {record.remoteSessionName});
+      expect(h.state.history.single.id, record.id);
+      expect(h.state.defaultHistoryId, isNull);
+      expect(h.client.commands, ['SHELL']);
+    },
+  );
 
   test(
     'confirmed missing default is cleared and replaced by a fresh terminal',
     () async {
       final first = await _Harness.create();
-      await first.notifier.ensureInitialized();
+      await first.notifier.addNewTab();
       await first.drain();
       final record = first.state.history.single;
       await first.notifier.setDefaultHistory(record.id);
       first.container.dispose();
       first.client.remoteNames.clear();
+      first.client.commands.clear();
       final h = await _Harness.create(
         storage: first.storage,
         client: first.client,
@@ -696,6 +980,12 @@ void main() {
       expect(h.state.noticeCode, 'TERMINAL_DEFAULT_MISSING');
       expect(h.state.activeTab!.id, isNot(record.id));
       expect(h.state.historyStatuses[record.id], TerminalHistoryStatus.ended);
+      expect(h.state.activeTab!.bridge.mode, TerminalSessionMode.plain);
+      expect(h.client.remoteNames, isEmpty);
+      expect(
+        h.client.commands.any((cmd) => cmd.contains('new-session')),
+        isFalse,
+      );
     },
   );
 
@@ -703,7 +993,7 @@ void main() {
     'failed query preserves default and never silently creates replacement',
     () async {
       final first = await _Harness.create();
-      await first.notifier.ensureInitialized();
+      await first.notifier.addNewTab();
       await first.drain();
       final id = first.state.history.single.id;
       await first.notifier.setDefaultHistory(id);
@@ -725,7 +1015,7 @@ void main() {
     'concurrent restore clicks produce one tab and no new remote process',
     () async {
       final h = await _Harness.create();
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       await h.drain();
       final record = h.state.history.single;
       await h.notifier.addNewTab();
@@ -746,7 +1036,7 @@ void main() {
     () async {
       final h = await _Harness.create();
       h.storage.saveGate = Completer<void>();
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       final id = h.state.activeTab!.id;
       final renaming = h.notifier.renameTab(id, '工作 👩‍💻');
       await h.drain();
@@ -773,7 +1063,7 @@ void main() {
     'explicit plus wins while cold default existence check is pending',
     () async {
       final first = await _Harness.create();
-      await first.notifier.ensureInitialized();
+      await first.notifier.addNewTab();
       await first.drain();
       final record = first.state.history.single;
       await first.notifier.setDefaultHistory(record.id);
@@ -800,7 +1090,7 @@ void main() {
     'confirmed late termination clears default without creating a replacement',
     () async {
       final h = await _Harness.create();
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       await h.drain();
       final record = h.state.history.single;
       await h.notifier.setDefaultHistory(record.id);
@@ -834,7 +1124,7 @@ void main() {
     'endpoint edits isolate history even when the server id is unchanged',
     () async {
       final h = await _Harness.create();
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       await h.drain();
       final record = h.state.history.single;
       await h.notifier.setDefaultHistory(record.id);
@@ -863,7 +1153,7 @@ void main() {
     'storage rejects cross-target records and preserves corrupt data',
     () async {
       final h = await _Harness.create();
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       await h.drain();
       final record = h.state.history.single;
       await expectLater(
@@ -886,13 +1176,17 @@ void main() {
       await restarted.notifier.ensureInitialized();
       await restarted.drain();
       expect(prefs.getString(key), '{broken');
+      expect(restarted.state.errorCode, 'TERMINAL_HISTORY_LOAD_FAILED');
+      await restarted.notifier.addNewTab();
+      await restarted.drain();
+      expect(prefs.getString(key), '{broken');
       expect(restarted.state.errorCode, 'TERMINAL_HISTORY_SAVE_FAILED');
     },
   );
 
   test('failed rename and default writes leave old values intact', () async {
     final h = await _Harness.create();
-    await h.notifier.ensureInitialized();
+    await h.notifier.addNewTab();
     await h.drain();
     final record = h.state.history.single;
     h.storage.failSave = true;
@@ -926,7 +1220,7 @@ void main() {
     'workspace switching retains terminal buffers and isolates target history',
     () async {
       final h = await _Harness.create();
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       await h.drain();
       final original = h.state.activeTab!;
       original.terminal.write('keep output');
@@ -936,7 +1230,7 @@ void main() {
       connection.set(false, _server.id);
       active.select(_second);
       connection.set(true, _second.id);
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       expect(h.state.tabs.any((tab) => tab.id == original.id), isFalse);
       connection.set(false, _second.id);
       active.select(_server);
@@ -947,6 +1241,7 @@ void main() {
         h.state.activeTab!.terminal.buffer.getText(),
         contains('keep output'),
       );
+      expect(h.state.history, isNotEmpty);
       expect(
         h.state.history.every((record) => record.serverId == _server.id),
         isTrue,
@@ -984,7 +1279,7 @@ void main() {
     'metadata does not persist screen, commands or enter configuration export',
     () async {
       final h = await _Harness.create();
-      await h.notifier.ensureInitialized();
+      await h.notifier.addNewTab();
       h.state.activeTab!.terminal.write('secret output');
       h.notifier.sendCommand('private-command');
       await h.drain();
@@ -994,6 +1289,8 @@ void main() {
           .where((key) => key.startsWith('valhalla_terminal_history'))
           .map(prefs.getString)
           .join();
+      expect(h.state.history, isNotEmpty);
+      expect(saved, isNotEmpty);
       expect(saved, isNot(contains('secret output')));
       expect(saved, isNot(contains('private-command')));
       expect(

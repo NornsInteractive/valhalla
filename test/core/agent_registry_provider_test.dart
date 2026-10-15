@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/errors/app_exceptions.dart';
 import 'package:valhalla/core/providers/agent_registry_provider.dart';
+import 'package:valhalla/core/providers/agent_update_lock_provider.dart';
 import 'package:valhalla/core/providers/infrastructure_providers.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/storage_providers.dart';
@@ -26,6 +28,7 @@ class _FakeEnvService implements AgentEnvironmentService {
   final List<String> inspectedAgentIds = [];
   final List<String> installedAgentIds = [];
   final List<String> loggedInAgentIds = [];
+  Future<AgentEnvironmentStatus>? pendingInspection;
 
   /// 记录 `runInstallCommand` 实际收到的命令，用于断言命令选择逻辑。
   final List<String> executedInstallCommands = [];
@@ -45,6 +48,8 @@ class _FakeEnvService implements AgentEnvironmentService {
     bool requireAcp = true,
   }) async {
     inspectedAgentIds.add(profile.id);
+    final pending = pendingInspection;
+    if (pending != null) return await pending;
     return _results[profile.id] ?? _ready();
   }
 
@@ -209,6 +214,154 @@ ServerProfile _server(String id) =>
 
 void main() {
   group('AgentRegistryNotifier', () {
+    test(
+      'late probe failure preserves interactive login lease and token',
+      () async {
+        final env = _FakeEnvService();
+        final container = await _container(
+          prefs: {
+            'valhalla_servers_v1': _serversPrefs([_server('s1')]),
+            'valhalla_active_server_id_v1': 's1',
+            'valhalla_agents_v1': _agentsPrefs([_agent('a1', 's1')]),
+          },
+          envService: env,
+        );
+        addTearDown(container.dispose);
+        final notifier = container.read(agentRegistryProvider.notifier);
+        await notifier.refresh();
+        final gate = Completer<AgentEnvironmentStatus>();
+        env.pendingInspection = gate.future;
+        final pending = notifier.refreshAgent('a1');
+        final first = notifier.beginInteractiveLogin('a1');
+        expect(first, isNotNull);
+        gate.completeError(StateError('fixture probe failure'));
+        await pending;
+        expect(
+          container.read(agentRegistryProvider).findRuntime('a1')!.isLoggingIn,
+          isTrue,
+        );
+        expect(notifier.beginInteractiveLogin('a1'), isNull);
+        notifier.endInteractiveLogin('a1', first!);
+        final second = notifier.beginInteractiveLogin('a1');
+        expect(second, isNotNull);
+        notifier.endInteractiveLogin('a1', first);
+        expect(
+          container.read(agentRegistryProvider).findRuntime('a1')!.isLoggingIn,
+          isTrue,
+        );
+        notifier.endInteractiveLogin('a1', second!);
+        expect(
+          container.read(agentRegistryProvider).findRuntime('a1')!.isLoggingIn,
+          isFalse,
+        );
+        expect(env.loggedInAgentIds, isEmpty);
+      },
+    );
+
+    test(
+      'update lease rejects login install edit and delete without mutation',
+      () async {
+        final profile = _agent('a1', 's1', install: 'fixture-install');
+        final env = _FakeEnvService(
+          results: {'a1': _kind(AgentEnvironmentStatusKind.cliMissing)},
+        );
+        final container = await _container(
+          prefs: {
+            'valhalla_servers_v1': _serversPrefs([_server('s1')]),
+            'valhalla_active_server_id_v1': 's1',
+            'valhalla_agents_v1': _agentsPrefs([profile]),
+          },
+          envService: env,
+        );
+        addTearDown(container.dispose);
+        final notifier = container.read(agentRegistryProvider.notifier);
+        await notifier.refresh();
+        final locks = container.read(agentUpdateLockProvider.notifier);
+        expect(locks.acquire(profile), isTrue);
+        expect(notifier.beginInteractiveLogin('a1'), isNull);
+        await notifier.installForCurrentStatus('a1');
+        final locked = isA<ValidationException>().having(
+          (error) => error.message,
+          'message',
+          'AGENT_UPDATE_IN_PROGRESS',
+        );
+        await expectLater(
+          notifier.updateAgent(profile.copyWith(name: 'changed')),
+          throwsA(locked),
+        );
+        await expectLater(notifier.deleteAgent('a1'), throwsA(locked));
+        expect(
+          container.read(agentRepositoryProvider).find('s1', 'a1')!.name,
+          'a1',
+        );
+        expect(env.installedAgentIds, isEmpty);
+        expect(env.loggedInAgentIds, isEmpty);
+        locks.release(profile);
+        final login = notifier.beginInteractiveLogin('a1');
+        expect(login, isNotNull);
+        notifier.endInteractiveLogin('a1', login!);
+      },
+    );
+
+    test(
+      'verified Claude migration requires lease and changes only adapter fields',
+      () async {
+        final profile = _agent('a1', 's1').copyWith(
+          cliCommand: 'claude',
+          acpCommand: 'claude-code-acp',
+          acpInstallCommand: 'npm install -g @zed-industries/claude-code-acp',
+        );
+        final container = await _container(
+          prefs: {
+            'valhalla_servers_v1': _serversPrefs([_server('s1')]),
+            'valhalla_active_server_id_v1': 's1',
+            'valhalla_agents_v1': _agentsPrefs([profile]),
+          },
+          envService: _FakeEnvService(),
+        );
+        addTearDown(container.dispose);
+        final notifier = container.read(agentRegistryProvider.notifier);
+        final original = container
+            .read(agentRegistryProvider)
+            .findRuntime('a1')!
+            .profile;
+        final migrated = original.copyWith(
+          acpCommand: 'claude-agent-acp',
+          acpInstallCommand:
+              'npm install -g @agentclientprotocol/claude-agent-acp',
+        );
+        final rejected = isA<ValidationException>().having(
+          (error) => error.message,
+          'message',
+          'AGENT_UPDATE_TARGET_CHANGED',
+        );
+        await expectLater(
+          notifier.commitVerifiedAdapterMigration(original, migrated),
+          throwsA(rejected),
+        );
+        final locks = container.read(agentUpdateLockProvider.notifier);
+        locks.acquire(original);
+        await expectLater(
+          notifier.commitVerifiedAdapterMigration(
+            original,
+            migrated.copyWith(name: 'changed'),
+          ),
+          throwsA(rejected),
+        );
+        await notifier.commitVerifiedAdapterMigration(original, migrated);
+        locks.release(original);
+        final saved = container.read(agentRepositoryProvider).find('s1', 'a1')!;
+        expect(saved.acpCommand, 'claude-agent-acp');
+        expect(
+          saved.acpInstallCommand,
+          'npm install -g @agentclientprotocol/claude-agent-acp',
+        );
+        expect(saved.name, original.name);
+        expect(saved.cliCommand, original.cliCommand);
+        expect(saved.id, original.id);
+      },
+    );
+
     test('isolates agents by server', () async {
       final container = await _container(
         prefs: {

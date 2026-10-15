@@ -130,7 +130,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get switchAgent => 'エージェント切り替え';
 
   @override
-  String get agentClaudeCode => 'Claude CodeX';
+  String get agentClaudeCode => 'Claude Code';
 
   @override
   String get agentCodex => 'OpenAI Codex';
@@ -410,7 +410,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsResetDefault => 'デフォルトに戻す';
 
   @override
-  String get settingsTerminalUseTmux => '永続セッション (tmux)';
+  String get settingsTerminalUseTmux => '手動新規ターミナルモード';
 
   @override
   String get settingsTerminalUseTmuxSubtitle =>
@@ -418,7 +418,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsTerminalUseTmuxDescription =>
-      '切断後もターミナル出力を保持します。リモートサーバーに tmux が必要です。新しく開いたタブに適用されます。';
+      '手動で新規作成したターミナルにのみ適用されます。自動作成される新規ターミナルは常に通常のSSHを使用し、復元可能な履歴は保持されません。tmuxを有効にすると、手動作成したセッションは切断後も復元できます（リモートにtmuxが必要）。既存の履歴復元には影響しません。';
 
   @override
   String get settingsTerminalFontSize => 'ターミナルフォントサイズ';
@@ -1349,6 +1349,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get transferFailedDownload => 'ダウンロード失敗';
+
+  @override
+  String get transferPhasePreparing => '準備中...';
+
+  @override
+  String get transferPhaseVerifyingPartial => '部分ファイルを検証中...';
+
+  @override
+  String get transferPhaseVerifying => '整合性を検証中...';
 
   @override
   String get stopGeneration => '停止';
@@ -4175,6 +4184,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get updateDownloadCompleted => 'ダウンロードが完了し検証されました';
 
   @override
+  String get updatePhaseResolving => '更新サーバーに接続中...';
+
+  @override
+  String get updatePhaseVerifying => '更新パッケージを検証中...';
+
+  @override
+  String get updateOpeningInstaller => 'インストーラーを準備中...';
+
+  @override
   String get updateInstall => 'アップデートをインストール';
 
   @override
@@ -5362,4 +5380,251 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get terminalNoticePlainInterrupted =>
       '接続が切断されました。非 tmux シェルプロセスは再開できませんでした';
+
+  @override
+  String get terminalHistoryDeleteDialogTitle => 'セッション履歴の削除';
+
+  @override
+  String get terminalHistoryTerminateRemote => 'リモートサーバーのセッションも終了する';
+
+  @override
+  String get terminalHistoryTerminateConfirmTitle => 'リモートセッションを終了しますか？';
+
+  @override
+  String get terminalHistoryTerminateConfirmMessage =>
+      'この操作によりリモートの tmux セッションが終了し、実行中のすべてのプロセスが停止します。';
+
+  @override
+  String get terminalErrorHistoryDeleteFailed => 'ターミナル履歴の削除に失敗しました';
+
+  @override
+  String get terminalErrorHistoryTerminateFailed => 'リモートセッションの終了に失敗しました';
+
+  @override
+  String get terminalErrorTargetChanged =>
+      '対象サーバーが変更されました。現在のサーバーでセッションを再度開いてください。';
+
+  @override
+  String get terminalModeStandard => '標準SSHターミナル（デフォルト、履歴なし）';
+
+  @override
+  String get terminalModeTmux => 'tmuxターミナル（リモートセッションと履歴を保持）';
+
+  @override
+  String get terminalModeSaveFailed => 'ターミナルモードの保存に失敗しました。再試行してください';
+
+  @override
+  String get sftpNew => '新規';
+
+  @override
+  String get terminalHistorySearchHint => 'セッション名を検索…';
+
+  @override
+  String get configMigrationBoundaryNote => 'ローカル設定のみを対象とし、リモートサーバーデータは変更しません。';
+
+  @override
+  String get configMigrationSubtitle => 'アプリ設定とサーバープロファイルをエクスポート/インポート';
+
+  @override
+  String get installAppId => 'アプリケーションID';
+
+  @override
+  String get installArchitecture => 'アーキテクチャ';
+
+  @override
+  String get installPlatform => 'プラットフォーム';
+
+  @override
+  String get settingsAboutPrivacyDesc => 'バージョン、オープンソースライセンス、プライバシーポリシー';
+
+  @override
+  String get settingsAccentColorDesc => 'テーマのアクセントカラーをカスタマイズ';
+
+  @override
+  String get settingsSearchHint => '設定を検索…';
+
+  @override
+  String get settingsSearchNoResults => '一致する設定が見つかりません';
+
+  @override
+  String get settingsSecurityDesc => '信頼済みホスト、資格情報、セキュリティアクション';
+
+  @override
+  String get agentExpandDetails => '詳細';
+
+  @override
+  String get agentCollapseDetails => '折りたたむ';
+
+  @override
+  String get transferPauseAll => 'すべて一時停止';
+
+  @override
+  String get transferResumePaused => '一時停止中を再開';
+
+  @override
+  String get transferFilterAll => 'すべて';
+
+  @override
+  String get transferFilterActive => '実行中';
+
+  @override
+  String get transferFilterFailed => '失敗';
+
+  @override
+  String get transferFilterCompleted => '完了';
+
+  @override
+  String get transferPauseReasonUser => 'ユーザーにより一時停止';
+
+  @override
+  String get transferPauseReasonNetwork => 'ネットワーク切断により一時停止';
+
+  @override
+  String get transferPauseReasonAppRestart => 'アプリ再起動後に一時停止';
+
+  @override
+  String get transferRemotePath => 'リモートパス';
+
+  @override
+  String get transferLocalPath => 'ローカルパス';
+
+  @override
+  String get transferErrorDetail => 'エラー詳細';
+
+  @override
+  String get chatFailureKindAuth => '認証が必要です';
+
+  @override
+  String get chatFailureKindModelUnavailable => 'モデルが利用できません';
+
+  @override
+  String get chatFailureKindConnection => '接続エラー';
+
+  @override
+  String get chatFailureKindHistory => '履歴読み込みエラー';
+
+  @override
+  String get chatFailureKindOther => 'リクエスト失敗';
+
+  @override
+  String get chatFailureActionLogin => 'ログイン';
+
+  @override
+  String get chatFailureActionRunSettings => 'モデル設定';
+
+  @override
+  String get chatFailureActionReconnect => '再接続';
+
+  @override
+  String get chatFailureActionReloadHistory => '再試行';
+
+  @override
+  String get chatFailureActionDetails => '詳細';
+
+  @override
+  String get sftpConfigureToolbar => 'ツールバーをカスタマイズ';
+
+  @override
+  String get sftpConfigureToolbarDesc =>
+      'ツールバーに直接固定するアクションを選択します。その他のアクションは「その他」メニューに表示されます。';
+
+  @override
+  String get sftpToolbarPreferenceSaveFailed => 'ツールバー設定の保存に失敗しました';
+
+  @override
+  String get sftpToolbarActionView => '表示切り替え';
+
+  @override
+  String agentUpdateNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 件のエージェントのアップデートが利用可能です',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agentUpdateViewAction => '確認';
+
+  @override
+  String get agentUpdateCheckAll => '更新を確認';
+
+  @override
+  String get agentUpdateCheck => '更新を確認';
+
+  @override
+  String get agentUpdateChecking => '確認中...';
+
+  @override
+  String get agentUpdateAvailable => '更新可能';
+
+  @override
+  String get agentUpdateUpToDate => '最新の状態';
+
+  @override
+  String get agentUpdateDialogTitle => 'エージェントの更新';
+
+  @override
+  String get agentUpdateConfirmButton => '確認して更新';
+
+  @override
+  String get agentUpdateCancelButton => 'キャンセル';
+
+  @override
+  String get agentUpdateTargetServer => 'サーバー';
+
+  @override
+  String get agentUpdateTargetEnvironment => '実行環境';
+
+  @override
+  String get agentUpdateTargetIdentity => '対象の識別情報';
+
+  @override
+  String get agentUpdateCommandPreview => 'コマンドプレビュー';
+
+  @override
+  String get agentUpdateClaudeMigrationNotice =>
+      'この更新により、レガシーな Claude アダプター (claude-code-acp) が公式の claude-agent-acp アダプターに移行されます。既存の履歴と認証情報は保持されます。';
+
+  @override
+  String get agentUpdateAgyNotice =>
+      'AgY CLI は公式の安定版リリースチャンネル経由で更新されます。確認時に表示されたスナップショットより新しいバージョンがインストールされる場合があります。';
+
+  @override
+  String get agentUpdateLogs => '更新ログ';
+
+  @override
+  String get agentUpdateCopyLog => 'ログをコピー';
+
+  @override
+  String get agentUpdateLogCopied => '更新ログをクリップボードにコピーしました';
+
+  @override
+  String get agentUpdateSuccess => 'エージェントが正常に更新されました';
+
+  @override
+  String get agentUpdateFailed => '更新に失敗しました';
+
+  @override
+  String get agentUpdateInterrupted =>
+      '更新が中断されたか接続が切断されました。安全のため自動再試行は無効になっています。再試行する前に実際のバージョンをご確認ください。';
+
+  @override
+  String get agentUpdateInProgress => 'このサーバーでアップデートが進行中です。';
+
+  @override
+  String get agentUpdateBusy => 'サーバーまたはエージェントがビジー状態です。現在の処理が完了するまでお待ちください。';
+
+  @override
+  String get agentUpdateVersionUnknown => '不明';
+
+  @override
+  String get agentUpdateSource => 'ソース';
+
+  @override
+  String get agentUpdateLastChecked => '最終確認';
+
+  @override
+  String get agentUpdateNeverChecked => '未確認';
 }

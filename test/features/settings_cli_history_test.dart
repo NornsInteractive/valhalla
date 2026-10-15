@@ -44,6 +44,11 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        final group = find.byKey(const Key('settings_ai_ops_tile'));
+        await tester.ensureVisible(group);
+        await tester.tap(group);
+        await tester.pumpAndSettle();
+
         // Check tile exists
         final tileFinder = find.byKey(
           const Key('settings_cli_history_page_size_tile'),
@@ -96,6 +101,11 @@ void main() {
             ),
           ),
         );
+        await tester.pumpAndSettle();
+
+        final group = find.byKey(const Key('settings_ai_ops_tile'));
+        await tester.ensureVisible(group);
+        await tester.tap(group);
         await tester.pumpAndSettle();
 
         final tileFinder = find.byKey(

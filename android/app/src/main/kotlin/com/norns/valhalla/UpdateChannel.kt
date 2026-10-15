@@ -1,4 +1,4 @@
-package com.antigravity.valhalla.valhalla
+package com.norns.valhalla
 
 import android.app.Activity
 import android.content.Intent
@@ -10,6 +10,7 @@ import android.provider.Settings
 import androidx.core.content.FileProvider
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.StandardMethodCodec
 import java.io.File
 import java.security.MessageDigest
 
@@ -32,7 +33,9 @@ object UpdateChannel {
         info.longVersionCode else info.versionCode.toLong()
 
     fun register(activity: Activity, engine: FlutterEngine) {
-        MethodChannel(engine.dartExecutor.binaryMessenger, "valhalla/updates")
+        MethodChannel(engine.dartExecutor.binaryMessenger, "valhalla/updates",
+            StandardMethodCodec.INSTANCE,
+            engine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue())
             .setMethodCallHandler { call, result ->
                 try {
                     val manager = activity.packageManager
@@ -76,19 +79,27 @@ object UpdateChannel {
                                 result.error("UPDATE_SIGNATURE_MISMATCH", null, null)
                                 return@setMethodCallHandler
                             }
-                            if (Build.VERSION.SDK_INT >= 26 && !manager.canRequestPackageInstalls()) {
-                                activity.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                                    Uri.parse("package:${activity.packageName}")))
-                                result.error("UPDATE_INSTALL_PERMISSION_REQUIRED", null, null)
-                                return@setMethodCallHandler
+                            activity.runOnUiThread {
+                                try {
+                                    if (activity.isFinishing || activity.isDestroyed) {
+                                        result.error("UPDATE_PLATFORM_FAILED", null, null)
+                                    } else if (Build.VERSION.SDK_INT >= 26 && !manager.canRequestPackageInstalls()) {
+                                        activity.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                            Uri.parse("package:${activity.packageName}")))
+                                        result.error("UPDATE_INSTALL_PERMISSION_REQUIRED", null, null)
+                                    } else {
+                                        val uri = FileProvider.getUriForFile(activity,
+                                            "${activity.packageName}.fileprovider", file)
+                                        activity.startActivity(Intent(Intent.ACTION_VIEW).apply {
+                                            setDataAndType(uri, "application/vnd.android.package-archive")
+                                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                        })
+                                        result.success(null)
+                                    }
+                                } catch (_: Exception) {
+                                    result.error("UPDATE_PLATFORM_FAILED", null, null)
+                                }
                             }
-                            val uri = FileProvider.getUriForFile(activity,
-                                "${activity.packageName}.fileprovider", file)
-                            activity.startActivity(Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(uri, "application/vnd.android.package-archive")
-                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            })
-                            result.success(null)
                         }
                         else -> result.notImplemented()
                     }

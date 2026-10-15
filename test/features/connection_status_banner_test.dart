@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valhalla/core/providers/ai_chat_provider.dart';
+import 'package:valhalla/core/providers/agent_update_provider.dart';
 import 'package:valhalla/core/providers/cli_chat_provider.dart';
 import 'package:valhalla/core/providers/reconnect_provider.dart';
+import 'package:valhalla/core/providers/server_provider.dart';
+import 'package:valhalla/core/providers/sftp_provider.dart';
 import 'package:valhalla/core/utils/reconnect_backoff.dart';
+import 'package:valhalla/core/utils/session_recovery_summary.dart';
+import 'package:valhalla/data/models/agent_profile.dart';
+import 'package:valhalla/data/models/chat_session.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/features/shell/widgets/connection_status_banner.dart';
+import 'package:valhalla/features/docker/docker_provider.dart';
+import 'package:valhalla/features/system/system_provider.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 
 import '../support/acp_chat_widget_harness.dart';
@@ -19,6 +27,114 @@ ServerProfile _server() => const ServerProfile(
   username: 'dev',
 );
 
+AgentProfile _agent(String mode) => AgentProfile(
+  id: '$mode-agent',
+  serverId: _server().id,
+  name: '$mode agent',
+  description: '',
+  cliCommand: 'codex',
+  acpCommand: 'fixture-acp',
+);
+
+AiChatState _acpRecovery(
+  SessionRecoveryStatus status, {
+  String sessionId = 'acp-session',
+  String title = 'ACP session',
+}) => AiChatState(
+  recoveryStatus: status,
+  activeAgentProfile: _agent('acp'),
+  activeSessionId: sessionId,
+  draftText: 'unsent draft',
+  sessions: [
+    ChatSession(
+      id: sessionId,
+      title: title,
+      serverId: _server().id,
+      agentId: 'acp-agent',
+      createdAt: DateTime.utc(2026, 10, 15),
+      updatedAt: DateTime.utc(2026, 10, 15),
+    ),
+  ],
+);
+
+CliChatState _cliRecovery(
+  SessionRecoveryStatus status, {
+  String sessionId = 'cli-session',
+  String title = 'CLI session',
+}) => CliChatState(
+  recoveryStatus: status,
+  serverId: _server().id,
+  activeAgent: _agent('cli'),
+  activeSession: NativeCliSession(id: sessionId, title: title),
+);
+
+class _ActiveBannerServer extends ActiveServerNotifier {
+  _ActiveBannerServer(this.initial);
+  final ServerProfile initial;
+  @override
+  ServerProfile build() => initial;
+  void select(ServerProfile server) => state = server;
+}
+
+class _BannerConnection extends ServerConnectionNotifier {
+  @override
+  ServerConnectionState build() => ServerConnectionState(
+    activeServerId: _server().id,
+    status: ConnectionStateEnum.connected,
+  );
+}
+
+class _BannerSftp extends SftpNotifier {
+  @override
+  SftpState build() => const SftpState();
+}
+
+class _BannerDocker extends DockerNotifier {
+  @override
+  DockerState build() => const DockerState();
+}
+
+class _BannerSystem extends SystemNotifier {
+  @override
+  SystemState build() => const SystemState();
+}
+
+class _BannerUpdates extends AgentUpdatesNotifier {
+  _BannerUpdates({this.available = false});
+  final bool available;
+  int dismissCalls = 0;
+  @override
+  AgentUpdatesState build() => !available
+      ? const AgentUpdatesState()
+      : AgentUpdatesState(
+          showUpdateNotices: true,
+          noticeDay: '2026-10-15',
+          agents: {
+            'fixture': AgentUpdateEntry(
+              report: AgentUpdateReport(
+                agentId: 'fixture',
+                targetKey: 'fixture-target',
+                checkedAt: DateTime.utc(2026, 10, 15),
+                components: const [
+                  AgentComponentUpdate(
+                    component: AgentUpdateComponent.cli,
+                    status: AgentUpdateStatus.available,
+                    installedVersion: '1.0.0',
+                    latestVersion: '1.1.0',
+                  ),
+                ],
+              ),
+            ),
+          },
+        );
+
+  @override
+  Future<void> dismissUpdateNotice() async {
+    dismissCalls++;
+    state = const AgentUpdatesState();
+  }
+}
+
 /// 顶栏直接读 aiChatProvider / cliChatProvider，测试必须提供替身，
 /// 否则真实的 SharedPreferences/DB 依赖会把断言变成初始化失败。
 class _AcpBannerNotifier extends FakeAcpChatNotifier {
@@ -26,6 +142,8 @@ class _AcpBannerNotifier extends FakeAcpChatNotifier {
 
   int recoverCalls = 0;
   int acknowledgeCalls = 0;
+
+  void replace(AiChatState next) => state = next;
 
   @override
   Future<void> recoverConnection() async {
@@ -44,6 +162,9 @@ class _CliBannerNotifier extends CliChatNotifier {
 
   final CliChatState initialState;
   int recoverCalls = 0;
+  int sendCalls = 0;
+
+  void replace(CliChatState next) => state = next;
 
   @override
   CliChatState build() => initialState;
@@ -52,6 +173,9 @@ class _CliBannerNotifier extends CliChatNotifier {
   Future<void> recoverConnection() async {
     recoverCalls++;
   }
+
+  @override
+  Future<void> sendMessage(String text) async => sendCalls++;
 }
 
 class _FakeReconnectController extends ReconnectController {
@@ -93,19 +217,49 @@ Widget _buildTestApp({
   CliChatState cli = const CliChatState(),
   _AcpBannerNotifier? acpNotifier,
   _CliBannerNotifier? cliNotifier,
+  _ActiveBannerServer? activeServer,
+  _BannerUpdates? updates,
+  SessionRecoveryMode? mode,
+  Locale locale = const Locale('en'),
+  double textScale = 1,
+  Widget? beforeBanner,
 }) {
   return ProviderScope(
     overrides: [
       reconnectControllerProvider.overrideWithValue(controller),
+      activeServerProvider.overrideWith(
+        () => activeServer ?? _ActiveBannerServer(_server()),
+      ),
+      serverConnectionProvider.overrideWith(_BannerConnection.new),
+      sftpProvider.overrideWith(_BannerSftp.new),
+      dockerProvider.overrideWith(_BannerDocker.new),
+      systemProvider.overrideWith(_BannerSystem.new),
+      agentUpdatesProvider.overrideWith(() => updates ?? _BannerUpdates()),
       aiChatProvider.overrideWith(() => acpNotifier ?? _AcpBannerNotifier(ai)),
       cliChatProvider.overrideWith(
         () => cliNotifier ?? _CliBannerNotifier(cli),
       ),
     ],
-    child: const MaterialApp(
+    child: MaterialApp(
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: ConnectionStatusBanner()),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
+      home: Scaffold(
+        body: beforeBanner == null
+            ? ConnectionStatusBanner(mode: mode)
+            : Column(
+                children: [
+                  beforeBanner,
+                  ConnectionStatusBanner(mode: mode),
+                ],
+              ),
+      ),
     ),
   );
 }
@@ -117,6 +271,121 @@ Future<void> pumpBanner(WidgetTester tester) async {
 }
 
 void main() {
+  group('update notice priority', () {
+    testWidgets(
+      'SSH and session recovery always take precedence over update notice',
+      (tester) async {
+        final controller = _FakeReconnectController(
+          initialState: const ReconnectState(status: ReconnectStatus.connected),
+        );
+        final acp = _AcpBannerNotifier(const AiChatState());
+        final updates = _BannerUpdates(available: true);
+        await tester.pumpWidget(
+          _buildTestApp(
+            controller: controller,
+            acpNotifier: acp,
+            updates: updates,
+          ),
+        );
+        await pumpBanner(tester);
+        expect(
+          find.byKey(const Key('agentUpdateNoticeBanner')),
+          findsOneWidget,
+        );
+        controller.setTestState(
+          const ReconnectState(status: ReconnectStatus.reconnecting),
+        );
+        await pumpBanner(tester);
+        expect(find.byKey(const Key('reconnectingBanner')), findsOneWidget);
+        expect(find.byKey(const Key('agentUpdateNoticeBanner')), findsNothing);
+        controller.setTestState(
+          const ReconnectState(
+            status: ReconnectStatus.failed,
+            retryable: false,
+          ),
+        );
+        await pumpBanner(tester);
+        expect(find.byKey(const Key('hostKeyChangedBanner')), findsOneWidget);
+        expect(find.byKey(const Key('agentUpdateNoticeBanner')), findsNothing);
+        controller.setTestState(
+          const ReconnectState(status: ReconnectStatus.reconnecting),
+        );
+        await pumpBanner(tester);
+        controller.setTestState(
+          const ReconnectState(status: ReconnectStatus.connected),
+        );
+        await pumpBanner(tester);
+        expect(find.byKey(const Key('reconnectedBanner')), findsOneWidget);
+        expect(find.byKey(const Key('agentUpdateNoticeBanner')), findsNothing);
+        await tester.pump(const Duration(seconds: 3));
+        for (final phase in {
+          SessionRecoveryStatus.reconnecting: 'sessionRecoverySyncingBanner',
+          SessionRecoveryStatus.syncing: 'sessionRecoverySyncingBanner',
+          SessionRecoveryStatus.incomplete: 'sessionRecoveryIncompleteBanner',
+          SessionRecoveryStatus.failed: 'sessionRecoveryFailedBanner',
+        }.entries) {
+          acp.replace(_acpRecovery(phase.key));
+          await pumpBanner(tester);
+          expect(find.byKey(Key(phase.value)), findsOneWidget);
+          expect(
+            find.byKey(const Key('agentUpdateNoticeBanner')),
+            findsNothing,
+          );
+        }
+        acp.replace(const AiChatState(acpSessionRestartDetected: true));
+        await pumpBanner(tester);
+        expect(
+          find.byKey(const Key('acpSessionRestartNotice')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('agentUpdateNoticeBanner')), findsNothing);
+        acp.replace(const AiChatState());
+        await pumpBanner(tester);
+        expect(
+          find.byKey(const Key('agentUpdateNoticeBanner')),
+          findsOneWidget,
+        );
+        await tester.tap(
+          find.byKey(const Key('dismissAgentUpdateNoticeButton')),
+        );
+        await pumpBanner(tester);
+        expect(updates.dismissCalls, 1);
+        expect(find.byKey(const Key('agentUpdateNoticeBanner')), findsNothing);
+        expect(acp.sendMessageCalls, 0);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    for (final locale in [const Locale('de'), const Locale('ar')]) {
+      testWidgets('320dp 2x $locale update notice remains dismissible', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(320, 640);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final updates = _BannerUpdates(available: true);
+        await tester.pumpWidget(
+          _buildTestApp(
+            controller: null,
+            updates: updates,
+            locale: locale,
+            textScale: 2,
+          ),
+        );
+        await pumpBanner(tester);
+        expect(tester.takeException(), isNull);
+        final dismiss = find.byKey(const Key('dismissAgentUpdateNoticeButton'));
+        expect(dismiss.hitTestable(), findsOneWidget);
+        await tester.tap(dismiss);
+        await pumpBanner(tester);
+        expect(updates.dismissCalls, 1);
+        expect(find.byKey(const Key('agentUpdateNoticeBanner')), findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
   group('ConnectionStatusBanner', () {
     testWidgets(
       'degrades to SizedBox.shrink() when reconnectControllerProvider is null',
@@ -365,7 +634,7 @@ void main() {
 
     testWidgets('controller 为 null 时 incomplete 显示并接上重试', (tester) async {
       final acp = _AcpBannerNotifier(
-        const AiChatState(recoveryStatus: SessionRecoveryStatus.incomplete),
+        _acpRecovery(SessionRecoveryStatus.incomplete),
       );
       await tester.pumpWidget(
         _buildTestApp(controller: null, acpNotifier: acp),
@@ -392,7 +661,7 @@ void main() {
 
     testWidgets('controller 为 null 时 failed 显示并接上重试', (tester) async {
       final acp = _AcpBannerNotifier(
-        const AiChatState(recoveryStatus: SessionRecoveryStatus.failed),
+        _acpRecovery(SessionRecoveryStatus.failed),
       );
       await tester.pumpWidget(
         _buildTestApp(controller: null, acpNotifier: acp),
@@ -421,7 +690,7 @@ void main() {
       tester,
     ) async {
       final cli = _CliBannerNotifier(
-        const CliChatState(recoveryStatus: SessionRecoveryStatus.failed),
+        _cliRecovery(SessionRecoveryStatus.failed),
       );
       await tester.pumpWidget(
         _buildTestApp(controller: null, cliNotifier: cli),
@@ -462,13 +731,11 @@ void main() {
       );
     });
 
-    testWidgets('连接断开时 recovery reconnecting 不再画无止境的转圈', (tester) async {
+    testWidgets('用户主动断开时 SSH 状态优先于 recovery reconnecting', (tester) async {
       await tester.pumpWidget(
         _buildTestApp(
-          controller: null,
-          ai: const AiChatState(
-            recoveryStatus: SessionRecoveryStatus.reconnecting,
-          ),
+          controller: _FakeReconnectController(initialUserIntent: false),
+          ai: _acpRecovery(SessionRecoveryStatus.reconnecting),
         ),
       );
       await pumpBanner(tester);
@@ -483,16 +750,14 @@ void main() {
         findsNothing,
         reason: 'offline is a state, not a failure to retry',
       );
-      expect(find.byType(Container), findsNothing);
+      expect(find.byKey(const Key('disconnectedManualBanner')), findsOneWidget);
     });
 
-    testWidgets('连接横幅缺席时不画重复的 recovery reconnecting 横幅', (tester) async {
+    testWidgets('连接横幅缺席时仍显示非 idle recovery reconnecting', (tester) async {
       await tester.pumpWidget(
         _buildTestApp(
           controller: null,
-          ai: const AiChatState(
-            recoveryStatus: SessionRecoveryStatus.reconnecting,
-          ),
+          ai: _acpRecovery(SessionRecoveryStatus.reconnecting),
         ),
       );
       await pumpBanner(tester);
@@ -500,10 +765,10 @@ void main() {
       expect(find.byKey(const Key('reconnectingBanner')), findsNothing);
       expect(
         find.byKey(const Key('sessionRecoverySyncingBanner')),
-        findsNothing,
-        reason: '顶栏只保留一条状态，reconnecting 不再重复堆叠',
+        findsOneWidget,
+        reason: '非 idle 会话恢复不能因 SSH 控制器缺席而消失',
       );
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
     testWidgets('传输层重连结束后 syncing 补上，恢复状态不会被顶栏吞掉', (tester) async {
@@ -545,5 +810,226 @@ void main() {
         findsOneWidget,
       );
     });
+  });
+
+  group('recovery details target routing', () {
+    testWidgets(
+      'closing recovery details does not restore mobile keyboard',
+      (tester) async {
+        final focus = FocusNode();
+        addTearDown(focus.dispose);
+        await tester.pumpWidget(
+          _buildTestApp(
+            controller: null,
+            ai: _acpRecovery(SessionRecoveryStatus.failed),
+            beforeBanner: TextField(
+              key: const Key('recovery_search'),
+              focusNode: focus,
+            ),
+          ),
+        );
+        await pumpBanner(tester);
+        await tester.tap(find.byKey(const Key('recovery_search')));
+        await tester.pump();
+        expect(focus.hasFocus, isTrue);
+        await tester.tap(find.byKey(const Key('sessionRecoveryFailedBanner')));
+        await pumpBanner(tester);
+        expect(find.byType(AlertDialog), findsOneWidget);
+        final dialog = tester.element(find.byType(AlertDialog));
+        Navigator.of(dialog).pop();
+        await pumpBanner(tester);
+        expect(focus.hasFocus, isFalse);
+        expect(tester.testTextInput.isVisible, isFalse);
+        expect(tester.takeException(), isNull);
+      },
+      variant: TargetPlatformVariant.only(TargetPlatform.android),
+    );
+
+    for (final mode in SessionRecoveryMode.values) {
+      testWidgets('two recovery rows retry only ${mode.name}', (tester) async {
+        final acp = _AcpBannerNotifier(
+          _acpRecovery(SessionRecoveryStatus.failed),
+        );
+        final cli = _CliBannerNotifier(
+          _cliRecovery(SessionRecoveryStatus.incomplete),
+        );
+        await tester.pumpWidget(
+          _buildTestApp(
+            controller: null,
+            acpNotifier: acp,
+            cliNotifier: cli,
+            mode: mode,
+          ),
+        );
+        await pumpBanner(tester);
+        final bannerKey = mode == SessionRecoveryMode.acp
+            ? 'sessionRecoveryFailedBanner'
+            : 'sessionRecoveryIncompleteBanner';
+        await tester.tap(find.byKey(Key(bannerKey)));
+        await pumpBanner(tester);
+        expect(find.textContaining('ACP: ACP session'), findsOneWidget);
+        expect(find.textContaining('CLI: CLI session'), findsOneWidget);
+        expect(
+          find.byKey(const Key('connectionDetailsRetryButton')),
+          findsNothing,
+        );
+        await tester.tap(find.byKey(Key('${mode.name}RecoveryRetryButton')));
+        await pumpBanner(tester);
+        expect(acp.recoverCalls, mode == SessionRecoveryMode.acp ? 1 : 0);
+        expect(cli.recoverCalls, mode == SessionRecoveryMode.cli ? 1 : 0);
+        expect(acp.sendMessageCalls, 0);
+        expect(cli.sendCalls, 0);
+        expect(acp.state.draftText, 'unsent draft');
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('stale ${mode.name} row cannot retry a replacement session', (
+        tester,
+      ) async {
+        final acp = _AcpBannerNotifier(
+          _acpRecovery(SessionRecoveryStatus.failed),
+        );
+        final cli = _CliBannerNotifier(
+          _cliRecovery(SessionRecoveryStatus.failed),
+        );
+        await tester.pumpWidget(
+          _buildTestApp(controller: null, acpNotifier: acp, cliNotifier: cli),
+        );
+        await pumpBanner(tester);
+        await tester.tap(find.byKey(const Key('sessionRecoveryFailedBanner')));
+        await pumpBanner(tester);
+        final staleRetry = tester
+            .widget<TextButton>(
+              find.byKey(Key('${mode.name}RecoveryRetryButton')),
+            )
+            .onPressed!;
+        // Exercise a target update before the next frame replaces the old row.
+        if (mode == SessionRecoveryMode.acp) {
+          acp.replace(
+            _acpRecovery(SessionRecoveryStatus.failed, sessionId: 'new-acp'),
+          );
+        } else {
+          cli.replace(
+            _cliRecovery(SessionRecoveryStatus.failed, sessionId: 'new-cli'),
+          );
+        }
+        staleRetry();
+        await pumpBanner(tester);
+        expect(acp.recoverCalls, 0);
+        expect(cli.recoverCalls, 0);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('same-ID server endpoint swap invalidates a rendered retry', (
+      tester,
+    ) async {
+      final active = _ActiveBannerServer(_server());
+      final acp = _AcpBannerNotifier(
+        _acpRecovery(SessionRecoveryStatus.failed),
+      );
+      await tester.pumpWidget(
+        _buildTestApp(controller: null, acpNotifier: acp, activeServer: active),
+      );
+      await pumpBanner(tester);
+      await tester.tap(find.byKey(const Key('sessionRecoveryFailedBanner')));
+      await pumpBanner(tester);
+      final staleRetry = tester
+          .widget<TextButton>(find.byKey(const Key('acpRecoveryRetryButton')))
+          .onPressed!;
+      active.select(_server().copyWith(host: '192.0.2.22'));
+      staleRetry();
+      await pumpBanner(tester);
+      expect(acp.recoverCalls, 0);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'preferred reconnecting session keeps the other failure actionable',
+      (tester) async {
+        final acp = _AcpBannerNotifier(
+          _acpRecovery(SessionRecoveryStatus.reconnecting),
+        );
+        final cli = _CliBannerNotifier(
+          _cliRecovery(SessionRecoveryStatus.failed),
+        );
+        await tester.pumpWidget(
+          _buildTestApp(
+            controller: null,
+            acpNotifier: acp,
+            cliNotifier: cli,
+            mode: SessionRecoveryMode.acp,
+          ),
+        );
+        await pumpBanner(tester);
+        await tester.tap(find.byKey(const Key('sessionRecoverySyncingBanner')));
+        await pumpBanner(tester);
+        expect(find.textContaining('ACP: ACP session'), findsOneWidget);
+        expect(find.textContaining('CLI: CLI session'), findsOneWidget);
+        expect(find.byKey(const Key('acpRecoveryRetryButton')), findsNothing);
+        expect(
+          find.byKey(const Key('connectionDetailsRetryButton')),
+          findsNothing,
+        );
+        acp.replace(
+          _acpRecovery(SessionRecoveryStatus.syncing, title: 'Updated ACP'),
+        );
+        await tester.pump();
+        expect(find.textContaining('ACP: Updated ACP'), findsOneWidget);
+        expect(find.textContaining('ACP: ACP session'), findsNothing);
+        await tester.tap(find.byKey(const Key('cliRecoveryRetryButton')));
+        await pumpBanner(tester);
+        expect(acp.recoverCalls, 0);
+        expect(cli.recoverCalls, 1);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    for (final locale in [const Locale('en'), const Locale('ar')]) {
+      testWidgets('320dp 2x ${locale.languageCode} long recovery details fit', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(320, 640);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final longTitle = List.filled(10, 'long session name').join(' ');
+        await tester.pumpWidget(
+          _buildTestApp(
+            controller: null,
+            activeServer: _ActiveBannerServer(
+              _server().copyWith(name: longTitle),
+            ),
+            ai: _acpRecovery(
+              SessionRecoveryStatus.failed,
+              title: longTitle,
+            ).copyWith(acpSessionRestartDetected: true),
+            cli: _cliRecovery(
+              SessionRecoveryStatus.incomplete,
+              title: longTitle,
+            ),
+            textScale: 2,
+            locale: locale,
+          ),
+        );
+        await pumpBanner(tester);
+        expect(tester.takeException(), isNull);
+        await tester.tap(
+          find.descendant(
+            of: find.byKey(const Key('sessionRecoveryFailedBanner')),
+            matching: find.byIcon(Icons.error_outline),
+          ),
+        );
+        await pumpBanner(tester);
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        final retry = find.byKey(const Key('cliRecoveryRetryButton'));
+        await tester.ensureVisible(retry);
+        await pumpBanner(tester);
+        expect(tester.getSize(retry).height, greaterThanOrEqualTo(44));
+        expect(retry.hitTestable(), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 }

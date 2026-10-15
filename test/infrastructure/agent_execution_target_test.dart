@@ -156,7 +156,7 @@ void main() {
       expect(command, contains('command -v'));
       expect(command, contains('ACP_CODEX_EXECUTABLE_UNAVAILABLE'));
       expect(command, contains('export CODEX_PATH='));
-      expect(command, contains('exec codex-acp --stdio'));
+      expect(command, contains('exec "\$valhalla_acp_path" --stdio'));
     });
 
     test('绝对路径的 codex-acp 同样走解析并原样启动', () {
@@ -166,7 +166,8 @@ void main() {
 
       expect(command, startsWith("bash -l -c "));
       expect(command, contains('type -P'));
-      expect(command, contains('exec /opt/codex/bin/codex-acp --stdio'));
+      expect(command, contains('/opt/codex/bin/codex-acp'));
+      expect(command, contains('exec "\$valhalla_acp_path" --stdio'));
     });
 
     test('codex-acp 之外的参数不改写', () {
@@ -232,13 +233,11 @@ void main() {
 
       expect(
         command,
-        startsWith(
-          "docker exec -i --user '1000:1000' 'codex-box' /bin/sh -lc ",
-        ),
+        startsWith("docker exec -i --user '1000:1000' 'codex-box' /bin/sh -c "),
       );
       expect(command, contains('/bin/bash -ic'));
       expect(command, contains('type -P'));
-      expect(command, contains('exec codex-acp --stdio'));
+      expect(command, contains('exec "\$valhalla_acp_path" --stdio'));
       expect(command, isNot(contains('bash -l -c ')));
     });
 
@@ -247,7 +246,7 @@ void main() {
         _acpProfile(target: 'docker', binding: 'name', reference: 'codex-box'),
       );
 
-      expect(command, startsWith("docker exec -i 'codex-box' /bin/sh -lc "));
+      expect(command, startsWith("docker exec -i 'codex-box' /bin/sh -c "));
       expect(command, isNot(contains('--user')));
     });
   });
@@ -267,7 +266,8 @@ void main() {
       Map<String, String> environment = const {},
     }) => Process.run(
       '/bin/bash',
-      ['-c', command],
+      ['--noprofile', '--norc', '-c', command],
+      includeParentEnvironment: false,
       environment: {'HOME': home, 'PATH': '$bin:/usr/bin:/bin', ...environment},
       stdoutEncoding: utf8,
       stderrEncoding: utf8,
@@ -301,6 +301,17 @@ void main() {
         await file.writeAsString(body);
         await Process.run('chmod', ['+x', path]);
       }
+
+      await script('$bin/bash', r'''#!/bin/sh
+if [ "$1" = '-l' ] && [ "$2" = '-c' ]; then
+  exec /bin/bash --noprofile --norc -c '. "$HOME/.bash_profile"; eval "$1"' fixture "$3"
+fi
+if [ "$1" = '-ic' ]; then
+  exec /bin/bash --noprofile --rcfile "$HOME/.bashrc" -ic "$2"
+fi
+exit 90
+''');
+      await Link('$stubBin/bash').create('$bin/bash');
 
       await script(
         '$bin/codex',
@@ -371,7 +382,7 @@ void main() {
       // the assertion never depends on whatever happens to be installed here.
       await File(
         '$homeMissing/.bash_profile',
-      ).writeAsString('export PATH="${fixture.path}/empty-bin"\n');
+      ).writeAsString('export PATH="$stubBin"\n');
       await File(
         '$homeDocker/.bashrc',
       ).writeAsString('export PATH="$bin:\$PATH"\n');
@@ -479,10 +490,10 @@ void main() {
         '1000:1000',
         'codex-box',
         '/bin/sh',
-        '-lc',
+        '-c',
       ]);
       expect(args.last, contains('type -P'));
-      expect(args.last, contains('exec codex-acp --stdio'));
+      expect(args.last, contains('exec "\$valhalla_acp_path" --stdio'));
       expect(
         result.stdout,
         contains('ACP_MOCK_STDOUT CODEX_PATH=$bin/codex'),

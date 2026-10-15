@@ -1,4 +1,4 @@
-package com.antigravity.valhalla.valhalla
+package com.norns.valhalla
 
 import android.app.Notification
 import android.app.NotificationChannel

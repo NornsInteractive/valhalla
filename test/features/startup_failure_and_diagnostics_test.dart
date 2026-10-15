@@ -36,6 +36,10 @@ class FakeAppDiagnostics extends Fake implements AppDiagnostics {
   }
 
   @override
+  Future<String> report({int maxBytes = 256 * 1024}) =>
+      read(maxBytes: maxBytes);
+
+  @override
   Future<String?> export() async {
     exportCallCount++;
     if (throwOnExport) {

@@ -8,8 +8,11 @@ import 'package:path/path.dart' as path_util;
 import 'package:uuid/uuid.dart';
 import 'package:dartssh2/dartssh2.dart';
 import '../../infrastructure/sftp/sftp_client_service.dart';
+import '../../infrastructure/sftp/isolated_sftp_client_service.dart';
 import '../../infrastructure/sftp/remote_file_actions.dart';
 import '../utils/file_preview.dart';
+import '../utils/file_integrity.dart';
+import '../utils/transfer_progress.dart';
 import '../errors/app_exceptions.dart';
 import '../services/download_platform_service.dart';
 import '../services/app_diagnostics.dart';
@@ -53,7 +56,12 @@ final sftpOperationsProvider = Provider<SftpOperations>((ref) {
   final sshClient = (activeServer != null && connected)
       ? sshManager.getClient(activeServer.id)
       : null;
-  final service = SftpClientService(sshClient);
+  final service = IsolatedSftpClientService(
+    sshClient,
+    connectionFor: () => activeServer == null
+        ? null
+        : sshManager.transferConnectionFor(activeServer),
+  );
   ref.onDispose(service.dispose);
   return service;
 });
@@ -89,6 +97,8 @@ SftpSortKey sftpSortKeyFromStorage(
 /// 判断，不需要在枚举里再分一层。
 enum SftpTransferStatus { queued, running, paused, completed, failed, canceled }
 
+enum SftpTransferPauseReason { user, network, appRestart }
+
 extension SftpTransferStatusX on SftpTransferStatus {
   /// 是否已经结束（不会再自行变化）。删除与「清除已完成」据此判断。
   bool get isTerminal =>
@@ -121,12 +131,17 @@ class SftpTransfer {
   final int totalBytes;
 
   final SftpTransferStatus status;
+  final SftpTransferPauseReason? pauseReason;
 
   /// 失败时的 reason code（由 UI 映射 ARB 文案）。其余状态为 null。
   final String? errorMessage;
   final Map<String, dynamic>? sourceIdentity;
   final bool managedDownload;
   final String? localSha256;
+  final SftpTransferPhase phase;
+  final int phaseProcessedBytes;
+  final int phaseTotalBytes;
+  final double bytesPerSecond;
 
   const SftpTransfer({
     required this.id,
@@ -136,11 +151,24 @@ class SftpTransfer {
     this.transferredBytes = 0,
     this.totalBytes = 0,
     this.status = SftpTransferStatus.queued,
+    this.pauseReason,
     this.errorMessage,
     this.sourceIdentity,
     this.managedDownload = false,
     this.localSha256,
+    this.phase = SftpTransferPhase.transferring,
+    this.phaseProcessedBytes = 0,
+    this.phaseTotalBytes = 0,
+    this.bytesPerSecond = 0,
   });
+
+  int? get remainingSeconds =>
+      status == SftpTransferStatus.running &&
+          phase == SftpTransferPhase.transferring &&
+          totalBytes > transferredBytes &&
+          bytesPerSecond > 0
+      ? ((totalBytes - transferredBytes) / bytesPerSecond).ceil()
+      : null;
 
   /// 进度 0.0~1.0；总大小未知时返回 null，避免 UI 显示假进度。
   double? get progress {
@@ -163,10 +191,16 @@ class SftpTransfer {
     int? transferredBytes,
     int? totalBytes,
     SftpTransferStatus? status,
+    SftpTransferPauseReason? pauseReason,
+    bool clearPauseReason = false,
     String? errorMessage,
     bool clearError = false,
     Map<String, dynamic>? sourceIdentity,
     String? localSha256,
+    SftpTransferPhase? phase,
+    int? phaseProcessedBytes,
+    int? phaseTotalBytes,
+    double? bytesPerSecond,
   }) {
     return SftpTransfer(
       id: id,
@@ -176,10 +210,15 @@ class SftpTransfer {
       transferredBytes: transferredBytes ?? this.transferredBytes,
       totalBytes: totalBytes ?? this.totalBytes,
       status: status ?? this.status,
+      pauseReason: clearPauseReason ? null : (pauseReason ?? this.pauseReason),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       sourceIdentity: sourceIdentity ?? this.sourceIdentity,
       managedDownload: managedDownload,
       localSha256: localSha256 ?? this.localSha256,
+      phase: phase ?? this.phase,
+      phaseProcessedBytes: phaseProcessedBytes ?? this.phaseProcessedBytes,
+      phaseTotalBytes: phaseTotalBytes ?? this.phaseTotalBytes,
+      bytesPerSecond: bytesPerSecond ?? this.bytesPerSecond,
     );
   }
 
@@ -191,6 +230,7 @@ class SftpTransfer {
     'transferredBytes': transferredBytes,
     'totalBytes': totalBytes,
     'status': status.name,
+    'pauseReason': pauseReason?.name,
     'errorMessage': errorMessage,
     'sourceIdentity': sourceIdentity,
     'managedDownload': managedDownload,
@@ -199,6 +239,9 @@ class SftpTransfer {
 
   factory SftpTransfer.fromJson(Map<String, dynamic> json) {
     final status = SftpTransferStatus.values.byName(json['status'] as String);
+    final interrupted =
+        status == SftpTransferStatus.running ||
+        status == SftpTransferStatus.queued;
     return SftpTransfer(
       id: json['id'] as String,
       kind: SftpTransferKind.values.byName(json['kind'] as String),
@@ -206,11 +249,15 @@ class SftpTransfer {
       localPath: json['localPath'] as String,
       transferredBytes: json['transferredBytes'] as int? ?? 0,
       totalBytes: json['totalBytes'] as int? ?? 0,
-      status:
-          status == SftpTransferStatus.running ||
-              status == SftpTransferStatus.queued
-          ? SftpTransferStatus.paused
-          : status,
+      status: interrupted ? SftpTransferStatus.paused : status,
+      pauseReason: interrupted
+          ? SftpTransferPauseReason.appRestart
+          : status == SftpTransferStatus.paused
+          ? SftpTransferPauseReason.values
+                    .where((reason) => reason.name == json['pauseReason'])
+                    .firstOrNull ??
+                SftpTransferPauseReason.user
+          : null,
       errorMessage: json['errorMessage'] as String?,
       sourceIdentity: json['sourceIdentity'] as Map<String, dynamic>?,
       managedDownload: json['managedDownload'] as bool? ?? false,
@@ -507,9 +554,12 @@ class SftpNotifier extends Notifier<SftpState> {
   /// 断开连接会重建 notifier，旧的句柄会随旧实例一起被丢弃。
   /// 这没问题：断开时底层的 SFTP 通道已经没了，句柄本就不可用。
   final Map<String, SftpTransferHandle> _handles = {};
+  final Set<String> _startingTransfers = {};
+  int _queuePauseDepth = 0;
   final Set<String> _finalizingTransfers = {};
   final Map<String, int> _downloadRetries = {};
   final Set<String> _connectionPaused = {};
+  final Map<String, TransferProgressMeter> _progressMeters = {};
   Future<void> _transferWrites = Future<void>.value();
   DateTime _lastTransferWrite = DateTime.fromMillisecondsSinceEpoch(0);
 
@@ -547,6 +597,7 @@ class SftpNotifier extends Notifier<SftpState> {
   @override
   SftpState build() {
     final sourceEpoch = ++_sourceEpoch;
+    _queuePauseDepth = 0;
     ref.watch(activeServerProvider.select((server) => server?.connectionKey));
     final activeServer = ref.read(activeServerProvider);
     final sameTarget =
@@ -644,6 +695,9 @@ class SftpNotifier extends Notifier<SftpState> {
         );
       }
       _handles.clear();
+      _startingTransfers.clear();
+      _finalizingTransfers.clear();
+      _progressMeters.clear();
     });
 
     // 排序偏好要持久化：`build()` 会因为切换服务器、断线重连而重跑，
@@ -683,12 +737,14 @@ class SftpNotifier extends Notifier<SftpState> {
           clearError: true,
           transfers: previous.transfers.map((task) {
             if (!_connectionPaused.remove(task.id) ||
-                task.status != SftpTransferStatus.paused) {
+                task.status != SftpTransferStatus.paused ||
+                task.pauseReason != SftpTransferPauseReason.network) {
               return task;
             }
             _downloadRetries[task.id] = (_downloadRetries[task.id] ?? 0) + 1;
             return task.copyWith(
               status: SftpTransferStatus.queued,
+              clearPauseReason: true,
               transferredBytes: 0,
               clearError: true,
             );
@@ -718,12 +774,16 @@ class SftpNotifier extends Notifier<SftpState> {
               _connectionPaused.add(task.id);
               return task.copyWith(
                 status: SftpTransferStatus.paused,
+                pauseReason: SftpTransferPauseReason.network,
                 errorMessage: 'SSH_DISCONNECTED',
+                bytesPerSecond: 0,
               );
             }
             return task.copyWith(
               status: SftpTransferStatus.failed,
+              clearPauseReason: true,
               errorMessage: 'SSH_DISCONNECTED',
+              bytesPerSecond: 0,
             );
           }).toList(),
         );
@@ -1099,8 +1159,7 @@ class SftpNotifier extends Notifier<SftpState> {
     if (task.localSha256 == null ||
         !await file.exists() ||
         await file.length() != task.transferredBytes ||
-        (await sha256.bind(file.openRead()).first).toString() !=
-            task.localSha256) {
+        await fileSha256(file.path) != task.localSha256) {
       throw const FileSystemException('SFTP_TRANSFER_PARTIAL_INVALID');
     }
   }
@@ -1114,26 +1173,64 @@ class SftpNotifier extends Notifier<SftpState> {
   ///
   /// 正在跑的任务还没结束就再次调用是安全的：直接返回，不会并发执行。
   void _pumpQueue() {
-    if (!ref.read(serverConnectionProvider).isConnected) return;
     if (!ref.mounted) return;
+    if (_queuePauseDepth > 0 || _startingTransfers.isNotEmpty) return;
+    if (!ref.read(serverConnectionProvider).isConnected) return;
     if (state.activeTransfer != null) return;
 
     final next = state.transfers
         .where((t) => t.status == SftpTransferStatus.queued)
         .firstOrNull;
     if (next == null) return;
+    final handle = _handles[next.id];
 
     state = state.withTransfer(
-      next.copyWith(status: SftpTransferStatus.running, clearError: true),
+      next.copyWith(
+        status: SftpTransferStatus.running,
+        clearPauseReason: true,
+        clearError: true,
+        phase: handle == null ? SftpTransferPhase.preparing : next.phase,
+        phaseProcessedBytes: handle == null ? 0 : next.phaseProcessedBytes,
+        phaseTotalBytes: handle == null ? 0 : next.phaseTotalBytes,
+        bytesPerSecond: 0,
+      ),
     );
     _persistTransfers();
     // 不 await：调用方（UI 回调、状态变更）不该等整个传输跑完。
-    unawaited(_runTransfer(next.id));
+    if (handle == null) {
+      unawaited(_runTransfer(next.id));
+    } else {
+      unawaited(_resumeQueuedHandle(next, handle));
+    }
+  }
+
+  Future<void> _resumeQueuedHandle(
+    SftpTransfer task,
+    SftpTransferHandle handle,
+  ) async {
+    final sourceEpoch = _sourceEpoch;
+    try {
+      await handle.resume();
+    } catch (error, stack) {
+      unawaited(AppDiagnostics.instance.record('sftp.resume', error, stack));
+      if (!_currentSource(sourceEpoch) ||
+          !identical(_handles[task.id], handle) ||
+          state.transferById(task.id)?.status != SftpTransferStatus.running) {
+        return;
+      }
+      // A failed control acknowledgment does not prove the worker has stopped.
+      state = state.copyWith(
+        errorMessage: task.kind == SftpTransferKind.download
+            ? downloadErrorCode(error)
+            : uploadFailedCode,
+      );
+    }
   }
 
   Future<void> _runTransfer(String id) async {
     final task = state.transferById(id);
     if (task == null) return;
+    _startingTransfers.add(id);
 
     /// provider 已被销毁（断开连接、切换服务器、容器 dispose）时，
     /// 后续任何一次 `state = ...` 都会抛「Ref ... after it has been
@@ -1167,6 +1264,8 @@ class SftpNotifier extends Notifier<SftpState> {
                 expectedSource: task.sourceIdentity,
                 onSource: onSource,
                 onProgress: (bytes) => _reportProgress(id, bytes),
+                onPhase: (phase, processed, total) =>
+                    _reportPhase(id, phase, processed, total),
               )
             : await (service as SftpResumableOperations).startResumableUpload(
                 task.localPath,
@@ -1175,6 +1274,8 @@ class SftpNotifier extends Notifier<SftpState> {
                 expectedSource: task.sourceIdentity,
                 onSource: onSource,
                 onProgress: (bytes) => _reportProgress(id, bytes),
+                onPhase: (phase, processed, total) =>
+                    _reportPhase(id, phase, processed, total),
               );
       } else {
         switch (task.kind) {
@@ -1209,6 +1310,7 @@ class SftpNotifier extends Notifier<SftpState> {
         return;
       }
       _handles[id] = handle;
+      _startingTransfers.remove(id);
 
       // 总字节数只有句柄才知道：上传方向入队时拿不到本地文件大小，
       // 下载方向服务器也可能报 0（/proc 这类虚拟文件）。
@@ -1221,6 +1323,15 @@ class SftpNotifier extends Notifier<SftpState> {
       }
 
       await handle.done;
+      if (disposed) return;
+      final transferred = state.transferById(id);
+      if (transferred?.phase == SftpTransferPhase.verifying) {
+        state = state.withTransfer(
+          transferred!.copyWith(transferredBytes: handle.transferredBytes),
+        );
+      } else {
+        _reportProgress(id, handle.transferredBytes, force: true);
+      }
       if (identical(_handles[id], handle)) _handles.remove(id);
       if (disposed) return;
       // 句柄「正常完成」不代表用户没取消过：dartssh2 的
@@ -1232,6 +1343,7 @@ class SftpNotifier extends Notifier<SftpState> {
         return;
       }
       _finalizingTransfers.add(id);
+      _reportPhase(id, SftpTransferPhase.verifying, 0, finished.totalBytes);
       if (_managedDownloads.contains(id)) {
         if (await File(task.localPath).exists()) {
           throw const FileSystemException('DOWNLOAD_TARGET_EXISTS');
@@ -1242,7 +1354,7 @@ class SftpNotifier extends Notifier<SftpState> {
       if (task.kind == SftpTransferKind.download &&
           await File(task.localPath).exists()) {
         final file = File(task.localPath);
-        final digest = (await sha256.bind(file.openRead()).first).toString();
+        final digest = await fileSha256(file.path);
         final length = await file.length();
         if (disposed) return;
         final latest = state.transferById(id);
@@ -1258,14 +1370,20 @@ class SftpNotifier extends Notifier<SftpState> {
       // 用户主动取消：不是错误，不要写 errorMessage。
       if (identical(_handles[id], handle)) _handles.remove(id);
       if (disposed) return;
-      _completeTransfer(id, SftpTransferStatus.canceled);
+      if (state.transferById(id)?.status == SftpTransferStatus.running) {
+        _completeTransfer(id, SftpTransferStatus.canceled);
+      }
     } catch (error, stack) {
       if (identical(_handles[id], handle)) _handles.remove(id);
       if (disposed) return;
       unawaited(AppDiagnostics.instance.record('sftp.transfer', error, stack));
       _failTransfer(id, task.kind, error);
     } finally {
-      _finalizingTransfers.remove(id);
+      if (!disposed) {
+        _startingTransfers.remove(id);
+        _finalizingTransfers.remove(id);
+        _pumpQueue();
+      }
     }
   }
 
@@ -1274,7 +1392,12 @@ class SftpNotifier extends Notifier<SftpState> {
     if (task == null) return;
     // 被取消时句柄会抛异常，但任务可能已经被 removeTransfer 移走了，
     // 上面的 null 检查就是防这个。
-    final finished = task.copyWith(status: status);
+    _progressMeters.remove(id);
+    final finished = task.copyWith(
+      status: status,
+      clearPauseReason: true,
+      bytesPerSecond: 0,
+    );
     state = state.withTransfer(finished);
     _persistTransfers();
     _notifyDownload(finished);
@@ -1339,8 +1462,13 @@ class SftpNotifier extends Notifier<SftpState> {
   }
 
   void _failTransfer(String id, SftpTransferKind kind, Object error) {
+    _progressMeters.remove(id);
     final task = state.transferById(id);
     if (task == null || task.status.isTerminal) return;
+    if (task.status == SftpTransferStatus.paused &&
+        task.pauseReason != SftpTransferPauseReason.network) {
+      return;
+    }
     final detailed =
         error is SFTPException &&
             {
@@ -1375,14 +1503,16 @@ class SftpNotifier extends Notifier<SftpState> {
           status: connected
               ? SftpTransferStatus.queued
               : SftpTransferStatus.paused,
+          pauseReason: connected ? null : SftpTransferPauseReason.network,
+          clearPauseReason: connected,
           transferredBytes: 0,
           errorMessage: connected ? null : 'SSH_DISCONNECTED',
           clearError: connected,
+          bytesPerSecond: 0,
         ),
       );
       _persistTransfers();
       _notifyDownload(state.transferById(id)!, force: true);
-      _pumpQueue();
       return;
     }
     // 两处都要写：任务上的 errorMessage 让传输列表能逐条标出失败原因，
@@ -1391,12 +1521,16 @@ class SftpNotifier extends Notifier<SftpState> {
     // 失败提示可能被旧的清空动作吃掉。
     state = state
         .withTransfer(
-          task.copyWith(status: SftpTransferStatus.failed, errorMessage: code),
+          task.copyWith(
+            status: SftpTransferStatus.failed,
+            clearPauseReason: true,
+            errorMessage: code,
+            bytesPerSecond: 0,
+          ),
         )
         .copyWith(errorMessage: code);
     _persistTransfers();
     _notifyDownload(state.transferById(id)!);
-    _pumpQueue();
   }
 
   /// 传输成功后的收尾。抽成方法是为了让「刷新目录」与「发通知」
@@ -1413,34 +1547,121 @@ class SftpNotifier extends Notifier<SftpState> {
 
   /// 暂停某个任务。
   ///
-  /// 只有 running 的任务能暂停：queued 的直接改状态即可（它还没开始），
-  /// 已结束的是空操作。
+  /// 排队和网络等待中的任务也改为手动暂停；已结束的任务不变。
   Future<void> pauseTransfer(String id) async {
     final task = state.transferById(id);
-    if (task == null) return;
+    if (task == null || task.status.isTerminal) return;
+    final sourceEpoch = _sourceEpoch;
     if (_isPublishing(id)) {
       state = state.copyWith(errorMessage: 'SFTP_TRANSFER_COMMITTING');
       return;
     }
 
-    if (task.status == SftpTransferStatus.queued) {
-      state = state.withTransfer(
-        task.copyWith(status: SftpTransferStatus.paused),
-      );
-      _persistTransfers();
-      return;
-    }
-    if (task.status != SftpTransferStatus.running) return;
-
+    final handle = _handles[id];
+    final wasRunning = task.status == SftpTransferStatus.running;
+    if (wasRunning) _queuePauseDepth++;
+    _connectionPaused.remove(id);
     state = state.withTransfer(
-      task.copyWith(status: SftpTransferStatus.paused),
+      task.copyWith(
+        status: SftpTransferStatus.paused,
+        pauseReason: SftpTransferPauseReason.user,
+        clearError: true,
+        transferredBytes: handle?.transferredBytes ?? task.transferredBytes,
+        bytesPerSecond: 0,
+      ),
     );
+    _progressMeters.remove(id);
     _persistTransfers();
     _notifyDownload(state.transferById(id)!, force: true);
-    await _handles[id]?.pause();
-    // 让出执行权，好让队列里排在后面的任务开始跑。
-    // 暂停中的任务仍然占着句柄，所以它自己不会被重新调度；
-    // 但若它是唯一的任务，这里不会有任何事发生。
+    if (!wasRunning) return;
+    try {
+      await handle?.pause();
+    } catch (_) {
+      if (_currentSource(sourceEpoch) && identical(_handles[id], handle)) {
+        final current = state.transferById(id);
+        if (current != null &&
+            (current.status == SftpTransferStatus.paused ||
+                current.status == SftpTransferStatus.queued)) {
+          state = state.withTransfer(
+            current.copyWith(
+              status: SftpTransferStatus.running,
+              clearPauseReason: true,
+            ),
+          );
+          _persistTransfers();
+          _notifyDownload(state.transferById(id)!, force: true);
+        }
+      }
+      rethrow;
+    } finally {
+      if (_currentSource(sourceEpoch)) {
+        _queuePauseDepth--;
+        _pumpQueue();
+      }
+    }
+  }
+
+  /// 暂停调用时当前服务器的未结束任务，先阻止调度再发暂停命令。
+  Future<void> pauseAllTransfers() async {
+    final sourceEpoch = _sourceEpoch;
+    final ids = state.transfers
+        .where((task) => !task.status.isTerminal)
+        .map((task) => task.id)
+        .toList();
+    _queuePauseDepth++;
+    try {
+      final pauses = <Future<void>>[];
+      for (final id in ids) {
+        if (!_currentSource(sourceEpoch)) break;
+        pauses.add(pauseTransfer(id));
+      }
+      await Future.wait(pauses);
+    } finally {
+      if (_currentSource(sourceEpoch)) {
+        _queuePauseDepth--;
+        _pumpQueue();
+      }
+    }
+  }
+
+  /// 仅把调用时当前目标的暂停任务重新入队，Future 不等待文件传完。
+  Future<void> resumePausedTransfers() async {
+    final sourceEpoch = _sourceEpoch;
+    final target = _boundServer?.connectionKey;
+    final ids = state.transfers
+        .where((task) => task.status == SftpTransferStatus.paused)
+        .map((task) => task.id)
+        .toSet();
+    if (!_currentSource(sourceEpoch) ||
+        target == null ||
+        ref.read(activeServerProvider)?.connectionKey != target ||
+        !ref.read(serverConnectionProvider).isConnected) {
+      return;
+    }
+    state = state.copyWith(
+      transfers: state.transfers.map((task) {
+        if (!ids.contains(task.id) ||
+            task.status != SftpTransferStatus.paused) {
+          return task;
+        }
+        _connectionPaused.remove(task.id);
+        return task.copyWith(
+          status: SftpTransferStatus.queued,
+          clearPauseReason: true,
+          clearError: true,
+          transferredBytes: _handles.containsKey(task.id)
+              ? task.transferredBytes
+              : 0,
+          bytesPerSecond: 0,
+        );
+      }).toList(),
+    );
+    _persistTransfers();
+    for (final task in state.transfers) {
+      if (ids.contains(task.id) && task.status == SftpTransferStatus.queued) {
+        _notifyDownload(task, force: true);
+      }
+    }
     _pumpQueue();
   }
 
@@ -1448,27 +1669,37 @@ class SftpNotifier extends Notifier<SftpState> {
   Future<void> resumeTransfer(String id) async {
     final task = state.transferById(id);
     if (task == null || task.status != SftpTransferStatus.paused) return;
+    if (!ref.read(serverConnectionProvider).isConnected) return;
 
     final handle = _handles[id];
-    if (handle != null) {
+    if (handle != null && _queuePauseDepth == 0) {
       if (state.activeTransfer != null) {
         state = state.copyWith(errorMessage: 'SFTP_TRANSFER_BUSY');
         return;
       }
       // 句柄还在：原地恢复，不需要重新排队。这是暂停/继续的常见路径。
+      _connectionPaused.remove(id);
       state = state.withTransfer(
-        task.copyWith(status: SftpTransferStatus.running),
+        task.copyWith(
+          status: SftpTransferStatus.running,
+          clearPauseReason: true,
+          clearError: true,
+          bytesPerSecond: 0,
+        ),
       );
+      _progressMeters.remove(id);
       _persistTransfers();
       _notifyDownload(state.transferById(id)!, force: true);
       await handle.resume();
       return;
     }
-    // 句柄已经没了（例如任务还没轮到跑就被暂停）。放回队列。
+    // 尚未启动或暂停确认仍在进行时，由队列统一安排继续。
+    _connectionPaused.remove(id);
     state = state.withTransfer(
       task.copyWith(
         status: SftpTransferStatus.queued,
-        transferredBytes: 0,
+        clearPauseReason: true,
+        transferredBytes: handle == null ? 0 : task.transferredBytes,
         clearError: true,
       ),
     );
@@ -1526,8 +1757,13 @@ class SftpNotifier extends Notifier<SftpState> {
       return;
     }
     final handle = _handles.remove(id);
+    _progressMeters.remove(id);
     state = state.withTransfer(
-      task.copyWith(status: SftpTransferStatus.canceled),
+      task.copyWith(
+        status: SftpTransferStatus.canceled,
+        clearPauseReason: true,
+        bytesPerSecond: 0,
+      ),
     );
     _persistTransfers();
     _notifyDownload(state.transferById(id)!, force: true);
@@ -1563,6 +1799,7 @@ class SftpNotifier extends Notifier<SftpState> {
         state = state.withTransfer(
           task.copyWith(
             status: SftpTransferStatus.canceled,
+            clearPauseReason: true,
             errorMessage: 'SFTP_TRANSFER_CLEANUP_FAILED',
           ),
         );
@@ -1585,9 +1822,13 @@ class SftpNotifier extends Notifier<SftpState> {
       state = state.copyWith(errorMessage: 'SFTP_TRANSFER_COMMITTING');
       return;
     }
+    _progressMeters.remove(id);
     if (!task.status.isTerminal) {
       _notifyDownload(
-        task.copyWith(status: SftpTransferStatus.canceled),
+        task.copyWith(
+          status: SftpTransferStatus.canceled,
+          clearPauseReason: true,
+        ),
         force: true,
       );
       final handle = _handles.remove(id);
@@ -1620,13 +1861,71 @@ class SftpNotifier extends Notifier<SftpState> {
   ///
   /// 任务可能已经被取消或删除，这时回调仍会到达（传输层不知道上层
   /// 已经放弃了它），所以必须先确认任务还在、且仍在跑。
-  void _reportProgress(String id, int transferred) {
+  void _reportProgress(String id, int transferred, {bool force = false}) {
     if (!ref.mounted) return;
     final task = state.transferById(id);
     if (task == null || task.status != SftpTransferStatus.running) return;
-    state = state.withTransfer(task.copyWith(transferredBytes: transferred));
+    final changed = task.phase != SftpTransferPhase.transferring;
+    if (changed) _progressMeters.remove(id);
+    final meter = _progressMeters.putIfAbsent(
+      id,
+      () => TransferProgressMeter(initialBytes: task.transferredBytes),
+    );
+    if (!meter.sample(
+          transferred,
+          force: force || task.totalBytes > 0 && transferred >= task.totalBytes,
+        ) &&
+        !changed) {
+      return;
+    }
+    state = state.withTransfer(
+      task.copyWith(
+        transferredBytes: transferred,
+        phase: SftpTransferPhase.transferring,
+        phaseProcessedBytes: transferred,
+        phaseTotalBytes: task.totalBytes,
+        bytesPerSecond: meter.bytesPerSecond,
+      ),
+    );
     _persistTransfers(progress: true);
     _notifyDownload(state.transferById(id)!);
+  }
+
+  void _reportPhase(
+    String id,
+    SftpTransferPhase phase,
+    int processed,
+    int total,
+  ) {
+    if (!ref.mounted) return;
+    final task = state.transferById(id);
+    if (task == null || task.status != SftpTransferStatus.running) return;
+    final changed = task.phase != phase;
+    if (changed) _progressMeters.remove(id);
+    final meter = _progressMeters.putIfAbsent(
+      id,
+      () => TransferProgressMeter(initialBytes: processed),
+    );
+    if (!meter.sample(
+      processed,
+      force: changed || total > 0 && processed >= total,
+    )) {
+      return;
+    }
+    state = state.withTransfer(
+      task.copyWith(
+        phase: phase,
+        phaseProcessedBytes: processed,
+        phaseTotalBytes: total,
+        transferredBytes: phase == SftpTransferPhase.transferring
+            ? processed
+            : null,
+        totalBytes: phase == SftpTransferPhase.transferring && total > 0
+            ? total
+            : null,
+        bytesPerSecond: 0,
+      ),
+    );
   }
 
   static String _newTransferId() => const Uuid().v4();
@@ -1811,6 +2110,7 @@ class SftpNotifier extends Notifier<SftpState> {
         .withTransfer(
           task.copyWith(
             status: SftpTransferStatus.queued,
+            clearPauseReason: true,
             transferredBytes: 0,
             clearError: true,
           ),

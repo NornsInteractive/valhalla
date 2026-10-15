@@ -28,7 +28,7 @@ COMMIT = "a" * 40
 CERT = "1a" * 32
 
 
-def apk_badging(package="com.antigravity.valhalla.valhalla", version_code=None,
+def apk_badging(package="com.norns.valhalla", version_code=None,
                 version_name=VERSION):
     """Version codes must satisfy version_code % 1000 == BUILD."""
     code = BUILD + 1000 * 7 if version_code is None else version_code

@@ -39,6 +39,8 @@ import '../settings/settings_view.dart';
 import '../settings/widgets/windows_appearance_actions.dart';
 import '../system/system_view.dart';
 import '../terminal/terminal_view.dart';
+import '../../core/utils/session_recovery_summary.dart';
+import '../../core/providers/agent_update_provider.dart';
 import 'widgets/connection_status_banner.dart';
 
 int appSectionToViewIndex(AppSection section) => switch (section) {
@@ -131,6 +133,41 @@ class _MainShellState extends ConsumerState<MainShell> {
   final Set<String> _deletingServerIds = {};
   static const _downloadsChannel = MethodChannel('valhalla/downloads');
 
+  SessionRecoveryMode? get _currentRecoveryMode {
+    final section = viewIndexToAppSection(_currentIndex);
+    if (section == AppSection.aiChat) return SessionRecoveryMode.acp;
+    if (section == AppSection.cliChat) return SessionRecoveryMode.cli;
+    return null;
+  }
+
+  ManualConnectionNotice? _manualConnectionNotice;
+  Timer? _manualConnectionNoticeTimer;
+
+  void _showManualConnectionNotice(ManualConnectionNotice notice) {
+    if (!mounted) return;
+    _manualConnectionNoticeTimer?.cancel();
+    setState(() {
+      _manualConnectionNotice = notice;
+    });
+    _manualConnectionNoticeTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _manualConnectionNotice = null;
+        });
+      }
+    });
+  }
+
+  void _clearManualConnectionNotice() {
+    _manualConnectionNoticeTimer?.cancel();
+    _manualConnectionNoticeTimer = null;
+    if (_manualConnectionNotice != null && mounted) {
+      setState(() {
+        _manualConnectionNotice = null;
+      });
+    }
+  }
+
   late final Widget _dashboardView = DashboardView(
     onNavigate: _navigateToSectionIndex,
     onConnect: () => _handleConnect(),
@@ -176,6 +213,20 @@ class _MainShellState extends ConsumerState<MainShell> {
     }
   }
 
+  void _notifyChatEnteredIfNeeded() {
+    final section = viewIndexToAppSection(_currentIndex);
+    if (section == AppSection.aiChat || section == AppSection.cliChat) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final currentSection = viewIndexToAppSection(_currentIndex);
+        if (currentSection == AppSection.aiChat ||
+            currentSection == AppSection.cliChat) {
+          ref.read(agentUpdatesProvider.notifier).onChatEntered();
+        }
+      });
+    }
+  }
+
   void _navigateToSectionIndex(int idx) {
     if (!mounted) return;
     final targetSection = viewIndexToAppSection(idx);
@@ -186,6 +237,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     if (_currentIndex != safeIndex) {
       _unfocusContentScopeOnMobile();
       setState(() => _currentIndex = safeIndex);
+      _notifyChatEnteredIfNeeded();
     }
   }
 
@@ -197,6 +249,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
     _downloadsChannel.setMethodCallHandler(_handleDownloadsMethodCall);
     unawaited(_consumeLaunchAction());
+    _notifyChatEnteredIfNeeded();
   }
 
   Future<dynamic> _handleDownloadsMethodCall(MethodCall call) async {
@@ -268,6 +321,8 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   void dispose() {
+    _manualConnectionNoticeTimer?.cancel();
+    _manualConnectionNoticeTimer = null;
     _downloadsChannel.setMethodCallHandler(null);
     _openTransfersRequest.dispose();
     _contentFocusScopeNode.dispose();
@@ -275,24 +330,26 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Future<void> _handleConnect({ServerProfile? targetServer}) async {
+    final initialTarget = targetServer ?? ref.read(activeServerProvider);
+    if (initialTarget == null) return;
+    final targetId = initialTarget.id;
+    final expectedConnectionKey = (targetServer ?? initialTarget).connectionKey;
+
+    bool isStillTarget() {
+      if (!mounted) return false;
+      final existsInList = ref
+          .read(serverListProvider)
+          .any((s) => s.id == targetId);
+      if (!existsInList) return false;
+      final currentActive = ref.read(activeServerProvider);
+      return currentActive?.id == targetId &&
+          currentActive?.connectionKey == expectedConnectionKey;
+    }
+
+    final exists = ref.read(serverListProvider).any((s) => s.id == targetId);
+    if (!exists) return;
+
     try {
-      final initialTarget = targetServer ?? ref.read(activeServerProvider);
-      if (initialTarget == null) return;
-      final targetId = initialTarget.id;
-
-      bool isStillTarget() {
-        if (!mounted) return false;
-        final existsInList = ref
-            .read(serverListProvider)
-            .any((s) => s.id == targetId);
-        if (!existsInList) return false;
-        final currentActive = ref.read(activeServerProvider);
-        return currentActive?.id == targetId;
-      }
-
-      final exists = ref.read(serverListProvider).any((s) => s.id == targetId);
-      if (!exists) return;
-
       if (targetServer != null) {
         await ref
             .read(activeServerProvider.notifier)
@@ -380,36 +437,33 @@ class _MainShellState extends ConsumerState<MainShell> {
           );
 
       if (!mounted || !isStillTarget()) return;
-      final scaffoldMessenger = ScaffoldMessenger.of(context);
 
       if (ok) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              context.l10n.sshConnectedSuccess(
-                '${activeServer.name} (${activeServer.host})',
-              ),
+        _showManualConnectionNotice(
+          ManualConnectionNotice(
+            message: context.l10n.sshConnectedSuccess(
+              '${activeServer.name} (${activeServer.host})',
             ),
-            backgroundColor: context.vSuccess,
+            type: ManualConnectionNoticeType.success,
           ),
         );
       } else {
         final err =
             ref.read(serverConnectionProvider).errorMessage ??
             'Connection Error';
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.sshConnectionFailed(err)),
-            backgroundColor: context.vDanger,
+        _showManualConnectionNotice(
+          ManualConnectionNotice(
+            message: context.l10n.sshConnectionFailed(err),
+            type: ManualConnectionNoticeType.failure,
           ),
         );
       }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.serverConnectionFailed(e.toString())),
-          backgroundColor: context.vDanger,
+      if (!mounted || !isStillTarget()) return;
+      _showManualConnectionNotice(
+        ManualConnectionNotice(
+          message: context.l10n.serverConnectionFailed(e.toString()),
+          type: ManualConnectionNoticeType.failure,
         ),
       );
     }
@@ -733,20 +787,8 @@ class _MainShellState extends ConsumerState<MainShell> {
                             Navigator.pop(ctx);
                             try {
                               await _handleConnect(targetServer: s);
-                            } catch (e) {
-                              if (!mounted || !parentContext.mounted) {
-                                return;
-                              }
-                              scaffoldMessenger.showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    parentContext.l10n.serverConnectionFailed(
-                                      e.toString(),
-                                    ),
-                                  ),
-                                  backgroundColor: parentContext.vDanger,
-                                ),
-                              );
+                            } catch (_) {
+                              // Handled by _handleConnect top overlay notice
                             }
                           },
                         );
@@ -806,11 +848,8 @@ class _MainShellState extends ConsumerState<MainShell> {
                   title: Text(localizedAppSectionName(context, section)),
                   selected: _currentIndex == idx,
                   onTap: () {
-                    _unfocusContentScopeOnMobile();
                     Navigator.pop(context);
-                    if (_currentIndex != idx) {
-                      setState(() => _currentIndex = idx);
-                    }
+                    _navigateToSectionIndex(idx);
                   },
                 ),
               );
@@ -870,15 +909,20 @@ class _MainShellState extends ConsumerState<MainShell> {
     ref.listen<SettingsState>(settingsProvider, (previous, next) {
       final currentSection = viewIndexToAppSection(_currentIndex);
       if (!next.isSectionEnabled(currentSection)) {
-        setState(() {
-          _currentIndex = appSectionToViewIndex(AppSection.dashboard);
-        });
+        _navigateToSectionIndex(appSectionToViewIndex(AppSection.dashboard));
       }
     });
 
-    final sftpState = ref.watch(sftpProvider);
+    ref.listen<ServerProfile?>(activeServerProvider, (previous, next) {
+      if (previous?.connectionKey != next?.connectionKey) {
+        _clearManualConnectionNotice();
+        _notifyChatEnteredIfNeeded();
+      }
+    });
+
+    final sftpIsAtRoot = ref.watch(sftpProvider.select((s) => s.isAtRoot));
     final onFilesTab = _currentIndex == _sftpTabIndex;
-    final backGoesUp = onFilesTab && !sftpState.isAtRoot;
+    final backGoesUp = onFilesTab && !sftpIsAtRoot;
 
     return PopScope(
       // canPop=false 会拦住根路由（即阻止 app 退出）并以 didPop=false 回调。
@@ -890,6 +934,25 @@ class _MainShellState extends ConsumerState<MainShell> {
         }
       },
       child: _buildResponsiveShell(),
+    );
+  }
+
+  Widget _buildConnectionStatusOverlay() {
+    return Positioned(
+      top: 8,
+      left: 12,
+      right: 12,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: ConnectionStatusBanner(
+            mode: _currentRecoveryMode,
+            manualNotice: _manualConnectionNotice,
+            onDismissManualNotice: _clearManualConnectionNotice,
+          ),
+        ),
+      ),
     );
   }
 
@@ -924,28 +987,35 @@ class _MainShellState extends ConsumerState<MainShell> {
                 children: [
                   _buildTopBar(showInspectorToggle: true),
                   const Divider(height: 1),
-                  const ConnectionStatusBanner(),
                   Expanded(
-                    child: Row(
+                    child: Stack(
                       children: [
-                        Expanded(
-                          child: AnimatedIndexedStack(
-                            index: _currentIndex,
-                            children: _buildViews(settings),
+                        Positioned.fill(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: AnimatedIndexedStack(
+                                  index: _currentIndex,
+                                  children: _buildViews(settings),
+                                ),
+                              ),
+                              if (_isInspectorOpen)
+                                // Keep the panel bounded even if its content fails to
+                                // build; a fallback ErrorWidget must not collapse the
+                                // page stack (including offstage terminal canvases).
+                                SizedBox(
+                                  width: 320,
+                                  child: ContextInspector(
+                                    activeTabIndex: _currentIndex,
+                                    onClose: () => setState(
+                                      () => _isInspectorOpen = false,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                        if (_isInspectorOpen)
-                          // Keep the panel bounded even if its content fails to
-                          // build; a fallback ErrorWidget must not collapse the
-                          // page stack (including offstage terminal canvases).
-                          SizedBox(
-                            width: 320,
-                            child: ContextInspector(
-                              activeTabIndex: _currentIndex,
-                              onClose: () =>
-                                  setState(() => _isInspectorOpen = false),
-                            ),
-                          ),
+                        _buildConnectionStatusOverlay(),
                       ],
                     ),
                   ),
@@ -979,11 +1049,17 @@ class _MainShellState extends ConsumerState<MainShell> {
                 children: [
                   _buildTopBar(showInspectorToggle: false),
                   const Divider(height: 1),
-                  const ConnectionStatusBanner(),
                   Expanded(
-                    child: AnimatedIndexedStack(
-                      index: _currentIndex,
-                      children: _buildViews(settings),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: AnimatedIndexedStack(
+                            index: _currentIndex,
+                            children: _buildViews(settings),
+                          ),
+                        ),
+                        _buildConnectionStatusOverlay(),
+                      ],
                     ),
                   ),
                   _buildGlobalMiniPlayer(),
@@ -1018,10 +1094,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         if (index >= 0 && index < visibleSections.length) {
           final targetSection = visibleSections[index];
           final newIndex = appSectionToViewIndex(targetSection);
-          if (_currentIndex != newIndex) {
-            _unfocusContentScopeOnMobile();
-            setState(() => _currentIndex = newIndex);
-          }
+          _navigateToSectionIndex(newIndex);
         }
       },
       leading: Padding(
@@ -1468,11 +1541,17 @@ class _MainShellState extends ConsumerState<MainShell> {
         node: _contentFocusScopeNode,
         child: Column(
           children: [
-            const ConnectionStatusBanner(),
             Expanded(
-              child: AnimatedIndexedStack(
-                index: _currentIndex,
-                children: _buildViews(settings),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: AnimatedIndexedStack(
+                      index: _currentIndex,
+                      children: _buildViews(settings),
+                    ),
+                  ),
+                  _buildConnectionStatusOverlay(),
+                ],
               ),
             ),
             _buildGlobalMiniPlayer(),
@@ -1485,10 +1564,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               sections: bottomSections,
               currentIndex: _currentIndex,
               onDestinationSelected: (index) {
-                if (_currentIndex != index) {
-                  _unfocusContentScopeOnMobile();
-                  setState(() => _currentIndex = index);
-                }
+                _navigateToSectionIndex(index);
               },
             ),
     );

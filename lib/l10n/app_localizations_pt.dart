@@ -132,7 +132,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get switchAgent => 'Trocar agente';
 
   @override
-  String get agentClaudeCode => 'Claude CodeX';
+  String get agentClaudeCode => 'Claude Code';
 
   @override
   String get agentCodex => 'OpenAI Codex';
@@ -414,7 +414,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsResetDefault => 'Restaurar padrões';
 
   @override
-  String get settingsTerminalUseTmux => 'Sessões persistentes (tmux)';
+  String get settingsTerminalUseTmux => 'Modo de novo terminal manual';
 
   @override
   String get settingsTerminalUseTmuxSubtitle =>
@@ -422,7 +422,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsTerminalUseTmuxDescription =>
-      'Mantém a saída do terminal após uma desconexão. Requer tmux no servidor remoto. Aplica-se a novas abas de terminal.';
+      'Afeta apenas os terminais criados manualmente. Os novos terminais automáticos sempre usam SSH padrão sem histórico recuperável; com o tmux ativado, as sessões criadas manualmente podem ser restauradas após desconexão (requer tmux remoto). A recuperação do histórico existente não é afetada.';
 
   @override
   String get settingsTerminalFontSize => 'Tamanho da fonte do terminal';
@@ -1396,6 +1396,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get transferFailedDownload => 'Falha no download';
+
+  @override
+  String get transferPhasePreparing => 'Preparando...';
+
+  @override
+  String get transferPhaseVerifyingPartial => 'Verificando arquivo parcial...';
+
+  @override
+  String get transferPhaseVerifying => 'Verificando integridade...';
 
   @override
   String get stopGeneration => 'Parar';
@@ -4354,6 +4363,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get updateDownloadCompleted => 'Download concluído e verificado';
 
   @override
+  String get updatePhaseResolving => 'Conectando ao servidor de atualização...';
+
+  @override
+  String get updatePhaseVerifying => 'Verificando pacote de atualização...';
+
+  @override
+  String get updateOpeningInstaller => 'Preparando instalação...';
+
+  @override
   String get updateInstall => 'Instalar atualização';
 
   @override
@@ -5640,4 +5658,271 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get terminalNoticePlainInterrupted =>
       'Conexão perdida. Processos de shell sem tmux não puderam ser retomados';
+
+  @override
+  String get terminalHistoryDeleteDialogTitle => 'Excluir histórico de sessão';
+
+  @override
+  String get terminalHistoryTerminateRemote =>
+      'Também encerrar a sessão no servidor remoto';
+
+  @override
+  String get terminalHistoryTerminateConfirmTitle =>
+      'Encerrar a sessão remota?';
+
+  @override
+  String get terminalHistoryTerminateConfirmMessage =>
+      'Isso encerrará a sessão tmux remota e interromperá todos os processos em execução nela.';
+
+  @override
+  String get terminalErrorHistoryDeleteFailed =>
+      'Falha ao excluir o histórico do terminal';
+
+  @override
+  String get terminalErrorHistoryTerminateFailed =>
+      'Falha ao encerrar a sessão remota';
+
+  @override
+  String get terminalErrorTargetChanged =>
+      'O servidor de destino foi alterado. Reabra a sessão no servidor atual.';
+
+  @override
+  String get terminalModeStandard =>
+      'Terminal SSH padrão (padrão, sem histórico)';
+
+  @override
+  String get terminalModeTmux =>
+      'Terminal tmux (mantém sessão remota e histórico)';
+
+  @override
+  String get terminalModeSaveFailed =>
+      'Falha ao salvar o modo do terminal, tente novamente';
+
+  @override
+  String get sftpNew => 'Novo';
+
+  @override
+  String get terminalHistorySearchHint => 'Pesquisar nome da sessão…';
+
+  @override
+  String get configMigrationBoundaryNote =>
+      'Apenas configuração do dispositivo local. Os dados no servidor remoto não são alterados.';
+
+  @override
+  String get configMigrationSubtitle =>
+      'Exportar ou importar configurações locais e perfis de servidor';
+
+  @override
+  String get installAppId => 'ID do aplicativo';
+
+  @override
+  String get installArchitecture => 'Arquitetura';
+
+  @override
+  String get installPlatform => 'Plataforma';
+
+  @override
+  String get settingsAboutPrivacyDesc =>
+      'Versão, licenças de código aberto e política de privacidade';
+
+  @override
+  String get settingsAccentColorDesc =>
+      'Personalizar cores de destaque do tema';
+
+  @override
+  String get settingsSearchHint => 'Pesquisar configurações…';
+
+  @override
+  String get settingsSearchNoResults =>
+      'Nenhuma configuração correspondente encontrada';
+
+  @override
+  String get settingsSecurityDesc =>
+      'Hosts conhecidos, credenciais e ações de segurança';
+
+  @override
+  String get agentExpandDetails => 'Detalhes';
+
+  @override
+  String get agentCollapseDetails => 'Recolher';
+
+  @override
+  String get transferPauseAll => 'Pausar tudo';
+
+  @override
+  String get transferResumePaused => 'Retomar pausadas';
+
+  @override
+  String get transferFilterAll => 'Todas';
+
+  @override
+  String get transferFilterActive => 'Ativas';
+
+  @override
+  String get transferFilterFailed => 'Com falha';
+
+  @override
+  String get transferFilterCompleted => 'Concluídas';
+
+  @override
+  String get transferPauseReasonUser => 'Pausado pelo usuário';
+
+  @override
+  String get transferPauseReasonNetwork =>
+      'Pausado devido a desconexão de rede';
+
+  @override
+  String get transferPauseReasonAppRestart =>
+      'Pausado após reinicialização do app';
+
+  @override
+  String get transferRemotePath => 'Caminho remoto';
+
+  @override
+  String get transferLocalPath => 'Caminho local';
+
+  @override
+  String get transferErrorDetail => 'Detalhe do erro';
+
+  @override
+  String get chatFailureKindAuth => 'Autenticação necessária';
+
+  @override
+  String get chatFailureKindModelUnavailable => 'Modelo indisponível';
+
+  @override
+  String get chatFailureKindConnection => 'Falha na conexão';
+
+  @override
+  String get chatFailureKindHistory => 'Falha no histórico';
+
+  @override
+  String get chatFailureKindOther => 'Falha na solicitação';
+
+  @override
+  String get chatFailureActionLogin => 'Entrar';
+
+  @override
+  String get chatFailureActionRunSettings => 'Configurações do modelo';
+
+  @override
+  String get chatFailureActionReconnect => 'Reconectar';
+
+  @override
+  String get chatFailureActionReloadHistory => 'Tentar novamente';
+
+  @override
+  String get chatFailureActionDetails => 'Detalhes';
+
+  @override
+  String get sftpConfigureToolbar => 'Configurar barra de ferramentas';
+
+  @override
+  String get sftpConfigureToolbarDesc =>
+      'Escolha as ações a serem fixadas na barra de ferramentas. As demais aparecerão no menu Mais.';
+
+  @override
+  String get sftpToolbarPreferenceSaveFailed =>
+      'Falha ao salvar preferências da barra de ferramentas';
+
+  @override
+  String get sftpToolbarActionView => 'Alternar visualização';
+
+  @override
+  String agentUpdateNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count atualizações de agente disponíveis',
+      one: '1 atualização de agente disponível',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agentUpdateViewAction => 'Visualizar';
+
+  @override
+  String get agentUpdateCheckAll => 'Verificar atualizações';
+
+  @override
+  String get agentUpdateCheck => 'Verificar atualização';
+
+  @override
+  String get agentUpdateChecking => 'Verificando...';
+
+  @override
+  String get agentUpdateAvailable => 'Atualização disponível';
+
+  @override
+  String get agentUpdateUpToDate => 'Atualizado';
+
+  @override
+  String get agentUpdateDialogTitle => 'Atualizar agente';
+
+  @override
+  String get agentUpdateConfirmButton => 'Confirmar e atualizar';
+
+  @override
+  String get agentUpdateCancelButton => 'Cancelar';
+
+  @override
+  String get agentUpdateTargetServer => 'Servidor';
+
+  @override
+  String get agentUpdateTargetEnvironment => 'Ambiente';
+
+  @override
+  String get agentUpdateTargetIdentity => 'Identidade';
+
+  @override
+  String get agentUpdateCommandPreview => 'Pré-visualização do comando';
+
+  @override
+  String get agentUpdateClaudeMigrationNotice =>
+      'Esta atualização migra o adaptador Claude antigo (claude-code-acp) para o adaptador oficial claude-agent-acp. O histórico e as credenciais existentes são preservados.';
+
+  @override
+  String get agentUpdateAgyNotice =>
+      'A CLI AgY é atualizada por meio de seu canal de lançamento estável oficial. A versão instalada pode ser mais recente do que o instantâneo exibido na confirmação.';
+
+  @override
+  String get agentUpdateLogs => 'Logs de atualização';
+
+  @override
+  String get agentUpdateCopyLog => 'Copiar log';
+
+  @override
+  String get agentUpdateLogCopied =>
+      'Log de atualização copiado para a área de transferência';
+
+  @override
+  String get agentUpdateSuccess => 'Agente atualizado com sucesso';
+
+  @override
+  String get agentUpdateFailed => 'Falha na atualização';
+
+  @override
+  String get agentUpdateInterrupted =>
+      'A atualização foi interrompida ou a conexão foi perdida. Verifique a versão real antes de tentar novamente; novas tentativas automáticas estão desativadas por segurança.';
+
+  @override
+  String get agentUpdateInProgress =>
+      'Uma atualização está em andamento neste servidor.';
+
+  @override
+  String get agentUpdateBusy =>
+      'O servidor ou agente está ocupado. Aguarde a conclusão das tarefas ativas.';
+
+  @override
+  String get agentUpdateVersionUnknown => 'Desconhecido';
+
+  @override
+  String get agentUpdateSource => 'Origem';
+
+  @override
+  String get agentUpdateLastChecked => 'Última verificação';
+
+  @override
+  String get agentUpdateNeverChecked => 'Nunca verificado';
 }

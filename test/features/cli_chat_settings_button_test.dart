@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xterm/xterm.dart';
 import 'package:valhalla/core/providers/agent_registry_provider.dart';
+import 'package:valhalla/core/providers/agent_update_provider.dart';
 import 'package:valhalla/core/providers/cli_chat_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/data/models/agent_profile.dart';
@@ -76,6 +77,16 @@ class _TestAgentRegistryNotifier extends AgentRegistryNotifier {
   }
 }
 
+/// Navigation/terminal-only fixture: update persistence and SSH probes are
+/// verified separately, not implicitly started when the destination is built.
+class _TestAgentUpdatesNotifier extends AgentUpdatesNotifier {
+  @override
+  AgentUpdatesState build() => const AgentUpdatesState(serverId: 'srv-1');
+
+  @override
+  Future<void> onChatEntered() async {}
+}
+
 const _server = ServerProfile(
   id: 'srv-1',
   name: 'Dev Server',
@@ -112,6 +123,7 @@ Future<void> _pumpCliChat(
           () => _TestServerConnectionNotifier(connected: true),
         ),
         agentRegistryProvider.overrideWith(_TestAgentRegistryNotifier.new),
+        agentUpdatesProvider.overrideWith(_TestAgentUpdatesNotifier.new),
         cliChatProvider.overrideWith(() => notifier),
         ...fixedTerminalSettingsOverrides(),
       ],

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:valhalla/core/errors/app_exceptions.dart';
 import 'package:valhalla/data/models/agent_profile.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
+import 'package:valhalla/infrastructure/cli/agent_execution_target.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
 
 /// 手写 fake：按命令子串返回预置结果，并记录收到的所有命令。
@@ -152,7 +153,7 @@ void main() {
   );
   group('AgentEnvironmentService.inspect', () {
     test(
-      'container inspection executes as configured user in a login shell',
+      'container inspection resolves real executable as configured user in interactive shell',
       () async {
         final executor = _FakeSshExecutor(
           results: {
@@ -177,12 +178,12 @@ void main() {
         );
         expect(
           status.diagnosticLog,
-          contains('cli availability: requested command: command -v codex'),
+          contains("valhalla_codex_path=\$(type -P -- 'codex')"),
         );
         expect(
           status.diagnosticLog,
           contains(
-            "cli availability: transport command: docker exec -i --user 'dev' 'workspace' /bin/sh -lc",
+            "cli availability: transport command: docker exec -i --user 'dev' 'workspace' /bin/sh -c",
           ),
         );
         expect(status.diagnosticLog, contains('/bin/bash -ic'));
@@ -190,7 +191,7 @@ void main() {
           executor.executedCommands,
           contains(
             allOf(
-              contains("docker exec -i --user 'dev' 'workspace' /bin/sh -lc"),
+              contains("docker exec -i --user 'dev' 'workspace' /bin/sh -c"),
               contains('id -u'),
             ),
           ),
@@ -199,8 +200,9 @@ void main() {
           executor.executedCommands,
           contains(
             allOf(
-              contains("docker exec -i --user 'dev' 'workspace' /bin/sh -lc"),
-              contains('command -v codex'),
+              contains("docker exec -i --user 'dev' 'workspace' /bin/sh -c"),
+              contains(r'export CODEX_PATH="$valhalla_codex_path"'),
+              contains(r'"$CODEX_PATH" --version'),
             ),
           ),
         );
@@ -274,16 +276,40 @@ void main() {
     });
 
     test('legacy Codex version check uses login status', () async {
+      final profile = _profile(
+        cliCommand: 'codex',
+        loginCheckCommand: 'codex --version',
+      );
+      final expectedLogin = agentCodexTargetCommand(
+        profile,
+        '${agentCodexExecutableScript(profile)}"\$CODEX_PATH" login status',
+      );
       final executor = _FakeSshExecutor(
-        results: {'codex login status': _fail('not logged in')},
+        results: {expectedLogin: _fail('not logged in')},
       );
-      final status = await AgentEnvironmentService(executor).inspect(
-        _profile(cliCommand: 'codex', loginCheckCommand: 'codex --version'),
-        'server-1',
-      );
+      final status = await AgentEnvironmentService(
+        executor,
+      ).inspect(profile, 'server-1');
       expect(status.authentication, AgentAuthenticationStatus.unauthenticated);
       expect(status.kind, AgentEnvironmentStatusKind.notLoggedIn);
-      expect(executor.executedCommands, contains('codex login status'));
+      expect(
+        executor.executedCommands.where(
+          (command) => command.contains('login status'),
+        ),
+        [expectedLogin],
+      );
+      expect(
+        executor.executedCommands.last,
+        contains(r'"$CODEX_PATH" login status'),
+      );
+      expect(
+        status.diagnosticLog,
+        contains('authentication: requested command: codex login status'),
+      );
+      expect(
+        status.diagnosticLog,
+        contains('authentication: exit 1 — not logged in'),
+      );
     });
 
     test(

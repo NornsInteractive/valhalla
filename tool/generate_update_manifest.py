@@ -56,7 +56,7 @@ def manifest(directory, version, build, commit):
             badging = subprocess.run([android_tool("aapt"), "dump", "badging", str(file)],
                                      check=True, capture_output=True, text=True).stdout
             identity = re.search(r"package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", badging)
-            if identity is None or identity[1] != "com.antigravity.valhalla.valhalla" or identity[3] != version:
+            if identity is None or identity[1] != "com.norns.valhalla" or identity[3] != version:
                 raise ValueError(f"APK identity mismatch: {file.name}")
             if int(identity[2]) % 1000 != build:
                 raise ValueError(f"APK build number mismatch: {file.name}")

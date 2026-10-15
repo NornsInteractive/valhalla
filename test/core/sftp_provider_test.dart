@@ -131,6 +131,31 @@ class _FakeOps implements SftpOperations {
   /// 同上，下载方向。
   bool autoCompleteDownload = true;
 
+  /// 非空时 [startUpload] 先等它：用来造「还没返回句柄」的启动窗口。
+  Completer<void>? uploadStartGate;
+
+  /// 非空时 [startDownload] 先等它：自动重试的第二次启动需要它。
+  Completer<void>? downloadStartGate;
+
+  /// 非空时生成的句柄把 [FakeTransferHandle.pause] 挂在这里：
+  /// 用来造「pause ack 还没回来」的窗口。
+  Completer<void>? pauseGate;
+
+  FakeTransferHandle _newHandle({
+    required int totalBytes,
+    void Function(int bytes)? onProgress,
+  }) {
+    final gate = pauseGate;
+    if (gate == null) {
+      return FakeTransferHandle(totalBytes: totalBytes, onProgress: onProgress);
+    }
+    return _PauseGatedHandle(
+      totalBytes: totalBytes,
+      onProgress: onProgress,
+      pauseGate: gate,
+    );
+  }
+
   @override
   Future<SftpTransferHandle> startUpload(
     String localPath,
@@ -139,10 +164,18 @@ class _FakeOps implements SftpOperations {
   }) async {
     if (throwOnStart) _guard(() => null);
     uploads.add((localPath, remotePath));
-    final handle = FakeTransferHandle(
-      totalBytes: uploadBytes,
-      onProgress: onProgress,
-    );
+    final startGate = uploadStartGate;
+    var suspendedOnGate = false;
+    if (startGate != null && !startGate.isCompleted) {
+      suspendedOnGate = true;
+      await startGate.future;
+    }
+    final handle = _newHandle(totalBytes: uploadBytes, onProgress: onProgress);
+    if (suspendedOnGate) {
+      // 这个过期句柄会被上层 abort，而那时没人 await 它的 done；
+      // 走「正常完成」那条语义，免得无人接管的异常污染测试。
+      handle.abortCompletesNormally = true;
+    }
     lastHandle = handle;
     uploadHandles.add(handle);
     // 真实实现会在句柄构造后尽快回调一次进度；替身也照做，
@@ -176,10 +209,17 @@ class _FakeOps implements SftpOperations {
   }) async {
     if (throwOnStart) _guard(() => null);
     downloads.add((remotePath, localPath));
-    final handle = FakeTransferHandle(
+    final startGate = downloadStartGate;
+    var suspendedOnGate = false;
+    if (startGate != null && !startGate.isCompleted) {
+      suspendedOnGate = true;
+      await startGate.future;
+    }
+    final handle = _newHandle(
       totalBytes: downloadBytes,
       onProgress: onProgress,
     );
+    if (suspendedOnGate) handle.abortCompletesNormally = true;
     lastHandle = handle;
     downloadHandles.add(handle);
     for (final b in downloadProgress) {
@@ -239,6 +279,26 @@ class _FakeOps implements SftpOperations {
     );
     await handle.done;
     return handle.transferredBytes;
+  }
+}
+
+/// 暂停确认（pause ack）被闸门卡住的句柄。
+///
+/// 只有「暂停命令已经发下去、但 ack 还没回来」这个窗口需要它：
+/// 这段时间里队列既不调度新任务，也不把占用的串行槽让出去。
+class _PauseGatedHandle extends FakeTransferHandle {
+  _PauseGatedHandle({
+    required super.totalBytes,
+    super.onProgress,
+    required this.pauseGate,
+  });
+
+  final Completer<void> pauseGate;
+
+  @override
+  Future<void> pause() async {
+    await pauseGate.future;
+    await super.pause();
   }
 }
 
@@ -1303,6 +1363,371 @@ void main() {
         SftpTransferStatus.completed,
       );
       expect(task.status, SftpTransferStatus.completed);
+    });
+
+    test('pauseAll 暂停全部后 bulk resume 复用首句柄串行跑完三个', () async {
+      final ops = _FakeOps()..autoCompleteUpload = false;
+      final container = await _container(ops);
+      addTearDown(container.dispose);
+      final notifier = container.read(sftpProvider.notifier);
+      await pumpEventQueue();
+
+      var maxRunning = 0;
+      final subscription = container.listen(sftpProvider, (_, next) {
+        final running = next.transfers
+            .where((t) => t.status == SftpTransferStatus.running)
+            .length;
+        if (running > maxRunning) maxRunning = running;
+      });
+      addTearDown(subscription.close);
+
+      await notifier.uploadFrom('/local/a.txt');
+      await notifier.uploadFrom('/local/b.txt');
+      await notifier.uploadFrom('/local/c.txt');
+      final ids = container
+          .read(sftpProvider)
+          .transfers
+          .map((t) => t.id)
+          .toList();
+      await _awaitStatus(container, ids[0], SftpTransferStatus.running);
+      expect(ops.uploads.map((u) => u.$1), ['/local/a.txt']);
+
+      await notifier.pauseAllTransfers();
+      await pumpEventQueue();
+
+      final paused = container.read(sftpProvider);
+      expect(paused.transfers.map((t) => t.status), [
+        SftpTransferStatus.paused,
+        SftpTransferStatus.paused,
+        SftpTransferStatus.paused,
+      ]);
+      expect(paused.transfers.map((t) => t.pauseReason), [
+        SftpTransferPauseReason.user,
+        SftpTransferPauseReason.user,
+        SftpTransferPauseReason.user,
+      ]);
+      expect(ops.uploads.map((u) => u.$1), [
+        '/local/a.txt',
+      ], reason: '暂停期间一个新任务都不许启动');
+
+      await notifier.resumePausedTransfers();
+      await pumpEventQueue();
+
+      expect(ops.uploads.map((u) => u.$1), [
+        '/local/a.txt',
+      ], reason: '首句柄还握在手里，必须原地复用而不是重开一次');
+      expect(ops.uploadHandles.single.resumeCount, 1);
+      expect(container.read(sftpProvider).transfers.map((t) => t.status), [
+        SftpTransferStatus.running,
+        SftpTransferStatus.queued,
+        SftpTransferStatus.queued,
+      ]);
+
+      ops.uploadHandles.single.finish();
+      await _awaitStatus(container, ids[1], SftpTransferStatus.running);
+      expect(ops.uploads.map((u) => u.$1), ['/local/a.txt', '/local/b.txt']);
+      expect(ops.uploadHandles[1].resumeCount, 0);
+
+      ops.uploadHandles[1].finish();
+      await _awaitStatus(container, ids[2], SftpTransferStatus.running);
+      expect(ops.uploads.map((u) => u.$1), [
+        '/local/a.txt',
+        '/local/b.txt',
+        '/local/c.txt',
+      ]);
+
+      ops.uploadHandles[2].finish();
+      await _awaitStatus(container, ids[2], SftpTransferStatus.completed);
+      expect(
+        container.read(sftpProvider).transfers.map((t) => t.status).toSet(),
+        {SftpTransferStatus.completed},
+      );
+      expect(maxRunning, lessThanOrEqualTo(1), reason: '队列任何时刻最多只能有一个 running');
+    });
+
+    test('保留暂停句柄的 pauseAll 复用两个旧句柄，终态记录不复活', () async {
+      final ops = _FakeOps()..autoCompleteUpload = false;
+      final container = await _container(ops);
+      addTearDown(container.dispose);
+      final notifier = container.read(sftpProvider.notifier);
+      await pumpEventQueue();
+
+      SftpTransfer byLocal(String local) => container
+          .read(sftpProvider)
+          .transfers
+          .firstWhere((t) => t.localPath == local);
+
+      // 一条失败记录：bulk resume 不许把它捡回来。
+      await notifier.uploadFrom('/local/fail.txt');
+      final failedId = byLocal('/local/fail.txt').id;
+      await _awaitStatus(container, failedId, SftpTransferStatus.running);
+      ops.uploadHandles.last.fail(const SFTPException('boom'));
+      await _awaitStatus(container, failedId, SftpTransferStatus.failed);
+
+      // 一条取消记录：同理不许复活。
+      await notifier.uploadFrom('/local/cancel.txt');
+      final canceledId = byLocal('/local/cancel.txt').id;
+      await _awaitStatus(container, canceledId, SftpTransferStatus.running);
+      await notifier.cancelTransfer(canceledId);
+      await _awaitStatus(container, canceledId, SftpTransferStatus.canceled);
+
+      // a 起跑并留下句柄，b 先排队。
+      await notifier.uploadFrom('/local/a.txt');
+      final aId = byLocal('/local/a.txt').id;
+      await _awaitStatus(container, aId, SftpTransferStatus.running);
+      final firstHandle = ops.uploadHandles.last;
+
+      await notifier.uploadFrom('/local/b.txt');
+      final bId = byLocal('/local/b.txt').id;
+      await pumpEventQueue();
+      expect(
+        byLocal('/local/b.txt').status,
+        SftpTransferStatus.queued,
+        reason: '前提：此刻 b 还没轮到',
+      );
+
+      // 暂停 a：句柄保留，b 接手成为 running。
+      await notifier.pauseTransfer(aId);
+      await _awaitStatus(container, bId, SftpTransferStatus.running);
+      final secondHandle = ops.uploadHandles.last;
+      expect(identical(secondHandle, firstHandle), isFalse);
+      expect(byLocal('/local/a.txt').status, SftpTransferStatus.paused);
+
+      final uploadsBeforeResume = ops.uploads.length;
+      await notifier.pauseAllTransfers();
+      await pumpEventQueue();
+
+      expect(byLocal('/local/a.txt').pauseReason, SftpTransferPauseReason.user);
+      expect(byLocal('/local/b.txt').status, SftpTransferStatus.paused);
+      expect(byLocal('/local/b.txt').pauseReason, SftpTransferPauseReason.user);
+      expect(
+        byLocal('/local/fail.txt').status,
+        SftpTransferStatus.failed,
+        reason: '终态记录不在捕获集合里',
+      );
+      expect(byLocal('/local/cancel.txt').status, SftpTransferStatus.canceled);
+      expect(ops.uploads.length, uploadsBeforeResume);
+
+      await notifier.resumePausedTransfers();
+      await pumpEventQueue();
+
+      expect(
+        ops.uploads.length,
+        uploadsBeforeResume,
+        reason: '两个旧句柄都还在，一个都不许重开',
+      );
+      expect(firstHandle.resumeCount, 1);
+      expect(secondHandle.resumeCount, 0);
+      expect(byLocal('/local/a.txt').status, SftpTransferStatus.running);
+      expect(byLocal('/local/b.txt').status, SftpTransferStatus.queued);
+      expect(byLocal('/local/fail.txt').status, SftpTransferStatus.failed);
+      expect(byLocal('/local/cancel.txt').status, SftpTransferStatus.canceled);
+
+      firstHandle.finish();
+      await _awaitStatus(container, bId, SftpTransferStatus.running);
+      expect(ops.uploads.length, uploadsBeforeResume);
+      expect(firstHandle.resumeCount, 1);
+      expect(secondHandle.resumeCount, 1);
+
+      secondHandle.finish();
+      await _awaitStatus(container, bId, SftpTransferStatus.completed);
+      expect(ops.uploads.length, uploadsBeforeResume);
+      expect(byLocal('/local/fail.txt').status, SftpTransferStatus.failed);
+      expect(byLocal('/local/cancel.txt').status, SftpTransferStatus.canceled);
+    });
+
+    test('启动闸门未返回句柄时 pauseAll+resume 不能让后面的任务超车', () async {
+      final startGate = Completer<void>();
+      final ops = _FakeOps()
+        ..autoCompleteUpload = false
+        ..uploadStartGate = startGate;
+      final container = await _container(ops);
+      addTearDown(container.dispose);
+      addTearDown(() {
+        if (!startGate.isCompleted) startGate.complete();
+      });
+      final notifier = container.read(sftpProvider.notifier);
+      await pumpEventQueue();
+
+      await notifier.uploadFrom('/local/a.txt');
+      await notifier.uploadFrom('/local/b.txt');
+      await pumpEventQueue();
+      final ids = container
+          .read(sftpProvider)
+          .transfers
+          .map((t) => t.id)
+          .toList();
+      await _awaitStatus(container, ids[0], SftpTransferStatus.running);
+      expect(
+        container.read(sftpProvider).transferById(ids[1])!.status,
+        SftpTransferStatus.queued,
+      );
+      // 启动闸门还没放行：第一个任务连句柄都还没拿到。
+      expect(ops.uploadHandles, isEmpty);
+      expect(ops.uploads.map((u) => u.$1), ['/local/a.txt']);
+
+      await notifier.pauseAllTransfers();
+      await pumpEventQueue();
+      expect(container.read(sftpProvider).transfers.map((t) => t.status), [
+        SftpTransferStatus.paused,
+        SftpTransferStatus.paused,
+      ]);
+
+      await notifier.resumePausedTransfers();
+      await pumpEventQueue();
+      expect(ops.uploads.map((u) => u.$1), [
+        '/local/a.txt',
+      ], reason: '第一个任务的启动还没落定，第二个任务不得抢先开跑');
+      expect(
+        container.read(sftpProvider).transferById(ids[0])!.status,
+        SftpTransferStatus.queued,
+      );
+
+      startGate.complete();
+      await _awaitStatus(container, ids[0], SftpTransferStatus.running);
+      await pumpEventQueue();
+      // 过期句柄先被中止，随后重新启动的仍然是 a，而不是 b。
+      expect(ops.uploads.map((u) => u.$1), ['/local/a.txt', '/local/a.txt']);
+      expect(ops.uploadHandles.first.abortCount, 1);
+      expect(
+        container.read(sftpProvider).transferById(ids[1])!.status,
+        SftpTransferStatus.queued,
+        reason: 'b 不得越过 a 并发启动',
+      );
+
+      ops.uploadHandles.last.finish();
+      await _awaitStatus(container, ids[1], SftpTransferStatus.running);
+      expect(ops.uploads.map((u) => u.$1), [
+        '/local/a.txt',
+        '/local/a.txt',
+        '/local/b.txt',
+      ]);
+      ops.uploadHandles.last.finish();
+      await _awaitStatus(container, ids[1], SftpTransferStatus.completed);
+    });
+
+    test('下载自动重试的启动被闸门卡住时第三个任务不能并发启动', () async {
+      final ops = _FakeOps()
+        ..handleFailure = TimeoutException('read', const Duration(seconds: 1));
+      final container = await _container(ops);
+      addTearDown(container.dispose);
+      final notifier = container.read(sftpProvider.notifier);
+      await pumpEventQueue();
+
+      // 第一次下载：句柄立刻超时失败，队列用同一个 id 自动重试。
+      unawaited(notifier.downloadTo(_item('a.iso'), '/tmp/a.iso'));
+      // 在重试真正调用 startDownload 之前挂上启动闸门（此刻还在同步执行）。
+      final retryGate = Completer<void>();
+      ops.downloadStartGate = retryGate;
+      addTearDown(() {
+        if (!retryGate.isCompleted) retryGate.complete();
+      });
+      await pumpEventQueue();
+
+      final aId = container.read(sftpProvider).transfers.single.id;
+      expect(ops.downloads, [
+        ('/root/a.iso', '/tmp/a.iso'),
+        ('/root/a.iso', '/tmp/a.iso'),
+      ], reason: '第一次尝试和同 id 的自动重试都已经发起');
+      await _awaitStatus(container, aId, SftpTransferStatus.running);
+
+      // 重试启动还没落定时加入第三个任务：只能排队，不能并发启动。
+      await notifier.downloadTo(_item('c.iso'), '/tmp/c.iso');
+      await pumpEventQueue();
+      final cId = container.read(sftpProvider).transfers.last.id;
+      expect(
+        ops.downloads,
+        hasLength(2),
+        reason: '重试启动未定，第三个任务不得并发调用 startDownload',
+      );
+      expect(
+        container.read(sftpProvider).transferById(cId)!.status,
+        SftpTransferStatus.queued,
+      );
+
+      // 放行后重试才发现第二次也超时，a 定案 failed；c 接手后同样只有一次
+      // 重试额度，也会 failed，因此总下载次数是 4（a 两次 + c 两次）。
+      retryGate.complete();
+      await _awaitStatus(container, aId, SftpTransferStatus.failed);
+      await _awaitStatus(container, cId, SftpTransferStatus.failed);
+      expect(ops.downloads, hasLength(4), reason: 'a 两次尝试 + c 两次尝试（各一次重试）');
+    });
+
+    test('pause ack 被闸门卡住时新任务不入快照也不能抢占串行槽', () async {
+      final pauseGate = Completer<void>();
+      final ops = _FakeOps()
+        ..autoCompleteUpload = false
+        ..pauseGate = pauseGate;
+      final container = await _container(ops);
+      addTearDown(container.dispose);
+      addTearDown(() {
+        if (!pauseGate.isCompleted) pauseGate.complete();
+      });
+      final notifier = container.read(sftpProvider.notifier);
+      await pumpEventQueue();
+
+      await notifier.uploadFrom('/local/a.txt');
+      await notifier.uploadFrom('/local/b.txt');
+      await pumpEventQueue();
+      final ids = container
+          .read(sftpProvider)
+          .transfers
+          .map((t) => t.id)
+          .toList();
+      await _awaitStatus(container, ids[0], SftpTransferStatus.running);
+      final aHandle = ops.lastHandle!;
+      expect(ops.uploads.map((u) => u.$1), ['/local/a.txt']);
+
+      final pauseAll = notifier.pauseAllTransfers();
+      await pumpEventQueue();
+
+      // a/b 已标 user-paused，但 a 的 pause ack 还卡在闸门上。
+      expect(
+        container.read(sftpProvider).transferById(ids[0])!.status,
+        SftpTransferStatus.paused,
+      );
+      expect(
+        container.read(sftpProvider).transferById(ids[1])!.status,
+        SftpTransferStatus.paused,
+      );
+      expect(aHandle.isPaused, isFalse, reason: 'pause ack 未回来，句柄尚未真正暂停');
+
+      // 快照之后加入的新任务：不属于本次暂停，也不能在 ack 前抢跑。
+      await notifier.uploadFrom('/local/c.txt');
+      await pumpEventQueue();
+      final cId = container.read(sftpProvider).transfers.last.id;
+      expect(
+        container.read(sftpProvider).transferById(cId)!.status,
+        SftpTransferStatus.queued,
+        reason: '新任务不在原快照里，不能被暂停',
+      );
+      expect(
+        container.read(sftpProvider).transferById(cId)!.pauseReason,
+        isNull,
+      );
+      expect(ops.uploads.map((u) => u.$1), [
+        '/local/a.txt',
+      ], reason: 'pause ack 未回来前串行槽不能让出');
+
+      pauseGate.complete();
+      await pauseAll;
+      await pumpEventQueue();
+
+      expect(aHandle.pauseCount, 1);
+      expect(aHandle.isPaused, isTrue);
+      await _awaitStatus(container, cId, SftpTransferStatus.running);
+      expect(ops.uploads.map((u) => u.$1), [
+        '/local/a.txt',
+        '/local/c.txt',
+      ], reason: 'ack 回来后新任务才能接手串行槽');
+      expect(
+        container.read(sftpProvider).transferById(ids[0])!.status,
+        SftpTransferStatus.paused,
+      );
+      expect(
+        container.read(sftpProvider).transferById(ids[1])!.status,
+        SftpTransferStatus.paused,
+      );
     });
   });
 

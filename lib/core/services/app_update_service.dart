@@ -2,9 +2,16 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import '../../data/models/app_update.dart';
+import '../utils/app_runtime_identity.dart' as runtime;
+import '../utils/file_integrity.dart';
 import 'app_diagnostics.dart';
+
+enum AppUpdateDownloadPhase { resolving, transferring, verifying }
+
+class _TransientUpdateDownload extends HttpException {
+  const _TransientUpdateDownload(super.message);
+}
 
 class AppUpdateCheck {
   final AppUpdateRelease? release;
@@ -21,6 +28,8 @@ class AppUpdateService {
   final HttpClient Function() clientFactory;
   HttpClient? _downloadClient;
   bool _canceled = false;
+  Timer? _retryTimer;
+  Completer<void>? _retryWaiter;
   AppUpdateService({HttpClient Function()? clientFactory})
     : clientFactory = clientFactory ?? HttpClient.new;
 
@@ -43,13 +52,7 @@ class AppUpdateService {
   static String distributionArchitecture(
     String platform,
     String architecture,
-  ) => platform == 'android' && architecture == 'arm'
-      ? 'armeabi-v7a'
-      : architecture == 'x64'
-      ? 'x86_64'
-      : architecture == 'arm64'
-      ? (platform == 'macos' ? 'apple-silicon' : 'arm64-v8a')
-      : architecture;
+  ) => runtime.distributionArchitecture(platform, architecture);
 
   static bool isCurrentCache(Map<String, dynamic>? cache) =>
       cache?['source'] == cacheSource;
@@ -421,6 +424,7 @@ class AppUpdateService {
     AppUpdateArtifact artifact,
     String destination, {
     required void Function(int) onProgress,
+    void Function(AppUpdateDownloadPhase)? onPhase,
   }) async {
     if (!_distributionDownload(artifact.url)) {
       throw const FormatException('UPDATE_ASSET_URL_INVALID');
@@ -452,50 +456,88 @@ class AppUpdateService {
       var offset = await partial.exists() ? await partial.length() : 0;
       received = offset;
       await metadata.writeAsString(identity, flush: true);
-      if (offset < artifact.size) {
-        final response = await _get(
-          client,
-          artifact.url,
-          headers: {if (offset > 0) 'Range': 'bytes=$offset-'},
-          download: true,
-        );
-        if (response.statusCode == 200) {
-          offset = 0;
-        } else if (response.statusCode != 206 ||
-            offset == 0 ||
-            response.headers.value('content-range') !=
-                'bytes $offset-${artifact.size - 1}/${artifact.size}') {
-          throw HttpException('UPDATE_DOWNLOAD_FAILED: ${response.statusCode}');
-        }
-        sink = partial.openWrite(
-          mode: offset > 0 ? FileMode.append : FileMode.write,
-        );
-        onProgress(offset);
-        var unflushed = 0;
-        await for (final chunk in response.timeout(
-          const Duration(seconds: 30),
-        )) {
+      var retries = 0;
+      while (offset < artifact.size) {
+        try {
           if (_canceled) throw StateError('UPDATE_DOWNLOAD_CANCELED');
-          offset += chunk.length;
-          received = offset;
-          if (offset > artifact.size) {
-            throw StateError('UPDATE_DOWNLOAD_SIZE_MISMATCH');
+          onPhase?.call(AppUpdateDownloadPhase.resolving);
+          final response = await _get(
+            client,
+            artifact.url,
+            headers: {if (offset > 0) 'Range': 'bytes=$offset-'},
+            download: true,
+          );
+          if ({408, 429, 500, 502, 503, 504}.contains(response.statusCode)) {
+            await response.drain<void>().timeout(const Duration(seconds: 30));
+            throw _TransientUpdateDownload(
+              'UPDATE_DOWNLOAD_FAILED: ${response.statusCode}',
+            );
           }
-          sink.add(chunk);
-          unflushed += chunk.length;
-          if (unflushed >= 256 * 1024) {
-            await sink.flush();
-            unflushed = 0;
+          if (response.statusCode == 200) {
+            offset = 0;
+          } else if (response.statusCode != 206 ||
+              offset == 0 ||
+              response.headers.value('content-range') !=
+                  'bytes $offset-${artifact.size - 1}/${artifact.size}') {
+            throw HttpException(
+              'UPDATE_DOWNLOAD_FAILED: ${response.statusCode}',
+            );
           }
+          sink = partial.openWrite(
+            mode: offset > 0 ? FileMode.append : FileMode.write,
+          );
+          onPhase?.call(AppUpdateDownloadPhase.transferring);
           onProgress(offset);
+          var unflushed = 0;
+          await for (final chunk in response.timeout(
+            const Duration(seconds: 30),
+          )) {
+            if (_canceled) throw StateError('UPDATE_DOWNLOAD_CANCELED');
+            offset += chunk.length;
+            received = offset;
+            if (offset > artifact.size) {
+              throw StateError('UPDATE_DOWNLOAD_SIZE_MISMATCH');
+            }
+            sink.add(chunk);
+            unflushed += chunk.length;
+            if (unflushed >= 2 * 1024 * 1024) {
+              await sink.flush();
+              unflushed = 0;
+            }
+            onProgress(offset);
+          }
+          await sink.close();
+          sink = null;
+          if (offset != artifact.size) {
+            throw const _TransientUpdateDownload('UPDATE_DOWNLOAD_INCOMPLETE');
+          }
+        } catch (error) {
+          await sink?.close();
+          sink = null;
+          if (_canceled ||
+              retries >= 2 ||
+              !(error is SocketException ||
+                  error is TimeoutException ||
+                  error is _TransientUpdateDownload)) {
+            rethrow;
+          }
+          offset = await partial.exists() ? await partial.length() : 0;
+          received = offset;
+          final waiter = _retryWaiter = Completer<void>();
+          _retryTimer = Timer(Duration(seconds: ++retries), waiter.complete);
+          try {
+            await waiter.future;
+          } finally {
+            _retryTimer?.cancel();
+            _retryTimer = null;
+            _retryWaiter = null;
+          }
         }
-        await sink.close();
-        sink = null;
       }
       if (_canceled) throw StateError('UPDATE_DOWNLOAD_CANCELED');
+      onPhase?.call(AppUpdateDownloadPhase.verifying);
       if (await partial.length() != artifact.size ||
-          (await sha256.bind(partial.openRead()).first).toString() !=
-              artifact.sha256) {
+          await fileSha256(partial.path) != artifact.sha256) {
         await partial.delete();
         throw StateError('UPDATE_DOWNLOAD_INTEGRITY_FAILED');
       }
@@ -528,6 +570,8 @@ class AppUpdateService {
 
   void cancelDownload() {
     _canceled = true;
+    final waiter = _retryWaiter;
+    if (waiter != null && !waiter.isCompleted) waiter.complete();
     _downloadClient?.close(force: true);
   }
 

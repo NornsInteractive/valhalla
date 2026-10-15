@@ -29,9 +29,12 @@ import '../../infrastructure/cli/codex_native_client.dart';
 import '../../infrastructure/cli/codex_account_models.dart';
 import '../../infrastructure/cli/codex_model_authorization.dart';
 import '../utils/shell_quote.dart';
+import '../utils/chat_failure_presentation.dart';
+export '../utils/chat_failure_presentation.dart';
 import '../logging/sanitizer.dart';
 import '../services/app_diagnostics.dart';
 import 'agent_registry_provider.dart';
+import 'agent_update_lock_provider.dart';
 import 'server_provider.dart';
 import 'storage_providers.dart';
 import 'security_settings_provider.dart';
@@ -41,15 +44,24 @@ import 'app_visibility_provider.dart';
 ///
 /// 抽成 provider 是为了让 provider 层测试可以注入替身，而不触碰真实 SSH。
 typedef AcpTransportFactory =
-    Future<Transport> Function(AgentProfile profile, SSHClient sshClient);
+    Future<Transport> Function(
+      AgentProfile profile,
+      SSHClient sshClient, {
+      String? initialModelId,
+    });
 
 final acpTransportFactoryProvider = Provider<AcpTransportFactory>((ref) {
-  return (profile, sshClient) async {
+  return (profile, sshClient, {initialModelId}) async {
+    if (isAgentUpdateLocked(ref, profile)) {
+      throw StateError('AGENT_UPDATE_IN_PROGRESS');
+    }
     final acpCommand = profile.acpCommand;
     if (acpCommand == null || acpCommand.trim().isEmpty) {
       throw StateError('Agent ${profile.id} has no ACP command');
     }
-    final session = await sshClient.execute(agentAcpLaunchCommand(profile));
+    final session = await sshClient.execute(
+      agentAcpLaunchCommand(profile, initialModelId: initialModelId),
+    );
     return AcpSshTransport(session);
   };
 });
@@ -238,6 +250,8 @@ class AiChatState {
     if (activeSessionId == null) return null;
     return sessions.where((s) => s.id == activeSessionId).firstOrNull;
   }
+
+  ChatFailurePresentation? get failure => classifyChatFailure(lastErrorCode);
 
   /// 兼容桥：旧的 `AgentType` 视图。新代码应使用 [activeAgentProfile]。
   @Deprecated('Use activeAgentProfile.agentId instead')
@@ -518,6 +532,35 @@ class AiChatNotifier extends Notifier<AiChatState> {
 
   int get activeConnectionCount =>
       _currentAdapter != null || _isPreparingPrompt ? 1 : 0;
+
+  /// Remote work may start before a visible loading flag changes.
+  bool get isRuntimeBusy =>
+      _isPreparingPrompt ||
+      state.isGenerating ||
+      state.isAuthenticating ||
+      state.authChallenge != null ||
+      state.authRequest != null ||
+      (state.authCompleter != null && !state.authCompleter!.isCompleted) ||
+      _authCallbackInFlight ||
+      _authorizationCancelled != null ||
+      state.pendingPermission != null ||
+      (state.permissionCompleter != null &&
+          !state.permissionCompleter!.isCompleted) ||
+      _permissionQueue.isNotEmpty ||
+      state.isLoadingSettings ||
+      state.isApplyingSettings ||
+      state.isLoadingSessions ||
+      state.isLoadingMessages ||
+      state.recoveryStatus == SessionRecoveryStatus.reconnecting ||
+      state.recoveryStatus == SessionRecoveryStatus.syncing ||
+      _recovering != null ||
+      _connectionLoss != null ||
+      _checkpointing != null ||
+      _openingAdapter != null ||
+      _composerQuery != null ||
+      _pendingAdapterOpens > 0 ||
+      _pendingComposerQueries > 0 ||
+      _remoteCatalogQueries > 0;
   static const _uuid = Uuid();
 
   static const notReadyCode = 'AGENT_NOT_READY';
@@ -532,6 +575,10 @@ class AiChatNotifier extends Notifier<AiChatState> {
   String? _modelAccountKey;
   List<AcpSlashCommand> _composerSkills = const [];
   Future<bool>? _composerQuery;
+  int _draftRuntimeEpoch = 0;
+  int _pendingComposerQueries = 0;
+  int _pendingAdapterOpens = 0;
+  int _remoteCatalogQueries = 0;
   Completer<void>? _authorizationCancelled;
 
   /// UI must confirm before calling this. No login or installation is automatic.
@@ -550,6 +597,9 @@ class AiChatNotifier extends Notifier<AiChatState> {
     if (profile == null || client == null) throw StateError(disconnectedCode);
     if (nativeCliKind(profile.cliCommand) != NativeCliKind.codex) {
       throw StateError('AGENT_MODEL_QUERY_UNSUPPORTED');
+    }
+    if (isAgentUpdateLocked(ref, profile)) {
+      throw StateError('AGENT_UPDATE_IN_PROGRESS');
     }
     final epoch = _requestEpoch;
     final cancelled = Completer<void>();
@@ -613,13 +663,31 @@ class AiChatNotifier extends Notifier<AiChatState> {
         : ref.read(sshClientManagerProvider).getClient(serverId);
     if (profile == null || client == null) return false;
     final epoch = _requestEpoch;
+    final draftRuntimeEpoch = _draftRuntimeEpoch;
+    final connectionKey = ref.read(activeServerProvider)?.connectionKey;
+    final launchKey = _launchKey(profile);
+    bool current() =>
+        ref.mounted &&
+        epoch == _requestEpoch &&
+        draftRuntimeEpoch == _draftRuntimeEpoch &&
+        ref.read(activeServerProvider)?.connectionKey == connectionKey &&
+        state.activeAgentProfile?.id == profile.id &&
+        _launchKey(state.activeAgentProfile!) == launchKey &&
+        ref.read(serverConnectionProvider).isConnected &&
+        identical(
+          ref.read(sshClientManagerProvider).getClient(serverId!),
+          client,
+        ) &&
+        !isAgentUpdateLocked(ref, profile);
+    _pendingComposerQueries++;
     try {
       final adapter = await _adapterFor(profile, client);
+      if (!current()) return false;
       _acpSub ??= adapter.eventStream.listen(
         (event) => _handleControlEvent(event, adapter),
       );
       await adapter.initializeOnly();
-      if (!ref.mounted || epoch != _requestEpoch) return false;
+      if (!current()) return false;
       // Session-scoped command notifications cannot arrive in an empty draft.
       // Publish the verified adapter baseline even if independent skills fail.
       state = state.copyWith(
@@ -630,7 +698,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
         client,
         adapter.workingDirectory,
       );
-      if (!ref.mounted || epoch != _requestEpoch) return false;
+      if (!current()) return false;
       _composerSkills = commands;
       state = state.copyWith(
         commands: _combinedCommands(adapter.composerCommands),
@@ -640,13 +708,15 @@ class AiChatNotifier extends Notifier<AiChatState> {
       );
       return true;
     } catch (error) {
-      if (ref.mounted && epoch == _requestEpoch) {
+      if (current()) {
         state = state.copyWith(
           lastErrorCode:
               'AGENT_COMPOSER_QUERY_FAILED: ${LogSanitizer.sanitize(error.toString())}',
         );
       }
       return false;
+    } finally {
+      _pendingComposerQueries--;
     }
   }
 
@@ -658,6 +728,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
   String? _currentAdapterSessionId;
   String? _currentAdapterServerId;
   String? _currentAdapterLaunchKey;
+  String? _currentAdapterInitialModelId;
   Future<ACPClientAdapter>? _openingAdapter;
   String? _openingAdapterKey;
   int _requestEpoch = 0;
@@ -946,8 +1017,9 @@ class AiChatNotifier extends Notifier<AiChatState> {
   /// 构造一个 ACP adapter，并接上会话 id 的读取与持久化。
   Future<ACPClientAdapter> _createAdapter(
     AgentProfile profile,
-    SSHClient sshClient,
-  ) async {
+    SSHClient sshClient, {
+    String? initialModelId,
+  }) async {
     final localSession = state.activeSession;
     final serverId = _activeServerId;
     final epoch = _requestEpoch;
@@ -955,6 +1027,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
     final transport = await ref.read(acpTransportFactoryProvider)(
       profile,
       sshClient,
+      initialModelId: initialModelId,
     );
     var workingDirectory =
         localSession?.workingDirectory ?? _draftWorkingDirectory ?? '.';
@@ -1060,13 +1133,30 @@ class AiChatNotifier extends Notifier<AiChatState> {
       '${profile.executionTarget}|${profile.containerBinding}|'
       '${profile.containerReference}|${profile.containerUser}|${profile.acpCommand}|${profile.cliCommand}';
 
+  String? _initialModelFor(AgentProfile profile) {
+    if (!usesStandardCodexAcp(profile) ||
+        state.activeSession?.contextFor(profile.id).remoteSessionId != null ||
+        (_currentAdapterAgentId == profile.id &&
+            _currentAdapterServerId == _activeServerId &&
+            _currentAdapterSessionId == state.activeSessionId &&
+            _currentAdapter?.sessionId != null)) {
+      return null;
+    }
+    final model = state.runSettings.modelId;
+    return _validCustomModel(model) ? model : null;
+  }
+
   Future<ACPClientAdapter> _adapterFor(AgentProfile profile, SSHClient client) {
+    if (isAgentUpdateLocked(ref, profile)) {
+      return Future.error(StateError('AGENT_UPDATE_IN_PROGRESS'));
+    }
+    final initialModelId = _initialModelFor(profile);
     final key =
-        '$_requestEpoch|$_activeServerId|${state.activeSessionId}|${profile.id}|${_launchKey(profile)}';
+        '$_requestEpoch|$_draftRuntimeEpoch|$_activeServerId|${state.activeSessionId}|${profile.id}|${_launchKey(profile)}|$initialModelId';
     if (_openingAdapterKey == key && _openingAdapter != null) {
       return _openingAdapter!;
     }
-    final operation = _openAdapterFor(profile, client);
+    final operation = _openAdapterFor(profile, client, initialModelId);
     _openingAdapterKey = key;
     _openingAdapter = operation;
     unawaited(
@@ -1085,6 +1175,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
   Future<ACPClientAdapter> _openAdapterFor(
     AgentProfile profile,
     SSHClient client,
+    String? initialModelId,
   ) async {
     final serverId = _activeServerId;
     final sessionId = state.activeSessionId;
@@ -1094,19 +1185,35 @@ class AiChatNotifier extends Notifier<AiChatState> {
         _currentAdapterAgentId == profile.id &&
         _currentAdapterSessionId == sessionId &&
         _currentAdapterServerId == serverId &&
-        _currentAdapterLaunchKey == key) {
+        _currentAdapterLaunchKey == key &&
+        (_currentAdapter!.sessionId != null ||
+            _currentAdapterInitialModelId == initialModelId)) {
       return _currentAdapter!;
     }
     _currentAdapter?.dispose();
     _currentAdapter = null;
     state = state.copyWith(authenticationConfirmed: false);
     final epoch = _requestEpoch;
-    final adapter = await _createAdapter(profile, client);
+    final draftRuntimeEpoch = _draftRuntimeEpoch;
+    final ACPClientAdapter adapter;
+    _pendingAdapterOpens++;
+    try {
+      adapter = await _createAdapter(
+        profile,
+        client,
+        initialModelId: initialModelId,
+      );
+    } finally {
+      _pendingAdapterOpens--;
+    }
     if (!ref.mounted ||
         epoch != _requestEpoch ||
+        draftRuntimeEpoch != _draftRuntimeEpoch ||
         _activeServerId != serverId ||
         state.activeSessionId != sessionId ||
-        state.activeAgentProfile?.id != profile.id) {
+        state.activeAgentProfile?.id != profile.id ||
+        _initialModelFor(profile) != initialModelId ||
+        isAgentUpdateLocked(ref, profile)) {
       adapter.dispose();
       throw StateError('ACP_TARGET_CHANGED');
     }
@@ -1115,6 +1222,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
     _currentAdapterSessionId = sessionId;
     _currentAdapterServerId = serverId;
     _currentAdapterLaunchKey = key;
+    _currentAdapterInitialModelId = initialModelId;
     return adapter;
   }
 
@@ -1305,6 +1413,62 @@ class AiChatNotifier extends Notifier<AiChatState> {
     }
   }
 
+  /// Explicit user action: replace the ACP transport and initialize only.
+  /// Does not create/load a session, send a prompt, or clear message failures.
+  /// False means busy, unavailable, superseded, or initialization failed.
+  Future<bool> reconnectCurrentAgent() async {
+    if (isRuntimeBusy || !ref.read(appVisibilityProvider)) {
+      return false;
+    }
+    final profile = state.activeAgentProfile;
+    final serverId = _activeServerId;
+    final connectionKey = ref.read(activeServerProvider)?.connectionKey;
+    if (profile == null ||
+        serverId == null ||
+        !ref.read(serverConnectionProvider).isConnected ||
+        ref.read(sshClientManagerProvider).getClient(serverId) == null) {
+      return false;
+    }
+    final sessionId = state.activeSessionId;
+    final launchKey = _launchKey(profile);
+    final draftDirectory = _draftWorkingDirectory;
+    final visibleDraftDirectory = state.draftWorkingDirectory;
+    final recoveryStatus = state.recoveryStatus;
+    final retryAfterAuth = _retryAfterAuth;
+    _resetAdapter(preserveDraftWorkingDirectory: true);
+    _retryAfterAuth = retryAfterAuth;
+    final epoch = _requestEpoch;
+    bool current() =>
+        ref.mounted &&
+        epoch == _requestEpoch &&
+        serverId == _activeServerId &&
+        connectionKey == ref.read(activeServerProvider)?.connectionKey &&
+        sessionId == state.activeSessionId &&
+        profile.id == state.activeAgentProfile?.id &&
+        launchKey == _launchKey(state.activeAgentProfile!);
+    if (!current()) return false;
+    // Reinitializing a transport does not resolve an incomplete history replay.
+    state = state.copyWith(recoveryStatus: recoveryStatus);
+    try {
+      final initialized = await prepareRunSettings(refresh: true);
+      return current() &&
+          ref.read(serverConnectionProvider).isConnected &&
+          initialized;
+    } finally {
+      if (current()) {
+        // Adapter discovery may canonicalize a blank draft's working directory.
+        // Reconnect must not change the user's draft selection.
+        _draftWorkingDirectory = draftDirectory;
+        if (state.draftWorkingDirectory != visibleDraftDirectory) {
+          state = state.copyWith(
+            draftWorkingDirectory: visibleDraftDirectory,
+            clearDraftWorkingDirectory: visibleDraftDirectory == null,
+          );
+        }
+      }
+    }
+  }
+
   Future<bool> prepareRunSettings({bool refresh = false}) async {
     if (state.isGenerating ||
         state.isAuthenticating ||
@@ -1324,7 +1488,27 @@ class AiChatNotifier extends Notifier<AiChatState> {
       );
       return false;
     }
+    if (isAgentUpdateLocked(ref, profile)) {
+      state = state.copyWith(lastErrorCode: 'AGENT_UPDATE_IN_PROGRESS');
+      return false;
+    }
     final epoch = _requestEpoch;
+    final connectionKey = ref.read(activeServerProvider)?.connectionKey;
+    final launchKey = _launchKey(profile);
+    bool sameTarget() =>
+        ref.mounted &&
+        epoch == _requestEpoch &&
+        ref.read(activeServerProvider)?.connectionKey == connectionKey &&
+        state.activeAgentProfile?.id == profile.id &&
+        _launchKey(state.activeAgentProfile!) == launchKey &&
+        identical(
+          ref.read(sshClientManagerProvider).getClient(serverId!),
+          client,
+        );
+    bool current() =>
+        sameTarget() &&
+        ref.read(serverConnectionProvider).isConnected &&
+        !isAgentUpdateLocked(ref, profile);
     state = state.copyWith(
       isLoadingSettings: true,
       settingsStale: true,
@@ -1332,6 +1516,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
     );
     try {
       final adapter = await _adapterFor(profile, client);
+      if (!current()) return false;
       await _acpSub?.cancel();
       _acpSub = adapter.eventStream.listen(
         (event) => _handleControlEvent(event, adapter),
@@ -1342,7 +1527,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
       // Discovery does not restore a thread or recreate the ACP transport.
       // Session setup is deferred to an explicit settings change or first send.
       await adapter.initializeOnly();
-      if (!ref.mounted || epoch != _requestEpoch) return false;
+      if (!current()) return false;
       AgentRuntimeCapabilities? catalog;
       String? catalogError;
       try {
@@ -1352,8 +1537,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
         }
       } catch (error) {
         catalogError = LogSanitizer.sanitize(error.toString());
-        if (ref.mounted &&
-            epoch == _requestEpoch &&
+        if (current() &&
             error is ModelCatalogQueryException &&
             ((error.accountKey != null &&
                     _modelAccountKey != null &&
@@ -1365,7 +1549,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
           state = state.copyWith(clearSettingsMetadata: true);
         }
       }
-      if (!ref.mounted || epoch != _requestEpoch) return false;
+      if (!current()) return false;
       if (catalog != null) {
         _modelCatalog = catalog;
         _modelAccountKey = catalog.catalogAccountKey;
@@ -1389,19 +1573,51 @@ class AiChatNotifier extends Notifier<AiChatState> {
       );
       return true;
     } catch (error) {
-      if (ref.mounted && epoch == _requestEpoch) {
+      if (current()) {
         state = state.copyWith(
           settingsStale: true,
           lastErrorCode: state.authChallenge != null
               ? authRequiredCode
               : error.toString(),
+          diagnostics: _currentAdapter?.diagnostics,
         );
       }
       return false;
     } finally {
-      if (ref.mounted && epoch == _requestEpoch) {
+      if (sameTarget()) {
         state = state.copyWith(isLoadingSettings: false);
       }
+    }
+  }
+
+  /// Aliased profiles can share an install; refresh the current server's idle runtime.
+  Future<void> refreshRuntimeAfterUpdate(
+    AgentProfile profile, {
+    bool refresh = true,
+  }) async {
+    final current = state.activeAgentProfile;
+    if (current == null ||
+        current.serverId != profile.serverId ||
+        _activeServerId != profile.serverId ||
+        isRuntimeBusy ||
+        (refresh && isAgentUpdateLocked(ref, current))) {
+      return;
+    }
+    _requestEpoch++;
+    _currentAdapter?.dispose();
+    _currentAdapter = null;
+    _currentAdapterInitialModelId = null;
+    _openingAdapter = null;
+    _openingAdapterKey = null;
+    unawaited(_acpSub?.cancel());
+    _acpSub = null;
+    _modelCatalog = null;
+    _modelAccountKey = null;
+    _composerSkills = const [];
+    _composerQuery = null;
+    state = state.copyWith(settingsStale: true);
+    if (refresh && ref.read(serverConnectionProvider).isConnected) {
+      await prepareRunSettings(refresh: true);
     }
   }
 
@@ -1656,6 +1872,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
     final session = state.sessions.firstWhere((s) => s.id == sessionId);
     final selectedAgentId = state.activeAgentProfile?.id;
     state = state.copyWith(
+      clearError: state.activeSessionId != sessionId,
       activeSessionId: sessionId,
       runSettings: selectedAgentId == null || serverId == null
           ? const ChatRunSettings()
@@ -1821,24 +2038,38 @@ class AiChatNotifier extends Notifier<AiChatState> {
         ? null
         : ref.read(sshClientManagerProvider).getClient(serverId);
     if (profile == null || client == null) throw StateError(disconnectedCode);
+    if (isAgentUpdateLocked(ref, profile)) {
+      throw StateError('AGENT_UPDATE_IN_PROGRESS');
+    }
     final key = _launchKey(profile);
-    final transport = await ref.read(acpTransportFactoryProvider)(
-      profile,
-      client,
-    );
-    final adapter = ACPClientAdapter(
-      profile: profile,
-      transport: transport,
-      workingDirectory: '/',
-    );
+    final epoch = _requestEpoch;
+    final connectionKey = ref.read(activeServerProvider)?.connectionKey;
+    ACPClientAdapter? adapter;
+    _remoteCatalogQueries++;
     try {
+      final transport = await ref.read(acpTransportFactoryProvider)(
+        profile,
+        client,
+      );
+      adapter = ACPClientAdapter(
+        profile: profile,
+        transport: transport,
+        workingDirectory: '/',
+      );
       final page = await adapter.listRemoteSessions(
         ListSessionsRequest(cursor: cursor),
       );
       if (!ref.mounted ||
+          epoch != _requestEpoch ||
+          ref.read(activeServerProvider)?.connectionKey != connectionKey ||
           serverId != _activeServerId ||
           profile.id != state.activeAgentProfile?.id ||
-          key != _launchKey(state.activeAgentProfile!)) {
+          key != _launchKey(state.activeAgentProfile!) ||
+          !identical(
+            ref.read(sshClientManagerProvider).getClient(serverId!),
+            client,
+          ) ||
+          isAgentUpdateLocked(ref, profile)) {
         throw StateError('ACP_TARGET_CHANGED');
       }
       return AcpRemoteSessionPage(
@@ -1848,7 +2079,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
                 id: s.sessionId,
                 title: s.title ?? s.sessionId,
                 workingDirectory: s.cwd,
-                serverId: serverId!,
+                serverId: serverId,
                 agentId: profile.id,
                 launchKey: key,
               ),
@@ -1857,7 +2088,8 @@ class AiChatNotifier extends Notifier<AiChatState> {
         page.nextCursor,
       );
     } finally {
-      adapter.dispose();
+      adapter?.dispose();
+      _remoteCatalogQueries--;
     }
   }
 
@@ -2344,7 +2576,8 @@ class AiChatNotifier extends Notifier<AiChatState> {
     if (settings.customModel && !_validCustomModel(settings.modelId)) {
       throw StateError('ACP_CUSTOM_MODEL_INVALID');
     }
-    if (state.isGenerating ||
+    if (_isPreparingPrompt ||
+        state.isGenerating ||
         state.isAuthenticating ||
         state.isLoadingSettings ||
         state.isApplyingSettings) {
@@ -2353,6 +2586,9 @@ class AiChatNotifier extends Notifier<AiChatState> {
     final serverId = _activeServerId;
     final agentId = state.activeAgentProfile?.id;
     if (serverId == null || agentId == null) return;
+    if (isAgentUpdateLocked(ref, state.activeAgentProfile!)) {
+      throw StateError('AGENT_UPDATE_IN_PROGRESS');
+    }
     final epoch = _requestEpoch;
     final previousSettings = state.runSettings;
     final storage = ref.read(localStorageServiceProvider);
@@ -2365,13 +2601,43 @@ class AiChatNotifier extends Notifier<AiChatState> {
     state = state.copyWith(isApplyingSettings: true, clearError: true);
     try {
       final adapter = _currentAdapter;
-      if (state.activeSession == null) {
-        // Draft preferences are applied only after session/new at first send.
+      final unstarted = state.activeSession;
+      if (unstarted == null ||
+          (usesStandardCodexAcp(state.activeAgentProfile!) &&
+              unstarted.contextFor(agentId).remoteSessionId == null &&
+              adapter?.sessionId == null)) {
+        // New standard Codex processes receive the chosen model before session/new.
         await ref
             .read(localStorageServiceProvider)
             .saveChatRunDefault(serverId, agentId, settings);
+        defaultSaved = true;
         if (!ref.mounted || epoch != _requestEpoch) return;
+        if (unstarted != null) {
+          final updated = unstarted.copyWith(
+            agentRunSettings: {
+              ...unstarted.agentRunSettings,
+              agentId: settings,
+            },
+          );
+          sessionSaveAttempted = true;
+          await ref.read(chatRepositoryProvider).saveSession(updated);
+          if (!ref.mounted || epoch != _requestEpoch) return;
+          _updateSessionInState(updated);
+        }
         state = state.copyWith(runSettings: settings);
+        if (usesStandardCodexAcp(state.activeAgentProfile!) &&
+            _currentAdapter?.sessionId == null &&
+            previousSettings.modelId != settings.modelId) {
+          _draftRuntimeEpoch++;
+          _composerQuery = null;
+          _openingAdapter = null;
+          _openingAdapterKey = null;
+          _currentAdapter?.dispose();
+          _currentAdapter = null;
+          _currentAdapterInitialModelId = null;
+          unawaited(_acpSub?.cancel());
+          _acpSub = null;
+        }
         return;
       }
       if (adapter == null) {
@@ -2684,6 +2950,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
       state = state.copyWith(recoveryStatus: SessionRecoveryStatus.idle);
       return;
     }
+    if (isAgentUpdateLocked(ref, profile)) return;
     final remoteId = session.contextFor(profile.id).remoteSessionId;
     if (remoteId == null) {
       state = state.copyWith(recoveryStatus: SessionRecoveryStatus.idle);
@@ -2882,7 +3149,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
     }
   }
 
-  void _resetAdapter() {
+  void _resetAdapter({bool preserveDraftWorkingDirectory = false}) {
     _closeAuthLoopback();
     cancelModelAuthorization();
     _modelCatalog = null;
@@ -2903,7 +3170,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
     _acpSub = null;
     _currentAdapter?.dispose();
     _currentAdapter = null;
-    _draftWorkingDirectory = null;
+    if (!preserveDraftWorkingDirectory) _draftWorkingDirectory = null;
     state = state.copyWith(
       recoveryStatus: SessionRecoveryStatus.idle,
       capabilities: const AgentRuntimeCapabilities(),
@@ -2916,7 +3183,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
       clearAuthChallenge: true,
       authenticationConfirmed: false,
       clearPermission: true,
-      clearDraftWorkingDirectory: true,
+      clearDraftWorkingDirectory: !preserveDraftWorkingDirectory,
       commands: const [],
       clearUsage: true,
       diagnostics: '',
@@ -2958,6 +3225,11 @@ class AiChatNotifier extends Notifier<AiChatState> {
   Future<void> sendMessage(String text) async {
     if (state.recoveryStatus == SessionRecoveryStatus.reconnecting ||
         state.recoveryStatus == SessionRecoveryStatus.syncing) {
+      return;
+    }
+    final target = state.activeAgentProfile;
+    if (target != null && isAgentUpdateLocked(ref, target)) {
+      state = state.copyWith(lastErrorCode: 'AGENT_UPDATE_IN_PROGRESS');
       return;
     }
     if ((text.trim().isEmpty && state.attachments.isEmpty) ||
@@ -3079,7 +3351,10 @@ class AiChatNotifier extends Notifier<AiChatState> {
     );
 
     var assistantMsg = retryPending
-        ? session.messages.last.copyWith(status: ChatTurnStatus.streaming)
+        ? session.messages.last.copyWith(
+            status: ChatTurnStatus.streaming,
+            clearFailure: true,
+          )
         : ChatMessage(
             status: ChatTurnStatus.streaming,
             agentId: profile.id,
@@ -3090,7 +3365,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
           );
 
     var currentMessages = retryPending
-        ? session.messages
+        ? [...session.messages.take(session.messages.length - 1), assistantMsg]
         : [...session.messages, userMsg, assistantMsg];
     var updatedSession = session.copyWith(
       participantAgentIds: {
@@ -3127,7 +3402,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
 
       await _acpSub?.cancel();
       final content = StringBuffer(assistantMsg.content);
-      var blocks = assistantMsg.contentBlocks.toList();
+      var blocks = assistantMsg.contentBlocks;
       final thinking = StringBuffer(assistantMsg.thinking ?? '');
       final resourceWrites = <Future<void>>[];
       final store = ref.read(acpAttachmentStoreProvider);
@@ -3135,11 +3410,15 @@ class AiChatNotifier extends Notifier<AiChatState> {
         _streamTimer?.cancel();
         _streamTimer = null;
         if (!ref.mounted || requestEpoch != _requestEpoch) return;
-        assistantMsg = assistantMsg.copyWith(
-          content: content.toString(),
-          contentBlocks: blocks,
-          thinking: thinking.toString(),
-        );
+        if (content.length != assistantMsg.content.length ||
+            thinking.length != (assistantMsg.thinking?.length ?? 0) ||
+            !identical(blocks, assistantMsg.contentBlocks)) {
+          assistantMsg = assistantMsg.copyWith(
+            content: content.toString(),
+            contentBlocks: blocks,
+            thinking: thinking.toString(),
+          );
+        }
         _updateAssistantMessage(updatedSession, assistantMsg);
       }
 
@@ -3169,7 +3448,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
           _updateSessionInState(
             latest.copyWith(messages: [...latest.messages, assistantMsg]),
           );
-        } else {
+        } else if (previousId != id) {
           assistantMsg = assistantMsg.copyWith(remoteMessageId: id);
         }
       }
@@ -3323,6 +3602,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
         } else if (event is ACPAuthRequiredEvent) {
           assistantMsg = assistantMsg.copyWith(
             status: ChatTurnStatus.awaitingAuthentication,
+            failureCode: authRequiredCode,
           );
           flush();
         } else if (event is ACPCompleteEvent) {
@@ -3336,19 +3616,16 @@ class AiChatNotifier extends Notifier<AiChatState> {
           state = state.copyWith(isGenerating: false, clearPermission: true);
         } else if (event is ACPErrorEvent) {
           _cancelPermissions();
-          assistantMsg = assistantMsg.copyWith(status: ChatTurnStatus.failed);
-          final errorText = '\n\n**Error:** ${event.error}';
-          blocks = ChatContentBlock.appendText(
-            blocks,
-            content.length,
-            content.length + errorText.length,
+          final failureCode = LogSanitizer.sanitize(event.error);
+          assistantMsg = assistantMsg.copyWith(
+            status: ChatTurnStatus.failed,
+            failureCode: failureCode,
           );
-          content.write(errorText);
           flush();
           state = state.copyWith(
             isGenerating: false,
             clearPermission: true,
-            lastErrorCode: event.error,
+            lastErrorCode: failureCode,
           );
         }
       });
@@ -3471,7 +3748,18 @@ class AiChatNotifier extends Notifier<AiChatState> {
         }
         return;
       }
-      state = state.copyWith(lastErrorCode: error.toString());
+      final failureCode = LogSanitizer.sanitize(error.toString());
+      _updateAssistantMessage(
+        updatedSession,
+        assistantMsg.copyWith(
+          status: ChatTurnStatus.failed,
+          failureCode: failureCode,
+        ),
+      );
+      state = state.copyWith(
+        lastErrorCode: failureCode,
+        diagnostics: adapter?.diagnostics,
+      );
       await stopGeneration();
     }
   }
@@ -3740,9 +4028,10 @@ class AiChatNotifier extends Notifier<AiChatState> {
         .where((entry) => entry.id == session.id)
         .firstOrNull;
     if (latest == null) return;
-    final msgs = latest.messages
-        .map((entry) => entry.id == msg.id ? msg : entry)
-        .toList();
+    final index = latest.messages.indexWhere((entry) => entry.id == msg.id);
+    if (index < 0 || identical(latest.messages[index], msg)) return;
+    final msgs = latest.messages.toList();
+    msgs[index] = msg;
     final updated = latest.copyWith(messages: msgs, updatedAt: DateTime.now());
     _updateSessionInState(updated);
   }
@@ -3896,6 +4185,12 @@ class AiChatNotifier extends Notifier<AiChatState> {
   /// retain their established deferred flow. Null cancels without sending text.
   Future<void> respondAuth(String? methodId) async {
     final profile = state.activeAgentProfile;
+    if (methodId != null &&
+        profile != null &&
+        isAgentUpdateLocked(ref, profile)) {
+      state = state.copyWith(authError: 'AGENT_UPDATE_IN_PROGRESS');
+      return;
+    }
     final challenge = state.authChallenge;
     if (profile != null && usesAntigravityAcp(profile) && challenge != null) {
       if (challenge.serverId != _activeServerId ||

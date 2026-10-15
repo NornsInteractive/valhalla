@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/providers/agent_registry_provider.dart';
+import 'package:valhalla/core/providers/agent_update_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/data/models/agent_profile.dart';
@@ -43,6 +46,13 @@ void main() {
         home: child,
       ),
     );
+  }
+
+  Future<void> expandAgentDetails(WidgetTester tester, String agentId) async {
+    final toggle = find.byKey(Key('agent_toggle_details_$agentId'));
+    await tester.ensureVisible(toggle);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
   }
 
   testWidgets(
@@ -145,6 +155,105 @@ void main() {
   );
 
   testWidgets(
+    'Update component selection preserves deliberate empty selection and exact scope',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final local = await LocalStorageService.init();
+      final profile = AgentProfile(
+        id: 'update-scope-fixture',
+        serverId: testServer.id,
+        name: 'Codex update scope',
+        description: '',
+        cliCommand: 'codex',
+        acpCommand: 'codex-acp',
+      );
+      final updates = _SelectableUpdates(testServer, profile);
+      await tester.pumpWidget(
+        createTestApp(
+          child: const AgentManagementView(),
+          overrides: [
+            localStorageServiceProvider.overrideWithValue(local),
+            activeServerProvider.overrideWith(
+              () => _MockActiveServerNotifier(testServer),
+            ),
+            serverConnectionProvider.overrideWith(
+              () => _MockServerConnectionNotifier(
+                ServerConnectionState(
+                  status: ConnectionStateEnum.connected,
+                  activeServerId: testServer.id,
+                ),
+              ),
+            ),
+            agentRegistryProvider.overrideWith(
+              () => _MockAgentRegistryNotifier(
+                AgentRegistryState(
+                  serverId: testServer.id,
+                  agents: [
+                    AgentRuntimeState(
+                      profile: profile,
+                      status: AgentEnvironmentStatus(
+                        kind: AgentEnvironmentStatusKind.ready,
+                        checkedAt: DateTime(2026, 10, 15),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            agentUpdatesProvider.overrideWith(() => updates),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expandAgentDetails(tester, profile.id);
+      final cli = find.byKey(Key('agent_select_update_${profile.id}_cli'));
+      final acp = find.byKey(Key('agent_select_update_${profile.id}_acp'));
+      final update = find.byKey(Key('agent_update_button_${profile.id}'));
+      expect(tester.widget<Checkbox>(cli).value, isTrue);
+      expect(tester.widget<Checkbox>(acp).value, isTrue);
+      await tester.ensureVisible(cli);
+      await tester.tap(cli);
+      await tester.pumpAndSettle();
+      expect(tester.widget<Checkbox>(cli).value, isFalse);
+      expect(tester.widget<Checkbox>(acp).value, isTrue);
+      await tester.ensureVisible(update);
+      await tester.tap(update);
+      await tester.pumpAndSettle();
+      expect(updates.preparedComponents, {AgentUpdateComponent.acp});
+      expect(updates.applyCalls, 0);
+      await tester.tap(
+        find.byKey(const Key('agent_update_dialog_cancel_button')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(acp);
+      await tester.tap(acp);
+      await tester.pumpAndSettle();
+      expect(tester.widget<Checkbox>(cli).value, isFalse);
+      expect(tester.widget<Checkbox>(acp).value, isFalse);
+      expect(tester.widget<ButtonStyleButton>(update).onPressed, isNull);
+      expect(updates.prepareCalls, 1);
+      expect(updates.applyCalls, 0);
+
+      await tester.ensureVisible(cli);
+      await tester.tap(cli);
+      await tester.pumpAndSettle();
+      expect(tester.widget<Checkbox>(cli).value, isTrue);
+      expect(tester.widget<Checkbox>(acp).value, isFalse);
+      await tester.ensureVisible(update);
+      await tester.tap(update);
+      await tester.pumpAndSettle();
+      expect(updates.preparedComponents, {AgentUpdateComponent.cli});
+      expect(updates.prepareCalls, 2);
+      expect(updates.applyCalls, 0);
+      await tester.tap(
+        find.byKey(const Key('agent_update_dialog_cancel_button')),
+      );
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
     'AgentFormDialog populates presets and validates required commands',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
@@ -159,9 +268,16 @@ void main() {
       await tester.pumpAndSettle();
 
       // Default preset is Claude Code
-      expect(find.text('Claude CodeX'), findsOneWidget);
+      expect(find.text('Claude Code'), findsNWidgets(2));
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is EditableText && widget.controller.text == 'Claude Code',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('claude'), findsOneWidget);
-      expect(find.text('claude-code-acp'), findsOneWidget);
+      expect(find.text('claude-agent-acp'), findsOneWidget);
 
       // Switch to Codex preset
       await tester.tap(find.text('OpenAI Codex'));
@@ -358,6 +474,7 @@ void main() {
               () => _MockServerConnectionNotifier(
                 const ServerConnectionState(
                   status: ConnectionStateEnum.connected,
+                  activeServerId: 'srv-test-1',
                 ),
               ),
             ),
@@ -410,6 +527,138 @@ void main() {
   );
 
   testWidgets(
+    'Pending interactive login releases its registry lease after management route is removed',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final local = await LocalStorageService.init();
+      final profile = AgentProfile(
+        id: 'codex-disposed-login',
+        serverId: testServer.id,
+        name: 'OpenAI Codex',
+        description: '',
+        cliCommand: 'codex',
+        acpCommand: 'codex-acp',
+        loginCommand: 'codex login',
+      );
+      final registry = _MockAgentRegistryNotifier(
+        AgentRegistryState(
+          serverId: testServer.id,
+          agents: [
+            AgentRuntimeState(
+              profile: profile,
+              status: AgentEnvironmentStatus(
+                kind: AgentEnvironmentStatusKind.notLoggedIn,
+                checkedAt: DateTime(2026, 10, 15),
+              ),
+            ),
+          ],
+        ),
+      );
+      final login = Completer<bool?>();
+      final entered = Completer<void>();
+      var launchCalls = 0;
+      final container = ProviderContainer(
+        overrides: [
+          tempChatRepositoryOverride(),
+          localStorageServiceProvider.overrideWithValue(local),
+          activeServerProvider.overrideWith(
+            () => _MockActiveServerNotifier(testServer),
+          ),
+          serverConnectionProvider.overrideWith(
+            () => _MockServerConnectionNotifier(
+              ServerConnectionState(
+                status: ConnectionStateEnum.connected,
+                activeServerId: testServer.id,
+              ),
+            ),
+          ),
+          agentRegistryProvider.overrideWith(() => registry),
+          interactiveLoginLauncherProvider.overrideWithValue(({
+            required context,
+            required agentName,
+            required command,
+            required serverName,
+            required sshClient,
+            remoteExecCommand,
+          }) {
+            launchCalls++;
+            entered.complete();
+            return login.future;
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      final navigation = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            navigatorKey: navigation,
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: TextButton(
+                key: const Key('open_management_fixture'),
+                onPressed: () => navigation.currentState!.push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => const AgentManagementView(),
+                  ),
+                ),
+                child: const Text('Open management fixture'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const Key('open_management_fixture')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Log In Now'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Execute'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(entered.isCompleted, isTrue);
+      expect(launchCalls, 1);
+      expect(
+        container
+            .read(agentRegistryProvider)
+            .findRuntime(profile.id)!
+            .isLoggingIn,
+        isTrue,
+      );
+
+      // Remove only the route. The registry and its login lease remain alive.
+      navigation.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(find.byType(AgentManagementView), findsNothing);
+      expect(
+        container
+            .read(agentRegistryProvider)
+            .findRuntime(profile.id)!
+            .isLoggingIn,
+        isTrue,
+      );
+      login.complete(true);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+        container
+            .read(agentRegistryProvider)
+            .findRuntime(profile.id)!
+            .isLoggingIn,
+        isFalse,
+      );
+      expect(
+        registry.loggedInAgentId,
+        isNull,
+        reason:
+            'A disposed route must not start a follow-up UI/login operation',
+      );
+    },
+  );
+
+  testWidgets(
     'AgentManagementView for Docker agent passes agentTargetCommand as remoteExecCommand while dialog shows raw command',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
@@ -456,6 +705,7 @@ void main() {
               () => _MockServerConnectionNotifier(
                 const ServerConnectionState(
                   status: ConnectionStateEnum.connected,
+                  activeServerId: 'srv-test-1',
                 ),
               ),
             ),
@@ -1361,7 +1611,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Docker: my-web-container'), findsOneWidget);
+      expect(
+        find.text('Docker: my-web-container').hitTestable(),
+        findsOneWidget,
+      );
     },
   );
 
@@ -1417,6 +1670,8 @@ void main() {
       final logBtnFinder = find.byKey(
         const Key('agent_diagnostic_log_button_agent-no-log'),
       );
+      await expandAgentDetails(tester, 'agent-no-log');
+      await tester.ensureVisible(logBtnFinder);
       expect(logBtnFinder, findsOneWidget);
       expect(find.text('View Diagnostic Log'), findsOneWidget);
 
@@ -1500,6 +1755,8 @@ void main() {
       expect(buttonWidget.enabled, isTrue);
 
       // Open log dialog
+      await expandAgentDetails(tester, 'agent-with-log');
+      await tester.ensureVisible(logBtnFinder);
       await tester.tap(logBtnFinder);
       await tester.pumpAndSettle();
 
@@ -1602,6 +1859,7 @@ void main() {
       final logBtn = find.byKey(
         const Key('agent_diagnostic_log_button_narrow-agent'),
       );
+      await expandAgentDetails(tester, 'narrow-agent');
       await tester.ensureVisible(logBtn);
       await tester.tap(logBtn);
       await tester.pumpAndSettle();
@@ -1894,6 +2152,69 @@ void main() {
 
     expect(layoutErrs, isEmpty, reason: '窄屏大字号下渲染异常：$layoutErrs');
   });
+}
+
+class _SelectableUpdates extends AgentUpdatesNotifier {
+  _SelectableUpdates(this.server, this.profile);
+  final ServerProfile server;
+  final AgentProfile profile;
+  Set<AgentUpdateComponent>? preparedComponents;
+  int prepareCalls = 0;
+  int applyCalls = 0;
+
+  List<AgentComponentUpdate> get components => [
+    for (final component in AgentUpdateComponent.values)
+      AgentComponentUpdate(
+        component: component,
+        status: AgentUpdateStatus.available,
+        installedVersion: '1.0.0',
+        latestVersion: '2.0.0',
+        source: 'official',
+        command: 'fixture-update-${component.name}',
+      ),
+  ];
+
+  @override
+  AgentUpdatesState build() => AgentUpdatesState(
+    serverId: server.id,
+    agents: {
+      profile.id: AgentUpdateEntry(
+        report: AgentUpdateReport(
+          agentId: profile.id,
+          targetKey: 'a' * 64,
+          checkedAt: DateTime(2026, 10, 15),
+          components: components,
+        ),
+      ),
+    },
+  );
+
+  @override
+  Future<void> dismissUpdateNotice() async {}
+
+  @override
+  Future<AgentUpdatePlan> prepareUpdate(
+    String agentId, {
+    Set<AgentUpdateComponent>? components,
+  }) async {
+    prepareCalls++;
+    preparedComponents = components == null ? null : Set.of(components);
+    return AgentUpdatePlan(
+      server: server,
+      profile: profile,
+      targetKey: 'a' * 64,
+      preparedAt: DateTime(2026, 10, 15),
+      runtimeIdentity: 'fixture-only',
+      components: this.components
+          .where((item) => components?.contains(item.component) ?? true)
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> applyConfirmedUpdate(AgentUpdatePlan plan) async {
+    applyCalls++;
+  }
 }
 
 class _MockAgentRegistryNotifier extends AgentRegistryNotifier {

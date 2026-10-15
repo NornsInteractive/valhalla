@@ -26,6 +26,18 @@ class _Bridge extends TerminalSessionBridge {
 
 class _Notifier extends SeededTerminalNotifier {
   _Notifier(super.initial);
+
+  void emit(SshTerminalState next) => state = next;
+}
+
+class _GeometryBridge extends _Bridge {
+  TerminalSessionMode simulatedMode = TerminalSessionMode.tmux;
+
+  @override
+  TerminalSessionMode get mode => simulatedMode;
+
+  @override
+  TerminalConnectionState get state => stateListenable.value;
 }
 
 TerminalTab _tab(String id) {
@@ -99,6 +111,136 @@ TerminalViewState _terminalState(WidgetTester tester) =>
     tester.state<TerminalViewState>(find.byType(TerminalView));
 
 void main() {
+  testWidgets(
+    'terminal recovery notices preserve canvas, PTY rows/columns, and scrollback',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final bridge = _GeometryBridge();
+      bridge.stateListenable.value = TerminalConnectionState.connected;
+      final tab = TerminalTab(
+        id: 'geometry',
+        title: 'geometry',
+        terminal: bridge.terminal,
+        bridge: bridge,
+      );
+      final notifier = _Notifier(
+        SshTerminalState(tabs: [tab], isInitialized: true),
+      );
+      await _pump(tester, notifier);
+      tab.terminal.write(
+        List.generate(250, (index) => 'history $index\r\n').join(),
+      );
+      await tester.pumpAndSettle();
+      final terminalView = find.byType(TerminalView);
+      final scroll = tester
+          .state<ScrollableState>(
+            find.descendant(
+              of: terminalView,
+              matching: find.byType(Scrollable),
+            ),
+          )
+          .position;
+      expect(scroll.maxScrollExtent, greaterThan(500));
+      scroll.jumpTo(scroll.maxScrollExtent / 2);
+      await tester.pump();
+      final rect = tester.getRect(terminalView);
+      final rows = tab.terminal.viewHeight;
+      final columns = tab.terminal.viewWidth;
+      final offset = scroll.pixels;
+      final contents = tab.terminal.buffer.getText();
+
+      void expectUnchanged(String phase) {
+        expect(tester.getRect(terminalView), rect, reason: '$phase canvas');
+        expect(tab.terminal.viewHeight, rows, reason: '$phase PTY rows');
+        expect(tab.terminal.viewWidth, columns, reason: '$phase PTY columns');
+        expect(scroll.pixels, offset, reason: '$phase scrollback');
+        expect(
+          tab.terminal.buffer.getText(),
+          contents,
+          reason: '$phase buffer',
+        );
+        expect(tester.testTextInput.isVisible, isFalse);
+        expect(tester.takeException(), isNull, reason: phase);
+      }
+
+      for (final phase in [
+        TerminalConnectionState.disconnected,
+        TerminalConnectionState.connecting,
+        TerminalConnectionState.connected,
+      ]) {
+        bridge.stateListenable.value = phase;
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        expectUnchanged(phase.name);
+      }
+      expect(
+        find.byKey(const Key('terminalTmuxSessionRestored')),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(seconds: 3));
+      expect(
+        find.byKey(const Key('terminalTmuxSessionRestored')),
+        findsNothing,
+      );
+      expectUnchanged('restored notice dismissed');
+
+      notifier.emit(
+        notifier.state.copyWith(errorCode: 'TERMINAL_RESTORE_FAILED'),
+      );
+      await tester.pump();
+      expect(find.byKey(const Key('terminalErrorBanner')), findsOneWidget);
+      expectUnchanged('TERMINAL_RESTORE_FAILED');
+      bridge.simulatedMode = TerminalSessionMode.plain;
+      notifier.emit(
+        notifier.state.copyWith(
+          clearError: true,
+          noticeCode: 'TERMINAL_PLAIN_INTERRUPTED',
+        ),
+      );
+      await tester.pump();
+      expect(find.byKey(const Key('terminalNoticeBanner')), findsOneWidget);
+      expectUnchanged('TERMINAL_PLAIN_INTERRUPTED');
+      notifier.emit(notifier.state.copyWith(clearNotice: true));
+      await tester.pump();
+      expectUnchanged('recovery notices cleared');
+      await tester.pumpWidget(const SizedBox.shrink());
+      bridge.dispose();
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'terminal mode dialog preserves active output and does not reopen IME',
+    (tester) async {
+      final tab = _tab('active');
+      final notifier = _Notifier(SshTerminalState(tabs: [tab]));
+      await _pump(tester, notifier);
+      tab.terminal.write('preserved-output');
+      await tester.pump();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
+      await tester.pumpAndSettle();
+      expect(tester.testTextInput.isVisible, isFalse);
+      await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('terminalModeTmuxRadio')));
+      await tester.pumpAndSettle();
+      expect(notifier.state.activeTab, same(tab));
+      expect(tab.terminal.buffer.getText(), contains('preserved-output'));
+      expect((tab.bridge as _Bridge).disposed, isFalse);
+      expect(tester.testTextInput.isVisible, isFalse);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      tab.bridge.dispose();
+    },
+    variant: TargetPlatformVariant({TargetPlatform.android}),
+  );
+
   testWidgets(
     'clicking close on the selected tab removes its session',
     (tester) async {

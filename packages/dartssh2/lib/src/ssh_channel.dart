@@ -495,8 +495,9 @@ class SSHChannelController {
   }
 
   late final _uploadLoop = OnceSimultaneously(() async {
+    final processingSlice = Stopwatch()..start();
     while (true) {
-      if (_remoteWindow <= 0) {
+      if (_remoteWindow <= 0 || _done.isCompleted || _hasSentEOF) {
         return;
       }
 
@@ -512,7 +513,7 @@ class SSHChannelController {
         return;
       }
 
-      if (_hasSentEOF) {
+      if (_done.isCompleted || _hasSentEOF) {
         return;
       }
 
@@ -532,6 +533,11 @@ class SSHChannelController {
       sendMessage(message);
 
       _remoteWindow -= data.bytes.length;
+      if (_remoteWindow > 0 && processingSlice.elapsedMicroseconds >= 4000) {
+        // Keep the packet and window update atomic before yielding to UI events.
+        await Future<void>.delayed(Duration.zero);
+        processingSlice.reset();
+      }
     }
   });
 

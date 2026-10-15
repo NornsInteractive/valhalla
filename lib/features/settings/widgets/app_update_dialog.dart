@@ -5,9 +5,49 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../../core/design/motion_widgets.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/app_update_provider.dart';
+
+String _formatEta(int seconds) {
+  if (seconds < 60) return '${seconds}s';
+  final minutes = seconds ~/ 60;
+  final remSec = seconds % 60;
+  if (minutes < 60) {
+    return remSec > 0 ? '${minutes}m ${remSec}s' : '${minutes}m';
+  }
+  final hours = minutes ~/ 60;
+  final remMin = minutes % 60;
+  return remMin > 0 ? '${hours}h ${remMin}m' : '${hours}h';
+}
+
+String _updatePhaseResolvingText(BuildContext context) {
+  final dynamic l10n = context.l10n;
+  try {
+    final text = l10n.updatePhaseResolving as String?;
+    if (text != null && text.isNotEmpty) return text;
+  } catch (_) {}
+  return context.l10n.serverConnecting;
+}
+
+String _updatePhaseVerifyingText(BuildContext context) {
+  final dynamic l10n = context.l10n;
+  try {
+    final text = l10n.updatePhaseVerifying as String?;
+    if (text != null && text.isNotEmpty) return text;
+  } catch (_) {}
+  return context.l10n.appCenterTaskStageChecking;
+}
+
+String _updateOpeningInstallerText(BuildContext context) {
+  final dynamic l10n = context.l10n;
+  try {
+    final text = l10n.updateOpeningInstaller as String?;
+    if (text != null && text.isNotEmpty) return text;
+  } catch (_) {}
+  return context.l10n.appCenterTaskStagePreparing;
+}
 
 String formatBytes(int bytes) {
   if (bytes < 1024) return '$bytes B';
@@ -117,6 +157,7 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
   }
 
   Future<void> _handleOpenDownloaded() async {
+    if (ref.read(appUpdateProvider).opening) return;
     setState(() {
       _actionError = null;
     });
@@ -557,36 +598,141 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
         // Download Progress / Status Display
         if (state.downloadStatus == AppUpdateDownloadStatus.downloading &&
             artifact != null) ...[
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              LinearProgressIndicator(
-                value: artifact.size > 0
-                    ? (state.downloadedBytes / artifact.size).clamp(0.0, 1.0)
-                    : null,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          () {
+            final isVerifying =
+                state.downloadPhase == AppUpdateDownloadPhase.verifying ||
+                (artifact.size > 0 && state.downloadedBytes >= artifact.size);
+            final isResolving =
+                state.downloadPhase == AppUpdateDownloadPhase.resolving;
+
+            if (isVerifying) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${formatBytes(state.downloadedBytes)} / ${formatBytes(artifact.size)}',
-                    style: monoTextStyle(fontSize: 11),
+                  const LinearProgressIndicator(
+                    borderRadius: BorderRadius.all(Radius.circular(4)),
                   ),
-                  Text(
-                    artifact.size > 0
-                        ? '${((state.downloadedBytes / artifact.size) * 100).toStringAsFixed(1)}%'
-                        : '',
-                    style: monoTextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          PulseDot(color: context.vInfo, size: 6),
+                          const SizedBox(width: 6),
+                          Text(
+                            _updatePhaseVerifyingText(context),
+                            style: context.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        artifact.size > 0
+                            ? '100% · ${formatBytes(artifact.size)}'
+                            : '100%',
+                        style: monoTextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
-          ),
+              );
+            }
+
+            if (isResolving) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const LinearProgressIndicator(
+                    borderRadius: BorderRadius.all(Radius.circular(4)),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          PulseDot(color: context.vInfo, size: 6),
+                          const SizedBox(width: 6),
+                          Text(
+                            _updatePhaseResolvingText(context),
+                            style: context.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (artifact.size > 0)
+                        Text(
+                          formatBytes(artifact.size),
+                          style: monoTextStyle(fontSize: 11),
+                        ),
+                    ],
+                  ),
+                ],
+              );
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LinearProgressIndicator(
+                  value: artifact.size > 0
+                      ? (state.downloadedBytes / artifact.size).clamp(0.0, 1.0)
+                      : null,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${formatBytes(state.downloadedBytes)} / ${formatBytes(artifact.size)}',
+                      style: monoTextStyle(fontSize: 11),
+                    ),
+                    Text(
+                      artifact.size > 0
+                          ? '${((state.downloadedBytes / artifact.size) * 100).toStringAsFixed(1)}%'
+                          : '',
+                      style: monoTextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                if (state.bytesPerSecond > 0) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${formatBytes(state.bytesPerSecond.round())}/s',
+                        style: monoTextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (state.remainingSeconds != null)
+                        Text(
+                          'ETA ${_formatEta(state.remainingSeconds!)}',
+                          style: monoTextStyle(
+                            fontSize: 11,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
+            );
+          }(),
           const SizedBox(height: 12),
         ] else if (state.downloadStatus == AppUpdateDownloadStatus.paused &&
             artifact != null) ...[
@@ -636,15 +782,27 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      color: context.vSuccess,
-                      size: 20,
-                    ),
+                    if (state.opening)
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: context.vSuccess,
+                        ),
+                      )
+                    else
+                      Icon(
+                        Icons.check_circle_outline,
+                        color: context.vSuccess,
+                        size: 20,
+                      ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        context.l10n.updateDownloadCompleted,
+                        state.opening
+                            ? _updateOpeningInstallerText(context)
+                            : context.l10n.updateDownloadCompleted,
                         style: TextStyle(
                           color: context.vSuccess,
                           fontWeight: FontWeight.bold,
@@ -654,7 +812,7 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
                     ),
                   ],
                 ),
-                if (!Platform.isAndroid) ...[
+                if (!Platform.isAndroid && !state.opening) ...[
                   const SizedBox(height: 8),
                   Text(
                     context.l10n.updateDesktopInstructions,
@@ -750,15 +908,24 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
         ),
         if (release != null) ...[
           if (state.downloadStatus == AppUpdateDownloadStatus.downloading) ...[
-            FilledButton.tonalIcon(
-              key: const Key('app_update_pause_button'),
-              icon: const Icon(Icons.pause, size: 18),
-              label: Text(context.l10n.updatePause),
-              onPressed: () {
-                _clearActionError();
-                notifier.pauseDownload();
-              },
-            ),
+            () {
+              final isVerifying =
+                  state.downloadPhase == AppUpdateDownloadPhase.verifying ||
+                  (artifact != null &&
+                      artifact.size > 0 &&
+                      state.downloadedBytes >= artifact.size);
+              return FilledButton.tonalIcon(
+                key: const Key('app_update_pause_button'),
+                icon: const Icon(Icons.pause, size: 18),
+                label: Text(context.l10n.updatePause),
+                onPressed: isVerifying
+                    ? null
+                    : () {
+                        _clearActionError();
+                        notifier.pauseDownload();
+                      },
+              );
+            }(),
           ] else if (state.downloadStatus ==
               AppUpdateDownloadStatus.paused) ...[
             FilledButton.icon(
@@ -786,30 +953,58 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
             if (Platform.isAndroid) ...[
               FilledButton.icon(
                 key: const Key('app_update_install_button'),
-                icon: const Icon(Icons.system_update, size: 18),
+                icon: state.opening
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.system_update, size: 18),
                 label: Text(
-                  _actionError != null &&
-                          _actionError!.contains(
-                            'UPDATE_INSTALL_PERMISSION_REQUIRED',
-                          )
-                      ? context.l10n.updateRetryInstall
-                      : context.l10n.updateInstall,
+                  state.opening
+                      ? _updateOpeningInstallerText(context)
+                      : (_actionError != null &&
+                                _actionError!.contains(
+                                  'UPDATE_INSTALL_PERMISSION_REQUIRED',
+                                )
+                            ? context.l10n.updateRetryInstall
+                            : context.l10n.updateInstall),
                 ),
-                onPressed: _handleOpenDownloaded,
+                onPressed: state.opening ? null : _handleOpenDownloaded,
               ),
             ] else if (Platform.isWindows) ...[
               FilledButton.icon(
                 key: const Key('app_update_reveal_button'),
-                icon: const Icon(Icons.folder_open, size: 18),
-                label: Text(context.l10n.updateRevealInFolder),
-                onPressed: _handleOpenDownloaded,
+                icon: state.opening
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.folder_open, size: 18),
+                label: Text(
+                  state.opening
+                      ? _updateOpeningInstallerText(context)
+                      : context.l10n.updateRevealInFolder,
+                ),
+                onPressed: state.opening ? null : _handleOpenDownloaded,
               ),
             ] else ...[
               FilledButton.icon(
                 key: const Key('app_update_open_folder_button'),
-                icon: const Icon(Icons.folder_open, size: 18),
-                label: Text(context.l10n.updateOpenFolder),
-                onPressed: _handleOpenDownloaded,
+                icon: state.opening
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.folder_open, size: 18),
+                label: Text(
+                  state.opening
+                      ? _updateOpeningInstallerText(context)
+                      : context.l10n.updateOpenFolder,
+                ),
+                onPressed: state.opening ? null : _handleOpenDownloaded,
               ),
             ],
           ] else if (state.downloadStatus == AppUpdateDownloadStatus.idle) ...[

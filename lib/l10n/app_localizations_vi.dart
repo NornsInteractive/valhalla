@@ -132,7 +132,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get switchAgent => 'Chuyển đổi Agent';
 
   @override
-  String get agentClaudeCode => 'Claude CodeX';
+  String get agentClaudeCode => 'Claude Code';
 
   @override
   String get agentCodex => 'OpenAI Codex';
@@ -414,7 +414,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsResetDefault => 'Khôi phục mặc định';
 
   @override
-  String get settingsTerminalUseTmux => 'Phiên duy trì (tmux)';
+  String get settingsTerminalUseTmux => 'Chế độ tạo terminal thủ công mới';
 
   @override
   String get settingsTerminalUseTmuxSubtitle =>
@@ -422,7 +422,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsTerminalUseTmuxDescription =>
-      'Giữ lại đầu ra terminal sau khi ngắt kết nối. Yêu cầu tmux trên máy chủ từ xa. Thay đổi áp dụng cho các tab terminal mới mở.';
+      'Chỉ áp dụng cho các terminal được tạo thủ công. Terminal mới tự động luôn sử dụng SSH tiêu chuẩn mà không lưu lịch sử có thể khôi phục; khi bật tmux, các phiên tạo thủ công có thể khôi phục sau khi ngắt kết nối (yêu cầu tmux từ xa). Việc khôi phục lịch sử hiện có không bị ảnh hưởng.';
 
   @override
   String get settingsTerminalFontSize => 'Cỡ chữ terminal';
@@ -1389,6 +1389,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get transferFailedDownload => 'Tải xuống thất bại';
+
+  @override
+  String get transferPhasePreparing => 'Đang chuẩn bị...';
+
+  @override
+  String get transferPhaseVerifyingPartial => 'Đang kiểm tra tệp một phần...';
+
+  @override
+  String get transferPhaseVerifying => 'Đang xác minh tính toàn vẹn...';
 
   @override
   String get stopGeneration => 'Dừng';
@@ -4321,6 +4330,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get updateDownloadCompleted => 'Tải xuống hoàn tất và đã xác minh';
 
   @override
+  String get updatePhaseResolving => 'Đang kết nối với máy chủ cập nhật...';
+
+  @override
+  String get updatePhaseVerifying => 'Đang xác minh gói cập nhật...';
+
+  @override
+  String get updateOpeningInstaller => 'Đang chuẩn bị cài đặt...';
+
+  @override
   String get updateInstall => 'Cài đặt bản cập nhật';
 
   @override
@@ -5578,4 +5596,265 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get terminalNoticePlainInterrupted =>
       'Mất kết nối. Không thể tiếp tục các tiến trình shell không dùng tmux';
+
+  @override
+  String get terminalHistoryDeleteDialogTitle => 'Xóa lịch sử phiên';
+
+  @override
+  String get terminalHistoryTerminateRemote =>
+      'Đồng thời chấm dứt phiên trên máy chủ từ xa';
+
+  @override
+  String get terminalHistoryTerminateConfirmTitle => 'Chấm dứt phiên từ xa?';
+
+  @override
+  String get terminalHistoryTerminateConfirmMessage =>
+      'Thao tác này sẽ chấm dứt phiên tmux từ xa và dừng mọi tiến trình đang chạy bên trong.';
+
+  @override
+  String get terminalErrorHistoryDeleteFailed =>
+      'Không thể xóa lịch sử terminal';
+
+  @override
+  String get terminalErrorHistoryTerminateFailed =>
+      'Không thể chấm dứt phiên từ xa';
+
+  @override
+  String get terminalErrorTargetChanged =>
+      'Máy chủ đích đã thay đổi. Vui lòng mở lại phiên trên máy chủ hiện tại.';
+
+  @override
+  String get terminalModeStandard =>
+      'Terminal SSH tiêu chuẩn (Mặc định, không lịch sử)';
+
+  @override
+  String get terminalModeTmux => 'Terminal tmux (Giữ phiên từ xa và lịch sử)';
+
+  @override
+  String get terminalModeSaveFailed =>
+      'Lưu chế độ terminal thất bại, vui lòng thử lại';
+
+  @override
+  String get sftpNew => 'Tạo mới';
+
+  @override
+  String get terminalHistorySearchHint => 'Tìm kiếm tên phiên…';
+
+  @override
+  String get configMigrationBoundaryNote =>
+      'Chỉ cấu hình thiết bị cục bộ. Dữ liệu máy chủ từ xa không bị thay đổi.';
+
+  @override
+  String get configMigrationSubtitle =>
+      'Xuất hoặc nhập cài đặt ứng dụng cục bộ và cấu hình máy chủ';
+
+  @override
+  String get installAppId => 'Mã ứng dụng';
+
+  @override
+  String get installArchitecture => 'Kiến trúc';
+
+  @override
+  String get installPlatform => 'Nền tảng';
+
+  @override
+  String get settingsAboutPrivacyDesc =>
+      'Phiên bản, giấy phép mã nguồn mở và chính sách bảo mật';
+
+  @override
+  String get settingsAccentColorDesc => 'Tùy chỉnh màu nhấn giao diện';
+
+  @override
+  String get settingsSearchHint => 'Tìm kiếm cài đặt…';
+
+  @override
+  String get settingsSearchNoResults => 'Không tìm thấy cài đặt phù hợp';
+
+  @override
+  String get settingsSecurityDesc =>
+      'Máy chủ đã biết, thông tin đăng nhập và bảo mật';
+
+  @override
+  String get agentExpandDetails => 'Chi tiết';
+
+  @override
+  String get agentCollapseDetails => 'Thu gọn';
+
+  @override
+  String get transferPauseAll => 'Tạm dừng tất cả';
+
+  @override
+  String get transferResumePaused => 'Tiếp tục các mục đã tạm dừng';
+
+  @override
+  String get transferFilterAll => 'Tất cả';
+
+  @override
+  String get transferFilterActive => 'Đang truyền';
+
+  @override
+  String get transferFilterFailed => 'Thất bại';
+
+  @override
+  String get transferFilterCompleted => 'Đã hoàn thành';
+
+  @override
+  String get transferPauseReasonUser => 'Người dùng tạm dừng';
+
+  @override
+  String get transferPauseReasonNetwork => 'Tạm dừng do mất kết nối mạng';
+
+  @override
+  String get transferPauseReasonAppRestart =>
+      'Tạm dừng sau khi khởi động lại ứng dụng';
+
+  @override
+  String get transferRemotePath => 'Đường dẫn từ xa';
+
+  @override
+  String get transferLocalPath => 'Đường dẫn cục bộ';
+
+  @override
+  String get transferErrorDetail => 'Chi tiết lỗi';
+
+  @override
+  String get chatFailureKindAuth => 'Yêu cầu xác thực';
+
+  @override
+  String get chatFailureKindModelUnavailable => 'Mô hình không khả dụng';
+
+  @override
+  String get chatFailureKindConnection => 'Kết nối thất bại';
+
+  @override
+  String get chatFailureKindHistory => 'Lịch sử thất bại';
+
+  @override
+  String get chatFailureKindOther => 'Yêu cầu thất bại';
+
+  @override
+  String get chatFailureActionLogin => 'Đăng nhập';
+
+  @override
+  String get chatFailureActionRunSettings => 'Cài đặt mô hình';
+
+  @override
+  String get chatFailureActionReconnect => 'Kết nối lại';
+
+  @override
+  String get chatFailureActionReloadHistory => 'Thử lại';
+
+  @override
+  String get chatFailureActionDetails => 'Chi tiết';
+
+  @override
+  String get sftpConfigureToolbar => 'Cấu hình thanh công cụ';
+
+  @override
+  String get sftpConfigureToolbarDesc =>
+      'Chọn các tác vụ cần ghim trực tiếp vào thanh công cụ. Các tác vụ khác sẽ xuất hiện trong menu Thêm.';
+
+  @override
+  String get sftpToolbarPreferenceSaveFailed =>
+      'Không thể lưu tùy chọn thanh công cụ';
+
+  @override
+  String get sftpToolbarActionView => 'Chuyển chế độ xem';
+
+  @override
+  String agentUpdateNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Có $count bản cập nhật tác nhân',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agentUpdateViewAction => 'Xem';
+
+  @override
+  String get agentUpdateCheckAll => 'Kiểm tra cập nhật';
+
+  @override
+  String get agentUpdateCheck => 'Kiểm tra cập nhật';
+
+  @override
+  String get agentUpdateChecking => 'Đang kiểm tra...';
+
+  @override
+  String get agentUpdateAvailable => 'Có bản cập nhật';
+
+  @override
+  String get agentUpdateUpToDate => 'Đã mới nhất';
+
+  @override
+  String get agentUpdateDialogTitle => 'Cập nhật tác nhân';
+
+  @override
+  String get agentUpdateConfirmButton => 'Xác nhận & Cập nhật';
+
+  @override
+  String get agentUpdateCancelButton => 'Hủy';
+
+  @override
+  String get agentUpdateTargetServer => 'Máy chủ';
+
+  @override
+  String get agentUpdateTargetEnvironment => 'Môi trường';
+
+  @override
+  String get agentUpdateTargetIdentity => 'Danh tính mục tiêu';
+
+  @override
+  String get agentUpdateCommandPreview => 'Xem trước lệnh';
+
+  @override
+  String get agentUpdateClaudeMigrationNotice =>
+      'Bản cập nhật này sẽ di chuyển bộ điều hợp Claude cũ (claude-code-acp) sang bộ điều hợp chính thức claude-agent-acp. Lịch sử và thông tin xác thực hiện có được giữ nguyên.';
+
+  @override
+  String get agentUpdateAgyNotice =>
+      'AgY CLI cập nhật qua kênh phát hành ổn định chính thức. Phiên bản được cài đặt có thể mới hơn ảnh chụp nhanh hiển thị tại thời điểm xác nhận.';
+
+  @override
+  String get agentUpdateLogs => 'Nhật ký cập nhật';
+
+  @override
+  String get agentUpdateCopyLog => 'Sao chép nhật ký';
+
+  @override
+  String get agentUpdateLogCopied =>
+      'Đã sao chép nhật ký cập nhật vào khay nhớ tạm';
+
+  @override
+  String get agentUpdateSuccess => 'Cập nhật tác nhân thành công';
+
+  @override
+  String get agentUpdateFailed => 'Cập nhật thất bại';
+
+  @override
+  String get agentUpdateInterrupted =>
+      'Quá trình cập nhật bị gián đoạn hoặc mất kết nối. Vui lòng xác minh phiên bản thực tế trước khi thử lại; tự động thử lại đã bị vô hiệu hóa vì lý do an toàn.';
+
+  @override
+  String get agentUpdateInProgress =>
+      'Một bản cập nhật hiện đang diễn ra trên máy chủ này.';
+
+  @override
+  String get agentUpdateBusy =>
+      'Máy chủ hoặc tác nhân đang bận. Vui lòng đợi các tác vụ đang hoạt động kết thúc.';
+
+  @override
+  String get agentUpdateVersionUnknown => 'Không xác định';
+
+  @override
+  String get agentUpdateSource => 'Nguồn';
+
+  @override
+  String get agentUpdateLastChecked => 'Kiểm tra lần cuối';
+
+  @override
+  String get agentUpdateNeverChecked => 'Chưa từng kiểm tra';
 }

@@ -6,6 +6,7 @@ import '../../core/logging/sanitizer.dart';
 import '../../core/security/agent_command_validator.dart';
 import '../../data/models/agent_profile.dart';
 import '../../data/models/builtin_agent_preset.dart';
+import '../../data/models/native_cli_session.dart';
 import '../../core/utils/shell_quote.dart';
 import '../cli/agent_execution_target.dart';
 import '../ssh/ssh_client_manager.dart';
@@ -89,6 +90,11 @@ class AgentEnvironmentService {
   static const checkTimeout = Duration(seconds: 20);
   static const installTimeout = Duration(minutes: 10);
   static const loginTimeout = Duration(minutes: 10);
+
+  String _target(AgentProfile profile, String command) =>
+      nativeCliKind(profile.cliCommand) == NativeCliKind.codex
+      ? agentCodexTargetCommand(profile, command)
+      : agentTargetCommand(profile, command);
 
   /// 只读探测。检测顺序：CLI → ACP → 登录检查。
   Future<AgentEnvironmentStatus> inspect(
@@ -181,7 +187,7 @@ class AgentEnvironmentService {
         if (profile.containerUser?.trim().isNotEmpty == true) {
           final user = await probe(
             'container user',
-            agentTargetCommand(profile, 'id -u'),
+            _target(profile, 'id -u'),
             requestedCommand: 'id -u',
           );
           if (!user.isSuccess) {
@@ -199,10 +205,18 @@ class AgentEnvironmentService {
           'CLI_EXECUTABLE_INVALID',
         );
       }
+      final codex = nativeCliKind(profile.cliCommand) == NativeCliKind.codex;
+      final cliProbe = codex
+          ? '${agentCodexExecutableScript(profile)}'
+                'printf "%s\\n" "\$CODEX_PATH"; '
+                '"\$CODEX_PATH" --version >&2; '
+                'printf "HOME: %s; CODEX_HOME: %s\\n" '
+                '"\$HOME" "\${CODEX_HOME:-<default>}" >&2'
+          : 'command -v ${profile.cliCommand}';
       final cli = await probe(
         'cli availability',
-        agentTargetCommand(profile, 'command -v ${profile.cliCommand}'),
-        requestedCommand: 'command -v ${profile.cliCommand}',
+        _target(profile, cliProbe),
+        requestedCommand: cliProbe,
       );
       if (!cli.isSuccess) {
         return finish(
@@ -229,10 +243,14 @@ class AgentEnvironmentService {
         }
         final acp = await probe(
           'acp availability',
-          agentTargetCommand(
+          _target(
             profile,
             acpBinary == 'agy_acp_server.par' && usesAntigravityAcp(profile)
                 ? antigravityAcpLookupCommand
+                : codex
+                ? 'if [ -n "\${BASH_VERSION:-}" ]; then '
+                      'type -P -- ${cliShellQuote(acpBinary)}; else '
+                      'command -v -- ${cliShellQuote(acpBinary)}; fi'
                 : 'command -v $acpBinary',
           ),
           requestedCommand: 'command -v $acpBinary',
@@ -267,7 +285,12 @@ class AgentEnvironmentService {
       AgentCommandValidator.validate(loginCheck);
       final login = await probe(
         'authentication',
-        agentTargetCommand(profile, loginCheck),
+        _target(
+          profile,
+          codex && loginCheck == 'codex login status'
+              ? '${agentCodexExecutableScript(profile)}"\$CODEX_PATH" login status'
+              : loginCheck,
+        ),
         requestedCommand: loginCheck,
       );
       if (loginCheck.trim() == kAntigravityLoginCheckCommand.trim()) {
@@ -434,7 +457,7 @@ class AgentEnvironmentService {
     );
     return _ssh.executeWithLoginShell(
       serverId,
-      agentTargetCommand(profile, profile.installCommand!),
+      _target(profile, profile.installCommand!),
       timeout: installTimeout,
     );
   }
@@ -451,7 +474,7 @@ class AgentEnvironmentService {
     AgentCommandValidator.require(command, label: 'installCommand');
     return _ssh.executeWithLoginShell(
       serverId,
-      agentTargetCommand(profile, command),
+      _target(profile, command),
       timeout: installTimeout,
     );
   }
@@ -467,7 +490,7 @@ class AgentEnvironmentService {
     return _ssh
         .executeStreaming(
           serverId,
-          agentTargetCommand(profile, command),
+          _target(profile, command),
           timeout: installTimeout,
         )
         .map((chunk) => chunk.text);
@@ -484,7 +507,7 @@ class AgentEnvironmentService {
     AgentCommandValidator.require(profile.loginCommand, label: 'loginCommand');
     return _ssh.executeWithLoginShell(
       serverId,
-      agentTargetCommand(profile, profile.loginCommand!),
+      _target(profile, profile.loginCommand!),
       timeout: loginTimeout,
     );
   }

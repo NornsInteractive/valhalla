@@ -89,7 +89,11 @@ void main() {
         sshClientManagerProvider.overrideWith(
           (ref) => _FakeSshManager(ref.read(localStorageServiceProvider)),
         ),
-        acpTransportFactoryProvider.overrideWithValue((_, _) {
+        acpTransportFactoryProvider.overrideWithValue((
+          _,
+          _, {
+          String? initialModelId,
+        }) {
           throw StateError('this test must not create a transport');
         }),
       ],

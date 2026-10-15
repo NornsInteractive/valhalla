@@ -719,6 +719,16 @@ void main() {
     test('short body leaves no completed file', () async {
       final client = _FakeClient([
         (_, _) => _bytesResponse(payload.sublist(0, 6)),
+        (_, _) => _bytesResponse(
+          [],
+          statusCode: 206,
+          headers: {'content-range': 'bytes 6-9/10'},
+        ),
+        (_, _) => _bytesResponse(
+          [],
+          statusCode: 206,
+          headers: {'content-range': 'bytes 6-9/10'},
+        ),
       ]);
       final service = AppUpdateService(clientFactory: () => client);
       final destination = destPath();
@@ -726,20 +736,99 @@ void main() {
       await expectLater(
         service.download(artifact, destination, onProgress: (_) {}),
         throwsA(
-          isA<StateError>().having(
+          isA<HttpException>().having(
             (e) => e.message,
             'message',
-            'UPDATE_DOWNLOAD_INTEGRITY_FAILED',
+            'UPDATE_DOWNLOAD_INCOMPLETE',
           ),
         ),
       );
       expect(File(destination).existsSync(), isFalse);
       expect(
         File('$destination.part').existsSync(),
-        isFalse,
-        reason: 'a size mismatch must not leave a resumable file behind',
+        isTrue,
+        reason: 'short streams preserve bytes for a later Range retry',
       );
+      expect(
+        await File('$destination.part').readAsBytes(),
+        payload.sublist(0, 6),
+      );
+      expect(client.requests, hasLength(3));
     });
+
+    test(
+      'short stream resumes through both redirects and verifies full hash',
+      () async {
+        final github =
+            'https://github.com/NornsInteractive/valhalla/releases/download/v1.2.3/archive.tar.gz';
+        final assets =
+            'https://release-assets.githubusercontent.com/archive.tar.gz';
+        final client = _FakeClient([
+          (_, _) => _bytesResponse(payload.sublist(0, 6)),
+          (_, _) => _bytesResponse(
+            [],
+            statusCode: 302,
+            headers: {'location': github},
+          ),
+          (_, _) => _bytesResponse(
+            [],
+            statusCode: 302,
+            headers: {'location': assets},
+          ),
+          (_, _) => _bytesResponse(
+            payload.sublist(6),
+            statusCode: 206,
+            headers: {'content-range': 'bytes 6-9/10'},
+          ),
+        ]);
+        final phases = <AppUpdateDownloadPhase>[];
+        final destination = destPath();
+        await AppUpdateService(clientFactory: () => client).download(
+          artifact,
+          destination,
+          onProgress: (_) {},
+          onPhase: phases.add,
+        );
+        expect(await File(destination).readAsBytes(), payload);
+        expect(
+          client.requests.skip(1).map((r) => r.header('range')),
+          everyElement('bytes=6-'),
+        );
+        expect(phases.last, AppUpdateDownloadPhase.verifying);
+        expect(File('$destination.part').existsSync(), isFalse);
+      },
+    );
+
+    test(
+      'cancel during retry backoff wakes promptly without another request',
+      () async {
+        final first = Completer<void>();
+        final client = _FakeClient([
+          (_, _) {
+            first.complete();
+            return _bytesResponse([], statusCode: 503);
+          },
+        ]);
+        final service = AppUpdateService(clientFactory: () => client);
+        final destination = destPath();
+        final failure = expectLater(
+          service.download(artifact, destination, onProgress: (_) {}),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'reason',
+              'UPDATE_DOWNLOAD_CANCELED',
+            ),
+          ),
+        );
+        await first.future;
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        service.cancelDownload();
+        await failure.timeout(const Duration(milliseconds: 500));
+        expect(client.requests, hasLength(1));
+        expect(File(destination).existsSync(), isFalse);
+      },
+    );
 
     test('oversized body is refused mid-stream', () async {
       final client = _FakeClient([

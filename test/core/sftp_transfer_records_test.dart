@@ -153,6 +153,7 @@ class _FakeService
   Object? downloadFailure;
 
   bool uploadAutoFinish = true;
+  int transferSize = 8;
   FakeTransferHandle? lastUploadHandle;
   FakeTransferHandle? lastDownloadHandle;
 
@@ -170,13 +171,14 @@ class _FakeService
     Map<String, dynamic>? expectedSource,
     required void Function(Map<String, dynamic>) onSource,
     void Function(int)? onProgress,
+    SftpPhaseCallback? onPhase,
   }) async {
     resumableUploads.add((localPath, remotePath, transferId, expectedSource));
     if (uploadFailure != null) throw uploadFailure!;
     onSource(uploadSource);
     final handle = uploadInCommitStage
-        ? _CommittingHandle(totalBytes: 8, onProgress: onProgress)
-        : FakeTransferHandle(totalBytes: 8, onProgress: onProgress);
+        ? _CommittingHandle(totalBytes: transferSize, onProgress: onProgress)
+        : FakeTransferHandle(totalBytes: transferSize, onProgress: onProgress);
     lastUploadHandle = handle;
     if (uploadAutoFinish && !uploadInCommitStage) {
       unawaited(
@@ -199,6 +201,7 @@ class _FakeService
     Map<String, dynamic>? expectedSource,
     required void Function(Map<String, dynamic>) onSource,
     void Function(int)? onProgress,
+    SftpPhaseCallback? onPhase,
   }) async {
     resumableDownloads.add((remotePath, localPath, expectedSource));
     if (downloadFailure != null) throw downloadFailure!;
@@ -392,6 +395,39 @@ Future<SftpTransfer> _awaitStatus(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test(
+    'high-frequency bytes throttle state updates and finish at exact final count',
+    () async {
+      final ops = _FakeService()
+        ..uploadAutoFinish = false
+        ..transferSize = 1000;
+      final (container, _, _) = await _container(ops);
+      addTearDown(container.dispose);
+      final notifier = container.read(sftpProvider.notifier);
+      await pumpEventQueue();
+      await notifier.uploadFrom('/tmp/progress.bin');
+      await pumpEventQueue();
+      final id = container.read(sftpProvider).transfers.single.id;
+      var updates = 0;
+      final subscription = container.listen(sftpProvider, (_, _) => updates++);
+      addTearDown(subscription.close);
+      final handle = ops.lastUploadHandle!;
+      for (var bytes = 1; bytes < 1000; bytes++) {
+        handle.emitProgress(bytes);
+      }
+      expect(updates, lessThan(20));
+      handle.emitProgress(1000);
+      handle.finish();
+      final task = await _awaitStatus(
+        container,
+        id,
+        SftpTransferStatus.completed,
+      );
+      expect(task.transferredBytes, 1000);
+      expect(task.bytesPerSecond, 0);
+    },
+  );
+
   group('transfer record persistence', () {
     test(
       'records the resumable source identity before the transfer finishes',
@@ -440,7 +476,198 @@ void main() {
     });
   });
 
+  group('pause reason records', () {
+    Map<String, dynamic> record({
+      required String status,
+      Object? pauseReason = 'user',
+      bool includeReason = true,
+    }) => <String, dynamic>{
+      'id': 'task-1',
+      'kind': 'upload',
+      'remotePath': '/a.bin',
+      'localPath': '/tmp/a.bin',
+      'status': status,
+      'sourceIdentity': {'size': 8, 'digest': 'd1'},
+      if (includeReason) 'pauseReason': pauseReason,
+    };
+
+    test('every pause reason survives a JSON round trip', () {
+      for (final reason in SftpTransferPauseReason.values) {
+        final task = SftpTransfer(
+          id: 'task-${reason.name}',
+          kind: SftpTransferKind.upload,
+          remotePath: '/a.bin',
+          localPath: '/tmp/a.bin',
+          status: SftpTransferStatus.paused,
+          pauseReason: reason,
+          sourceIdentity: const {'size': 8, 'digest': 'd1'},
+          localSha256: 'hash-${reason.name}',
+        );
+        final json = task.toJson();
+        expect(json['pauseReason'], reason.name);
+
+        final restored = SftpTransfer.fromJson(json);
+        expect(restored.status, SftpTransferStatus.paused, reason: reason.name);
+        expect(restored.pauseReason, reason, reason: reason.name);
+        expect(restored.id, task.id);
+        expect(restored.kind, task.kind);
+        expect(restored.sourceIdentity, task.sourceIdentity);
+        expect(restored.localSha256, task.localSha256);
+      }
+    });
+
+    test('a paused record with an unusable reason restores as user', () {
+      final fallbacks = <String, Map<String, dynamic>>{
+        'missing key': record(status: 'paused', includeReason: false),
+        'null': record(status: 'paused', pauseReason: null),
+        'unknown name': record(status: 'paused', pauseReason: 'legacy'),
+        'wrong type': record(status: 'paused', pauseReason: 7),
+      };
+      for (final entry in fallbacks.entries) {
+        final restored = SftpTransfer.fromJson(entry.value);
+        expect(restored.status, SftpTransferStatus.paused, reason: entry.key);
+        expect(
+          restored.pauseReason,
+          SftpTransferPauseReason.user,
+          reason: entry.key,
+        );
+      }
+    });
+
+    test('running and queued records restore paused/appRestart', () {
+      for (final status in ['running', 'queued']) {
+        for (final reason in ['user', 'network', null]) {
+          final restored = SftpTransfer.fromJson(
+            record(status: status, pauseReason: reason),
+          );
+          expect(restored.status, SftpTransferStatus.paused, reason: status);
+          expect(
+            restored.pauseReason,
+            SftpTransferPauseReason.appRestart,
+            reason: '$status/$reason',
+          );
+        }
+      }
+    });
+
+    test('terminal records restore with a null pause reason', () {
+      for (final status in ['completed', 'failed', 'canceled']) {
+        final restored = SftpTransfer.fromJson(
+          record(status: status, pauseReason: 'network'),
+        );
+        expect(restored.status.name, status);
+        expect(restored.pauseReason, isNull, reason: status);
+      }
+    });
+
+    test('copyWith keeps, replaces and clears the pause reason', () {
+      const source = {'size': 8, 'digest': 'd1'};
+      final task = SftpTransfer(
+        id: 'task-1',
+        kind: SftpTransferKind.download,
+        remotePath: '/srv/a.bin',
+        localPath: '/tmp/a.bin',
+        status: SftpTransferStatus.paused,
+        pauseReason: SftpTransferPauseReason.network,
+        sourceIdentity: source,
+        localSha256: 'hash-1',
+        transferredBytes: 64,
+      );
+
+      final kept = task.copyWith(transferredBytes: 128);
+      expect(kept.pauseReason, SftpTransferPauseReason.network);
+      expect(kept.transferredBytes, 128);
+      expect(
+        task.copyWith(pauseReason: null).pauseReason,
+        SftpTransferPauseReason.network,
+        reason: '传 null 不是清空，要清必须显式 clearPauseReason',
+      );
+
+      final replaced = task.copyWith(pauseReason: SftpTransferPauseReason.user);
+      expect(replaced.pauseReason, SftpTransferPauseReason.user);
+
+      final cleared = task.copyWith(clearPauseReason: true);
+      expect(cleared.pauseReason, isNull);
+
+      final clearWins = task.copyWith(
+        pauseReason: SftpTransferPauseReason.appRestart,
+        clearPauseReason: true,
+      );
+      expect(clearWins.pauseReason, isNull);
+
+      for (final derived in [kept, replaced, cleared, clearWins]) {
+        expect(derived.id, task.id);
+        expect(derived.kind, task.kind);
+        expect(derived.remotePath, task.remotePath);
+        expect(derived.localPath, task.localPath);
+        expect(derived.sourceIdentity, source);
+        expect(derived.localSha256, 'hash-1');
+      }
+    });
+  });
+
   group('restoring records', () {
+    test(
+      'restored paused records stay paused and start nothing by themselves',
+      () async {
+        final ops = _FakeService();
+        final (container, _, _) = await _container(
+          ops,
+          seededRecordsFor: _alpha,
+          records: {
+            'alpha': [
+              SftpTransfer(
+                id: 'paused-user',
+                kind: SftpTransferKind.upload,
+                remotePath: '/a.bin',
+                localPath: '/tmp/a.bin',
+                status: SftpTransferStatus.paused,
+                pauseReason: SftpTransferPauseReason.user,
+                sourceIdentity: const {'size': 8, 'digest': 'd1'},
+              ).toJson(),
+              SftpTransfer(
+                id: 'paused-network',
+                kind: SftpTransferKind.download,
+                remotePath: '/b.bin',
+                localPath: '/tmp/b.bin',
+                status: SftpTransferStatus.paused,
+                pauseReason: SftpTransferPauseReason.network,
+              ).toJson(),
+              SftpTransfer(
+                id: 'was-running',
+                kind: SftpTransferKind.upload,
+                remotePath: '/c.bin',
+                localPath: '/tmp/c.bin',
+                status: SftpTransferStatus.running,
+              ).toJson(),
+            ],
+          },
+        );
+        addTearDown(container.dispose);
+        await pumpEventQueue();
+        await pumpEventQueue();
+
+        final restored = container.read(sftpProvider).transfers;
+        expect(restored.map((t) => t.id), [
+          'paused-user',
+          'paused-network',
+          'was-running',
+        ]);
+        expect(restored.map((t) => t.status), [
+          SftpTransferStatus.paused,
+          SftpTransferStatus.paused,
+          SftpTransferStatus.paused,
+        ]);
+        expect(restored.map((t) => t.pauseReason), [
+          SftpTransferPauseReason.user,
+          SftpTransferPauseReason.network,
+          SftpTransferPauseReason.appRestart,
+        ]);
+        expect(ops.resumableUploads, isEmpty, reason: '恢复不等于续传');
+        expect(ops.resumableDownloads, isEmpty, reason: '恢复不等于续传');
+      },
+    );
+
     test(
       'restored running and queued records come back paused, never running',
       () async {

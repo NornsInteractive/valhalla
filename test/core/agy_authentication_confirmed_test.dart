@@ -101,7 +101,11 @@ void main() {
         serverConnectionProvider.overrideWith(() => _StaticConnection()),
         activeServerProvider.overrideWith(_StubActiveServer.new),
         sshClientManagerProvider.overrideWithValue(_FakeSshManager(storage)),
-        acpTransportFactoryProvider.overrideWithValue((_, _) async {
+        acpTransportFactoryProvider.overrideWithValue((
+          _,
+          _, {
+          String? initialModelId,
+        }) async {
           pair = FakeAcpPair();
           configurePair?.call(pair);
           return pair.client;

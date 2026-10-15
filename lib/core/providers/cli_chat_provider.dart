@@ -18,6 +18,7 @@ import '../logging/sanitizer.dart';
 import '../security/agent_command_validator.dart';
 import '../utils/shell_quote.dart';
 import 'agent_registry_provider.dart';
+import 'agent_update_lock_provider.dart';
 import 'infrastructure_providers.dart';
 import 'server_provider.dart';
 import 'settings_provider.dart';
@@ -136,6 +137,16 @@ final cliChatProvider = NotifierProvider<CliChatNotifier, CliChatState>(
 );
 
 class CliChatNotifier extends Notifier<CliChatState> {
+  bool get isRuntimeBusy =>
+      _connecting != null || _recovering != null || _selectingAgent;
+
+  bool _rejectDuringAgentUpdate() {
+    final profile = state.activeAgent;
+    if (profile == null || !isAgentUpdateLocked(ref, profile)) return false;
+    state = state.copyWith(errorCode: 'AGENT_UPDATE_IN_PROGRESS');
+    return true;
+  }
+
   int get activeConnectionCount =>
       (_codex?.connection.isClosed == false ? 1 : 0) +
       (_openCode?.isClosed == false ? 1 : 0) +
@@ -181,7 +192,10 @@ class CliChatNotifier extends Notifier<CliChatState> {
         _recovering = null;
         unawaited(_close());
         state = state.copyWith(
-          recoveryStatus: SessionRecoveryStatus.reconnecting,
+          // SSH reconnects alone do not create a CLI recovery target.
+          recoveryStatus: state.activeAgent == null
+              ? SessionRecoveryStatus.idle
+              : SessionRecoveryStatus.reconnecting,
           isSending: false,
           isLoading: false,
           isLoadingOlderMessages: false,
@@ -342,6 +356,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
               'CLI_SERVER_CHANGED',
               'CLI_ENVIRONMENT_FAILED',
               'CLI_MODEL_AT_CAPACITY',
+              'AGENT_UPDATE_IN_PROGRESS',
             ].firstWhere(text.contains, orElse: () => 'CLI_OPERATION_FAILED');
       final detail = LogSanitizer.sanitize(
         text
@@ -457,6 +472,10 @@ class CliChatNotifier extends Notifier<CliChatState> {
   }
 
   Future<void> _connectOnce() async {
+    final updatingProfile = state.activeAgent;
+    if (updatingProfile != null && isAgentUpdateLocked(ref, updatingProfile)) {
+      throw StateError('AGENT_UPDATE_IN_PROGRESS');
+    }
     final epoch = _epoch;
     final executor = ref.read(sshCommandExecutorProvider);
     final serverId = state.serverId;
@@ -483,16 +502,16 @@ class CliChatNotifier extends Notifier<CliChatState> {
         throw StateError('CLI_ENVIRONMENT_FAILED');
       }
     }
+    if (isAgentUpdateLocked(ref, state.activeAgent!)) {
+      throw StateError('AGENT_UPDATE_IN_PROGRESS');
+    }
     if (state.kind == NativeCliKind.codex && _codex == null) {
       final profile = state.activeAgent!;
-      final script = 'exec ${cliShellQuote(profile.cliCommand)} app-server';
+      final script =
+          '${agentCodexExecutableScript(profile)}'
+          'exec "\$CODEX_PATH" app-server';
       final process = await ssh.execute(
-        agentTargetCommand(
-          profile,
-          profile.executionTarget == 'docker'
-              ? script
-              : 'bash -l -c ${cliShellQuote(script)}',
-        ),
+        agentCodexTargetCommand(profile, script),
       );
       final client = CodexNativeClient(Connection(CodexSshTransport(process)));
       try {
@@ -879,6 +898,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
   }
 
   Future<void> updateRunSettings(ChatRunSettings settings) async {
+    if (_rejectDuringAgentUpdate()) return;
     if (state.isSending ||
         state.activeAgent == null ||
         state.serverId == null) {
@@ -906,6 +926,51 @@ class CliChatNotifier extends Notifier<CliChatState> {
       if (_current(epoch)) state = state.copyWith(composerCatalog: catalog);
     } catch (_) {
       // Composer enhancements never block the normal messaging path.
+    }
+  }
+
+  /// Drop only runtime-derived data after a confirmed update. Histories, draft
+  /// cwd, selected session and settings remain intact; no prompt is replayed.
+  Future<void> invalidateRuntimeAfterUpdate(
+    AgentProfile profile, {
+    bool refresh = true,
+  }) async {
+    if (state.serverId != profile.serverId) return;
+    // A name and an ID (or implicit and explicit user) can resolve to the same
+    // install. Match the update lease's server-wide scope, not profile spelling.
+    for (final entry in _agentStates.entries.toList()) {
+      final cached = entry.value;
+      if (cached.activeAgent case final AgentProfile agent) {
+        if (agent.serverId == profile.serverId) {
+          _agentStates[entry.key] = cached.copyWith(
+            capabilities: const AgentRuntimeCapabilities(),
+            composerCatalog: const AgentComposerCatalog(),
+          );
+        }
+      }
+    }
+    final active = state.activeAgent;
+    if (active == null || active.serverId != profile.serverId) return;
+    if (state.isSending ||
+        state.approvals.isNotEmpty ||
+        state.terminal != null) {
+      return;
+    }
+    final epoch = ++_epoch;
+    await _close();
+    if (!_current(epoch)) return;
+    state = state.copyWith(
+      capabilities: const AgentRuntimeCapabilities(),
+      composerCatalog: const AgentComposerCatalog(),
+    );
+    if (!refresh) return;
+    // Invalidation runs under the update lease; optional discovery runs after
+    // release. Any intervening new send already sees an empty, fresh runtime.
+    try {
+      await _connect();
+      if (_current(epoch)) await refreshComposerCatalog();
+    } catch (error) {
+      _fail(epoch, error);
     }
   }
 
@@ -1144,6 +1209,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
   }
 
   Future<void> sendMessage(String text) async {
+    if (_rejectDuringAgentUpdate()) return;
     if (text.trim().isEmpty ||
         !ref.read(serverConnectionProvider).isConnected ||
         state.recoveryStatus == SessionRecoveryStatus.reconnecting ||
@@ -1288,6 +1354,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
   }
 
   Future<void> deleteSession(String id, {required bool confirmed}) async {
+    if (_rejectDuringAgentUpdate()) return;
     if (!confirmed ||
         !state.canDelete ||
         state.isSending ||
@@ -1306,6 +1373,9 @@ class CliChatNotifier extends Notifier<CliChatState> {
           throw StateError('CLI_BUSY');
         }
         if (!_current(epoch)) return;
+        if (isAgentUpdateLocked(ref, state.activeAgent!)) {
+          throw StateError('AGENT_UPDATE_IN_PROGRESS');
+        }
         final result = await ref
             .read(sshCommandExecutorProvider)
             .executeWithLoginShell(
@@ -1342,6 +1412,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
   }
 
   Future<void> installHistorySdk({required bool confirmed}) async {
+    if (_rejectDuringAgentUpdate()) return;
     if (!confirmed ||
         state.kind != NativeCliKind.claude ||
         state.serverId == null ||
@@ -1363,6 +1434,7 @@ class CliChatNotifier extends Notifier<CliChatState> {
   }
 
   Future<void> openTerminal() async {
+    if (_rejectDuringAgentUpdate()) return;
     if (state.activeAgent == null ||
         state.terminal != null ||
         state.isSending) {

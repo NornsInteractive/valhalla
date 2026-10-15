@@ -153,8 +153,8 @@ class SSHTransport {
     SSHPacketHandler? onPacket,
     this.onMessage,
     this.disableHostkeyVerification = false,
-  }) : _legacyPacketHandler = onPacket,
-       assert(onPacket == null || onMessage == null) {
+  })  : _legacyPacketHandler = onPacket,
+        assert(onPacket == null || onMessage == null) {
     _initSocket();
     _startHandshake();
   }
@@ -172,6 +172,7 @@ class SSHTransport {
   /// Subscription to the socket's [Stream]. It should be closed when the
   /// transport is closed.
   StreamSubscription? _socketSubscription;
+  var _socketInputDone = false;
 
   /// Guards asynchronous packet processing to preserve message order.
   var _isProcessingData = false;
@@ -651,7 +652,9 @@ class SSHTransport {
   /// Callback triggered when the socket stream is closed by the remote peer.
   void _onSocketDone() {
     printDebug?.call('SSHTransport._onSocketDone');
-    close();
+    _socketInputDone = true;
+    // A packet-processing yield must not discard bytes received before EOF.
+    if (!_isProcessingData || _buffer.isEmpty) close();
   }
 
   void _scheduleProcessData() {
@@ -674,8 +677,10 @@ class SSHTransport {
       if (_buffer.isNotEmpty && !isClosed) {
         if (_hasNewData || _buffer.length < lengthBefore) {
           _scheduleProcessData();
+          return;
         }
       }
+      if (_socketInputDone) close();
     });
   }
 
@@ -776,6 +781,7 @@ class SSHTransport {
   /// Process one or more SSH packets queued in [_buffer].
   Future<void> _processPackets() async {
     printDebug?.call('SSHTransport._processPackets');
+    final processingSlice = Stopwatch()..start();
 
     while (_buffer.isNotEmpty && !isClosed) {
       final payload = _consumePacket();
@@ -797,6 +803,13 @@ class SSHTransport {
         _remotePacketSN.reset();
       } else {
         _remotePacketSN.increase();
+      }
+      if (_buffer.isNotEmpty &&
+          !isClosed &&
+          processingSlice.elapsedMicroseconds >= 4000) {
+        // Completed futures only yield microtasks; let input and frames run too.
+        await Future<void>.delayed(Duration.zero);
+        processingSlice.reset();
       }
     }
   }

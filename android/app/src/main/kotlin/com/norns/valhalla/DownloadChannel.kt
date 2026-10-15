@@ -1,4 +1,4 @@
-package com.antigravity.valhalla.valhalla
+package com.norns.valhalla
 
 import android.Manifest
 import android.app.Activity
@@ -17,8 +17,10 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.StandardMethodCodec
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.Locale
@@ -31,24 +33,71 @@ object DownloadChannel {
 
     private var hasRequestedNotificationPermission = false
     private var methodChannel: MethodChannel? = null
+    @Volatile
+    private var queueMessenger: BinaryMessenger? = null
+    private var notificationQueue: BinaryMessenger.TaskQueue? = null
+    @Volatile
     private var activityRef: WeakReference<Activity>? = null
 
     fun register(activity: Activity, flutterEngine: FlutterEngine) {
         activityRef = WeakReference(activity)
-        val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
+        val context = activity.applicationContext
+        if (queueMessenger !== messenger) {
+            notificationQueue = messenger.makeBackgroundTaskQueue()
+            queueMessenger = messenger
+        }
+        val channel = MethodChannel(
+            messenger,
+            CHANNEL,
+            StandardMethodCodec.INSTANCE,
+            // AudioService keeps its engine alive across Activity recreation; keep the same FIFO too.
+            checkNotNull(notificationQueue),
+        )
         methodChannel = channel
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
-                "reportProgress" -> handleReportProgress(activity, call, result)
-                "openFile" -> handleOpenFile(activity, call, result)
+                "reportProgress" -> handleReportProgress(context, messenger, call, result)
+                "openFile" -> {
+                    val currentActivity = activityRef?.get()
+                    if (currentActivity == null) {
+                        result.error("OPEN_FAILED", null, null)
+                    } else {
+                        currentActivity.runOnUiThread {
+                            try {
+                                if (queueMessenger === messenger && isCurrentActivity(currentActivity)) {
+                                    handleOpenFile(currentActivity, call, result)
+                                } else {
+                                    result.error("OPEN_FAILED", null, null)
+                                }
+                            } catch (_: Exception) {
+                                result.error("OPEN_FAILED", null, null)
+                            }
+                        }
+                    }
+                }
                 "getNasLaunchAction" -> {
-                    val shouldOpen = (activityRef?.get() as? MainActivity)?.consumePendingOpenNasDownloads() ?: false
-                    result.success(shouldOpen)
+                    val currentActivity = activityRef?.get()
+                    if (currentActivity == null) {
+                        result.success(false)
+                    } else {
+                        currentActivity.runOnUiThread {
+                            val shouldOpen = if (queueMessenger === messenger && isCurrentActivity(currentActivity)) {
+                                (currentActivity as? MainActivity)?.consumePendingOpenNasDownloads() ?: false
+                            } else {
+                                false
+                            }
+                            result.success(shouldOpen)
+                        }
+                    }
                 }
                 else -> result.notImplemented()
             }
         }
     }
+
+    private fun isCurrentActivity(activity: Activity): Boolean =
+        activityRef?.get() === activity && !activity.isFinishing && !activity.isDestroyed
 
     fun notifyOpenNasDownloads(onSuccess: (() -> Unit)? = null) {
         val act = activityRef?.get()
@@ -100,11 +149,11 @@ object DownloadChannel {
         }
     }
 
-    private fun createOpenTransfersIntent(activity: Activity, requestCode: Int, target: String?): PendingIntent {
+    private fun createOpenTransfersIntent(context: Context, requestCode: Int, target: String?): PendingIntent {
         return PendingIntent.getActivity(
-            activity,
+            context,
             requestCode,
-            Intent(activity, MainActivity::class.java).apply {
+            Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 when (target) {
                     "nas" -> putExtra(MainActivity.EXTRA_OPEN_NAS_DOWNLOADS, true)
@@ -117,7 +166,8 @@ object DownloadChannel {
     }
 
     private fun handleReportProgress(
-        activity: Activity,
+        context: Context,
+        messenger: BinaryMessenger,
         call: MethodCall,
         result: MethodChannel.Result,
     ) {
@@ -132,42 +182,46 @@ object DownloadChannel {
             return
         }
 
+        if (queueMessenger !== messenger) {
+            result.success(false)
+            return
+        }
+
         // Check notification permissions (Android 13+)
-        if (!checkAndRequestNotificationPermission(activity)) {
+        if (!checkAndRequestNotificationPermission(context, messenger)) {
             result.success(false)
             return
         }
 
         val manager =
-            activity.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         if (manager == null) {
             result.success(false)
             return
         }
 
-        ensureChannel(activity, manager)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = manager.getNotificationChannel(NOTIFICATION_CHANNEL_ID)
-            if (channel != null && channel.importance == NotificationManager.IMPORTANCE_NONE) {
-                result.success(false)
-                return
-            }
+        if (!ensureChannel(context, manager)) {
+            result.success(false)
+            return
         }
 
         val notificationId = 20000 + ((id.hashCode() and 0x7FFFFFFF) % 50000)
 
         if (status == "canceled") {
+            if (queueMessenger !== messenger) {
+                result.success(false)
+                return
+            }
             manager.cancel(notificationId)
             result.success(true)
             return
         }
 
         val openTransfersPendingIntent = createOpenTransfersIntent(
-            activity, notificationId, call.argument<String>("target"),
+            context, notificationId, call.argument<String>("target"),
         )
 
-        val builder = NotificationCompat.Builder(activity, NOTIFICATION_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(name)
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -177,7 +231,7 @@ object DownloadChannel {
         when (status) {
             "completed" -> {
                 builder.setSmallIcon(android.R.drawable.stat_sys_download_done)
-                    .setContentText(activity.getString(R.string.transfer_complete_body))
+                    .setContentText(context.getString(R.string.transfer_complete_body))
                     .setOngoing(false)
                     .setAutoCancel(true)
                     .setProgress(0, 0, false)
@@ -210,21 +264,21 @@ object DownloadChannel {
             "paused" -> {
                 builder.setOngoing(false)
                     .setAutoCancel(false)
-                    .setContentText(activity.getString(R.string.download_status_paused))
+                    .setContentText(context.getString(R.string.download_status_paused))
             }
 
             "failed" -> {
                 builder.setOngoing(false)
                     .setAutoCancel(true)
                     .setProgress(0, 0, false)
-                    .setContentText(activity.getString(R.string.download_status_failed))
+                    .setContentText(context.getString(R.string.download_status_failed))
             }
 
             "queued" -> {
                 builder.setOngoing(false)
                     .setAutoCancel(false)
                     .setProgress(0, 0, false)
-                    .setContentText(activity.getString(R.string.download_status_queued))
+                    .setContentText(context.getString(R.string.download_status_queued))
             }
 
             else -> {
@@ -235,6 +289,10 @@ object DownloadChannel {
         }
 
         try {
+            if (queueMessenger !== messenger) {
+                result.success(false)
+                return
+            }
             manager.notify(notificationId, builder.build())
             result.success(true)
         } catch (_: SecurityException) {
@@ -282,30 +340,42 @@ object DownloadChannel {
         }
     }
 
-    private fun checkAndRequestNotificationPermission(activity: Activity): Boolean {
+    private fun checkAndRequestNotificationPermission(context: Context, messenger: BinaryMessenger): Boolean {
         if (Build.VERSION.SDK_INT >= 33) {
             val granted = ContextCompat.checkSelfPermission(
-                activity,
+                context,
                 Manifest.permission.POST_NOTIFICATIONS,
             ) == PackageManager.PERMISSION_GRANTED
             if (!granted) {
-                if (!hasRequestedNotificationPermission) {
-                    hasRequestedNotificationPermission = true
-                    ActivityCompat.requestPermissions(
-                        activity,
-                        arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                        NOTIFICATION_PERMISSION_REQUEST,
-                    )
+                val activity = activityRef?.get()
+                if (activity != null) {
+                    activity.runOnUiThread {
+                        if (queueMessenger === messenger && isCurrentActivity(activity) && !hasRequestedNotificationPermission) {
+                            hasRequestedNotificationPermission = true
+                            try {
+                                ActivityCompat.requestPermissions(
+                                    activity,
+                                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                                    NOTIFICATION_PERMISSION_REQUEST,
+                                )
+                            } catch (_: Exception) {
+                                // The report already returned false; a detached permission UI must not crash.
+                            }
+                        }
+                    }
                 }
                 return false
             }
         }
-        return NotificationManagerCompat.from(activity).areNotificationsEnabled()
+        return NotificationManagerCompat.from(context).areNotificationsEnabled()
     }
 
-    private fun ensureChannel(context: Context, manager: NotificationManager) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        if (manager.getNotificationChannel(NOTIFICATION_CHANNEL_ID) != null) return
+    private fun ensureChannel(context: Context, manager: NotificationManager): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
+        val existing = manager.getNotificationChannel(NOTIFICATION_CHANNEL_ID)
+        if (existing != null) {
+            return existing.importance != NotificationManager.IMPORTANCE_NONE
+        }
 
         val channel = NotificationChannel(
             NOTIFICATION_CHANNEL_ID,
@@ -315,6 +385,7 @@ object DownloadChannel {
             description = context.getString(R.string.download_channel_description)
         }
         manager.createNotificationChannel(channel)
+        return true
     }
 
     private fun getMimeType(fileName: String): String {

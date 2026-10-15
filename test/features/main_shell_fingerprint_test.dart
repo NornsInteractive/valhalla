@@ -30,6 +30,8 @@ class _FakeActiveServerNotifier extends ActiveServerNotifier {
   _FakeActiveServerNotifier(this._server);
   @override
   ServerProfile? build() => _server;
+
+  void selectForTest(ServerProfile server) => state = server;
 }
 
 class _FakeServerListNotifier extends ServerListNotifier {
@@ -83,6 +85,72 @@ void main() {
     username: 'admin',
     authType: AuthType.password,
   );
+
+  for (final outcome in ['success', 'failure', 'exception']) {
+    testWidgets(
+      'manual connection $outcome displays at the top without a bottom SnackBar',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final local = await LocalStorageService.init();
+        final active = _FakeActiveServerNotifier(testServer);
+        final connection = _FakeServerConnectionNotifier(({
+          password,
+          privateKey,
+          onConfirmHostKey,
+        }) async {
+          if (outcome == 'exception') {
+            throw StateError('manual-connect-fixture');
+          }
+          return outcome == 'success';
+        });
+        final container = ProviderContainer(
+          overrides: [
+            localStorageServiceProvider.overrideWithValue(local),
+            serverRepositoryProvider.overrideWithValue(_FakeServerRepository()),
+            activeServerProvider.overrideWith(() => active),
+            serverListProvider.overrideWith(
+              () => _FakeServerListNotifier([testServer]),
+            ),
+            serverConnectionProvider.overrideWith(() => connection),
+            sftpProvider.overrideWith(_FakeSftpNotifier.new),
+          ],
+        );
+        addTearDown(container.dispose);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              locale: Locale('en'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: MainShell(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byIcon(Icons.link).first);
+        await tester.pumpAndSettle();
+        final notice = find.textContaining(switch (outcome) {
+          'success' => 'Successfully connected to',
+          'failure' => 'Connection Error',
+          _ => 'manual-connect-fixture',
+        });
+        expect(notice, findsOneWidget);
+        expect(find.byType(SnackBar), findsNothing);
+        expect(tester.getTopLeft(notice).dy, lessThan(180));
+        if (outcome == 'success') {
+          active.selectForTest(testServer.copyWith(host: '192.0.2.20'));
+          await tester.pumpAndSettle();
+          expect(
+            find.textContaining('Successfully connected to'),
+            findsNothing,
+          );
+        }
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
 
   group('MainShell Host Fingerprint Confirmation Regression Tests', () {
     testWidgets(

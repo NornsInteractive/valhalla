@@ -115,6 +115,7 @@ void main() {
       const SingleChildScrollView(child: AboutPrivacyCard()),
     );
     final website = find.byKey(const Key('settings_website_button'));
+    await tester.ensureVisible(website);
     await tester.tap(website);
     await tester.pumpAndSettle();
     expect(launcher.url, 'https://norns.cc.cd');
@@ -138,6 +139,9 @@ void main() {
       tester,
       const Locale('zh'),
       const SingleChildScrollView(child: AboutPrivacyCard()),
+    );
+    await tester.ensureVisible(
+      find.byKey(const Key('settings_license_button')),
     );
     await tester.tap(find.byKey(const Key('settings_license_button')));
     await settlePolicy(tester);
@@ -166,6 +170,9 @@ void main() {
       tester,
       const Locale('en'),
       const SingleChildScrollView(child: AboutPrivacyCard()),
+    );
+    await tester.ensureVisible(
+      find.byKey(const Key('settings_third_party_licenses_button')),
     );
     await tester.tap(
       find.byKey(const Key('settings_third_party_licenses_button')),

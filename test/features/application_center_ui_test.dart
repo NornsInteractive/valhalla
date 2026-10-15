@@ -737,6 +737,192 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  group('Grid version and source metadata assertions', () {
+    testWidgets('grid shows actual catalog version when present', (
+      tester,
+    ) async {
+      final notifier = _Center(empty: true);
+      await host(tester, notifier, fullView: true, width: 360);
+      notifier.setCatalog([
+        CatalogApplication.fromJson({
+          ...catalog(1).single.toJson(),
+          'version': '2.4.1',
+        }),
+      ]);
+      await tester.pumpAndSettle();
+      await toggleStore(tester);
+      expect(storeDescendant(find.byType(GridView)), findsOneWidget);
+      final card = find
+          .ancestor(
+            of: find.text('Catalog item 000'),
+            matching: find.byType(InkWell),
+          )
+          .first;
+      final versionText = find.descendant(
+        of: card,
+        matching: find.text('2.4.1'),
+      );
+      expect(versionText, findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('grid shows em dash when version is blank', (tester) async {
+      final notifier = _Center(empty: true);
+      await host(tester, notifier, fullView: true, width: 360);
+      notifier.setCatalog([
+        CatalogApplication.fromJson({
+          ...catalog(1).single.toJson(),
+          'version': '',
+        }),
+      ]);
+      await tester.pumpAndSettle();
+      await toggleStore(tester);
+      expect(storeDescendant(find.byType(GridView)), findsOneWidget);
+      final card = find
+          .ancestor(
+            of: find.text('Catalog item 000'),
+            matching: find.byType(InkWell),
+          )
+          .first;
+      final versionText = find.descendant(of: card, matching: find.text('—'));
+      expect(versionText, findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('grid long version has tooltip showing full version', (
+      tester,
+    ) async {
+      final notifier = _Center(empty: true);
+      await host(tester, notifier, fullView: true, width: 320);
+      const longVersion = '2026.10.13-long-build-identifier-amd64-release';
+      notifier.setCatalog([
+        CatalogApplication.fromJson({
+          ...catalog(1).single.toJson(),
+          'version': longVersion,
+        }),
+      ]);
+      await tester.pumpAndSettle();
+      await toggleStore(tester);
+      expect(storeDescendant(find.byType(GridView)), findsOneWidget);
+      final card = find
+          .ancestor(
+            of: find.text('Catalog item 000'),
+            matching: find.byType(InkWell),
+          )
+          .first;
+      final versionWidget = find.descendant(
+        of: card,
+        matching: find.text(longVersion),
+      );
+      expect(versionWidget, findsOneWidget);
+      // The version is wrapped in a Tooltip
+      final tooltip = find.ancestor(
+        of: versionWidget,
+        matching: find.byType(Tooltip),
+      );
+      expect(tooltip, findsOneWidget);
+      final tooltipWidget = tester.widget<Tooltip>(tooltip);
+      expect(tooltipWidget.message, longVersion);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'grid source and version are on separate rows with same left x',
+      (tester) async {
+        final notifier = _Center(empty: true);
+        await host(tester, notifier, fullView: true, width: 360);
+        notifier.setCatalog([
+          CatalogApplication.fromJson({
+            ...catalog(1).single.toJson(),
+            'version': '1.0.0',
+          }),
+        ]);
+        await tester.pumpAndSettle();
+        await toggleStore(tester);
+        expect(storeDescendant(find.byType(GridView)), findsOneWidget);
+        final card = find
+            .ancestor(
+              of: find.text('Catalog item 000'),
+              matching: find.byType(InkWell),
+            )
+            .first;
+        // Find source text (fixture) and version text positions
+        final sourceFinder = find.descendant(
+          of: card,
+          matching: find.text('fixture'),
+        );
+        final versionFinder = find.descendant(
+          of: card,
+          matching: find.text('1.0.0'),
+        );
+        expect(sourceFinder, findsOneWidget);
+        expect(versionFinder, findsOneWidget);
+        final sourceRect = tester.getRect(sourceFinder);
+        final versionRect = tester.getRect(versionFinder);
+        // Version should be below source (separate rows)
+        expect(versionRect.top, greaterThanOrEqualTo(sourceRect.bottom));
+        // They should have the same left x position
+        expect(versionRect.left, sourceRect.left);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('grid narrow width with large text does not overflow', (
+      tester,
+    ) async {
+      final notifier = _Center(empty: true);
+      await host(
+        tester,
+        notifier,
+        fullView: true,
+        width: 320,
+        scale: 2,
+        locale: const Locale('vi'),
+      );
+      notifier.setCatalog([
+        CatalogApplication.fromJson({
+          ...catalog(1).single.toJson(),
+          'title':
+              'Very long application name that wraps across multiple lines in Vietnamese language',
+          'version': '2026.10.13-build-amd64',
+        }),
+      ]);
+      await tester.pumpAndSettle();
+      await toggleStore(tester);
+      expect(storeDescendant(find.byType(GridView)), findsOneWidget);
+      final card = find
+          .ancestor(
+            of: find.textContaining('Very long application'),
+            matching: find.byType(InkWell),
+          )
+          .first;
+      expect(tester.getRect(card).width, lessThanOrEqualTo(320));
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets(
+    'store grid card height reflects compact content with meaningful bounds',
+    (tester) async {
+      final notifier = _Center(empty: true);
+      await host(tester, notifier, fullView: true, width: 360);
+      notifier.setCatalog(catalog(4));
+      await tester.pumpAndSettle();
+      await toggleStore(tester);
+      expect(storeDescendant(find.byType(GridView)), findsOneWidget);
+      final card = find
+          .ancestor(
+            of: find.text('Catalog item 000'),
+            matching: find.byType(InkWell),
+          )
+          .first;
+      // Height should be compact (tight upper bound reflecting 8dp padding, 4dp title-summary,
+      // 2dp summary-source, version row beneath source) but not collapse to zero.
+      expect(tester.getSize(card).height, inInclusiveRange(80, 140));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'source failure retry targets only that source and preserves other apps',
     (tester) async {

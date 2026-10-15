@@ -6,6 +6,7 @@ import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/server_provider.dart';
 import '../../core/providers/terminal_provider.dart';
+import '../../core/providers/terminal_settings_provider.dart';
 import '../../infrastructure/mosh/mosh_bridge_adapter.dart';
 import '../../infrastructure/mosh/mosh_session_service.dart';
 import '../../infrastructure/terminal/terminal_session_bridge.dart';
@@ -52,8 +53,9 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !widget.active) return;
       final server = ref.read(activeServerProvider);
-      final target =
-          server == null ? null : TerminalHistoryRecord.targetFor(server);
+      final target = server == null
+          ? null
+          : TerminalHistoryRecord.targetFor(server);
       if (target != null && target != _lastInitializedTarget) {
         _lastInitializedTarget = target;
         ref.read(terminalProvider.notifier).ensureInitialized();
@@ -112,17 +114,21 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
     }
   }
 
-  Widget _buildTmuxNotice(BuildContext context, TerminalSessionBridge? bridge) {
-    if (bridge == null) return const SizedBox.shrink();
-
+  Widget _buildTmuxSessionRestoredBanner(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-
-    // 1. tmux mode & reconnected: transient 2s notice
-    if (bridge.mode == TerminalSessionMode.tmux && _showSessionRestored) {
-      return Container(
+    return Material(
+      color: context.colorScheme.surface,
+      elevation: 3,
+      shadowColor: Colors.black26,
+      borderRadius: BorderRadius.circular(VRadius.input),
+      child: Container(
         key: const Key('terminalTmuxSessionRestored'),
-        color: context.vSuccess.withValues(alpha: 0.12),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: context.vSuccess.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(VRadius.input),
+          border: Border.all(color: context.vSuccess.withValues(alpha: 0.35)),
+        ),
         child: Row(
           children: [
             Icon(Icons.check_circle_outline, color: context.vSuccess, size: 16),
@@ -139,10 +145,16 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
             ),
           ],
         ),
-      );
-    }
+      ),
+    );
+  }
 
-    // 2. tmuxUnavailable mode: non-blocking warning notice with close button
+  Widget _buildTmuxNotice(BuildContext context, TerminalSessionBridge? bridge) {
+    if (bridge == null) return const SizedBox.shrink();
+
+    final l10n = AppLocalizations.of(context);
+
+    // tmuxUnavailable mode: non-blocking warning notice with close button
     // Only displayed when not awaiting user decision on an install offer
     if (bridge.mode == TerminalSessionMode.tmuxUnavailable &&
         !_dismissedTmuxMissing &&
@@ -431,6 +443,11 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
       'TERMINAL_HISTORY_SAVE_FAILED' => l10n.terminalErrorHistorySaveFailed,
       'TERMINAL_HISTORY_REFRESH_FAILED' =>
         l10n.terminalErrorHistoryRefreshFailed,
+      'TERMINAL_HISTORY_DELETE_FAILED' => l10n.terminalErrorHistoryDeleteFailed,
+      'TERMINAL_HISTORY_TERMINATE_FAILED' ||
+      'TERMINATE_FAILED' => l10n.terminalErrorHistoryTerminateFailed,
+      'TERMINAL_HISTORY_TARGET_CHANGED' ||
+      'TERMINAL_TARGET_CHANGED' => l10n.terminalErrorTargetChanged,
       'TERMINAL_START_FAILED' => l10n.terminalErrorStartFailed,
       'TERMINAL_RESTORE_FAILED' => l10n.terminalErrorRestoreFailed,
       'TERMINAL_DEFAULT_SAVE_FAILED' => l10n.terminalErrorDefaultSaveFailed,
@@ -453,64 +470,84 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
 
   Widget _buildErrorBanner(BuildContext context, String code) {
     final message = _localizeErrorCode(context, code);
-    return Container(
-      key: const Key('terminalErrorBanner'),
-      color: context.vDanger.withValues(alpha: 0.12),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, color: context.vDanger, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(
-                color: context.vDanger,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+    return Material(
+      color: context.colorScheme.surface,
+      elevation: 3,
+      shadowColor: Colors.black26,
+      borderRadius: BorderRadius.circular(VRadius.input),
+      child: Container(
+        key: const Key('terminalErrorBanner'),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: context.vDanger.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(VRadius.input),
+          border: Border.all(color: context.vDanger.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: context.vDanger, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: context.vDanger,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
-          IconButton(
-            icon: Icon(Icons.close, size: 16, color: context.vDanger),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-            onPressed: () => ref.read(terminalProvider.notifier).clearNotice(),
-          ),
-        ],
+            IconButton(
+              icon: Icon(Icons.close, size: 16, color: context.vDanger),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+              onPressed: () => ref.read(terminalProvider.notifier).clearNotice(),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildNoticeBanner(BuildContext context, String code) {
     final message = _localizeNoticeCode(context, code);
-    return Container(
-      key: const Key('terminalNoticeBanner'),
-      color: context.vWarning.withValues(alpha: 0.12),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, color: context.vWarning, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(
-                color: context.vWarning,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+    return Material(
+      color: context.colorScheme.surface,
+      elevation: 3,
+      shadowColor: Colors.black26,
+      borderRadius: BorderRadius.circular(VRadius.input),
+      child: Container(
+        key: const Key('terminalNoticeBanner'),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: context.vWarning.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(VRadius.input),
+          border: Border.all(color: context.vWarning.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: context.vWarning, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: context.vWarning,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
-          IconButton(
-            icon: Icon(Icons.close, size: 16, color: context.vWarning),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-            onPressed: () => ref.read(terminalProvider.notifier).clearNotice(),
-          ),
-        ],
+            IconButton(
+              icon: Icon(Icons.close, size: 16, color: context.vWarning),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+              onPressed: () => ref.read(terminalProvider.notifier).clearNotice(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -520,7 +557,8 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
       return const Center(child: CircularProgressIndicator());
     }
     final isConnected = ref.watch(serverConnectionProvider).isConnected;
-    final code = state.errorCode ??
+    final code =
+        state.errorCode ??
         (!isConnected ? 'SSH_DISCONNECTED' : 'TERMINAL_START_FAILED');
     final message = _localizeErrorCode(context, code);
 
@@ -560,10 +598,12 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
   @override
   Widget build(BuildContext context) {
     ref.listen(activeServerProvider, (prev, next) {
-      final prevTarget =
-          prev == null ? null : TerminalHistoryRecord.targetFor(prev);
-      final nextTarget =
-          next == null ? null : TerminalHistoryRecord.targetFor(next);
+      final prevTarget = prev == null
+          ? null
+          : TerminalHistoryRecord.targetFor(prev);
+      final nextTarget = next == null
+          ? null
+          : TerminalHistoryRecord.targetFor(next);
       if (widget.active && nextTarget != prevTarget) {
         _scheduleEnsureInitialized();
       }
@@ -590,65 +630,115 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
       body: Column(
         children: [
           _buildTabBar(terminalState),
-          if (terminalState.errorCode != null)
-            _buildErrorBanner(context, terminalState.errorCode!),
-          if (terminalState.noticeCode != null)
-            _buildNoticeBanner(context, terminalState.noticeCode!),
           if (terminalState.tmuxInstallOffer == null) ...[
             _buildTmuxNotice(context, activeTab?.bridge),
             _buildMoshNotice(context, activeTab?.bridge),
           ],
           Expanded(
-            child: originatingTab != null
-                ? SharedTerminalCanvas(
-                    terminal: originatingTab.terminal,
-                    requestKeyboardOnTap: false,
-                    pinKeyboardButtonTrailing: true,
-                    onKey:
-                        (
-                          key, {
-                          bool isCtrl = false,
-                          bool isAlt = false,
-                          bool isShift = false,
-                        }) {
-                          ref
-                              .read(terminalProvider.notifier)
-                              .sendKey(
-                                key,
-                                isCtrl: isCtrl,
-                                isAlt: isAlt,
-                                isShift: isShift,
-                              );
-                        },
-                    onPaste: () =>
-                        ref.read(terminalProvider.notifier).pasteClipboard(),
-                    onPasteText: (text) {
-                      final currentTabs = ref.read(terminalProvider).tabs;
-                      if (currentTabs.contains(originatingTab)) {
-                        originatingTab.bridge.pasteText(text);
-                      }
-                    },
-                    overlay: terminalState.tmuxInstallOffer != null
-                        ? Positioned(
-                            bottom: 8,
-                            left: 12,
-                            right: 12,
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              child: ConstrainedBox(
-                                constraints:
-                                    const BoxConstraints(maxWidth: 520),
-                                child: _buildTmuxInstallOfferDialog(
-                                  context,
-                                  terminalState.tmuxInstallOffer!,
-                                  originatingTab.bridge,
-                                ),
-                              ),
-                            ),
-                          )
-                        : null,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: originatingTab != null
+                      ? SharedTerminalCanvas(
+                          terminal: originatingTab.terminal,
+                          requestKeyboardOnTap: false,
+                          pinKeyboardButtonTrailing: true,
+                          onKey:
+                              (
+                                key, {
+                                bool isCtrl = false,
+                                bool isAlt = false,
+                                bool isShift = false,
+                              }) {
+                                ref
+                                    .read(terminalProvider.notifier)
+                                    .sendKey(
+                                      key,
+                                      isCtrl: isCtrl,
+                                      isAlt: isAlt,
+                                      isShift: isShift,
+                                    );
+                              },
+                          onPaste: () =>
+                              ref.read(terminalProvider.notifier).pasteClipboard(),
+                          onPasteText: (text) {
+                            final currentTabs = ref.read(terminalProvider).tabs;
+                            if (currentTabs.contains(originatingTab)) {
+                              originatingTab.bridge.pasteText(text);
+                            }
+                          },
+                          overlay: terminalState.tmuxInstallOffer != null
+                              ? Positioned(
+                                  bottom: 8,
+                                  left: 12,
+                                  right: 12,
+                                  child: Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 520,
+                                      ),
+                                      child: _buildTmuxInstallOfferDialog(
+                                        context,
+                                        terminalState.tmuxInstallOffer!,
+                                        originatingTab.bridge,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        )
+                      : _buildEmptyState(context, terminalState),
+                ),
+                if (terminalState.errorCode != null)
+                  Positioned(
+                    top: 8,
+                    left: 12,
+                    right: 12,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 560),
+                        child: _buildErrorBanner(
+                          context,
+                          terminalState.errorCode!,
+                        ),
+                      ),
+                    ),
                   )
-                : _buildEmptyState(context, terminalState),
+                else if (terminalState.noticeCode != null)
+                  Positioned(
+                    top: 8,
+                    left: 12,
+                    right: 12,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 560),
+                        child: _buildNoticeBanner(
+                          context,
+                          terminalState.noticeCode!,
+                        ),
+                      ),
+                    ),
+                  )
+                else if (terminalState.tmuxInstallOffer == null &&
+                    activeTab?.bridge.mode == TerminalSessionMode.tmux &&
+                    _showSessionRestored)
+                  Positioned(
+                    top: 8,
+                    left: 12,
+                    right: 12,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 560),
+                        child: _buildTmuxSessionRestoredBanner(context),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
@@ -679,27 +769,35 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
                 children: List.generate(state.tabs.length, (index) {
                   final isSelected = state.activeTabIndex == index;
                   final tab = state.tabs[index];
+                  final isTmux = tab.bridge.mode == TerminalSessionMode.tmux;
+                  final String modeName;
+                  if (isTmux) {
+                    modeName = 'tmux';
+                  } else if (tab.bridge is MoshBridgeAdapter) {
+                    modeName = 'Mosh';
+                  } else {
+                    modeName = 'SSH';
+                  }
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: GestureDetector(
-                      onLongPress: () => showRenameTabDialog(
-                        context,
-                        ref,
-                        tab.id,
-                        tab.title,
-                      ),
-                      onSecondaryTap: () => showRenameTabDialog(
-                        context,
-                        ref,
-                        tab.id,
-                        tab.title,
-                      ),
+                      onLongPress: () =>
+                          showRenameTabDialog(context, ref, tab.id, tab.title),
+                      onSecondaryTap: () =>
+                          showRenameTabDialog(context, ref, tab.id, tab.title),
                       child: InputChip(
                         key: ValueKey('terminal_tab_${tab.id}'),
                         selected: isSelected,
+                        avatar: Icon(
+                          isTmux ? Icons.layers_outlined : Icons.terminal,
+                          size: 14,
+                          color: isSelected
+                              ? context.colorScheme.primary
+                              : context.colorScheme.outline,
+                        ),
                         label: Tooltip(
-                          message: tab.title,
+                          message: '${tab.title} ($modeName)',
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 160),
                             child: Text(
@@ -755,8 +853,154 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
               }
             },
           ),
+          IconButton(
+            key: const Key('terminalDefaultModeButton'),
+            icon: const Icon(Icons.tune, size: 18),
+            tooltip: context.l10n.settingsTerminalUseTmux,
+            onPressed: () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              _showTerminalDefaultModeDialog(context);
+            },
+          ),
         ],
       ),
+    );
+  }
+
+  void _showTerminalDefaultModeDialog(BuildContext context) {
+    final currentUseTmux = ref.read(terminalSettingsProvider).useTmux;
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => _TerminalDefaultModeDialog(
+        initialUseTmux: currentUseTmux,
+        onSelect: (value) async {
+          await ref.read(terminalSettingsProvider.notifier).setUseTmux(value);
+        },
+      ),
+    );
+  }
+}
+
+class _TerminalDefaultModeDialog extends StatefulWidget {
+  final bool initialUseTmux;
+  final Future<void> Function(bool useTmux) onSelect;
+
+  const _TerminalDefaultModeDialog({
+    required this.initialUseTmux,
+    required this.onSelect,
+  });
+
+  @override
+  State<_TerminalDefaultModeDialog> createState() =>
+      _TerminalDefaultModeDialogState();
+}
+
+class _TerminalDefaultModeDialogState
+    extends State<_TerminalDefaultModeDialog> {
+  late bool _selectedMode;
+  bool _isSaving = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedMode = widget.initialUseTmux;
+  }
+
+  Future<void> _handleModeChanged(bool? value) async {
+    if (value == null || _isSaving) return;
+    setState(() {
+      _selectedMode = value;
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    final route = ModalRoute.of(context);
+    try {
+      await widget.onSelect(value);
+      if (!mounted) return;
+      if (route?.isCurrent ?? false) {
+        Navigator.of(context).pop();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      if (route?.isCurrent ?? false) {
+        setState(() {
+          _selectedMode = widget.initialUseTmux;
+          _isSaving = false;
+          _errorMessage = context.l10n.terminalModeSaveFailed;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: Text(l10n.settingsTerminalUseTmux),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.settingsTerminalUseTmuxDescription,
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          RadioGroup<bool>(
+            groupValue: _selectedMode,
+            onChanged: _handleModeChanged,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<bool>(
+                  key: const Key('terminalModeStandardRadio'),
+                  dense: true,
+                  enabled: !_isSaving,
+                  value: false,
+                  title: Text(l10n.terminalModeStandard),
+                ),
+                RadioListTile<bool>(
+                  key: const Key('terminalModeTmuxRadio'),
+                  dense: true,
+                  enabled: !_isSaving,
+                  value: true,
+                  title: Text(l10n.terminalModeTmux),
+                ),
+              ],
+            ),
+          ),
+          if (_isSaving) ...[
+            const SizedBox(height: 8),
+            const Center(
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ],
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage!,
+              style: TextStyle(fontSize: 12, color: theme.colorScheme.error),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+      ],
     );
   }
 }

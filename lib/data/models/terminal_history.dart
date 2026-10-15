@@ -100,10 +100,12 @@ class TerminalHistoryRecord {
 class TerminalHistorySnapshot {
   final List<TerminalHistoryRecord> records;
   final String? defaultRecordId;
+  final List<String> forgottenSessionNames;
 
   const TerminalHistorySnapshot({
     this.records = const [],
     this.defaultRecordId,
+    this.forgottenSessionNames = const [],
   });
 
   Map<String, Object?> toJson() => {
@@ -113,6 +115,8 @@ class TerminalHistorySnapshot {
         .map((item) => item.toJson())
         .toList(),
     'defaultRecordId': defaultRecordId,
+    if (forgottenSessionNames.isNotEmpty)
+      'forgottenSessionNames': forgottenSessionNames,
   };
 
   factory TerminalHistorySnapshot.fromJson(Map<String, dynamic> json) {
@@ -131,9 +135,18 @@ class TerminalHistorySnapshot {
             records.length) {
       throw const FormatException('TERMINAL_HISTORY_INVALID');
     }
+    final forgotten = List<String>.from(
+      json['forgottenSessionNames'] as List? ?? const [],
+    );
+    if (forgotten.any(
+      (name) => !RegExp(r'^valhalla_[A-Za-z0-9_-]+$').hasMatch(name),
+    )) {
+      throw const FormatException('TERMINAL_HISTORY_INVALID');
+    }
     return TerminalHistorySnapshot(
       records: List.unmodifiable(records),
       defaultRecordId: json['defaultRecordId'] as String?,
+      forgottenSessionNames: List.unmodifiable(forgotten.toSet()),
     );
   }
 }

@@ -52,6 +52,7 @@ class ConnectionLifecycleCoordinator {
   bool get inBackground => _inBackground;
   DateTime? _pausedAt;
   Future<bool>? _resuming;
+  ServerProfile? _resumingServer;
   int _epoch = 0;
   bool _disposed = false;
 
@@ -65,11 +66,17 @@ class ConnectionLifecycleCoordinator {
   ///
   /// 返回复验结果，测试与调用方据此判断是否需要展示重连状态。
   Future<bool> onResumed() {
-    if (_resuming != null) return _resuming!;
+    final server = activeServer();
+    // A pending check for another endpoint cannot verify the current target.
+    if (_resuming != null &&
+        _resumingServer?.connectionKey == server?.connectionKey) {
+      return _resuming!;
+    }
+    _resumingServer = server;
     final elapsed = Stopwatch()..start();
     var outcome = 'failed';
     late final Future<bool> future;
-    future = _resume()
+    future = _resume(server)
         .then((alive) {
           outcome = alive ? 'healthy' : 'unavailable';
           return alive;
@@ -88,7 +95,7 @@ class ConnectionLifecycleCoordinator {
     return future;
   }
 
-  Future<bool> _resume() async {
+  Future<bool> _resume(ServerProfile? server) async {
     if (_disposed) return false;
     final wasBackground = _inBackground;
     _inBackground = false;
@@ -97,7 +104,6 @@ class ConnectionLifecycleCoordinator {
     final epoch = ++_epoch;
 
     // 先复验现有连接，再解除后台重试暂停，避免启动多余的重连。
-    final server = activeServer();
     if (server == null) {
       reconnectController?.setAppDetached(false);
       return true;

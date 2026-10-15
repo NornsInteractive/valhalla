@@ -14,3 +14,12 @@ Analysis-only compatibility cleanup: retain the deprecated public onPacket gette
 and constructor argument, store its handler privately so internal dispatch does
 not reference a deprecated API. Callback behavior and onMessage precedence unchanged.
 Original upstream analysis_options.yaml retained; no analyzer exclusions/suppression.
+
+Transfer responsiveness (2026-10-14): packet receive and channel send loops yield
+to the event queue after roughly 4ms, after sequence/window updates, while keeping
+their existing serialization guards. Natural socket EOF drains received complete
+packets before closing; explicit close/error still stops processing immediately.
+ChunkBuffer compaction retains old views and grows only when space or compaction
+headroom requires it, rather than doubling on every trailing-space exhaustion.
+New focused regression and integration validation are recorded in
+agent-workflow/2026-10-14-transfer-jank-and-grid.md; status there is authoritative.

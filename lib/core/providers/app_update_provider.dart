@@ -1,18 +1,21 @@
 import 'dart:async';
-import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:crypto/crypto.dart';
 import '../../data/models/app_update.dart';
 import '../services/app_update_service.dart';
 import '../services/download_platform_service.dart';
 import '../services/app_diagnostics.dart';
 import 'app_visibility_provider.dart';
 import 'storage_providers.dart';
+import '../utils/file_integrity.dart';
+import '../utils/app_runtime_identity.dart';
+import '../utils/transfer_progress.dart';
+
+export '../services/app_update_service.dart' show AppUpdateDownloadPhase;
 
 enum AppUpdateDownloadStatus { idle, downloading, paused, completed, failed }
 
@@ -27,6 +30,9 @@ class AppUpdateState {
   final AppUpdateDownloadStatus downloadStatus;
   final int downloadedBytes;
   final String? localPath;
+  final AppUpdateDownloadPhase downloadPhase;
+  final double bytesPerSecond;
+  final bool opening;
   const AppUpdateState({
     this.automaticCheck = true,
     this.checking = false,
@@ -38,7 +44,19 @@ class AppUpdateState {
     this.downloadStatus = AppUpdateDownloadStatus.idle,
     this.downloadedBytes = 0,
     this.localPath,
+    this.downloadPhase = AppUpdateDownloadPhase.transferring,
+    this.bytesPerSecond = 0,
+    this.opening = false,
   });
+
+  int? get remainingSeconds =>
+      downloadStatus == AppUpdateDownloadStatus.downloading &&
+          downloadPhase == AppUpdateDownloadPhase.transferring &&
+          artifact != null &&
+          artifact!.size > downloadedBytes &&
+          bytesPerSecond > 0
+      ? ((artifact!.size - downloadedBytes) / bytesPerSecond).ceil()
+      : null;
 
   AppUpdateState copyWith({
     bool? automaticCheck,
@@ -52,6 +70,9 @@ class AppUpdateState {
     AppUpdateDownloadStatus? downloadStatus,
     int? downloadedBytes,
     String? localPath,
+    AppUpdateDownloadPhase? downloadPhase,
+    double? bytesPerSecond,
+    bool? opening,
   }) => AppUpdateState(
     automaticCheck: automaticCheck ?? this.automaticCheck,
     checking: checking ?? this.checking,
@@ -63,6 +84,9 @@ class AppUpdateState {
     downloadStatus: downloadStatus ?? this.downloadStatus,
     downloadedBytes: downloadedBytes ?? this.downloadedBytes,
     localPath: localPath ?? this.localPath,
+    downloadPhase: downloadPhase ?? this.downloadPhase,
+    bytesPerSecond: bytesPerSecond ?? this.bytesPerSecond,
+    opening: opening ?? this.opening,
   );
 }
 
@@ -239,15 +263,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     return _runtime;
   }
 
-  List<String> _architectures() {
-    final architecture = Abi.current().toString().split('_').last;
-    return [
-      Platform.isAndroid
-          ? AppUpdateService.distributionArchitecture('android', architecture)
-          : architecture,
-      if (Platform.isMacOS) 'universal',
-    ];
-  }
+  List<String> _architectures() => applicationArchitectures();
 
   Future<void> _performCheck() async {
     state = state.copyWith(checking: true, clearError: true);
@@ -298,6 +314,8 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     // Pin the selected artifact before path allocation yields to a release check.
     state = state.copyWith(
       downloadStatus: AppUpdateDownloadStatus.downloading,
+      downloadPhase: AppUpdateDownloadPhase.resolving,
+      bytesPerSecond: 0,
       clearError: true,
     );
     try {
@@ -324,13 +342,20 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
         localPath: path,
         clearError: true,
       );
-      var lastPublished = DateTime.fromMillisecondsSinceEpoch(0);
+      var meter = TransferProgressMeter(initialBytes: state.downloadedBytes);
       var lastReported = DateTime.fromMillisecondsSinceEpoch(0);
       final task = ref
           .read(appUpdateServiceProvider)
           .download(
             artifact,
             path,
+            onPhase: (phase) {
+              if (!ref.mounted || epoch != _downloadEpoch) return;
+              meter = TransferProgressMeter(
+                initialBytes: state.downloadedBytes,
+              );
+              state = state.copyWith(downloadPhase: phase, bytesPerSecond: 0);
+            },
             onProgress: (bytes) {
               if (!ref.mounted || epoch != _downloadEpoch) return;
               final now = DateTime.now();
@@ -338,12 +363,11 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
                 lastReported = now;
                 _reportDownload('running', artifact, bytes: bytes);
               }
-              if (bytes != artifact.size &&
-                  now.difference(lastPublished).inMilliseconds < 150) {
-                return;
-              }
-              lastPublished = now;
-              state = state.copyWith(downloadedBytes: bytes);
+              if (!meter.sample(bytes, force: bytes == artifact.size)) return;
+              state = state.copyWith(
+                downloadedBytes: bytes,
+                bytesPerSecond: meter.bytesPerSecond,
+              );
             },
           );
       _downloadTask = task;
@@ -356,6 +380,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
         state = state.copyWith(
           downloadStatus: AppUpdateDownloadStatus.completed,
           downloadedBytes: artifact.size,
+          bytesPerSecond: 0,
         );
         _reportDownload('completed', artifact);
       }
@@ -364,6 +389,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
         state = state.copyWith(
           downloadStatus: AppUpdateDownloadStatus.failed,
           error: error.toString(),
+          bytesPerSecond: 0,
         );
         _reportDownload('failed', artifact);
       }
@@ -374,7 +400,10 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     if (state.downloadStatus != AppUpdateDownloadStatus.downloading) return;
     _downloadEpoch++;
     ref.read(appUpdateServiceProvider).cancelDownload();
-    state = state.copyWith(downloadStatus: AppUpdateDownloadStatus.paused);
+    state = state.copyWith(
+      downloadStatus: AppUpdateDownloadStatus.paused,
+      bytesPerSecond: 0,
+    );
     final artifact = state.artifact;
     if (artifact != null) _reportDownload('paused', artifact);
   }
@@ -392,35 +421,39 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     final version = state.release?.version;
     final releaseEpoch = _releaseEpoch;
     final downloadEpoch = _downloadEpoch;
-    if (artifact == null ||
-        !await File(path).exists() ||
-        await File(path).length() != artifact.size ||
-        (await sha256.bind(File(path).openRead()).first).toString() !=
-            artifact.sha256) {
-      throw StateError('UPDATE_DOWNLOAD_INTEGRITY_FAILED');
-    }
-    // File verification yields; a newer release/disposal must invalidate this open.
-    if (!ref.mounted ||
-        releaseEpoch != _releaseEpoch ||
-        downloadEpoch != _downloadEpoch ||
-        state.downloadStatus != AppUpdateDownloadStatus.completed ||
-        state.localPath != path ||
-        state.artifact?.sha256 != artifact.sha256) {
-      return;
-    }
-    if (Platform.isAndroid) {
-      await platformChannel.invokeMethod<void>('install', {
-        'path': path,
-        'versionCode': artifact.androidVersionCode,
-        'certificateSha256': artifact.androidCertificateSha256,
-        'versionName': version,
-      });
-    } else if (Platform.isWindows) {
-      await _files.revealFile(path);
-    } else {
-      if (!await launchUrl(Uri.file(File(path).parent.path))) {
-        throw StateError('UPDATE_OPEN_FAILED');
+    state = state.copyWith(opening: true);
+    try {
+      if (artifact == null ||
+          !await File(path).exists() ||
+          await File(path).length() != artifact.size ||
+          await fileSha256(path) != artifact.sha256) {
+        throw StateError('UPDATE_DOWNLOAD_INTEGRITY_FAILED');
       }
+      // File verification yields; a newer release/disposal must invalidate this open.
+      if (!ref.mounted ||
+          releaseEpoch != _releaseEpoch ||
+          downloadEpoch != _downloadEpoch ||
+          state.downloadStatus != AppUpdateDownloadStatus.completed ||
+          state.localPath != path ||
+          state.artifact?.sha256 != artifact.sha256) {
+        return;
+      }
+      if (Platform.isAndroid) {
+        await platformChannel.invokeMethod<void>('install', {
+          'path': path,
+          'versionCode': artifact.androidVersionCode,
+          'certificateSha256': artifact.androidCertificateSha256,
+          'versionName': version,
+        });
+      } else if (Platform.isWindows) {
+        await _files.revealFile(path);
+      } else {
+        if (!await launchUrl(Uri.file(File(path).parent.path))) {
+          throw StateError('UPDATE_OPEN_FAILED');
+        }
+      }
+    } finally {
+      if (ref.mounted) state = state.copyWith(opening: false);
     }
   }
 
@@ -429,7 +462,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
         ? Uri.parse(
             Platform.isWindows
                 ? 'ms-windows-store://downloadsandupdates'
-                : 'https://play.google.com/store/apps/details?id=com.antigravity.valhalla.valhalla',
+                : 'https://play.google.com/store/apps/details?id=com.norns.valhalla',
           )
         : state.release?.page ?? Uri.parse(valhallaReleasesUrl);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {

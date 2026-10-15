@@ -83,6 +83,13 @@ Widget _buildSettingsApp({
   );
 }
 
+Future<void> _openAutoConnectGroup(WidgetTester tester) async {
+  final group = find.byKey(const Key('settings_auto_connect_tile'));
+  await tester.ensureVisible(group);
+  await tester.tap(group);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -114,6 +121,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await _openAutoConnectGroup(tester);
       // Tap mode tile to open dialog
       await tester.tap(
         find.byKey(const Key('settings_auto_connect_mode_tile')),
@@ -170,6 +178,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        await _openAutoConnectGroup(tester);
         expect(
           find.byKey(const Key('settingsAutoConnectServerTile')),
           findsNothing,
@@ -224,6 +233,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await _openAutoConnectGroup(tester);
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
       expect(
@@ -263,6 +273,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        await _openAutoConnectGroup(tester);
         // Tap server picker tile
         await tester.tap(
           find.byKey(const Key('settingsAutoConnectServerTile')),
@@ -310,6 +321,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        await _openAutoConnectGroup(tester);
         // Initially visible under fixed mode
         expect(
           find.byKey(const Key('settingsAutoConnectServerTile')),
@@ -361,6 +373,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        await _openAutoConnectGroup(tester);
         expect(
           find.byKey(const Key('settingsAutoConnectServerTile')),
           findsNothing,
@@ -396,6 +409,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        await _openAutoConnectGroup(tester);
         // Open dialog to check initial radio
         await tester.tap(
           find.byKey(const Key('settings_auto_connect_mode_tile')),

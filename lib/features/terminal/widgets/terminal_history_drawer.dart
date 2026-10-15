@@ -7,6 +7,8 @@ import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/server_provider.dart';
 import '../../../core/providers/terminal_provider.dart';
+import '../../../infrastructure/terminal/terminal_session_bridge.dart'
+    show TerminalConnectionState;
 
 String _formatLastUsed(DateTime dt) {
   final local = dt.toLocal();
@@ -196,6 +198,276 @@ Future<void> showRenameTabDialog(
   FocusManager.instance.primaryFocus?.unfocus();
 }
 
+String _terminalL10n(BuildContext context, String key, String fallback) {
+  try {
+    final dynamic l10n = context.l10n;
+    final val =
+        switch (key) {
+              'terminalHistoryDeleteDialogTitle' =>
+                l10n.terminalHistoryDeleteDialogTitle,
+              'terminalHistoryTerminateRemote' =>
+                l10n.terminalHistoryTerminateRemote,
+              'terminalHistoryTerminateConfirmTitle' =>
+                l10n.terminalHistoryTerminateConfirmTitle,
+              'terminalHistoryTerminateConfirmMessage' =>
+                l10n.terminalHistoryTerminateConfirmMessage,
+              'terminalErrorHistoryDeleteFailed' =>
+                l10n.terminalErrorHistoryDeleteFailed,
+              'terminalErrorHistoryTerminateFailed' =>
+                l10n.terminalErrorHistoryTerminateFailed,
+              'terminalErrorTargetChanged' => l10n.terminalErrorTargetChanged,
+              _ => null,
+            }
+            as String?;
+    if (val != null && val.isNotEmpty) return val;
+  } catch (_) {}
+  return fallback;
+}
+
+class _TerminalDeleteDialog extends StatefulWidget {
+  final TerminalHistoryRecord record;
+  final String serverLabel;
+  final bool canTerminateRemote;
+  final Future<void> Function(bool terminateRemote) onConfirm;
+
+  const _TerminalDeleteDialog({
+    required this.record,
+    required this.serverLabel,
+    required this.canTerminateRemote,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_TerminalDeleteDialog> createState() => _TerminalDeleteDialogState();
+}
+
+class _TerminalDeleteDialogState extends State<_TerminalDeleteDialog> {
+  bool _terminateRemote = false;
+  bool _isSubmitting = false;
+  String? _errorMessage;
+
+  Future<void> _submit() async {
+    if (_isSubmitting) return;
+
+    if (_terminateRemote) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(
+            _terminalL10n(
+              ctx,
+              'terminalHistoryTerminateConfirmTitle',
+              'Terminate Remote Session?',
+            ),
+          ),
+          content: Text(
+            _terminalL10n(
+              ctx,
+              'terminalHistoryTerminateConfirmMessage',
+              'This will terminate the remote tmux session and end all processes running inside it.',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(ctx.l10n.cancel),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: ctx.vDanger),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(ctx.l10n.delete),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
+    if (!mounted) return;
+    final route = ModalRoute.of(context);
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await widget.onConfirm(_terminateRemote);
+      if (!mounted) return;
+      if (route?.isCurrent ?? false) {
+        FocusManager.instance.primaryFocus?.unfocus();
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      if (route?.isCurrent ?? false) {
+        final err = e.toString();
+        final msg = err.contains('TERMINAL_HISTORY_TARGET_CHANGED')
+            ? _terminalL10n(
+                context,
+                'terminalErrorTargetChanged',
+                context.l10n.remoteBrowserTargetChanged,
+              )
+            : err.contains('TERMINAL_HISTORY_TERMINATE_FAILED')
+            ? _terminalL10n(
+                context,
+                'terminalErrorHistoryTerminateFailed',
+                'Failed to terminate remote session',
+              )
+            : _terminalL10n(
+                context,
+                'terminalErrorHistoryDeleteFailed',
+                'Failed to delete terminal history',
+              );
+        setState(() {
+          _isSubmitting = false;
+          _errorMessage = msg;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: Text(
+        _terminalL10n(
+          context,
+          'terminalHistoryDeleteDialogTitle',
+          'Delete Session History',
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.record.title,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          if (widget.serverLabel.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              widget.serverLabel,
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            title: Text(
+              _terminalL10n(
+                context,
+                'terminalHistoryTerminateRemote',
+                'Also terminate remote server session',
+              ),
+              style: TextStyle(
+                fontSize: 13,
+                color: widget.canTerminateRemote
+                    ? null
+                    : theme.colorScheme.outline,
+              ),
+            ),
+            subtitle: !widget.canTerminateRemote
+                ? Text(
+                    l10n.terminalStatusOffline,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.outline,
+                    ),
+                  )
+                : null,
+            value: _terminateRemote,
+            onChanged: widget.canTerminateRemote && !_isSubmitting
+                ? (val) => setState(() => _terminateRemote = val ?? false)
+                : null,
+          ),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage!,
+              style: TextStyle(color: theme.colorScheme.error, fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: context.vDanger),
+          onPressed: _isSubmitting ? null : _submit,
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(l10n.delete),
+        ),
+      ],
+    );
+  }
+}
+
+Future<void> showDeleteHistoryDialog(
+  BuildContext context,
+  WidgetRef ref,
+  TerminalHistoryRecord record,
+) async {
+  final activeServer = ref.read(activeServerProvider);
+  final isConnected = ref.read(serverConnectionProvider).isConnected;
+  final currentTarget = activeServer == null
+      ? null
+      : TerminalHistoryRecord.targetFor(activeServer);
+
+  final terminalState = ref.read(terminalProvider);
+  final status =
+      terminalState.historyStatuses[record.id] ?? TerminalHistoryStatus.unknown;
+
+  final canTerminateRemote =
+      isConnected &&
+      currentTarget == record.targetKey &&
+      status != TerminalHistoryStatus.ended &&
+      status != TerminalHistoryStatus.unknown;
+
+  final serverLabel = activeServer?.name.isNotEmpty == true
+      ? activeServer!.name
+      : (activeServer?.host ?? '');
+
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => _TerminalDeleteDialog(
+      record: record,
+      serverLabel: serverLabel,
+      canTerminateRemote: canTerminateRemote,
+      onConfirm: (terminateRemote) async {
+        await ref
+            .read(terminalProvider.notifier)
+            .deleteHistory(
+              record.id,
+              terminateRemote: terminateRemote,
+              expectedTargetKey: record.targetKey,
+            );
+      },
+    ),
+  );
+  if (result == true && context.mounted) {
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+}
+
 class _StartupSessionDialog extends ConsumerStatefulWidget {
   final String expectedTarget;
   final String? initialDefaultId;
@@ -375,11 +647,86 @@ Future<void> showStartupSessionDialog(
   FocusManager.instance.primaryFocus?.unfocus();
 }
 
-class TerminalHistoryDrawer extends ConsumerWidget {
+class _TerminalGroupItem {
+  final String title;
+  final int count;
+  final Color color;
+  const _TerminalGroupItem(this.title, this.count, this.color);
+}
+
+class TerminalHistoryDrawer extends ConsumerStatefulWidget {
   const TerminalHistoryDrawer({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TerminalHistoryDrawer> createState() =>
+      _TerminalHistoryDrawerState();
+}
+
+class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
+  String _searchQuery = '';
+  late final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildGroupHeader(
+    BuildContext context,
+    String title,
+    int count,
+    Color accentColor,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      color: context.colorScheme.surfaceContainerLowest,
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 12,
+            decoration: BoxDecoration(
+              color: accentColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: context.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: context.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: context.colorScheme.outline,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final terminalState = ref.watch(terminalProvider);
     final width = math.min(360.0, MediaQuery.sizeOf(context).width * 0.85);
     final l10n = context.l10n;
@@ -456,293 +803,453 @@ class TerminalHistoryDrawer extends ConsumerWidget {
               onTap: () => showStartupSessionDialog(context, ref),
             ),
             const Divider(height: 1),
-            Expanded(
-              child: terminalState.history.isEmpty
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 32,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (val) =>
+                    setState(() => _searchQuery = val.trim().toLowerCase()),
+                decoration: InputDecoration(
+                  hintText: l10n.terminalHistorySearchHint,
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  suffixIcon: _searchQuery.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.clear, size: 16),
+                          tooltip: MaterialLocalizations.of(
+                            context,
+                          ).deleteButtonTooltip,
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
                         ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.history_toggle_off,
-                              size: 40,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(VRadius.input),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: context.colorScheme.surfaceContainerHighest,
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: () {
+                final allRecords = terminalState.history;
+                final filtered = _searchQuery.isEmpty
+                    ? allRecords
+                    : allRecords
+                          .where(
+                            (r) => r.title.toLowerCase().contains(_searchQuery),
+                          )
+                          .toList();
+
+                if (filtered.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 32,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.history_toggle_off,
+                            size: 40,
+                            color: context.colorScheme.outline,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            allRecords.isEmpty
+                                ? l10n.terminalHistoryEmpty
+                                : l10n.stateEmpty,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
                               color: context.colorScheme.outline,
                             ),
-                            const SizedBox(height: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final openTabIds = terminalState.tabs.map((t) => t.id).toSet();
+                final openRecords =
+                    filtered.where((r) {
+                        if (openTabIds.contains(r.id)) return true;
+                        final s =
+                            terminalState.historyStatuses[r.id] ??
+                            TerminalHistoryStatus.unknown;
+                        return s == TerminalHistoryStatus.open;
+                      }).toList()
+                      ..sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
+
+                final openRecordIds = openRecords.map((r) => r.id).toSet();
+
+                final recoverableRecords =
+                    filtered.where((r) {
+                        if (openRecordIds.contains(r.id)) return false;
+                        final s =
+                            terminalState.historyStatuses[r.id] ??
+                            TerminalHistoryStatus.unknown;
+                        return s == TerminalHistoryStatus.available ||
+                            s == TerminalHistoryStatus.unknown;
+                      }).toList()
+                      ..sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
+
+                final endedRecords =
+                    filtered.where((r) {
+                        if (openRecordIds.contains(r.id)) return false;
+                        final s =
+                            terminalState.historyStatuses[r.id] ??
+                            TerminalHistoryStatus.unknown;
+                        return s == TerminalHistoryStatus.ended;
+                      }).toList()
+                      ..sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
+
+                final sortedItems = <dynamic>[
+                  if (openRecords.isNotEmpty) ...[
+                    _TerminalGroupItem(
+                      l10n.terminalStatusOpen,
+                      openRecords.length,
+                      context.vSuccess,
+                    ),
+                    ...openRecords,
+                  ],
+                  if (recoverableRecords.isNotEmpty) ...[
+                    _TerminalGroupItem(
+                      l10n.terminalRestoreSession,
+                      recoverableRecords.length,
+                      context.colorScheme.primary,
+                    ),
+                    ...recoverableRecords,
+                  ],
+                  if (endedRecords.isNotEmpty) ...[
+                    _TerminalGroupItem(
+                      l10n.terminalStatusEnded,
+                      endedRecords.length,
+                      context.colorScheme.outline,
+                    ),
+                    ...endedRecords,
+                  ],
+                ];
+
+                return ListView.separated(
+                  itemCount: sortedItems.length,
+                  separatorBuilder: (_, index) {
+                    if (index + 1 < sortedItems.length &&
+                        sortedItems[index + 1] is _TerminalGroupItem) {
+                      return const SizedBox.shrink();
+                    }
+                    return const Divider(height: 1);
+                  },
+                  itemBuilder: (context, index) {
+                    final item = sortedItems[index];
+                    if (item is _TerminalGroupItem) {
+                      return _buildGroupHeader(
+                        context,
+                        item.title,
+                        item.count,
+                        item.color,
+                      );
+                    }
+                    final record = item as TerminalHistoryRecord;
+                    final status =
+                        terminalState.historyStatuses[record.id] ??
+                        TerminalHistoryStatus.unknown;
+                    final isDefault =
+                        terminalState.defaultHistoryId == record.id;
+                    final matchingTab = terminalState.tabs
+                        .where((t) => t.id == record.id)
+                        .firstOrNull;
+
+                    final Color statusColor;
+                    final String statusLabel;
+                    if (matchingTab != null) {
+                      switch (matchingTab.bridge.state) {
+                        case TerminalConnectionState.connected:
+                          statusColor = context.vSuccess;
+                          statusLabel = l10n.terminalStatusOpen;
+                        case TerminalConnectionState.connecting:
+                          statusColor = context.colorScheme.primary;
+                          statusLabel = l10n.serverConnecting;
+                        case TerminalConnectionState.disconnected:
+                        case TerminalConnectionState.error:
+                          statusColor = context.vWarning;
+                          statusLabel = l10n.terminalStatusOffline;
+                      }
+                    } else {
+                      switch (status) {
+                        case TerminalHistoryStatus.open:
+                          statusColor = context.vSuccess;
+                          statusLabel = l10n.terminalStatusOpen;
+                        case TerminalHistoryStatus.available:
+                          statusColor = context.colorScheme.primary;
+                          statusLabel = l10n.terminalStatusAvailable;
+                        case TerminalHistoryStatus.ended:
+                          statusColor = context.colorScheme.outline;
+                          statusLabel = l10n.terminalStatusEnded;
+                        case TerminalHistoryStatus.unknown:
+                          statusColor = context.vWarning;
+                          statusLabel = l10n.terminalStatusOffline;
+                      }
+                    }
+
+                    final isEnded =
+                        matchingTab == null &&
+                        status == TerminalHistoryStatus.ended;
+
+                    return ListTile(
+                      dense: true,
+                      enabled: !isEnded,
+                      title: Text(
+                        record.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'JetBrains Mono',
+                          color: isEnded ? context.colorScheme.outline : null,
+                        ),
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
                             Text(
-                              l10n.terminalHistoryEmpty,
-                              textAlign: TextAlign.center,
+                              _formatLastUsed(record.lastUsedAt),
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: context.colorScheme.outline,
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : ListView.separated(
-                      itemCount: terminalState.history.length,
-                      separatorBuilder: (_, _) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final record = terminalState.history[index];
-                        final status =
-                            terminalState.historyStatuses[record.id] ??
-                            TerminalHistoryStatus.unknown;
-                        final isDefault =
-                            terminalState.defaultHistoryId == record.id;
-
-                        final Color statusColor;
-                        final String statusLabel;
-                        switch (status) {
-                          case TerminalHistoryStatus.open:
-                            statusColor = context.vSuccess;
-                            statusLabel = l10n.terminalStatusOpen;
-                          case TerminalHistoryStatus.available:
-                            statusColor = context.colorScheme.primary;
-                            statusLabel = l10n.terminalStatusAvailable;
-                          case TerminalHistoryStatus.ended:
-                            statusColor = context.colorScheme.outline;
-                            statusLabel = l10n.terminalStatusEnded;
-                          case TerminalHistoryStatus.unknown:
-                            statusColor = context.vWarning;
-                            statusLabel = l10n.terminalStatusOffline;
-                        }
-
-                        return ListTile(
-                          dense: true,
-                          enabled: status != TerminalHistoryStatus.ended,
-                          title: Text(
-                            record.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'JetBrains Mono',
-                              color: status == TerminalHistoryStatus.ended
-                                  ? context.colorScheme.outline
-                                  : null,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                statusLabel,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: statusColor,
+                                ),
+                              ),
                             ),
-                          ),
-                          subtitle: Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Wrap(
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 6,
-                              runSpacing: 4,
-                              children: [
-                                Text(
-                                  _formatLastUsed(record.lastUsedAt),
+                            if (isDefault)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: context.colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  l10n.terminalDefaultBadge,
                                   style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        context.colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                            if (record.isLegacy)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: context
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  l10n.terminalLegacyBadge,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
                                     color: context.colorScheme.outline,
                                   ),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                    vertical: 1.5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    statusLabel,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: statusColor,
-                                    ),
-                                  ),
-                                ),
-                                if (isDefault)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 5,
-                                      vertical: 1.5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          context.colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      l10n.terminalDefaultBadge,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: context
-                                            .colorScheme
-                                            .onPrimaryContainer,
+                              ),
+                          ],
+                        ),
+                      ),
+                      onTap: isEnded
+                          ? null
+                          : () {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              Navigator.of(context).pop();
+                              ref
+                                  .read(terminalProvider.notifier)
+                                  .restoreHistory(record.id);
+                            },
+                      trailing: PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, size: 18),
+                        tooltip: MaterialLocalizations.of(
+                          context,
+                        ).showMenuTooltip,
+                        onSelected: (value) async {
+                          final currentServer = ref.read(activeServerProvider);
+                          final currentTarget = currentServer == null
+                              ? ''
+                              : TerminalHistoryRecord.targetFor(currentServer);
+                          if (currentTarget != targetKey) return;
+
+                          switch (value) {
+                            case 'restore':
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              Navigator.of(context).pop();
+                              await ref
+                                  .read(terminalProvider.notifier)
+                                  .restoreHistory(record.id);
+                            case 'set_default':
+                              try {
+                                await ref
+                                    .read(terminalProvider.notifier)
+                                    .setDefaultHistory(record.id);
+                              } catch (_) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.maybeOf(
+                                    context,
+                                  )?.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        l10n.terminalErrorDefaultSaveFailed,
                                       ),
                                     ),
-                                  ),
-                                if (record.isLegacy)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 5,
-                                      vertical: 1.5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: context
-                                          .colorScheme
-                                          .surfaceContainerHighest,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      l10n.terminalLegacyBadge,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: context.colorScheme.outline,
+                                  );
+                                }
+                              }
+                            case 'clear_default':
+                              try {
+                                await ref
+                                    .read(terminalProvider.notifier)
+                                    .setDefaultHistory(null);
+                              } catch (_) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.maybeOf(
+                                    context,
+                                  )?.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        l10n.terminalErrorDefaultSaveFailed,
                                       ),
                                     ),
-                                  ),
+                                  );
+                                }
+                              }
+                            case 'rename':
+                              await showRenameHistoryDialog(
+                                context,
+                                ref,
+                                record,
+                              );
+                            case 'delete':
+                              await showDeleteHistoryDialog(
+                                context,
+                                ref,
+                                record,
+                              );
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'restore',
+                            enabled: status != TerminalHistoryStatus.ended,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.launch, size: 16),
+                                const SizedBox(width: 8),
+                                Text(l10n.terminalRestoreSession),
                               ],
                             ),
                           ),
-                          onTap: status == TerminalHistoryStatus.ended
-                              ? null
-                              : () {
-                                  FocusManager.instance.primaryFocus?.unfocus();
-                                  Navigator.of(context).pop();
-                                  ref
-                                      .read(terminalProvider.notifier)
-                                      .restoreHistory(record.id);
-                                },
-                          trailing: PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert, size: 18),
-                            tooltip: MaterialLocalizations.of(
-                              context,
-                            ).showMenuTooltip,
-                            onSelected: (value) async {
-                              final currentServer = ref.read(
-                                activeServerProvider,
-                              );
-                              final currentTarget = currentServer == null
-                                  ? ''
-                                  : TerminalHistoryRecord.targetFor(
-                                      currentServer,
-                                    );
-                              if (currentTarget != targetKey) return;
-
-                              switch (value) {
-                                case 'restore':
-                                  FocusManager.instance.primaryFocus?.unfocus();
-                                  Navigator.of(context).pop();
-                                  await ref
-                                      .read(terminalProvider.notifier)
-                                      .restoreHistory(record.id);
-                                case 'set_default':
-                                  try {
-                                    await ref
-                                        .read(terminalProvider.notifier)
-                                        .setDefaultHistory(record.id);
-                                  } catch (_) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.maybeOf(
-                                        context,
-                                      )?.showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            l10n.terminalErrorDefaultSaveFailed,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                case 'clear_default':
-                                  try {
-                                    await ref
-                                        .read(terminalProvider.notifier)
-                                        .setDefaultHistory(null);
-                                  } catch (_) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.maybeOf(
-                                        context,
-                                      )?.showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            l10n.terminalErrorDefaultSaveFailed,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                case 'rename':
-                                  await showRenameHistoryDialog(
-                                    context,
-                                    ref,
-                                    record,
-                                  );
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'restore',
-                                enabled: status != TerminalHistoryStatus.ended,
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.launch, size: 16),
-                                    const SizedBox(width: 8),
-                                    Text(l10n.terminalRestoreSession),
-                                  ],
-                                ),
-                              ),
-                              if (isDefault)
-                                PopupMenuItem(
-                                  value: 'clear_default',
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.bookmark_remove_outlined,
-                                        size: 16,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(l10n.terminalClearDefault),
-                                    ],
+                          if (isDefault)
+                            PopupMenuItem(
+                              value: 'clear_default',
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.bookmark_remove_outlined,
+                                    size: 16,
                                   ),
-                                )
-                              else
-                                PopupMenuItem(
-                                  value: 'set_default',
-                                  enabled:
-                                      status != TerminalHistoryStatus.ended,
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.bookmark_border,
-                                        size: 16,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(l10n.terminalSetDefault),
-                                    ],
-                                  ),
-                                ),
-                              PopupMenuItem(
-                                value: 'rename',
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.drive_file_rename_outline,
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(l10n.terminalRename),
-                                  ],
-                                ),
+                                  const SizedBox(width: 8),
+                                  Text(l10n.terminalClearDefault),
+                                ],
                               ),
-                            ],
+                            )
+                          else
+                            PopupMenuItem(
+                              value: 'set_default',
+                              enabled: status != TerminalHistoryStatus.ended,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.bookmark_border, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text(l10n.terminalSetDefault),
+                                ],
+                              ),
+                            ),
+                          PopupMenuItem(
+                            value: 'rename',
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.drive_file_rename_outline,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(l10n.terminalRename),
+                              ],
+                            ),
                           ),
-                        );
-                      },
-                    ),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  size: 16,
+                                  color: context.vDanger,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  l10n.delete,
+                                  style: TextStyle(color: context.vDanger),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              }(),
             ),
           ],
         ),

@@ -158,13 +158,30 @@ void main() {
     ) async {
       await _pumpShell(tester, openTransfers: true);
 
-      // 验证传输面板已弹出（空队列显示 transferEmptyView）
+      // 通知应打开一次传输面板，默认全部筛选显示空队列计数。
+      final sheet = find.byType(SftpTransferListSheet);
+      expect(sheet, findsOneWidget);
       expect(find.byKey(const Key('transferEmptyView')), findsOneWidget);
+      final l10n = AppLocalizations.of(tester.element(sheet));
+      expect(find.text('${l10n.transferFilterAll} (0)'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilterChip>(find.byKey(const Key('transferFilterAll')))
+            .selected,
+        isTrue,
+      );
 
       // 验证关闭按钮可正常关闭面板
-      await tester.tap(find.byKey(const Key('transferSheetCloseButton')));
+      final close = find.byKey(const Key('transferSheetCloseButton'));
+      expect(close.hitTestable(), findsOneWidget);
+      await tester.tap(close);
       await tester.pumpAndSettle();
+      expect(sheet, findsNothing);
       expect(find.byKey(const Key('transferEmptyView')), findsNothing);
+      expect(
+        find.byKey(const Key('sftpTransferListButton')).hitTestable(),
+        findsOneWidget,
+      );
     });
 
     testWidgets('2. openTransfers: false 时通过 MainShell 不弹出传输面板（对照组）', (
@@ -172,49 +189,50 @@ void main() {
     ) async {
       await _pumpShell(tester, openTransfers: false);
 
-      expect(find.byKey(const Key('transferEmptyView')), findsNothing);
+      expect(find.byType(SftpTransferListSheet), findsNothing);
       expect(find.byKey(const Key('transferListView')), findsNothing);
     });
 
     testWidgets('3. 同一个值不会被重复响应（防重复弹出与页面重建重弹）', (tester) async {
       final requestNotifier = _TestValueNotifier(0);
+      addTearDown(requestNotifier.dispose);
       await tester.pumpWidget(
         _buildSftpApp(openTransfersRequest: requestNotifier),
       );
       await tester.pumpAndSettle();
 
       // 初始值 0，面板未弹
-      expect(find.byKey(const Key('transferEmptyView')), findsNothing);
+      expect(find.byType(SftpTransferListSheet), findsNothing);
 
       // 对初始值 0 再次通知，仍不弹
       requestNotifier.forceNotify();
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('transferEmptyView')), findsNothing);
+      expect(find.byType(SftpTransferListSheet), findsNothing);
 
       // 递增至 1：第一次弹出
       requestNotifier.value = 1;
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('transferEmptyView')), findsOneWidget);
+      expect(find.byType(SftpTransferListSheet), findsOneWidget);
 
       // 在已打开状态下再次通知相同值 1，不会叠加弹出第二个面板
       requestNotifier.forceNotify();
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('transferEmptyView')), findsOneWidget);
+      expect(find.byType(SftpTransferListSheet), findsOneWidget);
 
       // 手动关闭面板
       await tester.tap(find.byKey(const Key('transferSheetCloseButton')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('transferEmptyView')), findsNothing);
+      expect(find.byType(SftpTransferListSheet), findsNothing);
 
       // 值未发生变化时（仍为 1）再次通知，不得重复弹出
       requestNotifier.forceNotify();
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('transferEmptyView')), findsNothing);
+      expect(find.byType(SftpTransferListSheet), findsNothing);
 
       // 递增至 2：第二次有效请求正常弹出
       requestNotifier.value = 2;
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('transferEmptyView')), findsOneWidget);
+      expect(find.byType(SftpTransferListSheet), findsOneWidget);
     });
 
     testWidgets('4. openTransfersRequest 为 null 时直接渲染不崩且生命周期清理正常', (
@@ -223,7 +241,7 @@ void main() {
       await tester.pumpWidget(_buildSftpApp(openTransfersRequest: null));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('transferEmptyView')), findsNothing);
+      expect(find.byType(SftpTransferListSheet), findsNothing);
       expect(find.byKey(const Key('transferListView')), findsNothing);
 
       // 卸载组件触发 dispose，验证 ?.removeListener 的空安全路径正常执行
@@ -236,6 +254,8 @@ void main() {
     ) async {
       final notifier1 = _TestValueNotifier(0);
       final notifier2 = _TestValueNotifier(0);
+      addTearDown(notifier1.dispose);
+      addTearDown(notifier2.dispose);
 
       await tester.pumpWidget(_buildSftpApp(openTransfersRequest: notifier1));
       await tester.pumpAndSettle();
@@ -247,12 +267,12 @@ void main() {
       // 递增旧 notifier1，已被解绑，不应弹出面板
       notifier1.value = 1;
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('transferEmptyView')), findsNothing);
+      expect(find.byType(SftpTransferListSheet), findsNothing);
 
       // 递增新 notifier2，已正确监听，正常弹出面板
       notifier2.value = 1;
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('transferEmptyView')), findsOneWidget);
+      expect(find.byType(SftpTransferListSheet), findsOneWidget);
     });
   });
 }

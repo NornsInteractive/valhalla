@@ -1,4 +1,4 @@
-package com.antigravity.valhalla.valhalla
+package com.norns.valhalla
 
 import android.content.Context
 import android.net.wifi.WifiManager

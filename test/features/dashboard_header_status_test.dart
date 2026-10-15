@@ -43,6 +43,9 @@ class _FakeConnectionNotifier extends ServerConnectionNotifier {
   _FakeConnectionNotifier(this._state);
   @override
   ServerConnectionState build() => _state;
+
+  void connection(ConnectionStateEnum status) =>
+      state = state.copyWith(status: status);
 }
 
 class _FakeAiChatNotifier extends AiChatNotifier {
@@ -76,6 +79,9 @@ Future<void> _pumpDashboardHeader(
   required ServerConnectionState connState,
   ServerProfile? server,
   Size size = const Size(800, 600),
+  _FakeConnectionNotifier? connection,
+  double textScale = 1,
+  Locale locale = const Locale('en'),
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -94,7 +100,7 @@ Future<void> _pumpDashboardHeader(
           () => _FakeActiveServerNotifier(targetServer),
         ),
         serverConnectionProvider.overrideWith(
-          () => _FakeConnectionNotifier(connState),
+          () => connection ?? _FakeConnectionNotifier(connState),
         ),
         aiChatProvider.overrideWith(() => _FakeAiChatNotifier()),
         cliChatProvider.overrideWith(() => _FakeCliChatNotifier()),
@@ -111,10 +117,17 @@ Future<void> _pumpDashboardHeader(
           ),
         ),
       ],
-      child: const MaterialApp(
+      child: MaterialApp(
+        locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(body: DashboardView()),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
+        home: const Scaffold(body: DashboardView()),
       ),
     ),
   );
@@ -127,6 +140,53 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       _localStorage = await LocalStorageService.init();
     });
+
+    for (final locale in [const Locale('en'), const Locale('ar')]) {
+      testWidgets(
+        'cache status keeps fixed title-row geometry at 320dp 2x $locale',
+        (tester) async {
+          const connected = ServerConnectionState(
+            status: ConnectionStateEnum.connected,
+          );
+          final connection = _FakeConnectionNotifier(connected);
+          await _pumpDashboardHeader(
+            tester,
+            connState: connected,
+            connection: connection,
+            size: const Size(320, 800),
+            textScale: 2,
+            locale: locale,
+          );
+          final indicator = find.byKey(
+            const Key('dashboardStaleDataIndicator'),
+          );
+          expect(indicator, findsOneWidget);
+          final titleRow = find
+              .ancestor(of: indicator, matching: find.byType(Wrap))
+              .first;
+          final titleRowSize = tester.getSize(titleRow);
+          final indicatorSize = tester.getSize(indicator);
+          expect(indicatorSize, const Size(18, 18));
+          expect(tester.takeException(), isNull, reason: 'initial connected');
+          for (final status in [
+            ConnectionStateEnum.disconnected,
+            ConnectionStateEnum.connecting,
+            ConnectionStateEnum.connected,
+          ]) {
+            connection.connection(status);
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 450));
+            expect(tester.getSize(titleRow), titleRowSize, reason: status.name);
+            expect(
+              tester.getSize(indicator),
+              indicatorSize,
+              reason: status.name,
+            );
+            expect(tester.takeException(), isNull, reason: status.name);
+          }
+        },
+      );
+    }
 
     testWidgets(
       'StatusBadge is placed on the address row next to username@host:port, not in action buttons',

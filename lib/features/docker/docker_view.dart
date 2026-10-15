@@ -522,34 +522,6 @@ class _DockerViewState extends ConsumerState<DockerView> {
     }
   }
 
-  Widget _buildCachedBanner(BuildContext context, DateTime cachedAt) {
-    final timeStr =
-        '${cachedAt.hour.toString().padLeft(2, '0')}:${cachedAt.minute.toString().padLeft(2, '0')}:${cachedAt.second.toString().padLeft(2, '0')}';
-    return Container(
-      width: double.infinity,
-      color: context.colorScheme.surfaceContainerHighest,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        children: [
-          Icon(
-            Icons.cloud_off_outlined,
-            size: 16,
-            color: context.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              context.l10n.cachedDataNotice(timeStr),
-              style: context.textTheme.bodySmall?.copyWith(
-                color: context.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final activeServer = ref.watch(activeServerProvider);
@@ -568,8 +540,6 @@ class _DockerViewState extends ConsumerState<DockerView> {
     return Scaffold(
       body: Column(
         children: [
-          if (dockerState.cachedAt != null)
-            _buildCachedBanner(context, dockerState.cachedAt!),
           Entrance(
             index: 0,
             child: Padding(
@@ -607,7 +577,9 @@ class _DockerViewState extends ConsumerState<DockerView> {
                   const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.refresh),
-                    tooltip: context.l10n.sftpRefresh,
+                    tooltip: dockerState.cachedAt != null
+                        ? '${context.l10n.sftpRefresh} (${context.l10n.cachedDataNotice('${dockerState.cachedAt!.hour.toString().padLeft(2, '0')}:${dockerState.cachedAt!.minute.toString().padLeft(2, '0')}:${dockerState.cachedAt!.second.toString().padLeft(2, '0')}')})'
+                        : context.l10n.sftpRefresh,
                     onPressed:
                         (dockerState.isLoading ||
                             !ref.watch(

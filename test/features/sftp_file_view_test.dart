@@ -390,6 +390,14 @@ SftpFileItem _makeItem(
   );
 }
 
+Finder _fileMoreMenu(String name) => find.descendant(
+  of: find.ancestor(
+    of: find.text(name),
+    matching: find.byType(RemoteBrowserEntryTile),
+  ),
+  matching: find.byIcon(Icons.more_vert),
+);
+
 void main() {
   setUpAll(() async {
     await loadRealTextFonts();
@@ -496,7 +504,7 @@ void main() {
         final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
         // 1. PopupMenuButton on archive.zip should NOT contain "Open"
-        final firstMoreBtn = find.byIcon(Icons.more_vert).first;
+        final firstMoreBtn = _fileMoreMenu(zipItem.name);
         await tester.tap(firstMoreBtn);
         await tester.pumpAndSettle();
 
@@ -530,7 +538,7 @@ void main() {
         final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
         // 1. Popup menu has Open and Download
-        final moreBtn = find.byIcon(Icons.more_vert);
+        final moreBtn = _fileMoreMenu(txtItem.name);
         await tester.tap(moreBtn);
         await tester.pumpAndSettle();
 
@@ -755,7 +763,7 @@ void main() {
         expect(uploadBtn.onPressed, isNull);
 
         // 3. Download menu item is enabled for continuous queuing
-        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.tap(_fileMoreMenu(txtItem.name));
         await tester.pumpAndSettle();
 
         final downloadFinder = find.widgetWithText(
@@ -775,6 +783,24 @@ void main() {
         expect(notifier.downloadCalls, hasLength(1));
         expect(notifier.downloadCalls.first.name, equals('document.txt'));
         expect(find.text(l10n.sftpDownloadSuccess), findsNothing);
+
+        notifier.emit(state.copyWith(transfers: []));
+        await tester.pump();
+        expect(
+          tester
+              .widget<IconButton>(find.byKey(const Key('sftpUploadButton')))
+              .onPressed,
+          isNotNull,
+        );
+        notifier.emit(state);
+        await tester.pump();
+        expect(
+          tester
+              .widget<IconButton>(find.byKey(const Key('sftpUploadButton')))
+              .onPressed,
+          isNull,
+          reason: 'Transfer-only state changes must update the upload guard',
+        );
       },
     );
 
@@ -878,9 +904,7 @@ void main() {
       expect(subUpBtn.onPressed, isNotNull);
     });
 
-    testWidgets('shows sort button and changes sort key and direction', (
-      tester,
-    ) async {
+    testWidgets('More menu changes sort key and direction', (tester) async {
       final notifier = _TestSftpNotifier(
         const SftpState(
           currentPath: '/var/www',
@@ -895,12 +919,9 @@ void main() {
 
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
-      expect(
-        find.widgetWithIcon(PopupMenuButton<String>, Icons.sort),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('sftpMoreButton')), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.sort));
+      await tester.tap(find.byKey(const Key('sftpMoreButton')));
       await tester.pumpAndSettle();
 
       expect(find.text(l10n.sftpSortName), findsOneWidget);
@@ -931,7 +952,7 @@ void main() {
       expect(notifier.setSortCalls.first.key, SftpSortKey.size);
       expect(notifier.setSortCalls.first.ascending, isTrue);
 
-      await tester.tap(find.byIcon(Icons.sort));
+      await tester.tap(find.byKey(const Key('sftpMoreButton')));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -946,7 +967,7 @@ void main() {
       expect(notifier.setSortCalls.last.key, SftpSortKey.size);
       expect(notifier.setSortCalls.last.ascending, isFalse);
 
-      await tester.tap(find.byIcon(Icons.sort));
+      await tester.tap(find.byKey(const Key('sftpMoreButton')));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -958,7 +979,7 @@ void main() {
       expect(notifier.setSortCalls.last.key, SftpSortKey.name);
       expect(notifier.setSortCalls.last.ascending, isFalse);
 
-      await tester.tap(find.byIcon(Icons.sort));
+      await tester.tap(find.byKey(const Key('sftpMoreButton')));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -970,7 +991,7 @@ void main() {
       expect(notifier.setSortCalls.last.key, SftpSortKey.name);
       expect(notifier.setSortCalls.last.ascending, isTrue);
 
-      await tester.tap(find.byIcon(Icons.sort));
+      await tester.tap(find.byKey(const Key('sftpMoreButton')));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -998,7 +1019,7 @@ void main() {
         final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
         // Tap more -> tap download
-        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.tap(_fileMoreMenu(txtItem.name));
         await tester.pumpAndSettle();
 
         await tester.tap(
@@ -1036,7 +1057,7 @@ void main() {
 
         final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
-        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.tap(_fileMoreMenu(txtItem.name));
         await tester.pumpAndSettle();
 
         await tester.tap(
@@ -1071,7 +1092,7 @@ void main() {
 
         final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
-        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.tap(_fileMoreMenu(txtItem.name));
         await tester.pumpAndSettle();
 
         await tester.tap(
@@ -1099,7 +1120,7 @@ void main() {
 
         final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
-        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.tap(_fileMoreMenu(txtItem.name));
         await tester.pumpAndSettle();
 
         await tester.tap(
@@ -1282,6 +1303,13 @@ void main() {
                 .ancestor(of: find.text(name), matching: find.byType(ListTile))
                 .first,
           );
+      Icon leadingIcon(WidgetTester tester, ListTile tile) =>
+          tester.widget<Icon>(
+            find.descendant(
+              of: find.byWidget(tile.leading!),
+              matching: find.byType(Icon),
+            ),
+          );
 
       testWidgets('hidden title and icon are subdued, menu icon stays normal', (
         tester,
@@ -1301,7 +1329,7 @@ void main() {
         ).colorScheme;
 
         final hiddenTile = tileOf(tester, '.env');
-        final hiddenIconColor = (hiddenTile.leading! as Icon).color;
+        final hiddenIconColor = leadingIcon(tester, hiddenTile).color;
         final normalTile = tileOf(tester, 'notes.txt');
 
         expect(
@@ -1331,7 +1359,7 @@ void main() {
         );
         expect(normalTitleColor, isNot(hiddenTitleColor));
         // 可见文件图标不指定颜色（走主题默认），隐藏文件才显式压暗。
-        expect((normalTile.leading! as Icon).color, isNull);
+        expect(leadingIcon(tester, normalTile).color, isNull);
         expect(hiddenIconColor!.a, lessThan(1.0));
 
         // 溢出菜单不受隐藏态影响。
@@ -1355,6 +1383,15 @@ void main() {
         );
         expect(hiddenMenu.color, normalMenu.color);
         expect(hiddenMenu.color, isNull);
+        final hiddenSize = find.descendant(
+          of: find.byKey(const ValueKey('sftp_file_/var/www/.env')),
+          matching: find.text('100 B'),
+        );
+        expect(hiddenSize, findsOneWidget);
+        expect(
+          tester.widget<Text>(hiddenSize).style?.color,
+          scheme.onSurfaceVariant.withValues(alpha: 0.62),
+        );
       });
 
       testWidgets(
@@ -1378,11 +1415,11 @@ void main() {
           ).colorScheme;
 
           expect(
-            (tileOf(tester, '.git').leading! as Icon).color,
+            leadingIcon(tester, tileOf(tester, '.git')).color,
             scheme.primary.withValues(alpha: 0.6),
           );
           expect(
-            (tileOf(tester, 'html').leading! as Icon).color,
+            leadingIcon(tester, tileOf(tester, 'html')).color,
             scheme.primary,
           );
 
@@ -1487,6 +1524,63 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    for (final width in [320.0, 390.0]) {
+      for (final scale in [1.0, 1.3, 2.0]) {
+        for (final name in ['a.txt', '${'long_' * 12}file.txt']) {
+          testWidgets(
+            'list filename and size stay inline at $width dp $scale x $name',
+            (tester) async {
+              tester.view.physicalSize = Size(width, 850);
+              tester.view.devicePixelRatio = 1;
+              tester.platformDispatcher.textScaleFactorTestValue = scale;
+              addTearDown(tester.view.reset);
+              addTearDown(
+                tester.platformDispatcher.clearTextScaleFactorTestValue,
+              );
+              await tester.pumpWidget(
+                _buildTestApp(
+                  state: SftpState(
+                    currentPath: '/var/www',
+                    viewMode: SftpViewMode.list,
+                    files: [_makeItem(name)],
+                  ),
+                ),
+              );
+              await tester.pumpAndSettle();
+              final tile = find.byKey(ValueKey('sftp_file_/var/www/$name'));
+              final size = find.descendant(
+                of: tile,
+                matching: find.text('100 B'),
+              );
+              expect(
+                size,
+                findsOneWidget,
+                reason: 'file size must not repeat in subtitle',
+              );
+              final filenameBounds = tester.getRect(find.text(name));
+              final sizeBounds = tester.getRect(size);
+              final tileBounds = tester.getRect(tile);
+              expect(sizeBounds.left - filenameBounds.right, closeTo(12, 0.5));
+              expect(
+                sizeBounds.center.dy,
+                closeTo(filenameBounds.center.dy, 0.5),
+              );
+              expect(
+                filenameBounds.left - tileBounds.left,
+                closeTo(56, 0.5),
+                reason: 'title moves 8dp nearer the icon, not the whole row',
+              );
+              expect(
+                tileBounds.inflate(0.5).contains(sizeBounds.bottomRight),
+                isTrue,
+              );
+              expect(tester.takeException(), isNull);
+            },
+          );
+        }
+      }
+    }
+
     for (final mode in [SftpViewMode.list, SftpViewMode.grid]) {
       for (final scale in [1.0, 1.3, 2.0]) {
         testWidgets(
@@ -1508,12 +1602,40 @@ void main() {
             await tester.pumpAndSettle();
             final label = find.text('2026-09-16 09:45');
             expect(label, findsOneWidget);
+            final horizontal = find.ancestor(
+              of: label,
+              matching: find.byWidgetPredicate(
+                (widget) =>
+                    widget is SingleChildScrollView &&
+                    widget.scrollDirection == Axis.horizontal,
+              ),
+            );
+            if (horizontal.evaluate().isNotEmpty) {
+              expect(mode, SftpViewMode.list);
+              expect(
+                scale,
+                2.0,
+                reason: 'normal text must show complete time without scrolling',
+              );
+              await tester.drag(horizontal, const Offset(-600, 0));
+              await tester.pumpAndSettle();
+            }
             final rich = find.descendant(
               of: label,
               matching: find.byType(RichText),
             );
             final paragraph = tester.renderObject<RenderParagraph>(rich);
             expect(paragraph.didExceedMaxLines, isFalse);
+            if (mode == SftpViewMode.list) {
+              final full = paragraph.getBoxesForSelection(
+                const TextSelection(baseOffset: 0, extentOffset: 16),
+              );
+              expect(
+                full.map((box) => box.top).toSet(),
+                hasLength(1),
+                reason: 'date and time must remain on the original single line',
+              );
+            }
             final boxes = paragraph.getBoxesForSelection(
               const TextSelection(baseOffset: 14, extentOffset: 16),
             );
@@ -1624,6 +1746,97 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    group('Grid metadata assertions', () {
+      testWidgets(
+        'grid directory shows permissions drwxr-xr-x not Directory label',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 850);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          final dirItem = _makeItem(
+            'html',
+            isDirectory: true,
+            path: '/var/www/html',
+          );
+          final state = SftpState(
+            currentPath: '/var/www',
+            viewMode: SftpViewMode.grid,
+            files: [dirItem],
+          );
+          await tester.pumpWidget(_buildTestApp(state: state));
+          await tester.pumpAndSettle();
+          final card = find.byKey(const ValueKey('sftp_file_/var/www/html'));
+          // Directory metadata should show permissions string, not "Directory"
+          final permissionsText = find.descendant(
+            of: card,
+            matching: find.text('drwxr-xr-x'),
+          );
+          expect(permissionsText, findsOneWidget);
+          final directoryLabel = find.descendant(
+            of: card,
+            matching: find.text('Directory'),
+          );
+          expect(directoryLabel, findsNothing);
+          expect(tester.takeException(), isNull);
+        },
+      );
+
+      testWidgets('grid ordinary file retains size in metadata', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(320, 850);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final fileItem = _makeItem(
+          'notes.txt',
+          size: 2048,
+          path: '/var/www/notes.txt',
+        );
+        final state = SftpState(
+          currentPath: '/var/www',
+          viewMode: SftpViewMode.grid,
+          files: [fileItem],
+        );
+        await tester.pumpWidget(_buildTestApp(state: state));
+        await tester.pumpAndSettle();
+        final card = find.byKey(const ValueKey('sftp_file_/var/www/notes.txt'));
+        // File metadata should show formatted size
+        final sizeText = find.descendant(
+          of: card,
+          matching: find.text('2048 B'),
+        );
+        expect(sizeText, findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets(
+        'grid long filename and size stay within bounds at narrow width 2x text',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 850);
+          tester.view.devicePixelRatio = 1;
+          tester.platformDispatcher.textScaleFactorTestValue = 2;
+          addTearDown(tester.view.reset);
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          final longName = 'a' * 60 + '.txt';
+          final fileItem = _makeItem(
+            longName,
+            size: 1024,
+            path: '/var/www/$longName',
+          );
+          final state = SftpState(
+            currentPath: '/var/www',
+            viewMode: SftpViewMode.grid,
+            files: [fileItem],
+          );
+          await tester.pumpWidget(_buildTestApp(state: state));
+          await tester.pumpAndSettle();
+          final card = find.byKey(ValueKey('sftp_file_/var/www/$longName'));
+          expect(tester.getRect(card).width, lessThanOrEqualTo(320));
+          expect(tester.takeException(), isNull);
+        },
+      );
+    });
 
     group('View mode persistence', () {
       late SharedPreferences prefs;

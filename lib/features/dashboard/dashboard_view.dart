@@ -155,14 +155,6 @@ class DashboardView extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isOfflineCached) ...[
-                _buildCachedBanner(
-                  context,
-                  cachedAt: cachedAt,
-                  isPartial: true,
-                ),
-                const SizedBox(height: 12),
-              ],
               _buildServerHeaderCard(
                 context,
                 ref,
@@ -226,44 +218,31 @@ class DashboardView extends ConsumerWidget {
                       context.l10n.dashboardTitle,
                       style: context.textTheme.titleMedium,
                     ),
-                    if (isOfflineCached) ...[
-                      Container(
+                    Tooltip(
+                      message: isOfflineCached
+                          ? (cachedAt != null
+                                ? '${context.l10n.dashboardUpdatesPaused} (${context.l10n.cachedDataNotice('${cachedAt.hour.toString().padLeft(2, '0')}:${cachedAt.minute.toString().padLeft(2, '0')}:${cachedAt.second.toString().padLeft(2, '0')}')})'
+                                : context.l10n.dashboardUpdatesPaused)
+                          : context.l10n.dashboardTitle,
+                      child: SizedBox(
                         key: const Key('dashboardStaleDataIndicator'),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: context.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(VRadius.pill),
-                          border: Border.all(
-                            color: context.colorScheme.outlineVariant
-                                .withValues(alpha: 0.5),
+                        width: 18,
+                        height: 18,
+                        child: Center(
+                          child: Icon(
+                            isOfflineCached
+                                ? Icons.pause_circle_outline
+                                : Icons.check_circle_outline,
+                            size: 16,
+                            color: isOfflineCached
+                                ? context.colorScheme.outline
+                                : context.colorScheme.primary.withValues(
+                                    alpha: 0.6,
+                                  ),
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.pause_circle_outline,
-                              size: 13,
-                              color: context.colorScheme.outline,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              cachedAt != null
-                                  ? '${context.l10n.dashboardUpdatesPaused} (${context.l10n.cachedDataNotice('${cachedAt.hour.toString().padLeft(2, '0')}:${cachedAt.minute.toString().padLeft(2, '0')}:${cachedAt.second.toString().padLeft(2, '0')}')})'
-                                  : context.l10n.dashboardUpdatesPaused,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: context.colorScheme.outline,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ),
@@ -305,45 +284,6 @@ class DashboardView extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildCachedBanner(
-    BuildContext context, {
-    DateTime? cachedAt,
-    bool isPartial = false,
-  }) {
-    final timeStr = cachedAt != null
-        ? '${cachedAt.hour.toString().padLeft(2, '0')}:${cachedAt.minute.toString().padLeft(2, '0')}:${cachedAt.second.toString().padLeft(2, '0')}'
-        : null;
-    final message = timeStr != null
-        ? context.l10n.cachedDataNotice(timeStr)
-        : context.l10n.stateOffline;
-    return Container(
-      key: const Key('dashboardCachedDataBanner'),
-      width: double.infinity,
-      color: context.colorScheme.surfaceContainerHighest,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Icon(
-            Icons.cloud_off_outlined,
-            size: 16,
-            color: context.colorScheme.outline,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              isPartial
-                  ? '$message · ${context.l10n.dashboardUpdatesPaused}'
-                  : message,
-              style: context.textTheme.labelSmall?.copyWith(
-                color: context.colorScheme.outline,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -447,22 +387,36 @@ class DashboardView extends ConsumerWidget {
                             ],
                           ),
                           const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '${server.username}@${server.host}:${server.port}',
-                                  style: monoTextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                    color: context.colorScheme.onSurfaceVariant,
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              return Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth: constraints.maxWidth,
+                                    ),
+                                    child: Text(
+                                      '${server.username}@${server.host}:${server.port}',
+                                      style: monoTextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        color: context
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              StatusBadge(label: badgeLabel, type: badgeType),
-                            ],
+                                  StatusBadge(
+                                    label: badgeLabel,
+                                    type: badgeType,
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -615,12 +569,15 @@ class DashboardView extends ConsumerWidget {
                       color: context.colorScheme.primary,
                     ),
                     const SizedBox(width: 5),
-                    Text(
-                      '${context.l10n.metricsUptime}: ${snapshot != null && snapshot.uptimeSeconds > 0 ? MetricsFormatters.formatUptime(snapshot.uptimeSeconds) : '--'}',
-                      style: monoTextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        color: context.colorScheme.onSurfaceVariant,
+                    Flexible(
+                      child: Text(
+                        '${context.l10n.metricsUptime}: ${snapshot != null && snapshot.uptimeSeconds > 0 ? MetricsFormatters.formatUptime(snapshot.uptimeSeconds) : '--'}',
+                        style: monoTextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: context.colorScheme.onSurfaceVariant,
+                        ),
+                        softWrap: true,
                       ),
                     ),
                   ],
@@ -653,10 +610,14 @@ class DashboardView extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (ctx, constraints) {
+        final textScale = MediaQuery.textScalerOf(ctx).scale(1.0);
+        final cardHeight =
+            (105.0 * (1.0 + (textScale > 1.0 ? (textScale - 1.0) * 0.65 : 0.0)))
+                .clamp(105.0, 240.0);
         return GridView(
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: LayoutBreakpoints.gridMetricsMaxExtent,
-            mainAxisExtent: 105,
+            mainAxisExtent: cardHeight,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
           ),

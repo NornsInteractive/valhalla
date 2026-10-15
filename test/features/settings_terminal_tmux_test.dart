@@ -3,16 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/providers/storage_providers.dart';
+import 'package:valhalla/core/providers/terminal_provider.dart';
 import 'package:valhalla/core/providers/terminal_settings_provider.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
-import 'package:valhalla/features/settings/settings_view.dart';
+import 'package:valhalla/features/terminal/terminal_view.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
+import 'package:valhalla/features/settings/settings_view.dart';
+import '../support/seeded_terminal_notifier.dart';
 
 const _tmuxStorageKey = 'valhalla_terminal_use_tmux_v1';
 
 class _SpyTerminalSettingsNotifier extends TerminalSettingsNotifier {
   final bool initialUseTmux;
   final List<bool> setUseTmuxCalls = [];
+  bool failSave = false;
 
   _SpyTerminalSettingsNotifier({this.initialUseTmux = false});
 
@@ -24,15 +28,11 @@ class _SpyTerminalSettingsNotifier extends TerminalSettingsNotifier {
   @override
   Future<void> setUseTmux(bool enabled) async {
     setUseTmuxCalls.add(enabled);
+    if (failSave) throw StateError('fixture mode save failure');
     state = state.copyWith(useTmux: enabled);
   }
 }
 
-/// 一个什么都不预置的存储，供只想测 tmux 开关的用例使用。
-///
-/// 设置页现在还有自动连接卡片，它经 `autoConnectSettingsProvider` 读
-/// `localStorageServiceProvider`；后者默认是抛 `UnimplementedError` 的占位，
-/// 不注入会让整个设置页构建失败（不只是那张卡片）。
 Future<LocalStorageService> _freshStorage() async =>
     LocalStorageService(await SharedPreferences.getInstance());
 
@@ -41,14 +41,31 @@ Widget _buildSettingsApp({
   Locale locale = const Locale('en'),
 }) {
   return ProviderScope(
-    overrides: overrides.cast(),
+    overrides: [
+      ...terminalWorkspaceOverrides().skip(1), // Callers provide real storage.
+      terminalProvider.overrideWith(
+        () => SeededTerminalNotifier(SshTerminalState(tabs: const [])),
+      ),
+      ...overrides.cast(),
+    ],
     child: MaterialApp(
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const Scaffold(body: SettingsView()),
+      home: const Scaffold(body: SshTerminalView(active: false)),
     ),
   );
+}
+
+Future<void> _selectMode(WidgetTester tester, bool tmux) async {
+  await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
+  await tester.pumpAndSettle();
+  await tester.tap(
+    find.byKey(
+      Key(tmux ? 'terminalModeTmuxRadio' : 'terminalModeStandardRadio'),
+    ),
+  );
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -56,7 +73,88 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  group('SettingsView terminal tmux toggle', () {
+  group('SSH terminal default mode', () {
+    testWidgets('mode entry is no longer in SettingsView', (tester) async {
+      final storage = await _freshStorage();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [localStorageServiceProvider.overrideWithValue(storage)],
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: SettingsView()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final security = find.byKey(const Key('settings_security_tile'));
+      await tester.ensureVisible(security);
+      await tester.pumpAndSettle();
+      await tester.tap(security);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('settingsTerminalFontSizeRow')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('settingsTerminalUseTmuxSwitch')),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
+    testWidgets('cancelling mode selection changes nothing', (tester) async {
+      tester.view.physicalSize = const Size(1024, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final spy = _SpyTerminalSettingsNotifier();
+      await tester.pumpWidget(
+        _buildSettingsApp(
+          overrides: [
+            terminalSettingsProvider.overrideWith(() => spy),
+            localStorageServiceProvider.overrideWithValue(
+              await _freshStorage(),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
+      await tester.pumpAndSettle();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
+      await tester.pumpAndSettle();
+      expect(spy.setUseTmuxCalls, isEmpty);
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets(
+      'mode save failure stays in dialog without changing the effective mode',
+      (tester) async {
+        tester.view.physicalSize = const Size(1024, 1400);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final spy = _SpyTerminalSettingsNotifier()..failSave = true;
+        await tester.pumpWidget(
+          _buildSettingsApp(
+            overrides: [
+              terminalSettingsProvider.overrideWith(() => spy),
+              localStorageServiceProvider.overrideWithValue(
+                await _freshStorage(),
+              ),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+        await _selectMode(tester, true);
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(spy.setUseTmuxCalls, [true]);
+        final scope = ProviderScope.containerOf(
+          tester.element(find.byType(SshTerminalView)),
+        );
+        expect(scope.read(terminalSettingsProvider).useTmux, isFalse);
+        expect(tester.takeException(), isNull);
+      },
+    );
     testWidgets(
       'renders tmux toggle with title, subtitle, description in English (default off)',
       (tester) async {
@@ -71,8 +169,6 @@ void main() {
           _buildSettingsApp(
             overrides: [
               terminalSettingsProvider.overrideWith(() => spy),
-              // 设置页现在还有自动连接卡片，它读 autoConnectSettingsProvider
-              // -> localStorageServiceProvider；不注入会让整页构建失败。
               localStorageServiceProvider.overrideWithValue(
                 await _freshStorage(),
               ),
@@ -82,21 +178,25 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final switchFinder = find.byKey(
-          const Key('settingsTerminalUseTmuxSwitch'),
-        );
-        expect(switchFinder, findsOneWidget);
-
+        await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
+        await tester.pumpAndSettle();
         final l10n = await AppLocalizations.delegate.load(const Locale('en'));
         expect(find.text(l10n.settingsTerminalUseTmux), findsOneWidget);
-        expect(find.text(l10n.settingsTerminalUseTmuxSubtitle), findsOneWidget);
+        expect(find.text(l10n.terminalModeStandard), findsOneWidget);
         expect(
           find.text(l10n.settingsTerminalUseTmuxDescription),
           findsOneWidget,
         );
 
-        final switchWidget = tester.widget<SwitchListTile>(switchFinder);
-        expect(switchWidget.value, isFalse);
+        expect(
+          tester
+              .widget<IconButton>(
+                find.byKey(const Key('terminalDefaultModeButton')),
+              )
+              .onPressed,
+          isNotNull,
+        );
+        expect(spy.setUseTmuxCalls, isEmpty);
       },
     );
 
@@ -123,21 +223,25 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final switchFinder = find.byKey(
-          const Key('settingsTerminalUseTmuxSwitch'),
-        );
-        expect(switchFinder, findsOneWidget);
-
+        await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
+        await tester.pumpAndSettle();
         final l10n = await AppLocalizations.delegate.load(const Locale('zh'));
         expect(find.text(l10n.settingsTerminalUseTmux), findsOneWidget);
-        expect(find.text(l10n.settingsTerminalUseTmuxSubtitle), findsOneWidget);
+        expect(find.text(l10n.terminalModeTmux), findsOneWidget);
         expect(
           find.text(l10n.settingsTerminalUseTmuxDescription),
           findsOneWidget,
         );
 
-        final switchWidget = tester.widget<SwitchListTile>(switchFinder);
-        expect(switchWidget.value, isTrue);
+        expect(
+          tester
+              .widget<IconButton>(
+                find.byKey(const Key('terminalDefaultModeButton')),
+              )
+              .onPressed,
+          isNotNull,
+        );
+        expect(spy.setUseTmuxCalls, isEmpty);
       },
     );
 
@@ -163,26 +267,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final switchFinder = find.byKey(
-        const Key('settingsTerminalUseTmuxSwitch'),
-      );
-      expect(switchFinder, findsOneWidget);
-
       // Tap the switch to turn it on
-      await tester.tap(switchFinder);
-      await tester.pumpAndSettle();
+      await _selectMode(tester, true);
 
       expect(spy.setUseTmuxCalls, [true]);
-      final switchWidget = tester.widget<SwitchListTile>(switchFinder);
-      expect(switchWidget.value, isTrue);
+      expect(spy.state.useTmux, isTrue);
 
       // Tap the switch to turn it off
-      await tester.tap(switchFinder);
-      await tester.pumpAndSettle();
+      await _selectMode(tester, false);
 
       expect(spy.setUseTmuxCalls, [true, false]);
-      final updatedSwitchWidget = tester.widget<SwitchListTile>(switchFinder);
-      expect(updatedSwitchWidget.value, isFalse);
+      expect(spy.state.useTmux, isFalse);
     });
 
     testWidgets(
@@ -206,27 +301,22 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final switchFinder = find.byKey(
-          const Key('settingsTerminalUseTmuxSwitch'),
+        final container = ProviderScope.containerOf(
+          tester.element(find.byType(SshTerminalView)),
         );
-        expect(switchFinder, findsOneWidget);
-
-        // Initially false
-        expect(tester.widget<SwitchListTile>(switchFinder).value, isFalse);
+        expect(container.read(terminalSettingsProvider).useTmux, isFalse);
         expect(prefs.getBool(_tmuxStorageKey), isNull);
 
         // Toggle on
-        await tester.tap(switchFinder);
-        await tester.pumpAndSettle();
+        await _selectMode(tester, true);
 
-        expect(tester.widget<SwitchListTile>(switchFinder).value, isTrue);
+        expect(container.read(terminalSettingsProvider).useTmux, isTrue);
         expect(prefs.getBool(_tmuxStorageKey), isTrue);
 
         // Toggle off
-        await tester.tap(switchFinder);
-        await tester.pumpAndSettle();
+        await _selectMode(tester, false);
 
-        expect(tester.widget<SwitchListTile>(switchFinder).value, isFalse);
+        expect(container.read(terminalSettingsProvider).useTmux, isFalse);
         expect(prefs.getBool(_tmuxStorageKey), isFalse);
       },
     );

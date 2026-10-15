@@ -101,7 +101,7 @@ class TerminalSessionBridge {
 
   /// 是否优先使用 tmux 保存会话。
   ///
-  /// 默认 false：tmux 是 opt-in 能力，由设置页开关决定。忘了显式传参时
+  /// 默认 false：tmux 是 opt-in 能力，由终端模式设置决定。忘了显式传参时
   /// 应当落到「普通 SSH PTY」这个安全默认值，而不是意外去探测/使用 tmux。
   final bool preferTmux;
 
@@ -263,9 +263,12 @@ class TerminalSessionBridge {
       return;
     }
 
+    // Ordinary SSH shells reopen automatically; never replay a CLI/login/exec
+    // command merely because its transport reconnected.
     if (_hasOpenedSession &&
         _mode != TerminalSessionMode.tmux &&
-        !_tmuxStartAttempted) {
+        !_tmuxStartAttempted &&
+        (launchCommand != null || remoteExecCommand != null)) {
       _lastError = const TerminalSessionInterruptedException();
       _setState(TerminalConnectionState.disconnected);
       return;
@@ -368,6 +371,31 @@ class TerminalSessionBridge {
             text.endsWith('(No such file or directory)')) ||
         text == 'failed to connect to server: No such file or directory';
   }
+
+  static Future<void> terminateTmuxSession(
+    SSHClient client,
+    String name, {
+    required String tmuxPath,
+  }) async {
+    if (!TmuxSessionPlanner.isTmuxAvailable(tmuxPath)) {
+      throw const SSHConnectionException('TMUX_DETECTION_FAILED');
+    }
+    final result = await _runTmuxQuery(
+      client,
+      TmuxSessionPlanner.killSessionCommand(
+        name,
+      ).replaceFirst('tmux ', '${cliShellQuote(tmuxPath)} '),
+    );
+    if (result.exitCode != 0) {
+      throw SSHConnectionException(
+        'TERMINAL_HISTORY_TERMINATE_FAILED',
+        result.exitCode,
+      );
+    }
+  }
+
+  static Future<String> tmuxExecutable(SSHClient client) =>
+      _queryTmuxPath(client);
 
   static Future<String> _queryTmuxPath(SSHClient client) async {
     final result = await _runTmuxQuery(
@@ -487,6 +515,7 @@ class TerminalSessionBridge {
     final client = sshClient;
     bool current() =>
         !_disposed && epoch == _sessionEpoch && identical(client, sshClient);
+    final layoutBeforeAllocation = (terminal.viewWidth, terminal.viewHeight);
     // 记住最后一次的尺寸：重连时用它重建 PTY，不然 tmux 会按默认
     // 80x24 重新布局，界面上的窗口大小就会跟实际不符。
     _lastWidth = width > 0 ? width : 80;
@@ -698,6 +727,11 @@ class TerminalSessionBridge {
           }
         });
       };
+
+      // Layout may finish while allocating the PTY, before onResize is wired.
+      if ((terminal.viewWidth, terminal.viewHeight) != layoutBeforeAllocation) {
+        terminal.onResize!(terminal.viewWidth, terminal.viewHeight, 0, 0);
+      }
 
       // Reattaching a session must never replay a command in its running shell.
       if (launchCommand != null && !restoring) {

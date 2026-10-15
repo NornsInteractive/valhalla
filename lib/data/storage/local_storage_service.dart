@@ -12,6 +12,7 @@ import '../models/chat_launch_preference.dart';
 import '../models/nas_media.dart';
 import '../models/nas_source.dart';
 import '../models/terminal_history.dart';
+import '../models/remote_file_toolbar_action.dart';
 
 /// 本地持久化服务 (SharedPreferences 快速存取)
 class LocalStorageService {
@@ -319,6 +320,8 @@ class LocalStorageService {
   /// 远端文件列表是否升序。
   static const _keyFileSortAscending = 'valhalla_file_sort_asc_v1';
   static const _keyFileShowHidden = 'valhalla_file_show_hidden_v1';
+  static const _keyRemoteFileToolbarActions =
+      'valhalla_remote_file_toolbar_actions_v1';
 
   /// 桌面窗口尺寸与坐标
   static const _keyWindowWidth = 'valhalla_window_width_v1';
@@ -349,6 +352,7 @@ class LocalStorageService {
     _keyFileSortKey: 'string',
     _keyFileSortAscending: 'bool',
     _keyFileShowHidden: 'bool',
+    _keyRemoteFileToolbarActions: 'strings',
     'valhalla_file_view_mode_v1': 'string',
   };
 
@@ -899,7 +903,14 @@ class LocalStorageService {
   bool getUseTmuxForTerminal() => _prefs.getBool(_keyTerminalUseTmux) ?? false;
 
   Future<void> setUseTmuxForTerminal(bool enabled) async {
-    await _prefs.setBool(_keyTerminalUseTmux, enabled);
+    try {
+      if (!await _prefs.setBool(_keyTerminalUseTmux, enabled)) {
+        throw const StorageException('TERMINAL_SETTINGS_SAVE_FAILED');
+      }
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
+    }
   }
 
   /// 终端字体大小。
@@ -1173,6 +1184,64 @@ class LocalStorageService {
   bool getFileSortAscending() => _prefs.getBool(_keyFileSortAscending) ?? true;
 
   bool getFileShowHidden() => _prefs.getBool(_keyFileShowHidden) ?? false;
+
+  Map<String, dynamic>? getAgentUpdateRecord(String targetKey) {
+    if (!RegExp(r'^[a-f0-9]{64}$').hasMatch(targetKey)) return null;
+    try {
+      final raw = _prefs.getString('valhalla_agent_update_v1::$targetKey');
+      if (raw == null ||
+          raw.length > 64 * 1024 ||
+          utf8.encode(raw).length > 64 * 1024) {
+        return null;
+      }
+      final decoded = jsonDecode(raw);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> saveAgentUpdateRecord(
+    String targetKey,
+    Map<String, dynamic> record,
+  ) async {
+    if (!RegExp(r'^[a-f0-9]{64}$').hasMatch(targetKey)) {
+      throw ArgumentError.value(targetKey, 'targetKey');
+    }
+    final encoded = jsonEncode(record);
+    if (utf8.encode(encoded).length > 64 * 1024) {
+      throw const FormatException('AGENT_UPDATE_RECORD_TOO_LARGE');
+    }
+    try {
+      if (!await _prefs.setString(
+        'valhalla_agent_update_v1::$targetKey',
+        encoded,
+      )) {
+        throw const StorageException('AGENT_UPDATE_RECORD_SAVE_FAILED');
+      }
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
+    }
+  }
+
+  List<String>? getRemoteFileToolbarActions() =>
+      _prefs.getStringList(_keyRemoteFileToolbarActions);
+
+  Future<void> setRemoteFileToolbarActions(List<String> actions) async {
+    final normalized = remoteFileToolbarActionsFromStorage(actions)
+        .map((action) => action.name)
+        .toList();
+    try {
+      if (!await _prefs.setStringList(_keyRemoteFileToolbarActions, normalized)) {
+        throw const StorageException('SFTP_TOOLBAR_PREFERENCE_SAVE_FAILED');
+      }
+    } catch (_) {
+      // SharedPreferences updates its cache before the platform accepts a write.
+      await _prefs.reload();
+      rethrow;
+    }
+  }
 
   String? getFileViewMode() {
     final value = _prefs.getString('valhalla_file_view_mode_v1');

@@ -131,7 +131,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get switchAgent => 'สลับ Agent';
 
   @override
-  String get agentClaudeCode => 'Claude CodeX';
+  String get agentClaudeCode => 'Claude Code';
 
   @override
   String get agentCodex => 'OpenAI Codex';
@@ -413,7 +413,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get settingsResetDefault => 'คืนค่าเริ่มต้น';
 
   @override
-  String get settingsTerminalUseTmux => 'เซสชันต่อเนื่อง (tmux)';
+  String get settingsTerminalUseTmux => 'โหมดสร้างเทอร์มินัลใหม่ด้วยตนเอง';
 
   @override
   String get settingsTerminalUseTmuxSubtitle =>
@@ -421,7 +421,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get settingsTerminalUseTmuxDescription =>
-      'รักษาผลลัพธ์ของเทอร์มินัลไว้หลังจากตัดการเชื่อมต่อ ต้องมี tmux บนเซิร์ฟเวอร์ระยะไกล การเปลี่ยนแปลงจะมีผลกับแท็บเทอร์มินัลที่เปิดใหม่';
+      'มีผลเฉพาะกับเทอร์มินัลที่สร้างขึ้นด้วยตนเองเท่านั้น เทอร์มินัลใหม่อัตโนมัติจะใช้ SSH มาตรฐานเสมอโดยไม่มีประวัติที่กู้คืนได้ เมื่อเปิดใช้งาน tmux เซสชันที่สร้างด้วยตนเองสามารถกู้คืนได้หลังจากการตัดการเชื่อมต่อ (ต้องติดตั้ง tmux บนเซิร์ฟเวอร์ปลายทาง) การกู้คืนประวัติที่มีอยู่จะไม่ได้รับผลกระทบ';
 
   @override
   String get settingsTerminalFontSize => 'ขนาดตัวอักษรเทอร์มินัล';
@@ -1388,6 +1388,15 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get transferFailedDownload => 'ดาวน์โหลดล้มเหลว';
+
+  @override
+  String get transferPhasePreparing => 'กำลังเตรียม...';
+
+  @override
+  String get transferPhaseVerifyingPartial => 'กำลังตรวจสอบไฟล์บางส่วน...';
+
+  @override
+  String get transferPhaseVerifying => 'กำลังตรวจสอบความสมบูรณ์...';
 
   @override
   String get stopGeneration => 'หยุด';
@@ -4308,6 +4317,15 @@ class AppLocalizationsTh extends AppLocalizations {
   String get updateDownloadCompleted => 'ดาวน์โหลดเสร็จสมบูรณ์และตรวจสอบแล้ว';
 
   @override
+  String get updatePhaseResolving => 'กำลังเชื่อมต่อกับเซิร์ฟเวอร์อัปเดต...';
+
+  @override
+  String get updatePhaseVerifying => 'กำลังตรวจสอบแพ็กเกจอัปเดต...';
+
+  @override
+  String get updateOpeningInstaller => 'กำลังเตรียมการติดตั้ง...';
+
+  @override
   String get updateInstall => 'ติดตั้งการอัปเดต';
 
   @override
@@ -5557,4 +5575,263 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get terminalNoticePlainInterrupted =>
       'การเชื่อมต่อขาดหาย ไม่สามารถดำเนินการกระบวนการเชลล์ที่ไม่ใช่ tmux ต่อได้';
+
+  @override
+  String get terminalHistoryDeleteDialogTitle => 'ลบประวัติเซสชัน';
+
+  @override
+  String get terminalHistoryTerminateRemote =>
+      'ยุติเซสชันบนเซิร์ฟเวอร์ระยะไกลด้วย';
+
+  @override
+  String get terminalHistoryTerminateConfirmTitle =>
+      'ต้องการยุติเซสชันระยะไกลหรือไม่?';
+
+  @override
+  String get terminalHistoryTerminateConfirmMessage =>
+      'การดำเนินการนี้จะยุติเซสชัน tmux ระยะไกลและหยุดกระบวนการทั้งหมดที่ทำงานอยู่ภายใน';
+
+  @override
+  String get terminalErrorHistoryDeleteFailed => 'ลบประวัติเทอร์มินัลไม่สำเร็จ';
+
+  @override
+  String get terminalErrorHistoryTerminateFailed =>
+      'ยุติเซสชันระยะไกลไม่สำเร็จ';
+
+  @override
+  String get terminalErrorTargetChanged =>
+      'เซิร์ฟเวอร์เป้าหมายมีการเปลี่ยนแปลง โปรดเปิดเซสชันอีกครั้งบนเซิร์ฟเวอร์ปัจจุบัน';
+
+  @override
+  String get terminalModeStandard =>
+      'เทอร์มินัล SSH มาตรฐาน (ค่าเริ่มต้น ไม่เก็บประวัติ)';
+
+  @override
+  String get terminalModeTmux => 'เทอร์มินัล tmux (คงเซสชันระยะไกลและประวัติ)';
+
+  @override
+  String get terminalModeSaveFailed =>
+      'บันทึกโหมดเทอร์มินัลไม่สำเร็จ โปรดลองอีกครั้ง';
+
+  @override
+  String get sftpNew => 'สร้างใหม่';
+
+  @override
+  String get terminalHistorySearchHint => 'ค้นหาชื่อเซสชัน…';
+
+  @override
+  String get configMigrationBoundaryNote =>
+      'การกำหนดค่าอุปกรณ์ภายในเครื่องเท่านั้น ข้อมูลบนเซิร์ฟเวอร์ระยะไกลจะไม่ถูกแก้ไข';
+
+  @override
+  String get configMigrationSubtitle =>
+      'ส่งออกหรือนำเข้าการตั้งค่าแอปภายในเครื่องและโปรไฟล์เซิร์ฟเวอร์';
+
+  @override
+  String get installAppId => 'รหัสแอปพลิเคชัน';
+
+  @override
+  String get installArchitecture => 'สถาปัตยกรรม';
+
+  @override
+  String get installPlatform => 'แพลตฟอร์ม';
+
+  @override
+  String get settingsAboutPrivacyDesc =>
+      'เวอร์ชัน ใบอนุญาตโอเพนซอร์ส และนโยบายความเป็นส่วนตัว';
+
+  @override
+  String get settingsAccentColorDesc => 'ปรับแต่งสีเน้นของธีม';
+
+  @override
+  String get settingsSearchHint => 'ค้นหาการตั้งค่า…';
+
+  @override
+  String get settingsSearchNoResults => 'ไม่พบการตั้งค่าที่ตรงกัน';
+
+  @override
+  String get settingsSecurityDesc =>
+      'โฮสต์ที่รู้จัก ข้อมูลรับรอง และการดำเนินการด้านความปลอดภัย';
+
+  @override
+  String get agentExpandDetails => 'รายละเอียด';
+
+  @override
+  String get agentCollapseDetails => 'ยุบ';
+
+  @override
+  String get transferPauseAll => 'หยุดชั่วคราวทั้งหมด';
+
+  @override
+  String get transferResumePaused => 'ดำเนินการต่อที่หยุดไว้';
+
+  @override
+  String get transferFilterAll => 'ทั้งหมด';
+
+  @override
+  String get transferFilterActive => 'กำลังดำเนินการ';
+
+  @override
+  String get transferFilterFailed => 'ล้มเหลว';
+
+  @override
+  String get transferFilterCompleted => 'เสร็จสมบูรณ์';
+
+  @override
+  String get transferPauseReasonUser => 'หยุดชั่วคราวโดยผู้ใช้';
+
+  @override
+  String get transferPauseReasonNetwork =>
+      'หยุดชั่วคราวเนื่องจากเครือข่ายตัดการเชื่อมต่อ';
+
+  @override
+  String get transferPauseReasonAppRestart => 'หยุดชั่วคราวหลังจากรีสตาร์ทแอป';
+
+  @override
+  String get transferRemotePath => 'เส้นทางระยะไกล';
+
+  @override
+  String get transferLocalPath => 'เส้นทางภายในเครื่อง';
+
+  @override
+  String get transferErrorDetail => 'รายละเอียดข้อผิดพลาด';
+
+  @override
+  String get chatFailureKindAuth => 'จำเป็นต้องตรวจสอบสิทธิ์';
+
+  @override
+  String get chatFailureKindModelUnavailable => 'โมเดลไม่พร้อมใช้งาน';
+
+  @override
+  String get chatFailureKindConnection => 'การเชื่อมต่อล้มเหลว';
+
+  @override
+  String get chatFailureKindHistory => 'ประวัติล้มเหลว';
+
+  @override
+  String get chatFailureKindOther => 'คำขอล้มเหลว';
+
+  @override
+  String get chatFailureActionLogin => 'เข้าสู่ระบบ';
+
+  @override
+  String get chatFailureActionRunSettings => 'การตั้งค่าโมเดล';
+
+  @override
+  String get chatFailureActionReconnect => 'เชื่อมต่อใหม่';
+
+  @override
+  String get chatFailureActionReloadHistory => 'ลองโหลดใหม่';
+
+  @override
+  String get chatFailureActionDetails => 'รายละเอียด';
+
+  @override
+  String get sftpConfigureToolbar => 'กำหนดค่าแถบเครื่องมือ';
+
+  @override
+  String get sftpConfigureToolbarDesc =>
+      'เลือกการกระทำที่จะปักหมุดไว้ที่แถบเครื่องมือโดยตรง การกระทำอื่นๆ จะปรากฏในเมนูเพิ่มเติม';
+
+  @override
+  String get sftpToolbarPreferenceSaveFailed =>
+      'บันทึกการตั้งค่าแถบเครื่องมือไม่สำเร็จ';
+
+  @override
+  String get sftpToolbarActionView => 'สลับมุมมอง';
+
+  @override
+  String agentUpdateNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'มีอัปเดตเอเจนต์ $count รายการ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agentUpdateViewAction => 'ดู';
+
+  @override
+  String get agentUpdateCheckAll => 'ตรวจหาอัปเดต';
+
+  @override
+  String get agentUpdateCheck => 'ตรวจหาอัปเดต';
+
+  @override
+  String get agentUpdateChecking => 'กำลังตรวจสอบ...';
+
+  @override
+  String get agentUpdateAvailable => 'มีอัปเดตใหม่';
+
+  @override
+  String get agentUpdateUpToDate => 'เป็นเวอร์ชันล่าสุดแล้ว';
+
+  @override
+  String get agentUpdateDialogTitle => 'อัปเดตเอเจนต์';
+
+  @override
+  String get agentUpdateConfirmButton => 'ยืนยันและอัปเดต';
+
+  @override
+  String get agentUpdateCancelButton => 'ยกเลิก';
+
+  @override
+  String get agentUpdateTargetServer => 'เซิร์ฟเวอร์';
+
+  @override
+  String get agentUpdateTargetEnvironment => 'สภาพแวดล้อม';
+
+  @override
+  String get agentUpdateTargetIdentity => 'ข้อมูลประจำตัว';
+
+  @override
+  String get agentUpdateCommandPreview => 'ดูตัวอย่างคำสั่ง';
+
+  @override
+  String get agentUpdateClaudeMigrationNotice =>
+      'การอัปเดตนี้จะย้ายตัวแปลง Claude เดิม (claude-code-acp) ไปยังตัวแปลง claude-agent-acp อย่างเป็นทางการ ประวัติและข้อมูลรับรองที่มีอยู่จะยังคงอยู่';
+
+  @override
+  String get agentUpdateAgyNotice =>
+      'AgY CLI อัปเดตผ่านช่องทางการเปิดตัวเวอร์ชันเสถียรอย่างเป็นทางการ เวอร์ชันที่ติดตั้งอาจใหม่กว่าภาพรวมที่แสดงในขณะยืนยัน';
+
+  @override
+  String get agentUpdateLogs => 'บันทึกการอัปเดต';
+
+  @override
+  String get agentUpdateCopyLog => 'คัดลอกบันทึก';
+
+  @override
+  String get agentUpdateLogCopied => 'คัดลอกบันทึกการอัปเดตไปยังคลิปบอร์ดแล้ว';
+
+  @override
+  String get agentUpdateSuccess => 'อัปเดตเอเจนต์สำเร็จ';
+
+  @override
+  String get agentUpdateFailed => 'การอัปเดตล้มเหลว';
+
+  @override
+  String get agentUpdateInterrupted =>
+      'การอัปเดตถูกขัดจังหวะหรือขาดการเชื่อมต่อ โปรดตรวจสอบเวอร์ชันจริงก่อนลองใหม่ การลองใหม่อัตโนมัติถูกปิดใช้งานเพื่อความปลอดภัย';
+
+  @override
+  String get agentUpdateInProgress => 'กำลังดำเนินการอัปเดตบนเซิร์ฟเวอร์นี้';
+
+  @override
+  String get agentUpdateBusy =>
+      'เซิร์ฟเวอร์หรือเอเจนต์ไม่ว่าง โปรดรอให้งานที่กำลังทำงานอยู่เสร็จสิ้น';
+
+  @override
+  String get agentUpdateVersionUnknown => 'ไม่ทราบ';
+
+  @override
+  String get agentUpdateSource => 'แหล่งที่มา';
+
+  @override
+  String get agentUpdateLastChecked => 'ตรวจสอบล่าสุด';
+
+  @override
+  String get agentUpdateNeverChecked => 'ไม่เคยตรวจสอบ';
 }

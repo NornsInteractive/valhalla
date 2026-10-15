@@ -469,8 +469,9 @@ void main() {
               ),
               serverConnectionProvider.overrideWith(
                 () => _MockServerConnectionNotifier(
-                  const ServerConnectionState(
+                  ServerConnectionState(
                     status: ConnectionStateEnum.connected,
+                    activeServerId: testServer.id,
                   ),
                 ),
               ),

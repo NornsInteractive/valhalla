@@ -132,7 +132,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get switchAgent => 'Ganti Agen';
 
   @override
-  String get agentClaudeCode => 'Claude CodeX';
+  String get agentClaudeCode => 'Claude Code';
 
   @override
   String get agentCodex => 'OpenAI Codex';
@@ -414,7 +414,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsResetDefault => 'Kembalikan ke Default';
 
   @override
-  String get settingsTerminalUseTmux => 'Sesi Persisten (tmux)';
+  String get settingsTerminalUseTmux => 'Mode Terminal Baru Manual';
 
   @override
   String get settingsTerminalUseTmuxSubtitle =>
@@ -422,7 +422,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsTerminalUseTmuxDescription =>
-      'Menjaga output terminal Anda setelah koneksi terputus. Memerlukan tmux pada server jarak jauh. Perubahan berlaku untuk tab terminal yang baru dibuka.';
+      'Hanya berlaku untuk terminal yang dibuat secara manual. Terminal baru otomatis selalu menggunakan SSH standar tanpa riwayat yang dapat dipulihkan; saat tmux diaktifkan, sesi yang dibuat secara manual dapat dipulihkan setelah terputus (memerlukan tmux jarak jauh). Pemulihan riwayat yang ada tidak terpengaruh.';
 
   @override
   String get settingsTerminalFontSize => 'Ukuran Font Terminal';
@@ -1387,6 +1387,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get transferFailedDownload => 'Unduhan gagal';
+
+  @override
+  String get transferPhasePreparing => 'Mempersiapkan...';
+
+  @override
+  String get transferPhaseVerifyingPartial => 'Memverifikasi berkas parsial...';
+
+  @override
+  String get transferPhaseVerifying => 'Memverifikasi integritas...';
 
   @override
   String get stopGeneration => 'Hentikan';
@@ -4325,6 +4334,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get updateDownloadCompleted => 'Unduhan selesai dan diverifikasi';
 
   @override
+  String get updatePhaseResolving => 'Menghubungkan ke server pembaruan...';
+
+  @override
+  String get updatePhaseVerifying => 'Memverifikasi paket pembaruan...';
+
+  @override
+  String get updateOpeningInstaller => 'Menyiapkan instalasi...';
+
+  @override
   String get updateInstall => 'Instal Pembaruan';
 
   @override
@@ -5585,4 +5603,267 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get terminalNoticePlainInterrupted =>
       'Koneksi terputus. Proses shell non-tmux tidak dapat dilanjutkan';
+
+  @override
+  String get terminalHistoryDeleteDialogTitle => 'Hapus Riwayat Sesi';
+
+  @override
+  String get terminalHistoryTerminateRemote =>
+      'Juga hentikan sesi di server jarak jauh';
+
+  @override
+  String get terminalHistoryTerminateConfirmTitle =>
+      'Hentikan Sesi Jarak Jauh?';
+
+  @override
+  String get terminalHistoryTerminateConfirmMessage =>
+      'Tindakan ini akan menghentikan sesi tmux jarak jauh dan mengakhiri semua proses yang berjalan di dalamnya.';
+
+  @override
+  String get terminalErrorHistoryDeleteFailed =>
+      'Gagal menghapus riwayat terminal';
+
+  @override
+  String get terminalErrorHistoryTerminateFailed =>
+      'Gagal menghentikan sesi jarak jauh';
+
+  @override
+  String get terminalErrorTargetChanged =>
+      'Server target telah berubah. Harap buka kembali sesi di server saat ini.';
+
+  @override
+  String get terminalModeStandard =>
+      'Terminal SSH Standar (Default, tanpa riwayat)';
+
+  @override
+  String get terminalModeTmux =>
+      'Terminal tmux (Mempertahankan sesi jarak jauh & riwayat)';
+
+  @override
+  String get terminalModeSaveFailed =>
+      'Gagal menyimpan mode terminal, silakan coba lagi';
+
+  @override
+  String get sftpNew => 'Baru';
+
+  @override
+  String get terminalHistorySearchHint => 'Cari nama sesi…';
+
+  @override
+  String get configMigrationBoundaryNote =>
+      'Hanya konfigurasi perangkat lokal. Data server jarak jauh tidak diubah.';
+
+  @override
+  String get configMigrationSubtitle =>
+      'Ekspor atau impor pengaturan aplikasi lokal dan profil server';
+
+  @override
+  String get installAppId => 'ID Aplikasi';
+
+  @override
+  String get installArchitecture => 'Arsitektur';
+
+  @override
+  String get installPlatform => 'Platform';
+
+  @override
+  String get settingsAboutPrivacyDesc =>
+      'Versi, lisensi sumber terbuka, dan kebijakan privasi';
+
+  @override
+  String get settingsAccentColorDesc => 'Sesuaikan warna aksen tema';
+
+  @override
+  String get settingsSearchHint => 'Cari pengaturan…';
+
+  @override
+  String get settingsSearchNoResults =>
+      'Tidak ada pengaturan yang cocok ditemukan';
+
+  @override
+  String get settingsSecurityDesc =>
+      'Host yang dikenal, kredensial, dan tindakan keamanan';
+
+  @override
+  String get agentExpandDetails => 'Detail';
+
+  @override
+  String get agentCollapseDetails => 'Ciutkan';
+
+  @override
+  String get transferPauseAll => 'Jeda Semua';
+
+  @override
+  String get transferResumePaused => 'Lanjutkan yang Dijeda';
+
+  @override
+  String get transferFilterAll => 'Semua';
+
+  @override
+  String get transferFilterActive => 'Aktif';
+
+  @override
+  String get transferFilterFailed => 'Gagal';
+
+  @override
+  String get transferFilterCompleted => 'Selesai';
+
+  @override
+  String get transferPauseReasonUser => 'Dijeda oleh pengguna';
+
+  @override
+  String get transferPauseReasonNetwork => 'Dijeda karena jaringan terputus';
+
+  @override
+  String get transferPauseReasonAppRestart =>
+      'Dijeda setelah aplikasi dimuat ulang';
+
+  @override
+  String get transferRemotePath => 'Jalur Jarak Jauh';
+
+  @override
+  String get transferLocalPath => 'Jalur Lokal';
+
+  @override
+  String get transferErrorDetail => 'Detail Kesalahan';
+
+  @override
+  String get chatFailureKindAuth => 'Autentikasi Diperlukan';
+
+  @override
+  String get chatFailureKindModelUnavailable => 'Model Tidak Tersedia';
+
+  @override
+  String get chatFailureKindConnection => 'Koneksi Gagal';
+
+  @override
+  String get chatFailureKindHistory => 'Riwayat Gagal';
+
+  @override
+  String get chatFailureKindOther => 'Permintaan Gagal';
+
+  @override
+  String get chatFailureActionLogin => 'Masuk';
+
+  @override
+  String get chatFailureActionRunSettings => 'Pengaturan Model';
+
+  @override
+  String get chatFailureActionReconnect => 'Sambungkan Ulang';
+
+  @override
+  String get chatFailureActionReloadHistory => 'Coba Lagi';
+
+  @override
+  String get chatFailureActionDetails => 'Detail';
+
+  @override
+  String get sftpConfigureToolbar => 'Konfigurasi Bilah Alat';
+
+  @override
+  String get sftpConfigureToolbarDesc =>
+      'Pilih tindakan yang akan disematkan langsung di bilah alat. Tindakan lainnya akan muncul di menu Lainnya.';
+
+  @override
+  String get sftpToolbarPreferenceSaveFailed =>
+      'Gagal menyimpan preferensi bilah alat';
+
+  @override
+  String get sftpToolbarActionView => 'Alihkan Tampilan';
+
+  @override
+  String agentUpdateNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pembaruan agen tersedia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agentUpdateViewAction => 'Lihat';
+
+  @override
+  String get agentUpdateCheckAll => 'Periksa Pembaruan';
+
+  @override
+  String get agentUpdateCheck => 'Periksa Pembaruan';
+
+  @override
+  String get agentUpdateChecking => 'Memeriksa...';
+
+  @override
+  String get agentUpdateAvailable => 'Pembaruan Tersedia';
+
+  @override
+  String get agentUpdateUpToDate => 'Sudah Terbaru';
+
+  @override
+  String get agentUpdateDialogTitle => 'Perbarui Agen';
+
+  @override
+  String get agentUpdateConfirmButton => 'Konfirmasi & Perbarui';
+
+  @override
+  String get agentUpdateCancelButton => 'Batal';
+
+  @override
+  String get agentUpdateTargetServer => 'Server';
+
+  @override
+  String get agentUpdateTargetEnvironment => 'Lingkungan';
+
+  @override
+  String get agentUpdateTargetIdentity => 'Identitas';
+
+  @override
+  String get agentUpdateCommandPreview => 'Pratinjau Perintah';
+
+  @override
+  String get agentUpdateClaudeMigrationNotice =>
+      'Pembaruan ini memigrasikan adapter Claude lama (claude-code-acp) ke adapter resmi claude-agent-acp. Riwayat dan kredensial yang ada tetap dipertahankan.';
+
+  @override
+  String get agentUpdateAgyNotice =>
+      'AgY CLI diperbarui melalui saluran rilis stabil resminya. Versi yang terinstal mungkin lebih baru daripada tangkapan yang ditampilkan saat konfirmasi.';
+
+  @override
+  String get agentUpdateLogs => 'Log Pembaruan';
+
+  @override
+  String get agentUpdateCopyLog => 'Salin Log';
+
+  @override
+  String get agentUpdateLogCopied => 'Log pembaruan disalin ke papan klip';
+
+  @override
+  String get agentUpdateSuccess => 'Agen berhasil diperbarui';
+
+  @override
+  String get agentUpdateFailed => 'Pembaruan gagal';
+
+  @override
+  String get agentUpdateInterrupted =>
+      'Pembaruan terputus atau koneksi terputus. Harap verifikasi versi sebenarnya sebelum mencoba lagi; coba lagi otomatis dinonaktifkan demi keamanan.';
+
+  @override
+  String get agentUpdateInProgress =>
+      'Pembaruan sedang berlangsung di server ini.';
+
+  @override
+  String get agentUpdateBusy =>
+      'Server atau agen sedang sibuk. Harap tunggu hingga tugas aktif selesai.';
+
+  @override
+  String get agentUpdateVersionUnknown => 'Tidak diketahui';
+
+  @override
+  String get agentUpdateSource => 'Sumber';
+
+  @override
+  String get agentUpdateLastChecked => 'Terakhir diperiksa';
+
+  @override
+  String get agentUpdateNeverChecked => 'Belum pernah diperiksa';
 }

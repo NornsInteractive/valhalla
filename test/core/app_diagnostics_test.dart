@@ -1,8 +1,42 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:valhalla/core/services/app_diagnostics.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test(
+    'report prepends install identity, redacts secrets, keeps platform and ABI',
+    () async {
+      PackageInfo.setMockInitialValues(
+        appName: 'Valhalla',
+        packageName: 'com.norns.valhalla',
+        version: '1.0.6',
+        buildNumber: '7',
+        buildSignature: '',
+      );
+      final directory = await Directory.systemTemp.createTemp(
+        'diagnostics-report-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final service = AppDiagnostics(directoryProvider: () async => directory);
+      await service.initialize();
+      await service.record(
+        'sftp.connect',
+        'password=do-not-save https://user:do-not-save@example.org',
+      );
+      final report = await service.report();
+      expect(report, contains('"applicationId":"com.norns.valhalla"'));
+      expect(report, contains('"version":"1.0.6"'));
+      expect(report, contains('"buildNumber":"7"'));
+      expect(report, contains('"platform":"${Platform.operatingSystem}"'));
+      expect(report, contains('"architecture":'));
+      expect(report, isNot(contains('do-not-save')));
+      expect(report, contains('password=******'));
+    },
+  );
+
   test(
     'operation timing is local, bounded metadata and never a content payload',
     () async {

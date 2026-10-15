@@ -107,12 +107,10 @@ class _RemoteBrowserEntriesViewState extends State<RemoteBrowserEntriesView> {
               ((constraints.maxWidth - 24) / (large ? 420 : 240)).floor(),
             );
       final rowExtent = list
-          ? (widget.detailedMetadata
-                ? math.max(86.0, 20.0 + 72.0 * scale)
-                : math.max(72.0, 40.0 + 32.0 * scale))
+          ? math.max(72.0, 40.0 + 32.0 * scale)
           : (gallery
                 ? 192.0 + math.max(0, scale - 1) * 64 + 8
-                : 112.0 + math.max(0, scale - 1) * 72 + 8);
+                : 92.0 + math.max(0, scale - 1) * 84 + 8);
       if ((_columns != columns || _rowExtent != rowExtent) &&
           _anchorId == null &&
           _restoreOffset == null) {
@@ -187,6 +185,9 @@ class RemoteBrowserEntryTile extends StatelessWidget {
   final Widget? metadata;
   final String? date;
   final bool isThreeLine;
+  final double trailingGap;
+  final double leadingGap;
+  final Widget? titleSuffix;
 
   const RemoteBrowserEntryTile({
     super.key,
@@ -203,6 +204,9 @@ class RemoteBrowserEntryTile extends StatelessWidget {
     this.metadata,
     this.date,
     this.isThreeLine = false,
+    this.trailingGap = 16.0,
+    this.leadingGap = 16.0,
+    this.titleSuffix,
   });
 
   @override
@@ -252,29 +256,67 @@ class RemoteBrowserEntryTile extends StatelessWidget {
             color: colors.onSurfaceVariant.withValues(alpha: hidden ? 0.62 : 1),
           ),
         );
-    final end =
-        trailing ??
-        (selected
-            ? Icon(Icons.check_circle, size: 20, color: colors.primary)
-            : entry.isSymbolicLink
-            ? Icon(Icons.link, size: 16, color: colors.outline)
-            : null);
     final list = viewMode == RemoteBrowserViewMode.list;
+    final grid = viewMode == RemoteBrowserViewMode.grid;
+    final Widget? fallbackEnd;
+    if (selected) {
+      final icon = Icon(Icons.check_circle, size: 20, color: colors.primary);
+      fallbackEnd = grid
+          ? Padding(padding: const EdgeInsets.all(6), child: icon)
+          : icon;
+    } else if (entry.isSymbolicLink) {
+      final icon = Icon(Icons.link, size: 16, color: colors.outline);
+      fallbackEnd = grid
+          ? Padding(padding: const EdgeInsets.all(6), child: icon)
+          : icon;
+    } else {
+      fallbackEnd = null;
+    }
+    final end = trailing ?? fallbackEnd;
+
     Widget content;
     if (list) {
+      final leadingCompensation = (leadingGap - trailingGap).clamp(0.0, 16.0);
+      final minLeadingWidth = 40.0 + leadingCompensation;
+      final effectiveLeading = leadingCompensation > 0
+          ? Padding(
+              padding: EdgeInsetsDirectional.only(end: leadingCompensation),
+              child: visual,
+            )
+          : visual;
+
       content = GestureDetector(
         onDoubleTap: onDoubleTap,
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           dense: true,
+          horizontalTitleGap: trailingGap,
+          minLeadingWidth: minLeadingWidth,
           isThreeLine: isThreeLine,
-          leading: visual,
-          title: Text(
-            entry.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: titleColor),
-          ),
+          leading: effectiveLeading,
+          title: titleSuffix == null
+              ? Text(
+                  entry.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: titleColor),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: Text(
+                        entry.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: titleColor),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    titleSuffix!,
+                  ],
+                ),
           subtitle: meta,
           trailing: end,
           selected: selected,
@@ -307,96 +349,116 @@ class RemoteBrowserEntryTile extends StatelessWidget {
           onTap: onTap,
           onDoubleTap: onDoubleTap,
           onLongPress: onLongPress,
-          child: Padding(
-            padding: EdgeInsets.all(gallery ? 10 : 6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (gallery) ...[
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: image,
-                          ),
-                        ),
-                        if (end != null)
-                          Positioned(top: 0, right: 0, child: end),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    entry.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: titleColor,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  meta,
-                ] else ...[
-                  // Ordinary compact file grid: 22–24dp icon + filename SAME ROW
-                  Row(
+          child: gallery
+              ? Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: Center(
-                          child: SizedBox(width: 24, height: 24, child: visual),
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: image,
+                              ),
+                            ),
+                            if (end != null)
+                              Positioned(top: 0, right: 0, child: end),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Semantics(
-                          label: entry.name,
-                          child: Text(
-                            entry.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: titleColor,
+                      const SizedBox(height: 8),
+                      Text(
+                        entry.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: titleColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      meta,
+                    ],
+                  ),
+                )
+              : Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Header: 22–24dp icon + filename SAME ROW
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: end != null ? 38 : 24,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: visual,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Semantics(
+                                    label: entry.name,
+                                    child: Text(
+                                      entry.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: titleColor,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                                if (end != null) const SizedBox(width: 44),
+                              ],
                             ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  // Compact metadata / action region below
-                  Row(
-                    children: [
-                      Expanded(child: meta),
-                      if (end != null) ...[const SizedBox(width: 4), end],
-                    ],
-                  ),
-                  // Full modification date/time on its own line
-                  if (dateStr != null && dateStr.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      dateStr,
-                      maxLines: 2,
-                      softWrap: true,
-                      overflow: TextOverflow.visible,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontSize: 11,
-                        color: colors.outline.withValues(
-                          alpha: hidden ? 0.62 : 1,
-                        ),
-                        fontFamily: 'JetBrains Mono',
+                          const SizedBox(height: 2),
+                          // Compact metadata (directory / size)
+                          meta,
+                          // Full modification date/time on its own line
+                          if (dateStr != null && dateStr.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              dateStr,
+                              maxLines: 2,
+                              softWrap: true,
+                              overflow: TextOverflow.visible,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontSize: 11,
+                                color: colors.outline.withValues(
+                                  alpha: hidden ? 0.62 : 1,
+                                ),
+                                fontFamily: 'JetBrains Mono',
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
+                    if (end != null)
+                      PositionedDirectional(top: 0, end: 0, child: end),
                   ],
-                ],
-              ],
-            ),
-          ),
+                ),
         ),
       );
     }
@@ -1123,6 +1185,7 @@ class RemoteBrowserViewState extends State<RemoteBrowserView> {
       RemoteBrowserToolbar(
         searchController: _searchCtrl,
         searchHint: context.l10n.remoteBrowserSearchHint,
+        isPicker: true,
         onSearchChanged: (value) =>
             setState(() => _searchQuery = value.trim().toLowerCase()),
         showHidden: _showHidden,

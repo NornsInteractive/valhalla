@@ -339,11 +339,15 @@ class ChatRepository {
               id: previous.id,
               // A history snapshot proves received content, not that a lost
               // running turn finished. Only a live terminal event can prove it.
-              status:
-                  previous.status == ChatTurnStatus.unknown ||
-                      previous.status == ChatTurnStatus.streaming
+              status: incoming.failureCode != null
+                  ? incoming.status
+                  : previous.failureCode != null
+                  ? previous.status
+                  : previous.status == ChatTurnStatus.unknown ||
+                        previous.status == ChatTurnStatus.streaming
                   ? ChatTurnStatus.unknown
                   : incoming.status,
+              failureCode: incoming.failureCode ?? previous.failureCode,
               createdAt: previous.createdAt,
               thinking: incoming.thinking ?? previous.thinking,
               contentBlocks:

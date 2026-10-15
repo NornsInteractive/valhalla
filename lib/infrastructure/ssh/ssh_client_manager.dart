@@ -8,6 +8,7 @@ import '../../core/errors/app_exceptions.dart';
 import '../../core/logging/sanitizer.dart';
 import '../../data/models/server_profile.dart';
 import 'ssh_host_key_verifier.dart';
+import 'ssh_transfer_connection.dart';
 
 class SSHExecutionResult {
   final int exitCode;
@@ -89,6 +90,7 @@ class SSHClientManager implements SshCommandExecutor {
   final SshSocketConnector _socketConnector;
   final Map<String, SSHClient> _activeClients = {};
   final Map<String, ServerProfile> _clientTargets = {};
+  final Map<String, SshTransferConnection> _transferConnections = {};
   final Map<String, _PendingConnection> _pendingConnections = {};
   final Map<String, Timer> _keepAliveTimers = {};
   final Map<String, Future<bool>> _verifications = {};
@@ -155,6 +157,13 @@ class SSHClientManager implements SshCommandExecutor {
 
   @override
   SSHClient? getClient(String serverId) => _activeClients[serverId];
+
+  SshTransferConnection? transferConnectionFor(ServerProfile server) =>
+      isConnected(server.id) &&
+          (_clientTargets[server.id]?.hasSameConnectionSettings(server) ??
+              false)
+      ? _transferConnections[server.id]
+      : null;
 
   Future<SSHClient> getOrCreateClient(
     ServerProfile server, {
@@ -297,6 +306,8 @@ class SSHClientManager implements SshCommandExecutor {
         socket.destroy();
         return;
       }
+      String? verifiedKeyType;
+      Uint8List? verifiedFingerprint;
       final client = SSHClient(
         socket,
         username: server.username,
@@ -305,7 +316,7 @@ class SSHClientManager implements SshCommandExecutor {
         // The manager owns one coalesced, lifecycle-aware heartbeat.
         keepAliveInterval: null,
         onVerifyHostKey: (keyType, fingerprint) async {
-          return _hostKeyVerifier.verifyHostKey(
+          final accepted = await _hostKeyVerifier.verifyHostKey(
             host: server.host,
             port: server.port,
             keyType: keyType,
@@ -325,6 +336,11 @@ class SSHClientManager implements SshCommandExecutor {
                     }
                   },
           );
+          if (accepted) {
+            verifiedKeyType = keyType;
+            verifiedFingerprint = Uint8List.fromList(fingerprint);
+          }
+          return accepted;
         },
       );
       attempt.client = client;
@@ -336,6 +352,22 @@ class SSHClientManager implements SshCommandExecutor {
       if (attempt.result.isCompleted) return;
       _activeClients[server.id] = client;
       _clientTargets[server.id] = server;
+      if (verifiedKeyType != null && verifiedFingerprint != null) {
+        _transferConnections[server.id] = SshTransferConnection(
+          host: server.host,
+          port: server.port,
+          username: server.username,
+          password: password,
+          privateKey:
+              server.authType == AuthType.privateKey &&
+                  privateKey != null &&
+                  privateKey.isNotEmpty
+              ? privateKey
+              : null,
+          hostKeyType: verifiedKeyType!,
+          hostKeyFingerprint: verifiedFingerprint!,
+        );
+      }
       _lastVerified[server.id] = DateTime.now();
       _startKeepAlive(server.id, client);
       _watchTransportDeath(server.id, client);
@@ -403,10 +435,7 @@ class SSHClientManager implements SshCommandExecutor {
     return future;
   }
 
-  Future<bool> _verifyAlive(
-    String serverId, {
-    bool notifyDeath = true,
-  }) async {
+  Future<bool> _verifyAlive(String serverId, {bool notifyDeath = true}) async {
     final client = _activeClients[serverId];
     if (client == null || client.isClosed) {
       disconnect(serverId, notifyDeath: notifyDeath && client != null);
@@ -718,6 +747,7 @@ class SSHClientManager implements SshCommandExecutor {
     _verifications.remove(serverId);
     if (client != null) _pings.remove(client);
     _clientTargets.remove(serverId);
+    _transferConnections.remove(serverId);
     if (notifyDeath && client != null) {
       _transportDiedController?.add(serverId);
     }

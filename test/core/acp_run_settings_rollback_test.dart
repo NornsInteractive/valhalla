@@ -87,8 +87,10 @@ class _FakeSshManager extends SSHClientManager {
   _FakeSshManager(LocalStorageService storage)
     : super(SSHHostKeyVerifier(storage));
 
+  final Map<String, SSHClient> _clients = <String, SSHClient>{};
+
   @override
-  SSHClient? getClient(String serverId) => _FakeSshClient();
+  SSHClient? getClient(String serverId) => _clients.putIfAbsent(serverId, () => _FakeSshClient());
 }
 
 class _FakeSshClient implements SSHClient {
@@ -407,7 +409,11 @@ Future<(ProviderContainer, AiChatNotifier, LocalStorageService)> _container({
       agentModelQueryProvider.overrideWithValue(
         (profile, _) async => _catalog(),
       ),
-      acpTransportFactoryProvider.overrideWithValue((_, _) async {
+      acpTransportFactoryProvider.overrideWithValue((
+        _,
+        _, {
+        String? initialModelId,
+      }) async {
         final pair = FakeAcpPair(sessionId: _remoteId)
           ..configOptions = configOptions;
         configurePair?.call(pair);

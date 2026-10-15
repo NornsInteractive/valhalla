@@ -11,7 +11,9 @@ import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/providers/file_bookmarks_provider.dart';
 import '../../core/providers/server_provider.dart';
+import '../../core/providers/settings_provider.dart';
 import '../../core/providers/sftp_provider.dart';
+import '../settings/widgets/remote_file_toolbar_dialog.dart';
 import '../../infrastructure/sftp/remote_file_actions.dart';
 import '../../infrastructure/sftp/sftp_client_service.dart';
 import '../../widgets/state_views.dart';
@@ -40,6 +42,44 @@ class SftpFileView extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<SftpFileView> createState() => _SftpFileViewState();
+}
+
+String _formatEta(int seconds) {
+  if (seconds < 60) return '${seconds}s';
+  final minutes = seconds ~/ 60;
+  final remSec = seconds % 60;
+  if (minutes < 60) {
+    return remSec > 0 ? '${minutes}m ${remSec}s' : '${minutes}m';
+  }
+  final hours = minutes ~/ 60;
+  final remMin = minutes % 60;
+  return remMin > 0 ? '${hours}h ${remMin}m' : '${hours}h';
+}
+
+String _transferPhaseText(BuildContext context, SftpTransferPhase phase) {
+  final dynamic l10n = context.l10n;
+  switch (phase) {
+    case SftpTransferPhase.preparing:
+      try {
+        final text = l10n.transferPhasePreparing as String?;
+        if (text != null && text.isNotEmpty) return text;
+      } catch (_) {}
+      return context.l10n.appCenterTaskStagePreparing;
+    case SftpTransferPhase.verifyingPartial:
+      try {
+        final text = l10n.transferPhaseVerifyingPartial as String?;
+        if (text != null && text.isNotEmpty) return text;
+      } catch (_) {}
+      return context.l10n.appCenterTaskStageChecking;
+    case SftpTransferPhase.transferring:
+      return context.l10n.transferStatusRunning;
+    case SftpTransferPhase.verifying:
+      try {
+        final text = l10n.transferPhaseVerifying as String?;
+        if (text != null && text.isNotEmpty) return text;
+      } catch (_) {}
+      return context.l10n.appCenterTaskStageChecking;
+  }
 }
 
 class _SftpFileViewState extends ConsumerState<SftpFileView>
@@ -691,39 +731,6 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
 
   String _mapErrorMessage(String code) => _mapSftpErrorMessage(context, code);
 
-  Widget _buildCachedBanner(DateTime cachedAt) {
-    final timeStr =
-        '${cachedAt.year}-${_twoDigits(cachedAt.month)}-${_twoDigits(cachedAt.day)} '
-        '${_twoDigits(cachedAt.hour)}:${_twoDigits(cachedAt.minute)}:${_twoDigits(cachedAt.second)}';
-    return Container(
-      key: const Key('sftpCachedDataBanner'),
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: context.colorScheme.surfaceContainerHighest,
-      child: Row(
-        children: [
-          Icon(
-            Icons.cloud_off_outlined,
-            size: 16,
-            color: context.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              context.l10n.cachedDataNotice(timeStr),
-              style: TextStyle(
-                fontSize: 12,
-                color: context.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _twoDigits(int n) => n.toString().padLeft(2, '0');
-
   Widget _buildNotificationUnavailableNotice() {
     return Container(
       key: const Key('downloadNotificationsUnavailableBanner'),
@@ -809,7 +816,22 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     final title = isUpload
         ? context.l10n.sftpUploading
         : context.l10n.sftpDownloading;
-    final progress = transfer.progress;
+    final isRunning = transfer.status == SftpTransferStatus.running;
+    final double? progress;
+    if (isRunning &&
+        (transfer.phase == SftpTransferPhase.verifyingPartial ||
+            transfer.phase == SftpTransferPhase.verifying)) {
+      progress = transfer.phaseTotalBytes > 0
+          ? (transfer.phaseProcessedBytes / transfer.phaseTotalBytes).clamp(
+              0.0,
+              1.0,
+            )
+          : null;
+    } else if (isRunning && transfer.phase == SftpTransferPhase.preparing) {
+      progress = null;
+    } else {
+      progress = transfer.progress;
+    }
 
     return Container(
       key: const Key('sftpTransferBanner'),
@@ -865,7 +887,25 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
 
   @override
   Widget build(BuildContext context) {
-    final sftpState = ref.watch(sftpProvider);
+    ref.watch(
+      sftpProvider.select(
+        (s) => (
+          currentPath: s.currentPath,
+          isAtRoot: s.isAtRoot,
+          files: s.files,
+          searchQuery: s.searchQuery,
+          showHiddenFiles: s.showHiddenFiles,
+          sortKey: s.sortKey,
+          sortAscending: s.sortAscending,
+          viewMode: s.viewMode,
+          errorMessage: s.errorMessage,
+          cachedAt: s.cachedAt,
+          downloadNotificationsUnavailable: s.downloadNotificationsUnavailable,
+          isLoading: s.isLoading,
+        ),
+      ),
+    );
+    final sftpState = ref.read(sftpProvider);
     final activeServer = ref.watch(activeServerProvider);
     final serverConnectionKey =
         activeServer?.connectionKey.toString() ?? 'no_server';
@@ -928,11 +968,21 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
         const Divider(height: 1),
         _buildActionBar(sftpState),
         const Divider(height: 1),
-        if (sftpState.activeTransfer != null) ...[
-          _buildTransferBanner(sftpState.activeTransfer!),
-          const Divider(height: 1),
-        ],
-        if (sftpState.cachedAt != null) _buildCachedBanner(sftpState.cachedAt!),
+        Consumer(
+          builder: (context, ref, _) {
+            final activeTransfer = ref.watch(
+              sftpProvider.select((s) => s.activeTransfer),
+            );
+            if (activeTransfer == null) return const SizedBox.shrink();
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTransferBanner(activeTransfer),
+                const Divider(height: 1),
+              ],
+            );
+          },
+        ),
         if (sftpState.errorMessage != null)
           _buildErrorBanner(sftpState.errorMessage!),
         if (sftpState.downloadNotificationsUnavailable)
@@ -1022,6 +1072,12 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     final isConnected = ref.watch(
       serverConnectionProvider.select((s) => s.isConnected),
     );
+    final hasActiveTransfer = ref.watch(
+      sftpProvider.select((s) => s.hasActiveTransfer),
+    );
+    final pinnedActions = ref.watch(
+      settingsProvider.select((s) => s.remoteFileToolbarActions),
+    );
     return LayoutBuilder(
       builder: (context, constraints) {
         final isGrid =
@@ -1030,6 +1086,9 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
                 constraints.maxWidth >= LayoutBreakpoints.compactMax;
         return RemoteBrowserToolbar(
           keyPrefix: 'sftp',
+          pinnedActions: pinnedActions,
+          onConfigureToolbar: () => RemoteFileToolbarDialog.show(context),
+          onTransfers: () => _showTransferListModal(context),
           searchController: _searchController,
           onSearchChanged: notifier.setSearchQuery,
           showHidden: state.showHiddenFiles,
@@ -1056,74 +1115,49 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
               : () => _handleSetViewMode(
                   isGrid ? SftpViewMode.list : SftpViewMode.grid,
                 ),
-          leadingActions: [
-            IconButton(
-              icon: const Icon(Icons.upload_file, size: 20),
-              tooltip: context.l10n.sftpUpload,
-              onPressed:
-                  (state.activeTransfer != null ||
-                      !isConnected ||
-                      state.cachedAt != null)
-                  ? null
-                  : _handleUpload,
-            ),
-            IconButton(
-              icon: const Icon(Icons.create_new_folder_outlined, size: 20),
-              tooltip: context.l10n.sftpNewFolder,
-              onPressed: (isConnected && state.cachedAt == null)
-                  ? _showNewFolderDialog
-                  : null,
-            ),
-            IconButton(
-              icon: const Icon(Icons.note_add_outlined, size: 20),
-              tooltip: context.l10n.sftpNewFile,
-              onPressed: (isConnected && state.cachedAt == null)
-                  ? _showNewFileDialog
-                  : null,
-            ),
-          ],
-          trailingActions: [
-            IconButton(
-              icon: const Icon(Icons.refresh, size: 20),
-              tooltip: context.l10n.sftpRefresh,
-              onPressed: isConnected ? () => notifier.refresh() : null,
-            ),
-            IconButton(
-              key: const Key('sftpBookmarksListButton'),
-              icon: const Icon(Icons.bookmarks_outlined, size: 20),
-              tooltip: context.l10n.sftpBookmarksTitle,
-              onPressed: isConnected ? _showBookmarksDialog : null,
-            ),
-            IconButton(
-              key: const Key('sftpSelectModeButton'),
-              icon: const Icon(Icons.checklist, size: 20),
-              tooltip: context.l10n.sftpSelectMode,
-              onPressed: _toggleSelectionMode,
-            ),
-            IconButton(
-              key: const Key('sftpTransferListButton'),
-              style: _highlightTransferButton
-                  ? IconButton.styleFrom(
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.primaryContainer,
-                      foregroundColor: Theme.of(
-                        context,
-                      ).colorScheme.onPrimaryContainer,
-                    )
-                  : null,
-              icon: KeyedSubtree(
-                key: _transferIconKey,
-                child: Badge(
-                  isLabelVisible: state.pendingTransferCount > 0,
-                  label: Text('${state.pendingTransferCount}'),
-                  child: const Icon(Icons.swap_vert, size: 20),
+          onUpload:
+              (!isConnected || state.cachedAt != null || hasActiveTransfer)
+              ? null
+              : _handleUpload,
+          onNewFile: (isConnected && state.cachedAt == null)
+              ? _showNewFileDialog
+              : null,
+          onNewFolder: (isConnected && state.cachedAt == null)
+              ? _showNewFolderDialog
+              : null,
+          onSelectMode: _toggleSelectionMode,
+          onBookmarks: isConnected ? _showBookmarksDialog : null,
+          onRefresh: isConnected ? () => notifier.refresh() : null,
+          transferAction: Consumer(
+            builder: (context, ref, _) {
+              final count = ref.watch(
+                sftpProvider.select((s) => s.pendingTransferCount),
+              );
+              return IconButton(
+                key: const Key('sftpTransferListButton'),
+                style: _highlightTransferButton
+                    ? IconButton.styleFrom(
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimaryContainer,
+                      )
+                    : null,
+                icon: KeyedSubtree(
+                  key: _transferIconKey,
+                  child: Badge(
+                    isLabelVisible: count > 0,
+                    label: Text('$count'),
+                    child: const Icon(Icons.swap_vert, size: 20),
+                  ),
                 ),
-              ),
-              tooltip: context.l10n.transferList,
-              onPressed: () => _showTransferListModal(context),
-            ),
-          ],
+                tooltip: context.l10n.transferList,
+                onPressed: () => _showTransferListModal(context),
+              );
+            },
+          ),
         );
       },
     );
@@ -1376,16 +1410,13 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
 
     Widget buildPopupMenu() => PopupMenuButton<String>(
       tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-      icon: isGrid ? null : const Icon(Icons.more_vert, size: 18),
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-      child: isGrid
-          ? const SizedBox(
-              width: 44,
-              height: 44,
-              child: Center(child: Icon(Icons.more_vert, size: 18)),
-            )
-          : null,
+      child: SizedBox(
+        width: isGrid ? 44 : 24,
+        height: isGrid ? 44 : 24,
+        child: const Center(child: Icon(Icons.more_vert, size: 18)),
+      ),
       onSelected: (action) {
         if (!ref.read(serverConnectionProvider).isConnected) {
           ScaffoldMessenger.of(
@@ -1470,16 +1501,22 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     if (isGrid) {
       leadingWidget = fileIconWidget;
       if (_isSelectionMode && !isSpecialNav) {
-        trailingWidget = Checkbox(
-          value: isSelected,
-          onChanged: (_) => _toggleSelect(item),
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          visualDensity: VisualDensity.compact,
+        trailingWidget = SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: Checkbox(
+              value: isSelected,
+              onChanged: (_) => _toggleSelect(item),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
         );
       } else if (!isSpecialNav) {
         trailingWidget = buildPopupMenu();
       } else {
-        trailingWidget = const SizedBox.shrink();
+        trailingWidget = null;
       }
     } else {
       if (_isSelectionMode && !isSpecialNav) {
@@ -1504,14 +1541,30 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
           : buildPopupMenu();
     }
 
+    final isList = viewMode == RemoteBrowserViewMode.list;
+    final showSizeInTitle = isList && !item.isDirectory && !isSpecialNav;
+    final titleSuffixColor = isHidden
+        ? context.colorScheme.onSurfaceVariant.withValues(alpha: 0.62)
+        : context.colorScheme.onSurfaceVariant;
+    final Widget? titleSuffixWidget = showSizeInTitle
+        ? Text(
+            item.formattedSize,
+            maxLines: 1,
+            softWrap: false,
+            style: monoTextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+              color: titleSuffixColor,
+            ),
+          )
+        : null;
+
     final Widget metadataWidget;
     if (isSpecialNav) {
       metadataWidget = const SizedBox.shrink();
     } else if (isGrid) {
       metadataWidget = Text(
-        item.isDirectory
-            ? context.l10n.appCenterTaskDirectory
-            : item.formattedSize,
+        item.isDirectory ? item.permissions : item.formattedSize,
         style: monoTextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w400,
@@ -1521,44 +1574,132 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
         overflow: TextOverflow.ellipsis,
       );
     } else {
-      // Main file LIST: name first, permissions/size second, full yyyy-MM-dd HH:mm third
-      metadataWidget = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 2),
-          Row(
-            children: [
-              Flexible(
-                child: Text(
+      // Main file LIST: measure time width to keep complete timestamp visible on screen in normal/1.3x scales.
+      // For files, formattedSize is in title, subtitle shows permissions and time; directories keep original fields.
+      metadataWidget = LayoutBuilder(
+        builder: (context, constraints) {
+          final textScaler = MediaQuery.textScalerOf(context);
+          final timeStyle = monoTextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+            color: context.colorScheme.outline,
+          );
+          final painter = TextPainter(
+            text: TextSpan(text: item.modified, style: timeStyle),
+            textDirection: Directionality.of(context),
+            textScaler: textScaler,
+            maxLines: 1,
+          )..layout();
+          final requiredTimeWidth = painter.width;
+          painter.dispose();
+          final fits =
+              constraints.hasBoundedWidth &&
+              constraints.maxWidth >= requiredTimeWidth + 8;
+
+          if (fits) {
+            if (item.isDirectory) {
+              return Row(
+                children: [
+                  Flexible(
+                    flex: 2,
+                    child: Text(
+                      item.permissions,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: monoTextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    flex: 1,
+                    child: Text(
+                      item.formattedSize,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: monoTextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    item.modified,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: timeStyle,
+                  ),
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    item.permissions,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: monoTextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  item.modified,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: timeStyle,
+                ),
+              ],
+            );
+          }
+
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
                   item.permissions,
+                  maxLines: 1,
+                  softWrap: false,
                   style: monoTextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w400,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                item.formattedSize,
-                style: monoTextStyle(fontSize: 11, fontWeight: FontWeight.w400),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            item.modified,
-            style: monoTextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w400,
-              color: context.colorScheme.outline,
+                if (item.isDirectory) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    item.formattedSize,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: monoTextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 8),
+                Text(
+                  item.modified,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: timeStyle,
+                ),
+              ],
             ),
-            maxLines: 2,
-            softWrap: true,
-            overflow: TextOverflow.visible,
-          ),
-        ],
+          );
+        },
       );
     }
 
@@ -1568,10 +1709,13 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
       viewMode: viewMode,
       selected: _isSelectionMode && isSelected,
       leading: leadingWidget,
+      titleSuffix: titleSuffixWidget,
       metadata: metadataWidget,
       date: isSpecialNav ? null : item.modified,
-      isThreeLine: !isSpecialNav && !isGrid,
+      isThreeLine: false,
       trailing: trailingWidget,
+      trailingGap: 4.0,
+      leadingGap: 8.0,
       onLongPress: (!isSpecialNav && !_isSelectionMode)
           ? () {
               setState(() {
@@ -2361,13 +2505,135 @@ class _SftpFileEditorDialogState extends ConsumerState<_SftpFileEditorDialog> {
   }
 }
 
-class SftpTransferListSheet extends ConsumerWidget {
+enum _TransferFilter { all, active, failed, completed }
+
+class _TransferMeta {
+  final String id;
+  final SftpTransferStatus status;
+
+  const _TransferMeta({required this.id, required this.status});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _TransferMeta && id == other.id && status == other.status;
+
+  @override
+  int get hashCode => Object.hash(id, status);
+}
+
+class _TransferMetaList {
+  final List<_TransferMeta> items;
+  _TransferMetaList(this.items);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! _TransferMetaList) return false;
+    if (items.length != other.items.length) return false;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i] != other.items[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hashAll(items);
+}
+
+class SftpTransferListSheet extends ConsumerStatefulWidget {
   const SftpTransferListSheet({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final sftpState = ref.watch(sftpProvider);
+  ConsumerState<SftpTransferListSheet> createState() =>
+      _SftpTransferListSheetState();
+}
+
+class _SftpTransferListSheetState extends ConsumerState<SftpTransferListSheet> {
+  _TransferFilter _filter = _TransferFilter.all;
+  bool _isBulkActing = false;
+
+  Widget _buildFilterChip({
+    required Key key,
+    required String label,
+    required bool selected,
+    required VoidCallback onSelected,
+  }) {
+    return FilterChip(
+      key: key,
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      selected: selected,
+      onSelected: (_) => onSelected(),
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final notifier = ref.read(sftpProvider.notifier);
+    final isConnected = ref.watch(
+      serverConnectionProvider.select((s) => s.isConnected),
+    );
+    final hasFinishedTransfers = ref.watch(
+      sftpProvider.select((s) => s.hasFinishedTransfers),
+    );
+    final errorMessage = ref.watch(sftpProvider.select((s) => s.errorMessage));
+    final downloadNotificationsUnavailable = ref.watch(
+      sftpProvider.select((s) => s.downloadNotificationsUnavailable),
+    );
+    final metaList = ref.watch(
+      sftpProvider.select(
+        (s) => _TransferMetaList(
+          s.transfers
+              .map((t) => _TransferMeta(id: t.id, status: t.status))
+              .toList(),
+        ),
+      ),
+    );
+
+    final allItems = metaList.items;
+    final totalCount = allItems.length;
+    final activeItems = allItems
+        .where(
+          (i) =>
+              i.status == SftpTransferStatus.running ||
+              i.status == SftpTransferStatus.queued ||
+              i.status == SftpTransferStatus.paused,
+        )
+        .toList();
+    final activeCount = activeItems.length;
+    final hasPaused = allItems.any(
+      (i) => i.status == SftpTransferStatus.paused,
+    );
+    final failedItems = allItems
+        .where((i) => i.status == SftpTransferStatus.failed)
+        .toList();
+    final failedCount = failedItems.length;
+    final completedItems = allItems
+        .where((i) => i.status == SftpTransferStatus.completed)
+        .toList();
+    final completedCount = completedItems.length;
+
+    final List<_TransferMeta> displayItems;
+    switch (_filter) {
+      case _TransferFilter.all:
+        final nonActive = allItems
+            .where(
+              (i) =>
+                  i.status != SftpTransferStatus.running &&
+                  i.status != SftpTransferStatus.queued &&
+                  i.status != SftpTransferStatus.paused,
+            )
+            .toList();
+        displayItems = [...activeItems, ...nonActive];
+      case _TransferFilter.active:
+        displayItems = activeItems;
+      case _TransferFilter.failed:
+        displayItems = failedItems;
+      case _TransferFilter.completed:
+        displayItems = completedItems;
+    }
 
     return SafeArea(
       child: SizedBox(
@@ -2381,32 +2647,172 @@ class SftpTransferListSheet extends ConsumerWidget {
                   horizontal: 16,
                   vertical: 8,
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      context.l10n.transferList,
-                      style: context.textTheme.titleMedium,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            context.l10n.transferList,
+                            style: context.textTheme.titleMedium,
+                          ),
+                        ),
+                        IconButton(
+                          key: const Key('transferSheetCloseButton'),
+                          icon: const Icon(Icons.close, size: 20),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    TextButton.icon(
-                      key: const Key('transferClearFinishedButton'),
-                      icon: const Icon(Icons.clear_all, size: 18),
-                      label: Text(context.l10n.transferClearFinished),
-                      onPressed: sftpState.hasFinishedTransfers
-                          ? () => notifier.clearFinishedTransfers()
-                          : null,
-                    ),
-                    const SizedBox(width: 4),
-                    IconButton(
-                      key: const Key('transferSheetCloseButton'),
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: () => Navigator.pop(context),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: [
+                        if (_isBulkActing)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8),
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        else ...[
+                          IconButton(
+                            key: const Key('transferPauseAllButton'),
+                            icon: const Icon(
+                              Icons.pause_circle_outline,
+                              size: 20,
+                            ),
+                            tooltip: context.l10n.transferPauseAll,
+                            onPressed: (activeCount > 0 && !_isBulkActing)
+                                ? () async {
+                                    if (_isBulkActing) return;
+                                    _isBulkActing = true;
+                                    setState(() {});
+                                    try {
+                                      await notifier.pauseAllTransfers();
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(e.toString()),
+                                            backgroundColor: context.vDanger,
+                                          ),
+                                        );
+                                      }
+                                    } finally {
+                                      _isBulkActing = false;
+                                      if (mounted) {
+                                        setState(() {});
+                                      }
+                                    }
+                                  }
+                                : null,
+                          ),
+                          IconButton(
+                            key: const Key('transferResumePausedButton'),
+                            icon: const Icon(
+                              Icons.play_circle_outline,
+                              size: 20,
+                            ),
+                            tooltip: context.l10n.transferResumePaused,
+                            onPressed:
+                                (hasPaused && isConnected && !_isBulkActing)
+                                ? () async {
+                                    if (_isBulkActing) return;
+                                    _isBulkActing = true;
+                                    setState(() {});
+                                    try {
+                                      await notifier.resumePausedTransfers();
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(e.toString()),
+                                            backgroundColor: context.vDanger,
+                                          ),
+                                        );
+                                      }
+                                    } finally {
+                                      _isBulkActing = false;
+                                      if (mounted) {
+                                        setState(() {});
+                                      }
+                                    }
+                                  }
+                                : null,
+                          ),
+                        ],
+                        TextButton.icon(
+                          key: const Key('transferClearFinishedButton'),
+                          icon: const Icon(Icons.clear_all, size: 18),
+                          label: Text(context.l10n.transferClearFinished),
+                          onPressed: hasFinishedTransfers
+                              ? () => notifier.clearFinishedTransfers()
+                              : null,
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
-            if (sftpState.errorMessage != null) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip(
+                      key: const Key('transferFilterAll'),
+                      label: '${context.l10n.transferFilterAll} ($totalCount)',
+                      selected: _filter == _TransferFilter.all,
+                      onSelected: () =>
+                          setState(() => _filter = _TransferFilter.all),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      key: const Key('transferFilterActive'),
+                      label:
+                          '${context.l10n.transferFilterActive} ($activeCount)',
+                      selected: _filter == _TransferFilter.active,
+                      onSelected: () =>
+                          setState(() => _filter = _TransferFilter.active),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      key: const Key('transferFilterFailed'),
+                      label:
+                          '${context.l10n.transferFilterFailed} ($failedCount)',
+                      selected: _filter == _TransferFilter.failed,
+                      onSelected: () =>
+                          setState(() => _filter = _TransferFilter.failed),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      key: const Key('transferFilterCompleted'),
+                      label:
+                          '${context.l10n.transferFilterCompleted} ($completedCount)',
+                      selected: _filter == _TransferFilter.completed,
+                      onSelected: () =>
+                          setState(() => _filter = _TransferFilter.completed),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            if (errorMessage != null) ...[
               Container(
                 key: const Key('transferSheetErrorBanner'),
                 color: context.colorScheme.errorContainer.withValues(
@@ -2426,7 +2832,7 @@ class SftpTransferListSheet extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _mapSftpErrorMessage(context, sftpState.errorMessage!),
+                        _mapSftpErrorMessage(context, errorMessage),
                         style: TextStyle(
                           fontSize: 12,
                           color: context.colorScheme.onErrorContainer,
@@ -2438,7 +2844,7 @@ class SftpTransferListSheet extends ConsumerWidget {
               ),
               const Divider(height: 1),
             ],
-            if (sftpState.downloadNotificationsUnavailable) ...[
+            if (downloadNotificationsUnavailable) ...[
               Container(
                 key: const Key('downloadNotificationsUnavailableSheetBanner'),
                 color: context.colorScheme.surfaceContainerHighest,
@@ -2469,7 +2875,7 @@ class SftpTransferListSheet extends ConsumerWidget {
               const Divider(height: 1),
             ],
             Expanded(
-              child: sftpState.transfers.isEmpty
+              child: displayItems.isEmpty
                   ? Center(
                       key: const Key('transferEmptyView'),
                       child: EmptyStateView(
@@ -2479,11 +2885,18 @@ class SftpTransferListSheet extends ConsumerWidget {
                     )
                   : ListView.separated(
                       key: const Key('transferListView'),
-                      itemCount: sftpState.transfers.length,
+                      itemCount: displayItems.length,
                       separatorBuilder: (_, _) => const Divider(height: 1),
                       itemBuilder: (context, index) {
-                        final transfer = sftpState.transfers[index];
-                        return SftpTransferListItem(transfer: transfer);
+                        final id = displayItems[index].id;
+                        final transfer = ref
+                            .read(sftpProvider)
+                            .transferById(id);
+                        if (transfer == null) return const SizedBox.shrink();
+                        return SftpTransferListItem(
+                          key: ValueKey('transfer_row_$id'),
+                          transfer: transfer,
+                        );
                       },
                     ),
             ),
@@ -2494,10 +2907,18 @@ class SftpTransferListSheet extends ConsumerWidget {
   }
 }
 
-class SftpTransferListItem extends ConsumerWidget {
+class SftpTransferListItem extends ConsumerStatefulWidget {
   final SftpTransfer transfer;
 
   const SftpTransferListItem({super.key, required this.transfer});
+
+  @override
+  ConsumerState<SftpTransferListItem> createState() =>
+      _SftpTransferListItemState();
+}
+
+class _SftpTransferListItemState extends ConsumerState<SftpTransferListItem> {
+  bool _isExpanded = false;
 
   String _mapTransferError(BuildContext context, String? code) {
     if (code == null) return context.l10n.transferStatusFailed;
@@ -2505,7 +2926,12 @@ class SftpTransferListItem extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final transfer =
+        ref.watch(
+          sftpProvider.select((s) => s.transferById(widget.transfer.id)),
+        ) ??
+        widget.transfer;
     final notifier = ref.read(sftpProvider.notifier);
     final isConnected = ref.watch(
       serverConnectionProvider.select((s) => s.isConnected),
@@ -2515,43 +2941,134 @@ class SftpTransferListItem extends ConsumerWidget {
         ? context.l10n.transferUpload
         : context.l10n.transferDownload;
 
-    final statusText = switch (transfer.status) {
-      SftpTransferStatus.queued => context.l10n.transferStatusQueued,
-      SftpTransferStatus.running => context.l10n.transferStatusRunning,
-      SftpTransferStatus.paused =>
-        (transfer.errorMessage == 'SSH_DISCONNECTED' ||
-                transfer.errorMessage == 'SFTP_DOWNLOAD_DISCONNECTED')
-            ? context.l10n.transferStatusWaitingConnection
-            : context.l10n.transferStatusPaused,
-      SftpTransferStatus.completed => context.l10n.transferStatusCompleted,
-      SftpTransferStatus.failed => context.l10n.transferStatusFailed,
-      SftpTransferStatus.canceled => context.l10n.transferStatusCanceled,
-    };
-
+    final String statusText;
     final String sizeText;
-    if (transfer.progress != null) {
-      final percent = (transfer.progress! * 100).toStringAsFixed(0);
-      final transferred = SftpFileItem.formatBytes(transfer.transferredBytes);
-      final total = SftpFileItem.formatBytes(transfer.totalBytes);
-      sizeText = '$transferred / $total ($percent%)';
+    final double? progressValue;
+
+    if (transfer.status == SftpTransferStatus.running) {
+      statusText = _transferPhaseText(context, transfer.phase);
+      switch (transfer.phase) {
+        case SftpTransferPhase.preparing:
+          progressValue = null;
+          sizeText = transfer.totalBytes > 0
+              ? SftpFileItem.formatBytes(transfer.totalBytes)
+              : context.l10n.transferSizeUnknown;
+        case SftpTransferPhase.verifyingPartial:
+          if (transfer.phaseTotalBytes > 0) {
+            progressValue =
+                (transfer.phaseProcessedBytes / transfer.phaseTotalBytes).clamp(
+                  0.0,
+                  1.0,
+                );
+            final percent = (progressValue * 100).toStringAsFixed(0);
+            final processed = SftpFileItem.formatBytes(
+              transfer.phaseProcessedBytes,
+            );
+            final total = SftpFileItem.formatBytes(transfer.phaseTotalBytes);
+            sizeText = '$processed / $total ($percent%)';
+          } else {
+            progressValue = null;
+            sizeText = transfer.phaseProcessedBytes > 0
+                ? SftpFileItem.formatBytes(transfer.phaseProcessedBytes)
+                : '';
+          }
+        case SftpTransferPhase.transferring:
+          progressValue = transfer.progress;
+          if (transfer.progress != null) {
+            final percent = (transfer.progress! * 100).toStringAsFixed(0);
+            final transferred = SftpFileItem.formatBytes(
+              transfer.transferredBytes,
+            );
+            final total = SftpFileItem.formatBytes(transfer.totalBytes);
+            sizeText = '$transferred / $total ($percent%)';
+          } else {
+            if (transfer.transferredBytes > 0) {
+              final transferred = SftpFileItem.formatBytes(
+                transfer.transferredBytes,
+              );
+              sizeText = '$transferred / ${context.l10n.transferSizeUnknown}';
+            } else {
+              sizeText = context.l10n.transferSizeUnknown;
+            }
+          }
+        case SftpTransferPhase.verifying:
+          if (transfer.phaseTotalBytes > 0) {
+            progressValue =
+                (transfer.phaseProcessedBytes / transfer.phaseTotalBytes).clamp(
+                  0.0,
+                  1.0,
+                );
+            final percent = (progressValue * 100).toStringAsFixed(0);
+            final processed = SftpFileItem.formatBytes(
+              transfer.phaseProcessedBytes,
+            );
+            final total = SftpFileItem.formatBytes(transfer.phaseTotalBytes);
+            sizeText = '$processed / $total ($percent%)';
+          } else {
+            progressValue = null;
+            sizeText = transfer.totalBytes > 0
+                ? SftpFileItem.formatBytes(transfer.totalBytes)
+                : (transfer.transferredBytes > 0
+                      ? SftpFileItem.formatBytes(transfer.transferredBytes)
+                      : '');
+          }
+      }
     } else {
-      if (transfer.transferredBytes > 0) {
+      statusText = switch (transfer.status) {
+        SftpTransferStatus.queued => context.l10n.transferStatusQueued,
+        SftpTransferStatus.running => context.l10n.transferStatusRunning,
+        SftpTransferStatus.paused => switch (transfer.pauseReason ??
+            SftpTransferPauseReason.user) {
+          SftpTransferPauseReason.user => context.l10n.transferPauseReasonUser,
+          SftpTransferPauseReason.network =>
+            context.l10n.transferPauseReasonNetwork,
+          SftpTransferPauseReason.appRestart =>
+            context.l10n.transferPauseReasonAppRestart,
+        },
+        SftpTransferStatus.completed => context.l10n.transferStatusCompleted,
+        SftpTransferStatus.failed => context.l10n.transferStatusFailed,
+        SftpTransferStatus.canceled => context.l10n.transferStatusCanceled,
+      };
+
+      if (transfer.progress != null) {
+        final percent = (transfer.progress! * 100).toStringAsFixed(0);
         final transferred = SftpFileItem.formatBytes(transfer.transferredBytes);
-        sizeText = '$transferred / ${context.l10n.transferSizeUnknown}';
+        final total = SftpFileItem.formatBytes(transfer.totalBytes);
+        sizeText = '$transferred / $total ($percent%)';
       } else {
-        sizeText = context.l10n.transferSizeUnknown;
+        if (transfer.transferredBytes > 0) {
+          final transferred = SftpFileItem.formatBytes(
+            transfer.transferredBytes,
+          );
+          sizeText = '$transferred / ${context.l10n.transferSizeUnknown}';
+        } else {
+          sizeText = context.l10n.transferSizeUnknown;
+        }
+      }
+
+      if (transfer.status == SftpTransferStatus.completed) {
+        progressValue = 1.0;
+      } else if (transfer.status == SftpTransferStatus.queued) {
+        progressValue = 0.0;
+      } else {
+        progressValue = transfer.progress ?? 0.0;
       }
     }
 
-    final double? progressValue;
-    if (transfer.status == SftpTransferStatus.running) {
-      progressValue = transfer.progress;
-    } else if (transfer.status == SftpTransferStatus.completed) {
-      progressValue = 1.0;
-    } else if (transfer.status == SftpTransferStatus.queued) {
-      progressValue = 0.0;
+    final String? speedOrEtaText;
+    if (transfer.status == SftpTransferStatus.running &&
+        transfer.phase == SftpTransferPhase.transferring &&
+        transfer.bytesPerSecond > 0) {
+      final speed =
+          '${SftpFileItem.formatBytes(transfer.bytesPerSecond.round())}/s';
+      final eta = transfer.remainingSeconds;
+      if (eta != null) {
+        speedOrEtaText = '$speed • ETA ${_formatEta(eta)}';
+      } else {
+        speedOrEtaText = speed;
+      }
     } else {
-      progressValue = transfer.progress ?? 0.0;
+      speedOrEtaText = null;
     }
 
     final canPause =
@@ -2682,6 +3199,17 @@ class SftpTransferListItem extends ConsumerWidget {
                   tooltip: context.l10n.transferRemove,
                   onPressed: () => notifier.removeTransfer(transfer.id),
                 ),
+              IconButton(
+                key: Key('transfer_toggle_details_${transfer.id}'),
+                icon: Icon(
+                  _isExpanded ? Icons.expand_less : Icons.expand_more,
+                  size: 18,
+                ),
+                tooltip: _isExpanded
+                    ? context.l10n.agentCollapseDetails
+                    : context.l10n.agentExpandDetails,
+                onPressed: () => setState(() => _isExpanded = !_isExpanded),
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -2691,25 +3219,55 @@ class SftpTransferListItem extends ConsumerWidget {
                 PulseDot(color: context.vInfo, size: 6),
                 const SizedBox(width: 6),
               ],
-              Text(
-                '[$kindText] $statusText',
-                style: context.textTheme.bodySmall?.copyWith(
-                  color: hasError
-                      ? context.colorScheme.error
-                      : context.colorScheme.onSurfaceVariant,
+              Expanded(
+                flex: 3,
+                child: Text(
+                  '[$kindText] $statusText',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.textTheme.bodySmall?.copyWith(
+                    color: hasError
+                        ? context.colorScheme.error
+                        : context.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
-              const Spacer(),
-              Text(
-                sizeText,
-                style: monoTextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w400,
-                  color: context.colorScheme.onSurfaceVariant,
+              const SizedBox(width: 8),
+              Flexible(
+                flex: 2,
+                child: Text(
+                  sizeText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: monoTextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                    color: context.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
           ),
+          if (speedOrEtaText != null) ...[
+            const SizedBox(height: 3),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Flexible(
+                  child: Text(
+                    speedOrEtaText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: monoTextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w400,
+                      color: context.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (errorText != null) ...[
             const SizedBox(height: 2),
             Text(
@@ -2717,6 +3275,51 @@ class SftpTransferListItem extends ConsumerWidget {
               key: Key('transfer_error_${transfer.id}'),
               style: context.textTheme.bodySmall?.copyWith(
                 color: context.colorScheme.error,
+              ),
+            ),
+          ],
+          if (_isExpanded) ...[
+            const SizedBox(height: 6),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: context.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${context.l10n.transferRemotePath}: ${transfer.remotePath}',
+                    style: monoTextStyle(
+                      fontSize: 10,
+                      color: context.colorScheme.outline,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${context.l10n.transferLocalPath}: ${transfer.localPath}',
+                    style: monoTextStyle(
+                      fontSize: 10,
+                      color: context.colorScheme.outline,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (transfer.errorMessage != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '${context.l10n.transferErrorDetail}: ${transfer.errorMessage}',
+                      style: monoTextStyle(
+                        fontSize: 10,
+                        color: context.colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
@@ -2732,7 +3335,7 @@ class SftpTransferListItem extends ConsumerWidget {
                         : null),
             )
           else
-            // 未知的传输总量: 保持不确定态动画。
+            // 未知的传输总量或准备/校验中未知进度: 保持不确定态动画。
             const LinearProgressIndicator(minHeight: 3),
         ],
       ),

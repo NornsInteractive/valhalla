@@ -21,22 +21,510 @@ import 'widgets/appearance_dialogs.dart';
 import 'widgets/clear_credentials_dialog.dart';
 import 'widgets/configuration_migration_dialog.dart';
 import 'widgets/default_agent_dialog.dart';
+import 'widgets/remote_file_toolbar_dialog.dart';
 import 'widgets/trusted_hosts_dialog.dart';
 import '../../core/providers/terminal_provider.dart';
 import '../terminal/widgets/customize_pinned_keys_dialog.dart';
 import '../terminal/widgets/terminal_history_drawer.dart';
 
-class SettingsView extends ConsumerWidget {
+class SettingsView extends ConsumerStatefulWidget {
   const SettingsView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsView> createState() => _SettingsViewState();
+}
+
+class _SettingsSearchItem {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _SettingsSearchItem({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+  });
+}
+
+class _SettingsViewState extends ConsumerState<SettingsView> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _showDetailSheet(
+    BuildContext context, {
+    required String title,
+    required Widget Function(BuildContext sheetContext, WidgetRef sheetRef)
+    builder,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(VRadius.sheet),
+        ),
+      ),
+      builder: (sheetContext) {
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.85,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: sheetContext.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Consumer(
+                    builder: (consumerContext, ref, _) {
+                      return builder(consumerContext, ref);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  List<_SettingsSearchItem> _getSearchItems(
+    BuildContext context,
+    SettingsState settings,
+    SettingsNotifier notifier,
+  ) {
+    final l10n = context.l10n;
+    final themeModeTitle = switch (settings.themeMode) {
+      AppThemeMode.system => l10n.themeSystem,
+      AppThemeMode.light => l10n.themeLight,
+      AppThemeMode.dark => l10n.themeDark,
+      AppThemeMode.amoled => l10n.themeAmoled,
+    };
+    final currentTag = settings.locale.languageCode == 'system'
+        ? 'system'
+        : settings.locale.toLanguageTag();
+    final languageTitle = localizedLanguageName(context, currentTag);
+    final startupPageTitle = _getLocalizedSectionName(
+      context,
+      settings.effectiveStartupSection,
+    );
+    final terminalSettings = ref.watch(terminalSettingsProvider);
+    final terminalState = ref.watch(terminalProvider);
+    final trustedHosts = ref.watch(trustedHostsProvider);
+    final autoConnectSettings = ref.watch(autoConnectSettingsProvider);
+    final servers = ref.watch(serverListProvider);
+    final activeServer = ref.watch(activeServerProvider);
+    final targetServer =
+        activeServer ?? (servers.isNotEmpty ? servers.first : null);
+    final matchingServer = servers.cast<ServerProfile?>().firstWhere(
+      (s) => s?.id == autoConnectSettings.fixedServerId,
+      orElse: () => null,
+    );
+    final serverDisplayName =
+        matchingServer?.name ?? l10n.settingsAutoConnectNoServer;
+    final autoConnectSubtitle = switch (autoConnectSettings.mode) {
+      AutoConnectMode.fixed =>
+        '${l10n.settingsAutoConnectFixed} ($serverDisplayName)',
+      AutoConnectMode.lastConnected => l10n.settingsAutoConnectLast,
+    };
+
+    return [
+      _SettingsSearchItem(
+        title: l10n.settingsThemeMode,
+        subtitle: themeModeTitle,
+        icon: Icons.brightness_medium,
+        onTap: () =>
+            showAppThemeModeDialog(context, settings.themeMode, notifier),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsAccentColor,
+        subtitle: l10n.settingsAccentColorDesc,
+        icon: Icons.color_lens_outlined,
+        onTap: () {
+          final systemSlot = Theme.of(context).brightness == Brightness.dark
+              ? AppThemeMode.dark
+              : AppThemeMode.light;
+          final initialMode = settings.themeMode == AppThemeMode.system
+              ? systemSlot
+              : settings.themeMode;
+          showDialog<void>(
+            context: context,
+            builder: (_) => ThemeAccentColorDialog(
+              settings: settings,
+              notifier: notifier,
+              initialMode: initialMode,
+            ),
+          );
+        },
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsLanguage,
+        subtitle: languageTitle,
+        icon: Icons.translate,
+        onTap: () => _showLanguageDialog(context, settings, notifier),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsAiOps,
+        subtitle: l10n.settingsAgentManagementSubtitle,
+        icon: Icons.psychology,
+        onTap: () => _showDetailSheet(
+          context,
+          title: l10n.settingsAiOps,
+          builder: (ctx, r) {
+            final s = r.watch(settingsProvider);
+            final n = r.read(settingsProvider.notifier);
+            return _buildAiOpsCard(ctx, r, s, n);
+          },
+        ),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsAgentManagement,
+        subtitle: l10n.settingsAgentManagementSubtitle,
+        icon: Icons.smart_toy_outlined,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AgentManagementView()),
+          );
+        },
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsCliHistoryPageSize,
+        subtitle: l10n.settingsCliHistoryPageSizeDesc,
+        icon: Icons.history_toggle_off,
+        onTap: () => _showCliHistoryPageSizeDialog(
+          context,
+          settings.cliHistoryPageSize,
+          notifier,
+        ),
+      ),
+      if (targetServer != null)
+        _SettingsSearchItem(
+          title: l10n.settingsDefaultAcpAgent,
+          subtitle: l10n.settingsDefaultAcpAgentSubtitle,
+          icon: Icons.hub_outlined,
+          onTap: () => DefaultAgentDialog.show(
+            context,
+            server: targetServer,
+            isCli: false,
+          ),
+        ),
+      if (targetServer != null && settings.isSectionEnabled(AppSection.cliChat))
+        _SettingsSearchItem(
+          title: l10n.settingsDefaultCliAgent,
+          subtitle: l10n.settingsDefaultCliAgentSubtitle,
+          icon: Icons.terminal,
+          onTap: () => DefaultAgentDialog.show(
+            context,
+            server: targetServer,
+            isCli: true,
+          ),
+        ),
+      _SettingsSearchItem(
+        title: l10n.settingsSecurity,
+        subtitle: l10n.settingsSecurityDesc,
+        icon: Icons.security,
+        onTap: () => _showDetailSheet(
+          context,
+          title: l10n.settingsSecurity,
+          builder: (ctx, r) => _buildSecurityCard(ctx, r),
+        ),
+      ),
+      _SettingsSearchItem(
+        title: l10n.terminalStartupSession,
+        subtitle: getStartupSessionLabel(context, terminalState),
+        icon: Icons.play_circle_outline,
+        onTap: () => showStartupSessionDialog(context, ref),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsTerminalFontSize,
+        subtitle: '${terminalSettings.fontSize} pt',
+        icon: Icons.format_size,
+        onTap: () => _showTerminalFontSizeDialog(context),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsTerminalPinnedKeys,
+        subtitle: l10n.settingsTerminalPinnedKeysSubtitle,
+        icon: Icons.keyboard_outlined,
+        onTap: () => CustomizePinnedKeysDialog.show(context),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsKnownHosts,
+        subtitle: trustedHosts.isEmpty
+            ? l10n.settingsKnownHostsEmpty
+            : l10n.settingsKnownHostsSubtitle(trustedHosts.length),
+        icon: Icons.fingerprint,
+        onTap: () => TrustedHostsDialog.show(context),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsClearStorage,
+        subtitle: l10n.settingsClearStorageSubtitle,
+        icon: Icons.lock_reset,
+        onTap: () => ClearCredentialsDialog.show(context),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsAutoConnect,
+        subtitle: autoConnectSubtitle,
+        icon: Icons.power_settings_new,
+        onTap: () => _showDetailSheet(
+          context,
+          title: l10n.settingsAutoConnect,
+          builder: (ctx, r) => const _AutoConnectCard(),
+        ),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsNavigation,
+        subtitle: '${l10n.settingsStartupPage}: $startupPageTitle',
+        icon: Icons.navigation_outlined,
+        onTap: () => _showDetailSheet(
+          context,
+          title: l10n.settingsNavigation,
+          builder: (ctx, r) {
+            final s = r.watch(settingsProvider);
+            final n = r.read(settingsProvider.notifier);
+            return _buildNavigationCard(ctx, s, n);
+          },
+        ),
+      ),
+      _SettingsSearchItem(
+        title: l10n.sftpConfigureToolbar,
+        subtitle: l10n.sftpConfigureToolbarDesc,
+        icon: Icons.tune,
+        onTap: () => RemoteFileToolbarDialog.show(context),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsStartupPage,
+        subtitle: startupPageTitle,
+        icon: Icons.home_outlined,
+        onTap: () => _showStartupPageDialog(context, settings, notifier),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsDashboardQuickActions,
+        subtitle: l10n.settingsDashboardQuickActionsDesc,
+        icon: Icons.dashboard_customize_outlined,
+        onTap: () => _showDetailSheet(
+          context,
+          title: l10n.settingsDashboardQuickActions,
+          builder: (ctx, r) {
+            final s = r.watch(settingsProvider);
+            final n = r.read(settingsProvider.notifier);
+            return _buildNavigationCard(
+              ctx,
+              s,
+              n,
+              showStartupPage: false,
+              showQuickActions: true,
+              showBottomNav: false,
+            );
+          },
+        ),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsBottomNav,
+        subtitle: l10n.settingsBottomNavDesc,
+        icon: Icons.view_headline_outlined,
+        onTap: () => _showDetailSheet(
+          context,
+          title: l10n.settingsBottomNav,
+          builder: (ctx, r) {
+            final s = r.watch(settingsProvider);
+            final n = r.read(settingsProvider.notifier);
+            return _buildNavigationCard(
+              ctx,
+              s,
+              n,
+              showStartupPage: false,
+              showQuickActions: false,
+              showBottomNav: true,
+            );
+          },
+        ),
+      ),
+      _SettingsSearchItem(
+        title: l10n.configMigrationTitle,
+        subtitle: l10n.configMigrationSubtitle,
+        icon: Icons.sync_alt,
+        onTap: () => _showDetailSheet(
+          context,
+          title: l10n.configMigrationTitle,
+          builder: (ctx, r) => _buildConfigurationMigrationCard(ctx, r),
+        ),
+      ),
+      _SettingsSearchItem(
+        title: l10n.configExportTitle,
+        subtitle: l10n.configExportSubtitle,
+        icon: Icons.file_upload_outlined,
+        onTap: () => ConfigurationMigrationManager.handleExport(context, ref),
+      ),
+      _SettingsSearchItem(
+        title: l10n.configImportTitle,
+        subtitle: l10n.configImportSubtitle,
+        icon: Icons.file_download_outlined,
+        onTap: () => ConfigurationMigrationManager.handleImport(context, ref),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsDiagnostics,
+        subtitle: l10n.settingsDiagnosticsDesc,
+        icon: Icons.bug_report_outlined,
+        onTap: () => _showDetailSheet(
+          context,
+          title: l10n.settingsDiagnostics,
+          builder: (ctx, r) => _buildDiagnosticsCard(ctx, r),
+        ),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsExperimentalFeatures,
+        subtitle: l10n.settingsExperimentalFeaturesDesc,
+        icon: Icons.science_outlined,
+        onTap: () => _showDetailSheet(
+          context,
+          title: l10n.settingsExperimentalFeatures,
+          builder: (ctx, r) => _buildExperimentalFeaturesCard(ctx),
+        ),
+      ),
+      _SettingsSearchItem(
+        title: l10n.settingsAboutPrivacy,
+        subtitle: l10n.settingsAboutPrivacyDesc,
+        icon: Icons.info_outline,
+        onTap: () => _showDetailSheet(
+          context,
+          title: l10n.settingsAboutPrivacy,
+          builder: (ctx, r) => const AboutPrivacyCard(),
+        ),
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
+    final trustedHosts = ref.watch(trustedHostsProvider);
+    final autoConnectSettings = ref.watch(autoConnectSettingsProvider);
+    final servers = ref.watch(serverListProvider);
+    final matchingServer = servers.cast<ServerProfile?>().firstWhere(
+      (s) => s?.id == autoConnectSettings.fixedServerId,
+      orElse: () => null,
+    );
+    final serverDisplayName =
+        matchingServer?.name ?? context.l10n.settingsAutoConnectNoServer;
+    final autoConnectSubtitle = switch (autoConnectSettings.mode) {
+      AutoConnectMode.fixed =>
+        '${context.l10n.settingsAutoConnectFixed} ($serverDisplayName)',
+      AutoConnectMode.lastConnected => context.l10n.settingsAutoConnectLast,
+    };
+
+    final searchField = Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextField(
+        controller: _searchController,
+        key: const Key('settings_search_field'),
+        decoration: InputDecoration(
+          hintText: context.l10n.settingsSearchHint,
+          prefixIcon: const Icon(Icons.search, size: 20),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
+          isDense: true,
+          filled: true,
+          fillColor: context.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.4,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(VRadius.input),
+            borderSide: BorderSide.none,
+          ),
+        ),
+        onChanged: (val) =>
+            setState(() => _searchQuery = val.trim().toLowerCase()),
+      ),
+    );
+
+    if (_searchQuery.isNotEmpty) {
+      final items = _getSearchItems(context, settings, notifier)
+          .where(
+            (item) =>
+                item.title.toLowerCase().contains(_searchQuery) ||
+                item.subtitle.toLowerCase().contains(_searchQuery),
+          )
+          .toList();
+
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          searchField,
+          if (items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: Text(
+                  context.l10n.settingsSearchNoResults,
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    color: context.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            )
+          else
+            ...items.map(
+              (item) => Card(
+                child: ListTile(
+                  leading: Icon(item.icon, color: context.colorScheme.primary),
+                  title: Text(item.title),
+                  subtitle: Text(
+                    item.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: item.onTap,
+                ),
+              ),
+            ),
+        ],
+      );
+    }
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        searchField,
         Entrance(
           index: 0,
           child: Column(
@@ -81,7 +569,35 @@ class SettingsView extends ConsumerWidget {
                 context.l10n.settingsAiOps,
                 Icons.psychology,
               ),
-              _buildAiOpsCard(context, ref, settings, notifier),
+              Card(
+                child: ListTile(
+                  key: const Key('settings_ai_ops_tile'),
+                  leading: const Icon(Icons.psychology),
+                  title: Text(context.l10n.settingsAiOps),
+                  subtitle: Text(
+                    context.l10n.settingsAgentManagementSubtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showDetailSheet(
+                    context,
+                    title: context.l10n.settingsAiOps,
+                    builder: (sheetContext, sheetRef) {
+                      final currentSettings = sheetRef.watch(settingsProvider);
+                      final currentNotifier = sheetRef.read(
+                        settingsProvider.notifier,
+                      );
+                      return _buildAiOpsCard(
+                        sheetContext,
+                        sheetRef,
+                        currentSettings,
+                        currentNotifier,
+                      );
+                    },
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -97,7 +613,29 @@ class SettingsView extends ConsumerWidget {
                 context.l10n.settingsSecurity,
                 Icons.security,
               ),
-              _buildSecurityCard(context, ref),
+              Card(
+                child: ListTile(
+                  key: const Key('settings_security_tile'),
+                  leading: const Icon(Icons.security),
+                  title: Text(context.l10n.settingsSecurity),
+                  subtitle: Text(
+                    trustedHosts.isEmpty
+                        ? context.l10n.settingsKnownHostsEmpty
+                        : context.l10n.settingsKnownHostsSubtitle(
+                            trustedHosts.length,
+                          ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showDetailSheet(
+                    context,
+                    title: context.l10n.settingsSecurity,
+                    builder: (sheetContext, sheetRef) =>
+                        _buildSecurityCard(sheetContext, sheetRef),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -113,7 +651,25 @@ class SettingsView extends ConsumerWidget {
                 context.l10n.settingsAutoConnect,
                 Icons.power_settings_new,
               ),
-              const _AutoConnectCard(),
+              Card(
+                child: ListTile(
+                  key: const Key('settings_auto_connect_tile'),
+                  leading: const Icon(Icons.power_settings_new),
+                  title: Text(context.l10n.settingsAutoConnect),
+                  subtitle: Text(
+                    autoConnectSubtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showDetailSheet(
+                    context,
+                    title: context.l10n.settingsAutoConnect,
+                    builder: (sheetContext, sheetRef) =>
+                        const _AutoConnectCard(),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -129,7 +685,34 @@ class SettingsView extends ConsumerWidget {
                 context.l10n.settingsNavigation,
                 Icons.navigation_outlined,
               ),
-              _buildNavigationCard(context, settings, notifier),
+              Card(
+                child: ListTile(
+                  key: const Key('settings_navigation_tile'),
+                  leading: const Icon(Icons.navigation_outlined),
+                  title: Text(context.l10n.settingsNavigation),
+                  subtitle: Text(
+                    '${context.l10n.settingsStartupPage}: ${_getLocalizedSectionName(context, settings.effectiveStartupSection)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showDetailSheet(
+                    context,
+                    title: context.l10n.settingsNavigation,
+                    builder: (sheetContext, sheetRef) {
+                      final currentSettings = sheetRef.watch(settingsProvider);
+                      final currentNotifier = sheetRef.read(
+                        settingsProvider.notifier,
+                      );
+                      return _buildNavigationCard(
+                        sheetContext,
+                        currentSettings,
+                        currentNotifier,
+                      );
+                    },
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -145,7 +728,25 @@ class SettingsView extends ConsumerWidget {
                 context.l10n.settingsDiagnostics,
                 Icons.bug_report_outlined,
               ),
-              _buildDiagnosticsCard(context, ref),
+              Card(
+                child: ListTile(
+                  key: const Key('settings_diagnostics_tile'),
+                  leading: const Icon(Icons.bug_report_outlined),
+                  title: Text(context.l10n.settingsDiagnostics),
+                  subtitle: Text(
+                    context.l10n.settingsDiagnosticsDesc,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showDetailSheet(
+                    context,
+                    title: context.l10n.settingsDiagnostics,
+                    builder: (sheetContext, sheetRef) =>
+                        _buildDiagnosticsCard(sheetContext, sheetRef),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -161,7 +762,28 @@ class SettingsView extends ConsumerWidget {
                 context.l10n.configMigrationTitle,
                 Icons.sync_alt,
               ),
-              _buildConfigurationMigrationCard(context, ref),
+              Card(
+                child: ListTile(
+                  key: const Key('settings_configuration_migration_tile'),
+                  leading: const Icon(Icons.sync_alt),
+                  title: Text(context.l10n.configMigrationTitle),
+                  subtitle: Text(
+                    context.l10n.configMigrationSubtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showDetailSheet(
+                    context,
+                    title: context.l10n.configMigrationTitle,
+                    builder: (sheetContext, sheetRef) =>
+                        _buildConfigurationMigrationCard(
+                          sheetContext,
+                          sheetRef,
+                        ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -346,6 +968,30 @@ class SettingsView extends ConsumerWidget {
             ),
             onTap: () =>
                 ConfigurationMigrationManager.handleImport(context, ref),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.shield_outlined,
+                  size: 16,
+                  color: context.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    context.l10n.configMigrationBoundaryNote,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -799,36 +1445,7 @@ class SettingsView extends ConsumerWidget {
                   )
                 : null,
           ),
-          const Divider(height: 1),
-          SwitchListTile(
-            key: const Key('settingsTerminalUseTmuxSwitch'),
-            secondary: const Icon(Icons.terminal),
-            dense: true,
-            title: Text(
-              context.l10n.settingsTerminalUseTmux,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.settingsTerminalUseTmuxSubtitle,
-                  style: const TextStyle(fontSize: 11),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  context.l10n.settingsTerminalUseTmuxDescription,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-              ],
-            ),
-            value: terminalSettings.useTmux,
-            onChanged: (val) =>
-                ref.read(terminalSettingsProvider.notifier).setUseTmux(val),
-          ),
+
           const Divider(height: 1),
           ListTile(
             key: const Key('settingsTerminalStartupSessionRow'),
@@ -1010,8 +1627,11 @@ class SettingsView extends ConsumerWidget {
   Widget _buildNavigationCard(
     BuildContext context,
     SettingsState settings,
-    SettingsNotifier notifier,
-  ) {
+    SettingsNotifier notifier, {
+    bool showStartupPage = true,
+    bool showQuickActions = true,
+    bool showBottomNav = true,
+  }) {
     final visibleQuick = settings.visibleDashboardQuickSections;
     final visibleBottom = settings.visibleBottomNavigationSections;
 
@@ -1022,224 +1642,281 @@ class SettingsView extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Startup Page (Single-select tile + Dialog)
+            if (showStartupPage) ...[
+              ListTile(
+                key: const Key('settings_startup_page_tile'),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  _getAppSectionIcon(settings.effectiveStartupSection),
+                  color: context.colorScheme.primary,
+                ),
+                title: Text(
+                  context.l10n.settingsStartupPage,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                subtitle: Text(
+                  _getLocalizedSectionName(
+                    context,
+                    settings.effectiveStartupSection,
+                  ),
+                  style: const TextStyle(fontSize: 11),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () =>
+                    _showStartupPageDialog(context, settings, notifier),
+              ),
+              if (showQuickActions || showBottomNav) ...[
+                const SizedBox(height: 8),
+                const Divider(),
+                const SizedBox(height: 8),
+              ],
+            ],
+
+            // 2. Dashboard Quick Actions (Demand 4)
+            if (showQuickActions) ...[
+              Text(
+                context.l10n.settingsDashboardQuickActions,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                context.l10n.settingsDashboardQuickActionsDesc,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: context.colorScheme.outline,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              if (visibleQuick.isNotEmpty) ...[
+                Text(
+                  context.l10n.settingsDashboardQuickActionsOrderTitle,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ReorderableListView.builder(
+                  key: const Key('settings_dashboard_quick_reorder_list'),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: visibleQuick.length,
+                  onReorder: (oldIndex, newIndex) {
+                    if (oldIndex < newIndex) newIndex -= 1;
+                    final items = List<AppSection>.from(visibleQuick);
+                    final item = items.removeAt(oldIndex);
+                    items.insert(newIndex, item);
+                    notifier.setVisibleDashboardQuickSections(items);
+                  },
+                  itemBuilder: (context, index) {
+                    final sec = visibleQuick[index];
+                    return ListTile(
+                      key: ValueKey('settings_quick_reorder_${sec.name}'),
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      leading: Icon(_getAppSectionIcon(sec), size: 18),
+                      title: Text(_getLocalizedSectionName(context, sec)),
+                      trailing: const Icon(Icons.drag_handle, size: 20),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                const Divider(),
+              ] else ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    context.l10n.settingsDashboardQuickActionsEmpty,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: context.colorScheme.outline,
+                    ),
+                  ),
+                ),
+                const Divider(),
+              ],
+
+              Text(
+                context.l10n.settingsDashboardQuickActionsCandidates,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 4),
+              ...settings.availableSections
+                  .where((sec) => sec != AppSection.dashboard)
+                  .map((sec) {
+                    final isChecked = visibleQuick.contains(sec);
+                    return CheckboxListTile(
+                      key: Key('settings_dashboard_quick_checkbox_${sec.name}'),
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      title: Row(
+                        children: [
+                          Icon(
+                            _getAppSectionIcon(sec),
+                            size: 18,
+                            color: isChecked
+                                ? context.colorScheme.primary
+                                : null,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              _getLocalizedSectionName(context, sec),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      value: isChecked,
+                      onChanged: (bool? checked) {
+                        final current = List<AppSection>.from(visibleQuick);
+                        if (checked == true) {
+                          if (!current.contains(sec)) {
+                            current.add(sec);
+                          }
+                        } else {
+                          current.remove(sec);
+                        }
+                        notifier.setVisibleDashboardQuickSections(current);
+                      },
+                    );
+                  }),
+              if (showBottomNav) ...[
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+              ],
+            ],
+
+            // 3. Bottom Navigation (Multi-select and reorder)
+            if (showBottomNav) ...[
+              Text(
+                context.l10n.settingsBottomNav,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                context.l10n.settingsBottomNavDesc,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: context.colorScheme.outline,
+                ),
+              ),
+              if (visibleBottom.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  context.l10n.settingsBottomNavOrderTitle,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ReorderableListView.builder(
+                  key: const Key('settings_bottom_nav_reorder_list'),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: visibleBottom.length,
+                  onReorder: (oldIndex, newIndex) {
+                    if (oldIndex < newIndex) newIndex -= 1;
+                    final items = List<AppSection>.from(visibleBottom);
+                    final item = items.removeAt(oldIndex);
+                    items.insert(newIndex, item);
+                    notifier.setVisibleBottomNavigationSections(items);
+                  },
+                  itemBuilder: (context, index) {
+                    final sec = visibleBottom[index];
+                    return ListTile(
+                      key: ValueKey('settings_reorder_${sec.name}'),
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      leading: Icon(_getAppSectionIcon(sec), size: 18),
+                      title: Text(_getLocalizedSectionName(context, sec)),
+                      trailing: const Icon(Icons.drag_handle, size: 20),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                const Divider(),
+              ],
+              const SizedBox(height: 8),
+              ...settings.availableSections.map((sec) {
+                final isChecked = visibleBottom.contains(sec);
+                return CheckboxListTile(
+                  key: Key('settings_bottom_nav_checkbox_${sec.name}'),
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  title: Row(
+                    children: [
+                      Icon(
+                        _getAppSectionIcon(sec),
+                        size: 18,
+                        color: isChecked ? context.colorScheme.primary : null,
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          _getLocalizedSectionName(context, sec),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  value: isChecked,
+                  onChanged: (bool? checked) {
+                    final current = List<AppSection>.from(visibleBottom);
+                    if (checked == true) {
+                      if (!current.contains(sec)) {
+                        current.add(sec);
+                      }
+                    } else {
+                      current.remove(sec);
+                    }
+                    notifier.setVisibleBottomNavigationSections(current);
+                  },
+                );
+              }),
+            ],
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
             ListTile(
-              key: const Key('settings_startup_page_tile'),
+              key: const Key('settings_file_toolbar_tile'),
               contentPadding: EdgeInsets.zero,
               leading: Icon(
-                _getAppSectionIcon(settings.effectiveStartupSection),
+                Icons.tune,
                 color: context.colorScheme.primary,
               ),
               title: Text(
-                context.l10n.settingsStartupPage,
+                context.l10n.sftpConfigureToolbar,
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
               ),
               subtitle: Text(
-                _getLocalizedSectionName(
-                  context,
-                  settings.effectiveStartupSection,
-                ),
+                context.l10n.sftpConfigureToolbarDesc,
                 style: const TextStyle(fontSize: 11),
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showStartupPageDialog(context, settings, notifier),
+              onTap: () => RemoteFileToolbarDialog.show(context),
             ),
-            const SizedBox(height: 8),
-            const Divider(),
-            const SizedBox(height: 8),
-
-            // 2. Dashboard Quick Actions (Demand 4)
-            Text(
-              context.l10n.settingsDashboardQuickActions,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              context.l10n.settingsDashboardQuickActionsDesc,
-              style: TextStyle(
-                fontSize: 11,
-                color: context.colorScheme.outline,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            if (visibleQuick.isNotEmpty) ...[
-              Text(
-                context.l10n.settingsDashboardQuickActionsOrderTitle,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 4),
-              ReorderableListView.builder(
-                key: const Key('settings_dashboard_quick_reorder_list'),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: visibleQuick.length,
-                onReorder: (oldIndex, newIndex) {
-                  if (oldIndex < newIndex) newIndex -= 1;
-                  final items = List<AppSection>.from(visibleQuick);
-                  final item = items.removeAt(oldIndex);
-                  items.insert(newIndex, item);
-                  notifier.setVisibleDashboardQuickSections(items);
-                },
-                itemBuilder: (context, index) {
-                  final sec = visibleQuick[index];
-                  return ListTile(
-                    key: ValueKey('settings_quick_reorder_${sec.name}'),
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                    leading: Icon(_getAppSectionIcon(sec), size: 18),
-                    title: Text(_getLocalizedSectionName(context, sec)),
-                    trailing: const Icon(Icons.drag_handle, size: 20),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              const Divider(),
-            ] else ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  context.l10n.settingsDashboardQuickActionsEmpty,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontStyle: FontStyle.italic,
-                    color: context.colorScheme.outline,
-                  ),
-                ),
-              ),
-              const Divider(),
-            ],
-
-            Text(
-              context.l10n.settingsDashboardQuickActionsCandidates,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-            ),
-            const SizedBox(height: 4),
-            ...settings.availableSections
-                .where((sec) => sec != AppSection.dashboard)
-                .map((sec) {
-                  final isChecked = visibleQuick.contains(sec);
-                  return CheckboxListTile(
-                    key: Key('settings_dashboard_quick_checkbox_${sec.name}'),
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                    title: Row(
-                      children: [
-                        Icon(
-                          _getAppSectionIcon(sec),
-                          size: 18,
-                          color: isChecked ? context.colorScheme.primary : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(_getLocalizedSectionName(context, sec)),
-                      ],
-                    ),
-                    value: isChecked,
-                    onChanged: (bool? checked) {
-                      final current = List<AppSection>.from(visibleQuick);
-                      if (checked == true) {
-                        if (!current.contains(sec)) {
-                          current.add(sec);
-                        }
-                      } else {
-                        current.remove(sec);
-                      }
-                      notifier.setVisibleDashboardQuickSections(current);
-                    },
-                  );
-                }),
-
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 8),
-
-            // 3. Bottom Navigation (Multi-select and reorder)
-            Text(
-              context.l10n.settingsBottomNav,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              context.l10n.settingsBottomNavDesc,
-              style: TextStyle(
-                fontSize: 12,
-                color: context.colorScheme.outline,
-              ),
-            ),
-            if (visibleBottom.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(
-                context.l10n.settingsBottomNavOrderTitle,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 4),
-              ReorderableListView.builder(
-                key: const Key('settings_bottom_nav_reorder_list'),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: visibleBottom.length,
-                onReorder: (oldIndex, newIndex) {
-                  if (oldIndex < newIndex) newIndex -= 1;
-                  final items = List<AppSection>.from(visibleBottom);
-                  final item = items.removeAt(oldIndex);
-                  items.insert(newIndex, item);
-                  notifier.setVisibleBottomNavigationSections(items);
-                },
-                itemBuilder: (context, index) {
-                  final sec = visibleBottom[index];
-                  return ListTile(
-                    key: ValueKey('settings_reorder_${sec.name}'),
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                    leading: Icon(_getAppSectionIcon(sec), size: 18),
-                    title: Text(_getLocalizedSectionName(context, sec)),
-                    trailing: const Icon(Icons.drag_handle, size: 20),
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
-              const Divider(),
-            ],
-            const SizedBox(height: 8),
-            ...settings.availableSections.map((sec) {
-              final isChecked = visibleBottom.contains(sec);
-              return CheckboxListTile(
-                key: Key('settings_bottom_nav_checkbox_${sec.name}'),
-                dense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                title: Row(
-                  children: [
-                    Icon(
-                      _getAppSectionIcon(sec),
-                      size: 18,
-                      color: isChecked ? context.colorScheme.primary : null,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(_getLocalizedSectionName(context, sec)),
-                  ],
-                ),
-                value: isChecked,
-                onChanged: (bool? checked) {
-                  final current = List<AppSection>.from(visibleBottom);
-                  if (checked == true) {
-                    if (!current.contains(sec)) {
-                      current.add(sec);
-                    }
-                  } else {
-                    current.remove(sec);
-                  }
-                  notifier.setVisibleBottomNavigationSections(current);
-                },
-              );
-            }),
           ],
         ),
       ),

@@ -9,6 +9,13 @@ const _tmuxKey = 'valhalla_terminal_use_tmux_v1';
 const _fontSizeKey = 'valhalla_terminal_font_size_v1';
 const _pinnedKeysKey = 'valhalla_terminal_pinned_keys_v1';
 
+class _FailedModeStorage extends LocalStorageService {
+  _FailedModeStorage(super.prefs);
+  @override
+  Future<void> setUseTmuxForTerminal(bool enabled) async =>
+      throw StateError('fixture failed save');
+}
+
 Future<ProviderContainer> _container() async {
   final localStorage = LocalStorageService(
     await SharedPreferences.getInstance(),
@@ -29,6 +36,21 @@ void main() {
     addTearDown(container.dispose);
 
     expect(container.read(terminalSettingsProvider).useTmux, isFalse);
+  });
+
+  test('failed mode save leaves effective default unchanged', () async {
+    final storage = _FailedModeStorage(await SharedPreferences.getInstance());
+    final container = ProviderContainer(
+      overrides: [localStorageServiceProvider.overrideWithValue(storage)],
+    );
+    addTearDown(container.dispose);
+    expect(container.read(terminalSettingsProvider).useTmux, isFalse);
+    await expectLater(
+      container.read(terminalSettingsProvider.notifier).setUseTmux(true),
+      throwsStateError,
+    );
+    expect(container.read(terminalSettingsProvider).useTmux, isFalse);
+    expect(storage.getUseTmuxForTerminal(), isFalse);
   });
 
   test('显式存过 true 时读回 true', () async {

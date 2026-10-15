@@ -125,7 +125,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get switchAgent => '切换运维 Agent';
 
   @override
-  String get agentClaudeCode => 'Claude CodeX';
+  String get agentClaudeCode => 'Claude Code';
 
   @override
   String get agentCodex => 'OpenAI Codex';
@@ -403,14 +403,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsResetDefault => '重置所有设置';
 
   @override
-  String get settingsTerminalUseTmux => '会话保活 (tmux)';
+  String get settingsTerminalUseTmux => '手动新建终端模式';
 
   @override
   String get settingsTerminalUseTmuxSubtitle => '在远端服务器上用 tmux 承载终端会话';
 
   @override
   String get settingsTerminalUseTmuxDescription =>
-      '断线后仍保留终端输出，需要远端已安装 tmux。更改仅对新打开的终端标签页生效。';
+      '仅影响手动点击新建的终端。自动新终端始终使用普通 SSH，不保留可恢复历史；开启 tmux 后，手动新建的会话可断线恢复（需远端安装 tmux）。已有历史的恢复不受影响。';
 
   @override
   String get settingsTerminalFontSize => '终端字体大小';
@@ -1328,6 +1328,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get transferFailedDownload => '下载失败';
+
+  @override
+  String get transferPhasePreparing => '准备中...';
+
+  @override
+  String get transferPhaseVerifyingPartial => '校验续传片段...';
+
+  @override
+  String get transferPhaseVerifying => '校验完整性...';
 
   @override
   String get stopGeneration => '停止';
@@ -4108,6 +4117,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get updateDownloadCompleted => '下载完成且校验通过';
 
   @override
+  String get updatePhaseResolving => '正在连接更新服务器...';
+
+  @override
+  String get updatePhaseVerifying => '正在校验更新包...';
+
+  @override
+  String get updateOpeningInstaller => '准备启动安装...';
+
+  @override
   String get updateInstall => '安装更新';
 
   @override
@@ -5269,6 +5287,250 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get terminalNoticePlainInterrupted => '连接中断，非 tmux 命令行进程无法继续恢复';
+
+  @override
+  String get terminalHistoryDeleteDialogTitle => '删除会话历史';
+
+  @override
+  String get terminalHistoryTerminateRemote => '同时终止服务器终端';
+
+  @override
+  String get terminalHistoryTerminateConfirmTitle => '确定终止远端会话？';
+
+  @override
+  String get terminalHistoryTerminateConfirmMessage =>
+      '此操作将终止远端 tmux 会话并结束其中正在运行的所有进程。';
+
+  @override
+  String get terminalErrorHistoryDeleteFailed => '删除终端历史记录失败';
+
+  @override
+  String get terminalErrorHistoryTerminateFailed => '终止远端会话失败';
+
+  @override
+  String get terminalErrorTargetChanged => '目标服务器已变更，请在当前服务器上重新打开会话。';
+
+  @override
+  String get terminalModeStandard => '普通SSH终端（默认，不保留历史）';
+
+  @override
+  String get terminalModeTmux => 'tmux终端（保留远端会话与历史）';
+
+  @override
+  String get terminalModeSaveFailed => '保存终端模式失败，请重试';
+
+  @override
+  String get sftpNew => '新建';
+
+  @override
+  String get terminalHistorySearchHint => '搜索会话名称…';
+
+  @override
+  String get configMigrationBoundaryNote => '仅备份/恢复本地应用配置，不修改远端服务器数据。';
+
+  @override
+  String get configMigrationSubtitle => '导出或导入本地应用设置及服务器配置';
+
+  @override
+  String get installAppId => '应用包名';
+
+  @override
+  String get installArchitecture => '架构';
+
+  @override
+  String get installPlatform => '运行平台';
+
+  @override
+  String get settingsAboutPrivacyDesc => '版本信息、开源许可与隐私政策';
+
+  @override
+  String get settingsAccentColorDesc => '自定义应用主题强调色';
+
+  @override
+  String get settingsSearchHint => '搜索设置…';
+
+  @override
+  String get settingsSearchNoResults => '未找到匹配的设置';
+
+  @override
+  String get settingsSecurityDesc => '可信主机、凭据管理与安全设置';
+
+  @override
+  String get agentExpandDetails => '详情';
+
+  @override
+  String get agentCollapseDetails => '折叠';
+
+  @override
+  String get transferPauseAll => '全部暂停';
+
+  @override
+  String get transferResumePaused => '恢复已暂停';
+
+  @override
+  String get transferFilterAll => '全部';
+
+  @override
+  String get transferFilterActive => '进行中';
+
+  @override
+  String get transferFilterFailed => '失败';
+
+  @override
+  String get transferFilterCompleted => '已完成';
+
+  @override
+  String get transferPauseReasonUser => '用户手动暂停';
+
+  @override
+  String get transferPauseReasonNetwork => '网络断开暂停';
+
+  @override
+  String get transferPauseReasonAppRestart => '应用重启后暂停';
+
+  @override
+  String get transferRemotePath => '远端路径';
+
+  @override
+  String get transferLocalPath => '本地路径';
+
+  @override
+  String get transferErrorDetail => '错误详情';
+
+  @override
+  String get chatFailureKindAuth => '需要认证';
+
+  @override
+  String get chatFailureKindModelUnavailable => '模型不可用';
+
+  @override
+  String get chatFailureKindConnection => '连接异常';
+
+  @override
+  String get chatFailureKindHistory => '会话历史异常';
+
+  @override
+  String get chatFailureKindOther => '请求失败';
+
+  @override
+  String get chatFailureActionLogin => '前往认证';
+
+  @override
+  String get chatFailureActionRunSettings => '运行设置';
+
+  @override
+  String get chatFailureActionReconnect => '重新连接';
+
+  @override
+  String get chatFailureActionReloadHistory => '重试读取';
+
+  @override
+  String get chatFailureActionDetails => '查看详情';
+
+  @override
+  String get sftpConfigureToolbar => '自定义工具栏';
+
+  @override
+  String get sftpConfigureToolbarDesc => '选择直接固定在工具栏上的操作，其余操作将显示在“更多”菜单中。';
+
+  @override
+  String get sftpToolbarPreferenceSaveFailed => '保存工具栏偏好设置失败';
+
+  @override
+  String get sftpToolbarActionView => '切换视图';
+
+  @override
+  String agentUpdateNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个 Agent 可更新',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agentUpdateViewAction => '查看';
+
+  @override
+  String get agentUpdateCheckAll => '检查更新';
+
+  @override
+  String get agentUpdateCheck => '检查更新';
+
+  @override
+  String get agentUpdateChecking => '正在检查...';
+
+  @override
+  String get agentUpdateAvailable => '有可用更新';
+
+  @override
+  String get agentUpdateUpToDate => '已是最新';
+
+  @override
+  String get agentUpdateDialogTitle => '更新 Agent';
+
+  @override
+  String get agentUpdateConfirmButton => '确认并更新';
+
+  @override
+  String get agentUpdateCancelButton => '取消';
+
+  @override
+  String get agentUpdateTargetServer => '服务器';
+
+  @override
+  String get agentUpdateTargetEnvironment => '运行环境';
+
+  @override
+  String get agentUpdateTargetIdentity => '目标标识';
+
+  @override
+  String get agentUpdateCommandPreview => '命令预览';
+
+  @override
+  String get agentUpdateClaudeMigrationNotice =>
+      '本次更新将旧版 Claude 适配器 (claude-code-acp) 迁移至官方 claude-agent-acp 适配器。现有历史记录与登录凭据将完整保留。';
+
+  @override
+  String get agentUpdateAgyNotice =>
+      'AgY CLI 通过其官方稳定发布渠道更新。实际安装的版本可能高于确认快照所显示的版本。';
+
+  @override
+  String get agentUpdateLogs => '更新日志';
+
+  @override
+  String get agentUpdateCopyLog => '复制日志';
+
+  @override
+  String get agentUpdateLogCopied => '更新日志已复制到剪贴板';
+
+  @override
+  String get agentUpdateSuccess => 'Agent 更新成功';
+
+  @override
+  String get agentUpdateFailed => '更新失败';
+
+  @override
+  String get agentUpdateInterrupted => '更新被中断或连接断开。请在重试前先核实实际版本；为安全起见已禁用自动重试。';
+
+  @override
+  String get agentUpdateInProgress => '该服务器当前正在进行更新操作。';
+
+  @override
+  String get agentUpdateBusy => '服务器或 Agent 正忙，请等待当前操作完成。';
+
+  @override
+  String get agentUpdateVersionUnknown => '未知';
+
+  @override
+  String get agentUpdateSource => '来源';
+
+  @override
+  String get agentUpdateLastChecked => '上次检查';
+
+  @override
+  String get agentUpdateNeverChecked => '从未检查';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -5392,7 +5654,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get switchAgent => '切換運維 Agent';
 
   @override
-  String get agentClaudeCode => 'Claude CodeX';
+  String get agentClaudeCode => 'Claude Code';
 
   @override
   String get agentCodex => 'OpenAI Codex';
@@ -5670,14 +5932,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get settingsResetDefault => '重置所有設定';
 
   @override
-  String get settingsTerminalUseTmux => '工作階段保活 (tmux)';
+  String get settingsTerminalUseTmux => '手動新建終端模式';
 
   @override
   String get settingsTerminalUseTmuxSubtitle => '在遠端伺服器上用 tmux 承載終端機工作階段';
 
   @override
   String get settingsTerminalUseTmuxDescription =>
-      '斷線後仍保留終端機輸出，需要遠端已安裝 tmux。更改僅對新打開的終端機標籤頁生效。';
+      '僅影響手動點擊新建的終端。自動新終端始終使用普通 SSH，不保留可恢復歷史；開啟 tmux 後，手動新建的會話可斷線恢復（需遠端安裝 tmux）。已有歷史的恢復不受影響。';
 
   @override
   String get settingsTerminalFontSize => '終端機字體大小';
@@ -6595,6 +6857,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get transferFailedDownload => '下載失敗';
+
+  @override
+  String get transferPhasePreparing => '準備中...';
+
+  @override
+  String get transferPhaseVerifyingPartial => '校驗續傳片段...';
+
+  @override
+  String get transferPhaseVerifying => '校驗完整性...';
 
   @override
   String get stopGeneration => '停止';
@@ -9375,6 +9646,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get updateDownloadCompleted => '下載完成且校驗通過';
 
   @override
+  String get updatePhaseResolving => '正在連接更新伺服器...';
+
+  @override
+  String get updatePhaseVerifying => '正在校驗更新套件...';
+
+  @override
+  String get updateOpeningInstaller => '準備啟動安裝...';
+
+  @override
   String get updateInstall => '安裝更新';
 
   @override
@@ -10537,4 +10817,248 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get terminalNoticePlainInterrupted => '連線中斷，非 tmux 命令列處理程序無法繼續復原';
+
+  @override
+  String get terminalHistoryDeleteDialogTitle => '刪除工作階段歷史';
+
+  @override
+  String get terminalHistoryTerminateRemote => '同時終止伺服器終端機';
+
+  @override
+  String get terminalHistoryTerminateConfirmTitle => '確定終止遠端工作階段？';
+
+  @override
+  String get terminalHistoryTerminateConfirmMessage =>
+      '此操作將終止遠端 tmux 工作階段並結束其中正在執行的所有處理程序。';
+
+  @override
+  String get terminalErrorHistoryDeleteFailed => '刪除終端機歷史記錄失敗';
+
+  @override
+  String get terminalErrorHistoryTerminateFailed => '終止遠端工作階段失敗';
+
+  @override
+  String get terminalErrorTargetChanged => '目標伺服器已變更，請在目前伺服器上重新開啟工作階段。';
+
+  @override
+  String get terminalModeStandard => '普通SSH終端（默認，不保留歷史）';
+
+  @override
+  String get terminalModeTmux => 'tmux終端（保留遠端會話與歷史）';
+
+  @override
+  String get terminalModeSaveFailed => '保存終端模式失敗，請重試';
+
+  @override
+  String get sftpNew => '新建';
+
+  @override
+  String get terminalHistorySearchHint => '搜尋會話名稱…';
+
+  @override
+  String get configMigrationBoundaryNote => '僅備份/還原偏好設定，不修改遠端伺服器資料。';
+
+  @override
+  String get configMigrationSubtitle => '匯出或匯入本機應用程式設定與伺服器設定';
+
+  @override
+  String get installAppId => '應用程式識別碼';
+
+  @override
+  String get installArchitecture => '架構';
+
+  @override
+  String get installPlatform => '執行平台';
+
+  @override
+  String get settingsAboutPrivacyDesc => '版本資訊、開放原始碼授權與隱私權政策';
+
+  @override
+  String get settingsAccentColorDesc => '自訂主題強調色';
+
+  @override
+  String get settingsSearchHint => '搜尋設定…';
+
+  @override
+  String get settingsSearchNoResults => '找不到符合的設定';
+
+  @override
+  String get settingsSecurityDesc => '受信任主機、憑證管理與安全性操作';
+
+  @override
+  String get agentExpandDetails => '詳細資料';
+
+  @override
+  String get agentCollapseDetails => '收合';
+
+  @override
+  String get transferPauseAll => '全部暫停';
+
+  @override
+  String get transferResumePaused => '繼續已暫停';
+
+  @override
+  String get transferFilterAll => '全部';
+
+  @override
+  String get transferFilterActive => '傳輸中';
+
+  @override
+  String get transferFilterFailed => '失敗';
+
+  @override
+  String get transferFilterCompleted => '已完成';
+
+  @override
+  String get transferPauseReasonUser => '使用者手動暫停';
+
+  @override
+  String get transferPauseReasonNetwork => '網路斷線暫停';
+
+  @override
+  String get transferPauseReasonAppRestart => '應用程式重啟後暫停';
+
+  @override
+  String get transferRemotePath => '遠端路徑';
+
+  @override
+  String get transferLocalPath => '本機路徑';
+
+  @override
+  String get transferErrorDetail => '錯誤詳細資訊';
+
+  @override
+  String get chatFailureKindAuth => '需要驗證';
+
+  @override
+  String get chatFailureKindModelUnavailable => '模型無法使用';
+
+  @override
+  String get chatFailureKindConnection => '連線異常';
+
+  @override
+  String get chatFailureKindHistory => '歷史紀錄異常';
+
+  @override
+  String get chatFailureKindOther => '請求失敗';
+
+  @override
+  String get chatFailureActionLogin => '前往登入';
+
+  @override
+  String get chatFailureActionRunSettings => '執行設定';
+
+  @override
+  String get chatFailureActionReconnect => '重新連線';
+
+  @override
+  String get chatFailureActionReloadHistory => '重試讀取';
+
+  @override
+  String get chatFailureActionDetails => '詳細資料';
+
+  @override
+  String get sftpConfigureToolbar => '自訂工具列';
+
+  @override
+  String get sftpConfigureToolbarDesc => '選擇直接固定在工具列上的操作，其餘操作將顯示在「更多」選單中。';
+
+  @override
+  String get sftpToolbarPreferenceSaveFailed => '儲存工具列偏好設定失敗';
+
+  @override
+  String get sftpToolbarActionView => '切換檢視';
+
+  @override
+  String agentUpdateNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 個 Agent 可更新',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agentUpdateViewAction => '查看';
+
+  @override
+  String get agentUpdateCheckAll => '檢查更新';
+
+  @override
+  String get agentUpdateCheck => '檢查更新';
+
+  @override
+  String get agentUpdateChecking => '正在檢查...';
+
+  @override
+  String get agentUpdateAvailable => '有可用更新';
+
+  @override
+  String get agentUpdateUpToDate => '已是最新';
+
+  @override
+  String get agentUpdateDialogTitle => '更新 Agent';
+
+  @override
+  String get agentUpdateConfirmButton => '確認並更新';
+
+  @override
+  String get agentUpdateCancelButton => '取消';
+
+  @override
+  String get agentUpdateTargetServer => '伺服器';
+
+  @override
+  String get agentUpdateTargetEnvironment => '執行環境';
+
+  @override
+  String get agentUpdateTargetIdentity => '目標識別';
+
+  @override
+  String get agentUpdateCommandPreview => '命令預覽';
+
+  @override
+  String get agentUpdateClaudeMigrationNotice =>
+      '本次更新將舊版 Claude 適配器 (claude-code-acp) 遷移至官方 claude-agent-acp 適配器。現有歷史記錄與登入憑證將完整保留。';
+
+  @override
+  String get agentUpdateAgyNotice =>
+      'AgY CLI 透過其官方穩定發布管道更新。實際安裝的版本可能高於確認快照所顯示的版本。';
+
+  @override
+  String get agentUpdateLogs => '更新日誌';
+
+  @override
+  String get agentUpdateCopyLog => '複製日誌';
+
+  @override
+  String get agentUpdateLogCopied => '更新日誌已複製到剪貼簿';
+
+  @override
+  String get agentUpdateSuccess => 'Agent 更新成功';
+
+  @override
+  String get agentUpdateFailed => '更新失敗';
+
+  @override
+  String get agentUpdateInterrupted => '更新被中斷或連線中斷。請在重試前先核實實際版本；為確保安全已停用自動重試。';
+
+  @override
+  String get agentUpdateInProgress => '該伺服器目前正在進行更新作業。';
+
+  @override
+  String get agentUpdateBusy => '伺服器或 Agent 正忙，請等待目前操作完成。';
+
+  @override
+  String get agentUpdateVersionUnknown => '未知';
+
+  @override
+  String get agentUpdateSource => '來源';
+
+  @override
+  String get agentUpdateLastChecked => '上次檢查';
+
+  @override
+  String get agentUpdateNeverChecked => '從未檢查';
 }

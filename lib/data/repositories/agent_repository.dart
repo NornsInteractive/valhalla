@@ -127,15 +127,20 @@ class AgentRepository {
         .toSet();
     return ids.map((id) {
       final preset = kBuiltinAgentPresets[id];
+      // Legacy enum preferences predate the adapter rename. Preserve their
+      // working command until the user confirms and verifies an upgrade.
+      final legacyClaude = id == 'builtin-claude-code';
       return AgentProfile(
         id: id,
         serverId: serverId,
         name: preset?.name ?? id,
         description: preset?.description ?? 'Built-in agent',
         cliCommand: preset?.cliCommand ?? id,
-        acpCommand: preset?.acpCommand,
+        acpCommand: legacyClaude ? 'claude-code-acp' : preset?.acpCommand,
         installCommand: preset?.cliInstallCommand,
-        acpInstallCommand: preset?.acpInstallCommand,
+        acpInstallCommand: legacyClaude
+            ? 'npm install -g @zed-industries/claude-code-acp'
+            : preset?.acpInstallCommand,
         loginCheckCommand: preset?.loginCheckCommand,
         loginCommand: preset?.loginCommand,
       );
@@ -175,7 +180,13 @@ class AgentRepository {
       );
       final acpInstallCommand = fill(
         profile.acpInstallCommand,
-        preset.acpInstallCommand,
+        preset.id == 'builtin-claude-code' &&
+                const [
+                  'claude-code-acp',
+                  'claude-code-acp --stdio',
+                ].contains(profile.acpCommand)
+            ? 'npm install -g @zed-industries/claude-code-acp'
+            : preset.acpInstallCommand,
       );
       final loginCheckCommand = fill(
         profile.loginCheckCommand,
@@ -244,7 +255,13 @@ class AgentRepository {
       if (bogus == null || profile.acpCommand != bogus) return profile;
 
       changed = true;
-      return profile.copyWith(acpCommand: preset.acpCommand);
+      // Removing a historical unsupported flag must not switch an installed
+      // legacy adapter to a different package before an explicit update.
+      return profile.copyWith(
+        acpCommand: preset.id == 'builtin-claude-code'
+            ? 'claude-code-acp'
+            : preset.acpCommand,
+      );
     }).toList();
 
     _acpRepairInProgress = false;

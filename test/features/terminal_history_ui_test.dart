@@ -44,8 +44,11 @@ class _Connection extends ServerConnectionNotifier {
 }
 
 class _Bridge extends TerminalSessionBridge {
-  _Bridge({this.testMode = TerminalSessionMode.plain, super.sessionIntent})
-    : super(terminal: Terminal(), serverName: 'fixture');
+  _Bridge({
+    this.testMode = TerminalSessionMode.plain,
+    super.sessionIntent,
+    super.preferTmux,
+  }) : super(terminal: Terminal(), serverName: 'fixture');
   final TerminalSessionMode testMode;
   @override
   TerminalSessionMode get mode => testMode;
@@ -62,6 +65,16 @@ class _Notifier extends SeededTerminalNotifier {
   Completer<void>? renameGate;
   Completer<void>? defaultGate;
   bool failDefault = false;
+  final deletions = <(String, bool, String?)>[];
+  @override
+  Future<void> deleteHistory(
+    String id, {
+    bool terminateRemote = false,
+    String? expectedTargetKey,
+  }) async {
+    deletions.add((id, terminateRemote, expectedTargetKey));
+  }
+
   @override
   Future<void> ensureInitialized() async => initializations++;
   @override
@@ -90,14 +103,18 @@ class _Notifier extends SeededTerminalNotifier {
   Future<void> addNewTab([String? customTitle]) async => freshStarts++;
 }
 
-TerminalHistoryRecord _record() => TerminalHistoryRecord(
-  id: 'session-1',
+TerminalHistoryRecord _record({
+  String id = 'session-1',
+  String title = 'History fixture',
+  int minute = 35,
+}) => TerminalHistoryRecord(
+  id: id,
   serverId: terminalFixtureServer.id,
   targetKey: TerminalHistoryRecord.targetFor(terminalFixtureServer),
-  remoteSessionName: 'valhalla_terminal-fixture_session-1',
-  title: 'History fixture',
+  remoteSessionName: 'valhalla_terminal-fixture_$id',
+  title: title,
   createdAt: DateTime.utc(2026, 10, 14),
-  lastUsedAt: DateTime.utc(2026, 10, 14, 18, 35),
+  lastUsedAt: DateTime.utc(2026, 10, 14, 18, minute),
 );
 
 ProviderContainer _container(_Notifier notifier) {
@@ -118,15 +135,23 @@ ProviderContainer _container(_Notifier notifier) {
 Future<void> _pump(
   WidgetTester tester,
   ProviderContainer container,
-  Widget child,
-) async {
+  Widget child, {
+  Locale locale = const Locale('en'),
+  double textScale = 1,
+}) async {
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
       child: MaterialApp(
-        locale: const Locale('en'),
+        locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         home: Scaffold(body: child),
       ),
     ),
@@ -145,11 +170,54 @@ Widget _dialogButtons() => Consumer(
         onPressed: () => showStartupSessionDialog(context, ref),
         child: const Text('Open startup'),
       ),
+      TextButton(
+        onPressed: () => showDeleteHistoryDialog(context, ref, _record()),
+        child: const Text('Open delete'),
+      ),
     ],
   ),
 );
 
 void main() {
+  testWidgets('history delete defaults to local-only and pins dialog target', (
+    tester,
+  ) async {
+    final record = _record();
+    final notifier = _Notifier(SshTerminalState(tabs: [], history: [record]));
+    await _pump(tester, _container(notifier), _dialogButtons());
+    await tester.tap(find.text('Open delete'));
+    await tester.pumpAndSettle();
+    final checkbox = tester.widget<Checkbox>(find.byType(Checkbox));
+    expect(checkbox.value, isFalse);
+    expect(
+      checkbox.onChanged,
+      isNull,
+      reason: 'offline cannot terminate remote',
+    );
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await tester.tap(find.widgetWithText(FilledButton, l10n.delete));
+    await tester.pumpAndSettle();
+    expect(notifier.deletions, [(record.id, false, record.targetKey)]);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(tester.testTextInput.isVisible, isFalse);
+  });
+
+  testWidgets(
+    'cancelling history delete performs no local or remote operation',
+    (tester) async {
+      final notifier = _Notifier(
+        SshTerminalState(tabs: [], history: [_record()]),
+      );
+      await _pump(tester, _container(notifier), _dialogButtons());
+      await tester.tap(find.text('Open delete'));
+      await tester.pumpAndSettle();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
+      await tester.pumpAndSettle();
+      expect(notifier.deletions, isEmpty);
+      expect(find.byType(AlertDialog), findsNothing);
+    },
+  );
   testWidgets(
     'history entry and drawer dismissal never reopen the mobile keyboard',
     (tester) async {
@@ -260,9 +328,9 @@ void main() {
       expect(titleText.maxLines, 1);
       expect(titleText.overflow, TextOverflow.ellipsis);
       expect(tester.getSize(find.text(title)).width, lessThanOrEqualTo(160));
-      final tooltip = find.byTooltip(title);
+      final tooltip = find.byTooltip(RegExp(RegExp.escape(title)));
       expect(tooltip, findsOneWidget);
-      expect(tester.widget<Tooltip>(tooltip).message, title);
+      expect(tester.widget<Tooltip>(tooltip).message, contains(title));
       expect(
         tester.state<TooltipState>(tooltip).ensureTooltipVisible(),
         isTrue,
@@ -638,4 +706,156 @@ void main() {
     expect(notifier.restores, 0);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'history search keeps offline open tabs separate from recoverable and ended',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 1100);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final bridge = _Bridge();
+      final output = <String>[];
+      bridge.terminal.onOutput = output.add;
+      final notifier = _Notifier(
+        SshTerminalState(
+          tabs: [
+            TerminalTab(
+              id: 'open',
+              title: 'Open disconnected',
+              terminal: bridge.terminal,
+              bridge: bridge,
+            ),
+          ],
+          history: [
+            _record(id: 'ended', title: 'Ended session', minute: 59),
+            _record(id: 'older', title: 'Older unknown', minute: 10),
+            _record(id: 'open', title: 'Open disconnected', minute: 1),
+            _record(id: 'newer', title: 'Newer available', minute: 30),
+          ],
+          historyStatuses: const {
+            'open': TerminalHistoryStatus.unknown,
+            'older': TerminalHistoryStatus.unknown,
+            'newer': TerminalHistoryStatus.available,
+            'ended': TerminalHistoryStatus.ended,
+          },
+        ),
+      );
+      await _pump(tester, _container(notifier), const TerminalHistoryDrawer());
+      await tester.pumpAndSettle();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(find.text(l10n.terminalStatusOpen), findsOneWidget);
+      expect(find.text(l10n.terminalRestoreSession), findsOneWidget);
+      expect(find.text(l10n.terminalStatusOffline), findsNWidgets(2));
+      final titles = [
+        'Open disconnected',
+        'Newer available',
+        'Older unknown',
+        'Ended session',
+      ];
+      for (var i = 0; i < titles.length - 1; i++) {
+        expect(
+          tester.getTopLeft(find.text(titles[i])).dy,
+          lessThan(tester.getTopLeft(find.text(titles[i + 1])).dy),
+        );
+      }
+      await tester.enterText(find.byType(TextField), '  OLDER  ');
+      await tester.pump();
+      expect(find.text('Older unknown'), findsOneWidget);
+      expect(find.text('Open disconnected'), findsNothing);
+      expect(find.text('Ended session'), findsNothing);
+      expect(find.text(l10n.terminalStatusOpen), findsNothing);
+      expect(find.text(l10n.terminalStatusOffline), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'not-a-session');
+      await tester.pump();
+      expect(find.text(l10n.stateEmpty), findsOneWidget);
+      expect(notifier.restores, 0);
+      expect(notifier.freshStarts, 0);
+      expect(output, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    '320dp 2x RTL history search closes without requesting terminal keyboard',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const openTitle = 'جلسة مفتوحة باسم طويل لاختبار العرض';
+      const availableTitle = 'جلسة قابلة للاستعادة';
+      final bridge = _Bridge(preferTmux: true);
+      final output = <String>[];
+      bridge.terminal.onOutput = output.add;
+      final notifier = _Notifier(
+        SshTerminalState(
+          tabs: [
+            TerminalTab(
+              id: 'open',
+              title: openTitle,
+              terminal: bridge.terminal,
+              bridge: bridge,
+            ),
+          ],
+          history: [
+            _record(id: 'open', title: openTitle),
+            _record(id: 'available', title: availableTitle),
+            _record(id: 'ended', title: 'جلسة منتهية'),
+          ],
+          historyStatuses: const {
+            'open': TerminalHistoryStatus.unknown,
+            'available': TerminalHistoryStatus.available,
+            'ended': TerminalHistoryStatus.ended,
+          },
+        ),
+      );
+      await _pump(
+        tester,
+        _container(notifier),
+        const SshTerminalView(),
+        locale: const Locale('ar'),
+        textScale: 2,
+      );
+      final canvas = tester.state<TerminalViewState>(find.byType(TerminalView));
+      expect(
+        find.byTooltip('$openTitle (SSH)'),
+        findsOneWidget,
+        reason:
+            'actual plain mode must not claim tmux from its requested preference',
+      );
+      await tester.tap(find.byKey(const Key('terminal_history_button')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final l10n = await AppLocalizations.delegate.load(const Locale('ar'));
+      expect(find.text(l10n.terminalStatusOpen), findsOneWidget);
+      expect(tester.testTextInput.isVisible, isFalse);
+      final search = find.descendant(
+        of: find.byType(TerminalHistoryDrawer),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(search, 'قابلة');
+      await tester.pumpAndSettle();
+      expect(find.text(availableTitle), findsOneWidget);
+      expect(find.text(l10n.terminalRestoreSession), findsOneWidget);
+      expect(find.text(l10n.terminalStatusOpen), findsNothing);
+      expect(tester.takeException(), isNull);
+      final scaffold = tester.state<ScaffoldState>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Scaffold && widget.drawer is TerminalHistoryDrawer,
+        ),
+      );
+      scaffold.closeDrawer();
+      await tester.pumpAndSettle();
+      expect(scaffold.isDrawerOpen, isFalse);
+      expect(canvas.hasInputConnection, isFalse);
+      expect(tester.testTextInput.isVisible, isFalse);
+      expect(notifier.restores, 0);
+      expect(notifier.freshStarts, 0);
+      expect(output, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
 }

@@ -12,7 +12,7 @@ import subprocess
 import time
 import xml.etree.ElementTree as ET
 
-PACKAGE = "com.antigravity.valhalla.valhalla"
+PACKAGE = "com.norns.valhalla"
 DUMP_PATH = "/sdcard/valhalla-soak.xml"
 MORE_LABELS = ("更多功能", "More features", "More")
 ROUTES = [

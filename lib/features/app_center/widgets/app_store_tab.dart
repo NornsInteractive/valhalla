@@ -160,6 +160,17 @@ class _AppStoreTabState extends ConsumerState<AppStoreTab>
       maxLines: 1,
     )..layout();
 
+    final versionPainter = TextPainter(
+      text: TextSpan(
+        text: '1.0.0',
+        style: typography.versionStyle,
+        locale: typography.locale,
+      ),
+      textDirection: typography.direction,
+      textScaler: typography.textScaler,
+      maxLines: 1,
+    )..layout();
+
     final badgePainter = TextPainter(
       text: TextSpan(
         text: 'Badge',
@@ -171,15 +182,15 @@ class _AppStoreTabState extends ConsumerState<AppStoreTab>
       maxLines: 1,
     )..layout();
 
-    const paddingHeight = 20.0;
+    const paddingHeight = 16.0;
     const iconHeight = 32.0;
     final titleRowHeight = math.max(iconHeight, titlePainter.height);
-    final footerHeight = math.max(
-      sourcePainter.height,
+    final versionRowHeight = math.max(
+      versionPainter.height,
       badgePainter.height + 3.0,
     );
-    const gap1 = 6.0;
-    const gap2 = 6.0;
+    const gap1 = 4.0;
+    const gap2 = 2.0;
 
     final totalHeight =
         paddingHeight +
@@ -187,14 +198,16 @@ class _AppStoreTabState extends ConsumerState<AppStoreTab>
         gap1 +
         summaryPainter.height +
         gap2 +
-        footerHeight;
+        sourcePainter.height +
+        versionRowHeight;
 
     titlePainter.dispose();
     badgePainter.dispose();
     summaryPainter.dispose();
     sourcePainter.dispose();
+    versionPainter.dispose();
 
-    return math.max(116.0, totalHeight.ceilToDouble());
+    return totalHeight.ceilToDouble();
   }
 
   List<CatalogApplication> _getFilteredCatalog() {
@@ -891,6 +904,8 @@ class _CatalogItemCard extends StatelessWidget {
     final sourceName =
         state.sources.where((s) => s.id == app.sourceId).firstOrNull?.name ??
         app.sourceId;
+    final rawVersion = app.version.trim();
+    final versionText = rawVersion.isNotEmpty ? rawVersion : '—';
 
     if (!isGrid) {
       return ValhallaCard(
@@ -1034,7 +1049,7 @@ class _CatalogItemCard extends StatelessWidget {
           onNavigateToTab: onNavigateToTab,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -1067,29 +1082,36 @@ class _CatalogItemCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 app.summary.isNotEmpty ? app.summary : app.category,
                 style: typography.summaryStyle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 2),
+              Text(
+                sourceName,
+                style: typography.sourceStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               Row(
                 children: [
                   Expanded(
-                    flex: 3,
-                    child: Text(
-                      sourceName,
-                      style: typography.sourceStyle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Tooltip(
+                      message: versionText,
+                      child: Text(
+                        versionText,
+                        style: typography.versionStyle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                   if (isInstalled) ...[
                     const SizedBox(width: 4),
                     Flexible(
-                      flex: 2,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 5,
@@ -1112,7 +1134,6 @@ class _CatalogItemCard extends StatelessWidget {
                   ] else if (!isCompatible) ...[
                     const SizedBox(width: 4),
                     Flexible(
-                      flex: 2,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 5,

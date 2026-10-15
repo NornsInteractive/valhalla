@@ -352,7 +352,7 @@ abstract class AppLocalizations {
   /// No description provided for @agentClaudeCode.
   ///
   /// In en, this message translates to:
-  /// **'Claude CodeX'**
+  /// **'Claude Code'**
   String get agentClaudeCode;
 
   /// No description provided for @agentCodex.
@@ -904,7 +904,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsTerminalUseTmux.
   ///
   /// In en, this message translates to:
-  /// **'Persistent Sessions (tmux)'**
+  /// **'Manual New Terminal Mode'**
   String get settingsTerminalUseTmux;
 
   /// No description provided for @settingsTerminalUseTmuxSubtitle.
@@ -916,7 +916,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsTerminalUseTmuxDescription.
   ///
   /// In en, this message translates to:
-  /// **'Keeps your terminal output after a disconnect. Requires tmux on the remote server. Changes apply to newly opened terminal tabs.'**
+  /// **'Only affects manually created terminals. Automatic new terminals always use standard SSH without recoverable history; with tmux enabled, manually created sessions can be restored after disconnection (requires remote tmux). Existing history recovery is unaffected.'**
   String get settingsTerminalUseTmuxDescription;
 
   /// No description provided for @settingsTerminalFontSize.
@@ -2730,6 +2730,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download failed'**
   String get transferFailedDownload;
+
+  /// No description provided for @transferPhasePreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing...'**
+  String get transferPhasePreparing;
+
+  /// No description provided for @transferPhaseVerifyingPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking partial file...'**
+  String get transferPhaseVerifyingPartial;
+
+  /// No description provided for @transferPhaseVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying integrity...'**
+  String get transferPhaseVerifying;
 
   /// No description provided for @stopGeneration.
   ///
@@ -7875,6 +7893,24 @@ abstract class AppLocalizations {
   /// **'Download completed and verified'**
   String get updateDownloadCompleted;
 
+  /// No description provided for @updatePhaseResolving.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to update server...'**
+  String get updatePhaseResolving;
+
+  /// No description provided for @updatePhaseVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying update package...'**
+  String get updatePhaseVerifying;
+
+  /// No description provided for @updateOpeningInstaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing installation...'**
+  String get updateOpeningInstaller;
+
   /// No description provided for @updateInstall.
   ///
   /// In en, this message translates to:
@@ -10070,6 +10106,474 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connection lost. Non-tmux shell processes could not be resumed'**
   String get terminalNoticePlainInterrupted;
+
+  /// No description provided for @terminalHistoryDeleteDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Session History'**
+  String get terminalHistoryDeleteDialogTitle;
+
+  /// No description provided for @terminalHistoryTerminateRemote.
+  ///
+  /// In en, this message translates to:
+  /// **'Also terminate remote server session'**
+  String get terminalHistoryTerminateRemote;
+
+  /// No description provided for @terminalHistoryTerminateConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminate Remote Session?'**
+  String get terminalHistoryTerminateConfirmTitle;
+
+  /// No description provided for @terminalHistoryTerminateConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will terminate the remote tmux session and end all processes running inside it.'**
+  String get terminalHistoryTerminateConfirmMessage;
+
+  /// No description provided for @terminalErrorHistoryDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete terminal history'**
+  String get terminalErrorHistoryDeleteFailed;
+
+  /// No description provided for @terminalErrorHistoryTerminateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to terminate remote session'**
+  String get terminalErrorHistoryTerminateFailed;
+
+  /// No description provided for @terminalErrorTargetChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Target server changed. Please reopen the session on the current server.'**
+  String get terminalErrorTargetChanged;
+
+  /// No description provided for @terminalModeStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard SSH Terminal (Default, no history)'**
+  String get terminalModeStandard;
+
+  /// No description provided for @terminalModeTmux.
+  ///
+  /// In en, this message translates to:
+  /// **'tmux Terminal (Persists remote session & history)'**
+  String get terminalModeTmux;
+
+  /// No description provided for @terminalModeSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save terminal mode, please retry'**
+  String get terminalModeSaveFailed;
+
+  /// No description provided for @sftpNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get sftpNew;
+
+  /// No description provided for @terminalHistorySearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search session name…'**
+  String get terminalHistorySearchHint;
+
+  /// No description provided for @configMigrationBoundaryNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Local device configuration only. Remote server data is not modified.'**
+  String get configMigrationBoundaryNote;
+
+  /// No description provided for @configMigrationSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export or import local application settings and server profiles'**
+  String get configMigrationSubtitle;
+
+  /// No description provided for @installAppId.
+  ///
+  /// In en, this message translates to:
+  /// **'Application ID'**
+  String get installAppId;
+
+  /// No description provided for @installArchitecture.
+  ///
+  /// In en, this message translates to:
+  /// **'Architecture'**
+  String get installArchitecture;
+
+  /// No description provided for @installPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform'**
+  String get installPlatform;
+
+  /// No description provided for @settingsAboutPrivacyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Version, open source licenses and privacy policy'**
+  String get settingsAboutPrivacyDesc;
+
+  /// No description provided for @settingsAccentColorDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize theme accent colors'**
+  String get settingsAccentColorDesc;
+
+  /// No description provided for @settingsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search settings…'**
+  String get settingsSearchHint;
+
+  /// No description provided for @settingsSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching settings found'**
+  String get settingsSearchNoResults;
+
+  /// No description provided for @settingsSecurityDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Known hosts, credentials and security actions'**
+  String get settingsSecurityDesc;
+
+  /// No description provided for @agentExpandDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get agentExpandDetails;
+
+  /// No description provided for @agentCollapseDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get agentCollapseDetails;
+
+  /// No description provided for @transferPauseAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause All'**
+  String get transferPauseAll;
+
+  /// No description provided for @transferResumePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume Paused'**
+  String get transferResumePaused;
+
+  /// No description provided for @transferFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get transferFilterAll;
+
+  /// No description provided for @transferFilterActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get transferFilterActive;
+
+  /// No description provided for @transferFilterFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get transferFilterFailed;
+
+  /// No description provided for @transferFilterCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get transferFilterCompleted;
+
+  /// No description provided for @transferPauseReasonUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused by user'**
+  String get transferPauseReasonUser;
+
+  /// No description provided for @transferPauseReasonNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused due to network disconnection'**
+  String get transferPauseReasonNetwork;
+
+  /// No description provided for @transferPauseReasonAppRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused after app restart'**
+  String get transferPauseReasonAppRestart;
+
+  /// No description provided for @transferRemotePath.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Path'**
+  String get transferRemotePath;
+
+  /// No description provided for @transferLocalPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Path'**
+  String get transferLocalPath;
+
+  /// No description provided for @transferErrorDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Error Detail'**
+  String get transferErrorDetail;
+
+  /// No description provided for @chatFailureKindAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication Required'**
+  String get chatFailureKindAuth;
+
+  /// No description provided for @chatFailureKindModelUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Unavailable'**
+  String get chatFailureKindModelUnavailable;
+
+  /// No description provided for @chatFailureKindConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection Failed'**
+  String get chatFailureKindConnection;
+
+  /// No description provided for @chatFailureKindHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History Failed'**
+  String get chatFailureKindHistory;
+
+  /// No description provided for @chatFailureKindOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Failed'**
+  String get chatFailureKindOther;
+
+  /// No description provided for @chatFailureActionLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In'**
+  String get chatFailureActionLogin;
+
+  /// No description provided for @chatFailureActionRunSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Settings'**
+  String get chatFailureActionRunSettings;
+
+  /// No description provided for @chatFailureActionReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect'**
+  String get chatFailureActionReconnect;
+
+  /// No description provided for @chatFailureActionReloadHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Load'**
+  String get chatFailureActionReloadHistory;
+
+  /// No description provided for @chatFailureActionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get chatFailureActionDetails;
+
+  /// No description provided for @sftpConfigureToolbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure Toolbar'**
+  String get sftpConfigureToolbar;
+
+  /// No description provided for @sftpConfigureToolbarDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose actions to pin directly to the toolbar. Other actions will appear in the More menu.'**
+  String get sftpConfigureToolbarDesc;
+
+  /// No description provided for @sftpToolbarPreferenceSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save toolbar preference'**
+  String get sftpToolbarPreferenceSaveFailed;
+
+  /// No description provided for @sftpToolbarActionView.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle View'**
+  String get sftpToolbarActionView;
+
+  /// No description provided for @agentUpdateNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 agent update available} other{{count} agent updates available}}'**
+  String agentUpdateNotice(int count);
+
+  /// No description provided for @agentUpdateViewAction.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get agentUpdateViewAction;
+
+  /// No description provided for @agentUpdateCheckAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Updates'**
+  String get agentUpdateCheckAll;
+
+  /// No description provided for @agentUpdateCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Update'**
+  String get agentUpdateCheck;
+
+  /// No description provided for @agentUpdateChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking...'**
+  String get agentUpdateChecking;
+
+  /// No description provided for @agentUpdateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Available'**
+  String get agentUpdateAvailable;
+
+  /// No description provided for @agentUpdateUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to Date'**
+  String get agentUpdateUpToDate;
+
+  /// No description provided for @agentUpdateDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Agent'**
+  String get agentUpdateDialogTitle;
+
+  /// No description provided for @agentUpdateConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm & Update'**
+  String get agentUpdateConfirmButton;
+
+  /// No description provided for @agentUpdateCancelButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get agentUpdateCancelButton;
+
+  /// No description provided for @agentUpdateTargetServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server'**
+  String get agentUpdateTargetServer;
+
+  /// No description provided for @agentUpdateTargetEnvironment.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment'**
+  String get agentUpdateTargetEnvironment;
+
+  /// No description provided for @agentUpdateTargetIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity'**
+  String get agentUpdateTargetIdentity;
+
+  /// No description provided for @agentUpdateCommandPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Command Preview'**
+  String get agentUpdateCommandPreview;
+
+  /// No description provided for @agentUpdateClaudeMigrationNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This update migrates the legacy Claude adapter (claude-code-acp) to the official claude-agent-acp adapter. Existing history and credentials are preserved.'**
+  String get agentUpdateClaudeMigrationNotice;
+
+  /// No description provided for @agentUpdateAgyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'AgY CLI updates via its official stable release channel. The installed version may be newer than the snapshot shown at confirmation time.'**
+  String get agentUpdateAgyNotice;
+
+  /// No description provided for @agentUpdateLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Logs'**
+  String get agentUpdateLogs;
+
+  /// No description provided for @agentUpdateCopyLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Log'**
+  String get agentUpdateCopyLog;
+
+  /// No description provided for @agentUpdateLogCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Update log copied to clipboard'**
+  String get agentUpdateLogCopied;
+
+  /// No description provided for @agentUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent updated successfully'**
+  String get agentUpdateSuccess;
+
+  /// No description provided for @agentUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update failed'**
+  String get agentUpdateFailed;
+
+  /// No description provided for @agentUpdateInterrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'The update was interrupted or connection lost. Please verify the actual version before retrying; automatic retries are disabled for safety.'**
+  String get agentUpdateInterrupted;
+
+  /// No description provided for @agentUpdateInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'An update is currently in progress on this server.'**
+  String get agentUpdateInProgress;
+
+  /// No description provided for @agentUpdateBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The server or agent is busy. Please wait for active tasks to finish.'**
+  String get agentUpdateBusy;
+
+  /// No description provided for @agentUpdateVersionUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get agentUpdateVersionUnknown;
+
+  /// No description provided for @agentUpdateSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get agentUpdateSource;
+
+  /// No description provided for @agentUpdateLastChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Last checked'**
+  String get agentUpdateLastChecked;
+
+  /// No description provided for @agentUpdateNeverChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Never checked'**
+  String get agentUpdateNeverChecked;
 }
 
 class _AppLocalizationsDelegate

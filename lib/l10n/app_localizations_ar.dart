@@ -132,7 +132,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get switchAgent => 'تبديل الوكيل';
 
   @override
-  String get agentClaudeCode => 'Claude CodeX';
+  String get agentClaudeCode => 'Claude Code';
 
   @override
   String get agentCodex => 'OpenAI Codex';
@@ -413,7 +413,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsResetDefault => 'استعادة الإعدادات الافتراضية';
 
   @override
-  String get settingsTerminalUseTmux => 'الجلسات المستمرة (tmux)';
+  String get settingsTerminalUseTmux => 'وضع إنشاء الطرفية يدويًا';
 
   @override
   String get settingsTerminalUseTmuxSubtitle =>
@@ -421,7 +421,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsTerminalUseTmuxDescription =>
-      'يحتفظ بمخرجات الطرفية بعد انقطاع الاتصال. يتطلب tmux على الخادم البعيد. تنطبق التغييرات على علامات التبويب المفتوحة حديثاً.';
+      'ينطبق فقط على الطرفيات التي يتم إنشاؤها يدويًا. تستخدم الطرفيات التلقائية الجديدة دائمًا وضع SSH القياسي بدون سجل قابل للاسترداد؛ عند تمكين tmux، يمكن استعادة الجلسات المنشأة يدويًا بعد انقطاع الاتصال (يتطلب tmux على الخادم البعيد). لا يتأثر استرداد السجل الحالي.';
 
   @override
   String get settingsTerminalFontSize => 'حجم خط الطرفية';
@@ -1380,6 +1380,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get transferFailedDownload => 'فشل التنزيل';
+
+  @override
+  String get transferPhasePreparing => 'جارٍ التحضير...';
+
+  @override
+  String get transferPhaseVerifyingPartial => 'جارٍ التحقق من الملف الجزئي...';
+
+  @override
+  String get transferPhaseVerifying => 'جارٍ التحقق من التكامل...';
 
   @override
   String get stopGeneration => 'إيقاف';
@@ -4283,6 +4292,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get updateDownloadCompleted => 'اكتمل التنزيل وتم التحقق منه';
 
   @override
+  String get updatePhaseResolving => 'جارٍ الاتصال بخادم التحديث...';
+
+  @override
+  String get updatePhaseVerifying => 'جارٍ التحقق من حزمة التحديث...';
+
+  @override
+  String get updateOpeningInstaller => 'جارٍ تجهيز التثبيت...';
+
+  @override
   String get updateInstall => 'تثبيت التحديث';
 
   @override
@@ -5525,4 +5543,264 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get terminalNoticePlainInterrupted =>
       'انقطع الاتصال. تعذر استئناف عمليات الصدفة غير المستندة إلى tmux';
+
+  @override
+  String get terminalHistoryDeleteDialogTitle => 'حذف سجل الجلسة';
+
+  @override
+  String get terminalHistoryTerminateRemote => 'إنهاء جلسة الخادم البعيد أيضاً';
+
+  @override
+  String get terminalHistoryTerminateConfirmTitle => 'إنهاء الجلسة البعيدة؟';
+
+  @override
+  String get terminalHistoryTerminateConfirmMessage =>
+      'سيؤدي هذا إلى إنهاء جلسة tmux البعيدة وإيقاف جميع العمليات التي تعمل بداخلها.';
+
+  @override
+  String get terminalErrorHistoryDeleteFailed => 'فشل حذف سجل الطرفية';
+
+  @override
+  String get terminalErrorHistoryTerminateFailed => 'فشل إنهاء الجلسة البعيدة';
+
+  @override
+  String get terminalErrorTargetChanged =>
+      'تغير الخادم المستهدف. يرجى إعادة فتح الجلسة على الخادم الحالي.';
+
+  @override
+  String get terminalModeStandard => 'طرفية SSH قياسية (افتراضي، بدون سجل)';
+
+  @override
+  String get terminalModeTmux => 'طرفية tmux (تحتفظ بالجلسة عن بعد والسجل)';
+
+  @override
+  String get terminalModeSaveFailed =>
+      'فشل حفظ وضع الطرفية، يرجى إعادة المحاولة';
+
+  @override
+  String get sftpNew => 'جديد';
+
+  @override
+  String get terminalHistorySearchHint => 'البحث في اسم الجلسة…';
+
+  @override
+  String get configMigrationBoundaryNote =>
+      'تكوين الجهاز المحلي فقط. لا يتم تعديل بيانات الخادم البعيد.';
+
+  @override
+  String get configMigrationSubtitle =>
+      'تصدير أو استيراد إعدادات التطبيق المحلية وملفات تعريف الخادم';
+
+  @override
+  String get installAppId => 'معرّف التطبيق';
+
+  @override
+  String get installArchitecture => 'البنية';
+
+  @override
+  String get installPlatform => 'المنصة';
+
+  @override
+  String get settingsAboutPrivacyDesc =>
+      'الإصدار وتراخيص البرمجيات مفتوحة المصدر وسياسة الخصوصية';
+
+  @override
+  String get settingsAccentColorDesc => 'تخصيص ألوان سمة التطبيق';
+
+  @override
+  String get settingsSearchHint => 'البحث في الإعدادات…';
+
+  @override
+  String get settingsSearchNoResults => 'لم يتم العثور على إعدادات مطابقة';
+
+  @override
+  String get settingsSecurityDesc =>
+      'المضيفون المعروفون وبيانات الاعتماد وإجراءات الأمان';
+
+  @override
+  String get agentExpandDetails => 'التفاصيل';
+
+  @override
+  String get agentCollapseDetails => 'طي';
+
+  @override
+  String get transferPauseAll => 'إيقاف الكل مؤقتًا';
+
+  @override
+  String get transferResumePaused => 'استئناف المتوقف';
+
+  @override
+  String get transferFilterAll => 'الكل';
+
+  @override
+  String get transferFilterActive => 'النشطة';
+
+  @override
+  String get transferFilterFailed => 'الفاشلة';
+
+  @override
+  String get transferFilterCompleted => 'المكتملة';
+
+  @override
+  String get transferPauseReasonUser => 'تم الإيقاف بواسطة المستخدم';
+
+  @override
+  String get transferPauseReasonNetwork => 'تم الإيقاف بسبب انقطاع الشبكة';
+
+  @override
+  String get transferPauseReasonAppRestart =>
+      'تم الإيقاف بعد إعادة تشغيل التطبيق';
+
+  @override
+  String get transferRemotePath => 'المسار البعيد';
+
+  @override
+  String get transferLocalPath => 'المسار المحلي';
+
+  @override
+  String get transferErrorDetail => 'تفاصيل الخطأ';
+
+  @override
+  String get chatFailureKindAuth => 'المصادقة مطلوبة';
+
+  @override
+  String get chatFailureKindModelUnavailable => 'النموذج غير متوفر';
+
+  @override
+  String get chatFailureKindConnection => 'فشل الاتصال';
+
+  @override
+  String get chatFailureKindHistory => 'فشل في السجل';
+
+  @override
+  String get chatFailureKindOther => 'فشل الطلب';
+
+  @override
+  String get chatFailureActionLogin => 'تسجيل الدخول';
+
+  @override
+  String get chatFailureActionRunSettings => 'إعدادات النموذج';
+
+  @override
+  String get chatFailureActionReconnect => 'إعادة الاتصال';
+
+  @override
+  String get chatFailureActionReloadHistory => 'إعادة المحاولة';
+
+  @override
+  String get chatFailureActionDetails => 'التفاصيل';
+
+  @override
+  String get sftpConfigureToolbar => 'تخصيص شريط الأدوات';
+
+  @override
+  String get sftpConfigureToolbarDesc =>
+      'اختر الإجراءات المراد تثبيتها مباشرة في شريط الأدوات. ستظهر الإجراءات الأخرى في قائمة المزيد.';
+
+  @override
+  String get sftpToolbarPreferenceSaveFailed => 'فشل حفظ تفضيلات شريط الأدوات';
+
+  @override
+  String get sftpToolbarActionView => 'تبديل طريقة العرض';
+
+  @override
+  String agentUpdateNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تحديث متاح للوكيل',
+      many: '$count تحديثًا متاحًا للوكيل',
+      few: '$count تحديثات متاحة للوكيل',
+      two: 'تحديثان متاحان للوكيل',
+      one: 'تحديث واحد متاح للوكيل',
+      zero: 'لا توجد تحديثات متاحة للوكيل',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agentUpdateViewAction => 'عرض';
+
+  @override
+  String get agentUpdateCheckAll => 'التحقق من التحديثات';
+
+  @override
+  String get agentUpdateCheck => 'التحقق من التحديث';
+
+  @override
+  String get agentUpdateChecking => 'جارٍ التحقق...';
+
+  @override
+  String get agentUpdateAvailable => 'تحديث متوفر';
+
+  @override
+  String get agentUpdateUpToDate => 'محدّث';
+
+  @override
+  String get agentUpdateDialogTitle => 'تحديث الوكيل';
+
+  @override
+  String get agentUpdateConfirmButton => 'تأكيد وتحديث';
+
+  @override
+  String get agentUpdateCancelButton => 'إلغاء';
+
+  @override
+  String get agentUpdateTargetServer => 'الخادم';
+
+  @override
+  String get agentUpdateTargetEnvironment => 'البيئة';
+
+  @override
+  String get agentUpdateTargetIdentity => 'الهوية';
+
+  @override
+  String get agentUpdateCommandPreview => 'معاينة الأمر';
+
+  @override
+  String get agentUpdateClaudeMigrationNotice =>
+      'يقوم هذا التحديث بترحيل محول Claude القديم (claude-code-acp) إلى محول claude-agent-acp الرسمي. يتم الاحتفاظ بالسجل وبيانات الاعتماد الحالية.';
+
+  @override
+  String get agentUpdateAgyNotice =>
+      'يتم تحديث AgY CLI عبر قناة الإصدار المستقر الرسمية. قد يكون الإصدار المثبت أحدث من اللقطة المعروضة في وقت التأكيد.';
+
+  @override
+  String get agentUpdateLogs => 'سجلات التحديث';
+
+  @override
+  String get agentUpdateCopyLog => 'نسخ السجل';
+
+  @override
+  String get agentUpdateLogCopied => 'تم نسخ سجل التحديث إلى الحافظة';
+
+  @override
+  String get agentUpdateSuccess => 'تم تحديث الوكيل بنجاح';
+
+  @override
+  String get agentUpdateFailed => 'فشل التحديث';
+
+  @override
+  String get agentUpdateInterrupted =>
+      'تمت مقاطعة التحديث أو فقد الاتصال. يرجى التحقق من الإصدار الفعلي قبل إعادة المحاولة؛ تم تعطيل عمليات إعادة المحاولة التلقائية للأمان.';
+
+  @override
+  String get agentUpdateInProgress =>
+      'هناك تحديث قيد التنفيذ حاليًا على هذا الخادم.';
+
+  @override
+  String get agentUpdateBusy =>
+      'الخادم أو الوكيل مشغول. يرجى الانتظار حتى تنتهي المهام النشطة.';
+
+  @override
+  String get agentUpdateVersionUnknown => 'غير معروف';
+
+  @override
+  String get agentUpdateSource => 'المصدر';
+
+  @override
+  String get agentUpdateLastChecked => 'آخر تحقق';
+
+  @override
+  String get agentUpdateNeverChecked => 'لم يتم التحقق مطلقًا';
 }

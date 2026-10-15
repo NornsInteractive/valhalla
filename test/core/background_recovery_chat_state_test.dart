@@ -325,7 +325,11 @@ void main() {
         serverConnectionProvider.overrideWith(() => connection),
         activeServerProvider.overrideWith(_StubActiveServer.new),
         sshClientManagerProvider.overrideWithValue(_FakeSshManager(storage)),
-        acpTransportFactoryProvider.overrideWithValue((_, _) async {
+        acpTransportFactoryProvider.overrideWithValue((
+          _,
+          _, {
+          String? initialModelId,
+        }) async {
           final pair = FakeAcpPair(sessionId: _remoteId)
             ..agentCapabilities = futurePairsWithoutReplay
                 ? const {

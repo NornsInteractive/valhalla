@@ -100,7 +100,7 @@ void main() {
           agentRegistryProvider.overrideWith(() => _ReadyRegistry(agy)),
           sshClientManagerProvider.overrideWithValue(_FakeSshManager(storage)),
           acpTransportFactoryProvider.overrideWithValue(
-            (_, _) async => AcpSshTransport(session),
+            (_, _, {String? initialModelId}) async => AcpSshTransport(session),
           ),
         ],
       );

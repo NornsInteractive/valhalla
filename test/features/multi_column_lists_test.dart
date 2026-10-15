@@ -367,20 +367,35 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // 1. Action bar buttons: Upload, New Folder, New File
+        // 1. Primary actions retain creation in the New menu.
         expect(find.byIcon(Icons.upload_file), findsOneWidget);
+        expect(
+          find.byKey(const Key('sftpToggleViewModeButton')),
+          findsOneWidget,
+        );
+        await tester.tap(find.byKey(const Key('sftpNewButton')));
+        await tester.pumpAndSettle();
         expect(find.byIcon(Icons.create_new_folder_outlined), findsOneWidget);
         expect(find.byIcon(Icons.note_add_outlined), findsOneWidget);
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
 
-        // 2. Breadcrumbs & Refresh button
+        // 2. Refresh and sorting remain available in More.
+        await tester.tap(find.byKey(const Key('sftpMoreButton')));
+        await tester.pumpAndSettle();
         expect(find.byIcon(Icons.refresh), findsOneWidget);
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(SftpFileView)),
+        );
+        expect(find.text(l10n.sftpSortName), findsOneWidget);
+        expect(find.text(l10n.sftpSortSize), findsOneWidget);
+        expect(find.text(l10n.sftpSortDate), findsOneWidget);
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
         expect(find.text('/'), findsWidgets);
 
         // 3. Search filter bar
         expect(find.byType(TextField), findsOneWidget);
-
-        // 4. Sort menu button
-        expect(find.byIcon(Icons.sort), findsOneWidget);
 
         // 5. Transfer list button
         expect(find.byKey(const Key('sftpTransferListButton')), findsOneWidget);

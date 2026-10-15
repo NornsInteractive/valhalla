@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -21,6 +22,144 @@ void main() {
   });
 
   String localPath(String name) => '${tempDir.path}/$name';
+
+  test(
+    'multi-megabyte download keeps a single bounded continuous read',
+    () async {
+      final bytes = Uint8List.fromList(
+        List.generate(3 * 1024 * 1024, (i) => i % 251),
+      );
+      final remote = _RemoteFile(size: bytes.length, replies: [], data: bytes);
+      final handle = await SftpClientService(
+        _Ssh(remote),
+      ).startDownload('/large', localPath('large'));
+      await handle.done;
+      expect(remote.streamCalls, 1);
+      expect(remote.streamChunkSize, 64 * 1024);
+      expect(remote.streamWindow, 32);
+      expect(await File(localPath('large')).readAsBytes(), bytes);
+    },
+  );
+
+  test(
+    'pause stops disk progress and resume completes the same stream',
+    () async {
+      final bytes = Uint8List(4 * 64 * 1024);
+      final remote = _RemoteFile(size: bytes.length, replies: [], data: bytes);
+      final paused = Completer<void>();
+      late SftpTransferHandle handle;
+      handle = await SftpClientService(_Ssh(remote)).startDownload(
+        '/paused',
+        localPath('paused'),
+        onProgress: (n) {
+          if (!paused.isCompleted) {
+            unawaited(handle.pause());
+            paused.complete();
+          }
+        },
+      );
+      await paused.future;
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(handle.transferredBytes, 64 * 1024);
+      expect(await File(localPath('paused')).length(), 64 * 1024);
+      await handle.resume();
+      await handle.done;
+      expect(remote.streamCalls, 1);
+      expect(handle.transferredBytes, bytes.length);
+    },
+  );
+
+  test(
+    'abort while paused closes channel once and prevents late writes',
+    () async {
+      final remote = _RemoteFile(
+        size: 4 * 64 * 1024,
+        replies: [],
+        data: Uint8List(4 * 64 * 1024),
+      );
+      final ssh = _Ssh(remote);
+      final paused = Completer<void>();
+      late SftpTransferHandle handle;
+      handle = await SftpClientService(ssh).startDownload(
+        '/cancel',
+        localPath('cancel'),
+        onProgress: (_) {
+          if (!paused.isCompleted) {
+            unawaited(handle.pause());
+            paused.complete();
+          }
+        },
+      );
+      final failure = expectLater(
+        handle.done,
+        throwsA(isA<SftpTransferAborted>()),
+      );
+      await paused.future;
+      await handle.abort();
+      await failure;
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(await File(localPath('cancel')).length(), 64 * 1024);
+      expect(remote.closes, 1);
+      expect(ssh.sftpClient.closes, 1);
+    },
+  );
+
+  for (final corrupt in [false, true]) {
+    test(
+      'full resume prefix ${corrupt ? 'rejects a middle-byte mismatch' : 'is verified before append'}',
+      () async {
+        final bytes = Uint8List.fromList(
+          List.generate(4 * 64 * 1024, (i) => i % 251),
+        );
+        final prefix = bytes.sublist(0, 2 * 64 * 1024);
+        if (corrupt) prefix[70001] ^= 1;
+        await File(localPath('resume')).writeAsBytes(prefix);
+        final remote = _RemoteFile(
+          size: bytes.length,
+          replies: [],
+          data: bytes,
+        );
+        final phases = <SftpTransferPhase>[];
+        final request = SftpClientService(_Ssh(remote)).startResumableDownload(
+          '/resume',
+          localPath('resume'),
+          expectedSource: {
+            'target': '/resume',
+            'size': bytes.length,
+            'modified': null,
+          },
+          onSource: (_) {},
+          onPhase: (phase, _, _) => phases.add(phase),
+        );
+        if (corrupt) {
+          await expectLater(
+            request,
+            throwsA(
+              isA<SFTPException>().having(
+                (e) => e.message,
+                'reason',
+                'SFTP_TRANSFER_PARTIAL_INVALID',
+              ),
+            ),
+          );
+          expect(await File(localPath('resume')).readAsBytes(), prefix);
+        } else {
+          final handle = await request;
+          await handle.done;
+          expect(await File(localPath('resume')).readAsBytes(), bytes);
+          expect(remote.streamCalls, 2);
+          expect(
+            phases,
+            containsAllInOrder([
+              SftpTransferPhase.verifyingPartial,
+              SftpTransferPhase.transferring,
+              SftpTransferPhase.verifying,
+            ]),
+          );
+        }
+      },
+    );
+  }
 
   test(
     'server ends the stream before the advertised size fails as incomplete',
@@ -137,15 +276,47 @@ void main() {
 }
 
 class _RemoteFile implements SftpFile {
-  _RemoteFile({required this.size, required this.replies});
+  _RemoteFile({required this.size, required this.replies, this.data});
 
   /// Advertised size; null models a file whose size cannot be trusted.
   final int? size;
   final List<Uint8List> replies;
+  final Uint8List? data;
 
   int readCalls = 0;
   int closes = 0;
+  int streamCalls = 0;
+  int? streamChunkSize;
+  int? streamWindow;
   final List<int?> requestedLengths = [];
+
+  @override
+  Stream<Uint8List> read({
+    int? length,
+    int offset = 0,
+    void Function(int)? onProgress,
+    int chunkSize = 16384,
+    int maxPendingRequests = 64,
+  }) async* {
+    streamCalls++;
+    streamChunkSize = chunkSize;
+    streamWindow = maxPendingRequests;
+    if (data case final content?) {
+      final end = length == null ? content.length : offset + length;
+      for (var start = offset; start < end; start += chunkSize) {
+        final next = start + chunkSize < end ? start + chunkSize : end;
+        yield Uint8List.sublistView(content, start, next);
+      }
+      return;
+    }
+    var processed = 0;
+    while (length == null || processed < length) {
+      final bytes = await readBytes(length: length, offset: offset + processed);
+      if (bytes.isEmpty) break;
+      processed += bytes.length;
+      yield bytes;
+    }
+  }
 
   @override
   Future<Uint8List> readBytes({int? length, int offset = 0}) async {

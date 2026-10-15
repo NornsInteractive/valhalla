@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xterm/xterm.dart';
 import 'package:valhalla/core/providers/agent_registry_provider.dart';
+import 'package:valhalla/core/providers/agent_update_provider.dart';
 import 'package:valhalla/core/providers/cli_chat_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/data/models/agent_profile.dart';
@@ -203,6 +204,14 @@ class _TestAgentRegistryNotifier extends AgentRegistryNotifier {
   }
 }
 
+class _TestAgentUpdatesNotifier extends AgentUpdatesNotifier {
+  @override
+  AgentUpdatesState build() => const AgentUpdatesState(serverId: 'srv-1');
+
+  @override
+  Future<void> onChatEntered() async {}
+}
+
 const _server = ServerProfile(
   id: 'srv-1',
   name: 'Production Cloud',
@@ -313,6 +322,7 @@ Future<void> _pumpTestApp(
         agentRegistryProvider.overrideWith(
           () => _TestAgentRegistryNotifier(runtimeAgents),
         ),
+        agentUpdatesProvider.overrideWith(_TestAgentUpdatesNotifier.new),
         cliChatProvider.overrideWith(() => cliNotifier),
         if (sftpOps != null)
           remoteBrowserFactoryProvider.overrideWith(

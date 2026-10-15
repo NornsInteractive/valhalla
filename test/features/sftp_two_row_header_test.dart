@@ -182,11 +182,33 @@ void main() {
         // Verify search field exists
         expect(find.byType(TextField), findsOneWidget);
 
-        // Verify action buttons exist in Row 2
-        expect(find.byIcon(Icons.upload_file), findsOneWidget);
+        // Primary actions stay below the standalone search row.
+        for (final key in [
+          'sftpUploadButton',
+          'sftpNewButton',
+          'sftpToggleViewModeButton',
+          'sftpTransferListButton',
+          'sftpMoreButton',
+        ]) {
+          final action = find.byKey(Key(key));
+          expect(action.hitTestable(), findsOneWidget);
+          expect(
+            tester.getTopLeft(action).dy,
+            greaterThan(tester.getBottomLeft(find.byType(TextField)).dy),
+          );
+        }
+        await tester.tap(find.byKey(const Key('sftpNewButton')));
+        await tester.pumpAndSettle();
         expect(find.byIcon(Icons.create_new_folder_outlined), findsOneWidget);
         expect(find.byIcon(Icons.note_add_outlined), findsOneWidget);
-        expect(find.byIcon(Icons.sort), findsOneWidget);
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('sftpMoreButton')));
+        await tester.pumpAndSettle();
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(SftpFileView)),
+        );
+        expect(find.text(l10n.sftpSortName), findsOneWidget);
         expect(find.byIcon(Icons.refresh), findsOneWidget);
 
         // No RenderFlex overflow

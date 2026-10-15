@@ -129,7 +129,7 @@ class NasAudioHandler extends BaseAudioHandler {
         await AudioService.init(
           builder: () => this,
           config: const AudioServiceConfig(
-            androidNotificationChannelId: 'com.antigravity.valhalla.media',
+            androidNotificationChannelId: 'com.norns.valhalla.media',
             androidNotificationChannelName: 'Valhalla',
             androidNotificationOngoing: true,
             androidStopForegroundOnPause: true,

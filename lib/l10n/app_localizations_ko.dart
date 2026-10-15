@@ -130,7 +130,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get switchAgent => '에이전트 전환';
 
   @override
-  String get agentClaudeCode => 'Claude CodeX';
+  String get agentClaudeCode => 'Claude Code';
 
   @override
   String get agentCodex => 'OpenAI Codex';
@@ -410,14 +410,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsResetDefault => '기본값으로 복원';
 
   @override
-  String get settingsTerminalUseTmux => '영구 세션 (tmux)';
+  String get settingsTerminalUseTmux => '수동 새 터미널 모드';
 
   @override
   String get settingsTerminalUseTmuxSubtitle => '원격 서버의 tmux 내에서 터미널 세션 실행';
 
   @override
   String get settingsTerminalUseTmuxDescription =>
-      '연결이 끊겨도 터미널 출력을 유지합니다. 원격 서버에 tmux가 설치되어 있어야 합니다. 새로 여는 터미널 탭에 적용됩니다.';
+      '수동으로 새로 생성한 터미널에만 적용됩니다. 자동으로 생성된 새 터미널은 항상 일반 SSH를 사용하며 복구 가능한 기록을 유지하지 않습니다. tmux를 활성화하면 수동으로 생성한 세션은 연결이 끊겨도 복구할 수 있습니다(원격에 tmux 설치 필요). 기존 기록 복구에는 영향을 주지 않습니다.';
 
   @override
   String get settingsTerminalFontSize => '터미널 글꼴 크기';
@@ -1346,6 +1346,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get transferFailedDownload => '다운로드 실패';
+
+  @override
+  String get transferPhasePreparing => '준비 중...';
+
+  @override
+  String get transferPhaseVerifyingPartial => '이어받기 파일 검증 중...';
+
+  @override
+  String get transferPhaseVerifying => '무결성 검증 중...';
 
   @override
   String get stopGeneration => '중지';
@@ -4166,6 +4175,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get updateDownloadCompleted => '다운로드가 완료되고 검증되었습니다';
 
   @override
+  String get updatePhaseResolving => '업데이트 서버에 연결 중...';
+
+  @override
+  String get updatePhaseVerifying => '업데이트 패키지 검증 중...';
+
+  @override
+  String get updateOpeningInstaller => '설치 준비 중...';
+
+  @override
   String get updateInstall => '업데이트 설치';
 
   @override
@@ -5353,4 +5371,252 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get terminalNoticePlainInterrupted =>
       '연결이 끊어졌습니다. 일반 셸 프로세스는 다시 시작할 수 없습니다';
+
+  @override
+  String get terminalHistoryDeleteDialogTitle => '세션 기록 삭제';
+
+  @override
+  String get terminalHistoryTerminateRemote => '원격 서버 세션도 함께 종료';
+
+  @override
+  String get terminalHistoryTerminateConfirmTitle => '원격 세션을 종료하시겠습니까?';
+
+  @override
+  String get terminalHistoryTerminateConfirmMessage =>
+      '이 작업은 원격 tmux 세션을 종료하고 그 안에서 실행 중인 모든 프로세스를 종료합니다.';
+
+  @override
+  String get terminalErrorHistoryDeleteFailed => '터미널 기록을 삭제하지 못했습니다';
+
+  @override
+  String get terminalErrorHistoryTerminateFailed => '원격 세션을 종료하지 못했습니다';
+
+  @override
+  String get terminalErrorTargetChanged =>
+      '대상 서버가 변경되었습니다. 현재 서버에서 세션을 다시 열어주세요。';
+
+  @override
+  String get terminalModeStandard => '표준 SSH 터미널 (기본값, 기록 없음)';
+
+  @override
+  String get terminalModeTmux => 'tmux 터미널 (원격 세션 및 기록 유지)';
+
+  @override
+  String get terminalModeSaveFailed => '터미널 모드 저장 실패, 다시 시도해 주세요';
+
+  @override
+  String get sftpNew => '새로 만들기';
+
+  @override
+  String get terminalHistorySearchHint => '세션 이름 검색…';
+
+  @override
+  String get configMigrationBoundaryNote =>
+      '로컬 기기 구성만 해당하며 원격 서버 데이터는 수정되지 않습니다.';
+
+  @override
+  String get configMigrationSubtitle => '로컬 앱 설정 및 서버 프로필 내보내기/가져오기';
+
+  @override
+  String get installAppId => '애플리케이션 ID';
+
+  @override
+  String get installArchitecture => '아키텍처';
+
+  @override
+  String get installPlatform => '플랫폼';
+
+  @override
+  String get settingsAboutPrivacyDesc => '버전, 오픈소스 라이선스 및 개인정보처리방침';
+
+  @override
+  String get settingsAccentColorDesc => '테마 강조 색상 맞춤설정';
+
+  @override
+  String get settingsSearchHint => '설정 검색…';
+
+  @override
+  String get settingsSearchNoResults => '일치하는 설정을 찾을 수 없습니다';
+
+  @override
+  String get settingsSecurityDesc => '신뢰할 수 있는 호스트, 자격 증명 및 보안 설정';
+
+  @override
+  String get agentExpandDetails => '세부정보';
+
+  @override
+  String get agentCollapseDetails => '접기';
+
+  @override
+  String get transferPauseAll => '모두 일시중지';
+
+  @override
+  String get transferResumePaused => '일시중지된 항목 재개';
+
+  @override
+  String get transferFilterAll => '전체';
+
+  @override
+  String get transferFilterActive => '진행 중';
+
+  @override
+  String get transferFilterFailed => '실패';
+
+  @override
+  String get transferFilterCompleted => '완료됨';
+
+  @override
+  String get transferPauseReasonUser => '사용자가 일시중지함';
+
+  @override
+  String get transferPauseReasonNetwork => '네트워크 연결 끊김으로 일시중지됨';
+
+  @override
+  String get transferPauseReasonAppRestart => '앱 재시작 후 일시중지됨';
+
+  @override
+  String get transferRemotePath => '원격 경로';
+
+  @override
+  String get transferLocalPath => '로컬 경로';
+
+  @override
+  String get transferErrorDetail => '오류 세부정보';
+
+  @override
+  String get chatFailureKindAuth => '인증 필요';
+
+  @override
+  String get chatFailureKindModelUnavailable => '모델 사용 불가';
+
+  @override
+  String get chatFailureKindConnection => '연결 실패';
+
+  @override
+  String get chatFailureKindHistory => '기록 불러오기 실패';
+
+  @override
+  String get chatFailureKindOther => '요청 실패';
+
+  @override
+  String get chatFailureActionLogin => '로그인';
+
+  @override
+  String get chatFailureActionRunSettings => '모델 설정';
+
+  @override
+  String get chatFailureActionReconnect => '다시 연결';
+
+  @override
+  String get chatFailureActionReloadHistory => '다시 시도';
+
+  @override
+  String get chatFailureActionDetails => '세부정보';
+
+  @override
+  String get sftpConfigureToolbar => '도구 모음 구성';
+
+  @override
+  String get sftpConfigureToolbarDesc =>
+      '도구 모음에 직접 고정할 작업을 선택합니다. 다른 작업은 \'더보기\' 메뉴에 표시됩니다.';
+
+  @override
+  String get sftpToolbarPreferenceSaveFailed => '도구 모음 설정 저장 실패';
+
+  @override
+  String get sftpToolbarActionView => '보기 전환';
+
+  @override
+  String agentUpdateNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count개의 에이전트 업데이트가 있습니다',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agentUpdateViewAction => '보기';
+
+  @override
+  String get agentUpdateCheckAll => '업데이트 확인';
+
+  @override
+  String get agentUpdateCheck => '업데이트 확인';
+
+  @override
+  String get agentUpdateChecking => '확인 중...';
+
+  @override
+  String get agentUpdateAvailable => '업데이트 가능';
+
+  @override
+  String get agentUpdateUpToDate => '최신 상태';
+
+  @override
+  String get agentUpdateDialogTitle => '에이전트 업데이트';
+
+  @override
+  String get agentUpdateConfirmButton => '확인 및 업데이트';
+
+  @override
+  String get agentUpdateCancelButton => '취소';
+
+  @override
+  String get agentUpdateTargetServer => '서버';
+
+  @override
+  String get agentUpdateTargetEnvironment => '실행 환경';
+
+  @override
+  String get agentUpdateTargetIdentity => '대상 식별자';
+
+  @override
+  String get agentUpdateCommandPreview => '명령 미리보기';
+
+  @override
+  String get agentUpdateClaudeMigrationNotice =>
+      '이 업데이트는 기존 Claude 어댑터(claude-code-acp)를 공식 claude-agent-acp 어댑터로 이전합니다. 기존 기록 및 인증 정보는 유지됩니다.';
+
+  @override
+  String get agentUpdateAgyNotice =>
+      'AgY CLI는 공식 안정 릴리스 채널을 통해 업데이트됩니다. 확인 스냅샷에 표시된 것보다 최신 안정 버전이 설치될 수 있습니다.';
+
+  @override
+  String get agentUpdateLogs => '업데이트 로그';
+
+  @override
+  String get agentUpdateCopyLog => '로그 복사';
+
+  @override
+  String get agentUpdateLogCopied => '업데이트 로그가 클립보드에 복사되었습니다';
+
+  @override
+  String get agentUpdateSuccess => '에이전트가 성공적으로 업데이트되었습니다';
+
+  @override
+  String get agentUpdateFailed => '업데이트 실패';
+
+  @override
+  String get agentUpdateInterrupted =>
+      '업데이트가 중단되었거나 연결이 끊어졌습니다. 안전을 위해 자동 재시도가 비활성화되어 있으므로 재시도 전에 실제 버전을 확인하십시오.';
+
+  @override
+  String get agentUpdateInProgress => '이 서버에서 현재 업데이트가 진행 중입니다.';
+
+  @override
+  String get agentUpdateBusy => '서버 또는 에이전트가 사용 중입니다. 활성 작업이 끝날 때까지 기다려 주십시오.';
+
+  @override
+  String get agentUpdateVersionUnknown => '알 수 없음';
+
+  @override
+  String get agentUpdateSource => '소스';
+
+  @override
+  String get agentUpdateLastChecked => '마지막 확인';
+
+  @override
+  String get agentUpdateNeverChecked => '확인된 적 없음';
 }

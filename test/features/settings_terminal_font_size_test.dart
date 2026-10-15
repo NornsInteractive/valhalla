@@ -56,6 +56,13 @@ Widget _buildSettingsApp({
   );
 }
 
+Future<void> _openSecurityGroup(WidgetTester tester) async {
+  final group = find.byKey(const Key('settings_security_tile'));
+  await tester.ensureVisible(group);
+  await tester.tap(group);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -81,6 +88,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        await _openSecurityGroup(tester);
         expect(find.byKey(_rowKey), findsOneWidget);
 
         final l10n = await AppLocalizations.delegate.load(const Locale('en'));
@@ -117,6 +125,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        await _openSecurityGroup(tester);
         final l10n = await AppLocalizations.delegate.load(const Locale('zh'));
         expect(find.text(l10n.settingsTerminalFontSize), findsOneWidget);
         expect(
@@ -158,6 +167,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        await _openSecurityGroup(tester);
         expect(container.read(terminalSettingsProvider).fontSize, 13);
 
         // Open the dialog.
@@ -222,6 +232,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await _openSecurityGroup(tester);
       await tester.tap(find.byKey(_rowKey));
       await tester.pumpAndSettle();
 

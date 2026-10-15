@@ -55,7 +55,7 @@ class _DiagnosticsViewState extends State<DiagnosticsView> {
     });
 
     try {
-      final text = await widget.diagnostics.read();
+      final text = await widget.diagnostics.report();
       if (!mounted) return;
       setState(() {
         _logs = text;

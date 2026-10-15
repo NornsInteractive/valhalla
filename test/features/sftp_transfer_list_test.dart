@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +18,10 @@ class _RecordingSftpNotifier extends SftpNotifier {
   final List<String> resumeCalls = [];
   final List<String> cancelCalls = [];
   final List<String> removeCalls = [];
+  final List<String> retryCalls = [];
+  int pauseAllCalls = 0;
+  int resumePausedCalls = 0;
+  Completer<void>? bulkGate;
   int clearFinishedCalls = 0;
   String? revealed;
   bool revealFails = false;
@@ -37,7 +43,10 @@ class _RecordingSftpNotifier extends SftpNotifier {
     final task = state.transferById(id);
     if (task != null) {
       state = state.withTransfer(
-        task.copyWith(status: SftpTransferStatus.paused),
+        task.copyWith(
+          status: SftpTransferStatus.paused,
+          pauseReason: SftpTransferPauseReason.user,
+        ),
       );
     }
   }
@@ -48,7 +57,10 @@ class _RecordingSftpNotifier extends SftpNotifier {
     final task = state.transferById(id);
     if (task != null) {
       state = state.withTransfer(
-        task.copyWith(status: SftpTransferStatus.running),
+        task.copyWith(
+          status: SftpTransferStatus.running,
+          clearPauseReason: true,
+        ),
       );
     }
   }
@@ -71,6 +83,35 @@ class _RecordingSftpNotifier extends SftpNotifier {
   }
 
   @override
+  Future<void> retryTransfer(String id) async {
+    retryCalls.add(id);
+  }
+
+  @override
+  Future<void> pauseAllTransfers() async {
+    pauseAllCalls++;
+    state = state.copyWith(
+      transfers: state.transfers
+          .map(
+            (task) => task.status.isTerminal
+                ? task
+                : task.copyWith(
+                    status: SftpTransferStatus.paused,
+                    pauseReason: SftpTransferPauseReason.user,
+                  ),
+          )
+          .toList(),
+    );
+    await bulkGate?.future;
+  }
+
+  @override
+  Future<void> resumePausedTransfers() async {
+    resumePausedCalls++;
+    await bulkGate?.future;
+  }
+
+  @override
   void clearFinishedTransfers() {
     clearFinishedCalls++;
     super.clearFinishedTransfers();
@@ -83,11 +124,18 @@ class _RecordingSftpNotifier extends SftpNotifier {
 
 /// Transfer controls are gated on the connection state, and the real
 /// connection notifier needs a live `LocalStorageService` for the SSH client
-/// manager. Every case here drives real transfer actions, so it is connected.
+/// manager. Default connected; offline controls use the same fixture explicitly.
 class _TestServerConnectionNotifier extends ServerConnectionNotifier {
+  _TestServerConnectionNotifier(this.connected);
+
+  final bool connected;
+
   @override
-  ServerConnectionState build() =>
-      const ServerConnectionState(status: ConnectionStateEnum.connected);
+  ServerConnectionState build() => ServerConnectionState(
+    status: connected
+        ? ConnectionStateEnum.connected
+        : ConnectionStateEnum.disconnected,
+  );
 }
 
 /// Transfer controls read the connection state, and the SFTP surface also
@@ -118,6 +166,7 @@ Widget _buildTestApp({
   required _RecordingSftpNotifier notifier,
   Locale locale = const Locale('en'),
   Widget? child,
+  bool connected = true,
 }) {
   return ProviderScope(
     overrides: [
@@ -126,7 +175,9 @@ Widget _buildTestApp({
         () => _ActiveServerWithProfile(_kTransferListServer),
       ),
       sftpProvider.overrideWith(() => notifier),
-      serverConnectionProvider.overrideWith(_TestServerConnectionNotifier.new),
+      serverConnectionProvider.overrideWith(
+        () => _TestServerConnectionNotifier(connected),
+      ),
     ],
     child: MaterialApp(
       locale: locale,
@@ -277,6 +328,255 @@ void main() {
       expect(find.byKey(const Key('transferEmptyView')), findsOneWidget);
       expect(find.text(l10n.transferEmpty), findsOneWidget);
       expect(find.byKey(const Key('transferListView')), findsNothing);
+    });
+
+    testWidgets('filters count each state and keep canceled out of completed', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(900, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      SftpTransfer task(String id, SftpTransferStatus status) => SftpTransfer(
+        id: id,
+        kind: SftpTransferKind.download,
+        remotePath: '/remote/$id.txt',
+        localPath: '/local/$id.txt',
+        totalBytes: 100,
+        status: status,
+      );
+      final notifier = _RecordingSftpNotifier(
+        SftpState(
+          transfers: [
+            task('completed', SftpTransferStatus.completed),
+            task('running', SftpTransferStatus.running),
+            task('canceled', SftpTransferStatus.canceled),
+            task('failed', SftpTransferStatus.failed),
+            task('queued', SftpTransferStatus.queued),
+            task('paused', SftpTransferStatus.paused),
+          ],
+        ),
+      );
+      await tester.pumpWidget(
+        _buildTestApp(notifier: notifier, child: const SftpTransferListSheet()),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      List<String> visibleIds() => tester
+          .widgetList<SftpTransferListItem>(find.byType(SftpTransferListItem))
+          .map((item) => item.transfer.id)
+          .toList();
+      expect(find.text('All (6)'), findsOneWidget);
+      expect(find.text('Active (3)'), findsOneWidget);
+      expect(find.text('Failed (1)'), findsOneWidget);
+      expect(find.text('Completed (1)'), findsOneWidget);
+      expect(visibleIds(), [
+        'running',
+        'queued',
+        'paused',
+        'completed',
+        'canceled',
+        'failed',
+      ]);
+      expect(find.textContaining('Canceled'), findsOneWidget);
+
+      for (final filter in [
+        ('transferFilterActive', ['running', 'queued', 'paused']),
+        ('transferFilterFailed', ['failed']),
+        ('transferFilterCompleted', ['completed']),
+      ]) {
+        await tester.tap(find.byKey(Key(filter.$1)));
+        await tester.pump();
+        expect(visibleIds(), filter.$2);
+        expect(find.byKey(const Key('transfer_item_canceled')), findsNothing);
+      }
+      await tester.tap(find.byKey(const Key('transferFilterAll')));
+      await tester.pump();
+      expect(find.byKey(const Key('transfer_item_canceled')), findsOneWidget);
+    });
+
+    testWidgets(
+      'bulk actions suppress repeat clicks until their Future finishes',
+      (tester) async {
+        final notifier = _RecordingSftpNotifier(
+          const SftpState(
+            transfers: [
+              SftpTransfer(
+                id: 'bulk',
+                kind: SftpTransferKind.upload,
+                remotePath: '/remote/a.txt',
+                localPath: '/local/a.txt',
+              ),
+            ],
+          ),
+        );
+        addTearDown(() {
+          final gate = notifier.bulkGate;
+          if (gate != null && !gate.isCompleted) gate.complete();
+        });
+        await tester.pumpWidget(
+          _buildTestApp(
+            notifier: notifier,
+            child: const SftpTransferListSheet(),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+        final pause = find.byKey(const Key('transferPauseAllButton'));
+        final resume = find.byKey(const Key('transferResumePausedButton'));
+        expect(tester.widget<IconButton>(resume).onPressed, isNull);
+
+        notifier.bulkGate = Completer<void>();
+        await tester.tap(pause);
+        await tester.tap(pause);
+        await tester.pump();
+        expect(notifier.pauseAllCalls, 1);
+        expect(pause, findsNothing);
+        expect(resume, findsNothing);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        notifier.bulkGate!.complete();
+        await tester.pump();
+        expect(tester.widget<IconButton>(resume).onPressed, isNotNull);
+
+        notifier.bulkGate = Completer<void>();
+        await tester.tap(resume);
+        await tester.tap(resume);
+        await tester.pump();
+        expect(notifier.resumePausedCalls, 1);
+        expect(pause, findsNothing);
+        expect(resume, findsNothing);
+        notifier.bulkGate!.complete();
+        await tester.pump();
+        expect(notifier.pauseAllCalls, 1);
+        expect(notifier.resumePausedCalls, 1);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(resume, findsOneWidget);
+      },
+    );
+
+    testWidgets('offline paused tasks disable individual and bulk resume', (
+      tester,
+    ) async {
+      final notifier = _RecordingSftpNotifier(
+        const SftpState(
+          transfers: [
+            SftpTransfer(
+              id: 'offline',
+              kind: SftpTransferKind.download,
+              remotePath: '/remote/a.txt',
+              localPath: '/local/a.txt',
+              status: SftpTransferStatus.paused,
+              pauseReason: SftpTransferPauseReason.network,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpWidget(
+        _buildTestApp(
+          notifier: notifier,
+          connected: false,
+          child: const SftpTransferListSheet(),
+        ),
+      );
+      await tester.pump();
+      for (final key in [
+        'transferResumePausedButton',
+        'transfer_resume_offline',
+      ]) {
+        expect(
+          tester.widget<IconButton>(find.byKey(Key(key))).onPressed,
+          isNull,
+        );
+      }
+      expect(notifier.resumePausedCalls, 0);
+      expect(notifier.resumeCalls, isEmpty);
+    });
+
+    testWidgets('pause reason labels include the legacy manual fallback', (
+      tester,
+    ) async {
+      const task = SftpTransfer(
+        id: 'reason',
+        kind: SftpTransferKind.download,
+        remotePath: '/remote/a.txt',
+        localPath: '/local/a.txt',
+        status: SftpTransferStatus.paused,
+        errorMessage: 'SSH_DISCONNECTED',
+      );
+      final notifier = _RecordingSftpNotifier(
+        const SftpState(transfers: [task]),
+      );
+      await tester.pumpWidget(
+        _buildTestApp(notifier: notifier, child: const SftpTransferListSheet()),
+      );
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      for (final reason in <(SftpTransferPauseReason?, String)>[
+        (null, l10n.transferPauseReasonUser),
+        (SftpTransferPauseReason.user, l10n.transferPauseReasonUser),
+        (SftpTransferPauseReason.network, l10n.transferPauseReasonNetwork),
+        (
+          SftpTransferPauseReason.appRestart,
+          l10n.transferPauseReasonAppRestart,
+        ),
+      ]) {
+        notifier.updateState(
+          SftpState(transfers: [task.copyWith(pauseReason: reason.$1)]),
+        );
+        await tester.pump();
+        expect(
+          find.text('[${l10n.transferDownload}] ${reason.$2}'),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('transfer_resume_reason')), findsOneWidget);
+      }
+    });
+
+    testWidgets('compact sheet fits 320dp at 2x text in English and Arabic', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      for (final locale in [const Locale('en'), const Locale('ar')]) {
+        final notifier = _RecordingSftpNotifier(
+          const SftpState(
+            transfers: [
+              SftpTransfer(
+                id: 'narrow',
+                kind: SftpTransferKind.download,
+                remotePath: '/remote/large-file.txt',
+                localPath: '/local/large-file.txt',
+                transferredBytes: 50,
+                totalBytes: 100,
+                status: SftpTransferStatus.paused,
+                pauseReason: SftpTransferPauseReason.network,
+              ),
+            ],
+          ),
+        );
+        await tester.pumpWidget(
+          _buildTestApp(
+            notifier: notifier,
+            locale: locale,
+            child: Builder(
+              builder: (context) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: const TextScaler.linear(2)),
+                child: const SftpTransferListSheet(),
+              ),
+            ),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: '${locale.languageCode} layout',
+        );
+        expect(find.byKey(const Key('transfer_resume_narrow')), findsOneWidget);
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
     });
 
     testWidgets(
@@ -872,7 +1172,30 @@ void main() {
 
         final l10n = await AppLocalizations.delegate.load(const Locale('en'));
         expect(find.text(l10n.sftpUploadFailed), findsOneWidget);
-        expect(find.text(SftpNotifier.uploadFailedCode), findsNothing);
+        expect(
+          find.textContaining(SftpNotifier.uploadFailedCode),
+          findsNothing,
+        );
+        expect(find.textContaining(task.remotePath), findsNothing);
+        expect(find.textContaining(task.localPath), findsNothing);
+        final details = find.byKey(
+          const Key('transfer_toggle_details_t-fail-up'),
+        );
+        await tester.tap(details);
+        await tester.pump();
+        expect(find.textContaining(task.remotePath), findsOneWidget);
+        expect(find.textContaining(task.localPath), findsOneWidget);
+        expect(
+          find.textContaining(SftpNotifier.uploadFailedCode),
+          findsOneWidget,
+        );
+        expect(find.text(l10n.sftpUploadFailed), findsOneWidget);
+        await tester.tap(details);
+        await tester.pump();
+        expect(find.textContaining(task.remotePath), findsNothing);
+        await tester.tap(find.byKey(const Key('transfer_retry_t-fail-up')));
+        await tester.pump();
+        expect(notifier.retryCalls, ['t-fail-up']);
       });
 
       testWidgets(

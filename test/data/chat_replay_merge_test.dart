@@ -442,4 +442,111 @@ void main() {
       expect(_storedMessages('s11'), hasLength(1));
     });
   });
+
+  group('回放保留失败原因', () {
+    const code = 'ACP_REMOTE_ERROR: RpcError(-32603)';
+
+    test('更长的无终态回放不得把本地失败伪装成完成', () async {
+      final repository = _repository(await _storage());
+      await repository.saveSession(
+        _session(
+          's12',
+          messages: [
+            _message(0, content: 'question'),
+            _message(
+              1,
+              content: 'partial answer',
+              remoteMessageId: 'r1',
+            ).copyWith(status: ChatTurnStatus.failed, failureCode: code),
+          ],
+        ),
+      );
+
+      final loaded = await repository.loadSession('s12');
+      expect(loaded, isNotNull);
+      expect(loaded!.messages.last.failureCode, code, reason: '保存后必须能读回失败原因');
+      expect(loaded.messages.last.status, ChatTurnStatus.failed);
+
+      await repository.mergeReplayBatch(
+        _session(
+          's12',
+          messages: [
+            _message(
+              51,
+              content: 'partial answer and the rest',
+              remoteMessageId: 'r1',
+              createdAt: _at(999),
+            ),
+          ],
+        ),
+        _agentId,
+      );
+
+      final stored = _storedMessages('s12');
+      expect(stored, hasLength(2));
+      expect(stored.last.id, 'm1');
+      expect(stored.last.content, 'partial answer and the rest');
+      expect(
+        stored.last.status,
+        ChatTurnStatus.failed,
+        reason: '正文变长只证明收到内容，不证明这一轮成功',
+      );
+      expect(stored.last.failureCode, code);
+    });
+
+    test('显式清除并保存 completed 后，再次回放不复活旧错误', () async {
+      final repository = _repository(await _storage());
+      await repository.saveSession(
+        _session(
+          's13',
+          messages: [
+            _message(0, content: 'question'),
+            _message(
+              1,
+              content: 'partial answer',
+              remoteMessageId: 'r1',
+            ).copyWith(status: ChatTurnStatus.failed, failureCode: code),
+          ],
+        ),
+      );
+
+      final loaded = await repository.loadSession('s13');
+      expect(loaded, isNotNull);
+      final messages = <ChatMessage>[...loaded!.messages];
+      final resent = messages.last.copyWith(
+        content: 'partial answer finished',
+        status: ChatTurnStatus.completed,
+        clearFailure: true,
+      );
+      expect(resent.failureCode, isNull);
+      messages[messages.length - 1] = resent;
+      await repository.saveSession(loaded.copyWith(messages: messages));
+
+      final saved = await repository.loadSession('s13');
+      expect(saved!.messages.last.failureCode, isNull, reason: '重发成功已落盘');
+      expect(saved.messages.last.status, ChatTurnStatus.completed);
+
+      await repository.mergeReplayBatch(
+        _session(
+          's13',
+          messages: [
+            _message(
+              53,
+              content: 'partial answer finished',
+              remoteMessageId: 'r1',
+              createdAt: _at(999),
+            ),
+          ],
+        ),
+        _agentId,
+      );
+
+      final after = _storedMessages('s13');
+      expect(after, hasLength(2));
+      expect(after.last.id, 'm1');
+      expect(after.last.content, 'partial answer finished');
+      expect(after.last.status, ChatTurnStatus.completed);
+      expect(after.last.failureCode, isNull, reason: '回放不得复活已清除的错误');
+    });
+  });
 }

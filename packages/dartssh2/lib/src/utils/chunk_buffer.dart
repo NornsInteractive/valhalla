@@ -3,13 +3,12 @@ import 'dart:typed_data';
 /// A buffer that queues chunks of data (typically produced by a socket) and
 /// lets callers consume parts or all of it as more becomes available.
 ///
-/// [add] is amortised O(1): incoming chunks are copied into a single
-/// growable backing array with a write cursor, which is only reallocated
-/// (doubling in size, and compacting away already-consumed bytes in the
-/// process) when its trailing free space runs out -- not on every call, as
-/// concatenating into a brand new array on every `add()` would do. Growth
-/// always allocates a *new* array rather than shifting bytes within the
-/// existing one, so nothing this buffer does ever mutates memory that has
+/// [add] copies incoming chunks into a growable backing array with a write
+/// cursor, reusing trailing space until compaction is needed. Compaction keeps
+/// capacity after at least half the array has been consumed; otherwise growth
+/// leaves room for subsequent additions. Compaction always allocates a
+/// *new* array rather than shifting bytes within the existing one, so
+/// nothing this buffer does ever mutates memory that has
 /// already been handed out through [view], [consume] or [consumeView]. The
 /// backing array is released as soon as the buffer is fully drained, so
 /// memory does not accumulate across a long-lived connection.
@@ -35,13 +34,8 @@ class ChunkBuffer {
 
   /// Appends [chunk] to the buffer.
   ///
-  /// Amortised O(1): reuses trailing free space in the backing array when
-  /// there is enough of it, and otherwise reallocates geometrically
-  /// (doubling), copying across only the bytes still unconsumed -- so the
-  /// cost of growing is amortised over the data added since the last
-  /// growth rather than the buffer's entire lifetime. This is what keeps
-  /// repeated `add()` calls (e.g. while streaming a large SFTP transfer)
-  /// from degrading to O(n^2) overall.
+  /// Reuses trailing space when available; otherwise copies only unconsumed
+  /// bytes into a new array, retaining capacity if enough prefix was consumed.
   void add(Uint8List chunk) {
     if (chunk.isEmpty) return;
 
@@ -54,13 +48,14 @@ class ChunkBuffer {
       return;
     }
 
-    // Not enough trailing room: grow (and, as a side effect, compact away
-    // already-consumed bytes) into a freshly allocated array. The old
-    // array is left untouched, so anything previously handed out via
-    // [view]/[consumeView] remains valid.
+    // A fresh array preserves old views; spare room avoids copying on every
+    // consume(k)/add(k) when a nearly full buffer has only consumed a few bytes.
     final liveLength = length;
     final needed = liveLength + chunk.length;
-    var newCapacity = _storage.isEmpty ? _minCapacity : _storage.length * 2;
+    var newCapacity = _storage.isEmpty ? _minCapacity : _storage.length;
+    if (_storage.isNotEmpty && _start < _storage.length ~/ 2) {
+      newCapacity *= 2;
+    }
     while (newCapacity < needed) {
       newCapacity *= 2;
     }

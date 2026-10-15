@@ -39,8 +39,9 @@ void main() {
   const codexId = 'builtin-codex';
   const remoteId = 'remote-codex-1';
 
-  late List<FakeAcpPair> pairs;
+  List<FakeAcpPair> pairs = [];
   late List<Map<String, Object?>> queries;
+  late List<String?> initialModels;
   late LocalStorageService storage;
 
   AgentProfile codex({String? cliCommand = 'codex'}) => AgentProfile(
@@ -89,6 +90,8 @@ void main() {
     List<Map<String, Object?>> configOptions = const [],
     Map<String, Object?> capabilities = const {},
     void Function(FakeAcpPair pair)? configurePair,
+    Future<void> Function(FakeAcpPair pair, String? initialModelId)?
+    beforeTransport,
     Map<String, Object> prefs = const {},
     AgentComposerQuery? composerQuery,
 
@@ -105,6 +108,7 @@ void main() {
     }
     pairs = [];
     queries = [];
+    initialModels = [];
     final container = ProviderContainer(
       overrides: [
         localStorageServiceProvider.overrideWithValue(storage),
@@ -122,12 +126,18 @@ void main() {
         agentComposerQueryProvider.overrideWithValue(
           composerQuery ?? (profile, ssh, cwd) async => const [],
         ),
-        acpTransportFactoryProvider.overrideWithValue((_, _) async {
+        acpTransportFactoryProvider.overrideWithValue((
+          _,
+          _, {
+          String? initialModelId,
+        }) async {
           final pair = FakeAcpPair(sessionId: remoteId)
             ..agentCapabilities = capabilities
             ..configOptions = configOptions;
           pairs.add(pair);
+          initialModels.add(initialModelId);
           configurePair?.call(pair);
+          await beforeTransport?.call(pair, initialModelId);
           return pair.client;
         }),
       ],
@@ -176,6 +186,239 @@ void main() {
   tearDown(() {
     for (final pair in pairs) {
       pair.close();
+    }
+  });
+
+  group('标准 Codex 初始模型与草稿运行时归属', () {
+    AgentProfile standard() => AgentProfile(
+      id: codexId,
+      serverId: 'srv-1',
+      name: 'Codex',
+      description: '',
+      cliCommand: 'codex',
+      acpCommand: 'codex-acp --stdio',
+    );
+
+    const models = ['seed', 'model-A', 'model-B'];
+    final options = <Map<String, Object?>>[
+      {
+        'type': 'select',
+        'id': 'model',
+        'name': 'Model',
+        'category': 'model',
+        'currentValue': 'seed',
+        'options': [
+          for (final id in models) {'value': id, 'name': id},
+        ],
+      },
+    ];
+
+    test('明确初始模型进入 factory，草稿发现不创建远端会话', () async {
+      final container = await makeContainer(
+        profiles: [standard()],
+        query: (_) async => catalog(models),
+        runSettings: const ChatRunSettings(modelId: 'model-A'),
+        configOptions: options,
+      );
+      final notifier = container.read(aiChatProvider.notifier);
+      await settle(container);
+      expect(await notifier.prepareComposerCatalog(), isTrue);
+      expect(await notifier.prepareRunSettings(), isTrue);
+      expect(initialModels, ['model-A']);
+      expect(pairs.single.newSessionCount, 0);
+      expect(pairs.single.loadRequests, isEmpty);
+      expect(pairs.single.resumeRequests, isEmpty);
+      expect(container.read(aiChatProvider).activeSessionId, isNull);
+
+      await notifier.updateRunSettings(
+        const ChatRunSettings(modelId: 'model-B'),
+      );
+      expect(await notifier.prepareComposerCatalog(), isTrue);
+      expect(initialModels, ['model-A', 'model-B']);
+      expect(pairs.every((pair) => pair.newSessionCount == 0), isTrue);
+
+      await notifier.sendMessage('first prompt');
+      await settle(container);
+      expect(initialModels, ['model-A', 'model-B']);
+      expect(
+        pairs.fold<int>(0, (count, pair) => count + pair.newSessionCount),
+        1,
+      );
+      expect(pairs.expand(promptTexts), ['first prompt']);
+      expect(container.read(aiChatProvider).lastErrorCode, isNull);
+    });
+
+    test('已有 remoteId 的新传输不覆盖初始模型且不补建会话', () async {
+      final container = await makeContainer(
+        profiles: [standard()],
+        query: (_) async => catalog(models),
+        runSettings: const ChatRunSettings(modelId: 'model-A'),
+        configOptions: options,
+        capabilities: const {'loadSession': true},
+      );
+      final notifier = container.read(aiChatProvider.notifier);
+      await settle(container);
+      await notifier.sendMessage('first prompt');
+      await settle(container);
+      final saved = container.read(aiChatProvider).activeSession!;
+      expect(saved.contextFor(codexId).remoteSessionId, remoteId);
+      expect(initialModels, ['model-A']);
+      expect(pairs.single.newSessionCount, 1);
+
+      await notifier.createNewSession();
+      await notifier.selectSession(saved.id);
+      await settle(container);
+      expect(await notifier.prepareRunSettings(refresh: true), isTrue);
+      expect(initialModels, ['model-A', null]);
+      expect(pairs.last.newSessionCount, 0);
+      expect(pairs.last.loadRequests, isEmpty, reason: '目录刷新不恢复历史');
+      expect(pairs.last.resumeRequests, isEmpty);
+      expect(
+        container.read(aiChatProvider).activeSession!.messages,
+        hasLength(saved.messages.length),
+      );
+
+      await notifier.sendMessage('second prompt');
+      await settle(container);
+      expect(pairs.last.loadRequests, [remoteId]);
+      expect(pairs.last.newSessionCount, 0);
+      expect(initialModels, ['model-A', null]);
+      expect(
+        container
+            .read(aiChatProvider)
+            .activeSession!
+            .contextFor(codexId)
+            .remoteSessionId,
+        remoteId,
+      );
+    });
+
+    for (final returnToA in [false, true]) {
+      test(
+        'pending ${returnToA ? 'A→B→A' : 'A→B'} 不复用旧 Future 或发布迟到错误',
+        () async {
+          final gates = <Completer<void>>[];
+          final closed = <bool>[];
+          var queriesCompleted = 0;
+          final container = await makeContainer(
+            profiles: [standard()],
+            runSettings: const ChatRunSettings(modelId: 'seed'),
+            query: (_) async => catalog(models),
+            configOptions: options,
+            composerQuery: (_, _, _) async => [
+              AcpSlashCommand(
+                'skill-${++queriesCompleted}',
+                'fixture skill',
+                null,
+              ),
+            ],
+            beforeTransport: (pair, model) async {
+              final index = closed.length;
+              closed.add(false);
+              pair.client.incoming.listen(
+                null,
+                onDone: () => closed[index] = true,
+              );
+              if (model == 'seed') return;
+              final gate = Completer<void>();
+              gates.add(gate);
+              await gate.future;
+            },
+          );
+          final notifier = container.read(aiChatProvider.notifier);
+          await settle(container);
+          expect(await notifier.prepareComposerCatalog(), isTrue);
+          notifier.updateDraftText('keep this unsent text');
+          final baseline = container
+              .read(aiChatProvider)
+              .commands
+              .map((command) => command.name)
+              .toList();
+          expect(baseline, contains('skill-1'));
+
+          await notifier.updateRunSettings(
+            const ChatRunSettings(modelId: 'model-A'),
+          );
+          final firstA = notifier.prepareComposerCatalog();
+          await pumpEventQueue();
+          expect(gates, hasLength(1));
+          expect(notifier.isRuntimeBusy, isTrue);
+          await notifier.updateRunSettings(
+            const ChatRunSettings(modelId: 'model-B'),
+          );
+          expect(
+            container
+                .read(aiChatProvider)
+                .commands
+                .map((command) => command.name),
+            baseline,
+          );
+          final nextB = notifier.prepareComposerCatalog();
+          expect(identical(firstA, nextB), isFalse);
+          await pumpEventQueue();
+          expect(gates, hasLength(2));
+
+          var newest = nextB;
+          if (returnToA) {
+            await notifier.updateRunSettings(
+              const ChatRunSettings(modelId: 'model-A'),
+            );
+            newest = notifier.prepareComposerCatalog();
+            expect(identical(newest, firstA), isFalse);
+            expect(identical(newest, nextB), isFalse);
+            await pumpEventQueue();
+            expect(gates, hasLength(3));
+          }
+          gates.last.complete();
+          expect(await newest, isTrue);
+          final currentCommands = container
+              .read(aiChatProvider)
+              .commands
+              .map((command) => command.name)
+              .toList();
+          expect(currentCommands, contains('skill-2'));
+          expect(notifier.isRuntimeBusy, isTrue, reason: '旧操作仍未退出时不能更新二进制');
+
+          gates.first.complete();
+          expect(await firstA, isFalse);
+          if (returnToA) {
+            gates[1].complete();
+            expect(await nextB, isFalse);
+          }
+          await pumpEventQueue();
+          expect(container.read(aiChatProvider).lastErrorCode, isNull);
+          expect(
+            container
+                .read(aiChatProvider)
+                .commands
+                .map((command) => command.name),
+            currentCommands,
+          );
+          expect(
+            container.read(aiChatProvider).draftText,
+            'keep this unsent text',
+          );
+          expect(container.read(aiChatProvider).activeSessionId, isNull);
+          expect(closed[1], isTrue, reason: '旧 A 必须关闭，不能复活');
+          expect(closed.last, isFalse, reason: '最新运行时不能被旧查询收尾关闭');
+          expect(notifier.isRuntimeBusy, isFalse);
+          expect(
+            pairs.every(
+              (pair) =>
+                  pair.newSessionCount == 0 &&
+                  pair.loadRequests.isEmpty &&
+                  pair.resumeRequests.isEmpty,
+            ),
+            isTrue,
+          );
+          expect(
+            initialModels,
+            returnToA
+                ? ['seed', 'model-A', 'model-B', 'model-A']
+                : ['seed', 'model-A', 'model-B'],
+          );
+        },
+      );
     }
   });
 
@@ -735,7 +978,11 @@ void main() {
             queries.add({'cli': profile.cliCommand});
             return catalog(['gpt-5-codex']);
           }),
-          acpTransportFactoryProvider.overrideWithValue((_, _) async {
+          acpTransportFactoryProvider.overrideWithValue((
+            _,
+            _, {
+            String? initialModelId,
+          }) async {
             final pair = FakeAcpPair(sessionId: remoteId);
             pairs.add(pair);
             return pair.client;
@@ -1338,7 +1585,8 @@ void main() {
       expect(client.commands, [agentAcpLaunchCommand(launchProfile())]);
       expect(client.commands.single, startsWith('bash -l -c '));
       expect(client.commands.single, contains('type -P'));
-      expect(client.commands.single, contains('exec codex-acp --stdio'));
+      expect(client.commands.single, contains('valhalla_acp_path'));
+      expect(client.commands.single, contains('--stdio'));
       expect(transport, isA<AcpSshTransport>());
     });
 
@@ -1364,9 +1612,7 @@ void main() {
       );
       expect(
         client.commands.single,
-        startsWith(
-          "docker exec -i --user '1000:1000' 'codex-box' /bin/sh -lc ",
-        ),
+        startsWith("docker exec -i --user '1000:1000' 'codex-box' /bin/sh -c "),
       );
       expect(client.commands.single, isNot(contains('bash -l -c ')));
     });
@@ -2165,8 +2411,11 @@ class _FakeSshManager extends SSHClientManager {
   _FakeSshManager(LocalStorageService storage)
     : super(SSHHostKeyVerifier(storage));
 
+  final Map<String, SSHClient> _clients = <String, SSHClient>{};
+
   @override
-  SSHClient? getClient(String serverId) => _FakeSshClient();
+  SSHClient? getClient(String serverId) =>
+      _clients.putIfAbsent(serverId, () => _FakeSshClient());
 }
 
 class _FakeSshClient implements SSHClient {

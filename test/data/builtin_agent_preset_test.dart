@@ -34,6 +34,14 @@ void main() {
       }
     });
 
+    test('new Claude profile uses the current name and official adapter', () {
+      final claude = kBuiltinAgentPresets['builtin-claude-code']!;
+      expect(claude.name, 'Claude Code');
+      expect(AgentType.claudeCode.displayName, 'Claude Code');
+      expect(claude.acpCommand, 'claude-agent-acp');
+      expect(kLegacyAgentTypeToId['claude codex'], 'builtin-claude-code');
+    });
+
     test('no preset uses the non-existent --stdio ACP flag', () {
       for (final preset in kBuiltinAgentPresets.values) {
         expect(
@@ -104,7 +112,7 @@ void main() {
       () {
         expect(
           kBuiltinAgentPresets['builtin-claude-code']!.acpInstallCommand,
-          'npm install -g @zed-industries/claude-code-acp',
+          'npm install -g @agentclientprotocol/claude-agent-acp',
         );
         expect(
           kBuiltinAgentPresets['builtin-codex']!.acpInstallCommand,

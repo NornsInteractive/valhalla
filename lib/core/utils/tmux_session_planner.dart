@@ -62,6 +62,11 @@ abstract final class TmuxSessionPlanner {
     return 'tmux -L $socketName has-session -t ${cliShellQuote('=$name')}';
   }
 
+  static String killSessionCommand(String name) {
+    _validateName(name);
+    return 'tmux -L $socketName kill-session -t ${cliShellQuote('=$name')}';
+  }
+
   static const listSessionsCommand =
       "tmux -L $socketName list-sessions -F '#{session_name}\t#{session_created}\t#{session_attached}'";
 

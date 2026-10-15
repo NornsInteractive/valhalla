@@ -132,7 +132,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get switchAgent => 'Ajan Değiştir';
 
   @override
-  String get agentClaudeCode => 'Claude CodeX';
+  String get agentClaudeCode => 'Claude Code';
 
   @override
   String get agentCodex => 'OpenAI Codex';
@@ -414,7 +414,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settingsResetDefault => 'Varsayılanlara Sıfırla';
 
   @override
-  String get settingsTerminalUseTmux => 'Kalıcı Oturumlar (tmux)';
+  String get settingsTerminalUseTmux => 'Manuel Yeni Terminal Modu';
 
   @override
   String get settingsTerminalUseTmuxSubtitle =>
@@ -422,7 +422,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settingsTerminalUseTmuxDescription =>
-      'Bağlantı kesildikten sonra terminal çıktısını korur. Uzak sunucuda tmux gerektirir. Değişiklikler yeni açılan terminal sekmelerine uygulanır.';
+      'Yalnızca manuel olarak oluşturulan terminalleri etkiler. Otomatik yeni terminaller her zaman kurtarılabilir geçmiş olmadan standart SSH kullanır; tmux etkinleştirildiğinde, manuel oluşturulan oturumlar bağlantı koptuktan sonra geri yüklenebilir (uzak sunucuda tmux gerektirir). Mevcut geçmiş kurtarma bu durumdan etkilenmez.';
 
   @override
   String get settingsTerminalFontSize => 'Terminal Yazı Tipi Boyutu';
@@ -1389,6 +1389,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get transferFailedDownload => 'İndirme başarısız';
+
+  @override
+  String get transferPhasePreparing => 'Hazırlanıyor...';
+
+  @override
+  String get transferPhaseVerifyingPartial => 'Kısmi dosya doğrulanıyor...';
+
+  @override
+  String get transferPhaseVerifying => 'Bütünlük doğrulanıyor...';
 
   @override
   String get stopGeneration => 'Durdur';
@@ -4325,6 +4334,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get updateDownloadCompleted => 'İndirme tamamlandı ve doğrulandı';
 
   @override
+  String get updatePhaseResolving => 'Güncelleme sunucusuna bağlanılıyor...';
+
+  @override
+  String get updatePhaseVerifying => 'Güncelleme paketi doğrulanıyor...';
+
+  @override
+  String get updateOpeningInstaller => 'Kurulum hazırlanıyor...';
+
+  @override
   String get updateInstall => 'Güncellemeyi Yükle';
 
   @override
@@ -5578,4 +5596,267 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get terminalNoticePlainInterrupted =>
       'Bağlantı kesildi. tmux dışı kabuk işlemleri sürdürülemedi';
+
+  @override
+  String get terminalHistoryDeleteDialogTitle => 'Oturum Geçmişini Sil';
+
+  @override
+  String get terminalHistoryTerminateRemote =>
+      'Uzak sunucu oturumunu da sonlandır';
+
+  @override
+  String get terminalHistoryTerminateConfirmTitle =>
+      'Uzak Oturum Sonlandırılsın mı?';
+
+  @override
+  String get terminalHistoryTerminateConfirmMessage =>
+      'Bu işlem uzak tmux oturumunu sonlandıracak ve içinde çalışan tüm süreçleri durduracaktır.';
+
+  @override
+  String get terminalErrorHistoryDeleteFailed => 'Terminal geçmişi silinemedi';
+
+  @override
+  String get terminalErrorHistoryTerminateFailed =>
+      'Uzak oturum sonlandırılamadı';
+
+  @override
+  String get terminalErrorTargetChanged =>
+      'Hedef sunucu değişti. Lütfen geçerli sunucuda oturumu yeniden açın.';
+
+  @override
+  String get terminalModeStandard =>
+      'Standart SSH Terminali (Varsayılan, geçmiş yok)';
+
+  @override
+  String get terminalModeTmux =>
+      'tmux Terminali (Uzak oturumu ve geçmişi korur)';
+
+  @override
+  String get terminalModeSaveFailed =>
+      'Terminal modu kaydedilemedi, lütfen tekrar deneyin';
+
+  @override
+  String get sftpNew => 'Yeni';
+
+  @override
+  String get terminalHistorySearchHint => 'Oturum adı ara…';
+
+  @override
+  String get configMigrationBoundaryNote =>
+      'Yalnızca yerel cihaz yapılandırması. Uzak sunucu verileri değiştirilmez.';
+
+  @override
+  String get configMigrationSubtitle =>
+      'Yerel uygulama ayarlarını ve sunucu profillerini dışa veya içe aktar';
+
+  @override
+  String get installAppId => 'Uygulama Kimliği';
+
+  @override
+  String get installArchitecture => 'Mimari';
+
+  @override
+  String get installPlatform => 'Platform';
+
+  @override
+  String get settingsAboutPrivacyDesc =>
+      'Sürüm, açık kaynak lisansları ve gizlilik politikası';
+
+  @override
+  String get settingsAccentColorDesc => 'Tema vurgu renklerini özelleştir';
+
+  @override
+  String get settingsSearchHint => 'Ayarları ara…';
+
+  @override
+  String get settingsSearchNoResults => 'Eşleşen ayar bulunamadı';
+
+  @override
+  String get settingsSecurityDesc =>
+      'Bilinen ana bilgisayarlar, kimlik bilgileri ve güvenlik işlemleri';
+
+  @override
+  String get agentExpandDetails => 'Ayrıntılar';
+
+  @override
+  String get agentCollapseDetails => 'Daralt';
+
+  @override
+  String get transferPauseAll => 'Tümünü Duraklat';
+
+  @override
+  String get transferResumePaused => 'Duraklatılanları Sürdür';
+
+  @override
+  String get transferFilterAll => 'Tümü';
+
+  @override
+  String get transferFilterActive => 'Etkin';
+
+  @override
+  String get transferFilterFailed => 'Başarısız';
+
+  @override
+  String get transferFilterCompleted => 'Tamamlandı';
+
+  @override
+  String get transferPauseReasonUser => 'Kullanıcı tarafından duraklatıldı';
+
+  @override
+  String get transferPauseReasonNetwork =>
+      'Ağ bağlantısı kesildiği için duraklatıldı';
+
+  @override
+  String get transferPauseReasonAppRestart =>
+      'Uygulama yeniden başlatıldıktan sonra duraklatıldı';
+
+  @override
+  String get transferRemotePath => 'Uzak Yol';
+
+  @override
+  String get transferLocalPath => 'Yerel Yol';
+
+  @override
+  String get transferErrorDetail => 'Hata Ayrıntısı';
+
+  @override
+  String get chatFailureKindAuth => 'Kimlik Doğrulama Gerekli';
+
+  @override
+  String get chatFailureKindModelUnavailable => 'Model Kullanılamıyor';
+
+  @override
+  String get chatFailureKindConnection => 'Bağlantı Başarısız';
+
+  @override
+  String get chatFailureKindHistory => 'Geçmiş Yüklenemedi';
+
+  @override
+  String get chatFailureKindOther => 'İstek Başarısız';
+
+  @override
+  String get chatFailureActionLogin => 'Giriş Yap';
+
+  @override
+  String get chatFailureActionRunSettings => 'Model Ayarları';
+
+  @override
+  String get chatFailureActionReconnect => 'Yeniden Bağlan';
+
+  @override
+  String get chatFailureActionReloadHistory => 'Yeniden Dene';
+
+  @override
+  String get chatFailureActionDetails => 'Ayrıntılar';
+
+  @override
+  String get sftpConfigureToolbar => 'Araç Çubuğunu Yapılandır';
+
+  @override
+  String get sftpConfigureToolbarDesc =>
+      'Doğrudan araç çubuğuna sabitlenecek eylemleri seçin. Diğer eylemler Daha Fazla menüsünde görünecektir.';
+
+  @override
+  String get sftpToolbarPreferenceSaveFailed =>
+      'Araç çubuğu tercihi kaydedilemedi';
+
+  @override
+  String get sftpToolbarActionView => 'Görünümü Değiştir';
+
+  @override
+  String agentUpdateNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ajan güncellemesi mevcut',
+      one: '1 ajan güncellemesi mevcut',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agentUpdateViewAction => 'Görüntüle';
+
+  @override
+  String get agentUpdateCheckAll => 'Güncellemeleri Kontrol Et';
+
+  @override
+  String get agentUpdateCheck => 'Güncellemeyi Kontrol Et';
+
+  @override
+  String get agentUpdateChecking => 'Kontrol ediliyor...';
+
+  @override
+  String get agentUpdateAvailable => 'Güncelleme Mevcut';
+
+  @override
+  String get agentUpdateUpToDate => 'Güncel';
+
+  @override
+  String get agentUpdateDialogTitle => 'Ajanı Güncelle';
+
+  @override
+  String get agentUpdateConfirmButton => 'Onayla ve Güncelle';
+
+  @override
+  String get agentUpdateCancelButton => 'İptal';
+
+  @override
+  String get agentUpdateTargetServer => 'Sunucu';
+
+  @override
+  String get agentUpdateTargetEnvironment => 'Ortam';
+
+  @override
+  String get agentUpdateTargetIdentity => 'Kimlik';
+
+  @override
+  String get agentUpdateCommandPreview => 'Komut Önizleme';
+
+  @override
+  String get agentUpdateClaudeMigrationNotice =>
+      'Bu güncelleme, eski Claude bağdaştırıcısını (claude-code-acp) resmi claude-agent-acp bağdaştırıcısına taşır. Mevcut geçmiş ve kimlik bilgileri korunur.';
+
+  @override
+  String get agentUpdateAgyNotice =>
+      'AgY CLI, resmi kararlı sürüm kanalı üzerinden güncellenir. Yüklenecek sürüm, onay anında gösterilen anlık görüntüden daha yeni olabilir.';
+
+  @override
+  String get agentUpdateLogs => 'Güncelleme Günlükleri';
+
+  @override
+  String get agentUpdateCopyLog => 'Günlüğü Kopyala';
+
+  @override
+  String get agentUpdateLogCopied => 'Güncelleme günlüğü panoya kopyalandı';
+
+  @override
+  String get agentUpdateSuccess => 'Ajan başarıyla güncellendi';
+
+  @override
+  String get agentUpdateFailed => 'Güncelleme başarısız oldu';
+
+  @override
+  String get agentUpdateInterrupted =>
+      'Güncelleme kesintiye uğradı veya bağlantı kesildi. Lütfen tekrar denemeden önce gerçek sürümü doğrulayın; güvenlik nedeniyle otomatik yeniden denemeler devre dışı bırakılmıştır.';
+
+  @override
+  String get agentUpdateInProgress =>
+      'Bu sunucuda şu anda bir güncelleme işlemi devam ediyor.';
+
+  @override
+  String get agentUpdateBusy =>
+      'Sunucu veya ajan meşgul. Lütfen etkin görevlerin bitmesini bekleyin.';
+
+  @override
+  String get agentUpdateVersionUnknown => 'Bilinmiyor';
+
+  @override
+  String get agentUpdateSource => 'Kaynak';
+
+  @override
+  String get agentUpdateLastChecked => 'Son kontrol';
+
+  @override
+  String get agentUpdateNeverChecked => 'Hiç kontrol edilmedi';
 }
