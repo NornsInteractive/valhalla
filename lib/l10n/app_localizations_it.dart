@@ -235,6 +235,15 @@ class AppLocalizationsIt extends AppLocalizations {
   String get terminalToggleKeyboard => 'Attiva/disattiva tastiera';
 
   @override
+  String get terminalKeyArrows => 'Tasti freccia';
+
+  @override
+  String get terminalDirectionPad => 'Pad direzionale';
+
+  @override
+  String get terminalCloseDirectionPad => 'Chiudi pad direzionale';
+
+  @override
   String get sftpCurrentPath => 'Percorso corrente';
 
   @override

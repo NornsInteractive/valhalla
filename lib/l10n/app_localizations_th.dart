@@ -235,6 +235,15 @@ class AppLocalizationsTh extends AppLocalizations {
   String get terminalToggleKeyboard => 'สลับแป้นพิมพ์';
 
   @override
+  String get terminalKeyArrows => 'ปุ่มลูกศร';
+
+  @override
+  String get terminalDirectionPad => 'แผงปุ่มทิศทาง';
+
+  @override
+  String get terminalCloseDirectionPad => 'ปิดแผงปุ่มทิศทาง';
+
+  @override
   String get sftpCurrentPath => 'เส้นทางปัจจุบัน';
 
   @override

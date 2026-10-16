@@ -234,6 +234,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get terminalToggleKeyboard => 'Toggle Keyboard';
 
   @override
+  String get terminalKeyArrows => 'Arrow Keys';
+
+  @override
+  String get terminalDirectionPad => 'Direction Pad';
+
+  @override
+  String get terminalCloseDirectionPad => 'Close Direction Pad';
+
+  @override
   String get sftpCurrentPath => 'Current Path';
 
   @override

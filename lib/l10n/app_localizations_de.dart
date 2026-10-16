@@ -237,6 +237,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get terminalToggleKeyboard => 'Tastatur umschalten';
 
   @override
+  String get terminalKeyArrows => 'Pfeiltasten';
+
+  @override
+  String get terminalDirectionPad => 'Steuerkreuz';
+
+  @override
+  String get terminalCloseDirectionPad => 'Steuerkreuz schließen';
+
+  @override
   String get sftpCurrentPath => 'Aktueller Pfad';
 
   @override

@@ -735,6 +735,38 @@ void main() {
       await gesture.cancel();
       expect(presses, seen, reason: 'widget 移除后不得继续触发 onPressed');
     });
+
+    testWidgets('canRepeat 返回 false 后不卸载也停止重复', (tester) async {
+      var allowed = true;
+      var calls = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Center(
+            child: HoldRepeatKey(
+              canRepeat: () => allowed,
+              onPressed: () => calls++,
+              child: const SizedBox(width: 40, height: 40),
+            ),
+          ),
+        ),
+      );
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(HoldRepeatKey)),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(calls, greaterThan(1), reason: '允许重复时长按应进入重复');
+
+      allowed = false;
+      final seen = calls;
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(calls, seen, reason: 'canRepeat 关闭后按住也必须停止重复');
+
+      await gesture.up();
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(calls, seen, reason: '卸载清理后不得再有帧回调');
+    });
   });
 
   group('CustomizePinnedKeysDialog', () {

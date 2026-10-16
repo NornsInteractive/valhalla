@@ -236,6 +236,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get terminalToggleKeyboard => 'Alihkan Papan Ketik';
 
   @override
+  String get terminalKeyArrows => 'Tombol Panah';
+
+  @override
+  String get terminalDirectionPad => 'Pad Arah';
+
+  @override
+  String get terminalCloseDirectionPad => 'Tutup pad arah';
+
+  @override
   String get sftpCurrentPath => 'Jalur Saat Ini';
 
   @override

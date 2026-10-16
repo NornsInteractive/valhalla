@@ -235,6 +235,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get terminalToggleKeyboard => 'Alternar teclado';
 
   @override
+  String get terminalKeyArrows => 'Teclas de flecha';
+
+  @override
+  String get terminalDirectionPad => 'Panel de dirección';
+
+  @override
+  String get terminalCloseDirectionPad => 'Cerrar panel de dirección';
+
+  @override
   String get sftpCurrentPath => 'Ruta actual';
 
   @override

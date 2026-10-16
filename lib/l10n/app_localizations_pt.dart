@@ -236,6 +236,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get terminalToggleKeyboard => 'Alternar teclado';
 
   @override
+  String get terminalKeyArrows => 'Teclas de seta';
+
+  @override
+  String get terminalDirectionPad => 'Painel direcional';
+
+  @override
+  String get terminalCloseDirectionPad => 'Fechar painel direcional';
+
+  @override
   String get sftpCurrentPath => 'Caminho atual';
 
   @override

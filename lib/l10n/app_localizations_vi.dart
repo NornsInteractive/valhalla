@@ -236,6 +236,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get terminalToggleKeyboard => 'Bật/tắt bàn phím';
 
   @override
+  String get terminalKeyArrows => 'Phím mũi tên';
+
+  @override
+  String get terminalDirectionPad => 'Bàn phím điều hướng';
+
+  @override
+  String get terminalCloseDirectionPad => 'Đóng bàn phím điều hướng';
+
+  @override
   String get sftpCurrentPath => 'Đường dẫn hiện tại';
 
   @override

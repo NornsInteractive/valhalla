@@ -61,6 +61,13 @@ class _CustomizePinnedKeysDialogState
     });
   }
 
+  String _displayKeyLabel(BuildContext context, String key) {
+    if (key == 'ARROWS') {
+      return context.l10n.terminalKeyArrows;
+    }
+    return key;
+  }
+
   Future<void> _save() async {
     setState(() => _isSaving = true);
     try {
@@ -165,12 +172,25 @@ class _CustomizePinnedKeysDialogState
                                   ),
                                 ),
                               ),
-                              title: Text(
-                                keyName,
-                                style: monoTextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              title: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (keyName == 'ARROWS') ...[
+                                    const Icon(Icons.open_with, size: 16),
+                                    const SizedBox(width: 6),
+                                  ],
+                                  Flexible(
+                                    child: Text(
+                                      _displayKeyLabel(context, keyName),
+                                      style: monoTextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
                               trailing: SizedBox(
                                 width: 44,
@@ -206,9 +226,12 @@ class _CustomizePinnedKeysDialogState
                     runSpacing: 6,
                     children: unpinnedKeys.map((k) {
                       return ActionChip(
-                        avatar: const Icon(Icons.add, size: 14),
+                        avatar: Icon(
+                          k == 'ARROWS' ? Icons.open_with : Icons.add,
+                          size: 14,
+                        ),
                         label: Text(
-                          k,
+                          _displayKeyLabel(context, k),
                           style: monoTextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,

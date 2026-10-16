@@ -201,5 +201,52 @@ void main() {
         reason: '用户自定义列表必须原样保留，不得被默认 SHIFT/FN 列表顶掉',
       );
     });
+
+    test('ARROWS 在默认列表与 availableKeys 中各只出现一次', () async {
+      expect(
+        TerminalSettings.defaultPinnedKeys.where((k) => k == 'ARROWS').length,
+        1,
+      );
+      expect(
+        TerminalSettings.availableKeys.where((k) => k == 'ARROWS').length,
+        1,
+      );
+    });
+
+    test('setPinnedKeys 落盘保序；移除 ARROWS 后不自动补回', () async {
+      final first = await _container();
+      await first.read(terminalSettingsProvider.notifier).setPinnedKeys([
+        'ARROWS',
+        'ESC',
+      ]);
+      first.dispose();
+
+      final second = await _container();
+      addTearDown(second.dispose);
+      expect(second.read(terminalSettingsProvider).pinnedKeys, [
+        'ARROWS',
+        'ESC',
+      ], reason: '自定义顺序必须跨重启原样读回');
+
+      await second.read(terminalSettingsProvider.notifier).setPinnedKeys([
+        'ESC',
+      ]);
+
+      final third = await _container();
+      addTearDown(third.dispose);
+      expect(
+        third.read(terminalSettingsProvider).pinnedKeys,
+        ['ESC'],
+        reason: '移除 ARROWS 后不得被默认列表自动补回',
+      );
+    });
+
+    test('显式存空列表时读回仍是空列表，不落回默认', () async {
+      SharedPreferences.setMockInitialValues({_pinnedKeysKey: <String>[]});
+      final container = await _container();
+      addTearDown(container.dispose);
+
+      expect(container.read(terminalSettingsProvider).pinnedKeys, isEmpty);
+    });
   });
 }

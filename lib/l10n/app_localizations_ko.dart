@@ -232,6 +232,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get terminalToggleKeyboard => '키보드 전환';
 
   @override
+  String get terminalKeyArrows => '방향키';
+
+  @override
+  String get terminalDirectionPad => '방향 패드';
+
+  @override
+  String get terminalCloseDirectionPad => '방향 패드 닫기';
+
+  @override
   String get sftpCurrentPath => '현재 경로';
 
   @override

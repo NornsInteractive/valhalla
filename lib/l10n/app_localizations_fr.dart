@@ -238,6 +238,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get terminalToggleKeyboard => 'Basculer le clavier';
 
   @override
+  String get terminalKeyArrows => 'Touches fléchées';
+
+  @override
+  String get terminalDirectionPad => 'Pavé directionnel';
+
+  @override
+  String get terminalCloseDirectionPad => 'Fermer le pavé directionnel';
+
+  @override
   String get sftpCurrentPath => 'Chemin actuel';
 
   @override

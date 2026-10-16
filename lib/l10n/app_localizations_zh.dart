@@ -226,6 +226,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get terminalToggleKeyboard => '切换键盘';
 
   @override
+  String get terminalKeyArrows => '方向键';
+
+  @override
+  String get terminalDirectionPad => '方向导航盘';
+
+  @override
+  String get terminalCloseDirectionPad => '关闭方向盘';
+
+  @override
   String get sftpCurrentPath => '当前工作路径';
 
   @override
@@ -5772,6 +5781,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get terminalToggleKeyboard => '切換鍵盤';
+
+  @override
+  String get terminalKeyArrows => '方向鍵';
+
+  @override
+  String get terminalDirectionPad => '方向導航盤';
+
+  @override
+  String get terminalCloseDirectionPad => '關閉方向盤';
 
   @override
   String get sftpCurrentPath => '當前工作路徑';

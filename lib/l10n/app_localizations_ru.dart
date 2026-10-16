@@ -235,6 +235,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get terminalToggleKeyboard => 'Переключить клавиатуру';
 
   @override
+  String get terminalKeyArrows => 'Клавиши со стрелками';
+
+  @override
+  String get terminalDirectionPad => 'Кнопки направления';
+
+  @override
+  String get terminalCloseDirectionPad => 'Закрыть кнопки направления';
+
+  @override
   String get sftpCurrentPath => 'Текущий путь';
 
   @override

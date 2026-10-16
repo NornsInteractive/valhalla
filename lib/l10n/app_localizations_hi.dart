@@ -236,6 +236,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get terminalToggleKeyboard => 'कीबोर्ड टॉगल करें';
 
   @override
+  String get terminalKeyArrows => 'तीर कुंजियाँ';
+
+  @override
+  String get terminalDirectionPad => 'दिशा पैड';
+
+  @override
+  String get terminalCloseDirectionPad => 'दिशा पैड बंद करें';
+
+  @override
   String get sftpCurrentPath => 'वर्तमान पथ';
 
   @override

@@ -547,6 +547,24 @@ abstract class AppLocalizations {
   /// **'Toggle Keyboard'**
   String get terminalToggleKeyboard;
 
+  /// No description provided for @terminalKeyArrows.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrow Keys'**
+  String get terminalKeyArrows;
+
+  /// No description provided for @terminalDirectionPad.
+  ///
+  /// In en, this message translates to:
+  /// **'Direction Pad'**
+  String get terminalDirectionPad;
+
+  /// No description provided for @terminalCloseDirectionPad.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Direction Pad'**
+  String get terminalCloseDirectionPad;
+
   /// No description provided for @sftpCurrentPath.
   ///
   /// In en, this message translates to:

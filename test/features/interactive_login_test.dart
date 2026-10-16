@@ -159,12 +159,15 @@ void main() {
         reason: 'paste callback must be delivered exactly once',
       );
 
-      // Unpinned keys are only reachable through the More panel: arrows live
-      // in the Nav category, Ctrl+D in the Edit category.
+      // Unpinned keys are only reachable through the More panel; the ARROWS
+      // group is already resident (default pinned keys), so ↑ is tappable
+      // directly after opening More — no group toggle, no dismiss.
       await tester.tap(find.byKey(const Key('terminal_accessory_more_button')));
       await tester.pumpAndSettle();
 
       expect(find.text('↑'), findsOneWidget);
+      await tester.ensureVisible(find.text('↑'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('↑'));
       expect(pressedKeys, contains('↑'));
       expect(

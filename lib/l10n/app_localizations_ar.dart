@@ -235,6 +235,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get terminalToggleKeyboard => 'تبديل لوحة المفاتيح';
 
   @override
+  String get terminalKeyArrows => 'مفاتيح الأسهم';
+
+  @override
+  String get terminalDirectionPad => 'لوحة الاتجاهات';
+
+  @override
+  String get terminalCloseDirectionPad => 'إغلاق لوحة الاتجاهات';
+
+  @override
   String get sftpCurrentPath => 'المسار الحالي';
 
   @override

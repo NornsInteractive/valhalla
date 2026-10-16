@@ -21,6 +21,7 @@ class TerminalSettings {
     'SHIFT',
     'ALT',
     'PASTE',
+    'ARROWS',
   ];
   static const availableKeys = [
     ...defaultPinnedKeys,

@@ -232,6 +232,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get terminalToggleKeyboard => 'キーボードの切り替え';
 
   @override
+  String get terminalKeyArrows => '矢印キー';
+
+  @override
+  String get terminalDirectionPad => '方向パッド';
+
+  @override
+  String get terminalCloseDirectionPad => '方向パッドを閉じる';
+
+  @override
   String get sftpCurrentPath => '現在のパス';
 
   @override

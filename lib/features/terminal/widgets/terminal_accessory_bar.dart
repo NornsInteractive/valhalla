@@ -12,11 +12,13 @@ enum ModifierLockState { inactive, oneShot, locked }
 class HoldRepeatKey extends StatefulWidget {
   final VoidCallback onPressed;
   final Widget child;
+  final bool Function()? canRepeat;
 
   const HoldRepeatKey({
     super.key,
     required this.onPressed,
     required this.child,
+    this.canRepeat,
   });
 
   @override
@@ -29,12 +31,21 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey> {
 
   void _start() {
     _cancel();
+    if (widget.canRepeat != null && !widget.canRepeat!()) {
+      return;
+    }
     widget.onPressed();
     _initialTimer = Timer(const Duration(milliseconds: 350), () {
+      if (widget.canRepeat != null && !widget.canRepeat!()) {
+        _cancel();
+        return;
+      }
       _repeatTimer = Timer.periodic(const Duration(milliseconds: 70), (_) {
-        if (mounted) {
-          widget.onPressed();
+        if (!mounted || (widget.canRepeat != null && !widget.canRepeat!())) {
+          _cancel();
+          return;
         }
+        widget.onPressed();
       });
     });
   }
@@ -47,6 +58,12 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey> {
   }
 
   @override
+  void deactivate() {
+    _cancel();
+    super.deactivate();
+  }
+
+  @override
   void dispose() {
     _cancel();
     super.dispose();
@@ -54,6 +71,9 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey> {
 
   @override
   Widget build(BuildContext context) {
+    if (!TickerMode.of(context)) {
+      _cancel();
+    }
     return Listener(
       behavior: HitTestBehavior.opaque,
       onPointerDown: (_) => _start(),
@@ -128,9 +148,16 @@ class TerminalAccessoryBar extends ConsumerStatefulWidget {
       _TerminalAccessoryBarState();
 }
 
-class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
+class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
+    with WidgetsBindingObserver {
   bool _isExpanded = false;
   _ExpandedCategory _activeCategory = _ExpandedCategory.nav;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   ModifierLockState get _effectiveCtrlState =>
       widget.ctrlState ??
@@ -149,6 +176,189 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
 
   ModifierLockState get _effectiveFnState =>
       widget.fnState ?? ModifierLockState.inactive;
+
+  AppLifecycleState _appLifecycleState = AppLifecycleState.resumed;
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _appLifecycleState = state;
+  }
+
+  bool _canRepeat() {
+    return mounted &&
+        _appLifecycleState == AppLifecycleState.resumed &&
+        TickerMode.of(context);
+  }
+
+  Widget _buildArrowsKeyGroup(BuildContext context, {bool isExpanded = false}) {
+    const colWidth = 44.0;
+    const rowHeight = 44.0;
+
+    final groupKey = isExpanded
+        ? const Key('terminal_accessory_expanded_key_ARROWS')
+        : const Key('terminal_accessory_key_ARROWS');
+
+    final tBgColor = context.colorScheme.surfaceContainerHigh.withValues(
+      alpha: 0.5,
+    );
+
+    return Semantics(
+      key: groupKey,
+      container: true,
+      label: context.l10n.terminalDirectionPad,
+      child: SizedBox(
+        key: const Key('terminal_direction_pad'),
+        width: colWidth * 3,
+        height: rowHeight * 2,
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Stack(
+            children: [
+              // Inverted-T background: connected top-center 44x44 and bottom 132x44
+              Positioned(
+                left: 44,
+                top: 0,
+                width: 44,
+                height: 44,
+                child: Material(
+                  color: tBgColor,
+                  elevation: 0,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(8),
+                  ),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                top: 44,
+                width: 132,
+                height: 44,
+                child: Material(
+                  color: tBgColor,
+                  elevation: 0,
+                  borderRadius: BorderRadius.circular(8),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              // Four 44x44 touch areas
+              Positioned(
+                left: 44,
+                top: 0,
+                width: 44,
+                height: 44,
+                child: _buildPadArrowKey(context, '↑', () => _handleKey('↑')),
+              ),
+              Positioned(
+                left: 0,
+                top: 44,
+                width: 44,
+                height: 44,
+                child: _buildPadArrowKey(context, '←', () => _handleKey('←')),
+              ),
+              Positioned(
+                left: 44,
+                top: 44,
+                width: 44,
+                height: 44,
+                child: _buildPadArrowKey(context, '↓', () => _handleKey('↓')),
+              ),
+              Positioned(
+                left: 88,
+                top: 44,
+                width: 44,
+                height: 44,
+                child: _buildPadArrowKey(context, '→', () => _handleKey('→')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPadArrowKey(
+    BuildContext context,
+    String label,
+    VoidCallback onPressed,
+  ) {
+    return SizedBox(
+      key: Key('terminal_accessory_key_$label'),
+      width: 44,
+      height: 44,
+      child: Semantics(
+        button: true,
+        label: label,
+        excludeSemantics: true,
+        onTap: onPressed,
+        child: HoldRepeatKey(
+          onPressed: onPressed,
+          canRepeat: _canRepeat,
+          child: Container(
+            color: Colors.transparent,
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'JetBrains Mono',
+                color: context.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResidentArea(BuildContext context, List<String> pinnedKeys) {
+    if (pinnedKeys.isEmpty) return const SizedBox.shrink();
+
+    final children = <Widget>[];
+    var i = 0;
+    while (i < pinnedKeys.length) {
+      final key = pinnedKeys[i];
+      if (key == 'ARROWS') {
+        children.add(_buildArrowsKeyGroup(context));
+        i++;
+      } else {
+        final topKey = key;
+        String? bottomKey;
+        if (i + 1 < pinnedKeys.length && pinnedKeys[i + 1] != 'ARROWS') {
+          bottomKey = pinnedKeys[i + 1];
+          i += 2;
+        } else {
+          i += 1;
+        }
+
+        children.add(
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildPinnedKey(context, topKey),
+              if (bottomKey != null)
+                _buildPinnedKey(context, bottomKey)
+              else
+                const SizedBox(width: 44, height: 44),
+            ],
+          ),
+        );
+      }
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
 
   void _handleKey(String key) {
     if (key.startsWith('Ctrl+')) {
@@ -194,18 +404,20 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
                 ),
               ),
             if (_isExpanded) _buildExpandedPanel(context),
-            // Two-row accessory keyboard (~92dp total height)
+            // Two-row compact accessory keyboard (~88dp total height without SafeArea)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
               child: SizedBox(
-                height: 92,
+                height: 88,
                 child: Directionality(
                   textDirection: TextDirection.ltr,
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(
-                        child: _buildResidentArea(context, pinnedKeys),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: _buildResidentArea(context, pinnedKeys),
+                        ),
                       ),
                       const SizedBox(width: 4),
                       _buildFixedRightCluster(context),
@@ -221,172 +433,36 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
   }
 
   Widget _buildFixedRightCluster(BuildContext context) {
-    const colWidth = 44.0;
-    const rowHeight = 44.0;
-
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: SizedBox(
-        width: colWidth * 4,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              height: rowHeight,
-              child: Row(
-                children: [
-                  const SizedBox(width: colWidth),
-                  SizedBox(
-                    width: colWidth,
-                    height: rowHeight,
-                    child: _buildKey(
-                      context,
-                      '↑',
-                      onPressed: () => _handleKey('↑'),
-                    ),
-                  ),
-                  const SizedBox(width: colWidth),
-                  SizedBox(
-                    width: colWidth,
-                    height: rowHeight,
-                    child: _buildMoreButton(context),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 4),
-            SizedBox(
-              height: rowHeight,
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: colWidth,
-                    height: rowHeight,
-                    child: _buildKey(
-                      context,
-                      '←',
-                      onPressed: () => _handleKey('←'),
-                    ),
-                  ),
-                  SizedBox(
-                    width: colWidth,
-                    height: rowHeight,
-                    child: _buildKey(
-                      context,
-                      '↓',
-                      onPressed: () => _handleKey('↓'),
-                    ),
-                  ),
-                  SizedBox(
-                    width: colWidth,
-                    height: rowHeight,
-                    child: _buildKey(
-                      context,
-                      '→',
-                      onPressed: () => _handleKey('→'),
-                    ),
-                  ),
-                  SizedBox(
-                    width: colWidth,
-                    height: rowHeight,
-                    child: _buildKeyboardButton(context),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return SizedBox(
+      width: 44,
+      height: 88,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [_buildMoreButton(context), _buildKeyboardButton(context)],
       ),
-    );
-  }
-
-  Widget _buildResidentArea(
-    BuildContext context,
-    List<String> pinnedKeys,
-  ) {
-    if (pinnedKeys.isEmpty) return const SizedBox.shrink();
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cols = (constraints.maxWidth / 50).floor().clamp(2, 8);
-        final perPage = cols * 2;
-
-        if (pinnedKeys.length <= perPage) {
-          final row1Keys = pinnedKeys.take(cols).toList();
-          final row2Keys = pinnedKeys.skip(cols).take(cols).toList();
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: constraints.maxWidth,
-              child: _buildKeyGridPage(context, row1Keys, row2Keys, cols: cols),
-            ),
-          );
-        }
-
-        final pageCount = (pinnedKeys.length / perPage).ceil();
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const PageScrollPhysics(),
-          child: Row(
-            children: List.generate(pageCount, (pageIndex) {
-              final pageKeys = pinnedKeys
-                  .skip(pageIndex * perPage)
-                  .take(perPage)
-                  .toList();
-              final row1Keys = pageKeys.take(cols).toList();
-              final row2Keys = pageKeys.skip(cols).take(cols).toList();
-              return SizedBox(
-                width: constraints.maxWidth,
-                child: _buildKeyGridPage(context, row1Keys, row2Keys, cols: cols),
-              );
-            }),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildKeyGridPage(
-    BuildContext context,
-    List<String> row1Keys,
-    List<String> row2Keys, {
-    required int cols,
-  }) {
-    const rowHeight = 44.0;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        SizedBox(
-          height: rowHeight,
-          child: Row(
-            children: [
-              for (final key in row1Keys)
-                Expanded(child: _buildPinnedKey(context, key)),
-              for (var i = 0; i < cols - row1Keys.length; i++)
-                const Spacer(),
-            ],
-          ),
-        ),
-        const SizedBox(height: 4),
-        SizedBox(
-          height: rowHeight,
-          child: Row(
-            children: [
-              for (final key in row2Keys)
-                Expanded(child: _buildPinnedKey(context, key)),
-              for (var i = 0; i < cols - row2Keys.length; i++)
-                const Spacer(),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
   Widget _buildKeyboardButton(BuildContext context) {
     final tooltipText = context.l10n.terminalToggleKeyboard;
+
+    final btn = Center(
+      child: SizedBox(
+        width: 32,
+        height: 32,
+        child: FilledButton.tonal(
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(32, 32),
+            padding: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          onPressed: widget.onToggleKeyboard,
+          child: const Icon(Icons.keyboard, size: 16),
+        ),
+      ),
+    );
 
     return SizedBox(
       key: const Key('terminal_accessory_keyboard_button'),
@@ -397,26 +473,12 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
         child: Semantics(
           button: true,
           label: tooltipText,
+          excludeSemantics: true,
+          onTap: widget.onToggleKeyboard,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: widget.onToggleKeyboard,
-            child: Center(
-              child: SizedBox(
-                width: 36,
-                height: 36,
-                child: FilledButton.tonal(
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(36, 36),
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  onPressed: widget.onToggleKeyboard,
-                  child: const Icon(Icons.keyboard, size: 18),
-                ),
-              ),
-            ),
+            child: btn,
           ),
         ),
       ),
@@ -424,35 +486,45 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
   }
 
   Widget _buildMoreButton(BuildContext context) {
+    final btn = Center(
+      child: SizedBox(
+        width: 32,
+        height: 32,
+        child: FilledButton.tonal(
+          key: const Key('terminal_accessory_more_button'),
+          style: FilledButton.styleFrom(
+            backgroundColor: _isExpanded
+                ? context.colorScheme.primaryContainer
+                : null,
+            foregroundColor: _isExpanded
+                ? context.colorScheme.onPrimaryContainer
+                : null,
+            minimumSize: const Size(32, 32),
+            padding: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          onPressed: () {
+            setState(() => _isExpanded = !_isExpanded);
+          },
+          child: Icon(
+            _isExpanded ? Icons.expand_more : Icons.more_horiz,
+            size: 16,
+          ),
+        ),
+      ),
+    );
+
     return SizedBox(
       width: 44,
       height: 44,
-      child: Center(
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: FilledButton.tonal(
-            key: const Key('terminal_accessory_more_button'),
-            style: FilledButton.styleFrom(
-              backgroundColor: _isExpanded
-                  ? context.colorScheme.primaryContainer
-                  : null,
-              foregroundColor: _isExpanded
-                  ? context.colorScheme.onPrimaryContainer
-                  : null,
-              minimumSize: const Size(36, 36),
-              padding: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-            onPressed: () => setState(() => _isExpanded = !_isExpanded),
-            child: Icon(
-              _isExpanded ? Icons.expand_more : Icons.more_horiz,
-              size: 18,
-            ),
-          ),
-        ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          setState(() => _isExpanded = !_isExpanded);
+        },
+        child: btn,
       ),
     );
   }
@@ -462,6 +534,20 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
     String key, {
     bool isExpanded = false,
   }) {
+    if (key == 'ARROWS') {
+      return _buildArrowsKeyGroup(context, isExpanded: isExpanded);
+    }
+    if (key == '↑' || key == '↓' || key == '←' || key == '→') {
+      final btnKey = isExpanded
+          ? Key('terminal_accessory_expanded_key_$key')
+          : Key('terminal_accessory_pinned_key_$key');
+      return _buildKey(
+        context,
+        key,
+        buttonKey: btnKey,
+        onPressed: () => _handleKey(key),
+      );
+    }
     if (key == 'CTRL') {
       return _buildModifierKey(
         context,
@@ -579,6 +665,7 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
   Widget _buildKey(
     BuildContext context,
     String label, {
+    Key? buttonKey,
     IconData? icon,
     required VoidCallback onPressed,
     String? tooltip,
@@ -586,15 +673,16 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
     final isArrow =
         label == '↑' || label == '↓' || label == '←' || label == '→';
 
+    final btnKey = buttonKey ?? Key('terminal_accessory_key_$label');
+
     final btn = Center(
       child: SizedBox(
-        width: 36,
-        height: 36,
+        height: 32,
         child: FilledButton.tonal(
-          key: Key('terminal_accessory_key_$label'),
+          key: btnKey,
           style: FilledButton.styleFrom(
-            minimumSize: const Size(36, 36),
-            padding: const EdgeInsets.symmetric(horizontal: 2),
+            minimumSize: const Size(32, 32),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(6),
             ),
@@ -622,13 +710,33 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
         ? SizedBox(
             width: 44,
             height: 44,
-            child: HoldRepeatKey(onPressed: onPressed, child: btn),
+            child: Semantics(
+              button: true,
+              label: label,
+              excludeSemantics: true,
+              onTap: onPressed,
+              child: HoldRepeatKey(
+                onPressed: onPressed,
+                canRepeat: _canRepeat,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  child: btn,
+                ),
+              ),
+            ),
           )
         : Padding(
             padding: const EdgeInsets.symmetric(horizontal: 1),
-            child: SizedBox(
-              height: 44,
-              child: btn,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              child: SizedBox(
+                height: 44,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onPressed,
+                  child: btn,
+                ),
+              ),
             ),
           );
 
@@ -748,13 +856,19 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
     BuildContext context,
     _ExpandedCategory category,
   ) {
+    if (category == _ExpandedCategory.nav) {
+      final pinnedKeys = ref.watch(terminalSettingsProvider).pinnedKeys;
+      return [
+        if (!pinnedKeys.contains('ARROWS'))
+          _buildPinnedKey(context, 'ARROWS', isExpanded: true),
+        ...const ['HOME', 'END', 'PGUP', 'PGDN'].map(
+          (key) => _buildKey(context, key, onPressed: () => _handleKey(key)),
+        ),
+      ];
+    }
+
     final keys = switch (category) {
-      _ExpandedCategory.nav => const [
-        'HOME',
-        'END',
-        'PGUP',
-        'PGDN',
-      ],
+      _ExpandedCategory.nav => const <String>[],
       _ExpandedCategory.edit => const [
         'INSERT',
         'DELETE',
@@ -852,15 +966,17 @@ class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
 
     final btn = Center(
       child: SizedBox(
-        height: 36,
+        height: 32,
         child: FilledButton.tonal(
           key: widget.buttonKey,
           style: FilledButton.styleFrom(
             backgroundColor: bgColor,
             foregroundColor: fgColor,
-            minimumSize: const Size(36, 36),
+            minimumSize: const Size(32, 32),
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
           ),
           onPressed: () {
             if (_pointerSequenceHandled) {
@@ -870,7 +986,9 @@ class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
             // Allows accessibility and keyboard/programmatic taps to trigger normally.
             widget.onTap();
           },
-          onLongPress: widget.onModifierDown != null ? null : widget.onLongPress,
+          onLongPress: widget.onModifierDown != null
+              ? null
+              : widget.onLongPress,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -949,15 +1067,23 @@ class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
                 });
               }
             },
-            child: btn,
+            child: Center(child: btn),
           )
-        : btn;
+        : GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            onLongPress: widget.onLongPress,
+            child: Center(child: btn),
+          );
 
     return Tooltip(
       message: widget.tooltip,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: SizedBox(height: 44, child: interactive),
+        padding: const EdgeInsets.symmetric(horizontal: 1),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          child: SizedBox(height: 44, child: interactive),
+        ),
       ),
     );
   }

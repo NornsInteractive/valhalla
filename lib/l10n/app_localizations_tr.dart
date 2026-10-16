@@ -236,6 +236,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get terminalToggleKeyboard => 'Klavyeyi Aç/Kapat';
 
   @override
+  String get terminalKeyArrows => 'Ok Tuşları';
+
+  @override
+  String get terminalDirectionPad => 'Yön Pedi';
+
+  @override
+  String get terminalCloseDirectionPad => 'Yön pedini kapat';
+
+  @override
   String get sftpCurrentPath => 'Mevcut Yol';
 
   @override

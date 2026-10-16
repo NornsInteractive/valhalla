@@ -11,7 +11,7 @@ void main() {
   for (final width in [320.0, 360.0, 430.0]) {
     for (final direction in TextDirection.values) {
       testWidgets(
-        'compact terminal keyboard has physical inverted-T directions and usable touch targets $width $direction',
+        'resident inline inverted-T directions keep physical layout and usable touch targets $width $direction',
         (tester) async {
           await tester.binding.setSurfaceSize(Size(width, 760));
           addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -49,9 +49,48 @@ void main() {
           await tester.pumpAndSettle();
           Finder key(String label) =>
               find.byKey(Key('terminal_accessory_key_$label'));
+
+          // ARROWS group is resident by default: no tap-to-open, no dismiss,
+          // no overlay — the pad lives inline inside the accessory bar.
+          expect(
+            find.byKey(const Key('terminal_accessory_key_ARROWS')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('terminal_direction_pad')),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(
+              of: find.byType(TerminalAccessoryBar),
+              matching: find.byKey(const Key('terminal_direction_pad')),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('terminal_direction_pad_dismiss')),
+            findsNothing,
+          );
+          expect(
+            find.byKey(const Key('terminal_accessory_key_FN')),
+            findsNothing,
+          );
+          for (final label in ['↑', '↓', '←', '→']) {
+            expect(key(label), findsOneWidget);
+          }
+
+          final barRect = tester.getRect(find.byType(TerminalAccessoryBar));
+          expect(barRect.height, lessThanOrEqualTo(88));
+
+          await tester.ensureVisible(
+            find.byKey(const Key('terminal_accessory_key_ARROWS')),
+          );
+          await tester.pumpAndSettle();
+
           final up = tester.getRect(key('↑')), down = tester.getRect(key('↓'));
           final left = tester.getRect(key('←')),
               right = tester.getRect(key('→'));
+          // Physical inverted-T: never mirrored, even in RTL.
           expect(up.center.dx, closeTo(down.center.dx, 1));
           expect(up.center.dy, lessThan(down.center.dy));
           expect(left.center.dx, lessThan(down.center.dx));
@@ -60,7 +99,7 @@ void main() {
           for (final label in ['↑', '↓', '←', '→']) {
             final rect = tester.getRect(
               find
-                  .ancestor(
+                  .descendant(
                     of: key(label),
                     matching: find.byType(HoldRepeatKey),
                   )
@@ -71,19 +110,137 @@ void main() {
             expect(rect.left, greaterThanOrEqualTo(0));
             expect(rect.right, lessThanOrEqualTo(width));
           }
-          final keyboard = tester.getCenter(
+
+          // More / keyboard stay pinned to the right, stacked with the
+          // keyboard underneath.
+          final moreRect = tester.getRect(
+            find.byKey(const Key('terminal_accessory_more_button')),
+          );
+          final keyboardRect = tester.getRect(
             find.byKey(const Key('terminal_accessory_keyboard_button')),
           );
-          expect(keyboard.dx, greaterThan(right.center.dx));
-          expect(keyboard.dy, closeTo(right.center.dy, 2));
-          expect(
-            find.byKey(const Key('terminal_accessory_key_FN')),
-            findsNothing,
-          );
-          expect(find.byType(TerminalAccessoryBar), findsOneWidget);
+          expect(keyboardRect.right, lessThanOrEqualTo(width));
+          expect(keyboardRect.center.dx, greaterThan(width - 60));
+          expect(moreRect.right, lessThanOrEqualTo(width));
+          expect(moreRect.center.dx, greaterThan(width / 2));
+          expect(keyboardRect.center.dy, greaterThan(moreRect.center.dy));
+          expect(keyboardRect.top, greaterThanOrEqualTo(moreRect.bottom - 1));
+
           expect(tester.takeException(), isNull);
         },
       );
     }
   }
+
+  testWidgets('arrow key long-repeat stops on lifecycle inactive', (
+    tester,
+  ) async {
+    final sentKeys = <String>[];
+    addTearDown(() {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    });
+    await tester.binding.setSurfaceSize(const Size(360, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: fixedTerminalSettingsOverrides(),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: TerminalAccessoryBar(
+                onKey:
+                    (key, {isCtrl = false, isAlt = false, isShift = false}) =>
+                        sentKeys.add(key),
+                onToggleCtrl: () {},
+                onToggleAlt: () {},
+                onPaste: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('terminal_accessory_key_↑')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('terminal_accessory_key_↑')));
+    await tester.pump();
+    expect(sentKeys.length, 1);
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const Key('terminal_accessory_key_↑'))),
+    );
+    await tester.pump(const Duration(milliseconds: 450));
+    final countAfterRepeat = sentKeys.length;
+    expect(countAfterRepeat, greaterThan(1));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(sentKeys.length, countAfterRepeat);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(sentKeys.length, countAfterRepeat);
+    await gesture.up();
+    await tester.pump();
+    expect(sentKeys.length, countAfterRepeat);
+  });
+
+  testWidgets('inline arrows repeat stops on inactive', (tester) async {
+    final sent = <String>[];
+    addTearDown(
+      () => tester.binding.handleAppLifecycleStateChanged(
+        AppLifecycleState.resumed,
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: fixedTerminalSettingsOverrides(),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: TerminalAccessoryBar(
+                onKey:
+                    (
+                      String key, {
+                      bool isCtrl = false,
+                      bool isAlt = false,
+                      bool isShift = false,
+                    }) {
+                      sent.add(key);
+                    },
+                onToggleCtrl: () {},
+                onToggleAlt: () {},
+                onPaste: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final up = find.byKey(const Key('terminal_accessory_key_↑'));
+    await tester.ensureVisible(up);
+    await tester.pumpAndSettle();
+    await tester.tap(up);
+    expect(sent, ['↑']);
+    sent.clear();
+    final gesture = await tester.startGesture(tester.getCenter(up));
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(sent.length, greaterThan(1));
+    final count = sent.length;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(sent.length, count);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await gesture.up();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(sent.length, count);
+    expect(tester.takeException(), isNull);
+  });
 }
