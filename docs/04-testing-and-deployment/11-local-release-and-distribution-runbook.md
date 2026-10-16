@@ -406,6 +406,7 @@ curl --fail --silent --show-error --get 'https://ygg.norns.cc.cd/api/v1/app/late
 
 已实际成功的对照记录：
 
+- [v1.0.9新增版本发布](../../agent-workflow/2026-10-17-v109-release.md)：落实每批递增版本／build的新长期规则，新标签和二进制同源，保留全部历史版本，四整包／八Range及旧端更新请求匹配通过。
 - [v1.0.8终端同版本覆盖](../../agent-workflow/2026-10-16-v108-terminal-refresh-release.md)：用户批准后仅替换四条external-only记录，保留原标签／Release身份，17附件及四整包／八Range闭环通过。
 - [v1.0.8代理分发](../../agent-workflow/2026-10-16-v108-release.md)：版本及四包代理开关、四次整包SHA256与八次Range验证，历史版本保持不变。
 - [首次 v1.0.5 发布](10-v1.0.5-release.md)：新版本流程。
