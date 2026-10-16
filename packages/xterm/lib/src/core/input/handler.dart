@@ -110,6 +110,13 @@ class KeytabInputHandler implements TerminalInputHandler {
   String? call(TerminalKeyboardEvent event) {
     final keytab = this.keytab ?? Keytab.defaultKeytab;
 
+    if ((event.key == TerminalKey.enter ||
+            event.key == TerminalKey.returnKey) &&
+        event.ctrl) {
+      final modifiers = 1 + (event.shift ? 1 : 0) + (event.alt ? 2 : 0) + 4;
+      return '\x1b[13;${modifiers}u';
+    }
+
     final record = keytab.find(
       event.key,
       ctrl: event.ctrl,

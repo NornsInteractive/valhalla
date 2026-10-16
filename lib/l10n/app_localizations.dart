@@ -9879,6 +9879,24 @@ abstract class AppLocalizations {
   /// **'The requested path is outside the allowed root directory.'**
   String get remoteBrowserPathOutsideRoot;
 
+  /// No description provided for @remoteBrowserPathDisplayMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Path display mode'**
+  String get remoteBrowserPathDisplayMode;
+
+  /// No description provided for @remoteBrowserPathDisplayModeScroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll horizontally'**
+  String get remoteBrowserPathDisplayModeScroll;
+
+  /// No description provided for @remoteBrowserPathDisplayModeCollapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse path'**
+  String get remoteBrowserPathDisplayModeCollapsed;
+
   /// No description provided for @remoteBrowserEntryUnavailable.
   ///
   /// In en, this message translates to:
@@ -10574,6 +10592,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Never checked'**
   String get agentUpdateNeverChecked;
+
+  /// No description provided for @agentUpdateCodexMigrationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Install New Adapter & Switch Agent'**
+  String get agentUpdateCodexMigrationTitle;
+
+  /// No description provided for @agentUpdateCodexMigrationNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This update installs a standalone official adapter and safely points this agent to it. Existing binaries, history, and configuration are preserved for seamless rollback.'**
+  String get agentUpdateCodexMigrationNotice;
+
+  /// No description provided for @agentUpdateReplacementCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'Replacement Command'**
+  String get agentUpdateReplacementCommand;
 }
 
 class _AppLocalizationsDelegate

@@ -7,8 +7,9 @@ import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/server_provider.dart';
 import '../../../core/providers/terminal_provider.dart';
+import '../../../infrastructure/mosh/mosh_bridge_adapter.dart';
 import '../../../infrastructure/terminal/terminal_session_bridge.dart'
-    show TerminalConnectionState;
+    show TerminalConnectionState, TerminalSessionMode;
 
 String _formatLastUsed(DateTime dt) {
   final local = dt.toLocal();
@@ -842,15 +843,23 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
             Expanded(
               child: () {
                 final allRecords = terminalState.history;
-                final filtered = _searchQuery.isEmpty
+                final filteredHistory = _searchQuery.isEmpty
                     ? allRecords
                     : allRecords
-                          .where(
-                            (r) => r.title.toLowerCase().contains(_searchQuery),
-                          )
-                          .toList();
+                        .where(
+                          (r) => r.title.toLowerCase().contains(_searchQuery),
+                        )
+                        .toList();
 
-                if (filtered.isEmpty) {
+                final matchingTabs = _searchQuery.isEmpty
+                    ? terminalState.tabs
+                    : terminalState.tabs
+                        .where(
+                          (t) => t.title.toLowerCase().contains(_searchQuery),
+                        )
+                        .toList();
+
+                if (matchingTabs.isEmpty && filteredHistory.isEmpty) {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -867,7 +876,7 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            allRecords.isEmpty
+                            terminalState.tabs.isEmpty && allRecords.isEmpty
                                 ? l10n.terminalHistoryEmpty
                                 : l10n.stateEmpty,
                             textAlign: TextAlign.center,
@@ -883,32 +892,22 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                 }
 
                 final openTabIds = terminalState.tabs.map((t) => t.id).toSet();
-                final openRecords =
-                    filtered.where((r) {
-                        if (openTabIds.contains(r.id)) return true;
-                        final s =
-                            terminalState.historyStatuses[r.id] ??
-                            TerminalHistoryStatus.unknown;
-                        return s == TerminalHistoryStatus.open;
-                      }).toList()
-                      ..sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
-
-                final openRecordIds = openRecords.map((r) => r.id).toSet();
 
                 final recoverableRecords =
-                    filtered.where((r) {
-                        if (openRecordIds.contains(r.id)) return false;
+                    filteredHistory.where((r) {
+                        if (openTabIds.contains(r.id)) return false;
                         final s =
                             terminalState.historyStatuses[r.id] ??
                             TerminalHistoryStatus.unknown;
                         return s == TerminalHistoryStatus.available ||
-                            s == TerminalHistoryStatus.unknown;
+                            s == TerminalHistoryStatus.unknown ||
+                            s == TerminalHistoryStatus.open;
                       }).toList()
                       ..sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
 
                 final endedRecords =
-                    filtered.where((r) {
-                        if (openRecordIds.contains(r.id)) return false;
+                    filteredHistory.where((r) {
+                        if (openTabIds.contains(r.id)) return false;
                         final s =
                             terminalState.historyStatuses[r.id] ??
                             TerminalHistoryStatus.unknown;
@@ -917,13 +916,13 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                       ..sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
 
                 final sortedItems = <dynamic>[
-                  if (openRecords.isNotEmpty) ...[
+                  if (matchingTabs.isNotEmpty) ...[
                     _TerminalGroupItem(
                       l10n.terminalStatusOpen,
-                      openRecords.length,
+                      matchingTabs.length,
                       context.vSuccess,
                     ),
-                    ...openRecords,
+                    ...matchingTabs,
                   ],
                   if (recoverableRecords.isNotEmpty) ...[
                     _TerminalGroupItem(
@@ -960,6 +959,14 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                         item.title,
                         item.count,
                         item.color,
+                      );
+                    }
+                    if (item is TerminalTab) {
+                      return _buildCurrentTabTile(
+                        context,
+                        item,
+                        terminalState,
+                        targetKey,
                       );
                     }
                     final record = item as TerminalHistoryRecord;
@@ -1103,6 +1110,16 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                           : () {
                               FocusManager.instance.primaryFocus?.unfocus();
                               Navigator.of(context).pop();
+                              if (matchingTab != null) {
+                                final tabIndex =
+                                    terminalState.tabs.indexOf(matchingTab);
+                                if (tabIndex >= 0) {
+                                  ref
+                                      .read(terminalProvider.notifier)
+                                      .selectTab(tabIndex);
+                                  return;
+                                }
+                              }
                               ref
                                   .read(terminalProvider.notifier)
                                   .restoreHistory(record.id);
@@ -1120,6 +1137,16 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                           if (currentTarget != targetKey) return;
 
                           switch (value) {
+                            case 'close_tab':
+                              if (matchingTab != null) {
+                                final tabIndex =
+                                    terminalState.tabs.indexOf(matchingTab);
+                                if (tabIndex >= 0) {
+                                  ref
+                                      .read(terminalProvider.notifier)
+                                      .closeTab(tabIndex);
+                                }
+                              }
                             case 'restore':
                               FocusManager.instance.primaryFocus?.unfocus();
                               Navigator.of(context).pop();
@@ -1214,6 +1241,25 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                                 ],
                               ),
                             ),
+                          if (matchingTab != null &&
+                              terminalState.tabs.length > 1)
+                            PopupMenuItem(
+                              value: 'close_tab',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.close,
+                                    size: 16,
+                                    color: context.vDanger,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    l10n.terminalCloseTab,
+                                    style: TextStyle(color: context.vDanger),
+                                  ),
+                                ],
+                              ),
+                            ),
                           PopupMenuItem(
                             value: 'rename',
                             child: Row(
@@ -1253,6 +1299,163 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentTabTile(
+    BuildContext context,
+    TerminalTab tab,
+    SshTerminalState terminalState,
+    String targetKey,
+  ) {
+    final l10n = context.l10n;
+    final isSelected = terminalState.activeTabIndex >= 0 &&
+        terminalState.activeTabIndex < terminalState.tabs.length &&
+        terminalState.tabs[terminalState.activeTabIndex].id == tab.id;
+
+    final Color statusColor;
+    final String statusLabel;
+    switch (tab.bridge.state) {
+      case TerminalConnectionState.connected:
+        statusColor = context.vSuccess;
+        statusLabel = l10n.terminalStatusOpen;
+      case TerminalConnectionState.connecting:
+        statusColor = context.colorScheme.primary;
+        statusLabel = l10n.serverConnecting;
+      case TerminalConnectionState.disconnected:
+      case TerminalConnectionState.error:
+        statusColor = context.vWarning;
+        statusLabel = l10n.terminalStatusOffline;
+    }
+
+    final String modeLabel;
+    if (tab.bridge.mode == TerminalSessionMode.tmux) {
+      modeLabel = 'tmux';
+    } else if (tab.bridge is MoshBridgeAdapter) {
+      modeLabel = 'Mosh';
+    } else {
+      modeLabel = 'SSH';
+    }
+
+    return ListTile(
+      dense: true,
+      selected: isSelected,
+      leading: Icon(
+        tab.bridge.mode == TerminalSessionMode.tmux
+            ? Icons.layers_outlined
+            : (tab.bridge is MoshBridgeAdapter
+                ? Icons.bolt_rounded
+                : Icons.terminal),
+        size: 18,
+        color: isSelected
+            ? context.colorScheme.primary
+            : context.colorScheme.outline,
+      ),
+      title: Text(
+        tab.title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+          fontFamily: 'JetBrains Mono',
+        ),
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 6,
+          runSpacing: 4,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+              decoration: BoxDecoration(
+                color: context.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                modeLabel,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: context.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                statusLabel,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: statusColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+        Navigator.of(context).pop();
+        final tabIndex = terminalState.tabs.indexOf(tab);
+        if (tabIndex >= 0) {
+          ref.read(terminalProvider.notifier).selectTab(tabIndex);
+        }
+      },
+      trailing: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert, size: 18),
+        tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+        onSelected: (value) async {
+          final currentServer = ref.read(activeServerProvider);
+          final currentTarget = currentServer == null
+              ? ''
+              : TerminalHistoryRecord.targetFor(currentServer);
+          if (currentTarget != targetKey) return;
+
+          switch (value) {
+            case 'rename':
+              await showRenameTabDialog(context, ref, tab.id, tab.title);
+            case 'close_tab':
+              final tabIndex = terminalState.tabs.indexOf(tab);
+              if (tabIndex >= 0) {
+                ref.read(terminalProvider.notifier).closeTab(tabIndex);
+              }
+          }
+        },
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: 'rename',
+            child: Row(
+              children: [
+                const Icon(Icons.edit_outlined, size: 16),
+                const SizedBox(width: 8),
+                Text(l10n.rename),
+              ],
+            ),
+          ),
+          if (terminalState.tabs.length > 1)
+            PopupMenuItem(
+              value: 'close_tab',
+              child: Row(
+                children: [
+                  Icon(Icons.close, size: 16, color: context.vDanger),
+                  const SizedBox(width: 8),
+                  Text(
+                    l10n.terminalCloseTab,
+                    style: TextStyle(color: context.vDanger),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

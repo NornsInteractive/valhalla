@@ -440,9 +440,23 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
       return true;
     }
 
-    if (text == '\r' || text == '\n') {
+    if (text == '\r' || text == '\n' || text == '\r\n') {
       _handleKey('ENTER');
       return true;
+    }
+
+    if (text.endsWith('\r\n') || text.endsWith('\n') || text.endsWith('\r')) {
+      final prefix = text.endsWith('\r\n')
+          ? text.substring(0, text.length - 2)
+          : text.substring(0, text.length - 1);
+      if (prefix.isNotEmpty &&
+          !prefix.contains('\r') &&
+          !prefix.contains('\n') &&
+          !prefix.contains('\t')) {
+        widget.terminal.textInput(prefix);
+        _handleKey('ENTER');
+        return true;
+      }
     }
 
     if (text == '\t') {

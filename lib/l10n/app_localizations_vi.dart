@@ -5470,6 +5470,15 @@ class AppLocalizationsVi extends AppLocalizations {
       'Đường dẫn được yêu cầu nằm ngoài thư mục gốc cho phép.';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'Chế độ hiển thị đường dẫn';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'Cuộn ngang';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'Thu gọn đường dẫn';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'Mục đã chọn không khả dụng hoặc không hợp lệ.';
 
@@ -5857,4 +5866,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'Chưa từng kiểm tra';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'Cài đặt bộ điều hợp mới và chuyển đổi Agent này';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'Chương trình và cấu hình hiện tại sẽ được giữ nguyên, cài đặt bộ điều hợp mới độc lập rồi chuyển kết nối, có thể quay lại an toàn nếu có sự cố.';
+
+  @override
+  String get agentUpdateReplacementCommand => 'Lệnh thay thế';
 }

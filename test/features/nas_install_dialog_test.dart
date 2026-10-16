@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/in_memory_app_settings.dart';
 import 'package:valhalla/core/providers/nas_install_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/services/nas_install_service.dart';
@@ -240,6 +241,7 @@ Widget _buildTestApp({
 }) {
   return ProviderScope(
     overrides: [
+      settingsProvider.overrideWith(InMemoryAppSettings.new),
       if (browserCreated != null)
         remoteBrowserFactoryProvider.overrideWith((ref) {
           final factory = NasBrowserFixture(ref);

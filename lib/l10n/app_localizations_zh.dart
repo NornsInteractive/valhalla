@@ -5175,6 +5175,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remoteBrowserPathOutsideRoot => '请求的路径超出了允许的根目录范围。';
 
   @override
+  String get remoteBrowserPathDisplayMode => '路径显示模式';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => '横向滚动';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => '折叠路径';
+
+  @override
   String get remoteBrowserEntryUnavailable => '选中的条目不可用或无效。';
 
   @override
@@ -5531,6 +5540,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => '从未检查';
+
+  @override
+  String get agentUpdateCodexMigrationTitle => '安装新版适配器并切换此 Agent';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      '将保留现有程序与配置，安装独立的新版适配器后切换连接，出现问题可安全回退。';
+
+  @override
+  String get agentUpdateReplacementCommand => '切换后的命令';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -10705,6 +10724,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get remoteBrowserPathOutsideRoot => '請求的路徑超出了允許的根目錄範圍。';
 
   @override
+  String get remoteBrowserPathDisplayMode => '路徑顯示模式';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => '橫向捲動';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => '折疊路徑';
+
+  @override
   String get remoteBrowserEntryUnavailable => '選取的項目無法使用或無效。';
 
   @override
@@ -11061,4 +11089,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get agentUpdateNeverChecked => '從未檢查';
+
+  @override
+  String get agentUpdateCodexMigrationTitle => '安裝新版配接器並切換此 Agent';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      '將保留現有程式與設定，安裝獨立的新版配接器後切換連線，發生問題可安全復原。';
+
+  @override
+  String get agentUpdateReplacementCommand => '切換後的命令';
 }

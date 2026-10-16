@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:convert';
 
 import 'package:path/path.dart' as path;
@@ -7,6 +8,7 @@ import '../../core/utils/shell_quote.dart';
 import '../../data/models/nas_media.dart';
 import '../../data/models/nas_source.dart';
 import '../ssh/ssh_client_manager.dart';
+import '../ssh/ssh_transfer_connection.dart';
 
 class NasScanService {
   final SshCommandExecutor executor;
@@ -138,6 +140,9 @@ class NasScanService {
     int batchSize = 256,
   }) async* {
     cancellation.check();
+    if (batchSize < 1 || batchSize > 10000) {
+      throw ArgumentError.value(batchSize, 'batchSize');
+    }
     final prefixes = _findPrefixes(raw);
     final client = executor.getClient(serverId);
     if (client == null || client.isClosed) {
@@ -148,6 +153,18 @@ class NasScanService {
         "if find / -maxdepth 0 -printf '' >/dev/null 2>&1; then "
         '${prefixes.map((prefix) => '$prefix -printf ${cliShellQuote('%p\\0%s\\0%T@\\0')}').join(' && ')}; '
         'else ${prefixes.map(_portableFind).join(' && ')}; fi';
+    if (executor case SSHClientManager manager) {
+      final connection = manager.verifiedTransferConnectionForId(serverId);
+      if (connection == null) throw StateError('NAS_SSH_NOT_CONNECTED');
+      yield* _isolatedScan(
+        connection,
+        serverId,
+        command,
+        batchSize,
+        cancellation,
+      );
+      return;
+    }
     final session = await client.execute(command);
     final unregister = cancellation.onCancel(session.close);
     final errors = StringBuffer();
@@ -264,5 +281,86 @@ class NasScanService {
             value.contains('illegal') ||
             value.contains('unrecognized') ||
             value.contains('primary'));
+  }
+}
+
+Stream<List<NasMediaItem>> _isolatedScan(
+  SshTransferConnection connection,
+  String serverId,
+  String command,
+  int batchSize,
+  NasCancellation cancellation,
+) async* {
+  final events = ReceivePort();
+  Isolate? worker;
+  final unregister = cancellation.onCancel(() {
+    events.sendPort.send(['cancel']);
+    worker?.kill(priority: Isolate.immediate);
+  });
+  try {
+    cancellation.check();
+    worker = await Isolate.spawn(
+      _scanWorker,
+      (connection, serverId, command, batchSize, events.sendPort),
+      onError: events.sendPort,
+      onExit: events.sendPort,
+    );
+    SendPort? control;
+    await for (final event in events) {
+      cancellation.check();
+      if (event == null) throw StateError('NAS_SCAN_WORKER_EXITED');
+      final data = event as List;
+      switch (data.first) {
+        case 'control':
+          control = data[1] as SendPort;
+        case 'batch':
+          yield (data[1] as List).cast<NasMediaItem>();
+          cancellation.check();
+          control!.send(true);
+        case 'done':
+          return;
+        default:
+          throw StateError('NAS_SCAN_FAILED');
+      }
+    }
+  } finally {
+    unregister();
+    worker?.kill(priority: Isolate.immediate);
+    events.close();
+  }
+}
+
+Future<void> _scanWorker(
+  (SshTransferConnection, String, String, int, SendPort) input,
+) async {
+  final (connection, serverId, command, batchSize, events) = input;
+  final commands = ReceivePort();
+  final acknowledgements = StreamIterator(commands);
+  events.send(['control', commands.sendPort]);
+  final client = await connectSshWorker(connection);
+  try {
+    final session = await client.execute(command);
+    final stderr = session.stderr.listen((_) {});
+    try {
+      await for (final batch in NasScanService.decodeRecords(
+        serverId,
+        session.stdout,
+        NasCancellation(),
+        batchSize: batchSize,
+      )) {
+        events.send(['batch', batch]);
+        if (!await acknowledgements.moveNext()) return;
+      }
+      await session.done;
+      if (session.exitCode != 0) throw StateError('NAS_SCAN_FAILED');
+      events.send(['done']);
+    } finally {
+      session.close();
+      await stderr.cancel();
+    }
+  } finally {
+    client.close();
+    await acknowledgements.cancel();
+    commands.close();
   }
 }

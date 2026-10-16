@@ -5433,6 +5433,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'The requested path is outside the allowed root directory.';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'Path display mode';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'Scroll horizontally';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'Collapse path';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'Selected entry is unavailable or invalid.';
 
@@ -5824,4 +5833,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'Never checked';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'Install New Adapter & Switch Agent';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'This update installs a standalone official adapter and safely points this agent to it. Existing binaries, history, and configuration are preserved for seamless rollback.';
+
+  @override
+  String get agentUpdateReplacementCommand => 'Replacement Command';
 }

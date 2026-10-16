@@ -1,4 +1,33 @@
 import 'dart:typed_data';
+import 'package:dartssh2/dartssh2.dart';
+
+Future<SSHClient> connectSshWorker(SshTransferConnection connection) async {
+  final socket = await SSHSocket.connect(
+    connection.host,
+    connection.port,
+    timeout: const Duration(seconds: 30),
+  );
+  SSHClient? client;
+  try {
+    client = SSHClient(
+      socket,
+      username: connection.username,
+      identities: connection.privateKey == null
+          ? null
+          : SSHKeyPair.fromPem(connection.privateKey!),
+      onPasswordRequest: () => connection.password ?? '',
+      onVerifyHostKey: connection.matchesHostKey,
+    );
+    await client.authenticated.timeout(const Duration(seconds: 30));
+    return client;
+  } catch (_) {
+    try {
+      await client?.close().timeout(const Duration(seconds: 2));
+    } catch (_) {}
+    socket.destroy();
+    rethrow;
+  }
+}
 
 /// In-memory authentication snapshot of an already verified SSH connection.
 /// Never persisted or included in diagnostics.

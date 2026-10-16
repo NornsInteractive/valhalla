@@ -904,7 +904,9 @@ void main() {
       expect(subUpBtn.onPressed, isNotNull);
     });
 
-    testWidgets('More menu changes sort key and direction', (tester) async {
+    testWidgets('pinned sort menu changes sort key and direction', (
+      tester,
+    ) async {
       final notifier = _TestSftpNotifier(
         const SftpState(
           currentPath: '/var/www',
@@ -921,7 +923,7 @@ void main() {
 
       expect(find.byKey(const Key('sftpMoreButton')), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('sftpMoreButton')));
+      await tester.tap(find.byKey(const Key('sftpSortButton')));
       await tester.pumpAndSettle();
 
       expect(find.text(l10n.sftpSortName), findsOneWidget);
@@ -952,7 +954,7 @@ void main() {
       expect(notifier.setSortCalls.first.key, SftpSortKey.size);
       expect(notifier.setSortCalls.first.ascending, isTrue);
 
-      await tester.tap(find.byKey(const Key('sftpMoreButton')));
+      await tester.tap(find.byKey(const Key('sftpSortButton')));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -967,7 +969,7 @@ void main() {
       expect(notifier.setSortCalls.last.key, SftpSortKey.size);
       expect(notifier.setSortCalls.last.ascending, isFalse);
 
-      await tester.tap(find.byKey(const Key('sftpMoreButton')));
+      await tester.tap(find.byKey(const Key('sftpSortButton')));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -979,7 +981,7 @@ void main() {
       expect(notifier.setSortCalls.last.key, SftpSortKey.name);
       expect(notifier.setSortCalls.last.ascending, isFalse);
 
-      await tester.tap(find.byKey(const Key('sftpMoreButton')));
+      await tester.tap(find.byKey(const Key('sftpSortButton')));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -991,7 +993,7 @@ void main() {
       expect(notifier.setSortCalls.last.key, SftpSortKey.name);
       expect(notifier.setSortCalls.last.ascending, isTrue);
 
-      await tester.tap(find.byKey(const Key('sftpMoreButton')));
+      await tester.tap(find.byKey(const Key('sftpSortButton')));
       await tester.pumpAndSettle();
 
       await tester.tap(

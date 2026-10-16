@@ -91,6 +91,8 @@ class SSHClientManager implements SshCommandExecutor {
   final Map<String, SSHClient> _activeClients = {};
   final Map<String, ServerProfile> _clientTargets = {};
   final Map<String, SshTransferConnection> _transferConnections = {};
+  SshTransferConnection? verifiedTransferConnectionForId(String serverId) =>
+      isConnected(serverId) ? _transferConnections[serverId] : null;
   final Map<String, _PendingConnection> _pendingConnections = {};
   final Map<String, Timer> _keepAliveTimers = {};
   final Map<String, Future<bool>> _verifications = {};

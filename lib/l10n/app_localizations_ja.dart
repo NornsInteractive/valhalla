@@ -5264,6 +5264,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get remoteBrowserPathOutsideRoot => '要求されたパスは許可されたルートディレクトリの外にあります。';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'パス表示モード';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => '横スクロール';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'パスを折りたたむ';
+
+  @override
   String get remoteBrowserEntryUnavailable => '選択されたエントリは利用できないか無効です。';
 
   @override
@@ -5627,4 +5636,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => '未確認';
+
+  @override
+  String get agentUpdateCodexMigrationTitle => '新しいアダプターをインストールしてこのAgentに切り替え';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      '既存のプログラムと設定は保持され、独立した新版アダプターをインストールした後に接続を切り替えます。問題発生時は安全にロールバックできます。';
+
+  @override
+  String get agentUpdateReplacementCommand => '切り替え後のコマンド';
 }

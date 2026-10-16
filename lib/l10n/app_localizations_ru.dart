@@ -5510,6 +5510,15 @@ class AppLocalizationsRu extends AppLocalizations {
       'Запрошенный путь находится вне разрешенного корневого каталога.';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'Режим отображения пути';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'Горизонтальная прокрутка';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'Свернуть путь';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'Выбранный элемент недоступен или недействителен.';
 
@@ -5908,4 +5917,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'Никогда не проверялось';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'Установить новый адаптер и переключить этого агента';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'Существующая программа и конфигурация сохраняются. Устанавливается отдельный новый адаптер и переключается подключение; при проблемах возможен безопасный откат.';
+
+  @override
+  String get agentUpdateReplacementCommand => 'Команда замены';
 }

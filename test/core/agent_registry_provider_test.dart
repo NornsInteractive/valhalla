@@ -362,6 +362,51 @@ void main() {
       },
     );
 
+    test(
+      'verified Codex migration preserves identity and saves its isolated reinstall command',
+      () async {
+        final profile = _agent(
+          'a1',
+          's1',
+        ).copyWith(cliCommand: 'codex', acpCommand: 'codex-acp');
+        final container = await _container(
+          prefs: {
+            'valhalla_servers_v1': _serversPrefs([_server('s1')]),
+            'valhalla_active_server_id_v1': 's1',
+            'valhalla_agents_v1': _agentsPrefs([profile]),
+          },
+          envService: _FakeEnvService(),
+        );
+        addTearDown(container.dispose);
+        final original = container
+            .read(agentRegistryProvider)
+            .findRuntime('a1')!
+            .profile;
+        const command =
+            'npm install --prefix /home/dev/.local/share/valhalla/codex-acp/2.0.0 -- @agentclientprotocol/codex-acp@2.0.0';
+        final updated = original.copyWith(
+          acpCommand:
+              '/home/dev/.local/share/valhalla/codex-acp/2.0.0/node_modules/.bin/codex-acp',
+          acpInstallCommand: command,
+        );
+        final locks = container.read(agentUpdateLockProvider.notifier);
+        locks.acquire(original);
+        await container
+            .read(agentRegistryProvider.notifier)
+            .commitVerifiedAdapterMigration(
+              original,
+              updated,
+              verifiedInstallCommand: command,
+            );
+        locks.release(original);
+        final saved = container.read(agentRepositoryProvider).find('s1', 'a1')!;
+        expect(saved.acpCommand, updated.acpCommand);
+        expect(saved.acpInstallCommand, command);
+        expect(saved.name, original.name);
+        expect(saved.cliCommand, original.cliCommand);
+      },
+    );
+
     test('isolates agents by server', () async {
       final container = await _container(
         prefs: {

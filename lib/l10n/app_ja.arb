@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "ターゲット環境またはアクティブなサーバーが変更されました。",
   "remoteBrowserPathInvalid": "要求されたパスが無効であるかアクセスできません。",
   "remoteBrowserPathOutsideRoot": "要求されたパスは許可されたルートディレクトリの外にあります。",
+  "remoteBrowserPathDisplayMode": "パス表示モード",
+  "remoteBrowserPathDisplayModeScroll": "横スクロール",
+  "remoteBrowserPathDisplayModeCollapsed": "パスを折りたたむ",
   "remoteBrowserEntryUnavailable": "選択されたエントリは利用できないか無効です。",
   "nasBrowseUnavailable": "NAS ブラウズサービスは現在利用できません。",
   "nasInvalidDirectoryEntry": "NAS の参照中に無効なディレクトリエントリが見つかりました。",
@@ -2249,5 +2252,8 @@
   "agentUpdateVersionUnknown": "不明",
   "agentUpdateSource": "ソース",
   "agentUpdateLastChecked": "最終確認",
-  "agentUpdateNeverChecked": "未確認"
+  "agentUpdateNeverChecked": "未確認",
+  "agentUpdateCodexMigrationTitle": "新しいアダプターをインストールしてこのAgentに切り替え",
+  "agentUpdateCodexMigrationNotice": "既存のプログラムと設定は保持され、独立した新版アダプターをインストールした後に接続を切り替えます。問題発生時は安全にロールバックできます。",
+  "agentUpdateReplacementCommand": "切り替え後のコマンド"
 }

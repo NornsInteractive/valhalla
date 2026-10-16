@@ -47,6 +47,7 @@ class AgentComponentUpdate {
   final String? command;
   final bool migratesClaudeAdapter;
   final String? catalogIdentity;
+  final String? replacementAcpCommand;
 
   const AgentComponentUpdate({
     required this.component,
@@ -58,6 +59,7 @@ class AgentComponentUpdate {
     this.command,
     this.migratesClaudeAdapter = false,
     this.catalogIdentity,
+    this.replacementAcpCommand,
   });
 
   bool get canUpdate =>

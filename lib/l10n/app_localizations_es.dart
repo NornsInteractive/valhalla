@@ -5540,6 +5540,15 @@ class AppLocalizationsEs extends AppLocalizations {
       'La ruta solicitada está fuera del directorio raíz permitido.';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'Modo de visualización de ruta';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'Desplazamiento horizontal';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'Contraer ruta';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'La entrada seleccionada no está disponible o no es válida.';
 
@@ -5938,4 +5947,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'Nunca comprobado';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'Instalar nuevo adaptador y cambiar este agente';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'Se conservarán el programa y la configuración existentes, instalando un adaptador independiente y cambiando la conexión, con reversión segura en caso de problemas.';
+
+  @override
+  String get agentUpdateReplacementCommand => 'Comando de sustitución';
 }

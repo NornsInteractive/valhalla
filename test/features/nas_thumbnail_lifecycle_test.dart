@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valhalla/app/theme.dart';
 import 'package:valhalla/core/providers/nas_provider.dart';
+import 'package:valhalla/core/providers/nas_preview_provider.dart';
 import 'package:valhalla/core/services/nas_image_cache_service.dart';
 import 'package:valhalla/data/models/nas_media.dart';
 import 'package:valhalla/features/nas/widgets/nas_thumbnail_image.dart';
@@ -19,7 +20,11 @@ class _FakeNasImageCacheService extends NasImageCacheService {
     : super((_) => throw UnimplementedError(), () => 0);
 
   @override
-  Future<String?> thumbnail(NasMediaItem item, {Object? owner}) {
+  Future<String?> thumbnail(
+    NasMediaItem item, {
+    Object? owner,
+    bool prefetch = false,
+  }) {
     thumbnailCalls.add((item, owner));
     events.add('thumbnail:${item.modifiedEpoch}:${item.sizeBytes}');
     return Future.value(null);
@@ -53,6 +58,194 @@ Widget _host(ProviderContainer container, Widget body) =>
 
 void main() {
   setUpAll(loadRealTextFonts);
+  setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized()
+        .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    addTearDown(() {
+      TestWidgetsFlutterBinding.ensureInitialized()
+          .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    });
+  });
+
+  testWidgets(
+    'full-screen viewport prefetch includes bounded items outside the physical screen',
+    (tester) async {
+      final cache = _FakeNasImageCacheService();
+      final container = ProviderContainer(
+        overrides: [nasImageCacheProvider.overrideWithValue(cache)],
+      );
+      addTearDown(container.dispose);
+      await tester.binding.setSurfaceSize(const Size(360, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        _host(
+          container,
+          ListView.builder(
+            cacheExtent: 3000,
+            itemExtent: 100,
+            itemCount: 100,
+            itemBuilder: (_, index) => NasThumbnailImage(
+              item: _item(path: '/photos/$index.jpg'),
+              width: 100,
+              height: 100,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final requests = container.read(nasPreviewRequestsProvider);
+      expect(requests.values.where((r) => r.visible), hasLength(6));
+      expect(
+        requests.values.where((r) => !r.visible).length,
+        inInclusiveRange(5, 7),
+      );
+      expect(cache.thumbnailCalls.length, inInclusiveRange(11, 13));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      expect(container.read(nasPreviewRequestsProvider), isEmpty);
+    },
+  );
+
+  testWidgets(
+    'large original still delegates server-thumbnail size checks to the cache service',
+    (tester) async {
+      final cache = _FakeNasImageCacheService();
+      final container = ProviderContainer(
+        overrides: [nasImageCacheProvider.overrideWithValue(cache)],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        _host(
+          container,
+          NasThumbnailImage(
+            item: _item(sizeBytes: 64 * 1024 * 1024),
+            width: 100,
+            height: 100,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(cache.thumbnailCalls, hasLength(1));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    },
+  );
+
+  testWidgets('mounted cache-extent tiles do not request the whole library', (
+    tester,
+  ) async {
+    final cache = _FakeNasImageCacheService();
+    final container = ProviderContainer(
+      overrides: [nasImageCacheProvider.overrideWithValue(cache)],
+    );
+    addTearDown(container.dispose);
+    await tester.binding.setSurfaceSize(const Size(360, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    await tester.pumpWidget(
+      _host(
+        container,
+        Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            height: 300,
+            child: ListView.builder(
+              controller: scroll,
+              cacheExtent: 4000,
+              itemExtent: 100,
+              itemCount: 100,
+              itemBuilder: (_, index) => NasThumbnailImage(
+                item: _item(path: '/photos/$index.jpg'),
+                width: 100,
+                height: 100,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pumpAndSettle();
+    expect(
+      find.byType(NasThumbnailImage, skipOffstage: false),
+      findsAtLeastNWidgets(30),
+    );
+    expect(cache.thumbnailCalls.length, inInclusiveRange(3, 8));
+    final requests = container.read(nasPreviewRequestsProvider);
+    expect(
+      requests.values.where((r) => r.visible).length,
+      inInclusiveRange(3, 4),
+    );
+    expect(
+      requests.values.where((r) => !r.visible).length,
+      lessThanOrEqualTo(4),
+    );
+    final before = cache.thumbnailCalls.length;
+    scroll.jumpTo(2000);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pumpAndSettle();
+    expect(cache.thumbnailCalls.length - before, inInclusiveRange(3, 8));
+    expect(
+      cache.releaseCalls.any((call) => call.$1.path == '/photos/0.jpg'),
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    expect(container.read(nasPreviewRequestsProvider), isEmpty);
+  });
+
+  testWidgets(
+    'hidden NAS page and application background release preview ownership',
+    (tester) async {
+      final cache = _FakeNasImageCacheService();
+      final container = ProviderContainer(
+        overrides: [nasImageCacheProvider.overrideWithValue(cache)],
+      );
+      addTearDown(container.dispose);
+      Future<void> show(bool active) async {
+        await tester.pumpWidget(
+          _host(
+            container,
+            TickerMode(
+              enabled: active,
+              child: NasThumbnailImage(item: _item(), width: 100, height: 100),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+        await tester.pumpAndSettle();
+      }
+
+      await show(false);
+      expect(cache.thumbnailCalls, isEmpty);
+      expect(container.read(nasPreviewRequestsProvider), isEmpty);
+      await show(true);
+      expect(cache.thumbnailCalls, hasLength(1));
+      expect(container.read(nasPreviewRequestsProvider), hasLength(1));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pumpAndSettle();
+      expect(container.read(nasPreviewRequestsProvider), isEmpty);
+      expect(cache.releaseCalls, hasLength(1));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
+      expect(cache.thumbnailCalls, hasLength(2));
+      await show(false);
+      expect(container.read(nasPreviewRequestsProvider), isEmpty);
+      expect(cache.releaseCalls, hasLength(2));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    },
+  );
 
   testWidgets('mini player keeps its cover and controls at 320dp and 2x RTL', (
     tester,
@@ -179,17 +372,20 @@ void main() {
     final item = _item();
     var tick = 0;
 
-    Future<void> pumpHost() => tester.pumpWidget(
-      _host(
-        container,
-        Column(
-          children: [
-            Text('tick ${tick++}'),
-            NasThumbnailImage(item: item),
-          ],
+    Future<void> pumpHost() async {
+      await tester.pumpWidget(
+        _host(
+          container,
+          Column(
+            children: [
+              Text('tick ${tick++}'),
+              NasThumbnailImage(item: item),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+      await tester.pumpAndSettle();
+    }
 
     await pumpHost();
     await tester.pump();
@@ -212,8 +408,12 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      Future<void> pumpItem(NasMediaItem item) =>
-          tester.pumpWidget(_host(container, NasThumbnailImage(item: item)));
+      Future<void> pumpItem(NasMediaItem item) async {
+        await tester.pumpWidget(
+          _host(container, NasThumbnailImage(item: item)),
+        );
+        await tester.pumpAndSettle();
+      }
 
       await pumpItem(_item(modifiedEpoch: 100, sizeBytes: 1000));
       final firstOwner = fake.thumbnailCalls.single.$2;
@@ -254,8 +454,10 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      Future<void> pumpBody(Widget body) =>
-          tester.pumpWidget(_host(container, body));
+      Future<void> pumpBody(Widget body) async {
+        await tester.pumpWidget(_host(container, body));
+        await tester.pumpAndSettle();
+      }
 
       await pumpBody(NasThumbnailImage(item: _item()));
       final owner = fake.thumbnailCalls.single.$2;
@@ -282,8 +484,12 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      Future<void> pumpItem(NasMediaItem item) =>
-          tester.pumpWidget(_host(container, NasThumbnailImage(item: item)));
+      Future<void> pumpItem(NasMediaItem item) async {
+        await tester.pumpWidget(
+          _host(container, NasThumbnailImage(item: item)),
+        );
+        await tester.pumpAndSettle();
+      }
 
       await pumpItem(_item(modifiedEpoch: 100));
       expect(oldService.thumbnailCalls, hasLength(1));

@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "O ambiente de destino ou o servidor ativo foi alterado.",
   "remoteBrowserPathInvalid": "O caminho solicitado é inválido ou não pode ser acessado.",
   "remoteBrowserPathOutsideRoot": "O caminho solicitado está fora do diretório raiz permitido.",
+  "remoteBrowserPathDisplayMode": "Modo de exibição de caminho",
+  "remoteBrowserPathDisplayModeScroll": "Rolagem horizontal",
+  "remoteBrowserPathDisplayModeCollapsed": "Recolher caminho",
   "remoteBrowserEntryUnavailable": "A entrada selecionada está indisponível ou inválida.",
   "nasBrowseUnavailable": "O serviço de navegação do NAS está indisponível no momento.",
   "nasInvalidDirectoryEntry": "Entrada de diretório inválida encontrada ao navegar no NAS.",
@@ -2249,5 +2252,8 @@
   "agentUpdateVersionUnknown": "Desconhecido",
   "agentUpdateSource": "Origem",
   "agentUpdateLastChecked": "Última verificação",
-  "agentUpdateNeverChecked": "Nunca verificado"
+  "agentUpdateNeverChecked": "Nunca verificado",
+  "agentUpdateCodexMigrationTitle": "Instalar novo adaptador e alternar este agente",
+  "agentUpdateCodexMigrationNotice": "O programa e as configurações existentes serão preservados. Um novo adaptador independente é instalado e a conexão é alternada, com reversão segura em caso de problemas.",
+  "agentUpdateReplacementCommand": "Comando substituto"
 }

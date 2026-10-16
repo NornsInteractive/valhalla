@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "تغيرت البيئة المستهدفة أو الخادم النشط.",
   "remoteBrowserPathInvalid": "المسار المطلوب غير صالح أو لا يمكن الوصول إليه.",
   "remoteBrowserPathOutsideRoot": "المسار المطلوب خارج الدليل الجذر المسموح به.",
+  "remoteBrowserPathDisplayMode": "وضع عرض المسار",
+  "remoteBrowserPathDisplayModeScroll": "التمرير أفقياً",
+  "remoteBrowserPathDisplayModeCollapsed": "طي المسار",
   "remoteBrowserEntryUnavailable": "العنصر المحدد غير متاح أو غير صالح.",
   "nasBrowseUnavailable": "خدمة تصفح NAS غير متاحة حاليًا.",
   "nasInvalidDirectoryEntry": "تمت مصادفة إدخال دليل غير صالح أثناء تصفح NAS.",
@@ -2249,5 +2252,8 @@
   "agentUpdateVersionUnknown": "غير معروف",
   "agentUpdateSource": "المصدر",
   "agentUpdateLastChecked": "آخر تحقق",
-  "agentUpdateNeverChecked": "لم يتم التحقق مطلقًا"
+  "agentUpdateNeverChecked": "لم يتم التحقق مطلقًا",
+  "agentUpdateCodexMigrationTitle": "تثبيت المحول الجديد والتبديل إلى هذا الوكيل",
+  "agentUpdateCodexMigrationNotice": "سيتم الاحتفاظ بالبرنامج والإعدادات الحالية، وتثبيت محول جديد مستقل ثم تحويل الاتصال، مع إمكانية التراجع بأمان في حالة حدوث مشاكل.",
+  "agentUpdateReplacementCommand": "الأمر البديل"
 }

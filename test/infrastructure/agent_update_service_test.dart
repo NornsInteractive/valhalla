@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +9,7 @@ import 'package:valhalla/data/models/agent_profile.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/infrastructure/agents/agent_update_service.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
+import '../support/fake_acp_transport.dart';
 
 const _server = ServerProfile(
   id: 'srv-1',
@@ -45,6 +48,7 @@ Map<String, String> _npmProbe({
 };
 
 class _FakeSsh implements SshCommandExecutor {
+  SSHClient? client;
   Map<String, String> values = _npmProbe();
   Map<String, String>? afterValues;
   int? exitCode = 0;
@@ -56,7 +60,7 @@ class _FakeSsh implements SshCommandExecutor {
   @override
   bool isConnected(String serverId) => connected && serverId == _server.id;
   @override
-  SSHClient? getClient(String serverId) => null;
+  SSHClient? getClient(String serverId) => client;
   @override
   Future<SSHExecutionResult> executeWithLoginShell(
     String serverId,
@@ -106,6 +110,47 @@ class _FakeSsh implements SshCommandExecutor {
 Matcher _error(String code) =>
     isA<AgentUpdateException>().having((error) => error.code, 'code', code);
 
+class _VersionSession extends Fake implements SSHSession {
+  final output = StreamController<Uint8List>();
+  final input = StreamController<Uint8List>();
+  final FakeAcpPair pair;
+  bool closed = false;
+  _VersionSession(this.pair) {
+    input.stream.listen(
+      (bytes) => pair.agent.deliver(utf8.decode(bytes).trim()),
+    );
+    pair.client.onReceive = (wire) {
+      if (!output.isClosed) output.add(utf8.encode('$wire\n'));
+    };
+  }
+  @override
+  Stream<Uint8List> get stdout => output.stream;
+  @override
+  Stream<Uint8List> get stderr => const Stream.empty();
+  @override
+  StreamSink<Uint8List> get stdin => input.sink;
+  @override
+  int? get exitCode => null;
+  @override
+  void close() {
+    closed = true;
+    if (!input.isClosed) unawaited(input.close());
+    if (!output.isClosed) unawaited(output.close());
+  }
+}
+
+class _VersionClient extends Fake implements SSHClient {
+  final _VersionSession session;
+  _VersionClient(this.session);
+  @override
+  Future<SSHSession> execute(
+    String command, {
+    Map<String, String>? environment,
+    SSHPtyConfig? pty,
+    SSHX11Config? x11,
+  }) async => session;
+}
+
 AgentUpdateService _service(
   _FakeSsh ssh, {
   DateTime Function()? now,
@@ -122,6 +167,88 @@ AgentUpdateService _service(
 );
 
 void main() {
+  test(
+    'standalone ACP version comes from initialize without creating or authenticating a chat',
+    () async {
+      final pair = FakeAcpPair()
+        ..agentInfo = {'name': 'codex-acp', 'version': '0.16.0'};
+      final session = _VersionSession(pair);
+      final ssh = _FakeSsh()..client = _VersionClient(session);
+      ssh.values.addAll({'acpPath': '/usr/local/bin/codex-acp'});
+      final report = await _service(
+        ssh,
+      ).check(_server, _profile(acp: 'codex-acp'));
+      expect(report.components.last.installedVersion, '0.16.0');
+      expect(pair.newSessionCount, 0);
+    expect(pair.authenticateCallCount, 0);
+      expect(session.closed, isTrue);
+    },
+  );
+  test(
+    'legacy standalone Codex ACP prepares isolated migration and keeps old executable',
+    () async {
+      final ssh = _FakeSsh();
+      ssh.values.addAll({
+        'acpPath': '/usr/local/bin/codex-acp',
+        'acpCanonical': '/usr/local/bin/codex-acp',
+        'acpProtocolVersion': '0.16.0',
+      });
+      final profile = _profile(acp: 'codex-acp');
+      final service = _service(ssh);
+      final plan = await service.prepare(
+        _server,
+        profile,
+        components: {AgentUpdateComponent.acp},
+      );
+      final item = plan.components.single;
+      expect(item.installedVersion, '0.16.0');
+      expect(item.latestVersion, '2.0.0');
+      expect(item.reasonCode, 'AGENT_UPDATE_CODEX_ADAPTER_MIGRATION');
+      expect(
+        item.replacementAcpCommand,
+        '/home/dev/.local/share/valhalla/codex-acp/2.0.0/node_modules/.bin/codex-acp',
+      );
+      expect(item.command, contains('install --prefix'));
+      expect(item.command, isNot(contains('install -g')));
+      expect(ssh.streamed, isEmpty);
+      expect(profile.acpCommand, 'codex-acp');
+    },
+  );
+
+  test(
+    'managed Codex ACP at latest does not repeatedly offer migration',
+    () async {
+      final ssh = _FakeSsh();
+      final command =
+          '/home/dev/.local/share/valhalla/codex-acp/2.0.0/node_modules/.bin/codex-acp';
+      ssh.values.addAll({
+        'acpPath': command,
+        'acpPackage': '@agentclientprotocol/codex-acp',
+        'acpPackageVersion': '2.0.0',
+      });
+      final report = await _service(ssh).check(_server, _profile(acp: command));
+      expect(report.components.last.status, AgentUpdateStatus.current);
+      expect(report.components.last.canUpdate, isFalse);
+    },
+  );
+
+  test(
+    'Codex ACP migration exposes a useful latest version when npm is absent',
+    () async {
+      final ssh = _FakeSsh();
+      ssh.values.addAll({
+        'acpPath': '/usr/local/bin/codex-acp',
+        'acpProtocolVersion': '0.16.0',
+        'npmPath': '',
+      });
+      final report = await _service(
+        ssh,
+      ).check(_server, _profile(acp: 'codex-acp'));
+      expect(report.components.last.installedVersion, '0.16.0');
+      expect(report.components.last.latestVersion, '2.0.0');
+      expect(report.components.last.reasonCode, 'AGENT_UPDATE_TOOLS_MISSING');
+    },
+  );
   test(
     'npm probe resolves current target and prepares exact version without mutation',
     () async {

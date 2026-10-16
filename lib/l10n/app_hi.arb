@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "लक्षित वातावरण या सक्रिय सर्वर बदल गया।",
   "remoteBrowserPathInvalid": "अनुरोधित पथ अमान्य है या उस तक नहीं पहुंचा जा सकता।",
   "remoteBrowserPathOutsideRoot": "अनुरोधित पथ अनुमत रूट निर्देशिका से बाहर है।",
+  "remoteBrowserPathDisplayMode": "पथ प्रदर्शन मोड",
+  "remoteBrowserPathDisplayModeScroll": "क्षैतिज स्क्रॉल",
+  "remoteBrowserPathDisplayModeCollapsed": "पथ संक्षिप्त करें",
   "remoteBrowserEntryUnavailable": "चयनित प्रविष्टि अनुपलब्ध या अमान्य है।",
   "nasBrowseUnavailable": "NAS ब्राउज़ सेवा वर्तमान में अनुपलब्ध है।",
   "nasInvalidDirectoryEntry": "NAS ब्राउज़ करते समय अमान्य निर्देशिका प्रविष्टि मिली।",
@@ -2243,5 +2246,8 @@
   "agentUpdateVersionUnknown": "अज्ञात",
   "agentUpdateSource": "स्रोत",
   "agentUpdateLastChecked": "अंतिम जांच",
-  "agentUpdateNeverChecked": "कभी नहीं जाँचा गया"
+  "agentUpdateNeverChecked": "कभी नहीं जाँचा गया",
+  "agentUpdateCodexMigrationTitle": "नया एडेप्टर इंस्टॉल करें और इस एजेंट पर स्विच करें",
+  "agentUpdateCodexMigrationNotice": "मौजूदा प्रोग्राम और कॉन्फ़िगरेशन सुरक्षित रहेंगे। एक स्वतंत्र नया एडेप्टर इंस्टॉल करके कनेक्शन बदला जाएगा, समस्या होने पर सुरक्षित रूप से वापस लौटा जा सकता है।",
+  "agentUpdateReplacementCommand": "स्विच के बाद का कमांड"
 }

@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "Target environment or active server changed.",
   "remoteBrowserPathInvalid": "The requested path is invalid or cannot be accessed.",
   "remoteBrowserPathOutsideRoot": "The requested path is outside the allowed root directory.",
+  "remoteBrowserPathDisplayMode": "Path display mode",
+  "remoteBrowserPathDisplayModeScroll": "Scroll horizontally",
+  "remoteBrowserPathDisplayModeCollapsed": "Collapse path",
   "remoteBrowserEntryUnavailable": "Selected entry is unavailable or invalid.",
   "nasBrowseUnavailable": "NAS browse service is currently unavailable.",
   "nasInvalidDirectoryEntry": "Invalid directory entry encountered while browsing NAS.",
@@ -2249,5 +2252,8 @@
   "agentUpdateVersionUnknown": "Unknown",
   "agentUpdateSource": "Source",
   "agentUpdateLastChecked": "Last checked",
-  "agentUpdateNeverChecked": "Never checked"
+  "agentUpdateNeverChecked": "Never checked",
+  "agentUpdateCodexMigrationTitle": "Install New Adapter & Switch Agent",
+  "agentUpdateCodexMigrationNotice": "This update installs a standalone official adapter and safely points this agent to it. Existing binaries, history, and configuration are preserved for seamless rollback.",
+  "agentUpdateReplacementCommand": "Replacement Command"
 }

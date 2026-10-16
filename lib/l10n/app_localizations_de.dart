@@ -5526,6 +5526,15 @@ class AppLocalizationsDe extends AppLocalizations {
       'Der angeforderte Pfad liegt außerhalb des zulässigen Stammverzeichnisses.';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'Pfadanzeigemodus';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'Horizontal scrollen';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'Pfad einklappen';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'Ausgewählter Eintrag ist nicht verfügbar oder ungültig.';
 
@@ -5923,4 +5932,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'Nie geprüft';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'Neuen Adapter installieren & Agent wechseln';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'Vorhandene Programme und Konfigurationen bleiben erhalten. Es wird ein separater neuer Adapter installiert und verknüpft; bei Problemen ist ein sicheres Rollback möglich.';
+
+  @override
+  String get agentUpdateReplacementCommand => 'Befehl nach Wechsel';
 }

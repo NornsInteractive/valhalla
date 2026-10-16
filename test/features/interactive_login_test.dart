@@ -132,13 +132,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Pinned row (default pinned keys): ESC/TAB/CTRL/ALT/Ctrl+C/PASTE stay
+      // Pinned row (default pinned keys): ESC/TAB/CTRL/SHIFT/ALT/PASTE stay
       // inline without opening any panel.
       expect(find.text('ESC'), findsOneWidget);
       expect(find.text('TAB'), findsOneWidget);
       expect(find.text('CTRL'), findsOneWidget);
       expect(find.text('ALT'), findsOneWidget);
-      expect(find.text('Ctrl+C'), findsOneWidget);
+      expect(find.text('SHIFT'), findsOneWidget);
       expect(find.byIcon(Icons.content_paste), findsOneWidget);
 
       await tester.tap(find.text('ESC'));
@@ -149,9 +149,6 @@ void main() {
 
       await tester.tap(find.text('ALT'));
       expect(altToggled, isTrue);
-
-      await tester.tap(find.text('Ctrl+C'));
-      expect(pressedKeys, contains('Ctrl+C'));
 
       await tester.tap(find.byIcon(Icons.content_paste));
       await tester.pumpAndSettle();
@@ -178,6 +175,10 @@ void main() {
 
       await tester.tap(find.text('Edit'));
       await tester.pumpAndSettle();
+
+      expect(find.text('Ctrl+C'), findsOneWidget);
+      await tester.tap(find.text('Ctrl+C'));
+      expect(pressedKeys, contains('Ctrl+C'));
 
       expect(find.text('Ctrl+D'), findsOneWidget);
       await tester.tap(find.text('Ctrl+D'));

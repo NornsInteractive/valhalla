@@ -4,6 +4,7 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/in_memory_app_settings.dart';
 import 'package:valhalla/core/providers/application_center_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/services/application_compose_service.dart';
@@ -160,6 +161,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          settingsProvider.overrideWith(InMemoryAppSettings.new),
           activeServerProvider.overrideWith(() => active),
           serverConnectionProvider.overrideWith(() => connection),
           remoteBrowserFactoryProvider.overrideWith(

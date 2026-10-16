@@ -12,6 +12,8 @@ import '../data/models/nas_media.dart';
 import '../data/models/remote_browser.dart';
 import 'valhalla_card.dart';
 import 'remote_browser_toolbar.dart';
+export 'remote_browser_toolbar.dart' show RemotePathDisplayMode;
+
 
 enum RemoteBrowserMode {
   directory,
@@ -502,11 +504,15 @@ class RemoteBrowserView extends StatefulWidget {
   final int? maxSelectCount;
   final ValueChanged<bool>? onStatusChanged;
   final Set<String> allowedExtensions;
+  final RemotePathDisplayMode pathDisplayMode;
+  final ValueChanged<RemotePathDisplayMode>? onPathDisplayModeChanged;
 
   const RemoteBrowserView({
     super.key,
     required this.source,
     this.mode = RemoteBrowserMode.directory,
+    this.pathDisplayMode = RemotePathDisplayMode.scroll,
+    this.onPathDisplayModeChanged,
     this.initialPath,
     this.initialSelectedIds = const {},
     this.onPathChanged,
@@ -1165,6 +1171,8 @@ class RemoteBrowserViewState extends State<RemoteBrowserView> {
     return RemoteBrowserBreadcrumb(
       path: _currentPath,
       rootPath: widget.source.rootPath,
+      mode: widget.pathDisplayMode,
+      onModeChanged: widget.onPathDisplayModeChanged,
       onNavigate: _navigateTo,
       onUp: widget.source.parentOf(_currentPath) == null ? null : _navigateUp,
       trailing: Row(

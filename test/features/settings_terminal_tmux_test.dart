@@ -57,9 +57,15 @@ Widget _buildSettingsApp({
   );
 }
 
-Future<void> _selectMode(WidgetTester tester, bool tmux) async {
-  await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
+Future<void> _openMode(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('terminal_more_button')));
   await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('terminal_tmux_menu_item')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _selectMode(WidgetTester tester, bool tmux) async {
+  await _openMode(tester);
   await tester.tap(
     find.byKey(
       Key(tmux ? 'terminalModeTmuxRadio' : 'terminalModeStandardRadio'),
@@ -118,8 +124,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
-      await tester.pumpAndSettle();
+      await _openMode(tester);
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
       await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
       await tester.pumpAndSettle();
@@ -178,8 +183,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
-        await tester.pumpAndSettle();
+        await _openMode(tester);
         final l10n = await AppLocalizations.delegate.load(const Locale('en'));
         expect(find.text(l10n.settingsTerminalUseTmux), findsOneWidget);
         expect(find.text(l10n.terminalModeStandard), findsOneWidget);
@@ -188,14 +192,7 @@ void main() {
           findsOneWidget,
         );
 
-        expect(
-          tester
-              .widget<IconButton>(
-                find.byKey(const Key('terminalDefaultModeButton')),
-              )
-              .onPressed,
-          isNotNull,
-        );
+        expect(find.byKey(const Key('terminal_more_button')), findsOneWidget);
         expect(spy.setUseTmuxCalls, isEmpty);
       },
     );
@@ -223,8 +220,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
-        await tester.pumpAndSettle();
+        await _openMode(tester);
         final l10n = await AppLocalizations.delegate.load(const Locale('zh'));
         expect(find.text(l10n.settingsTerminalUseTmux), findsOneWidget);
         expect(find.text(l10n.terminalModeTmux), findsOneWidget);
@@ -233,14 +229,7 @@ void main() {
           findsOneWidget,
         );
 
-        expect(
-          tester
-              .widget<IconButton>(
-                find.byKey(const Key('terminalDefaultModeButton')),
-              )
-              .onPressed,
-          isNotNull,
-        );
+        expect(find.byKey(const Key('terminal_more_button')), findsOneWidget);
         expect(spy.setUseTmuxCalls, isEmpty);
       },
     );

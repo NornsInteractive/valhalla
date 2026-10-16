@@ -361,22 +361,39 @@ class AgentRegistryNotifier extends Notifier<AgentRegistryState> {
   /// official adapter. It cannot be used to edit unrelated profile fields.
   Future<void> commitVerifiedAdapterMigration(
     AgentProfile original,
-    AgentProfile updated,
-  ) async {
+    AgentProfile updated, {
+    String? verifiedInstallCommand,
+  }) async {
     Map<String, dynamic> comparable(AgentProfile profile) => profile.toJson()
       ..remove('createdAt')
       ..remove('updatedAt');
     final current = state.findRuntime(original.id);
-    final expected = original.copyWith(
-      acpCommand: 'claude-agent-acp',
-      acpInstallCommand: 'npm install -g @agentclientprotocol/claude-agent-acp',
-    );
+    final codexMigration =
+        verifiedInstallCommand != null &&
+        original.cliCommand.split('/').last == 'codex' &&
+        RegExp(
+          r'^(?:/[^\s]+/)?codex-acp(?:\s+--stdio)?$',
+        ).hasMatch(original.acpCommand ?? '') &&
+        RegExp(
+          r'^/[^\s\x00]+/\.local/share/valhalla/codex-acp/\d+\.\d+\.\d+/node_modules/\.bin/codex-acp$',
+        ).hasMatch(updated.acpCommand ?? '');
+    final expected = codexMigration
+        ? original.copyWith(
+            acpCommand: updated.acpCommand,
+            acpInstallCommand: verifiedInstallCommand,
+          )
+        : original.copyWith(
+            acpCommand: 'claude-agent-acp',
+            acpInstallCommand:
+                'npm install -g @agentclientprotocol/claude-agent-acp',
+          );
     if (state.serverId != original.serverId ||
         current == null ||
         !isAgentUpdateLocked(ref, original) ||
-        original.acpCommand != 'claude-code-acp' ||
-        original.acpInstallCommand !=
-            'npm install -g @zed-industries/claude-code-acp' ||
+        (!codexMigration &&
+            (original.acpCommand != 'claude-code-acp' ||
+                original.acpInstallCommand !=
+                    'npm install -g @zed-industries/claude-code-acp')) ||
         jsonEncode(comparable(current.profile)) !=
             jsonEncode(comparable(original)) ||
         jsonEncode(comparable(updated)) != jsonEncode(comparable(expected))) {

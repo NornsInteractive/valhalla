@@ -131,7 +131,7 @@ void main() {
   });
 
   group('remoteFileToolbarActionsFromStorage', () {
-    test('缺键返回四个默认动作，且结果不可修改', () {
+    test('缺键返回五个默认动作，且结果不可修改', () {
       final parsed = remoteFileToolbarActionsFromStorage(null);
 
       expect(parsed, defaultRemoteFileToolbarActions);
@@ -140,8 +140,9 @@ void main() {
         RemoteFileToolbarAction.create,
         RemoteFileToolbarAction.view,
         RemoteFileToolbarAction.transfers,
+        RemoteFileToolbarAction.sort,
       ]);
-      expect(defaultRemoteFileToolbarActions, hasLength(4));
+      expect(defaultRemoteFileToolbarActions, hasLength(5));
       expect(
         () => parsed.add(RemoteFileToolbarAction.refresh),
         throwsUnsupportedError,
@@ -190,7 +191,7 @@ void main() {
   });
 
   group('SettingsNotifier 工具栏偏好', () {
-    test('磁盘缺键时 provider 给出四个默认动作且不写键', () async {
+    test('磁盘缺键时 provider 给出五个默认动作且不写键', () async {
       final prefs = await SharedPreferences.getInstance();
       final container = _container(LocalStorageService(prefs));
       addTearDown(container.dispose);
@@ -345,6 +346,7 @@ void main() {
         'create',
         'view',
         'transfers',
+        'sort',
       ]);
       expect(prefs.getString(_themeModeKey), 'system');
       expect(prefs.getInt(_cliHistoryPageSizeKey), defaultCliHistoryPageSize);

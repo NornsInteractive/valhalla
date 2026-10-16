@@ -24,21 +24,31 @@ class NasImageCacheService {
   int _writes = 0;
   NasImageCacheService(this.adapterFor, this.budget);
 
-  String _key(NasMediaItem item) => sha256.convert(utf8.encode(
-    '${item.serverId}\u0000${item.path}\u0000${item.modifiedEpoch}\u0000${item.sizeBytes}')).toString();
+  String _key(NasMediaItem item) => sha256
+      .convert(
+        utf8.encode(
+          '${item.serverId}\u0000${item.path}\u0000${item.modifiedEpoch}\u0000${item.sizeBytes}',
+        ),
+      )
+      .toString();
 
-  Future<String?> thumbnail(NasMediaItem item, {Object? owner}) {
+  Future<String?> thumbnail(
+    NasMediaItem item, {
+    Object? owner,
+    bool prefetch = false,
+  }) {
     if (_disposed || _clearing) return Future.value(null);
     final key = _key(item);
     final existing = _pending[key];
     if (existing != null) {
       existing.owners.add(owner);
+      if (!prefetch) existing.prefetch = false;
       if (_queue.remove(existing)) _queue.add(existing);
       return existing.result.future;
     }
     // New visible work takes priority over tiles that have scrolled away.
     if (_pending.length >= 64 && _queue.isNotEmpty) _cancel(_queue.first);
-    final work = _ThumbnailWork(item, key, owner);
+    final work = _ThumbnailWork(item, key, owner)..prefetch = prefetch;
     _pending[key] = work;
     _queue.add(work);
     _pumpFuture ??= _pump().whenComplete(() => _pumpFuture = null);
@@ -53,6 +63,7 @@ class NasImageCacheService {
   }
 
   void _cancel(_ThumbnailWork work) {
+    work.timeout?.cancel();
     work.cancellation.cancel();
     _queue.remove(work);
     if (identical(_pending[work.key], work)) _pending.remove(work.key);
@@ -64,8 +75,15 @@ class NasImageCacheService {
     _running = true;
     try {
       while (_queue.isNotEmpty && !_disposed && !_clearing) {
-        final work = _queue.removeLast();
+        final visibleIndex = _queue.lastIndexWhere((work) => !work.prefetch);
+        final work = _queue.removeAt(
+          visibleIndex < 0 ? _queue.length - 1 : visibleIndex,
+        );
         _activeWork = work;
+        work.timeout = Timer(
+          Duration(seconds: work.item.kind == NasMediaKind.image ? 15 : 5),
+          work.cancellation.cancel,
+        );
         try {
           final path = await _load(work.item, work.key, work.cancellation);
           if (!work.result.isCompleted) work.result.complete(path);
@@ -74,15 +92,22 @@ class NasImageCacheService {
             work.result.completeError(error, stack);
           }
         } finally {
+          work.timeout?.cancel();
           if (identical(_pending[work.key], work)) _pending.remove(work.key);
           _activeWork = null;
           if (!work.finished.isCompleted) work.finished.complete();
         }
       }
-    } finally { _running = false; }
+    } finally {
+      _running = false;
+    }
   }
 
-  Future<String?> _load(NasMediaItem item, String key, NasCancellation cancellation) async {
+  Future<String?> _load(
+    NasMediaItem item,
+    String key,
+    NasCancellation cancellation,
+  ) async {
     cancellation.check();
     final root = Directory(
       '${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2',
@@ -100,7 +125,7 @@ class NasImageCacheService {
     if (preview == null && item.kind != NasMediaKind.image) return null;
     final resource = preview ?? await adapter.resolve(item);
     // The thumbnail working file is bounded separately from the persistent cache.
-    const maxInput = 32 * 1024 * 1024;
+    const maxInput = 16 * 1024 * 1024;
     if ((resource.sizeBytes ?? 0) > maxInput) return null;
     final temporary = File('${root.path}/$key.part');
     final sink = temporary.openWrite();
@@ -115,7 +140,6 @@ class NasImageCacheService {
         size += chunk.length;
         if (size > maxInput) throw StateError('NAS_IMAGE_TOO_LARGE');
         sink.add(chunk);
-        await sink.flush();
       }
       await sink.close();
       cancellation.check();
@@ -216,7 +240,9 @@ class NasImageCacheService {
 
   /// The empty key represents pre-existing cache with unknown ownership.
   Future<Map<String, Map<String, int>>> cacheUsageBySource() async {
-    final root = Directory('${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2');
+    final root = Directory(
+      '${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2',
+    );
     final usage = <String, Map<String, int>>{};
     if (await root.exists()) {
       await for (final entity in root.list(followLinks: false)) {
@@ -224,7 +250,10 @@ class NasImageCacheService {
           try {
             final owner = await _owner(entity);
             final size = await entity.length();
-            final entry = usage.putIfAbsent(owner, () => {'bytes': 0, 'count': 0});
+            final entry = usage.putIfAbsent(
+              owner,
+              () => {'bytes': 0, 'count': 0},
+            );
             entry['bytes'] = entry['bytes']! + size;
             entry['count'] = entry['count']! + 1;
           } on FileSystemException catch (error) {
@@ -252,7 +281,9 @@ class NasImageCacheService {
   }
 
   Future<void> trimCache() async {
-    final root = Directory('${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2');
+    final root = Directory(
+      '${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2',
+    );
     if (await root.exists()) await _prune(root);
   }
 
@@ -268,13 +299,17 @@ class NasImageCacheService {
       }
       // An active write must finish its ownership sidecar before legacy cleanup.
       if (active != null) await active.finished.future;
-      final root = Directory('${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2');
+      final root = Directory(
+        '${(await getApplicationSupportDirectory()).path}/nas-thumbnails-v2',
+      );
       if (await root.exists()) {
         await for (final entity in root.list(followLinks: false)) {
           if (entity is! File || !entity.path.endsWith('.png')) continue;
           try {
             final owner = await _owner(entity);
-            if (legacyOnly ? owner.isNotEmpty : sourceId != null && owner != sourceId) {
+            if (legacyOnly
+                ? owner.isNotEmpty
+                : sourceId != null && owner != sourceId) {
               continue;
             }
             await entity.delete();
@@ -295,7 +330,9 @@ class NasImageCacheService {
 
   void dispose() {
     _disposed = true;
-    for (final work in _pending.values.toList()) { _cancel(work); }
+    for (final work in _pending.values.toList()) {
+      _cancel(work);
+    }
   }
 }
 
@@ -306,5 +343,9 @@ class _ThumbnailWork {
   final result = Completer<String?>();
   final finished = Completer<void>();
   final cancellation = NasCancellation();
-  _ThumbnailWork(this.item, this.key, Object? owner) { owners.add(owner); }
+  Timer? timeout;
+  bool prefetch = false;
+  _ThumbnailWork(this.item, this.key, Object? owner) {
+    owners.add(owner);
+  }
 }

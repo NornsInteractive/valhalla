@@ -322,6 +322,9 @@ class LocalStorageService {
   static const _keyFileShowHidden = 'valhalla_file_show_hidden_v1';
   static const _keyRemoteFileToolbarActions =
       'valhalla_remote_file_toolbar_actions_v1';
+  static const _keyFilePathDisplayMode = 'valhalla_file_path_display_mode_v1';
+  static const _keyPickerPathDisplayMode =
+      'valhalla_picker_path_display_mode_v1';
 
   /// 桌面窗口尺寸与坐标
   static const _keyWindowWidth = 'valhalla_window_width_v1';
@@ -353,6 +356,8 @@ class LocalStorageService {
     _keyFileSortAscending: 'bool',
     _keyFileShowHidden: 'bool',
     _keyRemoteFileToolbarActions: 'strings',
+    _keyFilePathDisplayMode: 'string',
+    _keyPickerPathDisplayMode: 'string',
     'valhalla_file_view_mode_v1': 'string',
   };
 
@@ -1228,12 +1233,39 @@ class LocalStorageService {
   List<String>? getRemoteFileToolbarActions() =>
       _prefs.getStringList(_keyRemoteFileToolbarActions);
 
-  Future<void> setRemoteFileToolbarActions(List<String> actions) async {
-    final normalized = remoteFileToolbarActionsFromStorage(actions)
-        .map((action) => action.name)
-        .toList();
+  String? getRemotePathDisplayMode({required bool picker}) => _prefs.getString(
+    picker ? _keyPickerPathDisplayMode : _keyFilePathDisplayMode,
+  );
+
+  Future<void> setRemotePathDisplayMode(
+    String mode, {
+    required bool picker,
+  }) async {
+    if (!{'scroll', 'collapsed'}.contains(mode)) {
+      throw ArgumentError.value(mode);
+    }
     try {
-      if (!await _prefs.setStringList(_keyRemoteFileToolbarActions, normalized)) {
+      if (!await _prefs.setString(
+        picker ? _keyPickerPathDisplayMode : _keyFilePathDisplayMode,
+        mode,
+      )) {
+        throw const StorageException('SFTP_PATH_PREFERENCE_SAVE_FAILED');
+      }
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
+    }
+  }
+
+  Future<void> setRemoteFileToolbarActions(List<String> actions) async {
+    final normalized = remoteFileToolbarActionsFromStorage(
+      actions,
+    ).map((action) => action.name).toList();
+    try {
+      if (!await _prefs.setStringList(
+        _keyRemoteFileToolbarActions,
+        normalized,
+      )) {
         throw const StorageException('SFTP_TOOLBAR_PREFERENCE_SAVE_FAILED');
       }
     } catch (_) {

@@ -5527,6 +5527,15 @@ class AppLocalizationsPt extends AppLocalizations {
       'O caminho solicitado está fora do diretório raiz permitido.';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'Modo de exibição de caminho';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'Rolagem horizontal';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'Recolher caminho';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'A entrada selecionada está indisponível ou inválida.';
 
@@ -5925,4 +5934,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'Nunca verificado';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'Instalar novo adaptador e alternar este agente';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'O programa e as configurações existentes serão preservados. Um novo adaptador independente é instalado e a conexão é alternada, com reversão segura em caso de problemas.';
+
+  @override
+  String get agentUpdateReplacementCommand => 'Comando substituto';
 }

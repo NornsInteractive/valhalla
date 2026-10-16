@@ -1018,9 +1018,16 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
     final isConnected = ref.watch(
       serverConnectionProvider.select((s) => s.isConnected),
     );
+    final filePathMode = ref.watch(
+      settingsProvider.select((s) => s.filePathDisplayMode),
+    );
     return RemoteBrowserBreadcrumb(
       keyPrefix: 'sftp',
       path: state.currentPath,
+      mode: filePathMode,
+      onModeChanged: (mode) => ref
+          .read(settingsProvider.notifier)
+          .setRemotePathDisplayMode(mode, picker: false),
       scrollController: _breadcrumbScrollController,
       onUp: state.isAtRoot || !isConnected ? null : () => notifier.navigateUp(),
       onNavigate: isConnected ? (path) => notifier.navigateTo(path) : null,
@@ -1176,97 +1183,105 @@ class _SftpFileViewState extends ConsumerState<SftpFileView>
           alpha: 0.5,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                tooltip: context.l10n.cancel,
-                onPressed: _toggleSelectionMode,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                context.l10n.sftpSelectedCount(count),
-                style: context.textTheme.titleSmall,
-              ),
-              const SizedBox(width: 8),
-              TextButton(
-                key: const Key('sftpSelectAllButton'),
-                onPressed: _selectAll,
-                child: Text(context.l10n.sftpSelectAll),
-              ),
-              TextButton(
-                key: const Key('sftpDeselectAllButton'),
-                onPressed: _selectedPaths.isEmpty ? null : _deselectAll,
-                child: Text(context.l10n.sftpDeselectAll),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                key: const Key('sftpBatchDownloadButton'),
-                icon: const Icon(Icons.download, size: 20),
-                tooltip: context.l10n.sftpDownload,
-                onPressed: (count == 0 || _isBatchRunning || !isConnected)
-                    ? null
-                    : () => _handleBatchAction(RemoteFileAction.download),
-              ),
-              IconButton(
-                key: const Key('sftpBatchCopyButton'),
-                icon: const Icon(Icons.copy, size: 20),
-                tooltip: context.l10n.sftpBatchCopy,
-                onPressed:
-                    (count == 0 ||
-                        _isBatchRunning ||
-                        !isConnected ||
-                        state.cachedAt != null)
-                    ? null
-                    : () => _handleBatchAction(RemoteFileAction.copy),
-              ),
-              IconButton(
-                key: const Key('sftpBatchMoveButton'),
-                icon: const Icon(Icons.drive_file_move_outlined, size: 20),
-                tooltip: context.l10n.sftpBatchMove,
-                onPressed:
-                    (count == 0 ||
-                        _isBatchRunning ||
-                        !isConnected ||
-                        state.cachedAt != null)
-                    ? null
-                    : () => _handleBatchAction(RemoteFileAction.move),
-              ),
-              IconButton(
-                key: const Key('sftpBatchDeleteButton'),
-                icon: Icon(Icons.delete, size: 20, color: context.vDanger),
-                tooltip: context.l10n.delete,
-                onPressed:
-                    (count == 0 ||
-                        _isBatchRunning ||
-                        !isConnected ||
-                        state.cachedAt != null)
-                    ? null
-                    : () => _handleBatchAction(RemoteFileAction.delete),
-              ),
-              if (_isBatchRunning) ...[
-                const SizedBox(width: 8),
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  tooltip: context.l10n.cancel,
+                  onPressed: _toggleSelectionMode,
                 ),
-                if (_batchTotal != null) ...[
-                  const SizedBox(width: 6),
-                  Text(
-                    '$_batchCompleted/$_batchTotal',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    context.l10n.sftpSelectedCount(count),
+                    style: context.textTheme.titleSmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                ),
+                TextButton(
+                  key: const Key('sftpSelectAllButton'),
+                  onPressed: _selectAll,
+                  child: Text(context.l10n.sftpSelectAll),
+                ),
+                TextButton(
+                  key: const Key('sftpDeselectAllButton'),
+                  onPressed: _selectedPaths.isEmpty ? null : _deselectAll,
+                  child: Text(context.l10n.sftpDeselectAll),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                IconButton(
+                  key: const Key('sftpBatchDownloadButton'),
+                  icon: const Icon(Icons.download, size: 20),
+                  tooltip: context.l10n.sftpDownload,
+                  onPressed: (count == 0 || _isBatchRunning || !isConnected)
+                      ? null
+                      : () => _handleBatchAction(RemoteFileAction.download),
+                ),
+                IconButton(
+                  key: const Key('sftpBatchCopyButton'),
+                  icon: const Icon(Icons.copy, size: 20),
+                  tooltip: context.l10n.sftpBatchCopy,
+                  onPressed:
+                      (count == 0 ||
+                          _isBatchRunning ||
+                          !isConnected ||
+                          state.cachedAt != null)
+                      ? null
+                      : () => _handleBatchAction(RemoteFileAction.copy),
+                ),
+                IconButton(
+                  key: const Key('sftpBatchMoveButton'),
+                  icon: const Icon(Icons.drive_file_move_outlined, size: 20),
+                  tooltip: context.l10n.sftpBatchMove,
+                  onPressed:
+                      (count == 0 ||
+                          _isBatchRunning ||
+                          !isConnected ||
+                          state.cachedAt != null)
+                      ? null
+                      : () => _handleBatchAction(RemoteFileAction.move),
+                ),
+                IconButton(
+                  key: const Key('sftpBatchDeleteButton'),
+                  icon: Icon(Icons.delete, size: 20, color: context.vDanger),
+                  tooltip: context.l10n.delete,
+                  onPressed:
+                      (count == 0 ||
+                          _isBatchRunning ||
+                          !isConnected ||
+                          state.cachedAt != null)
+                      ? null
+                      : () => _handleBatchAction(RemoteFileAction.delete),
+                ),
+                if (_isBatchRunning) ...[
+                  const SizedBox(width: 8),
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  if (_batchTotal != null) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '$_batchCompleted/$_batchTotal',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ],
               ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

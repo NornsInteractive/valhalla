@@ -232,6 +232,9 @@ void main() {
       await tester.pumpWidget(canvas(terminal));
       await tester.pumpAndSettle();
 
+      await tester.tap(find.byKey(const Key('terminal_accessory_more_button')));
+      await tester.pumpAndSettle();
+
       final onTextInput = inputHook(tester);
 
       await tester.tap(find.byKey(const Key('terminal_accessory_key_FN')));

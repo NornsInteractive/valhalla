@@ -8,6 +8,7 @@ import '../../data/models/remote_browser.dart';
 import '../sftp/sftp_client_service.dart' show SftpFileItem;
 import '../ssh/ssh_client_manager.dart';
 import 'nas_scan_service.dart';
+import 'nas_thumbnail_resource.dart';
 
 class NasSftpAdapter extends NasSourceAdapter {
   @override
@@ -31,6 +32,18 @@ class NasSftpAdapter extends NasSourceAdapter {
     } finally {
       await sftp.close();
     }
+  }
+
+  @override
+  Future<NasResource?> thumbnail(NasMediaItem item) async {
+    if (item.kind != NasMediaKind.image || ssh is! SSHClientManager) {
+      return null;
+    }
+    if (item.serverId != source.id) throw ArgumentError('NAS_SOURCE_MISMATCH');
+    final connection = (ssh as SSHClientManager)
+        .verifiedTransferConnectionForId(source.sshServerId ?? source.id);
+    if (connection == null) throw StateError('NAS_SOURCE_DISCONNECTED');
+    return isolatedNasImageResource(connection, item);
   }
 
   @override

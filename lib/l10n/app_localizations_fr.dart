@@ -5553,6 +5553,15 @@ class AppLocalizationsFr extends AppLocalizations {
       'Le chemin demandé se situe en dehors du répertoire racine autorisé.';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'Mode d\'affichage du chemin';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'Défilement horizontal';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'Réduire le chemin';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'L\'entrée sélectionnée est indisponible ou invalide.';
 
@@ -5952,4 +5961,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'Jamais vérifié';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'Installer le nouvel adaptateur et basculer cet agent';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'Le programme et la configuration existants sont conservés. Un adaptateur indépendant est installé puis la connexion est basculée, avec retour en arrière sécurisé en cas de problème.';
+
+  @override
+  String get agentUpdateReplacementCommand => 'Commande de remplacement';
 }

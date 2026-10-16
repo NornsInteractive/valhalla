@@ -546,6 +546,7 @@ void main() {
         _host(
           RemoteBrowserBreadcrumb(
             path: '/first/second/third/fourth/fifth/last',
+            mode: RemotePathDisplayMode.collapsed,
             onNavigate: (path) => navigated = path,
           ),
         ),
@@ -609,6 +610,7 @@ void main() {
         _host(
           RemoteBrowserBreadcrumb(
             path: '/erster/zweiter/dritter/vierter/fuenfster/letzter',
+            mode: RemotePathDisplayMode.collapsed,
             onNavigate: (_) {},
           ),
           locale: const Locale('de'),

@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "สภาพแวดล้อมเป้าหมายหรือเซิร์ฟเวอร์ที่ใช้งานอยู่มีการเปลี่ยนแปลง",
   "remoteBrowserPathInvalid": "เส้นทางที่ร้องขอไม่ถูกต้องหรือไม่สามารถเข้าถึงได้",
   "remoteBrowserPathOutsideRoot": "เส้นทางที่ร้องขออยู่นอกไดเรกทอรีรูทที่อนุญาต",
+  "remoteBrowserPathDisplayMode": "โหมดการแสดงเส้นทาง",
+  "remoteBrowserPathDisplayModeScroll": "เลื่อนในแนวนอน",
+  "remoteBrowserPathDisplayModeCollapsed": "ยุบเส้นทาง",
   "remoteBrowserEntryUnavailable": "รายการที่เลือกไม่พร้อมใช้งานหรือไม่ถูกต้อง",
   "nasBrowseUnavailable": "บริการเรียกดู NAS ไม่พร้อมใช้งานในขณะนี้",
   "nasInvalidDirectoryEntry": "พบรายการไดเรกทอรีที่ไม่ถูกต้องขณะเรียกดู NAS",
@@ -2243,5 +2246,8 @@
   "agentUpdateVersionUnknown": "ไม่ทราบ",
   "agentUpdateSource": "แหล่งที่มา",
   "agentUpdateLastChecked": "ตรวจสอบล่าสุด",
-  "agentUpdateNeverChecked": "ไม่เคยตรวจสอบ"
+  "agentUpdateNeverChecked": "ไม่เคยตรวจสอบ",
+  "agentUpdateCodexMigrationTitle": "ติดตั้งอะแดปเตอร์ใหม่และสลับเอเจนต์นี้",
+  "agentUpdateCodexMigrationNotice": "โปรแกรมและการกำหนดค่าเดิมจะยังคงอยู่ ติดตั้งอะแดปเตอร์ใหม่แบบสแตนด์อโลนแล้วสลับการเชื่อมต่อ และสามารถย้อนกลับได้อย่างปลอดภัยหากเกิดปัญหา",
+  "agentUpdateReplacementCommand": "คำสั่งหลังสลับ"
 }

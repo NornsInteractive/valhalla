@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "目标环境或当前活动服务器已更改。",
   "remoteBrowserPathInvalid": "请求的路径无效或无法访问。",
   "remoteBrowserPathOutsideRoot": "请求的路径超出了允许的根目录范围。",
+  "remoteBrowserPathDisplayMode": "路径显示模式",
+  "remoteBrowserPathDisplayModeScroll": "横向滚动",
+  "remoteBrowserPathDisplayModeCollapsed": "折叠路径",
   "remoteBrowserEntryUnavailable": "选中的条目不可用或无效。",
   "nasBrowseUnavailable": "NAS 浏览服务当前不可用。",
   "nasInvalidDirectoryEntry": "浏览 NAS 时遇到无效的目录项。",
@@ -2249,5 +2252,8 @@
   "agentUpdateVersionUnknown": "未知",
   "agentUpdateSource": "来源",
   "agentUpdateLastChecked": "上次检查",
-  "agentUpdateNeverChecked": "从未检查"
+  "agentUpdateNeverChecked": "从未检查",
+  "agentUpdateCodexMigrationTitle": "安装新版适配器并切换此 Agent",
+  "agentUpdateCodexMigrationNotice": "将保留现有程序与配置，安装独立的新版适配器后切换连接，出现问题可安全回退。",
+  "agentUpdateReplacementCommand": "切换后的命令"
 }

@@ -5450,6 +5450,15 @@ class AppLocalizationsTh extends AppLocalizations {
       'เส้นทางที่ร้องขออยู่นอกไดเรกทอรีรูทที่อนุญาต';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'โหมดการแสดงเส้นทาง';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'เลื่อนในแนวนอน';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'ยุบเส้นทาง';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'รายการที่เลือกไม่พร้อมใช้งานหรือไม่ถูกต้อง';
 
@@ -5834,4 +5843,15 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'ไม่เคยตรวจสอบ';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'ติดตั้งอะแดปเตอร์ใหม่และสลับเอเจนต์นี้';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'โปรแกรมและการกำหนดค่าเดิมจะยังคงอยู่ ติดตั้งอะแดปเตอร์ใหม่แบบสแตนด์อโลนแล้วสลับการเชื่อมต่อ และสามารถย้อนกลับได้อย่างปลอดภัยหากเกิดปัญหา';
+
+  @override
+  String get agentUpdateReplacementCommand => 'คำสั่งหลังสลับ';
 }

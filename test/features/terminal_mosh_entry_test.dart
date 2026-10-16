@@ -147,6 +147,17 @@ _MockTerminalNotifier _notifierFor({required bool moshAvailable}) {
   );
 }
 
+Future<void> _openMore(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('terminal_more_button')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _newMosh(WidgetTester tester) async {
+  await _openMore(tester);
+  await tester.tap(find.byKey(const Key('terminal_new_mosh_menu_item')));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets(
     'mosh entry appears for mosh-enabled server and creates a Mosh bridge tab',
@@ -174,10 +185,7 @@ void main() {
 
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
-      expect(find.byKey(const Key('terminal_new_mosh_tab')), findsOneWidget);
-
-      await tester.tap(find.byKey(const Key('terminal_new_mosh_tab')));
-      await tester.pumpAndSettle();
+      await _newMosh(tester);
 
       // A Mosh bridge tab was created and bootstrapped through the service.
       expect(service.bootstrapCalls, 1);
@@ -211,7 +219,11 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byKey(const Key('terminal_new_mosh_tab')), findsNothing);
+      await _openMore(tester);
+      expect(
+        find.byKey(const Key('terminal_new_mosh_menu_item')),
+        findsNothing,
+      );
       expect(service.bootstrapCalls, 0);
     },
   );
@@ -236,8 +248,7 @@ void main() {
 
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
-    await tester.tap(find.byKey(const Key('terminal_new_mosh_tab')));
-    await tester.pumpAndSettle();
+    await _newMosh(tester);
 
     expect(find.byKey(const Key('terminalMoshErrorNotice')), findsOneWidget);
     expect(find.text(l10n.moshNotInstalled), findsOneWidget);
@@ -263,8 +274,7 @@ void main() {
 
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
-    await tester.tap(find.byKey(const Key('terminal_new_mosh_tab')));
-    await tester.pumpAndSettle();
+    await _newMosh(tester);
 
     expect(find.byKey(const Key('terminalMoshErrorNotice')), findsOneWidget);
     expect(find.text(l10n.moshUdpTimeout), findsOneWidget);
@@ -291,8 +301,7 @@ void main() {
 
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
-      await tester.tap(find.byKey(const Key('terminal_new_mosh_tab')));
-      await tester.pumpAndSettle();
+      await _newMosh(tester);
 
       expect(find.byKey(const Key('terminalMoshErrorNotice')), findsOneWidget);
       expect(
@@ -323,8 +332,7 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.byKey(const Key('terminal_new_mosh_tab')));
-    await tester.pumpAndSettle();
+    await _newMosh(tester);
 
     final adapter = notifier.state.tabs.last.bridge as MoshBridgeAdapter;
     final handle = service.handles.single;

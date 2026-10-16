@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/design/tokens.dart';
 import '../core/extensions/context_extensions.dart';
+import '../core/providers/settings_provider.dart';
 import '../data/models/remote_browser.dart';
 import 'remote_browser_view.dart';
 
@@ -19,6 +21,8 @@ class RemoteBrowserDialog extends StatefulWidget {
   final bool Function(String path)? isPathRestricted;
   final int? maxSelectCount;
   final Set<String> allowedExtensions;
+  final RemotePathDisplayMode? pathDisplayMode;
+  final ValueChanged<RemotePathDisplayMode>? onPathDisplayModeChanged;
 
   const RemoteBrowserDialog({
     super.key,
@@ -31,6 +35,8 @@ class RemoteBrowserDialog extends StatefulWidget {
     this.isPathRestricted,
     this.maxSelectCount,
     this.allowedExtensions = const {},
+    this.pathDisplayMode,
+    this.onPathDisplayModeChanged,
   });
 
   static Future<RemoteBrowserSelection?> show(
@@ -44,6 +50,8 @@ class RemoteBrowserDialog extends StatefulWidget {
     bool Function(String path)? isPathRestricted,
     int? maxSelectCount,
     Set<String> allowedExtensions = const {},
+    RemotePathDisplayMode? pathDisplayMode,
+    ValueChanged<RemotePathDisplayMode>? onPathDisplayModeChanged,
   }) {
     FocusManager.instance.primaryFocus?.unfocus();
     return showDialog<RemoteBrowserSelection>(
@@ -85,6 +93,8 @@ class RemoteBrowserDialog extends StatefulWidget {
                       isPathRestricted: isPathRestricted,
                       maxSelectCount: maxSelectCount,
                       allowedExtensions: allowedExtensions,
+                      pathDisplayMode: pathDisplayMode,
+                      onPathDisplayModeChanged: onPathDisplayModeChanged,
                     ),
                   ),
                 ),
@@ -379,40 +389,22 @@ class _RemoteBrowserDialogState extends State<RemoteBrowserDialog> {
       body: Column(
         children: [
           Expanded(
-            child: RemoteBrowserView(
-              key: _viewKey,
-              source: widget.source,
-              mode: widget.mode,
-              initialPath: widget.initialPath,
-              initialSelectedIds: widget.initialSelectedIds,
-              canSelectEntry: widget.canSelectEntry,
-              isPathRestricted: widget.isPathRestricted,
-              maxSelectCount: widget.maxSelectCount,
-              allowedExtensions: widget.allowedExtensions,
-              onPathChanged: (path) => setState(() => _currentPath = path),
-              onSelectionChanged: (entries) =>
-                  setState(() => _selected = entries),
-              onStatusChanged: (ready) {
-                setState(() => _isReady = ready);
-                if (!widget.source.isCurrent) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted &&
-                        !widget.source.isCurrent &&
-                        (ModalRoute.of(context)?.isCurrent ?? false) &&
-                        Navigator.of(context).canPop()) {
-                      Navigator.of(context).pop(null);
-                    }
-                  });
-                }
-              },
-              onEntryDoubleTap:
-                  widget.mode == RemoteBrowserMode.file ||
-                      widget.mode == RemoteBrowserMode.multipleFiles
-                  ? (entry) {
-                      if (!entry.isDirectory && canConfirm) _confirm();
-                    }
-                  : null,
-            ),
+            child: widget.pathDisplayMode != null
+                ? _buildBrowserView(
+                    context,
+                    pathDisplayMode: widget.pathDisplayMode!,
+                    onPathDisplayModeChanged: widget.onPathDisplayModeChanged,
+                  )
+                : _OptionalPickerModeConsumer(
+                    builder: (context, mode, onChanged) => _buildBrowserView(
+                      context,
+                      pathDisplayMode: mode,
+                      onPathDisplayModeChanged: (newMode) {
+                        onChanged(newMode);
+                        widget.onPathDisplayModeChanged?.call(newMode);
+                      },
+                    ),
+                  ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -480,5 +472,78 @@ class _RemoteBrowserDialogState extends State<RemoteBrowserDialog> {
         ],
       ),
     );
+  }
+
+  Widget _buildBrowserView(
+    BuildContext context, {
+    required RemotePathDisplayMode pathDisplayMode,
+    ValueChanged<RemotePathDisplayMode>? onPathDisplayModeChanged,
+  }) {
+    return RemoteBrowserView(
+      key: _viewKey,
+      source: widget.source,
+      mode: widget.mode,
+      initialPath: widget.initialPath,
+      initialSelectedIds: widget.initialSelectedIds,
+      canSelectEntry: widget.canSelectEntry,
+      isPathRestricted: widget.isPathRestricted,
+      maxSelectCount: widget.maxSelectCount,
+      allowedExtensions: widget.allowedExtensions,
+      pathDisplayMode: pathDisplayMode,
+      onPathDisplayModeChanged: onPathDisplayModeChanged,
+      onPathChanged: (path) => setState(() => _currentPath = path),
+      onSelectionChanged: (entries) => setState(() => _selected = entries),
+      onStatusChanged: (ready) {
+        setState(() => _isReady = ready);
+        if (!widget.source.isCurrent) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted &&
+                !widget.source.isCurrent &&
+                (ModalRoute.of(context)?.isCurrent ?? false) &&
+                Navigator.of(context).canPop()) {
+              Navigator.of(context).pop(null);
+            }
+          });
+        }
+      },
+      onEntryDoubleTap:
+          widget.mode == RemoteBrowserMode.file ||
+                  widget.mode == RemoteBrowserMode.multipleFiles
+              ? (entry) {
+                if (!entry.isDirectory && canConfirm) _confirm();
+              }
+              : null,
+    );
+  }
+}
+
+class _OptionalPickerModeConsumer extends StatelessWidget {
+  final Widget Function(
+    BuildContext context,
+    RemotePathDisplayMode mode,
+    ValueChanged<RemotePathDisplayMode> onChanged,
+  ) builder;
+
+  const _OptionalPickerModeConsumer({required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    try {
+      ProviderScope.containerOf(context, listen: false);
+      return Consumer(
+        builder: (context, ref, _) {
+          final mode = ref.watch(
+            settingsProvider.select((s) => s.pickerPathDisplayMode),
+          );
+          return builder(context, mode, (newMode) {
+            ref
+                .read(settingsProvider.notifier)
+                .setRemotePathDisplayMode(newMode, picker: true);
+          });
+        },
+      );
+    } catch (_) {
+      return builder(context, RemotePathDisplayMode.scroll, (_) {});
+    }
   }
 }

@@ -4,6 +4,10 @@
 本文是可复用操作方法，不是执行授权；新版本、同版本覆盖、其他平台和 ADB 安装须按当轮要求决定。
 不依赖历史 `/tmp` 发布脚本，不在本文存放密码、Token 或私钥。
 
+**1.0.8起的新发布策略：** 用户要求分发平台代理中转。新版本与**每个架构包**均设置
+`use_proxy=true`；不能只改版本顶层开关。GitHub外链仍作为源站，客户端下载从分发API
+返回200／206流式响应，不能302到GitHub。历史版本保持原设置，除非另有修改授权。
+
 ## 1. 固定身份和发布边界
 
 | 项目 | 值／规则 |
@@ -304,7 +308,7 @@ curl --fail-with-body --silent --show-error 'https://ygg.norns.cc.cd/api/mcp' \
 ### 6.2 新增版本与架构包
 
 先确认版本不存在，再调用 `ygg_publish_version`，传入项目 ID、目录 code/name、主包直链／文件名／字节数、
-`platform=android`、`arch=arm64-v8a`、`use_proxy=false`、更新说明。
+`platform=android`、`arch=arm64-v8a`、`use_proxy=true`、更新说明。
 先用唯一暂存 channel（例如 `staging-vVERSION`），非强制更新、最低兼容 code 保持原政策。
 保存创建回执，不盲目重发创建调用。
 
@@ -317,7 +321,7 @@ curl --fail-with-body --silent --show-error 'https://ygg.norns.cc.cd/api/mcp' \
   "platform": "android",
   "arch": "arm64-v8a",
   "external_url": "https://github.com/NornsInteractive/valhalla/releases/download/vVERSION/valhalla-vVERSION-android-arm64-v8a-signed-B.apk",
-  "use_proxy": false,
+  "use_proxy": true,
   "file_name": "valhalla-vVERSION-android-arm64-v8a-signed-B.apk",
   "file_size": 1,
   "file_sha256": "<实际文件的64位SHA256>"
@@ -336,7 +340,7 @@ curl --fail-with-body --silent --show-error 'https://ygg.norns.cc.cd/api/mcp' \
 未获替换授权则停留暂存渠道，不带缺失哈希上线。
 
 四个包均唯一、size/hash 正确、GitHub 已公开后，调用 `ygg_update_version`，
-传真实 `version_id`、`channel=default`、`is_published=true`，其余策略不变。
+传真实 `version_id`、`channel=default`、`is_published=true`、`use_proxy=true`，其余策略不变。
 
 ### 6.3 同版本重新登记
 
@@ -374,6 +378,9 @@ curl --fail --silent --show-error --get 'https://ygg.norns.cc.cd/api/v1/app/late
 不只检查顶层 `has_update`／默认下载链接；不同 APK 版本码不能直接互相比大小。
 从选中包返回的 `download_url` 下载，保留其 `package_id`、再携带 platform/arch；
 校验最终 HTTPS 重定向目标，下载到独立证据目录，核对**完整实际字节数和 SHA256**，不能仅做 HEAD 请求。
+代理策略要求四个下载不跟随重定向时就返回200且无外部Location；完整文件哈希一致。
+另外发送 `Range: bytes=0-65535`，要求206、正确Content-Range及与源文件相同的65536字节。
+若平台配置为true但返回502／重定向或忽略Range，不能宣称代理验收成功；保留证据并报告。
 
 最终逐项核对：
 

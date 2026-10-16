@@ -20,12 +20,12 @@ class TerminalSettings {
     'CTRL',
     'SHIFT',
     'ALT',
-    'FN',
-    'Ctrl+C',
     'PASTE',
   ];
   static const availableKeys = [
     ...defaultPinnedKeys,
+    'FN',
+    'Ctrl+C',
     '↑',
     '↓',
     '←',

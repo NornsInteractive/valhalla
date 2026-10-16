@@ -5470,6 +5470,15 @@ class AppLocalizationsTr extends AppLocalizations {
       'İstenen yol izin verilen kök dizinin dışında.';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'Yol görüntüleme modu';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'Yatay kaydırma';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'Yolu daralt';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'Seçilen girdi kullanılamıyor veya geçersiz.';
 
@@ -5859,4 +5868,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'Hiç kontrol edilmedi';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'Yeni Adaptörü Yükle ve Bu Ajanı Değiştir';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'Mevcut program ve yapılandırma korunur. Bağımsız yeni bir adaptör kurulduktan sonra bağlantı aktarılır ve sorun çıkarsa güvenle geri dönülebilir.';
+
+  @override
+  String get agentUpdateReplacementCommand => 'Değiştirilen Komut';
 }

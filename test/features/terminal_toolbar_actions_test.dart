@@ -110,7 +110,63 @@ Future<void> _pumpNarrow(
 TerminalViewState _terminalState(WidgetTester tester) =>
     tester.state<TerminalViewState>(find.byType(TerminalView));
 
+Future<void> _menuAction(WidgetTester tester, String action) async {
+  await tester.tap(find.byKey(const Key('terminal_more_button')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(Key('terminal_${action}_menu_item')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _closeTab(WidgetTester tester, String id) async {
+  final tab = find.byKey(ValueKey('terminal_tab_$id'));
+  await tester.ensureVisible(tab);
+  await tester.longPress(tab);
+  await tester.pumpAndSettle();
+  final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+  await tester.tap(find.widgetWithText(ListTile, l10n.terminalCloseTab));
+  await tester.pumpAndSettle();
+}
+
 void main() {
+  testWidgets(
+    '360dp tabs show two short titles and reveal selected variable-width tab',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(360, 760));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final tabs = [
+        _tab('a'),
+        _tab('b'),
+        ...List.generate(14, (i) => _tab('Long terminal $i')),
+      ];
+      final notifier = _Notifier(
+        SshTerminalState(tabs: tabs, isInitialized: true),
+      );
+      await _pump(tester, notifier);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('terminal_tab_a')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('terminal_tab_b')).hitTestable(),
+        findsOneWidget,
+      );
+      notifier.emit(notifier.state.copyWith(activeTabIndex: 11));
+      await tester.pumpAndSettle();
+      final selected = find.byKey(ValueKey('terminal_tab_${tabs[11].id}'));
+      expect(selected.hitTestable(), findsOneWidget);
+      final rect = tester.getRect(selected);
+      expect(rect.left, greaterThanOrEqualTo(44));
+      expect(rect.right, lessThanOrEqualTo(360 - 88));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      for (final tab in tabs) {
+        tab.bridge.dispose();
+      }
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
   testWidgets(
     'terminal recovery notices preserve canvas, PTY rows/columns, and scrollback',
     (tester) async {
@@ -221,13 +277,11 @@ void main() {
       tab.terminal.write('preserved-output');
       await tester.pump();
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-      await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
-      await tester.pumpAndSettle();
+      await _menuAction(tester, 'tmux');
       await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
       await tester.pumpAndSettle();
       expect(tester.testTextInput.isVisible, isFalse);
-      await tester.tap(find.byKey(const Key('terminalDefaultModeButton')));
-      await tester.pumpAndSettle();
+      await _menuAction(tester, 'tmux');
       await tester.tap(find.byKey(const Key('terminalModeTmuxRadio')));
       await tester.pumpAndSettle();
       expect(notifier.state.activeTab, same(tab));
@@ -242,7 +296,7 @@ void main() {
   );
 
   testWidgets(
-    'clicking close on the selected tab removes its session',
+    'long-press close on the selected tab removes its session',
     (tester) async {
       final first = _tab('first');
       final second = _tab('second');
@@ -251,15 +305,7 @@ void main() {
       );
       await _pump(tester, notifier);
 
-      final close = find.descendant(
-        of: find.ancestor(
-          of: find.text('second'),
-          matching: find.byType(InputChip),
-        ),
-        matching: find.byIcon(Icons.close),
-      );
-      await tester.tap(close);
-      await tester.pump();
+      await _closeTab(tester, 'second');
 
       expect(notifier.state.tabs, [first]);
       expect(notifier.state.activeTab, same(first));
@@ -283,13 +329,7 @@ void main() {
         SshTerminalState(tabs: tabs, activeTabIndex: 1),
       );
       await _pump(tester, notifier);
-      await tester.tap(
-        find.descendant(
-          of: find.byKey(const ValueKey('terminal_tab_first')),
-          matching: find.byIcon(Icons.close),
-        ),
-      );
-      await tester.pump();
+      await _closeTab(tester, 'first');
 
       expect(notifier.state.tabs, [tabs[1], tabs[2]]);
       expect(notifier.state.activeTab, same(tabs[1]));
@@ -322,13 +362,7 @@ void main() {
         ),
       );
       await _pump(tester, notifier);
-      await tester.tap(
-        find.descendant(
-          of: find.byKey(const ValueKey('terminal_tab_second')),
-          matching: find.byIcon(Icons.close),
-        ),
-      );
-      await tester.pump();
+      await _closeTab(tester, 'second');
 
       expect(notifier.state.tabs, [tabs[0], tabs[2]]);
       expect(notifier.state.activeTab, same(tabs[2]));
@@ -355,13 +389,7 @@ void main() {
         SshTerminalState(tabs: tabs, tmuxInstallOffer: offer),
       );
       await _pump(tester, notifier);
-      await tester.tap(
-        find.descendant(
-          of: find.byKey(const ValueKey('terminal_tab_third')),
-          matching: find.byIcon(Icons.close),
-        ),
-      );
-      await tester.pump();
+      await _closeTab(tester, 'third');
 
       expect(notifier.state.tabs, [tabs[0], tabs[1]]);
       expect(notifier.state.activeTab, same(tabs[0]));
@@ -428,8 +456,7 @@ void main() {
       void onChanged() => repaints++;
       terminal.addListener(onChanged);
 
-      await tester.tap(find.byTooltip('Clear'));
-      await tester.pump();
+      await _menuAction(tester, 'clear');
 
       expect(repaints, 1);
       expect(terminal.buffer.getText().trim(), isEmpty);
@@ -460,25 +487,19 @@ void main() {
   );
 
   testWidgets(
-    'Android tabs expose independent, accessible close callbacks',
+    'Android compact tabs omit inline close and retain long-press close',
     (tester) async {
       final tabs = [_tab('first'), _tab('second')];
       final notifier = _Notifier(SshTerminalState(tabs: tabs));
       await _pump(tester, notifier);
 
-      // Mobile reuses the same chip layout as Windows, so the close affordance
-      // stays a real, labelled and per-index callback instead of a nested tap
-      // target buried inside the label.
       final chips = tester.widgetList<InputChip>(find.byType(InputChip));
       expect(chips.length, 2);
-      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
       for (final chip in chips) {
-        expect(chip.onDeleted, isNotNull);
-        expect(chip.deleteButtonTooltipMessage, l10n.terminalCloseTab);
+        expect(chip.onDeleted, isNull);
       }
       // Closing one tab must not close the other.
-      await tester.tap(find.byIcon(Icons.close).first);
-      await tester.pump();
+      await _closeTab(tester, 'first');
       expect(notifier.state.tabs, [tabs[1]]);
 
       final lastChip = tester.widget<InputChip>(find.byType(InputChip));

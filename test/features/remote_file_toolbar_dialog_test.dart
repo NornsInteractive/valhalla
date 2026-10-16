@@ -174,6 +174,7 @@ void main() {
       'create',
       'view',
       'transfers',
+      'sort',
     ]);
   });
 

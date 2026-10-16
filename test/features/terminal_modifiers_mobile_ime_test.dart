@@ -79,6 +79,37 @@ Future<void> _commit(WidgetTester tester, String text) async {
 }
 
 void main() {
+  for (final committed in ['a\n', '中文\r\n', 'hello \n']) {
+    testWidgets(
+      'Gboard batched text plus Enter preserves committed prefix and consumes Ctrl: $committed',
+      (tester) {
+        return _mobile(tester, (output) async {
+          await _keyboard(tester);
+          await _modifier(tester, 'CTRL');
+          await _commit(tester, committed);
+          final prefix = committed.replaceFirst(RegExp(r'\r\n$|[\r\n]$'), '');
+          expect(output.join(), '$prefix\x1b[13;5u');
+          await _commit(tester, 'c');
+          expect(output.join(), '$prefix\x1b[13;5uc');
+        });
+      },
+    );
+  }
+
+  testWidgets(
+    'IME multiline paste is not split or rewritten by a pending modifier',
+    (tester) {
+      return _mobile(tester, (output) async {
+        await _keyboard(tester);
+        await _modifier(tester, 'CTRL');
+        await _commit(tester, 'one\ntwo\n');
+        expect(output.join(), 'one\ntwo\n');
+        await _commit(tester, 'c');
+        expect(output.join(), 'one\ntwo\n\x03');
+      });
+    },
+  );
+
   for (final entry in {'CTRL': '\x03', 'SHIFT': 'C', 'ALT': '\x1bc'}.entries) {
     testWidgets('mobile IME: tap ${entry.key} then committed c', (tester) {
       return _mobile(tester, (output) async {

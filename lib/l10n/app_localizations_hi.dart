@@ -5467,6 +5467,15 @@ class AppLocalizationsHi extends AppLocalizations {
       'अनुरोधित पथ अनुमत रूट निर्देशिका से बाहर है।';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'पथ प्रदर्शन मोड';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'क्षैतिज स्क्रॉल';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'पथ संक्षिप्त करें';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'चयनित प्रविष्टि अनुपलब्ध या अमान्य है।';
 
@@ -5858,4 +5867,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'कभी नहीं जाँचा गया';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'नया एडेप्टर इंस्टॉल करें और इस एजेंट पर स्विच करें';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'मौजूदा प्रोग्राम और कॉन्फ़िगरेशन सुरक्षित रहेंगे। एक स्वतंत्र नया एडेप्टर इंस्टॉल करके कनेक्शन बदला जाएगा, समस्या होने पर सुरक्षित रूप से वापस लौटा जा सकता है।';
+
+  @override
+  String get agentUpdateReplacementCommand => 'स्विच के बाद का कमांड';
 }

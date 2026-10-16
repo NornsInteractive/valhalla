@@ -579,7 +579,17 @@ class AgentUpdatesNotifier extends Notifier<AgentUpdatesState> {
       if (updatedProfile.acpCommand != plan.profile.acpCommand) {
         await ref
             .read(agentRegistryProvider.notifier)
-            .commitVerifiedAdapterMigration(plan.profile, updatedProfile);
+            .commitVerifiedAdapterMigration(
+              plan.profile,
+              updatedProfile,
+              verifiedInstallCommand: plan.components
+                  .where(
+                    (item) =>
+                        item.replacementAcpCommand == updatedProfile.acpCommand,
+                  )
+                  .firstOrNull
+                  ?.command,
+            );
       }
       final done = (state.agents[plan.profile.id] ?? entry).copyWith(
         targetKey: agentUpdateTargetKey(plan.server, updatedProfile),

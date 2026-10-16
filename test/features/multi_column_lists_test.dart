@@ -380,10 +380,14 @@ void main() {
         await tester.tapAt(const Offset(10, 10));
         await tester.pumpAndSettle();
 
-        // 2. Refresh and sorting remain available in More.
+        // 2. Refresh stays in More; default sorting is directly accessible.
         await tester.tap(find.byKey(const Key('sftpMoreButton')));
         await tester.pumpAndSettle();
         expect(find.byIcon(Icons.refresh), findsOneWidget);
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('sftpSortButton')));
+        await tester.pumpAndSettle();
         final l10n = AppLocalizations.of(
           tester.element(find.byType(SftpFileView)),
         );

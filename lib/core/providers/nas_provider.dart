@@ -19,6 +19,7 @@ import 'infrastructure_providers.dart';
 import 'nas_sources_provider.dart';
 import 'storage_providers.dart';
 import 'server_provider.dart';
+import '../utils/nas_scan_performance.dart';
 
 final nasIndexRepositoryProvider = FutureProvider<NasIndexRepository>((
   ref,
@@ -108,7 +109,12 @@ final nasDownloadsProvider = StreamProvider<List<NasDownloadTask>>((
 });
 
 class NasHomeSections {
-  final List<NasMediaItem> continueWatching, continueListening, photos, videos, music, favorites;
+  final List<NasMediaItem> continueWatching,
+      continueListening,
+      photos,
+      videos,
+      music,
+      favorites;
   final Map<String, NasPlaybackState> playbackByPath;
   const NasHomeSections({
     this.continueWatching = const [],
@@ -132,7 +138,9 @@ final nasHomeProvider = FutureProvider<NasHomeSections>((ref) async {
     repository.query(id, kind: NasMediaKind.video, limit: 8),
     repository.query(id, kind: NasMediaKind.audio, limit: 8),
     repository.recentPlayback(id, kind: NasMediaKind.audio),
-    repository.queryPage(id, favoritesOnly: true, limit: 12).then((page) => page.items),
+    repository
+        .queryPage(id, favoritesOnly: true, limit: 12)
+        .then((page) => page.items),
   ]);
   return NasHomeSections(
     continueWatching: sections[0],
@@ -141,7 +149,10 @@ final nasHomeProvider = FutureProvider<NasHomeSections>((ref) async {
     music: sections[3],
     continueListening: sections[4],
     favorites: sections[5],
-    playbackByPath: await repository.playbackForItems(id, [...sections[0], ...sections[2], ...sections[4]].map((item) => item.path)),
+    playbackByPath: await repository.playbackForItems(
+      id,
+      [...sections[0], ...sections[2], ...sections[4]].map((item) => item.path),
+    ),
   );
 });
 
@@ -278,8 +289,12 @@ class NasState {
     album: clearScope ? null : album ?? this.album,
     playlistId: clearScope ? null : playlistId ?? this.playlistId,
     albumKey: clearScope ? null : albumKey ?? this.albumKey,
-    modifiedFromEpoch: clearScope ? null : modifiedFromEpoch ?? this.modifiedFromEpoch,
-    modifiedBeforeEpoch: clearScope ? null : modifiedBeforeEpoch ?? this.modifiedBeforeEpoch,
+    modifiedFromEpoch: clearScope
+        ? null
+        : modifiedFromEpoch ?? this.modifiedFromEpoch,
+    modifiedBeforeEpoch: clearScope
+        ? null
+        : modifiedBeforeEpoch ?? this.modifiedBeforeEpoch,
     playbackByPath: playbackByPath ?? this.playbackByPath,
     scanStage: scanStage ?? this.scanStage,
     scanErrorCode: clearScanError ? null : scanErrorCode ?? this.scanErrorCode,
@@ -389,10 +404,12 @@ class NasNotifier extends Notifier<NasState> {
       lastScan: initial.lastScan,
       isLoading: false,
       isScanning: false,
-      scanStage: remembered.state.scanStage == NasScanStage.scanning ||
-          remembered.state.scanStage == NasScanStage.connecting ||
-          remembered.state.scanStage == NasScanStage.finalizing
-          ? NasScanStage.cancelled : remembered.state.scanStage,
+      scanStage:
+          remembered.state.scanStage == NasScanStage.scanning ||
+              remembered.state.scanStage == NasScanStage.connecting ||
+              remembered.state.scanStage == NasScanStage.finalizing
+          ? NasScanStage.cancelled
+          : remembered.state.scanStage,
       clearError: true,
     );
   }
@@ -400,7 +417,9 @@ class NasNotifier extends Notifier<NasState> {
   void _rememberBrowse() {
     final visible = _visibleState;
     final id = visible?.serverId;
-    if (visible == null || id == null || !_sameSource(_browseSources[id])) return;
+    if (visible == null || id == null || !_sameSource(_browseSources[id])) {
+      return;
+    }
     final key = (id, visible.browseCategory);
     _sourceCategories[id] = visible.browseCategory;
     _browseMemory.remove(key);
@@ -472,37 +491,50 @@ class NasNotifier extends Notifier<NasState> {
     await refresh(preservePosition: remembered != null);
   }
 
-  Future<NasIndexPage> _page(String id, NasIndexCursor? cursor, {
-    bool before = false, bool inclusive = false,
+  Future<NasIndexPage> _page(
+    String id,
+    NasIndexCursor? cursor, {
+    bool before = false,
+    bool inclusive = false,
     int limit = _pageSize,
   }) async {
     final query = state;
     return (await _repository).queryPage(
-        id,
-        kind: query.filter,
-        search: query.search,
-        favoritesOnly: query.favoritesOnly,
-        folder: query.folder,
-        artist: query.artist,
-        album: query.album,
-        albumKey: query.albumKey,
-        modifiedFromEpoch: query.modifiedFromEpoch,
-        modifiedBeforeEpoch: query.modifiedBeforeEpoch,
-        cursor: cursor,
-        before: before,
-        inclusive: inclusive,
-        sortKey: query.sortKey,
-        sortAscending: query.sortAscending,
-        limit: limit,
-      );
+      id,
+      kind: query.filter,
+      search: query.search,
+      favoritesOnly: query.favoritesOnly,
+      folder: query.folder,
+      artist: query.artist,
+      album: query.album,
+      albumKey: query.albumKey,
+      modifiedFromEpoch: query.modifiedFromEpoch,
+      modifiedBeforeEpoch: query.modifiedBeforeEpoch,
+      cursor: cursor,
+      before: before,
+      inclusive: inclusive,
+      sortKey: query.sortKey,
+      sortAscending: query.sortAscending,
+      limit: limit,
+    );
   }
 
-  NasIndexCursor _cursor(NasMediaItem item) => NasIndexCursor.fromItem(item,
-    sortKey: state.sortKey, ascending: state.sortAscending, albumKey: state.albumKey);
+  NasIndexCursor _cursor(NasMediaItem item) => NasIndexCursor.fromItem(
+    item,
+    sortKey: state.sortKey,
+    ascending: state.sortAscending,
+    albumKey: state.albumKey,
+  );
 
-  Future<Map<String, NasPlaybackState>> _playbackForVisible(String id, List<NasMediaItem> items) async =>
-      (await _repository).playbackForItems(id,
-        items.where((item) => item.kind != NasMediaKind.image).map((item) => item.path));
+  Future<Map<String, NasPlaybackState>> _playbackForVisible(
+    String id,
+    List<NasMediaItem> items,
+  ) async => (await _repository).playbackForItems(
+    id,
+    items
+        .where((item) => item.kind != NasMediaKind.image)
+        .map((item) => item.path),
+  );
 
   Future<void> refreshPlayback() async {
     final id = state.serverId;
@@ -513,14 +545,19 @@ class NasNotifier extends Notifier<NasState> {
       if (ref.mounted && epoch == _epoch && identical(visible, state.items)) {
         state = state.copyWith(playbackByPath: progress);
       }
-    } catch (_) { /* Playback must not fail because an optional library lookup failed. */ }
+    } catch (_) {
+      /* Playback must not fail because an optional library lookup failed. */
+    }
   }
 
   Future<void> refresh({bool preservePosition = true}) async {
     final id = state.serverId;
     if (id == null) return;
     final epoch = ++_epoch;
-    final retainedGallery = preservePosition && state.galleryWindowEnabled && state.items.isNotEmpty;
+    final retainedGallery =
+        preservePosition &&
+        state.galleryWindowEnabled &&
+        state.items.isNotEmpty;
     final galleryFirst = retainedGallery ? _cursor(state.items.first) : null;
     final galleryLength = retainedGallery ? state.items.length : _pageSize;
     if (!preservePosition) {
@@ -573,16 +610,23 @@ class NasNotifier extends Notifier<NasState> {
           reload: preservePosition,
         );
       } else {
-        var page = await _page(id, retainedGallery ? galleryFirst : _anchors.lastOrNull,
-          inclusive: retainedGallery);
+        var page = await _page(
+          id,
+          retainedGallery ? galleryFirst : _anchors.lastOrNull,
+          inclusive: retainedGallery,
+        );
         if (!ref.mounted || epoch != _epoch) return;
-        if (page.items.isEmpty && (_anchors.lastOrNull != null || retainedGallery)) {
+        if (page.items.isEmpty &&
+            (_anchors.lastOrNull != null || retainedGallery)) {
           page = await _page(id, null);
           if (!ref.mounted || epoch != _epoch) return;
           _anchors.clear();
         }
         final items = List<NasMediaItem>.of(page.items);
-        while (state.galleryWindowEnabled && page.hasMore && items.length < galleryLength && items.length < 600) {
+        while (state.galleryWindowEnabled &&
+            page.hasMore &&
+            items.length < galleryLength &&
+            items.length < 600) {
           page = await _page(id, page.nextCursor);
           if (!ref.mounted || epoch != _epoch) return;
           items.addAll(page.items);
@@ -593,7 +637,12 @@ class NasNotifier extends Notifier<NasState> {
         if (state.galleryWindowEnabled && items.isNotEmpty) {
           // An incremental scan can insert files ahead of the retained anchor.
           // Recheck the edge rather than inheriting a stale "first page" flag.
-          final preceding = await _page(id, _cursor(items.first), before: true, limit: 1);
+          final preceding = await _page(
+            id,
+            _cursor(items.first),
+            before: true,
+            limit: 1,
+          );
           if (!ref.mounted || epoch != _epoch) return;
           galleryHasPrevious = preceding.items.isNotEmpty;
         }
@@ -603,7 +652,9 @@ class NasNotifier extends Notifier<NasState> {
           items: items,
           playbackByPath: progress,
           hasMore: page.hasMore,
-          hasPrevious: state.galleryWindowEnabled ? galleryHasPrevious : _anchors.length > 1,
+          hasPrevious: state.galleryWindowEnabled
+              ? galleryHasPrevious
+              : _anchors.length > 1,
           galleryTrimmedBefore: 0,
           galleryTrimmedAfter: 0,
           isLoading: false,
@@ -629,7 +680,9 @@ class NasNotifier extends Notifier<NasState> {
         state.serverId == source.id &&
         identical(ref.read(nasSourcesProvider).selected, source);
     try {
-      final adapter = await ref.read(nasSourceAdapterProvider(source.id).future);
+      final adapter = await ref.read(
+        nasSourceAdapterProvider(source.id).future,
+      );
       if (!current()) return;
       final playlists = await adapter.playlists();
       if (current()) state = state.copyWith(playlists: playlists);
@@ -714,9 +767,15 @@ class NasNotifier extends Notifier<NasState> {
   /// eviction counts; keep a visible source/path anchor before awaiting a load.
   Future<void> enableGalleryWindow(bool enabled) async {
     if (state.galleryWindowEnabled == enabled) return;
-    if (enabled && (state.filter != NasMediaKind.image || state.playlistId != null)) return;
-    state = state.copyWith(galleryWindowEnabled: enabled,
-      galleryTrimmedBefore: 0, galleryTrimmedAfter: 0);
+    if (enabled &&
+        (state.filter != NasMediaKind.image || state.playlistId != null)) {
+      return;
+    }
+    state = state.copyWith(
+      galleryWindowEnabled: enabled,
+      galleryTrimmedBefore: 0,
+      galleryTrimmedAfter: 0,
+    );
     if (!enabled) await refresh(preservePosition: false);
   }
 
@@ -724,25 +783,40 @@ class NasNotifier extends Notifier<NasState> {
   Future<void> loadGalleryPrevious() => _loadGallery(previous: true);
 
   Future<void> _loadGallery({required bool previous}) async {
-    if (!state.galleryWindowEnabled || state.isLoading || state.serverId == null ||
-        state.items.isEmpty || !(previous ? state.hasPrevious : state.hasMore)) {
+    if (!state.galleryWindowEnabled ||
+        state.isLoading ||
+        state.serverId == null ||
+        state.items.isEmpty ||
+        !(previous ? state.hasPrevious : state.hasMore)) {
       return;
     }
     final id = state.serverId!, epoch = _epoch;
     final oldItems = state.items;
     final boundary = _cursor(previous ? oldItems.first : oldItems.last);
-    state = state.copyWith(isLoading: true, clearError: true,
-      galleryTrimmedBefore: 0, galleryTrimmedAfter: 0);
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      galleryTrimmedBefore: 0,
+      galleryTrimmedAfter: 0,
+    );
     try {
       final page = await _page(id, boundary, before: previous);
       if (!ref.mounted || epoch != _epoch) return;
       final seen = <String>{};
-      final combined = (previous ? [...page.items, ...oldItems] : [...oldItems, ...page.items])
-          .where((item) => seen.add(item.path)).toList();
+      final combined =
+          (previous
+                  ? [...page.items, ...oldItems]
+                  : [...oldItems, ...page.items])
+              .where((item) => seen.add(item.path))
+              .toList();
       final evicted = combined.length > 600 ? combined.length - 600 : 0;
-      final items = previous ? combined.take(600).toList() : combined.skip(evicted).toList();
+      final items = previous
+          ? combined.take(600).toList()
+          : combined.skip(evicted).toList();
       _nextCursor = items.isEmpty ? null : _cursor(items.last);
-      state = state.copyWith(items: items, isLoading: false,
+      state = state.copyWith(
+        items: items,
+        isLoading: false,
         hasPrevious: previous ? page.hasMore : state.hasPrevious || evicted > 0,
         hasMore: previous ? state.hasMore || evicted > 0 : page.hasMore,
         galleryTrimmedBefore: previous ? 0 : evicted,
@@ -750,7 +824,10 @@ class NasNotifier extends Notifier<NasState> {
       );
     } catch (_) {
       if (ref.mounted && epoch == _epoch) {
-        state = state.copyWith(isLoading: false, errorCode: 'NAS_LIBRARY_LOAD_FAILED');
+        state = state.copyWith(
+          isLoading: false,
+          errorCode: 'NAS_LIBRARY_LOAD_FAILED',
+        );
       }
     }
   }
@@ -765,7 +842,8 @@ class NasNotifier extends Notifier<NasState> {
       clearScope: true,
       favoritesOnly: favoritesOnly,
       items: [],
-      galleryWindowEnabled: value == NasMediaKind.image && state.galleryWindowEnabled,
+      galleryWindowEnabled:
+          value == NasMediaKind.image && state.galleryWindowEnabled,
     );
     await refresh(preservePosition: false);
   }
@@ -804,7 +882,8 @@ class NasNotifier extends Notifier<NasState> {
           albumKey: albumKey,
           modifiedFromEpoch: modifiedFromEpoch,
           modifiedBeforeEpoch: modifiedBeforeEpoch,
-          galleryWindowEnabled: playlistId == null && state.galleryWindowEnabled,
+          galleryWindowEnabled:
+              playlistId == null && state.galleryWindowEnabled,
           items: [],
         );
     await refresh(preservePosition: false);
@@ -824,18 +903,29 @@ class NasNotifier extends Notifier<NasState> {
     final id = query.serverId;
     return id == null
         ? []
-        : (await _repository).groups(id, group, after: after, limit: 200,
-          kind: kind ?? query.filter ?? switch (group) {
-            NasIndexGroup.byArtist || NasIndexGroup.byAlbum => NasMediaKind.audio,
-            NasIndexGroup.byDate => NasMediaKind.image,
-            NasIndexGroup.byFolder => null,
-          },
-          search: query.search, favoritesOnly: query.favoritesOnly,
-          folder: folder ?? query.folder, artist: artist ?? query.artist,
-          albumKey: albumKey ?? query.albumKey,
-          modifiedFromEpoch: modifiedFromEpoch ?? query.modifiedFromEpoch,
-          modifiedBeforeEpoch: modifiedBeforeEpoch ?? query.modifiedBeforeEpoch,
-        );
+        : (await _repository).groups(
+            id,
+            group,
+            after: after,
+            limit: 200,
+            kind:
+                kind ??
+                query.filter ??
+                switch (group) {
+                  NasIndexGroup.byArtist ||
+                  NasIndexGroup.byAlbum => NasMediaKind.audio,
+                  NasIndexGroup.byDate => NasMediaKind.image,
+                  NasIndexGroup.byFolder => null,
+                },
+            search: query.search,
+            favoritesOnly: query.favoritesOnly,
+            folder: folder ?? query.folder,
+            artist: artist ?? query.artist,
+            albumKey: albumKey ?? query.albumKey,
+            modifiedFromEpoch: modifiedFromEpoch ?? query.modifiedFromEpoch,
+            modifiedBeforeEpoch:
+                modifiedBeforeEpoch ?? query.modifiedBeforeEpoch,
+          );
   }
 
   Future<void> saveConfig(NasScanConfig config) async {
@@ -876,21 +966,40 @@ class NasNotifier extends Notifier<NasState> {
     if (id == null || state.isScanning) return;
     final source = _source(id);
     final cancellation = NasCancellation();
+    final performance = NasScanPerformance();
     _scanCancellation = cancellation;
     final config = state.config;
-    bool current() => ref.mounted && state.serverId == id && _sameSource(source) && _scanCancellation == cancellation;
-    state = state.copyWith(isScanning: true, scannedCount: 0, clearError: true,
-      scanStage: NasScanStage.connecting, clearScanError: true, scanUpdatedAt: DateTime.now());
+    bool current() =>
+        ref.mounted &&
+        state.serverId == id &&
+        _sameSource(source) &&
+        _scanCancellation == cancellation;
+    state = state.copyWith(
+      isScanning: true,
+      scannedCount: 0,
+      clearError: true,
+      scanStage: NasScanStage.connecting,
+      clearScanError: true,
+      scanUpdatedAt: DateTime.now(),
+    );
+    var count = 0;
     try {
       final adapter = await ref.read(nasSourceAdapterProvider(id).future);
       final repository = await _repository;
       cancellation.check();
       final generation = await repository.beginScan(id);
       cancellation.check();
-      if (!current()) { cancellation.cancel(); cancellation.check(); }
-      state = state.copyWith(scanStage: NasScanStage.scanning, scanUpdatedAt: DateTime.now());
-      var count = 0;
+      if (!current()) {
+        cancellation.cancel();
+        cancellation.check();
+      }
+      state = state.copyWith(
+        scanStage: NasScanStage.scanning,
+        scanUpdatedAt: DateTime.now(),
+      );
       var lastRefresh = DateTime.now();
+      final progressClock = Stopwatch()..start();
+      var lastProgressMillis = -250;
       await for (final batch in adapter.scan(config, cancellation)) {
         cancellation.check();
         await repository.upsertBatch(
@@ -904,7 +1013,13 @@ class NasNotifier extends Notifier<NasState> {
           cancellation.cancel();
           break;
         }
-        state = state.copyWith(scannedCount: count, scanUpdatedAt: DateTime.now());
+        if (progressClock.elapsedMilliseconds - lastProgressMillis >= 250) {
+          lastProgressMillis = progressClock.elapsedMilliseconds;
+          state = state.copyWith(
+            scannedCount: count,
+            scanUpdatedAt: DateTime.now(),
+          );
+        }
         if (DateTime.now().difference(lastRefresh).inSeconds >= 2 &&
             !state.isLoading &&
             _anchors.length <= 1) {
@@ -913,31 +1028,50 @@ class NasNotifier extends Notifier<NasState> {
         }
       }
       cancellation.check();
-      if (!current()) { cancellation.cancel(); cancellation.check(); }
-      state = state.copyWith(scanStage: NasScanStage.finalizing, scanUpdatedAt: DateTime.now());
+      if (!current()) {
+        cancellation.cancel();
+        cancellation.check();
+      }
+      state = state.copyWith(
+        scannedCount: count,
+        scanStage: NasScanStage.finalizing,
+        scanUpdatedAt: DateTime.now(),
+      );
       await repository.finishScan(id, generation, cancellation: cancellation);
       cancellation.check();
       if (!current()) return;
       final now = DateTime.now();
       await ref.read(localStorageServiceProvider).saveNasLastScan(id, now);
       if (current()) {
-        state = state.copyWith(lastScan: now, scanStage: NasScanStage.completed,
-          clearScanError: true, scanUpdatedAt: now);
+        state = state.copyWith(
+          lastScan: now,
+          scanStage: NasScanStage.completed,
+          clearScanError: true,
+          scanUpdatedAt: now,
+        );
         await refresh();
       }
     } catch (error) {
       if (current()) {
-        final code = cancellation.isCancelled ? 'NAS_SCAN_CANCELLED'
-            : error is StateError && RegExp(r'^NAS_[A-Z0-9_]+$').hasMatch(error.message)
-                ? error.message : 'NAS_SCAN_FAILED';
+        final code = cancellation.isCancelled
+            ? 'NAS_SCAN_CANCELLED'
+            : error is StateError &&
+                  RegExp(r'^NAS_[A-Z0-9_]+$').hasMatch(error.message)
+            ? error.message
+            : 'NAS_SCAN_FAILED';
         state = state.copyWith(
           errorCode: code,
           scanErrorCode: code,
-          scanStage: cancellation.isCancelled ? NasScanStage.cancelled : NasScanStage.failed,
+          scanStage: cancellation.isCancelled
+              ? NasScanStage.cancelled
+              : NasScanStage.failed,
           scanUpdatedAt: DateTime.now(),
         );
       }
     } finally {
+      unawaited(
+        performance.finish(count: count, cancelled: cancellation.isCancelled),
+      );
       if (current()) {
         state = state.copyWith(isScanning: false);
       }
@@ -983,7 +1117,8 @@ class NasNotifier extends Notifier<NasState> {
         favorites = state.favoritesOnly;
     final sortKey = state.sortKey, sortAscending = state.sortAscending;
     final folder = state.folder, artist = state.artist, album = state.album;
-    final albumKey = state.albumKey, modifiedFrom = state.modifiedFromEpoch,
+    final albumKey = state.albumKey,
+        modifiedFrom = state.modifiedFromEpoch,
         modifiedBefore = state.modifiedBeforeEpoch;
     var hasMore = sameSource && state.hasMore;
     final playlistId = sameSource ? state.playlistId : null;
@@ -1100,8 +1235,11 @@ class NasNotifier extends Notifier<NasState> {
   }
 
   Future<void> addToQueue(NasMediaItem item) async {
-    final source = ref.read(nasSourcesProvider).sources
-        .where((source) => source.id == item.serverId).firstOrNull;
+    final source = ref
+        .read(nasSourcesProvider)
+        .sources
+        .where((source) => source.id == item.serverId)
+        .firstOrNull;
     if (source == null) throw StateError('NAS_SOURCE_NOT_FOUND');
     final player = await ref.read(nasMediaPlayerProvider.future);
     if (!ref.mounted ||
@@ -1121,12 +1259,20 @@ class NasNotifier extends Notifier<NasState> {
       ref.read(nasImageCacheProvider).thumbnail(item, owner: owner);
   void releaseThumbnail(NasMediaItem item, Object owner) =>
       ref.read(nasImageCacheProvider).releaseThumbnail(item, owner);
-  Future<Map<String, int>> thumbnailCacheUsage({String? sourceId, bool legacyOnly = false}) =>
-      ref.read(nasImageCacheProvider).cacheUsage(sourceId: sourceId, legacyOnly: legacyOnly);
+  Future<Map<String, int>> thumbnailCacheUsage({
+    String? sourceId,
+    bool legacyOnly = false,
+  }) => ref
+      .read(nasImageCacheProvider)
+      .cacheUsage(sourceId: sourceId, legacyOnly: legacyOnly);
   Future<Map<String, Map<String, int>>> thumbnailCacheUsageBySource() =>
       ref.read(nasImageCacheProvider).cacheUsageBySource();
-  Future<void> clearThumbnailCache({String? sourceId, bool legacyOnly = false}) =>
-      ref.read(nasImageCacheProvider).clearCache(sourceId: sourceId, legacyOnly: legacyOnly);
+  Future<void> clearThumbnailCache({
+    String? sourceId,
+    bool legacyOnly = false,
+  }) => ref
+      .read(nasImageCacheProvider)
+      .clearCache(sourceId: sourceId, legacyOnly: legacyOnly);
   int get thumbnailCacheBudget =>
       ref.read(localStorageServiceProvider).getNasThumbnailCacheBytes();
   Future<void> setThumbnailCacheBudget(int bytes) async {
@@ -1175,8 +1321,11 @@ class NasNotifier extends Notifier<NasState> {
     ref.invalidate(nasHomeProvider);
   }
 
-  NasSource? _source(String id) => ref.read(nasSourcesProvider).sources
-      .where((source) => source.id == id).firstOrNull;
+  NasSource? _source(String id) => ref
+      .read(nasSourcesProvider)
+      .sources
+      .where((source) => source.id == id)
+      .firstOrNull;
 
   bool _sameSource(NasSource? source) =>
       ref.mounted && source != null && _source(source.id) == source;
@@ -1295,8 +1444,11 @@ class NasNotifier extends Notifier<NasState> {
           } catch (error) {
             results[index] = NasBatchItemResult(
               item,
-              errorCode: error is StateError && error.message == 'NAS_BATCH_SOURCE_CHANGED'
-                  ? 'NAS_BATCH_SOURCE_CHANGED' : 'NAS_BATCH_ITEM_FAILED',
+              errorCode:
+                  error is StateError &&
+                      error.message == 'NAS_BATCH_SOURCE_CHANGED'
+                  ? 'NAS_BATCH_SOURCE_CHANGED'
+                  : 'NAS_BATCH_ITEM_FAILED',
             );
           }
         }

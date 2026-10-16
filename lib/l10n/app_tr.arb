@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "Hedef ortam veya etkin sunucu değişti.",
   "remoteBrowserPathInvalid": "İstenen yol geçersiz veya erişilemiyor.",
   "remoteBrowserPathOutsideRoot": "İstenen yol izin verilen kök dizinin dışında.",
+  "remoteBrowserPathDisplayMode": "Yol görüntüleme modu",
+  "remoteBrowserPathDisplayModeScroll": "Yatay kaydırma",
+  "remoteBrowserPathDisplayModeCollapsed": "Yolu daralt",
   "remoteBrowserEntryUnavailable": "Seçilen girdi kullanılamıyor veya geçersiz.",
   "nasBrowseUnavailable": "NAS tarama hizmeti şu anda kullanılamıyor.",
   "nasInvalidDirectoryEntry": "NAS taranırken geçersiz dizin girdisiyle karşılaşıldı.",
@@ -2243,5 +2246,8 @@
   "agentUpdateVersionUnknown": "Bilinmiyor",
   "agentUpdateSource": "Kaynak",
   "agentUpdateLastChecked": "Son kontrol",
-  "agentUpdateNeverChecked": "Hiç kontrol edilmedi"
+  "agentUpdateNeverChecked": "Hiç kontrol edilmedi",
+  "agentUpdateCodexMigrationTitle": "Yeni Adaptörü Yükle ve Bu Ajanı Değiştir",
+  "agentUpdateCodexMigrationNotice": "Mevcut program ve yapılandırma korunur. Bağımsız yeni bir adaptör kurulduktan sonra bağlantı aktarılır ve sorun çıkarsa güvenle geri dönülebilir.",
+  "agentUpdateReplacementCommand": "Değiştirilen Komut"
 }

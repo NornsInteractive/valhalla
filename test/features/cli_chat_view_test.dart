@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/in_memory_app_settings.dart';
 import 'package:xterm/xterm.dart';
 import 'package:valhalla/core/providers/agent_registry_provider.dart';
 import 'package:valhalla/core/providers/agent_update_provider.dart';
@@ -313,6 +314,7 @@ Future<void> _pumpTestApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        settingsProvider.overrideWith(InMemoryAppSettings.new),
         activeServerProvider.overrideWith(
           () => activeServerNotifier ?? _TestActiveServerNotifier(_server),
         ),

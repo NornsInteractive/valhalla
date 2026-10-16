@@ -11,11 +11,19 @@ enum RemoteFileToolbarAction {
   refresh,
 }
 
+enum RemotePathDisplayMode { scroll, collapsed }
+
+RemotePathDisplayMode remotePathDisplayModeFromStorage(String? value) =>
+    value == 'collapsed'
+    ? RemotePathDisplayMode.collapsed
+    : RemotePathDisplayMode.scroll;
+
 const defaultRemoteFileToolbarActions = <RemoteFileToolbarAction>[
   RemoteFileToolbarAction.upload,
   RemoteFileToolbarAction.create,
   RemoteFileToolbarAction.view,
   RemoteFileToolbarAction.transfers,
+  RemoteFileToolbarAction.sort,
 ];
 
 List<RemoteFileToolbarAction> remoteFileToolbarActionsFromStorage(

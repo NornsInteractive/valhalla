@@ -179,6 +179,11 @@ class _AgentUpdateDialogState extends ConsumerState<AgentUpdateDialog> {
 
     final hasClaudeMigration =
         _plan?.components.any((c) => c.migratesClaudeAdapter) ?? false;
+    final codexMigrationComp = _plan?.components.where(
+      (c) =>
+          c.reasonCode == 'AGENT_UPDATE_CODEX_ADAPTER_MIGRATION' ||
+          c.replacementAcpCommand != null,
+    ).firstOrNull;
     final isAgy =
         widget.profile.id == 'builtin-agy' ||
         widget.profile.cliCommand == 'agy';
@@ -383,6 +388,88 @@ class _AgentUpdateDialogState extends ConsumerState<AgentUpdateDialog> {
                             style: context.textTheme.bodySmall,
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                if (codexMigrationComp != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    key: const Key('agent_update_codex_migration_card'),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: context.colorScheme.primaryContainer.withValues(
+                        alpha: 0.25,
+                      ),
+                      borderRadius: BorderRadius.circular(VRadius.input),
+                      border: Border.all(
+                        color: context.colorScheme.primary.withValues(
+                          alpha: 0.4,
+                        ),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.swap_horiz_rounded,
+                              color: context.colorScheme.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                l10n.agentUpdateCodexMigrationTitle,
+                                style: context.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: context.colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.agentUpdateCodexMigrationNotice,
+                          style: context.textTheme.bodySmall,
+                        ),
+                        if (codexMigrationComp.replacementAcpCommand != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.agentUpdateReplacementCommand,
+                            style: context.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? const Color(0xFF07080B)
+                                      : const Color(0xFF1A1E26),
+                              borderRadius: BorderRadius.circular(
+                                VRadius.input,
+                              ),
+                            ),
+                            child: SelectableText(
+                              codexMigrationComp.replacementAcpCommand!,
+                              style: monoTextStyle(
+                                fontSize: 11,
+                                color: const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

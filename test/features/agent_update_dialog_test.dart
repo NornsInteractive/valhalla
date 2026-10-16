@@ -162,6 +162,53 @@ AppLocalizations _l10n(WidgetTester tester) =>
     AppLocalizations.of(tester.element(find.byType(AgentUpdateDialog)));
 
 void main() {
+  testWidgets(
+    'legacy Codex ACP migration explains isolated target before confirmation',
+    (tester) async {
+      const replacement =
+          '/home/dev/.local/share/valhalla/codex-acp/2.0.0/node_modules/.bin/codex-acp';
+      final profile = _profile().copyWith(
+        name: 'Codex',
+        cliCommand: 'codex',
+        acpCommand: '/opt/legacy/codex-acp',
+      );
+      final plan = AgentUpdatePlan(
+        server: _server,
+        profile: profile,
+        targetKey: 'a' * 64,
+        preparedAt: DateTime(2026, 10, 16),
+        runtimeIdentity: 'legacy-codex-test',
+        resolvedContainerId: 'b' * 64,
+        components: const [
+          AgentComponentUpdate(
+            component: AgentUpdateComponent.acp,
+            status: AgentUpdateStatus.available,
+            installedVersion: '0.16.0',
+            latestVersion: '2.0.0',
+            source: '@agentclientprotocol/codex-acp',
+            reasonCode: 'AGENT_UPDATE_CODEX_ADAPTER_MIGRATION',
+            replacementAcpCommand: replacement,
+            command:
+                'npm install --prefix /home/dev/.local/share/valhalla/codex-acp/2.0.0 -- @agentclientprotocol/codex-acp@2.0.0',
+          ),
+        ],
+      );
+      final updates = _DialogUpdates(plan);
+      await _pumpHost(tester, updates, initialPlan: plan);
+      final l10n = _l10n(tester);
+      expect(find.text(l10n.agentUpdateCodexMigrationTitle), findsOneWidget);
+      expect(find.text(l10n.agentUpdateCodexMigrationNotice), findsOneWidget);
+      expect(find.textContaining(replacement), findsWidgets);
+      expect(find.text('0.16.0 → 2.0.0'), findsOneWidget);
+      expect(updates.applied, isEmpty);
+      expect(updates.prepareCalls, 0);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byKey(_cancel));
+      await tester.pumpAndSettle();
+      expect(updates.applied, isEmpty);
+    },
+  );
+
   for (final component in AgentUpdateComponent.values) {
     testWidgets(
       'single-component selection passes exact ${component.name} scope to prepare and apply',

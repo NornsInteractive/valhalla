@@ -4,11 +4,17 @@ import 'dart:typed_data';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:valhalla/core/providers/settings_provider.dart';
+import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/data/models/remote_browser.dart';
+import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 import 'package:valhalla/widgets/remote_browser_dialog.dart';
 import 'package:valhalla/widgets/remote_browser_view.dart';
+import 'package:valhalla/widgets/remote_browser_toolbar.dart';
 
 const _confirmKey = Key('remote_browser_confirm_button');
 const _file = RemoteBrowserEntry(
@@ -160,6 +166,106 @@ class _DelayedCancelSource extends RemoteBrowserSource {
 }
 
 void main() {
+  testWidgets(
+    'picker path mode can repeatedly persist without changing file page or directory',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final storage = LocalStorageService(
+        await SharedPreferences.getInstance(),
+      );
+      final container = ProviderContainer(
+        overrides: [localStorageServiceProvider.overrideWithValue(storage)],
+      );
+      addTearDown(container.dispose);
+      await container
+          .read(settingsProvider.notifier)
+          .setRemotePathDisplayMode(
+            RemotePathDisplayMode.collapsed,
+            picker: false,
+          );
+      final source = _source(list: (_) => Stream.value([_folder]));
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: _app(
+            Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () =>
+                      RemoteBrowserDialog.show(context, source: source),
+                  child: const Text('Open browser'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      Future<void> open() async {
+        await tester.tap(find.text('Open browser'));
+        await _frames(tester);
+      }
+
+      Future<void> change(RemotePathDisplayMode mode) async {
+        await tester.tap(
+          find.byKey(const Key('remote_browser_path_mode_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byWidgetPredicate(
+            (w) => w is PopupMenuItem<RemotePathDisplayMode> && w.value == mode,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<RemoteBrowserBreadcrumb>(
+                find.byType(RemoteBrowserBreadcrumb),
+              )
+              .mode,
+          mode,
+        );
+        expect(storage.getRemotePathDisplayMode(picker: true), mode.name);
+        expect(
+          container.read(settingsProvider).filePathDisplayMode,
+          RemotePathDisplayMode.collapsed,
+        );
+        expect(
+          tester
+              .state<RemoteBrowserViewState>(find.byType(RemoteBrowserView))
+              .currentPath,
+          '/',
+        );
+      }
+
+      await open();
+      expect(
+        tester
+            .widget<RemoteBrowserBreadcrumb>(
+              find.byType(RemoteBrowserBreadcrumb),
+            )
+            .mode,
+        RemotePathDisplayMode.scroll,
+      );
+      await change(RemotePathDisplayMode.collapsed);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await open();
+      expect(
+        tester
+            .widget<RemoteBrowserBreadcrumb>(
+              find.byType(RemoteBrowserBreadcrumb),
+            )
+            .mode,
+        RemotePathDisplayMode.collapsed,
+      );
+      await change(RemotePathDisplayMode.scroll);
+      await change(RemotePathDisplayMode.collapsed);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _frames(tester);
+    },
+  );
+
   _presentationTests();
   testWidgets('a loaded empty directory can be confirmed', (tester) async {
     final source = _source();

@@ -194,32 +194,104 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
                 ),
               ),
             if (_isExpanded) _buildExpandedPanel(context),
-            // Pinned accessory keys row
+            // Two-row accessory keyboard (~92dp total height)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: SizedBox(
+                height: 92,
+                child: Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _buildResidentArea(context, pinnedKeys),
+                      ),
+                      const SizedBox(width: 4),
+                      _buildFixedRightCluster(context),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFixedRightCluster(BuildContext context) {
+    const colWidth = 44.0;
+    const rowHeight = 44.0;
+
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: SizedBox(
+        width: colWidth * 4,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              height: rowHeight,
               child: Row(
                 children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          if (!widget.pinKeyboardButtonTrailing &&
-                              widget.onToggleKeyboard != null)
-                            _buildKeyboardButton(context),
-                          ...pinnedKeys.map(
-                            (key) => _buildPinnedKey(context, key),
-                          ),
-                          _buildMoreButton(context),
-                        ],
-                      ),
+                  const SizedBox(width: colWidth),
+                  SizedBox(
+                    width: colWidth,
+                    height: rowHeight,
+                    child: _buildKey(
+                      context,
+                      '↑',
+                      onPressed: () => _handleKey('↑'),
                     ),
                   ),
-                  if (widget.pinKeyboardButtonTrailing &&
-                      widget.onToggleKeyboard != null) ...[
-                    const SizedBox(width: 4),
-                    _buildKeyboardButton(context),
-                  ],
+                  const SizedBox(width: colWidth),
+                  SizedBox(
+                    width: colWidth,
+                    height: rowHeight,
+                    child: _buildMoreButton(context),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              height: rowHeight,
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: colWidth,
+                    height: rowHeight,
+                    child: _buildKey(
+                      context,
+                      '←',
+                      onPressed: () => _handleKey('←'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: colWidth,
+                    height: rowHeight,
+                    child: _buildKey(
+                      context,
+                      '↓',
+                      onPressed: () => _handleKey('↓'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: colWidth,
+                    height: rowHeight,
+                    child: _buildKey(
+                      context,
+                      '→',
+                      onPressed: () => _handleKey('→'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: colWidth,
+                    height: rowHeight,
+                    child: _buildKeyboardButton(context),
+                  ),
                 ],
               ),
             ),
@@ -229,29 +301,121 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
     );
   }
 
+  Widget _buildResidentArea(
+    BuildContext context,
+    List<String> pinnedKeys,
+  ) {
+    if (pinnedKeys.isEmpty) return const SizedBox.shrink();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cols = (constraints.maxWidth / 50).floor().clamp(2, 8);
+        final perPage = cols * 2;
+
+        if (pinnedKeys.length <= perPage) {
+          final row1Keys = pinnedKeys.take(cols).toList();
+          final row2Keys = pinnedKeys.skip(cols).take(cols).toList();
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: constraints.maxWidth,
+              child: _buildKeyGridPage(context, row1Keys, row2Keys, cols: cols),
+            ),
+          );
+        }
+
+        final pageCount = (pinnedKeys.length / perPage).ceil();
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const PageScrollPhysics(),
+          child: Row(
+            children: List.generate(pageCount, (pageIndex) {
+              final pageKeys = pinnedKeys
+                  .skip(pageIndex * perPage)
+                  .take(perPage)
+                  .toList();
+              final row1Keys = pageKeys.take(cols).toList();
+              final row2Keys = pageKeys.skip(cols).take(cols).toList();
+              return SizedBox(
+                width: constraints.maxWidth,
+                child: _buildKeyGridPage(context, row1Keys, row2Keys, cols: cols),
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildKeyGridPage(
+    BuildContext context,
+    List<String> row1Keys,
+    List<String> row2Keys, {
+    required int cols,
+  }) {
+    const rowHeight = 44.0;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          height: rowHeight,
+          child: Row(
+            children: [
+              for (final key in row1Keys)
+                Expanded(child: _buildPinnedKey(context, key)),
+              for (var i = 0; i < cols - row1Keys.length; i++)
+                const Spacer(),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: rowHeight,
+          child: Row(
+            children: [
+              for (final key in row2Keys)
+                Expanded(child: _buildPinnedKey(context, key)),
+              for (var i = 0; i < cols - row2Keys.length; i++)
+                const Spacer(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildKeyboardButton(BuildContext context) {
     final tooltipText = context.l10n.terminalToggleKeyboard;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: SizedBox(
-        height: 44,
-        child: Tooltip(
-          message: tooltipText,
-          child: Semantics(
-            button: true,
-            label: tooltipText,
-            child: FilledButton.tonal(
-              key: const Key('terminal_accessory_keyboard_button'),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(44, 44),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+    return SizedBox(
+      key: const Key('terminal_accessory_keyboard_button'),
+      width: 44,
+      height: 44,
+      child: Tooltip(
+        message: tooltipText,
+        child: Semantics(
+          button: true,
+          label: tooltipText,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onToggleKeyboard,
+            child: Center(
+              child: SizedBox(
+                width: 36,
+                height: 36,
+                child: FilledButton.tonal(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(36, 36),
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  onPressed: widget.onToggleKeyboard,
+                  child: const Icon(Icons.keyboard, size: 18),
                 ),
               ),
-              onPressed: widget.onToggleKeyboard,
-              child: const Icon(Icons.keyboard, size: 18),
             ),
           ),
         ),
@@ -260,29 +424,33 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
   }
 
   Widget _buildMoreButton(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: SizedBox(
-        height: 44,
-        child: FilledButton.tonal(
-          key: const Key('terminal_accessory_more_button'),
-          style: FilledButton.styleFrom(
-            backgroundColor: _isExpanded
-                ? context.colorScheme.primaryContainer
-                : null,
-            foregroundColor: _isExpanded
-                ? context.colorScheme.onPrimaryContainer
-                : null,
-            minimumSize: const Size(44, 44),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: Center(
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: FilledButton.tonal(
+            key: const Key('terminal_accessory_more_button'),
+            style: FilledButton.styleFrom(
+              backgroundColor: _isExpanded
+                  ? context.colorScheme.primaryContainer
+                  : null,
+              foregroundColor: _isExpanded
+                  ? context.colorScheme.onPrimaryContainer
+                  : null,
+              minimumSize: const Size(36, 36),
+              padding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
             ),
-          ),
-          onPressed: () => setState(() => _isExpanded = !_isExpanded),
-          child: Icon(
-            _isExpanded ? Icons.expand_more : Icons.more_horiz,
-            size: 18,
+            onPressed: () => setState(() => _isExpanded = !_isExpanded),
+            child: Icon(
+              _isExpanded ? Icons.expand_more : Icons.more_horiz,
+              size: 18,
+            ),
           ),
         ),
       ),
@@ -418,15 +586,15 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
     final isArrow =
         label == '↑' || label == '↓' || label == '←' || label == '→';
 
-    final btn = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
+    final btn = Center(
       child: SizedBox(
-        height: 44,
+        width: 36,
+        height: 36,
         child: FilledButton.tonal(
           key: Key('terminal_accessory_key_$label'),
           style: FilledButton.styleFrom(
-            minimumSize: const Size(44, 44),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            minimumSize: const Size(36, 36),
+            padding: const EdgeInsets.symmetric(horizontal: 2),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(6),
             ),
@@ -434,12 +602,16 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
           onPressed: isArrow ? () {} : onPressed,
           child: icon != null
               ? Icon(icon, size: 16)
-              : Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'JetBrains Mono',
+              : FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'JetBrains Mono',
+                    ),
                   ),
                 ),
         ),
@@ -447,8 +619,18 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
     );
 
     final interactive = isArrow
-        ? HoldRepeatKey(onPressed: onPressed, child: btn)
-        : btn;
+        ? SizedBox(
+            width: 44,
+            height: 44,
+            child: HoldRepeatKey(onPressed: onPressed, child: btn),
+          )
+        : Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1),
+            child: SizedBox(
+              height: 44,
+              child: btn,
+            ),
+          );
 
     if (tooltip != null) {
       return Tooltip(message: tooltip, child: interactive);
@@ -568,10 +750,6 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar> {
   ) {
     final keys = switch (category) {
       _ExpandedCategory.nav => const [
-        '↑',
-        '↓',
-        '←',
-        '→',
         'HOME',
         'END',
         'PGUP',
@@ -672,40 +850,52 @@ class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
         ? context.colorScheme.onPrimary
         : (isActive ? context.colorScheme.onPrimaryContainer : null);
 
-    final btn = FilledButton.tonal(
-      key: widget.buttonKey,
-      style: FilledButton.styleFrom(
-        backgroundColor: bgColor,
-        foregroundColor: fgColor,
-        minimumSize: const Size(44, 44),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-      ),
-      onPressed: () {
-        if (_pointerSequenceHandled) {
-          // Handled deterministically by pointer sequence; ignore duplicate gesture tap.
-          return;
-        }
-        // Allows accessibility and keyboard/programmatic taps to trigger normally.
-        widget.onTap();
-      },
-      onLongPress: widget.onModifierDown != null ? null : widget.onLongPress,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            widget.label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'JetBrains Mono',
-            ),
+    final btn = Center(
+      child: SizedBox(
+        height: 36,
+        child: FilledButton.tonal(
+          key: widget.buttonKey,
+          style: FilledButton.styleFrom(
+            backgroundColor: bgColor,
+            foregroundColor: fgColor,
+            minimumSize: const Size(36, 36),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           ),
-          if (isLocked) ...[
-            const SizedBox(width: 3),
-            const Icon(Icons.lock, size: 12),
-          ],
-        ],
+          onPressed: () {
+            if (_pointerSequenceHandled) {
+              // Handled deterministically by pointer sequence; ignore duplicate gesture tap.
+              return;
+            }
+            // Allows accessibility and keyboard/programmatic taps to trigger normally.
+            widget.onTap();
+          },
+          onLongPress: widget.onModifierDown != null ? null : widget.onLongPress,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    widget.label,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'JetBrains Mono',
+                    ),
+                  ),
+                ),
+              ),
+              if (isLocked) ...[
+                const SizedBox(width: 2),
+                const Icon(Icons.lock, size: 11),
+              ],
+            ],
+          ),
+        ),
       ),
     );
 

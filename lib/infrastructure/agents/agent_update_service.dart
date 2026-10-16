@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -8,6 +9,8 @@ import '../../data/models/agent_update.dart';
 import '../../data/models/server_profile.dart';
 import '../cli/agent_execution_target.dart';
 import '../ssh/ssh_client_manager.dart';
+import '../acp/acp_client_adapter.dart';
+import '../acp/acp_ssh_transport.dart';
 
 typedef AgentUpdateJsonLoader = Future<Map<String, dynamic>> Function(Uri uri);
 
@@ -185,14 +188,67 @@ class AgentUpdateService {
         !(values['home']?.startsWith('/') ?? false)) {
       throw const AgentUpdateException('AGENT_UPDATE_PROBE_INVALID');
     }
+    if (acpName == 'codex-acp' &&
+        values['acpPath']?.startsWith('/') == true &&
+        _version(values['acpPackageVersion']) == null) {
+      final client = ssh.getClient(server.id);
+      if (client != null) {
+        try {
+          final info = await _readAcpVersion(
+            server.id,
+            target,
+            values['acpPath']!,
+          );
+          values['acpProtocolVersion'] = info.$2 ?? '';
+          values['acpProtocolName'] = info.$1 ?? '';
+        } catch (_) {
+          values['acpProtocolVersion'] = '';
+        }
+      }
+    }
     return _Runtime(
       target,
       containerId,
       values,
       LogSanitizer.sanitize(
-        'target: ${profile.executionTarget}${containerId == null ? '' : ' $containerId'}\nuser: ${values['uid']}\nCLI: ${values['cliPath']}\nACP: ${values['acpPath']}\n${_tail(result.stderr)}',
+        'target: ${profile.executionTarget}${containerId == null ? '' : ' $containerId'}\nuser: ${values['uid']}\nCLI: ${values['cliPath']}\nACP: ${values['acpPath']}\nACP version: ${values['acpPackageVersion'] ?? values['acpProtocolVersion'] ?? 'unknown'}\nACP package: ${values['acpPackage'] ?? 'standalone'}\n${_tail(result.stderr)}',
       ),
     );
+  }
+
+  Future<(String?, String?)> _readAcpVersion(
+    String serverId,
+    AgentProfile profile,
+    String executable,
+  ) async {
+    final client = ssh.getClient(serverId);
+    if (client == null) throw const AgentUpdateException('SSH_DISCONNECTED');
+    var finished = false;
+    final opening = client.execute(
+      _target(profile, 'exec ${cliShellQuote(executable)}'),
+    );
+    unawaited(
+      opening.then((session) {
+        if (finished) session.close();
+      }, onError: (Object _) {}),
+    );
+    ACPClientAdapter? adapter;
+    void Function()? closeSession;
+    try {
+      final session = await opening.timeout(probeTimeout);
+      closeSession = session.close;
+      adapter = ACPClientAdapter(
+        profile: profile,
+        transport: AcpSshTransport(session),
+        requestTimeout: const Duration(seconds: 8),
+      );
+      await adapter.initializeOnly().timeout(const Duration(seconds: 10));
+      return (adapter.agentInfo?.name, adapter.agentInfo?.version);
+    } finally {
+      finished = true;
+      adapter?.dispose();
+      closeSession?.call();
+    }
   }
 
   static String _probeScript(String cli, String acp, bool versionSupported) =>
@@ -249,8 +305,8 @@ for(const [key,file] of [['cli',process.argv[2]],['acp',process.argv[3]]]) {
   let dir=p.dirname(real);
   for(let i=0;i<8;i++) {
     const meta=p.join(dir,'package.json');
-    if(root&&dir.startsWith(root+p.sep)&&fs.existsSync(meta)) {
-      try {const data=JSON.parse(fs.readFileSync(meta,'utf8')); if(data.name&&data.version){emit(key+'Package',data.name);emit(key+'PackageVersion',data.version);break;}}catch{}
+    if(fs.existsSync(meta)) {
+      try {const data=JSON.parse(fs.readFileSync(meta,'utf8')); if(data.name&&data.version&&data.bin){const bins=typeof data.bin==='string'?[data.bin]:Object.values(data.bin);if(bins.some(b=>typeof b==='string'&&p.resolve(dir,b)===real)){emit(key+'Package',data.name);emit(key+'PackageVersion',data.version);if(root&&dir.startsWith(root+p.sep))emit(key+'NpmOwned','yes');break;}}}catch{}
     }
     const parent=p.dirname(dir); if(parent===dir)break;dir=parent;
   }
@@ -380,10 +436,9 @@ if command -v curl >/dev/null 2>&1; then valhalla_update_emit curl yes; fi
     final path = runtime.values['${key}Path'] ?? '';
     final installed = component == AgentUpdateComponent.cli
         ? _version(runtime.values['cliVersion'])
-        : _version(
-            runtime.values['acpPackageVersion'] ??
-                runtime.values['agyAcpVersion'],
-          );
+        : _version(runtime.values['acpPackageVersion']) ??
+              _version(runtime.values['acpProtocolVersion']) ??
+              _version(runtime.values['agyAcpVersion']);
     AgentComponentUpdate unavailable(
       String reason, {
       String? latest,
@@ -406,6 +461,77 @@ if command -v curl >/dev/null 2>&1; then valhalla_update_emit curl yes; fi
         status: AgentUpdateStatus.missing,
         reasonCode: 'AGENT_UPDATE_COMPONENT_MISSING',
       );
+    }
+    if (component == AgentUpdateComponent.acp && name == 'codex-acp') {
+      final metadata = await _catalog(
+        Uri.https(
+          'registry.npmjs.org',
+          '/@agentclientprotocol/codex-acp/latest',
+        ),
+        force: force,
+      );
+      if (metadata['name'] != '@agentclientprotocol/codex-acp') {
+        throw const AgentUpdateException('AGENT_UPDATE_CATALOG_INVALID');
+      }
+      final latest = _stableVersion(metadata['version']);
+      final package = runtime.values['acpPackage'];
+      final officialNpm =
+          package == '@agentclientprotocol/codex-acp' &&
+          (runtime.values['acpCanonical']?.startsWith(
+                '${runtime.values['npmRoot']}/',
+              ) ??
+              false);
+      if (!officialNpm) {
+        final managedRoot =
+            '${runtime.values['home']}/.local/share/valhalla/codex-acp/';
+        if (package == '@agentclientprotocol/codex-acp' &&
+            path.startsWith(managedRoot) &&
+            compareAgentVersions(installed, latest) == 0) {
+          return AgentComponentUpdate(
+            component: component,
+            status: AgentUpdateStatus.current,
+            installedVersion: installed,
+            latestVersion: latest,
+            source: package,
+          );
+        }
+        if (runtime.values['npmPath']?.startsWith('/') != true ||
+            runtime.values['nodeVersion'] == null) {
+          return unavailable(
+            'AGENT_UPDATE_TOOLS_MISSING',
+            latest: latest,
+            source: '@agentclientprotocol/codex-acp',
+          );
+        }
+        final minimum = RegExp(r'>=\s*(\d+)')
+            .firstMatch(
+              (metadata['engines'] as Map?)?['node']?.toString() ?? '',
+            )
+            ?.group(1);
+        if (minimum != null &&
+            (int.tryParse(runtime.values['nodeVersion']!.split('.').first) ??
+                    0) <
+                int.parse(minimum)) {
+          return unavailable(
+            'AGENT_UPDATE_NODE_UNSUPPORTED',
+            latest: latest,
+            source: '@agentclientprotocol/codex-acp',
+          );
+        }
+        final prefix =
+            '${runtime.values['home']}/.local/share/valhalla/codex-acp/$latest';
+        return AgentComponentUpdate(
+          component: component,
+          status: AgentUpdateStatus.available,
+          installedVersion: installed,
+          latestVersion: latest,
+          source: '@agentclientprotocol/codex-acp',
+          reasonCode: 'AGENT_UPDATE_CODEX_ADAPTER_MIGRATION',
+          replacementAcpCommand: '$prefix/node_modules/.bin/codex-acp',
+          command:
+              'npm_config_engine_strict=true ${cliShellQuote(runtime.values['npmPath']!)} install --prefix ${cliShellQuote(prefix)} --registry https://registry.npmjs.org -- ${cliShellQuote('@agentclientprotocol/codex-acp@$latest')}',
+        );
+      }
     }
     final expected = _packages[name];
     final npmOwned =
@@ -716,6 +842,12 @@ if command -v curl >/dev/null 2>&1; then valhalla_update_emit curl yes; fi
               'npm install -g @agentclientprotocol/claude-agent-acp',
         );
       }
+      if (item.replacementAcpCommand != null) {
+        profile = profile.copyWith(
+          acpCommand: item.replacementAcpCommand,
+          acpInstallCommand: item.command,
+        );
+      }
       final after = await _probe(plan.server, profile);
       if (after.containerId != runtime.containerId ||
           after.values['uid'] != runtime.values['uid'] ||
@@ -724,13 +856,22 @@ if command -v curl >/dev/null 2>&1; then valhalla_update_emit curl yes; fi
       }
       final actual = item.component == AgentUpdateComponent.cli
           ? _version(after.values['cliVersion'])
-          : _version(
-              after.values['acpPackageVersion'] ??
-                  after.values['agyAcpVersion'],
-            );
+          : _version(after.values['acpPackageVersion']) ??
+                _version(after.values['acpProtocolVersion']) ??
+                _version(after.values['agyAcpVersion']);
       final order = compareAgentVersions(actual, item.latestVersion);
       if (order == null || order < 0) {
         throw const AgentUpdateException('AGENT_UPDATE_VERSION_UNCHANGED');
+      }
+      if (item.replacementAcpCommand != null) {
+        final info = await _readAcpVersion(
+          plan.server.id,
+          after.profile,
+          item.replacementAcpCommand!,
+        );
+        if (compareAgentVersions(info.$2, item.latestVersion) != 0) {
+          throw const AgentUpdateException('AGENT_UPDATE_RUNTIME_INVALID');
+        }
       }
       if (item.source == 'antigravity-acp' &&
           after.values['agyAcpVerified'] != 'yes') {
@@ -860,6 +1001,7 @@ class _Runtime {
       'cliVersion',
       'cliPackageVersion',
       'acpPackageVersion',
+      'acpProtocolVersion',
       'agyAcpVersion',
       'npmPath',
       'npmRoot',

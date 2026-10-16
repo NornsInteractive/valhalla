@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "Môi trường đích hoặc máy chủ đang hoạt động đã thay đổi.",
   "remoteBrowserPathInvalid": "Đường dẫn được yêu cầu không hợp lệ hoặc không thể truy cập.",
   "remoteBrowserPathOutsideRoot": "Đường dẫn được yêu cầu nằm ngoài thư mục gốc cho phép.",
+  "remoteBrowserPathDisplayMode": "Chế độ hiển thị đường dẫn",
+  "remoteBrowserPathDisplayModeScroll": "Cuộn ngang",
+  "remoteBrowserPathDisplayModeCollapsed": "Thu gọn đường dẫn",
   "remoteBrowserEntryUnavailable": "Mục đã chọn không khả dụng hoặc không hợp lệ.",
   "nasBrowseUnavailable": "Dịch vụ duyệt NAS hiện không khả dụng.",
   "nasInvalidDirectoryEntry": "Gặp mục thư mục không hợp lệ khi duyệt NAS.",
@@ -2243,5 +2246,8 @@
   "agentUpdateVersionUnknown": "Không xác định",
   "agentUpdateSource": "Nguồn",
   "agentUpdateLastChecked": "Kiểm tra lần cuối",
-  "agentUpdateNeverChecked": "Chưa từng kiểm tra"
+  "agentUpdateNeverChecked": "Chưa từng kiểm tra",
+  "agentUpdateCodexMigrationTitle": "Cài đặt bộ điều hợp mới và chuyển đổi Agent này",
+  "agentUpdateCodexMigrationNotice": "Chương trình và cấu hình hiện tại sẽ được giữ nguyên, cài đặt bộ điều hợp mới độc lập rồi chuyển kết nối, có thể quay lại an toàn nếu có sự cố.",
+  "agentUpdateReplacementCommand": "Lệnh thay thế"
 }

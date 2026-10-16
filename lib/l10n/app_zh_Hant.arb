@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "目標環境或目前活動伺服器已變更。",
   "remoteBrowserPathInvalid": "請求的路徑無效或無法存取。",
   "remoteBrowserPathOutsideRoot": "請求的路徑超出了允許的根目錄範圍。",
+  "remoteBrowserPathDisplayMode": "路徑顯示模式",
+  "remoteBrowserPathDisplayModeScroll": "橫向捲動",
+  "remoteBrowserPathDisplayModeCollapsed": "折疊路徑",
   "remoteBrowserEntryUnavailable": "選取的項目無法使用或無效。",
   "nasBrowseUnavailable": "NAS 瀏覽服務目前無法使用。",
   "nasInvalidDirectoryEntry": "瀏覽 NAS 時遇到無效的目錄項目。",
@@ -2249,5 +2252,8 @@
   "agentUpdateVersionUnknown": "未知",
   "agentUpdateSource": "來源",
   "agentUpdateLastChecked": "上次檢查",
-  "agentUpdateNeverChecked": "從未檢查"
+  "agentUpdateNeverChecked": "從未檢查",
+  "agentUpdateCodexMigrationTitle": "安裝新版配接器並切換此 Agent",
+  "agentUpdateCodexMigrationNotice": "將保留現有程式與設定，安裝獨立的新版配接器後切換連線，發生問題可安全復原。",
+  "agentUpdateReplacementCommand": "切換後的命令"
 }

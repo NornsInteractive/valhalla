@@ -317,31 +317,7 @@ class _WorkerTransfer implements SftpTransferHandle, SftpCommittingTransfer {
 }
 
 Future<SSHClient> _connectWorker(SshTransferConnection connection) async {
-  final socket = await SSHSocket.connect(
-    connection.host,
-    connection.port,
-    timeout: const Duration(seconds: 30),
-  );
-  SSHClient? client;
-  try {
-    client = SSHClient(
-      socket,
-      username: connection.username,
-      identities: connection.privateKey == null
-          ? null
-          : SSHKeyPair.fromPem(connection.privateKey!),
-      onPasswordRequest: () => connection.password ?? '',
-      onVerifyHostKey: connection.matchesHostKey,
-    );
-    await client.authenticated.timeout(const Duration(seconds: 30));
-    return client;
-  } catch (_) {
-    try {
-      await client?.close().timeout(const Duration(seconds: 2));
-    } catch (_) {}
-    socket.destroy();
-    rethrow;
-  }
+  return connectSshWorker(connection);
 }
 
 Future<void> _runTransferWorker((_TransferRequest, SendPort) message) async {

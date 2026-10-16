@@ -5256,6 +5256,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get remoteBrowserPathOutsideRoot => '요청한 경로가 허용된 루트 디렉터리 외부에 있습니다.';
 
   @override
+  String get remoteBrowserPathDisplayMode => '경로 표시 모드';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => '가로 스크롤';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => '경로 축소';
+
+  @override
   String get remoteBrowserEntryUnavailable => '선택한 항목을 사용할 수 없거나 유효하지 않습니다.';
 
   @override
@@ -5619,4 +5628,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => '확인된 적 없음';
+
+  @override
+  String get agentUpdateCodexMigrationTitle => '새 어댑터 설치 및 이 에이전트로 전환';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      '기존 프로그램 및 설정은 유지되며, 독립적인 새 버전 어댑터를 설치한 후 연결을 전환합니다. 문제 발생 시 안전하게 롤백할 수 있습니다.';
+
+  @override
+  String get agentUpdateReplacementCommand => '전환 후 명령';
 }

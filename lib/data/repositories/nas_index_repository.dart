@@ -29,17 +29,26 @@ class NasIndexCursor {
     this.trackOrder,
   });
 
-  factory NasIndexCursor.fromItem(NasMediaItem item, {
+  factory NasIndexCursor.fromItem(
+    NasMediaItem item, {
     NasSortKey sortKey = NasSortKey.modified,
     bool ascending = false,
     String? albumKey,
-  }) => NasIndexCursor(item.modifiedEpoch, item.path,
-    sortKey: sortKey, ascending: ascending, albumKey: albumKey,
+  }) => NasIndexCursor(
+    item.modifiedEpoch,
+    item.path,
+    sortKey: sortKey,
+    ascending: ascending,
+    albumKey: albumKey,
     discOrder: NasIndexRepository._numberOrder(item.discNumber),
     trackOrder: NasIndexRepository._numberOrder(item.trackNumber),
     sortValue: switch (sortKey) {
       NasSortKey.modified => -item.modifiedEpoch,
-      NasSortKey.name => NasIndexRepository._sortName(item.path, item.sourcePath, item.title),
+      NasSortKey.name => NasIndexRepository._sortName(
+        item.path,
+        item.sourcePath,
+        item.title,
+      ),
       NasSortKey.size => item.sizeBytes,
     },
   );
@@ -71,7 +80,9 @@ class NasIndexGroupCount {
   final String? _key;
   final NasMediaItem? representative;
   final int? totalDurationMillis, modifiedFromEpoch, modifiedBeforeEpoch;
-  const NasIndexGroupCount(this.name, this.count, {
+  const NasIndexGroupCount(
+    this.name,
+    this.count, {
     String? key,
     this.representative,
     this.totalDurationMillis,
@@ -156,15 +167,27 @@ class NasIndexRepository {
             .select('PRAGMA table_info(nas_media)')
             .any((row) => row['name'] == 'sort_name');
         _addColumn(db, 'nas_media', "sort_name TEXT NOT NULL DEFAULT ''");
-        final needsAlbumMigration = !db.select('PRAGMA table_info(nas_media)')
+        final needsAlbumMigration = !db
+            .select('PRAGMA table_info(nas_media)')
             .any((row) => row['name'] == 'album_key');
         _addColumn(db, 'nas_media', "album_key TEXT NOT NULL DEFAULT ''");
-        _addColumn(db, 'nas_media', 'disc_order INTEGER NOT NULL DEFAULT 2147483647');
-        _addColumn(db, 'nas_media', 'track_order INTEGER NOT NULL DEFAULT 2147483647');
+        _addColumn(
+          db,
+          'nas_media',
+          'disc_order INTEGER NOT NULL DEFAULT 2147483647',
+        );
+        _addColumn(
+          db,
+          'nas_media',
+          'track_order INTEGER NOT NULL DEFAULT 2147483647',
+        );
         if (needsAlbumMigration) {
           var lastRow = 0;
           while (true) {
-            final rows = db.select('SELECT rowid, * FROM nas_media WHERE rowid > ? ORDER BY rowid LIMIT 1000', [lastRow]);
+            final rows = db.select(
+              'SELECT rowid, * FROM nas_media WHERE rowid > ? ORDER BY rowid LIMIT 1000',
+              [lastRow],
+            );
             if (rows.isEmpty) break;
             for (final row in rows) {
               _updateAlbumIdentity(db, _item(row));
@@ -520,6 +543,7 @@ class NasIndexRepository {
   Future<List<NasMediaItem>> pendingMetadata(
     String sourceId, {
     int limit = 32,
+    List<String>? paths,
   }) => Isolate.run(() {
     if (limit < 1 || limit > 32) throw ArgumentError.value(limit, 'limit');
     final db = _open(databasePath, mode: OpenMode.readOnly);
@@ -527,8 +551,8 @@ class NasIndexRepository {
       return db
           .select(
             '''SELECT * FROM nas_media WHERE server_id = ?
-        AND kind = 'audio' AND metadata_probed = 0 ORDER BY sort_epoch, path LIMIT ?''',
-            [sourceId, limit],
+        AND kind = 'audio' AND metadata_probed = 0 ${paths == null ? '' : 'AND path IN (${List.filled(paths.length, '?').join(',')})'} ORDER BY sort_epoch, path LIMIT ?''',
+            [sourceId, ...?paths, limit],
           )
           .map(_item)
           .toList();
@@ -658,7 +682,8 @@ class NasIndexRepository {
       final column = _sortColumn(sortKey);
       final forward = albumKey != null || _sortForward(sortKey, sortAscending);
       final direction = forward != before ? 'ASC' : 'DESC';
-      final order = albumKey == null ? '$column $direction, path $direction'
+      final order = albumKey == null
+          ? '$column $direction, path $direction'
           : 'disc_order $direction, track_order $direction, path $direction';
       final rows = db.select(
         'SELECT * FROM nas_media WHERE $where ORDER BY $order LIMIT ?',
@@ -672,8 +697,12 @@ class NasIndexRepository {
         items,
         last == null
             ? null
-            : NasIndexCursor.fromItem(last, sortKey: sortKey,
-                ascending: sortAscending, albumKey: albumKey),
+            : NasIndexCursor.fromItem(
+                last,
+                sortKey: sortKey,
+                ascending: sortAscending,
+                albumKey: albumKey,
+              ),
         more,
       );
     } finally {
@@ -766,38 +795,62 @@ class NasIndexRepository {
       NasIndexGroup.byFolder => 'folder',
       NasIndexGroup.byArtist => "COALESCE(artist, '')",
       NasIndexGroup.byAlbum => 'album_key',
-      NasIndexGroup.byDate => "CASE WHEN modified_epoch > 0 THEN date(modified_epoch, 'unixepoch') ELSE '' END",
+      NasIndexGroup.byDate =>
+        "CASE WHEN modified_epoch > 0 THEN date(modified_epoch, 'unixepoch') ELSE '' END",
     };
     final db = _open(databasePath, mode: OpenMode.readOnly);
     try {
-      final (where, values) = _where(serverId, kind: kind, search: search,
-        favoritesOnly: favoritesOnly, folder: folder, artist: artist,
-        albumKey: albumKey, modifiedFromEpoch: modifiedFromEpoch,
-        modifiedBeforeEpoch: modifiedBeforeEpoch);
+      final (where, values) = _where(
+        serverId,
+        kind: kind,
+        search: search,
+        favoritesOnly: favoritesOnly,
+        folder: folder,
+        artist: artist,
+        albumKey: albumKey,
+        modifiedFromEpoch: modifiedFromEpoch,
+        modifiedBeforeEpoch: modifiedBeforeEpoch,
+      );
       final descending = group == NasIndexGroup.byDate;
-      final boundary = after == null ? '' : ' AND $column ${descending ? '<' : '>'} ?';
-      final rows = db.select('''SELECT $column AS group_key, COUNT(*) AS n,
+      final boundary = after == null
+          ? ''
+          : ' AND $column ${descending ? '<' : '>'} ?';
+      final rows = db.select(
+        '''SELECT $column AS group_key, COUNT(*) AS n,
         SUM(duration_millis) AS total_duration, MIN(path) AS cover_path
         FROM nas_media WHERE $where$boundary GROUP BY $column
         ORDER BY $column ${descending ? 'DESC' : 'ASC'} LIMIT ?''',
-        [...values, ?after, limit]);
+        [...values, ?after, limit],
+      );
       if (rows.isEmpty) return [];
       final paths = rows.map((row) => row['cover_path'] as String).toList();
-      final covers = {for (final row in db.select(
-        'SELECT * FROM nas_media WHERE server_id = ? AND path IN (${List.filled(paths.length, '?').join(',')})',
-        [serverId, ...paths])) row['path'] as String: _item(row)};
+      final covers = {
+        for (final row in db.select(
+          'SELECT * FROM nas_media WHERE server_id = ? AND path IN (${List.filled(paths.length, '?').join(',')})',
+          [serverId, ...paths],
+        ))
+          row['path'] as String: _item(row),
+      };
       return rows.map((row) {
         final key = row['group_key'] as String;
         final cover = covers[row['cover_path']];
         final date = group == NasIndexGroup.byDate && key.isNotEmpty
-            ? DateTime.parse('${key}T00:00:00Z').millisecondsSinceEpoch ~/ 1000 : null;
+            ? DateTime.parse('${key}T00:00:00Z').millisecondsSinceEpoch ~/ 1000
+            : null;
         return NasIndexGroupCount(
-          group == NasIndexGroup.byAlbum ? (cover?.album?.trim().isNotEmpty == true
-            ? cover!.album! : cover?.folder ?? key) : key,
-          row['n'] as int, key: key, representative: cover,
+          group == NasIndexGroup.byAlbum
+              ? (cover?.album?.trim().isNotEmpty == true
+                    ? cover!.album!
+                    : cover?.folder ?? key)
+              : key,
+          row['n'] as int,
+          key: key,
+          representative: cover,
           totalDurationMillis: row['total_duration'] as int?,
-          modifiedFromEpoch: date, modifiedBeforeEpoch: date == null
-              ? (group == NasIndexGroup.byDate ? 1 : null) : date + 86400,
+          modifiedFromEpoch: date,
+          modifiedBeforeEpoch: date == null
+              ? (group == NasIndexGroup.byDate ? 1 : null)
+              : date + 86400,
         );
       }).toList();
     } finally {
@@ -836,7 +889,9 @@ class NasIndexRepository {
       'album_key': albumKey,
     }.entries) {
       if (entry.value != null) {
-        clauses.add('${entry.key == 'artist' && entry.value!.isEmpty ? "COALESCE(artist, '')" : entry.key} = ?');
+        clauses.add(
+          '${entry.key == 'artist' && entry.value!.isEmpty ? "COALESCE(artist, '')" : entry.key} = ?',
+        );
         values.add(entry.value);
       }
     }
@@ -848,7 +903,9 @@ class NasIndexRepository {
       clauses.add('modified_epoch < ?');
       values.add(modifiedBeforeEpoch);
     }
-    if (modifiedFromEpoch != null && modifiedBeforeEpoch != null && modifiedBeforeEpoch <= modifiedFromEpoch) {
+    if (modifiedFromEpoch != null &&
+        modifiedBeforeEpoch != null &&
+        modifiedBeforeEpoch <= modifiedFromEpoch) {
       throw ArgumentError('NAS_DATE_RANGE_INVALID');
     }
     if (search.trim().isNotEmpty) {
@@ -866,24 +923,34 @@ class NasIndexRepository {
       values.add(terms);
     }
     if (cursor != null) {
-      if (cursor.sortKey != sortKey || cursor.ascending != sortAscending || cursor.albumKey != albumKey) {
+      if (cursor.sortKey != sortKey ||
+          cursor.ascending != sortAscending ||
+          cursor.albumKey != albumKey) {
         throw ArgumentError('NAS_SORT_CURSOR_MISMATCH');
       }
       if (albumKey != null) {
-        if (cursor.discOrder == null || cursor.trackOrder == null) throw ArgumentError('NAS_SORT_CURSOR_INVALID');
-        clauses.add('(disc_order, track_order, path) ${before ? '<' : '>'}${inclusive ? '=' : ''} (?, ?, ?)');
+        if (cursor.discOrder == null || cursor.trackOrder == null) {
+          throw ArgumentError('NAS_SORT_CURSOR_INVALID');
+        }
+        clauses.add(
+          '(disc_order, track_order, path) ${before ? '<' : '>'}${inclusive ? '=' : ''} (?, ?, ?)',
+        );
         values.addAll([cursor.discOrder, cursor.trackOrder, cursor.path]);
       } else {
-      final value =
-          cursor.sortValue ??
-          (sortKey == NasSortKey.modified ? -cursor.modifiedEpoch : null);
-      if ((sortKey == NasSortKey.name && value is! String) ||
-          (sortKey != NasSortKey.name && value is! int)) {
-        throw ArgumentError('NAS_SORT_CURSOR_INVALID');
-      }
-      final comparison = _sortForward(sortKey, sortAscending) != before ? '>' : '<';
-      clauses.add('(${_sortColumn(sortKey)}, path) $comparison${inclusive ? '=' : ''} (?, ?)');
-      values.addAll([value, cursor.path]);
+        final value =
+            cursor.sortValue ??
+            (sortKey == NasSortKey.modified ? -cursor.modifiedEpoch : null);
+        if ((sortKey == NasSortKey.name && value is! String) ||
+            (sortKey != NasSortKey.name && value is! int)) {
+          throw ArgumentError('NAS_SORT_CURSOR_INVALID');
+        }
+        final comparison = _sortForward(sortKey, sortAscending) != before
+            ? '>'
+            : '<';
+        clauses.add(
+          '(${_sortColumn(sortKey)}, path) $comparison${inclusive ? '=' : ''} (?, ?)',
+        );
+        values.addAll([value, cursor.path]);
       }
     }
     return (clauses.join(' AND '), values);
@@ -948,18 +1015,27 @@ class NasIndexRepository {
     sourcePath: row['source_path'] as String?,
   );
 
-  static int _numberOrder(int? value) => value != null && value > 0
-      ? value : 2147483647;
+  static int _numberOrder(int? value) =>
+      value != null && value > 0 ? value : 2147483647;
 
   static void _updateAlbumIdentity(Database db, NasMediaItem item) {
-    db.execute('UPDATE nas_media SET album_key = ?, disc_order = ?, track_order = ? WHERE server_id = ? AND path = ?', [
-      item.albumKey, _numberOrder(item.discNumber), _numberOrder(item.trackNumber),
-      item.serverId, item.path,
-    ]);
+    db.execute(
+      'UPDATE nas_media SET album_key = ?, disc_order = ?, track_order = ? WHERE server_id = ? AND path = ?',
+      [
+        item.albumKey,
+        _numberOrder(item.discNumber),
+        _numberOrder(item.trackNumber),
+        item.serverId,
+        item.path,
+      ],
+    );
   }
 
   static void _refreshAlbumIdentity(Database db, String sourceId, String path) {
-    final row = db.select('SELECT * FROM nas_media WHERE server_id = ? AND path = ?', [sourceId, path]).firstOrNull;
+    final row = db.select(
+      'SELECT * FROM nas_media WHERE server_id = ? AND path = ?',
+      [sourceId, path],
+    ).firstOrNull;
     if (row != null) _updateAlbumIdentity(db, _item(row));
   }
 
@@ -1311,7 +1387,8 @@ class NasIndexRepository {
 
   /// One bounded lookup for a visible page/window, never a database call per tile.
   Future<Map<String, NasPlaybackState>> playbackForItems(
-    String sourceId, Iterable<String> itemPaths,
+    String sourceId,
+    Iterable<String> itemPaths,
   ) {
     final paths = itemPaths.toSet().toList();
     if (paths.length > 600) throw ArgumentError('NAS_PLAYBACK_BATCH_TOO_LARGE');
@@ -1319,15 +1396,26 @@ class NasIndexRepository {
     return Isolate.run(() {
       final db = _open(databasePath, mode: OpenMode.readOnly);
       try {
-        return {for (final row in db.select(
-          'SELECT * FROM nas_playback WHERE server_id = ? AND path IN (${List.filled(paths.length, '?').join(',')})',
-          [sourceId, ...paths])) row['path'] as String: NasPlaybackState(
-            serverId: sourceId, path: row['path'] as String,
-            position: Duration(milliseconds: row['position_millis'] as int),
-            duration: row['duration_millis'] == null ? null : Duration(milliseconds: row['duration_millis'] as int),
-            updatedAt: DateTime.fromMillisecondsSinceEpoch((row['updated_epoch'] as int) * 1000),
-          )};
-      } finally { db.dispose(); }
+        return {
+          for (final row in db.select(
+            'SELECT * FROM nas_playback WHERE server_id = ? AND path IN (${List.filled(paths.length, '?').join(',')})',
+            [sourceId, ...paths],
+          ))
+            row['path'] as String: NasPlaybackState(
+              serverId: sourceId,
+              path: row['path'] as String,
+              position: Duration(milliseconds: row['position_millis'] as int),
+              duration: row['duration_millis'] == null
+                  ? null
+                  : Duration(milliseconds: row['duration_millis'] as int),
+              updatedAt: DateTime.fromMillisecondsSinceEpoch(
+                (row['updated_epoch'] as int) * 1000,
+              ),
+            ),
+        };
+      } finally {
+        db.dispose();
+      }
     });
   }
 
@@ -1382,27 +1470,30 @@ class NasIndexRepository {
     }),
   );
 
-  Future<List<NasMediaItem>> recentPlayback(String sourceId, {int limit = 8, NasMediaKind kind = NasMediaKind.video}) =>
-      Isolate.run(() {
-        _checkLimit(limit);
-        final db = _open(databasePath, mode: OpenMode.readOnly);
-        try {
-          return db
-              .select(
-                '''SELECT m.* FROM nas_playback p JOIN nas_media m
+  Future<List<NasMediaItem>> recentPlayback(
+    String sourceId, {
+    int limit = 8,
+    NasMediaKind kind = NasMediaKind.video,
+  }) => Isolate.run(() {
+    _checkLimit(limit);
+    final db = _open(databasePath, mode: OpenMode.readOnly);
+    try {
+      return db
+          .select(
+            '''SELECT m.* FROM nas_playback p JOIN nas_media m
         ON m.server_id=p.server_id AND m.path=p.path
         WHERE p.server_id=? AND m.kind=? AND p.position_millis>0
         AND (p.duration_millis IS NULL OR p.duration_millis<=0
           OR p.position_millis < p.duration_millis-3000)
         ORDER BY p.updated_epoch DESC,m.path LIMIT ?''',
-                [sourceId, kind.name, limit],
-              )
-              .map(_item)
-              .toList();
-        } finally {
-          db.dispose();
-        }
-      });
+            [sourceId, kind.name, limit],
+          )
+          .map(_item)
+          .toList();
+    } finally {
+      db.dispose();
+    }
+  });
 
   static void _addColumn(Database db, String table, String column) {
     final name = column.split(' ').first;

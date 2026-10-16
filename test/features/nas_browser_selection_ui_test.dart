@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/in_memory_app_settings.dart';
 import 'package:valhalla/core/providers/nas_provider.dart';
 import 'package:valhalla/core/providers/nas_sources_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
@@ -229,6 +230,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          settingsProvider.overrideWith(InMemoryAppSettings.new),
           nasSourcesProvider.overrideWith(() => sources),
           nasProvider.overrideWith(() => nas),
           serverListProvider.overrideWith(_Servers.new),

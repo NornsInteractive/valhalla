@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "Lingkungan target atau server aktif berubah.",
   "remoteBrowserPathInvalid": "Jalur yang diminta tidak valid atau tidak dapat diakses.",
   "remoteBrowserPathOutsideRoot": "Jalur yang diminta berada di luar direktori pangkal yang diizinkan.",
+  "remoteBrowserPathDisplayMode": "Mode tampilan jalur",
+  "remoteBrowserPathDisplayModeScroll": "Gulir horizontal",
+  "remoteBrowserPathDisplayModeCollapsed": "Ciutkan jalur",
   "remoteBrowserEntryUnavailable": "Entri yang dipilih tidak tersedia atau tidak valid.",
   "nasBrowseUnavailable": "Layanan penjelajahan NAS saat ini tidak tersedia.",
   "nasInvalidDirectoryEntry": "Entri direktori tidak valid ditemukan saat menjelajahi NAS.",
@@ -2243,5 +2246,8 @@
   "agentUpdateVersionUnknown": "Tidak diketahui",
   "agentUpdateSource": "Sumber",
   "agentUpdateLastChecked": "Terakhir diperiksa",
-  "agentUpdateNeverChecked": "Belum pernah diperiksa"
+  "agentUpdateNeverChecked": "Belum pernah diperiksa",
+  "agentUpdateCodexMigrationTitle": "Pasang Adaptor Baru & Alihkan Agen",
+  "agentUpdateCodexMigrationNotice": "Program dan konfigurasi saat ini akan dipertahankan. Adaptor baru independen dipasang lalu koneksi dialihkan, dengan rollback aman jika ada masalah.",
+  "agentUpdateReplacementCommand": "Perintah Pengganti"
 }

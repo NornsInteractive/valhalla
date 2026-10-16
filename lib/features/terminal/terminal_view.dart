@@ -31,13 +31,73 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
   TerminalConnectionState? _lastBridgeState;
   TerminalSessionBridge? _lastListenedBridge;
   Timer? _sessionRestoredTimer;
+  final ScrollController _tabScrollController = ScrollController();
+  final GlobalKey _tabBarScrollableKey = GlobalKey();
+  final Map<String, GlobalKey> _tabKeys = {};
   bool _hadConnectedOnce = false;
+
+  void _scheduleTabScroll(String? tabId) {
+    if (tabId == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_tabScrollController.hasClients) return;
+      final tabKey = _tabKeys[tabId];
+      final tabContext = tabKey?.currentContext;
+      final scrollableContext = _tabBarScrollableKey.currentContext;
+      if (tabContext == null || scrollableContext == null) return;
+
+      final tabBox = tabContext.findRenderObject() as RenderBox?;
+      final scrollableBox = scrollableContext.findRenderObject() as RenderBox?;
+      if (tabBox == null ||
+          !tabBox.hasSize ||
+          scrollableBox == null ||
+          !scrollableBox.hasSize) {
+        return;
+      }
+
+      final offset =
+          tabBox.localToGlobal(Offset.zero, ancestor: scrollableBox);
+      final tabLeft = offset.dx;
+      final tabRight = tabLeft + tabBox.size.width;
+      final viewportWidth = scrollableBox.size.width;
+
+      final currentScrollOffset = _tabScrollController.offset;
+      double? targetOffset;
+
+      if (tabLeft < 0) {
+        targetOffset = (currentScrollOffset + tabLeft).clamp(
+          0.0,
+          _tabScrollController.position.maxScrollExtent,
+        );
+      } else if (tabRight > viewportWidth) {
+        targetOffset = (currentScrollOffset + (tabRight - viewportWidth)).clamp(
+          0.0,
+          _tabScrollController.position.maxScrollExtent,
+        );
+      }
+
+      if (targetOffset != null &&
+          (targetOffset - currentScrollOffset).abs() > 0.5) {
+        _tabScrollController.animateTo(
+          targetOffset,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     if (widget.active) {
       _scheduleEnsureInitialized();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final activeTab = ref.read(terminalProvider).activeTab;
+        if (activeTab != null) {
+          _scheduleTabScroll(activeTab.id);
+        }
+      });
     }
   }
 
@@ -67,6 +127,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
 
   @override
   void dispose() {
+    _tabScrollController.dispose();
     _sessionRestoredTimer?.cancel();
     _lastListenedBridge?.stateListenable.removeListener(_onBridgeStateChanged);
     super.dispose();
@@ -613,6 +674,14 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
         _scheduleEnsureInitialized();
       }
     });
+    ref.listen(terminalProvider.select((s) => s.activeTabIndex), (prev, next) {
+      if (next != prev) {
+        final tabs = ref.read(terminalProvider).tabs;
+        if (next >= 0 && next < tabs.length) {
+          _scheduleTabScroll(tabs[next].id);
+        }
+      }
+    });
 
     final terminalState = ref.watch(terminalProvider);
     final activeTab = terminalState.activeTab;
@@ -747,6 +816,8 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
 
   Widget _buildTabBar(SshTerminalState state) {
     final notifier = ref.read(terminalProvider.notifier);
+    final currentTabIds = state.tabs.map((t) => t.id).toSet();
+    _tabKeys.removeWhere((id, _) => !currentTabIds.contains(id));
 
     return Container(
       color: context.colorScheme.surfaceContainerLowest,
@@ -764,6 +835,8 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
           ),
           Expanded(
             child: SingleChildScrollView(
+              key: _tabBarScrollableKey,
+              controller: _tabScrollController,
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: List.generate(state.tabs.length, (index) {
@@ -780,12 +853,13 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
                   }
 
                   return Padding(
-                    padding: const EdgeInsets.only(right: 6),
+                    key: _tabKeys.putIfAbsent(tab.id, GlobalKey.new),
+                    padding: const EdgeInsets.only(right: 4),
                     child: GestureDetector(
-                      onLongPress: () =>
-                          showRenameTabDialog(context, ref, tab.id, tab.title),
+                      behavior: HitTestBehavior.opaque,
+                      onLongPress: () => _showTabOptions(context, index, tab),
                       onSecondaryTap: () =>
-                          showRenameTabDialog(context, ref, tab.id, tab.title),
+                          _showTabOptions(context, index, tab),
                       child: InputChip(
                         key: ValueKey('terminal_tab_${tab.id}'),
                         selected: isSelected,
@@ -797,28 +871,33 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
                               : context.colorScheme.outline,
                         ),
                         label: Tooltip(
+                          triggerMode: TooltipTriggerMode.manual,
                           message: '${tab.title} ($modeName)',
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 160),
-                            child: Text(
-                              tab.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontFamily: 'JetBrains Mono',
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onLongPress: () =>
+                                _showTabOptions(context, index, tab),
+                            onSecondaryTap: () =>
+                                _showTabOptions(context, index, tab),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 80),
+                              child: Text(
+                                tab.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontFamily: 'JetBrains Mono',
+                                ),
                               ),
                             ),
                           ),
                         ),
-                        deleteIcon: const Icon(Icons.close, size: 14),
-                        deleteButtonTooltipMessage:
-                            context.l10n.terminalCloseTab,
-                        onDeleted: state.tabs.length > 1
-                            ? () => notifier.closeTab(index)
-                            : null,
                         onSelected: (selected) {
-                          if (selected) notifier.selectTab(index);
+                          if (selected) {
+                            notifier.selectTab(index);
+                            _scheduleTabScroll(tab.id);
+                          }
                         },
                       ),
                     ),
@@ -832,39 +911,103 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
             tooltip: context.l10n.terminalNewTab,
             onPressed: () => notifier.addNewTab(),
           ),
-          if (state.moshAvailable)
-            IconButton(
-              key: const Key('terminal_new_mosh_tab'),
-              icon: const Icon(Icons.bolt_rounded, size: 18),
-              tooltip: context.l10n.moshNewSession,
-              onPressed: () => notifier.addMoshTab(context.l10n.moshSessionTag),
-            ),
-          IconButton(
-            key: const Key('terminal_clear_button'),
-            icon: const Icon(Icons.cleaning_services, size: 18),
-            tooltip: context.l10n.terminalClear,
-            onPressed: () {
-              final terminal = state.activeTab?.terminal;
-              if (terminal != null) {
-                clearTerminalScrollState(terminal);
-                // Parse locally so xterm clears screen/history and repaints.
-                // This is display data, not a command sent to the SSH shell.
-                terminal.write('\x1b[2J\x1b[3J\x1b[H');
+          PopupMenuButton<String>(
+            key: const Key('terminal_more_button'),
+            icon: const Icon(Icons.more_vert, size: 18),
+            tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+            onSelected: (value) {
+              switch (value) {
+                case 'clear':
+                  _handleClearScreen(state);
+                case 'tmux_mode':
+                  FocusManager.instance.primaryFocus?.unfocus();
+                  _showTerminalDefaultModeDialog(context);
+                case 'new_mosh':
+                  notifier.addMoshTab(context.l10n.moshSessionTag);
               }
             },
-          ),
-          IconButton(
-            key: const Key('terminalDefaultModeButton'),
-            icon: const Icon(Icons.tune, size: 18),
-            tooltip: context.l10n.settingsTerminalUseTmux,
-            onPressed: () {
-              FocusManager.instance.primaryFocus?.unfocus();
-              _showTerminalDefaultModeDialog(context);
-            },
+            itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                key: const Key('terminal_clear_menu_item'),
+                value: 'clear',
+                child: Row(
+                  children: [
+                    const Icon(Icons.cleaning_services, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(context.l10n.terminalClear)),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                key: const Key('terminal_tmux_menu_item'),
+                value: 'tmux_mode',
+                child: Row(
+                  children: [
+                    const Icon(Icons.tune, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(context.l10n.settingsTerminalUseTmux)),
+                  ],
+                ),
+              ),
+              if (state.moshAvailable)
+                PopupMenuItem<String>(
+                  key: const Key('terminal_new_mosh_menu_item'),
+                  value: 'new_mosh',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.bolt_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(context.l10n.moshNewSession)),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  void _showTabOptions(BuildContext context, int index, TerminalTab tab) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: Text(context.l10n.rename),
+              onTap: () {
+                Navigator.pop(ctx);
+                showRenameTabDialog(context, ref, tab.id, tab.title);
+              },
+            ),
+            if (ref.read(terminalProvider).tabs.length > 1)
+              ListTile(
+                leading: Icon(Icons.close, color: context.vDanger),
+                title: Text(
+                  context.l10n.terminalCloseTab,
+                  style: TextStyle(color: context.vDanger),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ref.read(terminalProvider.notifier).closeTab(index);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleClearScreen(SshTerminalState state) {
+    final terminal = state.activeTab?.terminal;
+    if (terminal != null) {
+      clearTerminalScrollState(terminal);
+      terminal.write('\x1b[2J\x1b[3J\x1b[H');
+    }
   }
 
   void _showTerminalDefaultModeDialog(BuildContext context) {

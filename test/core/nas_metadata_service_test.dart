@@ -133,6 +133,87 @@ Future<NasIndexRepository> _repository() async {
 
 void main() {
   test(
+    'viewport changes discard stale rows already fetched in a metadata batch',
+    () async {
+      final repo = await _repository();
+      final items = List.generate(8, _item);
+      await repo.replaceServerItems('source', items);
+      final proxy = NasMediaProxyService(_Ssh()),
+          player = _Player(),
+          adapter = _Adapter();
+      final ready = Completer<void>(), proceed = Completer<void>();
+      adapter.probeAction = () async {
+        if (!ready.isCompleted) {
+          ready.complete();
+          await proceed.future;
+        }
+      };
+      final service = NasMetadataService(
+        repo,
+        proxy,
+        (_) async => adapter,
+        playerFactory: () => player,
+      );
+      addTearDown(() async {
+        await service.dispose();
+        await proxy.dispose();
+      });
+      final running = service.start(
+        'source',
+        requested: items.take(4).toList(),
+      );
+      await ready.future;
+      final changed = service.start('source', requested: [items.last]);
+      proceed.complete();
+      await Future.wait([running, changed]);
+      expect(player.opened, 1);
+      expect(
+        await repo.pendingMetadata(
+          'source',
+          paths: items.take(4).map((i) => i.path).toList(),
+        ),
+        hasLength(4),
+      );
+      expect(
+        await repo.pendingMetadata('source', paths: [items.last.path]),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'viewport-only metadata enrichment never drains the remaining library',
+    () async {
+      final repo = await _repository();
+      final items = List.generate(67, _item);
+      await repo.replaceServerItems('source', items);
+      final proxy = NasMediaProxyService(_Ssh()),
+          player = _Player(),
+          adapter = _Adapter();
+      final service = NasMetadataService(
+        repo,
+        proxy,
+        (_) async => adapter,
+        playerFactory: () => player,
+      );
+      addTearDown(() async {
+        await service.dispose();
+        await proxy.dispose();
+      });
+      await service.start('source', requested: [items[40], items[41]]);
+      expect(player.opened, 2);
+      expect(service.state.processed, 2);
+      expect(
+        await repo.pendingMetadata(
+          'source',
+          paths: [items[40].path, items[41].path],
+        ),
+        isEmpty,
+      );
+      expect(await repo.pendingMetadata('source'), hasLength(32));
+    },
+  );
+  test(
     'indexes unplayed music beyond one database page using a paused decoder',
     () async {
       final repo = await _repository();

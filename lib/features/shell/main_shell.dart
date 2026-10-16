@@ -1766,48 +1766,43 @@ class MainBottomNavigationBar extends StatelessWidget {
               );
             }).toList();
 
-            Widget bar;
-            if (canFitAll) {
-              bar = Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: children,
-              );
-            } else {
-              bar = SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(children: children),
-              );
-            }
-
-            // 滑动指示条: 选中项下方的强调色胶囊, 随切页平移 (spring)。
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                Positioned.fill(child: bar),
-                if (canFitAll && selectedIndex >= 0)
-                  Positioned(
-                    top: 2,
-                    left: 0,
-                    width: trackWidth,
-                    child: AnimatedAlign(
-                      alignment: Alignment(
-                        -1 + (2 * selectedIndex + 1) / count,
-                        0,
-                      ),
+            final content = SizedBox(
+              width: trackWidth,
+              height: height,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Row(
+                      children: children,
+                    ),
+                  ),
+                  if (selectedIndex >= 0)
+                    AnimatedPositionedDirectional(
+                      top: 2,
+                      start: selectedIndex * slotWidth + (slotWidth - 18) / 2,
+                      width: 18,
+                      height: 3,
                       duration: VTiming.base,
                       curve: VCurves.springish,
                       child: Container(
-                        width: 18,
-                        height: 3,
                         decoration: BoxDecoration(
                           color: scheme.primary,
                           borderRadius: BorderRadius.circular(VRadius.pill),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             );
+
+            if (canFitAll) {
+              return content;
+            } else {
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: content,
+              );
+            }
           },
         ),
       ),

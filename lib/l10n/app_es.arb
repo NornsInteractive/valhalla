@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "El entorno de destino o el servidor activo han cambiado.",
   "remoteBrowserPathInvalid": "La ruta solicitada no es válida o no se puede acceder a ella.",
   "remoteBrowserPathOutsideRoot": "La ruta solicitada está fuera del directorio raíz permitido.",
+  "remoteBrowserPathDisplayMode": "Modo de visualización de ruta",
+  "remoteBrowserPathDisplayModeScroll": "Desplazamiento horizontal",
+  "remoteBrowserPathDisplayModeCollapsed": "Contraer ruta",
   "remoteBrowserEntryUnavailable": "La entrada seleccionada no está disponible o no es válida.",
   "nasBrowseUnavailable": "El servicio de exploración NAS no está disponible actualmente.",
   "nasInvalidDirectoryEntry": "Entrada de directorio no válida encontrada al explorar NAS.",
@@ -2249,5 +2252,8 @@
   "agentUpdateVersionUnknown": "Desconocido",
   "agentUpdateSource": "Origen",
   "agentUpdateLastChecked": "Última comprobación",
-  "agentUpdateNeverChecked": "Nunca comprobado"
+  "agentUpdateNeverChecked": "Nunca comprobado",
+  "agentUpdateCodexMigrationTitle": "Instalar nuevo adaptador y cambiar este agente",
+  "agentUpdateCodexMigrationNotice": "Se conservarán el programa y la configuración existentes, instalando un adaptador independiente y cambiando la conexión, con reversión segura en caso de problemas.",
+  "agentUpdateReplacementCommand": "Comando de sustitución"
 }

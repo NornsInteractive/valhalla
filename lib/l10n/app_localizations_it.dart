@@ -5531,6 +5531,16 @@ class AppLocalizationsIt extends AppLocalizations {
       'Il percorso richiesto è esterno alla directory radice consentita.';
 
   @override
+  String get remoteBrowserPathDisplayMode =>
+      'Modalità di visualizzazione del percorso';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'Scorrimento orizzontale';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'Comprimi percorso';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'La voce selezionata non è disponibile o non è valida.';
 
@@ -5928,4 +5938,15 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'Mai verificato';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'Installa nuovo adattatore e scambia agente';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'Programma e configurazione esistenti verranno conservati. Viene installato un nuovo adattatore indipendente e scambiata la connessione, con ripristino sicuro in caso di problemi.';
+
+  @override
+  String get agentUpdateReplacementCommand => 'Comando sostitutivo';
 }

@@ -7,6 +7,7 @@ import '../services/nas_metadata_service.dart';
 import 'infrastructure_providers.dart';
 import 'nas_provider.dart';
 import 'nas_sources_provider.dart';
+import 'nas_preview_provider.dart';
 
 final nasMetadataServiceProvider = FutureProvider<NasMetadataService>((
   ref,
@@ -22,8 +23,20 @@ final nasMetadataServiceProvider = FutureProvider<NasMetadataService>((
   void start() {
     if (!ref.mounted || !foreground) return;
     final source = ref.read(nasSourcesProvider).selected;
-    if (source != null && !source.isMediaServer) {
-      unawaited(service.start(source.id).catchError((Object _) {}));
+    final scanning = ref.read(nasProvider).isScanning;
+    final items = ref
+        .read(nasPreviewRequestsProvider)
+        .values
+        .where((entry) => entry.visible && entry.item.serverId == source?.id)
+        .map((entry) => entry.item)
+        .toList(growable: false);
+    if (source != null &&
+        !source.isMediaServer &&
+        !scanning &&
+        items.isNotEmpty) {
+      unawaited(
+        service.start(source.id, requested: items).catchError((Object _) {}),
+      );
     } else {
       unawaited(service.cancel());
     }
@@ -40,10 +53,8 @@ final nasMetadataServiceProvider = FutureProvider<NasMetadataService>((
     },
   );
   ref.listen(nasSourcesProvider.select((s) => s.selectedId), (_, _) => start());
-  ref.listen(
-    nasProvider.select((s) => (s.scannedCount, s.isScanning)),
-    (_, _) => start(),
-  );
+  ref.listen(nasPreviewRequestsProvider, (_, _) => start());
+  ref.listen(nasProvider.select((s) => s.isScanning), (_, _) => start());
   ref.onDispose(() {
     lifecycle.dispose();
     service.dispose();

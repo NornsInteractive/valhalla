@@ -5,12 +5,17 @@ import '../core/design/tokens.dart';
 import '../core/extensions/context_extensions.dart';
 import '../data/models/remote_file_toolbar_action.dart';
 
+export '../data/models/remote_file_toolbar_action.dart'
+    show RemotePathDisplayMode;
+
 /// Controlled browser chrome shared by the file page and read-only pickers.
 class RemoteBrowserBreadcrumb extends StatefulWidget {
   const RemoteBrowserBreadcrumb({
     super.key,
     required this.path,
     this.rootPath = '/',
+    this.mode = RemotePathDisplayMode.scroll,
+    this.onModeChanged,
     this.onNavigate,
     this.onUp,
     this.trailing,
@@ -20,6 +25,8 @@ class RemoteBrowserBreadcrumb extends StatefulWidget {
 
   final String path;
   final String rootPath;
+  final RemotePathDisplayMode mode;
+  final ValueChanged<RemotePathDisplayMode>? onModeChanged;
   final ValueChanged<String>? onNavigate;
   final VoidCallback? onUp;
   final Widget? trailing;
@@ -47,6 +54,7 @@ class _RemoteBrowserBreadcrumbState extends State<RemoteBrowserBreadcrumb> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.path != widget.path ||
         oldWidget.rootPath != widget.rootPath ||
+        oldWidget.mode != widget.mode ||
         oldWidget.scrollController != widget.scrollController) {
       _revealTail();
     }
@@ -96,97 +104,185 @@ class _RemoteBrowserBreadcrumbState extends State<RemoteBrowserBreadcrumb> {
               maxWidth: 80,
             ),
             Expanded(
-              child: SingleChildScrollView(
-                controller: _controller,
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (segments.length <= 3) ...[
-                      for (var i = 0; i < segments.length; i++) ...[
-                        Icon(
-                          Icons.chevron_right,
-                          size: 10,
-                          color: context.colorScheme.outline,
-                        ),
-                        _segment(
-                          context,
-                          segments[i],
-                          p.posix.joinAll([root, ...segments.take(i + 1)]),
-                          i == segments.length - 1,
-                          Key('${widget.keyPrefix}_breadcrumb_seg_$i'),
-                        ),
-                      ],
-                    ] else ...[
-                      Icon(
-                        Icons.chevron_right,
-                        size: 10,
-                        color: context.colorScheme.outline,
-                      ),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          minHeight: 44,
-                          minWidth: 32,
-                        ),
-                        child: PopupMenuButton<String>(
-                          key: Key('${widget.keyPrefix}_breadcrumb_collapsed'),
-                          tooltip: context.l10n.sftpUpDirectory,
-                          icon: const Icon(Icons.more_horiz, size: 16),
-                          padding: EdgeInsets.zero,
-                          onSelected: widget.onNavigate == null
-                              ? null
-                              : (target) => widget.onNavigate!(target),
-                          itemBuilder: (context) => [
-                            for (var i = 0; i < segments.length - 1; i++)
-                              PopupMenuItem<String>(
-                                key: Key(
-                                  '${widget.keyPrefix}_breadcrumb_seg_$i',
-                                ),
-                                value: p.posix.joinAll([
-                                  root,
-                                  ...segments.take(i + 1),
-                                ]),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.folder_outlined, size: 16),
-                                    const SizedBox(width: 8),
-                                    Flexible(
-                                      child: Tooltip(
-                                        message: segments[i],
-                                        child: Text(
-                                          segments[i],
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: monoTextStyle(fontSize: 12),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final textScaler = MediaQuery.textScalerOf(context);
+                  double estimateSegmentWidth(String text) {
+                    final scaledCharWidth = textScaler.scale(8.5);
+                    return (text.length * scaledCharWidth).clamp(24.0, 120.0) +
+                        20.0;
+                  }
+
+                  final totalEstimatedWidth = segments.fold<double>(
+                    0.0,
+                    (sum, s) => sum + estimateSegmentWidth(s),
+                  );
+
+                  final shouldCollapse =
+                      widget.mode == RemotePathDisplayMode.collapsed &&
+                      segments.length > 2 &&
+                      constraints.maxWidth.isFinite &&
+                      totalEstimatedWidth > constraints.maxWidth;
+
+                  return SingleChildScrollView(
+                    controller: _controller,
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!shouldCollapse) ...[
+                          for (var i = 0; i < segments.length; i++) ...[
+                            Icon(
+                              Icons.chevron_right,
+                              size: 10,
+                              color: context.colorScheme.outline,
+                            ),
+                            _segment(
+                              context,
+                              segments[i],
+                              p.posix.joinAll([root, ...segments.take(i + 1)]),
+                              i == segments.length - 1,
+                              Key('${widget.keyPrefix}_breadcrumb_seg_$i'),
+                            ),
                           ],
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 10,
-                        color: context.colorScheme.outline,
-                      ),
-                      _segment(
-                        context,
-                        segments.last,
-                        p.posix.joinAll([root, ...segments]),
-                        true,
-                        Key(
-                          '${widget.keyPrefix}_breadcrumb_seg_${segments.length - 1}',
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                        ] else ...[
+                          Icon(
+                            Icons.chevron_right,
+                            size: 10,
+                            color: context.colorScheme.outline,
+                          ),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              minHeight: 44,
+                              minWidth: 32,
+                            ),
+                            child: PopupMenuButton<String>(
+                              key: Key(
+                                '${widget.keyPrefix}_breadcrumb_collapsed',
+                              ),
+                              tooltip: context.l10n.sftpUpDirectory,
+                              icon: const Icon(Icons.more_horiz, size: 16),
+                              padding: EdgeInsets.zero,
+                              onSelected: widget.onNavigate == null
+                                  ? null
+                                  : (target) => widget.onNavigate!(target),
+                              itemBuilder: (context) => [
+                                for (var i = 0; i < segments.length - 1; i++)
+                                  PopupMenuItem<String>(
+                                    key: Key(
+                                      '${widget.keyPrefix}_breadcrumb_seg_$i',
+                                    ),
+                                    value: p.posix.joinAll([
+                                      root,
+                                      ...segments.take(i + 1),
+                                    ]),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.folder_outlined,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Tooltip(
+                                            message: segments[i],
+                                            child: Text(
+                                              segments[i],
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: monoTextStyle(
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 10,
+                            color: context.colorScheme.outline,
+                          ),
+                          _segment(
+                            context,
+                            segments.last,
+                            p.posix.joinAll([root, ...segments]),
+                            true,
+                            Key(
+                              '${widget.keyPrefix}_breadcrumb_seg_${segments.length - 1}',
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
+            if (widget.onModeChanged != null)
+              PopupMenuButton<RemotePathDisplayMode>(
+                key: Key('${widget.keyPrefix}_path_mode_button'),
+                tooltip: context.l10n.remoteBrowserPathDisplayMode,
+                icon: Icon(
+                  widget.mode == RemotePathDisplayMode.collapsed
+                      ? Icons.unfold_less
+                      : Icons.unfold_more,
+                  size: 18,
+                ),
+                initialValue: widget.mode,
+                onSelected: widget.onModeChanged,
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: RemotePathDisplayMode.scroll,
+                    child: Row(
+                      children: [
+                        Icon(
+                          widget.mode == RemotePathDisplayMode.scroll
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_unchecked,
+                          size: 18,
+                          color: widget.mode == RemotePathDisplayMode.scroll
+                              ? context.colorScheme.primary
+                              : null,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            context.l10n.remoteBrowserPathDisplayModeScroll,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: RemotePathDisplayMode.collapsed,
+                    child: Row(
+                      children: [
+                        Icon(
+                          widget.mode == RemotePathDisplayMode.collapsed
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_unchecked,
+                          size: 18,
+                          color: widget.mode == RemotePathDisplayMode.collapsed
+                              ? context.colorScheme.primary
+                              : null,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            context.l10n.remoteBrowserPathDisplayModeCollapsed,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ?widget.trailing,
           ],
         ),

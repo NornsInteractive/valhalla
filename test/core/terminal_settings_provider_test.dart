@@ -178,13 +178,14 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    test('默认固定键开箱包含 SHIFT 与 FN', () async {
+    test('默认固定键包含 SHIFT，FN 保留为可选键', () async {
       final container = await _container();
       addTearDown(container.dispose);
 
       final pinned = container.read(terminalSettingsProvider).pinnedKeys;
       expect(pinned, contains('SHIFT'));
-      expect(pinned, contains('FN'));
+      expect(pinned, isNot(contains('FN')));
+      expect(TerminalSettings.availableKeys, contains('FN'));
       expect(pinned, containsAll(['ESC', 'TAB', 'CTRL', 'ALT']));
     });
 

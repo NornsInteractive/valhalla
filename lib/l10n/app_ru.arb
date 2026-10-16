@@ -2127,6 +2127,9 @@
   "remoteBrowserTargetChanged": "Целевое окружение или активный сервер изменились.",
   "remoteBrowserPathInvalid": "Запрошенный путь недействителен или недоступен.",
   "remoteBrowserPathOutsideRoot": "Запрошенный путь находится вне разрешенного корневого каталога.",
+  "remoteBrowserPathDisplayMode": "Режим отображения пути",
+  "remoteBrowserPathDisplayModeScroll": "Горизонтальная прокрутка",
+  "remoteBrowserPathDisplayModeCollapsed": "Свернуть путь",
   "remoteBrowserEntryUnavailable": "Выбранный элемент недоступен или недействителен.",
   "nasBrowseUnavailable": "Служба обзора NAS в данный момент недоступна.",
   "nasInvalidDirectoryEntry": "При обзоре NAS обнаружен недействительный элемент каталога.",
@@ -2249,5 +2252,8 @@
   "agentUpdateVersionUnknown": "Неизвестно",
   "agentUpdateSource": "Источник",
   "agentUpdateLastChecked": "Последняя проверка",
-  "agentUpdateNeverChecked": "Никогда не проверялось"
+  "agentUpdateNeverChecked": "Никогда не проверялось",
+  "agentUpdateCodexMigrationTitle": "Установить новый адаптер и переключить этого агента",
+  "agentUpdateCodexMigrationNotice": "Существующая программа и конфигурация сохраняются. Устанавливается отдельный новый адаптер и переключается подключение; при проблемах возможен безопасный откат.",
+  "agentUpdateReplacementCommand": "Команда замены"
 }

@@ -36,6 +36,7 @@ class NasMetadataService {
   Uri? _relay;
   bool _disposed = false, _again = false;
   int _generation = 0;
+  List<NasMediaItem>? _requested;
 
   NasMetadataService(
     this._repository,
@@ -55,8 +56,9 @@ class NasMetadataService {
   NasMetadataProgress get state => _state;
   Stream<NasMetadataProgress> get changes => _changes.stream;
 
-  Future<void> start(String sourceId) async {
+  Future<void> start(String sourceId, {List<NasMediaItem>? requested}) async {
     if (_disposed) throw StateError('NAS_METADATA_DISPOSED');
+    _requested = requested;
     if (_worker != null &&
         _state.sourceId == sourceId &&
         _cancellation?.isCancelled == false) {
@@ -80,7 +82,7 @@ class NasMetadataService {
         generation == _generation &&
         !cancellation.isCancelled) {
       _again = false;
-      await start(sourceId);
+      await start(sourceId, requested: _requested);
     }
   }
 
@@ -99,7 +101,10 @@ class NasMetadataService {
         throw StateError('NAS_SOURCE_MISMATCH');
       }
       if (adapter.source.isMediaServer) return;
-      var items = await _repository.pendingMetadata(sourceId);
+      var items = await _repository.pendingMetadata(
+        sourceId,
+        paths: _requested?.map((item) => item.path).toList(),
+      );
       cancellation.check();
       if (items.isEmpty) return;
       await _probeSource(adapter, cancellation);
@@ -112,6 +117,11 @@ class NasMetadataService {
       while (items.isNotEmpty) {
         for (final item in items) {
           cancellation.check();
+          // A viewport update can arrive while the preceding probe awaits I/O.
+          if (_requested != null &&
+              !_requested!.any((candidate) => candidate.path == item.path)) {
+            continue;
+          }
           try {
             final metadata = await _probe(
               player,
@@ -139,7 +149,10 @@ class NasMetadataService {
           );
           _emit();
         }
-        items = await _repository.pendingMetadata(sourceId);
+        items = await _repository.pendingMetadata(
+          sourceId,
+          paths: _requested?.map((item) => item.path).toList(),
+        );
       }
     } on NasCancelled {
       // Cancellation leaves the current file pending, preserving completed tags.
@@ -289,7 +302,9 @@ class NasMetadataService {
           (tags['TRACK'] ?? tags['TRACKNUMBER'] ?? '').split('/').first,
         );
         final duration = player.state.duration;
-        final disc = int.tryParse((tags['DISC'] ?? tags['DISCNUMBER'] ?? '').split('/').first);
+        final disc = int.tryParse(
+          (tags['DISC'] ?? tags['DISCNUMBER'] ?? '').split('/').first,
+        );
         return NasMediaItem(
           serverId: item.serverId,
           path: item.path,
@@ -306,7 +321,7 @@ class NasMetadataService {
               ? duration.inMilliseconds
               : null,
         );
-      })().timeout(const Duration(seconds: 10));
+      })().timeout(const Duration(seconds: 5));
     } finally {
       cancellation.cancel();
       remove();

@@ -104,6 +104,8 @@ class SettingsState {
   final List<AppSection> bottomNavigationSections;
   final List<AppSection> dashboardQuickSections;
   final List<RemoteFileToolbarAction> remoteFileToolbarActions;
+  final RemotePathDisplayMode filePathDisplayMode;
+  final RemotePathDisplayMode pickerPathDisplayMode;
   final AppSection startupSection;
   final int cliHistoryPageSize;
   final Set<ExperimentalFeature> enabledExperimentalFeatures;
@@ -118,6 +120,8 @@ class SettingsState {
     this.bottomNavigationSections = defaultBottomNavigationSections,
     this.dashboardQuickSections = defaultDashboardQuickSections,
     this.remoteFileToolbarActions = defaultRemoteFileToolbarActions,
+    this.filePathDisplayMode = RemotePathDisplayMode.scroll,
+    this.pickerPathDisplayMode = RemotePathDisplayMode.scroll,
     this.startupSection = AppSection.dashboard,
     this.cliHistoryPageSize = defaultCliHistoryPageSize,
     this.enabledExperimentalFeatures = const {},
@@ -133,6 +137,8 @@ class SettingsState {
     List<AppSection>? bottomNavigationSections,
     List<AppSection>? dashboardQuickSections,
     List<RemoteFileToolbarAction>? remoteFileToolbarActions,
+    RemotePathDisplayMode? filePathDisplayMode,
+    RemotePathDisplayMode? pickerPathDisplayMode,
     AppSection? startupSection,
     int? cliHistoryPageSize,
     Set<ExperimentalFeature>? enabledExperimentalFeatures,
@@ -150,6 +156,9 @@ class SettingsState {
           dashboardQuickSections ?? this.dashboardQuickSections,
       remoteFileToolbarActions:
           remoteFileToolbarActions ?? this.remoteFileToolbarActions,
+      filePathDisplayMode: filePathDisplayMode ?? this.filePathDisplayMode,
+      pickerPathDisplayMode:
+          pickerPathDisplayMode ?? this.pickerPathDisplayMode,
       startupSection: startupSection ?? this.startupSection,
       cliHistoryPageSize: cliHistoryPageSize ?? this.cliHistoryPageSize,
       enabledExperimentalFeatures:
@@ -250,6 +259,12 @@ class SettingsNotifier extends Notifier<SettingsState> {
       ),
       remoteFileToolbarActions: remoteFileToolbarActionsFromStorage(
         storage.getRemoteFileToolbarActions(),
+      ),
+      filePathDisplayMode: remotePathDisplayModeFromStorage(
+        storage.getRemotePathDisplayMode(picker: false),
+      ),
+      pickerPathDisplayMode: remotePathDisplayModeFromStorage(
+        storage.getRemotePathDisplayMode(picker: true),
       ),
       startupSection:
           appSectionFromStorage(storage.getStartupSection() ?? '') ??
@@ -391,8 +406,22 @@ class SettingsNotifier extends Notifier<SettingsState> {
     );
     await ref
         .read(localStorageServiceProvider)
-        .setRemoteFileToolbarActions(next.map((action) => action.name).toList());
+        .setRemoteFileToolbarActions(
+          next.map((action) => action.name).toList(),
+        );
     state = state.copyWith(remoteFileToolbarActions: next);
+  }
+
+  Future<void> setRemotePathDisplayMode(
+    RemotePathDisplayMode mode, {
+    required bool picker,
+  }) async {
+    await ref
+        .read(localStorageServiceProvider)
+        .setRemotePathDisplayMode(mode.name, picker: picker);
+    state = picker
+        ? state.copyWith(pickerPathDisplayMode: mode)
+        : state.copyWith(filePathDisplayMode: mode);
   }
 
   Future<void> setExperimentalFeature(
@@ -430,6 +459,14 @@ class SettingsNotifier extends Notifier<SettingsState> {
     final storage = ref.read(localStorageServiceProvider);
     await storage.setRemoteFileToolbarActions(
       defaults.remoteFileToolbarActions.map((action) => action.name).toList(),
+    );
+    await storage.setRemotePathDisplayMode(
+      defaults.filePathDisplayMode.name,
+      picker: false,
+    );
+    await storage.setRemotePathDisplayMode(
+      defaults.pickerPathDisplayMode.name,
+      picker: true,
     );
     state = defaults;
     await storage.setThemeMode(defaults.themeMode.name);

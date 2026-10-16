@@ -5474,6 +5474,15 @@ class AppLocalizationsId extends AppLocalizations {
       'Jalur yang diminta berada di luar direktori pangkal yang diizinkan.';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'Mode tampilan jalur';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'Gulir horizontal';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'Ciutkan jalur';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'Entri yang dipilih tidak tersedia atau tidak valid.';
 
@@ -5866,4 +5875,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'Belum pernah diperiksa';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'Pasang Adaptor Baru & Alihkan Agen';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'Program dan konfigurasi saat ini akan dipertahankan. Adaptor baru independen dipasang lalu koneksi dialihkan, dengan rollback aman jika ada masalah.';
+
+  @override
+  String get agentUpdateReplacementCommand => 'Perintah Pengganti';
 }

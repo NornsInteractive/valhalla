@@ -5419,6 +5419,15 @@ class AppLocalizationsAr extends AppLocalizations {
       'المسار المطلوب خارج الدليل الجذر المسموح به.';
 
   @override
+  String get remoteBrowserPathDisplayMode => 'وضع عرض المسار';
+
+  @override
+  String get remoteBrowserPathDisplayModeScroll => 'التمرير أفقياً';
+
+  @override
+  String get remoteBrowserPathDisplayModeCollapsed => 'طي المسار';
+
+  @override
   String get remoteBrowserEntryUnavailable =>
       'العنصر المحدد غير متاح أو غير صالح.';
 
@@ -5803,4 +5812,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get agentUpdateNeverChecked => 'لم يتم التحقق مطلقًا';
+
+  @override
+  String get agentUpdateCodexMigrationTitle =>
+      'تثبيت المحول الجديد والتبديل إلى هذا الوكيل';
+
+  @override
+  String get agentUpdateCodexMigrationNotice =>
+      'سيتم الاحتفاظ بالبرنامج والإعدادات الحالية، وتثبيت محول جديد مستقل ثم تحويل الاتصال، مع إمكانية التراجع بأمان في حالة حدوث مشاكل.';
+
+  @override
+  String get agentUpdateReplacementCommand => 'الأمر البديل';
 }

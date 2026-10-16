@@ -5,4 +5,6 @@ Local modification by Norns: on Windows, include the current Flutter view ID
 in TextInputConfiguration to support the Windows text input plugin.
 Terminal/controller changes explicitly invalidate paint as well as layout,
 so same-size SSH output and tab changes repaint without opening the keyboard.
+Modified Enter keys with Control retain the modifier using CSI-u encoding,
+shared by hardware and mobile accessory input instead of collapsing to CR.
 This package remains licensed under MIT.

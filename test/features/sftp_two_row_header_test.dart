@@ -188,6 +188,7 @@ void main() {
           'sftpNewButton',
           'sftpToggleViewModeButton',
           'sftpTransferListButton',
+          'sftpSortButton',
           'sftpMoreButton',
         ]) {
           final action = find.byKey(Key(key));
@@ -208,8 +209,12 @@ void main() {
         final l10n = AppLocalizations.of(
           tester.element(find.byType(SftpFileView)),
         );
-        expect(find.text(l10n.sftpSortName), findsOneWidget);
         expect(find.byIcon(Icons.refresh), findsOneWidget);
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('sftpSortButton')));
+        await tester.pumpAndSettle();
+        expect(find.text(l10n.sftpSortName), findsOneWidget);
 
         // No RenderFlex overflow
         expect(tester.takeException(), isNull);
