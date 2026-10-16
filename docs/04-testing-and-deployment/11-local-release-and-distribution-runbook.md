@@ -405,6 +405,7 @@ curl --fail --silent --show-error --get 'https://ygg.norns.cc.cd/api/v1/app/late
 
 已实际成功的对照记录：
 
+- [v1.0.8终端同版本覆盖](../../agent-workflow/2026-10-16-v108-terminal-refresh-release.md)：用户批准后仅替换四条external-only记录，保留原标签／Release身份，17附件及四整包／八Range闭环通过。
 - [v1.0.8代理分发](../../agent-workflow/2026-10-16-v108-release.md)：版本及四包代理开关、四次整包SHA256与八次Range验证，历史版本保持不变。
 - [首次 v1.0.5 发布](10-v1.0.5-release.md)：新版本流程。
 - [v1.0.6 本地发布与 ADB 验收](../../agent-workflow/2026-10-14-v106-release.md)：新标签、隐藏占位处理、四架构与旧 Windows 分流。
