@@ -1,8 +1,12 @@
 # 本地构建 → GitHub Releases → 分发平台操作手册
 
 最后核对：2026-10-16。适用于已获批准的 **Android 三架构 APK／AAB + Linux x64** 本地发布。
-本文是可复用操作方法，不是执行授权；新版本、同版本覆盖、其他平台和 ADB 安装须按当轮要求决定。
+本文是可复用操作方法，不是执行授权；构建平台和 ADB 安装须按当轮要求决定。
 不依赖历史 `/tmp` 发布脚本，不在本文存放密码、Token 或私钥。
+
+**最新长期规则：每批新包都要新增版本。** 同时递增pubspec.yaml语义版本和build，新建GitHub标签／Release及分发版本；
+不得再覆盖已发布的同版本附件、移动旧标签或重新登记旧版本包。失败重试仍属同批次，不能重复升号／创建重复记录。
+本次升级为1.0.9+10。本文同版本章节只保留作历史审计和事故恢复参考，不适用于后续正常发布。
 
 **1.0.8起的新发布策略：** 用户要求分发平台代理中转。新版本与**每个架构包**均设置
 `use_proxy=true`；不能只改版本顶层开关。GitHub外链仍作为源站，客户端下载从分发API
@@ -44,12 +48,9 @@ Apple 新 Bundle ID 还需匹配相应签名／配置描述，Linux 新 applicat
 
 ## 2. 先确认版本和源码，再构建
 
-两种模式不要混用：
-
-- **新版本**：经批准修改 `pubspec.yaml` 的版本与基础 build；发布新标签／新 Release／新分发版本。
-- **同版本覆盖**：保持版本、基础 build、原标签、Release ID、发布策略和原分发版本不变；只换授权的附件／包元数据。
-  不 force push、不移动标签；原标签的 GitHub Source code 压缩包仍是旧源码，必须在说明和 BUILD-INFO 中标明新包的实际源码提交。
-  同版本客户端可能需要手动下载，不用虚增分发版本号强迫更新。
+正常流程只允许**新增版本**：递增 `pubspec.yaml` 的版本与基础 build；新标签／新 Release／新分发版本保持一致。
+先查GitHub和分发平台，版本号及各架构真实versionCode都须比上一批递增；不能仅虚增分发目录code或重命名旧包。
+同批失败重试先读取已有草稿／暂存记录再续办，禁止盲目再次创建；已发布版本保持只读。
 
 先查看工作区，保留他人改动；仅提交本轮明确属于发布的文件，提交信息带 `[skip ci]`，正常推送到 `main`。
 不要自动 `git add .`、覆盖远端分支或提交密钥。远端领先／冲突时先处理，不强推。
@@ -245,7 +246,7 @@ gh release upload "$valhalla_tag" --repo "$valhalla_repo" "$valhalla_stage/$valh
 gh release edit "$valhalla_tag" --repo "$valhalla_repo" --draft=false --latest
 ```
 
-### 5.2 覆盖现有版本
+### 5.2 历史审计：覆盖现有版本（后续正常发布禁止使用）
 
 **覆盖前置条件：**先按第 6 节查询并备份分发平台原版本／架构包，确认当下可用的元数据修改方式及当轮权限；
 如果需要删除重登记，须先取得准确范围和 ID／计数变化的许可。接口、凭据或权限未准备好时，
@@ -342,7 +343,7 @@ curl --fail-with-body --silent --show-error 'https://ygg.norns.cc.cd/api/mcp' \
 四个包均唯一、size/hash 正确、GitHub 已公开后，调用 `ygg_update_version`，
 传真实 `version_id`、`channel=default`、`is_published=true`、`use_proxy=true`，其余策略不变。
 
-### 6.3 同版本重新登记
+### 6.3 历史审计：同版本重新登记（后续正常发布禁止使用）
 
 优先使用平台未来提供的正式包更新接口；当前管理员 `PUT /api/admin/packages/:packageId`
 可原地改包元数据，但需要独立且已授权的管理员会话，不等于 MCP 凭据，不能自行生成或绕过鉴权。
