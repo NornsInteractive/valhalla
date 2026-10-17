@@ -241,6 +241,56 @@ class AppLocalizationsKo extends AppLocalizations {
   String get terminalCloseDirectionPad => '방향 패드 닫기';
 
   @override
+  String get terminalDirectionPadModeFixed => '우측 고정';
+
+  @override
+  String get terminalDirectionPadModeFlow => '단축키와 함께 스크롤';
+
+  @override
+  String get terminalDirectionPadModeHidden => '숨김';
+
+  @override
+  String get terminalDirectionKeyColor => '방향키 색상';
+
+  @override
+  String get terminalDirectionKeyColorDefault => '테마 따르기';
+
+  @override
+  String get terminalDirectionKeyColorReset => '테마 색상으로 초기화';
+
+  @override
+  String get terminalAccessorySaveFailed => '단축키 바 설정 저장에 실패했습니다';
+
+  @override
+  String get terminalDirectionKeyNormal => '기본';
+
+  @override
+  String get terminalDirectionKeyPressed => '누름';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '고정됨 ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => '고정된 키 없음';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '추가 가능 ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => '현재 경로';
 
   @override

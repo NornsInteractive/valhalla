@@ -110,6 +110,32 @@
   "terminalKeyArrows": "方向鍵",
   "terminalDirectionPad": "方向導航盤",
   "terminalCloseDirectionPad": "關閉方向盤",
+  "terminalDirectionPadModeFixed": "固定最右",
+  "terminalDirectionPadModeFlow": "隨常用鍵滾動",
+  "terminalDirectionPadModeHidden": "隱藏",
+  "terminalDirectionKeyColor": "方向鍵配色",
+  "terminalDirectionKeyColorDefault": "跟隨主題",
+  "terminalDirectionKeyColorReset": "恢復跟隨主題",
+  "terminalAccessorySaveFailed": "儲存快捷列設定失敗",
+  "terminalDirectionKeyNormal": "常規",
+  "terminalDirectionKeyPressed": "按下",
+  "terminalPinnedKeysCount": "{count, plural, other{已固定 ({count})}}",
+  "terminalNoPinnedKeys": "暫無固定按鍵",
+  "terminalAvailableKeysCount": "{count, plural, other{可新增按鍵 ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "當前工作路徑",
   "sftpUpload": "上傳檔案",
   "sftpNewFolder": "新建目錄",

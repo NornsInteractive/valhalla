@@ -110,6 +110,32 @@
   "terminalKeyArrows": "Touches fléchées",
   "terminalDirectionPad": "Pavé directionnel",
   "terminalCloseDirectionPad": "Fermer le pavé directionnel",
+  "terminalDirectionPadModeFixed": "Fixé à droite",
+  "terminalDirectionPadModeFlow": "Défiler avec les touches",
+  "terminalDirectionPadModeHidden": "Masqué",
+  "terminalDirectionKeyColor": "Couleur des touches de direction",
+  "terminalDirectionKeyColorDefault": "Suivre le thème",
+  "terminalDirectionKeyColorReset": "Rétablir le thème",
+  "terminalAccessorySaveFailed": "Échec de l'enregistrement des paramètres de la barre d'accessoires",
+  "terminalDirectionKeyNormal": "Normal",
+  "terminalDirectionKeyPressed": "Appuyé",
+  "terminalPinnedKeysCount": "{count, plural, =1{Épinglées ({count})} other{Épinglées ({count})}}",
+  "terminalNoPinnedKeys": "Aucune touche épinglée",
+  "terminalAvailableKeysCount": "{count, plural, =1{Disponibles à ajouter ({count})} other{Disponibles à ajouter ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "Chemin actuel",
   "sftpUpload": "Téléverser",
   "sftpNewFolder": "Nouveau dossier",

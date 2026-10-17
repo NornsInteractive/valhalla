@@ -166,13 +166,85 @@ class LocalStorageService {
     }
   }
 
-  List<String>? getTerminalPinnedKeys() =>
-      _prefs.getStringList('valhalla_terminal_pinned_keys_v1');
+  static const _keyTerminalAccessory = 'valhalla_terminal_accessory_v2';
+
+  Map<String, dynamic>? _getTerminalAccessory() {
+    final raw = _prefs.get(_keyTerminalAccessory);
+    if (raw is! String) return null;
+    try {
+      final value = jsonDecode(raw);
+      if (value is! Map<String, dynamic> ||
+          value['pinnedKeys'] is! List ||
+          !(value['pinnedKeys'] as List).every((key) => key is String) ||
+          !const [
+            'fixed',
+            'flow',
+            'hidden',
+          ].contains(value['directionPadMode'])) {
+        return null;
+      }
+      final color = value['directionKeySeedColorValue'];
+      if (color != null &&
+          (color is! int || color < 0xff000000 || color > 0xffffffff)) {
+        return null;
+      }
+      return value;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  List<String>? getTerminalPinnedKeys() {
+    final accessory = _getTerminalAccessory();
+    return accessory == null
+        ? _prefs.getStringList('valhalla_terminal_pinned_keys_v1')
+        : List<String>.from(accessory['pinnedKeys'] as List);
+  }
+
+  String? getTerminalDirectionPadMode() =>
+      _getTerminalAccessory()?['directionPadMode'] as String?;
+
+  int? getTerminalDirectionKeySeedColorValue() =>
+      _getTerminalAccessory()?['directionKeySeedColorValue'] as int?;
 
   Future<void> setTerminalPinnedKeys(List<String> keys) async {
-    if (!await _prefs.setStringList('valhalla_terminal_pinned_keys_v1', keys)) {
+    final previous = getTerminalPinnedKeys();
+    final mode = !keys.contains('ARROWS')
+        ? 'hidden'
+        : previous?.contains('ARROWS') == true
+        ? getTerminalDirectionPadMode() ?? 'fixed'
+        : 'fixed';
+    await setTerminalAccessorySettings(
+      pinnedKeys: keys,
+      directionPadMode: mode,
+      directionKeySeedColorValue: getTerminalDirectionKeySeedColorValue(),
+    );
+  }
+
+  Future<void> setTerminalAccessorySettings({
+    required List<String> pinnedKeys,
+    required String directionPadMode,
+    required int? directionKeySeedColorValue,
+  }) async {
+    if (!const ['fixed', 'flow', 'hidden'].contains(directionPadMode) ||
+        (directionKeySeedColorValue != null &&
+            (directionKeySeedColorValue < 0xff000000 ||
+                directionKeySeedColorValue > 0xffffffff))) {
+      throw ArgumentError('Invalid terminal accessory settings');
+    }
+    final encoded = jsonEncode({
+      'pinnedKeys': pinnedKeys,
+      'directionPadMode': directionPadMode,
+      'directionKeySeedColorValue': directionKeySeedColorValue,
+    });
+    // Keep v1 untouched so upgrading never destroys the previous configuration.
+    try {
+      if (!await _prefs.setString(_keyTerminalAccessory, encoded)) {
+        throw StateError('SETTINGS_SAVE_FAILED');
+      }
+    } catch (_) {
       await _prefs.reload();
-      throw StateError('SETTINGS_SAVE_FAILED');
+      rethrow;
     }
   }
 
@@ -350,6 +422,7 @@ class LocalStorageService {
     _keyTerminalUseTmux: 'bool',
     _keyTerminalFontSize: 'int',
     'valhalla_terminal_pinned_keys_v1': 'strings',
+    _keyTerminalAccessory: 'string',
     'valhalla_update_auto_v1': 'bool',
     _keyCliHistoryPageSize: 'int',
     _keyFileSortKey: 'string',

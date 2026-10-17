@@ -110,6 +110,32 @@
   "terminalKeyArrows": "مفاتيح الأسهم",
   "terminalDirectionPad": "لوحة الاتجاهات",
   "terminalCloseDirectionPad": "إغلاق لوحة الاتجاهات",
+  "terminalDirectionPadModeFixed": "ثابت على اليمين",
+  "terminalDirectionPadModeFlow": "التمرير مع المفاتيح",
+  "terminalDirectionPadModeHidden": "مخفي",
+  "terminalDirectionKeyColor": "لون مفاتيح الاتجاه",
+  "terminalDirectionKeyColorDefault": "اتباع السمة",
+  "terminalDirectionKeyColorReset": "إعادة التعيين إلى السمة",
+  "terminalAccessorySaveFailed": "فشل حفظ إعدادات شريط الأدوات",
+  "terminalDirectionKeyNormal": "عادي",
+  "terminalDirectionKeyPressed": "مضغوط",
+  "terminalPinnedKeysCount": "{count, plural, =0{مثبتة (0)} =1{مثبتة (1)} =2{مثبتة (2)} few{مثبتة ({count})} many{مثبتة ({count})} other{مثبتة ({count})}}",
+  "terminalNoPinnedKeys": "لا توجد مفاتيح مثبتة",
+  "terminalAvailableKeysCount": "{count, plural, =0{متاح للإضافة (0)} =1{متاح للإضافة (1)} =2{متاح للإضافة (2)} few{متاح للإضافة ({count})} many{متاح للإضافة ({count})} other{متاح للإضافة ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "المسار الحالي",
   "sftpUpload": "رفع",
   "sftpNewFolder": "مجلد جديد",

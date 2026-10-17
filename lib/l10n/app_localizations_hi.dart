@@ -245,6 +245,59 @@ class AppLocalizationsHi extends AppLocalizations {
   String get terminalCloseDirectionPad => 'दिशा पैड बंद करें';
 
   @override
+  String get terminalDirectionPadModeFixed => 'दाईं ओर स्थिर';
+
+  @override
+  String get terminalDirectionPadModeFlow => 'कुंजियों के साथ स्क्रॉल करें';
+
+  @override
+  String get terminalDirectionPadModeHidden => 'छिपा हुआ';
+
+  @override
+  String get terminalDirectionKeyColor => 'दिशा कुंजियों का रंग';
+
+  @override
+  String get terminalDirectionKeyColorDefault => 'थीम का पालन करें';
+
+  @override
+  String get terminalDirectionKeyColorReset => 'थीम पर रीसेट करें';
+
+  @override
+  String get terminalAccessorySaveFailed =>
+      'एक्सेसरी बार सेटिंग्स सहेजने में विफल';
+
+  @override
+  String get terminalDirectionKeyNormal => 'सामान्य';
+
+  @override
+  String get terminalDirectionKeyPressed => 'दबाया गया';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'पिन की गई ($count)',
+      one: 'पिन की गई ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => 'कोई पिन की गई कुंजी नहीं';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'जोड़ने के लिए उपलब्ध ($count)',
+      one: 'जोड़ने के लिए उपलब्ध ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => 'वर्तमान पथ';
 
   @override

@@ -241,6 +241,56 @@ class AppLocalizationsJa extends AppLocalizations {
   String get terminalCloseDirectionPad => '方向パッドを閉じる';
 
   @override
+  String get terminalDirectionPadModeFixed => '右側に固定';
+
+  @override
+  String get terminalDirectionPadModeFlow => 'キーと一緒にスクロール';
+
+  @override
+  String get terminalDirectionPadModeHidden => '非表示';
+
+  @override
+  String get terminalDirectionKeyColor => '方向キーの色';
+
+  @override
+  String get terminalDirectionKeyColorDefault => 'テーマに従う';
+
+  @override
+  String get terminalDirectionKeyColorReset => 'テーマ色にリセット';
+
+  @override
+  String get terminalAccessorySaveFailed => 'アクセサリーバーの設定の保存に失敗しました';
+
+  @override
+  String get terminalDirectionKeyNormal => '通常';
+
+  @override
+  String get terminalDirectionKeyPressed => '押下時';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '固定済み ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => '固定されたキーはありません';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '追加可能 ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => '現在のパス';
 
   @override

@@ -246,6 +246,59 @@ class AppLocalizationsDe extends AppLocalizations {
   String get terminalCloseDirectionPad => 'Steuerkreuz schließen';
 
   @override
+  String get terminalDirectionPadModeFixed => 'Rechts fixiert';
+
+  @override
+  String get terminalDirectionPadModeFlow => 'Mit Tasten scrollen';
+
+  @override
+  String get terminalDirectionPadModeHidden => 'Ausgeblendet';
+
+  @override
+  String get terminalDirectionKeyColor => 'Richtungstasten-Farbe';
+
+  @override
+  String get terminalDirectionKeyColorDefault => 'Design folgen';
+
+  @override
+  String get terminalDirectionKeyColorReset => 'Auf Design zurücksetzen';
+
+  @override
+  String get terminalAccessorySaveFailed =>
+      'Fehler beim Speichern der Schnellleisten-Einstellungen';
+
+  @override
+  String get terminalDirectionKeyNormal => 'Normal';
+
+  @override
+  String get terminalDirectionKeyPressed => 'Gedrückt';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Angeheftet ($count)',
+      one: 'Angeheftet ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => 'Keine angehefteten Tasten';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Zum Hinzufügen verfügbar ($count)',
+      one: 'Zum Hinzufügen verfügbar ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => 'Aktueller Pfad';
 
   @override

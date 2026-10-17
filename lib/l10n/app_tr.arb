@@ -110,6 +110,32 @@
   "terminalKeyArrows": "Ok Tuşları",
   "terminalDirectionPad": "Yön Pedi",
   "terminalCloseDirectionPad": "Yön pedini kapat",
+  "terminalDirectionPadModeFixed": "Sağda Sabit",
+  "terminalDirectionPadModeFlow": "Tuşlarla Birlikte Kaydır",
+  "terminalDirectionPadModeHidden": "Gizli",
+  "terminalDirectionKeyColor": "Yön Tuşları Rengi",
+  "terminalDirectionKeyColorDefault": "Temayı Takip Et",
+  "terminalDirectionKeyColorReset": "Temaya Sıfırla",
+  "terminalAccessorySaveFailed": "Aksesuar çubuğu ayarları kaydedilemedi",
+  "terminalDirectionKeyNormal": "Normal",
+  "terminalDirectionKeyPressed": "Basılı",
+  "terminalPinnedKeysCount": "{count, plural, =1{Sabitlendi ({count})} other{Sabitlendi ({count})}}",
+  "terminalNoPinnedKeys": "Sabitlenmiş tuş yok",
+  "terminalAvailableKeysCount": "{count, plural, =1{Eklenebilir ({count})} other{Eklenebilir ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "Mevcut Yol",
   "sftpUpload": "Yükle",
   "sftpNewFolder": "Yeni Klasör",

@@ -110,6 +110,32 @@
   "terminalKeyArrows": "Pfeiltasten",
   "terminalDirectionPad": "Steuerkreuz",
   "terminalCloseDirectionPad": "Steuerkreuz schließen",
+  "terminalDirectionPadModeFixed": "Rechts fixiert",
+  "terminalDirectionPadModeFlow": "Mit Tasten scrollen",
+  "terminalDirectionPadModeHidden": "Ausgeblendet",
+  "terminalDirectionKeyColor": "Richtungstasten-Farbe",
+  "terminalDirectionKeyColorDefault": "Design folgen",
+  "terminalDirectionKeyColorReset": "Auf Design zurücksetzen",
+  "terminalAccessorySaveFailed": "Fehler beim Speichern der Schnellleisten-Einstellungen",
+  "terminalDirectionKeyNormal": "Normal",
+  "terminalDirectionKeyPressed": "Gedrückt",
+  "terminalPinnedKeysCount": "{count, plural, =1{Angeheftet ({count})} other{Angeheftet ({count})}}",
+  "terminalNoPinnedKeys": "Keine angehefteten Tasten",
+  "terminalAvailableKeysCount": "{count, plural, =1{Zum Hinzufügen verfügbar ({count})} other{Zum Hinzufügen verfügbar ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "Aktueller Pfad",
   "sftpUpload": "Hochladen",
   "sftpNewFolder": "Neuer Ordner",

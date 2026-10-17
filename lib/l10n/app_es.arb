@@ -110,6 +110,32 @@
   "terminalKeyArrows": "Teclas de flecha",
   "terminalDirectionPad": "Panel de dirección",
   "terminalCloseDirectionPad": "Cerrar panel de dirección",
+  "terminalDirectionPadModeFixed": "Fijo a la derecha",
+  "terminalDirectionPadModeFlow": "Desplazar con teclas",
+  "terminalDirectionPadModeHidden": "Oculto",
+  "terminalDirectionKeyColor": "Color de teclas de dirección",
+  "terminalDirectionKeyColorDefault": "Seguir el tema",
+  "terminalDirectionKeyColorReset": "Restablecer al tema",
+  "terminalAccessorySaveFailed": "Error al guardar la configuración de la barra de accesorios",
+  "terminalDirectionKeyNormal": "Normal",
+  "terminalDirectionKeyPressed": "Presionado",
+  "terminalPinnedKeysCount": "{count, plural, =1{Fijadas ({count})} other{Fijadas ({count})}}",
+  "terminalNoPinnedKeys": "Sin teclas fijadas",
+  "terminalAvailableKeysCount": "{count, plural, =1{Disponibles para agregar ({count})} other{Disponibles para agregar ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "Ruta actual",
   "sftpUpload": "Subir",
   "sftpNewFolder": "Nueva carpeta",

@@ -110,6 +110,32 @@
   "terminalKeyArrows": "Клавиши со стрелками",
   "terminalDirectionPad": "Кнопки направления",
   "terminalCloseDirectionPad": "Закрыть кнопки направления",
+  "terminalDirectionPadModeFixed": "Справа (фиксировано)",
+  "terminalDirectionPadModeFlow": "Прокрутка с клавишами",
+  "terminalDirectionPadModeHidden": "Скрыто",
+  "terminalDirectionKeyColor": "Цвет клавиш со стрелками",
+  "terminalDirectionKeyColorDefault": "Как в теме",
+  "terminalDirectionKeyColorReset": "Сбросить на тему",
+  "terminalAccessorySaveFailed": "Не удалось сохранить настройки панели клавиш",
+  "terminalDirectionKeyNormal": "Обычный",
+  "terminalDirectionKeyPressed": "Нажато",
+  "terminalPinnedKeysCount": "{count, plural, =1{Закреплено ({count})} few{Закреплено ({count})} many{Закреплено ({count})} other{Закреплено ({count})}}",
+  "terminalNoPinnedKeys": "Нет закрепленных клавиш",
+  "terminalAvailableKeysCount": "{count, plural, =1{Доступно для добавления ({count})} few{Доступно для добавления ({count})} many{Доступно для добавления ({count})} other{Доступно для добавления ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "Текущий путь",
   "sftpUpload": "Загрузить",
   "sftpNewFolder": "Новая папка",

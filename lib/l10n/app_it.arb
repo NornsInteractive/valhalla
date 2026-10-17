@@ -110,6 +110,32 @@
   "terminalKeyArrows": "Tasti freccia",
   "terminalDirectionPad": "Pad direzionale",
   "terminalCloseDirectionPad": "Chiudi pad direzionale",
+  "terminalDirectionPadModeFixed": "Fisso a destra",
+  "terminalDirectionPadModeFlow": "Scorri con i tasti",
+  "terminalDirectionPadModeHidden": "Nascosto",
+  "terminalDirectionKeyColor": "Colore tasti di direzione",
+  "terminalDirectionKeyColorDefault": "Segui il tema",
+  "terminalDirectionKeyColorReset": "Ripristina al tema",
+  "terminalAccessorySaveFailed": "Impossibile salvare le impostazioni della barra accessori",
+  "terminalDirectionKeyNormal": "Normale",
+  "terminalDirectionKeyPressed": "Premuto",
+  "terminalPinnedKeysCount": "{count, plural, =1{Fissate ({count})} other{Fissate ({count})}}",
+  "terminalNoPinnedKeys": "Nessun tasto fissato",
+  "terminalAvailableKeysCount": "{count, plural, =1{Disponibili da aggiungere ({count})} other{Disponibili da aggiungere ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "Percorso corrente",
   "sftpUpload": "Carica",
   "sftpNewFolder": "Nuova cartella",

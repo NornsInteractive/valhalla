@@ -111,18 +111,42 @@ void main() {
             expect(rect.right, lessThanOrEqualTo(width));
           }
 
-          // More / keyboard stay pinned to the right, stacked with the
-          // keyboard underneath.
+          // More / keyboard sit in one fixed column immediately to the LEFT
+          // of the pinned inverted-T direction pad (the pad owns the right
+          // edge), still stacked with the keyboard underneath.
           final moreRect = tester.getRect(
             find.byKey(const Key('terminal_accessory_more_button')),
           );
           final keyboardRect = tester.getRect(
             find.byKey(const Key('terminal_accessory_keyboard_button')),
           );
+          final padRect = tester.getRect(
+            find.byKey(const Key('terminal_direction_pad')),
+          );
+          final barNow = tester.getRect(find.byType(TerminalAccessoryBar));
           expect(keyboardRect.right, lessThanOrEqualTo(width));
-          expect(keyboardRect.center.dx, greaterThan(width - 60));
           expect(moreRect.right, lessThanOrEqualTo(width));
-          expect(moreRect.center.dx, greaterThan(width / 2));
+          expect(padRect.right, lessThanOrEqualTo(width));
+          expect(
+            barNow.right - padRect.right,
+            lessThanOrEqualTo(8),
+            reason: '固定方向区必须贴在底栏最右端',
+          );
+          expect(
+            keyboardRect.right,
+            lessThanOrEqualTo(padRect.left),
+            reason: '键盘列必须在固定方向区左侧',
+          );
+          expect(
+            moreRect.right,
+            lessThanOrEqualTo(padRect.left),
+            reason: '更多列必须在固定方向区左侧',
+          );
+          expect(
+            moreRect.center.dx,
+            closeTo(keyboardRect.center.dx, 1),
+            reason: '更多/键盘必须同一列',
+          );
           expect(keyboardRect.center.dy, greaterThan(moreRect.center.dy));
           expect(keyboardRect.top, greaterThanOrEqualTo(moreRect.bottom - 1));
 

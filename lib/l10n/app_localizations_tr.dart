@@ -245,6 +245,59 @@ class AppLocalizationsTr extends AppLocalizations {
   String get terminalCloseDirectionPad => 'Yön pedini kapat';
 
   @override
+  String get terminalDirectionPadModeFixed => 'Sağda Sabit';
+
+  @override
+  String get terminalDirectionPadModeFlow => 'Tuşlarla Birlikte Kaydır';
+
+  @override
+  String get terminalDirectionPadModeHidden => 'Gizli';
+
+  @override
+  String get terminalDirectionKeyColor => 'Yön Tuşları Rengi';
+
+  @override
+  String get terminalDirectionKeyColorDefault => 'Temayı Takip Et';
+
+  @override
+  String get terminalDirectionKeyColorReset => 'Temaya Sıfırla';
+
+  @override
+  String get terminalAccessorySaveFailed =>
+      'Aksesuar çubuğu ayarları kaydedilemedi';
+
+  @override
+  String get terminalDirectionKeyNormal => 'Normal';
+
+  @override
+  String get terminalDirectionKeyPressed => 'Basılı';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sabitlendi ($count)',
+      one: 'Sabitlendi ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => 'Sabitlenmiş tuş yok';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Eklenebilir ($count)',
+      one: 'Eklenebilir ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => 'Mevcut Yol';
 
   @override

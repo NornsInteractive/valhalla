@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'storage_providers.dart';
 
+enum TerminalDirectionPadMode { fixed, flow, hidden }
+
 /// 终端相关的用户设置，独立于 [SettingsNotifier]。
 ///
 /// 单独成家而不是塞进 `settings_provider.dart`：那边的 `SettingsState`
@@ -69,22 +71,39 @@ class TerminalSettings {
     'F12',
   ];
   final List<String> pinnedKeys;
+  final TerminalDirectionPadMode? _directionPadMode;
+  final int? directionKeySeedColorValue;
+
+  TerminalDirectionPadMode get directionPadMode =>
+      _directionPadMode ??
+      (pinnedKeys.contains('ARROWS')
+          ? TerminalDirectionPadMode.fixed
+          : TerminalDirectionPadMode.hidden);
 
   const TerminalSettings({
     this.useTmux = false,
     this.fontSize = 13,
     this.pinnedKeys = defaultPinnedKeys,
-  });
+    TerminalDirectionPadMode? directionPadMode,
+    this.directionKeySeedColorValue,
+  }) : _directionPadMode = directionPadMode;
 
   TerminalSettings copyWith({
     bool? useTmux,
     int? fontSize,
     List<String>? pinnedKeys,
+    TerminalDirectionPadMode? directionPadMode,
+    int? directionKeySeedColorValue,
+    bool clearDirectionKeySeedColor = false,
   }) {
     return TerminalSettings(
       useTmux: useTmux ?? this.useTmux,
       fontSize: fontSize ?? this.fontSize,
       pinnedKeys: pinnedKeys ?? this.pinnedKeys,
+      directionPadMode: directionPadMode ?? _directionPadMode,
+      directionKeySeedColorValue: clearDirectionKeySeedColor
+          ? null
+          : directionKeySeedColorValue ?? this.directionKeySeedColorValue,
     );
   }
 }
@@ -105,6 +124,11 @@ class TerminalSettingsNotifier extends Notifier<TerminalSettings> {
             .where(TerminalSettings.availableKeys.contains)
             .toSet(),
       ),
+      directionPadMode: TerminalDirectionPadMode.values
+          .where((mode) => mode.name == storage.getTerminalDirectionPadMode())
+          .firstOrNull,
+      directionKeySeedColorValue: storage
+          .getTerminalDirectionKeySeedColorValue(),
     );
   }
 
@@ -115,7 +139,46 @@ class TerminalSettingsNotifier extends Notifier<TerminalSettings> {
         .toList();
     await ref.read(localStorageServiceProvider).setTerminalPinnedKeys(valid);
     if (ref.mounted) {
-      state = state.copyWith(pinnedKeys: List.unmodifiable(valid));
+      final storage = ref.read(localStorageServiceProvider);
+      state = state.copyWith(
+        pinnedKeys: List.unmodifiable(valid),
+        directionPadMode:
+            TerminalDirectionPadMode.values
+                .where(
+                  (mode) => mode.name == storage.getTerminalDirectionPadMode(),
+                )
+                .firstOrNull ??
+            (valid.contains('ARROWS')
+                ? TerminalDirectionPadMode.fixed
+                : TerminalDirectionPadMode.hidden),
+      );
+    }
+  }
+
+  /// Save the complete dialog in one record; failures must not partially apply.
+  Future<void> setAccessorySettings({
+    required List<String> pinnedKeys,
+    required TerminalDirectionPadMode directionPadMode,
+    required int? directionKeySeedColorValue,
+  }) async {
+    final valid = pinnedKeys
+        .where(TerminalSettings.availableKeys.contains)
+        .toSet()
+        .toList();
+    await ref
+        .read(localStorageServiceProvider)
+        .setTerminalAccessorySettings(
+          pinnedKeys: valid,
+          directionPadMode: directionPadMode.name,
+          directionKeySeedColorValue: directionKeySeedColorValue,
+        );
+    if (ref.mounted) {
+      state = state.copyWith(
+        pinnedKeys: List.unmodifiable(valid),
+        directionPadMode: directionPadMode,
+        directionKeySeedColorValue: directionKeySeedColorValue,
+        clearDirectionKeySeedColor: directionKeySeedColorValue == null,
+      );
     }
   }
 

@@ -1,5 +1,17 @@
 # Valhalla - 模块详细设计与分层架构说明书
 
+## 2026-10-17 终端快捷栏配置与渲染隔离
+
+`TerminalSettings`增加方向区模式（fixed/flow/hidden）和可空独立颜色seed，
+`setAccessorySettings`将常用键列表、模式、颜色一起写入`valhalla_terminal_accessory_v2`。
+旧v1键不覆盖；新记录缺失或损坏时读旧列表并推导模式，旧显式空列表仍为空/隐藏。
+新增记录纳入配置导入/导出；保存失败不更新内存，弹窗保留草稿。
+旧`setPinnedKeys`入口仍支持增删ARROWS，保留已有flow选择与独立颜色。
+
+共享快捷键栏消费这些偏好，不让终端连接provider订阅设置，以免销毁终端实例。
+方向固定/滚动/隐藏仅影响布局；按压颜色为局部状态，不通过全局主题或终端实例更新。
+新布局/配色/语言和本轮实际验证见[实施台账](../../agent-workflow/2026-10-17-terminal-accessory-redesign.md)。
+
 ## 2026-10-15 Agent 更新与执行环境（本轮验证中）
 
 更新检查经独立 `AgentUpdateService` 读取版本和官方目录，不复用安装命令执行

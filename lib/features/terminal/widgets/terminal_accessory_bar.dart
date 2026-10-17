@@ -13,35 +13,82 @@ class HoldRepeatKey extends StatefulWidget {
   final VoidCallback onPressed;
   final Widget child;
   final bool Function()? canRepeat;
+  final ValueChanged<bool>? onHoldChanged;
 
   const HoldRepeatKey({
     super.key,
     required this.onPressed,
     required this.child,
     this.canRepeat,
+    this.onHoldChanged,
   });
 
   @override
   State<HoldRepeatKey> createState() => _HoldRepeatKeyState();
 }
 
-class _HoldRepeatKeyState extends State<HoldRepeatKey> {
+class _HoldRepeatKeyState extends State<HoldRepeatKey>
+    with WidgetsBindingObserver {
   Timer? _initialTimer;
   Timer? _repeatTimer;
+  int? _activePointerId;
+  bool _isHeld = false;
+  bool _isDisposed = false;
 
-  void _start() {
-    _cancel();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      _cancel();
+    }
+  }
+
+  void _notifyHold(bool held) {
+    if (_isHeld == held) return;
+    _isHeld = held;
+    final callback = widget.onHoldChanged;
+    if (callback == null || _isDisposed) return;
+    scheduleMicrotask(() {
+      if (mounted && !_isDisposed) {
+        callback(held);
+      }
+    });
+  }
+
+  void _start(int pointerId) {
+    if (_activePointerId != null) {
+      _cancel();
+    }
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (lifecycle != null && lifecycle != AppLifecycleState.resumed) {
+      return;
+    }
     if (widget.canRepeat != null && !widget.canRepeat!()) {
       return;
     }
+    _activePointerId = pointerId;
+    _notifyHold(true);
     widget.onPressed();
     _initialTimer = Timer(const Duration(milliseconds: 350), () {
-      if (widget.canRepeat != null && !widget.canRepeat!()) {
+      final currentLifecycle = WidgetsBinding.instance.lifecycleState;
+      if (!mounted ||
+          (currentLifecycle != null &&
+              currentLifecycle != AppLifecycleState.resumed) ||
+          (widget.canRepeat != null && !widget.canRepeat!())) {
         _cancel();
         return;
       }
       _repeatTimer = Timer.periodic(const Duration(milliseconds: 70), (_) {
-        if (!mounted || (widget.canRepeat != null && !widget.canRepeat!())) {
+        final tickLifecycle = WidgetsBinding.instance.lifecycleState;
+        if (!mounted ||
+            (tickLifecycle != null &&
+                tickLifecycle != AppLifecycleState.resumed) ||
+            (widget.canRepeat != null && !widget.canRepeat!())) {
           _cancel();
           return;
         }
@@ -51,10 +98,12 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey> {
   }
 
   void _cancel() {
+    _activePointerId = null;
     _initialTimer?.cancel();
     _initialTimer = null;
     _repeatTimer?.cancel();
     _repeatTimer = null;
+    _notifyHold(false);
   }
 
   @override
@@ -65,6 +114,8 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey> {
 
   @override
   void dispose() {
+    _isDisposed = true;
+    WidgetsBinding.instance.removeObserver(this);
     _cancel();
     super.dispose();
   }
@@ -76,9 +127,21 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey> {
     }
     return Listener(
       behavior: HitTestBehavior.opaque,
-      onPointerDown: (_) => _start(),
-      onPointerUp: (_) => _cancel(),
-      onPointerCancel: (_) => _cancel(),
+      onPointerDown: (e) {
+        if (_activePointerId == null) {
+          _start(e.pointer);
+        }
+      },
+      onPointerUp: (e) {
+        if (e.pointer == _activePointerId) {
+          _cancel();
+        }
+      },
+      onPointerCancel: (e) {
+        if (e.pointer == _activePointerId) {
+          _cancel();
+        }
+      },
       child: widget.child,
     );
   }
@@ -196,6 +259,44 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         TickerMode.of(context);
   }
 
+  ({
+    Color baseBgColor,
+    Color idleBgColor,
+    Color idleFgColor,
+    Color activeBgColor,
+    Color activeFgColor,
+  })
+  _getDirectionPadColors(BuildContext context) {
+    final seedValue = ref
+        .watch(terminalSettingsProvider)
+        .directionKeySeedColorValue;
+    if (seedValue != null) {
+      final brightness = Theme.of(context).brightness;
+      final scheme = ColorScheme.fromSeed(
+        seedColor: Color(seedValue),
+        brightness: brightness,
+      );
+      return (
+        baseBgColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        idleBgColor: scheme.secondaryContainer,
+        idleFgColor: scheme.onSecondaryContainer,
+        activeBgColor: scheme.primary,
+        activeFgColor: scheme.onPrimary,
+      );
+    }
+    return (
+      baseBgColor: context.colorScheme.surfaceContainerHigh.withValues(
+        alpha: 0.5,
+      ),
+      idleBgColor: context.colorScheme.secondaryContainer.withValues(
+        alpha: 0.7,
+      ),
+      idleFgColor: context.colorScheme.onSecondaryContainer,
+      activeBgColor: context.colorScheme.primary,
+      activeFgColor: context.colorScheme.onPrimary,
+    );
+  }
+
   Widget _buildArrowsKeyGroup(BuildContext context, {bool isExpanded = false}) {
     const colWidth = 44.0;
     const rowHeight = 44.0;
@@ -204,9 +305,7 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         ? const Key('terminal_accessory_expanded_key_ARROWS')
         : const Key('terminal_accessory_key_ARROWS');
 
-    final tBgColor = context.colorScheme.surfaceContainerHigh.withValues(
-      alpha: 0.5,
-    );
+    final colors = _getDirectionPadColors(context);
 
     return Semantics(
       key: groupKey,
@@ -220,14 +319,14 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
           textDirection: TextDirection.ltr,
           child: Stack(
             children: [
-              // Inverted-T background: connected top-center 44x44 and bottom 132x44
+              // Inverted-T base: connected top-center 44x44 and bottom 132x44
               Positioned(
                 left: 44,
                 top: 0,
                 width: 44,
                 height: 44,
                 child: Material(
-                  color: tBgColor,
+                  color: colors.baseBgColor,
                   elevation: 0,
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(8),
@@ -241,77 +340,97 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                 width: 132,
                 height: 44,
                 child: Material(
-                  color: tBgColor,
+                  color: colors.baseBgColor,
                   elevation: 0,
                   borderRadius: BorderRadius.circular(8),
                   child: const SizedBox.expand(),
                 ),
               ),
-              // Four 44x44 touch areas
+              // Upper-left and upper-right corners: absorb touch to prevent penetrating to terminal
+              Positioned(
+                left: 0,
+                top: 0,
+                width: 44,
+                height: 44,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {},
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              Positioned(
+                left: 88,
+                top: 0,
+                width: 44,
+                height: 44,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {},
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              // Four 44x44 touch areas with 40x40 visual keys and instant feedback
               Positioned(
                 left: 44,
                 top: 0,
                 width: 44,
                 height: 44,
-                child: _buildPadArrowKey(context, '↑', () => _handleKey('↑')),
+                child: _DirectionPadArrowButton(
+                  label: '↑',
+                  onPressed: () => _handleKey('↑'),
+                  canRepeat: _canRepeat,
+                  idleBgColor: colors.idleBgColor,
+                  idleFgColor: colors.idleFgColor,
+                  activeBgColor: colors.activeBgColor,
+                  activeFgColor: colors.activeFgColor,
+                ),
               ),
               Positioned(
                 left: 0,
                 top: 44,
                 width: 44,
                 height: 44,
-                child: _buildPadArrowKey(context, '←', () => _handleKey('←')),
+                child: _DirectionPadArrowButton(
+                  label: '←',
+                  onPressed: () => _handleKey('←'),
+                  canRepeat: _canRepeat,
+                  idleBgColor: colors.idleBgColor,
+                  idleFgColor: colors.idleFgColor,
+                  activeBgColor: colors.activeBgColor,
+                  activeFgColor: colors.activeFgColor,
+                ),
               ),
               Positioned(
                 left: 44,
                 top: 44,
                 width: 44,
                 height: 44,
-                child: _buildPadArrowKey(context, '↓', () => _handleKey('↓')),
+                child: _DirectionPadArrowButton(
+                  label: '↓',
+                  onPressed: () => _handleKey('↓'),
+                  canRepeat: _canRepeat,
+                  idleBgColor: colors.idleBgColor,
+                  idleFgColor: colors.idleFgColor,
+                  activeBgColor: colors.activeBgColor,
+                  activeFgColor: colors.activeFgColor,
+                ),
               ),
               Positioned(
                 left: 88,
                 top: 44,
                 width: 44,
                 height: 44,
-                child: _buildPadArrowKey(context, '→', () => _handleKey('→')),
+                child: _DirectionPadArrowButton(
+                  label: '→',
+                  onPressed: () => _handleKey('→'),
+                  canRepeat: _canRepeat,
+                  idleBgColor: colors.idleBgColor,
+                  idleFgColor: colors.idleFgColor,
+                  activeBgColor: colors.activeBgColor,
+                  activeFgColor: colors.activeFgColor,
+                ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPadArrowKey(
-    BuildContext context,
-    String label,
-    VoidCallback onPressed,
-  ) {
-    return SizedBox(
-      key: Key('terminal_accessory_key_$label'),
-      width: 44,
-      height: 44,
-      child: Semantics(
-        button: true,
-        label: label,
-        excludeSemantics: true,
-        onTap: onPressed,
-        child: HoldRepeatKey(
-          onPressed: onPressed,
-          canRepeat: _canRepeat,
-          child: Container(
-            color: Colors.transparent,
-            alignment: Alignment.center,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'JetBrains Mono',
-                color: context.colorScheme.onSurfaceVariant,
-              ),
-            ),
           ),
         ),
       ),
@@ -371,7 +490,25 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
 
   @override
   Widget build(BuildContext context) {
-    final pinnedKeys = ref.watch(terminalSettingsProvider).pinnedKeys;
+    final settings = ref.watch(terminalSettingsProvider);
+    final pinnedKeys = settings.pinnedKeys;
+    final mode = settings.directionPadMode;
+
+    final List<String> scrollableKeys;
+    switch (mode) {
+      case TerminalDirectionPadMode.fixed:
+      case TerminalDirectionPadMode.hidden:
+        scrollableKeys = pinnedKeys.where((k) => k != 'ARROWS').toList();
+        break;
+      case TerminalDirectionPadMode.flow:
+        if (pinnedKeys.contains('ARROWS')) {
+          scrollableKeys = pinnedKeys;
+        } else {
+          scrollableKeys = [...pinnedKeys, 'ARROWS'];
+        }
+        break;
+    }
+
     final showFnHint =
         _effectiveFnState != ModifierLockState.inactive || widget.isFnHeld;
 
@@ -416,11 +553,13 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                       Expanded(
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
-                          child: _buildResidentArea(context, pinnedKeys),
+                          child: _buildResidentArea(context, scrollableKeys),
                         ),
                       ),
                       const SizedBox(width: 4),
-                      _buildFixedRightCluster(context),
+                      _buildFixedMoreAndKeyboard(context),
+                      if (mode == TerminalDirectionPadMode.fixed)
+                        _buildArrowsKeyGroup(context),
                     ],
                   ),
                 ),
@@ -432,7 +571,7 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     );
   }
 
-  Widget _buildFixedRightCluster(BuildContext context) {
+  Widget _buildFixedMoreAndKeyboard(BuildContext context) {
     return SizedBox(
       width: 44,
       height: 88,
@@ -448,11 +587,13 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
 
     final btn = Center(
       child: SizedBox(
-        width: 32,
-        height: 32,
+        width: 40,
+        height: 40,
         child: FilledButton.tonal(
           style: FilledButton.styleFrom(
-            minimumSize: const Size(32, 32),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.standard,
+            minimumSize: const Size(40, 40),
             padding: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(6),
@@ -488,8 +629,8 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   Widget _buildMoreButton(BuildContext context) {
     final btn = Center(
       child: SizedBox(
-        width: 32,
-        height: 32,
+        width: 40,
+        height: 40,
         child: FilledButton.tonal(
           key: const Key('terminal_accessory_more_button'),
           style: FilledButton.styleFrom(
@@ -499,7 +640,9 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
             foregroundColor: _isExpanded
                 ? context.colorScheme.onPrimaryContainer
                 : null,
-            minimumSize: const Size(32, 32),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.standard,
+            minimumSize: const Size(40, 40),
             padding: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(6),
@@ -519,12 +662,23 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     return SizedBox(
       width: 44,
       height: 44,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          setState(() => _isExpanded = !_isExpanded);
-        },
-        child: btn,
+      child: Tooltip(
+        message: 'More',
+        child: Semantics(
+          button: true,
+          label: 'More',
+          excludeSemantics: true,
+          onTap: () {
+            setState(() => _isExpanded = !_isExpanded);
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              setState(() => _isExpanded = !_isExpanded);
+            },
+            child: btn,
+          ),
+        ),
       ),
     );
   }
@@ -677,12 +831,14 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
 
     final btn = Center(
       child: SizedBox(
-        height: 32,
+        height: 40,
         child: FilledButton.tonal(
           key: btnKey,
           style: FilledButton.styleFrom(
-            minimumSize: const Size(32, 32),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.standard,
+            minimumSize: const Size(40, 40),
+            padding: const EdgeInsets.symmetric(horizontal: 3),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(6),
             ),
@@ -690,16 +846,13 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
           onPressed: isArrow ? () {} : onPressed,
           child: icon != null
               ? Icon(icon, size: 16)
-              : FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'JetBrains Mono',
-                    ),
+              : Text(
+                  label,
+                  maxLines: 1,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'JetBrains Mono',
                   ),
                 ),
         ),
@@ -718,24 +871,24 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
               child: HoldRepeatKey(
                 onPressed: onPressed,
                 canRepeat: _canRepeat,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  child: btn,
+                child: Padding(
+                  padding: const EdgeInsets.all(2),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    child: btn,
+                  ),
                 ),
               ),
             ),
           )
-        : Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 1),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-              child: SizedBox(
-                height: 44,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onPressed,
-                  child: btn,
-                ),
+        : ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            child: SizedBox(
+              height: 44,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onPressed,
+                child: Padding(padding: const EdgeInsets.all(2), child: btn),
               ),
             ),
           );
@@ -857,9 +1010,9 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     _ExpandedCategory category,
   ) {
     if (category == _ExpandedCategory.nav) {
-      final pinnedKeys = ref.watch(terminalSettingsProvider).pinnedKeys;
+      final mode = ref.watch(terminalSettingsProvider).directionPadMode;
       return [
-        if (!pinnedKeys.contains('ARROWS'))
+        if (mode == TerminalDirectionPadMode.hidden)
           _buildPinnedKey(context, 'ARROWS', isExpanded: true),
         ...const ['HOME', 'END', 'PGUP', 'PGDN'].map(
           (key) => _buildKey(context, key, onPressed: () => _handleKey(key)),
@@ -966,14 +1119,16 @@ class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
 
     final btn = Center(
       child: SizedBox(
-        height: 32,
+        height: 40,
         child: FilledButton.tonal(
           key: widget.buttonKey,
           style: FilledButton.styleFrom(
             backgroundColor: bgColor,
             foregroundColor: fgColor,
-            minimumSize: const Size(32, 32),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.standard,
+            minimumSize: const Size(40, 40),
+            padding: const EdgeInsets.symmetric(horizontal: 3),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(6),
             ),
@@ -989,32 +1144,34 @@ class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
           onLongPress: widget.onModifierDown != null
               ? null
               : widget.onLongPress,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
             children: [
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    widget.label,
-                    maxLines: 1,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'JetBrains Mono',
-                    ),
-                  ),
+              Text(
+                widget.label,
+                maxLines: 1,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'JetBrains Mono',
                 ),
               ),
-              if (isLocked) ...[
-                const SizedBox(width: 2),
-                const Icon(Icons.lock, size: 11),
-              ],
+              if (isLocked)
+                Positioned(
+                  top: -2,
+                  right: -4,
+                  child: Icon(Icons.lock, size: 8, color: fgColor),
+                ),
             ],
           ),
         ),
       ),
+    );
+
+    final paddedChild = Padding(
+      padding: const EdgeInsets.all(2),
+      child: Center(child: btn),
     );
 
     final interactive = widget.onModifierDown != null
@@ -1067,22 +1224,92 @@ class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
                 });
               }
             },
-            child: Center(child: btn),
+            child: paddedChild,
           )
         : GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: widget.onTap,
             onLongPress: widget.onLongPress,
-            child: Center(child: btn),
+            child: paddedChild,
           );
 
     return Tooltip(
       message: widget.tooltip,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 1),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-          child: SizedBox(height: 44, child: interactive),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+        child: SizedBox(height: 44, child: interactive),
+      ),
+    );
+  }
+}
+
+class _DirectionPadArrowButton extends StatefulWidget {
+  final String label;
+  final VoidCallback onPressed;
+  final bool Function()? canRepeat;
+  final Color idleBgColor;
+  final Color idleFgColor;
+  final Color activeBgColor;
+  final Color activeFgColor;
+
+  const _DirectionPadArrowButton({
+    required this.label,
+    required this.onPressed,
+    this.canRepeat,
+    required this.idleBgColor,
+    required this.idleFgColor,
+    required this.activeBgColor,
+    required this.activeFgColor,
+  });
+
+  @override
+  State<_DirectionPadArrowButton> createState() =>
+      _DirectionPadArrowButtonState();
+}
+
+class _DirectionPadArrowButtonState extends State<_DirectionPadArrowButton> {
+  bool _isHeld = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = _isHeld ? widget.activeBgColor : widget.idleBgColor;
+    final fgColor = _isHeld ? widget.activeFgColor : widget.idleFgColor;
+
+    return SizedBox(
+      key: Key('terminal_accessory_key_${widget.label}'),
+      width: 44,
+      height: 44,
+      child: Semantics(
+        button: true,
+        label: widget.label,
+        excludeSemantics: true,
+        onTap: widget.onPressed,
+        child: HoldRepeatKey(
+          onPressed: widget.onPressed,
+          canRepeat: widget.canRepeat,
+          onHoldChanged: (held) {
+            if (mounted && _isHeld != held) {
+              setState(() => _isHeld = held);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: Material(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(6),
+              child: Center(
+                child: Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'JetBrains Mono',
+                    color: fgColor,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

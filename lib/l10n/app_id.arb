@@ -110,6 +110,32 @@
   "terminalKeyArrows": "Tombol Panah",
   "terminalDirectionPad": "Pad Arah",
   "terminalCloseDirectionPad": "Tutup pad arah",
+  "terminalDirectionPadModeFixed": "Tetap di Kanan",
+  "terminalDirectionPadModeFlow": "Gulir dengan Tombol",
+  "terminalDirectionPadModeHidden": "Tersembunyi",
+  "terminalDirectionKeyColor": "Warna Tombol Arah",
+  "terminalDirectionKeyColorDefault": "Ikuti Tema",
+  "terminalDirectionKeyColorReset": "Reset ke Tema",
+  "terminalAccessorySaveFailed": "Gagal menyimpan pengaturan bilah aksesori",
+  "terminalDirectionKeyNormal": "Normal",
+  "terminalDirectionKeyPressed": "Ditekan",
+  "terminalPinnedKeysCount": "{count, plural, other{Disematkan ({count})}}",
+  "terminalNoPinnedKeys": "Tidak ada tombol yang disematkan",
+  "terminalAvailableKeysCount": "{count, plural, other{Tersedia untuk Ditambahkan ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "Jalur Saat Ini",
   "sftpUpload": "Unggah",
   "sftpNewFolder": "Folder Baru",

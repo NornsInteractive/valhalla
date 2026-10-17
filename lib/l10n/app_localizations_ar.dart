@@ -244,6 +244,66 @@ class AppLocalizationsAr extends AppLocalizations {
   String get terminalCloseDirectionPad => 'إغلاق لوحة الاتجاهات';
 
   @override
+  String get terminalDirectionPadModeFixed => 'ثابت على اليمين';
+
+  @override
+  String get terminalDirectionPadModeFlow => 'التمرير مع المفاتيح';
+
+  @override
+  String get terminalDirectionPadModeHidden => 'مخفي';
+
+  @override
+  String get terminalDirectionKeyColor => 'لون مفاتيح الاتجاه';
+
+  @override
+  String get terminalDirectionKeyColorDefault => 'اتباع السمة';
+
+  @override
+  String get terminalDirectionKeyColorReset => 'إعادة التعيين إلى السمة';
+
+  @override
+  String get terminalAccessorySaveFailed => 'فشل حفظ إعدادات شريط الأدوات';
+
+  @override
+  String get terminalDirectionKeyNormal => 'عادي';
+
+  @override
+  String get terminalDirectionKeyPressed => 'مضغوط';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'مثبتة ($count)',
+      many: 'مثبتة ($count)',
+      few: 'مثبتة ($count)',
+      two: 'مثبتة (2)',
+      one: 'مثبتة (1)',
+      zero: 'مثبتة (0)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => 'لا توجد مفاتيح مثبتة';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'متاح للإضافة ($count)',
+      many: 'متاح للإضافة ($count)',
+      few: 'متاح للإضافة ($count)',
+      two: 'متاح للإضافة (2)',
+      one: 'متاح للإضافة (1)',
+      zero: 'متاح للإضافة (0)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => 'المسار الحالي';
 
   @override

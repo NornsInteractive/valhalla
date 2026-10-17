@@ -565,6 +565,78 @@ abstract class AppLocalizations {
   /// **'Close Direction Pad'**
   String get terminalCloseDirectionPad;
 
+  /// No description provided for @terminalDirectionPadModeFixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed on Right'**
+  String get terminalDirectionPadModeFixed;
+
+  /// No description provided for @terminalDirectionPadModeFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Flow with Keys'**
+  String get terminalDirectionPadModeFlow;
+
+  /// No description provided for @terminalDirectionPadModeHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get terminalDirectionPadModeHidden;
+
+  /// No description provided for @terminalDirectionKeyColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Direction Key Color'**
+  String get terminalDirectionKeyColor;
+
+  /// No description provided for @terminalDirectionKeyColorDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow Theme'**
+  String get terminalDirectionKeyColorDefault;
+
+  /// No description provided for @terminalDirectionKeyColorReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to Theme'**
+  String get terminalDirectionKeyColorReset;
+
+  /// No description provided for @terminalAccessorySaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save accessory bar settings'**
+  String get terminalAccessorySaveFailed;
+
+  /// No description provided for @terminalDirectionKeyNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get terminalDirectionKeyNormal;
+
+  /// No description provided for @terminalDirectionKeyPressed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pressed'**
+  String get terminalDirectionKeyPressed;
+
+  /// No description provided for @terminalPinnedKeysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Pinned ({count})} other{Pinned ({count})}}'**
+  String terminalPinnedKeysCount(int count);
+
+  /// No description provided for @terminalNoPinnedKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'No pinned keys'**
+  String get terminalNoPinnedKeys;
+
+  /// No description provided for @terminalAvailableKeysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Available to Add ({count})} other{Available to Add ({count})}}'**
+  String terminalAvailableKeysCount(int count);
+
   /// No description provided for @sftpCurrentPath.
   ///
   /// In en, this message translates to:

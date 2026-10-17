@@ -244,6 +244,63 @@ class AppLocalizationsRu extends AppLocalizations {
   String get terminalCloseDirectionPad => 'Закрыть кнопки направления';
 
   @override
+  String get terminalDirectionPadModeFixed => 'Справа (фиксировано)';
+
+  @override
+  String get terminalDirectionPadModeFlow => 'Прокрутка с клавишами';
+
+  @override
+  String get terminalDirectionPadModeHidden => 'Скрыто';
+
+  @override
+  String get terminalDirectionKeyColor => 'Цвет клавиш со стрелками';
+
+  @override
+  String get terminalDirectionKeyColorDefault => 'Как в теме';
+
+  @override
+  String get terminalDirectionKeyColorReset => 'Сбросить на тему';
+
+  @override
+  String get terminalAccessorySaveFailed =>
+      'Не удалось сохранить настройки панели клавиш';
+
+  @override
+  String get terminalDirectionKeyNormal => 'Обычный';
+
+  @override
+  String get terminalDirectionKeyPressed => 'Нажато';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Закреплено ($count)',
+      many: 'Закреплено ($count)',
+      few: 'Закреплено ($count)',
+      one: 'Закреплено ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => 'Нет закрепленных клавиш';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Доступно для добавления ($count)',
+      many: 'Доступно для добавления ($count)',
+      few: 'Доступно для добавления ($count)',
+      one: 'Доступно для добавления ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => 'Текущий путь';
 
   @override

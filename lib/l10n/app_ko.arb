@@ -110,6 +110,32 @@
   "terminalKeyArrows": "방향키",
   "terminalDirectionPad": "방향 패드",
   "terminalCloseDirectionPad": "방향 패드 닫기",
+  "terminalDirectionPadModeFixed": "우측 고정",
+  "terminalDirectionPadModeFlow": "단축키와 함께 스크롤",
+  "terminalDirectionPadModeHidden": "숨김",
+  "terminalDirectionKeyColor": "방향키 색상",
+  "terminalDirectionKeyColorDefault": "테마 따르기",
+  "terminalDirectionKeyColorReset": "테마 색상으로 초기화",
+  "terminalAccessorySaveFailed": "단축키 바 설정 저장에 실패했습니다",
+  "terminalDirectionKeyNormal": "기본",
+  "terminalDirectionKeyPressed": "누름",
+  "terminalPinnedKeysCount": "{count, plural, other{고정됨 ({count})}}",
+  "terminalNoPinnedKeys": "고정된 키 없음",
+  "terminalAvailableKeysCount": "{count, plural, other{추가 가능 ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "현재 경로",
   "sftpUpload": "업로드",
   "sftpNewFolder": "새 폴더",

@@ -110,6 +110,32 @@
   "terminalKeyArrows": "Phím mũi tên",
   "terminalDirectionPad": "Bàn phím điều hướng",
   "terminalCloseDirectionPad": "Đóng bàn phím điều hướng",
+  "terminalDirectionPadModeFixed": "Cố định bên phải",
+  "terminalDirectionPadModeFlow": "Cuộn cùng các phím",
+  "terminalDirectionPadModeHidden": "Ẩn",
+  "terminalDirectionKeyColor": "Màu phím điều hướng",
+  "terminalDirectionKeyColorDefault": "Theo chủ đề",
+  "terminalDirectionKeyColorReset": "Đặt lại theo chủ đề",
+  "terminalAccessorySaveFailed": "Lưu cài đặt thanh phím tắt thất bại",
+  "terminalDirectionKeyNormal": "Bình thường",
+  "terminalDirectionKeyPressed": "Đã nhấn",
+  "terminalPinnedKeysCount": "{count, plural, other{Đã ghim ({count})}}",
+  "terminalNoPinnedKeys": "Chưa có phím nào được ghim",
+  "terminalAvailableKeysCount": "{count, plural, other{Khả dụng để thêm ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "Đường dẫn hiện tại",
   "sftpUpload": "Tải lên",
   "sftpNewFolder": "Thư mục mới",

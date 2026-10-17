@@ -243,6 +243,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String get terminalCloseDirectionPad => 'Close Direction Pad';
 
   @override
+  String get terminalDirectionPadModeFixed => 'Fixed on Right';
+
+  @override
+  String get terminalDirectionPadModeFlow => 'Flow with Keys';
+
+  @override
+  String get terminalDirectionPadModeHidden => 'Hidden';
+
+  @override
+  String get terminalDirectionKeyColor => 'Direction Key Color';
+
+  @override
+  String get terminalDirectionKeyColorDefault => 'Follow Theme';
+
+  @override
+  String get terminalDirectionKeyColorReset => 'Reset to Theme';
+
+  @override
+  String get terminalAccessorySaveFailed =>
+      'Failed to save accessory bar settings';
+
+  @override
+  String get terminalDirectionKeyNormal => 'Normal';
+
+  @override
+  String get terminalDirectionKeyPressed => 'Pressed';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pinned ($count)',
+      one: 'Pinned ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => 'No pinned keys';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Available to Add ($count)',
+      one: 'Available to Add ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => 'Current Path';
 
   @override

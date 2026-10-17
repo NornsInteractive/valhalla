@@ -244,6 +244,57 @@ class AppLocalizationsTh extends AppLocalizations {
   String get terminalCloseDirectionPad => 'ปิดแผงปุ่มทิศทาง';
 
   @override
+  String get terminalDirectionPadModeFixed => 'ตรึงไว้ทางขวา';
+
+  @override
+  String get terminalDirectionPadModeFlow => 'เลื่อนไปพร้อมปุ่มลัด';
+
+  @override
+  String get terminalDirectionPadModeHidden => 'ซ่อน';
+
+  @override
+  String get terminalDirectionKeyColor => 'สีของปุ่มลูกศร';
+
+  @override
+  String get terminalDirectionKeyColorDefault => 'ตามธีม';
+
+  @override
+  String get terminalDirectionKeyColorReset => 'รีเซ็ตเป็นค่าตามธีม';
+
+  @override
+  String get terminalAccessorySaveFailed =>
+      'บันทึกการตั้งค่าแถบปุ่มลัดไม่สำเร็จ';
+
+  @override
+  String get terminalDirectionKeyNormal => 'ปกติ';
+
+  @override
+  String get terminalDirectionKeyPressed => 'เมื่อกด';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ปักหมุดแล้ว ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => 'ไม่มีปุ่มที่ปักหมุด';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'พร้อมให้เพิ่ม ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => 'เส้นทางปัจจุบัน';
 
   @override

@@ -110,6 +110,32 @@
   "terminalKeyArrows": "ปุ่มลูกศร",
   "terminalDirectionPad": "แผงปุ่มทิศทาง",
   "terminalCloseDirectionPad": "ปิดแผงปุ่มทิศทาง",
+  "terminalDirectionPadModeFixed": "ตรึงไว้ทางขวา",
+  "terminalDirectionPadModeFlow": "เลื่อนไปพร้อมปุ่มลัด",
+  "terminalDirectionPadModeHidden": "ซ่อน",
+  "terminalDirectionKeyColor": "สีของปุ่มลูกศร",
+  "terminalDirectionKeyColorDefault": "ตามธีม",
+  "terminalDirectionKeyColorReset": "รีเซ็ตเป็นค่าตามธีม",
+  "terminalAccessorySaveFailed": "บันทึกการตั้งค่าแถบปุ่มลัดไม่สำเร็จ",
+  "terminalDirectionKeyNormal": "ปกติ",
+  "terminalDirectionKeyPressed": "เมื่อกด",
+  "terminalPinnedKeysCount": "{count, plural, other{ปักหมุดแล้ว ({count})}}",
+  "terminalNoPinnedKeys": "ไม่มีปุ่มที่ปักหมุด",
+  "terminalAvailableKeysCount": "{count, plural, other{พร้อมให้เพิ่ม ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "เส้นทางปัจจุบัน",
   "sftpUpload": "อัปโหลด",
   "sftpNewFolder": "โฟลเดอร์ใหม่",

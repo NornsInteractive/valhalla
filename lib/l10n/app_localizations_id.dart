@@ -245,6 +245,57 @@ class AppLocalizationsId extends AppLocalizations {
   String get terminalCloseDirectionPad => 'Tutup pad arah';
 
   @override
+  String get terminalDirectionPadModeFixed => 'Tetap di Kanan';
+
+  @override
+  String get terminalDirectionPadModeFlow => 'Gulir dengan Tombol';
+
+  @override
+  String get terminalDirectionPadModeHidden => 'Tersembunyi';
+
+  @override
+  String get terminalDirectionKeyColor => 'Warna Tombol Arah';
+
+  @override
+  String get terminalDirectionKeyColorDefault => 'Ikuti Tema';
+
+  @override
+  String get terminalDirectionKeyColorReset => 'Reset ke Tema';
+
+  @override
+  String get terminalAccessorySaveFailed =>
+      'Gagal menyimpan pengaturan bilah aksesori';
+
+  @override
+  String get terminalDirectionKeyNormal => 'Normal';
+
+  @override
+  String get terminalDirectionKeyPressed => 'Ditekan';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Disematkan ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => 'Tidak ada tombol yang disematkan';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Tersedia untuk Ditambahkan ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => 'Jalur Saat Ini';
 
   @override

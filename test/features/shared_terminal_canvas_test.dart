@@ -785,7 +785,13 @@ void main() {
       await tester.pumpAndSettle();
 
       // 追加一个未固定的键。
-      await tester.tap(find.widgetWithText(ActionChip, '↑'));
+      // 对话框 content 是 maxHeight:560 的 SingleChildScrollView，方向区/配色
+      // 段落把「可用键」Wrap 顶到折叠线以下，必须先滚到可见处再点击。
+      final availableUp = find.widgetWithText(ActionChip, '↑');
+      expect(availableUp, findsOneWidget, reason: '可用键区必须提供 ↑');
+      await tester.ensureVisible(availableUp);
+      await tester.pumpAndSettle();
+      await tester.tap(availableUp);
       await tester.pumpAndSettle();
       expect(notifier.saved, isEmpty, reason: '未点保存前不得落库');
 
@@ -800,6 +806,20 @@ void main() {
       expect(dragHandle, findsOneWidget, reason: 'ESC 行必须暴露拖拽把手');
       final lastRow = find.byKey(const ValueKey('pinned_↑'));
       expect(lastRow, findsOneWidget, reason: '追加的 ↑ 应是当前末行');
+      // 点 ↑ 后滚动停在底部，滚回来让 ESC 把手和末行都回到真实可视列表，
+      // 后面所有坐标都在可见几何上重新取值，仍然走真实拖拽，不直接调 onReorder。
+      await tester.ensureVisible(dragHandle);
+      await tester.pumpAndSettle();
+      final handleVisible = tester
+          .hitTestOnBinding(tester.getCenter(dragHandle))
+          .path
+          .any((entry) => entry.target == tester.renderObject(dragHandle));
+      expect(handleVisible, isTrue, reason: 'ESC 把手必须在可视列表内可命中');
+      final lastRowVisible = tester
+          .hitTestOnBinding(tester.getCenter(lastRow))
+          .path
+          .any((entry) => entry.target == tester.renderObject(lastRow));
+      expect(lastRowVisible, isTrue, reason: '末行必须在可视列表内可命中');
       final lastRowBottom = tester.getRect(lastRow).bottom;
       final lastRowHeight = tester.getRect(lastRow).height;
       final midRowTAB = tester
@@ -881,7 +901,12 @@ void main() {
 
       expect(notifier.saved, hasLength(1));
       expect(find.byType(CustomizePinnedKeysDialog), findsOneWidget);
-      expect(find.textContaining('Failed to save pinned keys'), findsOneWidget);
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(
+        find.text(l10n.terminalAccessorySaveFailed),
+        findsOneWidget,
+        reason: '失败提示必须走 terminalAccessorySaveFailed 本地化串',
+      );
       expect(tester.takeException(), isNull);
     });
   });
@@ -1051,7 +1076,7 @@ Widget _canvas(
   );
 }
 
-/// 记录 setPinnedKeys 调用的 notifier，可选模拟落盘失败。
+/// 记录 setPinnedKeys / setAccessorySettings 调用的 notifier，可选模拟落盘失败。
 class _RecordingPinnedNotifier extends TerminalSettingsNotifier {
   _RecordingPinnedNotifier({this.failing = false});
 
@@ -1072,6 +1097,24 @@ class _RecordingPinnedNotifier extends TerminalSettingsNotifier {
       throw StateError('storage offline');
     }
     state = state.copyWith(pinnedKeys: List.unmodifiable(keys));
+  }
+
+  @override
+  Future<void> setAccessorySettings({
+    required List<String> pinnedKeys,
+    required TerminalDirectionPadMode directionPadMode,
+    required int? directionKeySeedColorValue,
+  }) async {
+    saved.add(List.of(pinnedKeys));
+    if (failing) {
+      throw StateError('storage offline');
+    }
+    state = state.copyWith(
+      pinnedKeys: List.unmodifiable(pinnedKeys),
+      directionPadMode: directionPadMode,
+      directionKeySeedColorValue: directionKeySeedColorValue,
+      clearDirectionKeySeedColor: directionKeySeedColorValue == null,
+    );
   }
 }
 

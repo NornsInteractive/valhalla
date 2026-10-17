@@ -244,6 +244,59 @@ class AppLocalizationsIt extends AppLocalizations {
   String get terminalCloseDirectionPad => 'Chiudi pad direzionale';
 
   @override
+  String get terminalDirectionPadModeFixed => 'Fisso a destra';
+
+  @override
+  String get terminalDirectionPadModeFlow => 'Scorri con i tasti';
+
+  @override
+  String get terminalDirectionPadModeHidden => 'Nascosto';
+
+  @override
+  String get terminalDirectionKeyColor => 'Colore tasti di direzione';
+
+  @override
+  String get terminalDirectionKeyColorDefault => 'Segui il tema';
+
+  @override
+  String get terminalDirectionKeyColorReset => 'Ripristina al tema';
+
+  @override
+  String get terminalAccessorySaveFailed =>
+      'Impossibile salvare le impostazioni della barra accessori';
+
+  @override
+  String get terminalDirectionKeyNormal => 'Normale';
+
+  @override
+  String get terminalDirectionKeyPressed => 'Premuto';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Fissate ($count)',
+      one: 'Fissate ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => 'Nessun tasto fissato';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Disponibili da aggiungere ($count)',
+      one: 'Disponibili da aggiungere ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => 'Percorso corrente';
 
   @override

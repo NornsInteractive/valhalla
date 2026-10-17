@@ -235,6 +235,56 @@ class AppLocalizationsZh extends AppLocalizations {
   String get terminalCloseDirectionPad => '关闭方向盘';
 
   @override
+  String get terminalDirectionPadModeFixed => '固定最右';
+
+  @override
+  String get terminalDirectionPadModeFlow => '随常用键滚动';
+
+  @override
+  String get terminalDirectionPadModeHidden => '隐藏';
+
+  @override
+  String get terminalDirectionKeyColor => '方向键配色';
+
+  @override
+  String get terminalDirectionKeyColorDefault => '跟随主题';
+
+  @override
+  String get terminalDirectionKeyColorReset => '恢复跟随主题';
+
+  @override
+  String get terminalAccessorySaveFailed => '保存快捷栏设置失败';
+
+  @override
+  String get terminalDirectionKeyNormal => '常规';
+
+  @override
+  String get terminalDirectionKeyPressed => '按下';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已固定 ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => '暂无固定按键';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '可添加按键 ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => '当前工作路径';
 
   @override
@@ -5790,6 +5840,56 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get terminalCloseDirectionPad => '關閉方向盤';
+
+  @override
+  String get terminalDirectionPadModeFixed => '固定最右';
+
+  @override
+  String get terminalDirectionPadModeFlow => '隨常用鍵滾動';
+
+  @override
+  String get terminalDirectionPadModeHidden => '隱藏';
+
+  @override
+  String get terminalDirectionKeyColor => '方向鍵配色';
+
+  @override
+  String get terminalDirectionKeyColorDefault => '跟隨主題';
+
+  @override
+  String get terminalDirectionKeyColorReset => '恢復跟隨主題';
+
+  @override
+  String get terminalAccessorySaveFailed => '儲存快捷列設定失敗';
+
+  @override
+  String get terminalDirectionKeyNormal => '常規';
+
+  @override
+  String get terminalDirectionKeyPressed => '按下';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已固定 ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => '暫無固定按鍵';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '可新增按鍵 ($count)',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get sftpCurrentPath => '當前工作路徑';

@@ -110,6 +110,32 @@
   "terminalKeyArrows": "矢印キー",
   "terminalDirectionPad": "方向パッド",
   "terminalCloseDirectionPad": "方向パッドを閉じる",
+  "terminalDirectionPadModeFixed": "右側に固定",
+  "terminalDirectionPadModeFlow": "キーと一緒にスクロール",
+  "terminalDirectionPadModeHidden": "非表示",
+  "terminalDirectionKeyColor": "方向キーの色",
+  "terminalDirectionKeyColorDefault": "テーマに従う",
+  "terminalDirectionKeyColorReset": "テーマ色にリセット",
+  "terminalAccessorySaveFailed": "アクセサリーバーの設定の保存に失敗しました",
+  "terminalDirectionKeyNormal": "通常",
+  "terminalDirectionKeyPressed": "押下時",
+  "terminalPinnedKeysCount": "{count, plural, other{固定済み ({count})}}",
+  "terminalNoPinnedKeys": "固定されたキーはありません",
+  "terminalAvailableKeysCount": "{count, plural, other{追加可能 ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "現在のパス",
   "sftpUpload": "アップロード",
   "sftpNewFolder": "新規フォルダー",

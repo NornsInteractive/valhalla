@@ -245,6 +245,57 @@ class AppLocalizationsVi extends AppLocalizations {
   String get terminalCloseDirectionPad => 'Đóng bàn phím điều hướng';
 
   @override
+  String get terminalDirectionPadModeFixed => 'Cố định bên phải';
+
+  @override
+  String get terminalDirectionPadModeFlow => 'Cuộn cùng các phím';
+
+  @override
+  String get terminalDirectionPadModeHidden => 'Ẩn';
+
+  @override
+  String get terminalDirectionKeyColor => 'Màu phím điều hướng';
+
+  @override
+  String get terminalDirectionKeyColorDefault => 'Theo chủ đề';
+
+  @override
+  String get terminalDirectionKeyColorReset => 'Đặt lại theo chủ đề';
+
+  @override
+  String get terminalAccessorySaveFailed =>
+      'Lưu cài đặt thanh phím tắt thất bại';
+
+  @override
+  String get terminalDirectionKeyNormal => 'Bình thường';
+
+  @override
+  String get terminalDirectionKeyPressed => 'Đã nhấn';
+
+  @override
+  String terminalPinnedKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã ghim ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get terminalNoPinnedKeys => 'Chưa có phím nào được ghim';
+
+  @override
+  String terminalAvailableKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Khả dụng để thêm ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get sftpCurrentPath => 'Đường dẫn hiện tại';
 
   @override

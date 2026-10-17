@@ -94,6 +94,32 @@
   "terminalKeyArrows": "Arrow Keys",
   "terminalDirectionPad": "Direction Pad",
   "terminalCloseDirectionPad": "Close Direction Pad",
+  "terminalDirectionPadModeFixed": "Fixed on Right",
+  "terminalDirectionPadModeFlow": "Flow with Keys",
+  "terminalDirectionPadModeHidden": "Hidden",
+  "terminalDirectionKeyColor": "Direction Key Color",
+  "terminalDirectionKeyColorDefault": "Follow Theme",
+  "terminalDirectionKeyColorReset": "Reset to Theme",
+  "terminalAccessorySaveFailed": "Failed to save accessory bar settings",
+  "terminalDirectionKeyNormal": "Normal",
+  "terminalDirectionKeyPressed": "Pressed",
+  "terminalPinnedKeysCount": "{count, plural, =1{Pinned ({count})} other{Pinned ({count})}}",
+  "terminalNoPinnedKeys": "No pinned keys",
+  "terminalAvailableKeysCount": "{count, plural, =1{Available to Add ({count})} other{Available to Add ({count})}}",
+  "@terminalPinnedKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@terminalAvailableKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sftpCurrentPath": "Current Path",
   "sftpUpload": "Upload",
   "sftpNewFolder": "New Folder",
