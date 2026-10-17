@@ -248,6 +248,24 @@ class LocalStorageService {
     }
   }
 
+  static const _keyTerminalGrid = 'valhalla_terminal_grid_v1';
+
+  String? getTerminalGridConfig() {
+    final raw = _prefs.get(_keyTerminalGrid);
+    return raw is String ? raw : null;
+  }
+
+  Future<void> setTerminalGridConfig(String json) async {
+    try {
+      if (!await _prefs.setString(_keyTerminalGrid, json)) {
+        throw StateError('SETTINGS_SAVE_FAILED');
+      }
+    } catch (_) {
+      await _prefs.reload();
+      rethrow;
+    }
+  }
+
   bool getAutomaticUpdateCheck() =>
       _prefs.getBool('valhalla_update_auto_v1') ?? true;
   Future<void> setAutomaticUpdateCheck(bool value) async {
@@ -423,6 +441,7 @@ class LocalStorageService {
     _keyTerminalFontSize: 'int',
     'valhalla_terminal_pinned_keys_v1': 'strings',
     _keyTerminalAccessory: 'string',
+    _keyTerminalGrid: 'string',
     'valhalla_update_auto_v1': 'bool',
     _keyCliHistoryPageSize: 'int',
     _keyFileSortKey: 'string',
