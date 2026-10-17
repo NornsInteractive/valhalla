@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
+import '../../../core/providers/storage_providers.dart';
 import '../../../core/providers/terminal_settings_provider.dart';
 import '../../../core/utils/terminal_keys.dart';
 import 'terminal_accessory_bar.dart';
@@ -193,23 +195,76 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
         _modifierStates[mod] != ModifierLockState.inactive,
   );
 
+  bool _isImeOpen = false;
+  late double _accessoryBarHeight;
+
+  double _getInitialAccessoryHeight() {
+    try {
+      final storage = ref.read(localStorageServiceProvider);
+      final raw = storage.getTerminalGridConfig();
+      if (raw != null && raw.isNotEmpty) {
+        final data = jsonDecode(raw) as Map<String, dynamic>;
+        final rows = (data['rows'] as num?)?.toInt() ?? 2;
+        return TerminalAccessoryBar.calculateBaseHeight(rows);
+      }
+    } catch (_) {}
+    return TerminalAccessoryBar.calculateBaseHeight(2);
+  }
+
+  void _onAccessoryHeightChanged(double newHeight) {
+    if (_accessoryBarHeight != newHeight && mounted) {
+      setState(() {
+        _accessoryBarHeight = newHeight;
+      });
+    }
+  }
+
   void requestKeyboard() {
+    _isImeOpen = true;
     _terminalViewKey.currentState?.requestKeyboard();
+    if (mounted) setState(() {});
   }
 
   void closeKeyboard() {
+    _isImeOpen = false;
     _terminalViewKey.currentState?.closeKeyboard();
+    if (mounted) setState(() {});
   }
 
   void _toggleKeyboard() {
     final currentState = _terminalViewKey.currentState;
-    if (currentState != null) {
-      if (currentState.hasInputConnection) {
-        currentState.closeKeyboard();
-      } else {
-        currentState.requestKeyboard();
-      }
+    if (currentState == null) return;
+
+    final insets = View.maybeOf(context)?.viewInsets.bottom ?? 0.0;
+    final isActuallyVisible = insets > 0 || _isImeOpen;
+
+    if (isActuallyVisible) {
+      _isImeOpen = false;
+      currentState.closeKeyboard();
+    } else {
+      _isImeOpen = true;
+      currentState.closeKeyboard();
+      currentState.requestKeyboard();
     }
+    setState(() {});
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (!mounted) return;
+    try {
+      final view = View.maybeOf(context);
+      if (view != null) {
+        final insets = view.viewInsets.bottom;
+        final isVisible = insets > 0;
+        if (_isImeOpen != isVisible) {
+          setState(() {
+            _isImeOpen = isVisible;
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   void _resetModifiers() {
@@ -230,6 +285,7 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _accessoryBarHeight = _getInitialAccessoryHeight();
     _effectiveFocusNode.addListener(_onFocusChanged);
     if (widget.isCtrlActive == true) {
       _modifierStates['CTRL'] = ModifierLockState.oneShot;
@@ -243,6 +299,12 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   void _onFocusChanged() {
     if (!_effectiveFocusNode.hasFocus) {
       _resetModifiers();
+      try {
+        final insets = View.maybeOf(context)?.viewInsets.bottom ?? 0.0;
+        if (insets == 0 && _isImeOpen) {
+          _isImeOpen = false;
+        }
+      } catch (_) {}
       setState(() {});
     }
   }
@@ -674,124 +736,146 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
     // 叶子节点 watch 字号：设置里拖动滑块时画布直接重渲染，不惊动
     // Terminal 状态与桥接层；PTY 尺寸由 TerminalView 的 onResize 自动跟进。
     final fontSize = ref.watch(terminalSettingsProvider).fontSize;
-    return Column(
+
+    final accessoryBar = widget.showAccessoryBar
+        ? TerminalAccessoryBar(
+            onKey: _handleKey,
+            onToggleCtrl: () => _toggleModifier('CTRL'),
+            onLockCtrl: () => _lockModifier('CTRL'),
+            onToggleAlt: () => _toggleModifier('ALT'),
+            onLockAlt: () => _lockModifier('ALT'),
+            onToggleShift: () => _toggleModifier('SHIFT'),
+            onLockShift: () => _lockModifier('SHIFT'),
+            onToggleFn: () => _toggleModifier('FN'),
+            onLockFn: () => _lockModifier('FN'),
+            onModifierDown: _handleModifierDown,
+            onModifierUp: _handleModifierUp,
+            onModifierCancel: _handleModifierCancel,
+            onPaste: () => _handlePasteText(),
+            onToggleKeyboard: _toggleKeyboard,
+            isKeyboardActive: _isImeOpen,
+            onHeightChanged: _onAccessoryHeightChanged,
+            ctrlState: _modifierStates['CTRL'],
+            altState: _modifierStates['ALT'],
+            shiftState: _modifierStates['SHIFT'],
+            fnState: _modifierStates['FN'],
+            isCtrlHeld: _modifierHeld['CTRL']!,
+            isAltHeld: _modifierHeld['ALT']!,
+            isShiftHeld: _modifierHeld['SHIFT']!,
+            isFnHeld: _modifierHeld['FN']!,
+            pinKeyboardButtonTrailing: widget.pinKeyboardButtonTrailing,
+          )
+        : null;
+
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final safeAreaBottom = mediaQuery?.padding.bottom ?? 0.0;
+    final keyboardInset = mediaQuery?.viewInsets.bottom ?? 0.0;
+    final effectiveBottomSpace = widget.showAccessoryBar
+        ? (_accessoryBarHeight + (keyboardInset > 0 ? 0.0 : safeAreaBottom))
+        : 0.0;
+
+    return Stack(
       children: [
-        Expanded(
-          child: Stack(
-            children: [
-              Container(
-                color: widget.backgroundColor ?? Colors.black,
-                child: TerminalView(
-                  key: _terminalViewKey,
-                  widget.terminal,
-                  controller: _controller,
-                  focusNode: _effectiveFocusNode,
-                  autofocus: widget.autofocus,
-                  requestKeyboardOnTap: widget.requestKeyboardOnTap,
-                  onPasteText: _handlePasteText,
-                  onTextInput: _handleTextInput,
-                  onKeyEvent: _handlePhysicalKeyEvent,
-                  textStyle:
-                      widget.textStyle ??
-                      TerminalStyle(
-                        fontSize: fontSize.toDouble(),
-                        fontFamily: 'JetBrains Mono',
-                      ),
-                  padding: widget.padding ?? const EdgeInsets.all(8),
-                ),
-              ),
-              if (_hasSelection)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: ExcludeFocus(
-                    excluding: true,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.35),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextButton.icon(
-                              key: const Key('terminal_copy_selection_button'),
-                              onPressed: _copySelection,
-                              icon: const Icon(Icons.copy, size: 14),
-                              label: Text(
-                                context.l10n.terminalCopySelection,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
+        Column(
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  Container(
+                    color: widget.backgroundColor ?? Colors.black,
+                    child: TerminalView(
+                      key: _terminalViewKey,
+                      widget.terminal,
+                      controller: _controller,
+                      focusNode: _effectiveFocusNode,
+                      autofocus: widget.autofocus,
+                      requestKeyboardOnTap: widget.requestKeyboardOnTap,
+                      onPasteText: _handlePasteText,
+                      onTextInput: _handleTextInput,
+                      onKeyEvent: _handlePhysicalKeyEvent,
+                      textStyle:
+                          widget.textStyle ??
+                          TerminalStyle(
+                            fontSize: fontSize.toDouble(),
+                            fontFamily: 'JetBrains Mono',
+                          ),
+                      padding: widget.padding ?? const EdgeInsets.all(8),
+                    ),
+                  ),
+                  if (_hasSelection)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: ExcludeFocus(
+                        excluding: true,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.35),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
                                 ),
-                              ),
-                              style: TextButton.styleFrom(
-                                visualDensity: VisualDensity.compact,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TextButton.icon(
+                                  key: const Key('terminal_copy_selection_button'),
+                                  onPressed: _copySelection,
+                                  icon: const Icon(Icons.copy, size: 14),
+                                  label: Text(
+                                    context.l10n.terminalCopySelection,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                IconButton(
+                                  key: const Key('terminal_clear_selection_button'),
+                                  icon: const Icon(Icons.close, size: 14),
+                                  onPressed: () => _controller.clearSelection(),
+                                  visualDensity: VisualDensity.compact,
+                                  padding: const EdgeInsets.all(6),
+                                  constraints: const BoxConstraints(),
+                                ),
+                                const SizedBox(width: 4),
+                              ],
                             ),
-                            IconButton(
-                              key: const Key('terminal_clear_selection_button'),
-                              icon: const Icon(Icons.close, size: 14),
-                              onPressed: () => _controller.clearSelection(),
-                              visualDensity: VisualDensity.compact,
-                              padding: const EdgeInsets.all(6),
-                              constraints: const BoxConstraints(),
-                            ),
-                            const SizedBox(width: 4),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              if (widget.overlay != null) widget.overlay!,
-            ],
-          ),
-        ),
-        if (widget.footer != null) widget.footer!,
-        if (widget.showAccessoryBar)
-          ExcludeFocus(
-            excluding: true,
-            child: TerminalAccessoryBar(
-              onKey: _handleKey,
-              onToggleCtrl: () => _toggleModifier('CTRL'),
-              onLockCtrl: () => _lockModifier('CTRL'),
-              onToggleAlt: () => _toggleModifier('ALT'),
-              onLockAlt: () => _lockModifier('ALT'),
-              onToggleShift: () => _toggleModifier('SHIFT'),
-              onLockShift: () => _lockModifier('SHIFT'),
-              onToggleFn: () => _toggleModifier('FN'),
-              onLockFn: () => _lockModifier('FN'),
-              onModifierDown: _handleModifierDown,
-              onModifierUp: _handleModifierUp,
-              onModifierCancel: _handleModifierCancel,
-              onPaste: () => _handlePasteText(),
-              onToggleKeyboard: _toggleKeyboard,
-              ctrlState: _modifierStates['CTRL'],
-              altState: _modifierStates['ALT'],
-              shiftState: _modifierStates['SHIFT'],
-              fnState: _modifierStates['FN'],
-              isCtrlHeld: _modifierHeld['CTRL']!,
-              isAltHeld: _modifierHeld['ALT']!,
-              isShiftHeld: _modifierHeld['SHIFT']!,
-              isFnHeld: _modifierHeld['FN']!,
-              pinKeyboardButtonTrailing: widget.pinKeyboardButtonTrailing,
+                  if (widget.overlay != null) widget.overlay!,
+                ],
+              ),
             ),
+            if (widget.footer != null) widget.footer!,
+            if (widget.showAccessoryBar)
+              SizedBox(height: effectiveBottomSpace),
+          ],
+        ),
+        if (accessoryBar != null)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: accessoryBar,
           ),
       ],
     );

@@ -539,6 +539,12 @@ class TerminalAccessoryBar extends ConsumerStatefulWidget {
   final bool isShiftHeld;
   final bool isFnHeld;
   final bool pinKeyboardButtonTrailing;
+  final bool? isKeyboardActive;
+  final ValueChanged<double>? onHeightChanged;
+
+  static double calculateBaseHeight(int rows) {
+    return 28.0 + rows * kAccessoryCellHeight;
+  }
 
   const TerminalAccessoryBar({
     super.key,
@@ -567,6 +573,8 @@ class TerminalAccessoryBar extends ConsumerStatefulWidget {
     this.isShiftHeld = false,
     this.isFnHeld = false,
     this.pinKeyboardButtonTrailing = false,
+    this.isKeyboardActive,
+    this.onHeightChanged,
   });
 
   @override
@@ -585,7 +593,6 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   String? _sel;
   String _st = 'add'; // 'add', 'key', 'set'
   String _cat = '常用';
-  bool _imeOn = false;
   bool _isExpanded = false;
   String _expandedCategory = 'Fn';
 
@@ -615,6 +622,11 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadConfig();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.onHeightChanged?.call(TerminalAccessoryBar.calculateBaseHeight(_rows));
+      }
+    });
   }
 
   @override
@@ -703,9 +715,6 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     }
 
     if (o.t == 'i') {
-      setState(() {
-        _imeOn = !_imeOn;
-      });
       widget.onToggleKeyboard?.call();
       return;
     }
@@ -977,9 +986,16 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_edit) _buildEditSheet(context),
-            if (_isExpanded && !_edit) _buildExpandedPanel(context),
-            _buildBar(context),
+            if (_edit) FocusScope(child: _buildEditSheet(context)),
+            if (_isExpanded && !_edit)
+              ExcludeFocus(
+                excluding: true,
+                child: _buildExpandedPanel(context),
+              ),
+            ExcludeFocus(
+              excluding: true,
+              child: _buildBar(context),
+            ),
           ],
         ),
       ),
@@ -1163,11 +1179,12 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         (upper == 'SHIFT' && widget.isShiftHeld) ||
         (upper == 'FN' && widget.isFnHeld);
 
+    final isKeyboardActive = widget.isKeyboardActive ?? false;
     final isAct = _mods.contains(o.l) ||
         isLocked ||
         isOneShot ||
         isHeld ||
-        (o.t == 'i' && _imeOn) ||
+        (o.t == 'i' && isKeyboardActive) ||
         (upper == 'CTRL' && widget.isCtrlActive) ||
         (upper == 'ALT' && widget.isAltActive);
 
@@ -1333,9 +1350,6 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         behavior: HitTestBehavior.opaque,
         onTap: () {
           if (o.t == 'i') {
-            setState(() {
-              _imeOn = !_imeOn;
-            });
             widget.onToggleKeyboard?.call();
             return;
           }
@@ -1705,13 +1719,27 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     }
   }
 
+  void _onEditDone() {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _edit = false;
+      _sel = null;
+    });
+    widget.onHeightChanged?.call(TerminalAccessoryBar.calculateBaseHeight(_rows));
+  }
+
   // ===========================================================================
   // Edit Sheet (Matching .sheet in prototype)
   // ===========================================================================
 
   Widget _buildEditSheet(BuildContext context) {
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final screenHeight = mediaQuery?.size.height ?? 800.0;
+    final viewInsetsBottom = mediaQuery?.viewInsets.bottom ?? 0.0;
+    final safeHeight = (screenHeight - viewInsetsBottom - 140).clamp(180.0, 300.0);
+
     return Container(
-      constraints: const BoxConstraints(maxHeight: 280),
+      constraints: BoxConstraints(maxHeight: safeHeight),
       decoration: const BoxDecoration(
         color: Color(0xFF161A20),
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -1754,12 +1782,7 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _edit = false;
-                      _sel = null;
-                    });
-                  },
+                  onPressed: _onEditDone,
                   child: const Text(
                     '完成',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),

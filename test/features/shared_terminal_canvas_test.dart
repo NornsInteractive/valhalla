@@ -1029,6 +1029,109 @@ void main() {
       expect(copied, 'hello');
     });
   });
+
+  group('SharedTerminalCanvas Accessory Bar and IME Regressions', () {
+    late Terminal terminal;
+
+    setUp(() {
+      terminal = Terminal(maxLines: 100);
+    });
+
+    testWidgets('Edit sheet TextFields can request focus and accept text input', (tester) async {
+      await tester.pumpWidget(_canvas(terminal));
+      await tester.pumpAndSettle();
+
+      // Enter edit mode by long pressing a key
+      await tester.longPress(find.text('ESC'));
+      await tester.pumpAndSettle();
+
+      // "完成" button is visible
+      expect(find.text('完成'), findsOneWidget);
+
+      // In Tab 'add' or 'key', find a TextField
+      final textField = find.byType(TextField);
+      expect(textField, findsWidgets);
+
+      // Tap the TextField to gain focus
+      await tester.tap(textField.first);
+      await tester.pumpAndSettle();
+
+      // Type text into the TextField
+      await tester.enterText(textField.first, 'TestKey');
+      await tester.pumpAndSettle();
+      expect(
+        find.byWidgetPredicate((w) => w is EditableText && w.controller.text == 'TestKey'),
+        findsOneWidget,
+      );
+
+      // Tap '完成' to exit edit mode
+      await tester.tap(find.text('完成'));
+      await tester.pumpAndSettle();
+      expect(find.text('完成'), findsNothing);
+    });
+
+    testWidgets('Keyboard button single-tap opens IME even after being closed', (tester) async {
+      await tester.pumpWidget(_canvas(terminal));
+      await tester.pumpAndSettle();
+
+      final kbBtn = find.byKey(const Key('terminal_accessory_keyboard_button'));
+      expect(kbBtn, findsOneWidget);
+
+      // First tap opens IME
+      await tester.tap(kbBtn);
+      await tester.pumpAndSettle();
+      expect(tester.testTextInput.isVisible, isTrue);
+
+      // Simulate system IME dismissal (e.g. user closes keyboard via Gboard or system back)
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pump();
+      tester.view.viewInsets = FakeViewPadding.zero;
+      await tester.pumpAndSettle();
+
+      // Second tap on the button should IMMEDIATELY reopen IME on the first click
+      await tester.tap(kbBtn);
+      await tester.pumpAndSettle();
+      expect(tester.testTextInput.isVisible, isTrue);
+
+      addTearDown(() {
+        tester.view.resetViewInsets();
+      });
+    });
+
+    testWidgets('Opening edit sheet or quick panel does not change TerminalView size', (tester) async {
+      await tester.pumpWidget(_canvas(terminal, width: 800, height: 600));
+      await tester.pumpAndSettle();
+
+      final terminalViewFinder = find.byType(TerminalView);
+      final initialSize = tester.getSize(terminalViewFinder);
+
+      // Open quick panel ('...')
+      final moreBtn = find.byKey(const Key('terminal_accessory_more_button'));
+      await tester.tap(moreBtn);
+      await tester.pumpAndSettle();
+
+      // TerminalView size must remain identical
+      expect(tester.getSize(terminalViewFinder), initialSize);
+
+      // Close quick panel
+      await tester.tap(moreBtn);
+      await tester.pumpAndSettle();
+      expect(tester.getSize(terminalViewFinder), initialSize);
+
+      // Enter edit mode by long pressing 'ESC'
+      await tester.longPress(find.text('ESC'));
+      await tester.pumpAndSettle();
+      expect(find.text('完成'), findsOneWidget);
+
+      // TerminalView size must remain identical
+      expect(tester.getSize(terminalViewFinder), initialSize);
+
+      // Tap '完成'
+      await tester.tap(find.text('完成'));
+      await tester.pumpAndSettle();
+      expect(tester.getSize(terminalViewFinder), initialSize);
+    });
+  });
 }
 
 /// 画布宿主：固定字号 notifier 免注入存储，可指定尺寸与字号缩放。
