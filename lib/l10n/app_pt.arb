@@ -2284,5 +2284,78 @@
   "agentUpdateNeverChecked": "Nunca verificado",
   "agentUpdateCodexMigrationTitle": "Instalar novo adaptador e alternar este agente",
   "agentUpdateCodexMigrationNotice": "O programa e as configurações existentes serão preservados. Um novo adaptador independente é instalado e a conexão é alternada, com reversão segura em caso de problemas.",
-  "agentUpdateReplacementCommand": "Comando substituto"
+  "agentUpdateReplacementCommand": "Comando substituto",
+  "terminalGridEditLayout": "Editar layout da barra",
+  "terminalGridSave": "Salvar",
+  "terminalGridCancel": "Cancelar",
+  "terminalGridUndo": "Desfazer",
+  "terminalGridDiscardConfirm": "Descartar alterações não salvas?",
+  "terminalGridSaveFailed": "Falha ao salvar o layout da barra",
+  "terminalGridCorruptedPrompt": "A configuração da barra está corrompida. Restaurar layout padrão?",
+  "terminalGridCorruptedReset": "Redefinir",
+  "terminalGridAddTab": "Adicionar",
+  "terminalGridKeyTab": "Tecla",
+  "terminalGridSetTab": "Ajustes",
+  "terminalGridCurrentPage": "Página",
+  "terminalGridAddPage": "＋ Adicionar página",
+  "terminalGridDeletePage": "Excluir página",
+  "terminalGridDeletePageConfirm": "Excluir a página {page} e todas as suas teclas?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "Excluir tecla",
+  "terminalGridRows": "Linhas do teclado",
+  "terminalGridRowsSubtitle": "1–5 linhas, padrão 2 linhas",
+  "terminalGridInvertedT": "Setas em T invertido",
+  "terminalGridInvertedTSubtitle": "Desative para separar em 4 teclas independentes",
+  "terminalGridSplitArrows": "Separar em teclas independentes",
+  "terminalGridDeleteArrows": "Excluir grupo de setas",
+  "terminalGridReset": "Restaurar layout padrão",
+  "terminalGridResetConfirm": "Restaurar o layout padrão de atalhos?",
+  "terminalGridNoSpace": "Sem espaço nesta página. Adicione uma página, aumente as linhas ou exclua teclas.",
+  "terminalGridArrowsNeedTwoRows": "As setas em T invertido requerem ao menos 2 linhas. Separe-as nas configurações.",
+  "terminalGridArrowsNeedSpace": "As setas em T invertido requerem espaço de 3×2 na página atual.",
+  "terminalGridKeepAtLeastOnePage": "Mantenha ao menos uma página",
+  "terminalGridPageSpaceInsufficient": "Espaço insuficiente na página {page}. Mova ou exclua algumas teclas primeiro.",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "A tecla Meta não é suportada pelo protocolo do terminal",
+  "terminalGridSelectKeyHint": "Toque em uma tecla para editar\nSegure e arraste para reposicionar",
+  "terminalGridDisplayName": "Nome exibido",
+  "terminalGridActionSend": "Enviar",
+  "terminalGridWidth": "Largura (blocos)",
+  "terminalGridCustomCombo": "Atalho personalizado",
+  "terminalGridCustomComboHint": "Marque modificadores + insira tecla",
+  "terminalGridKeyHint": "Tecla, ex. C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "Nome exibido (opcional)",
+  "terminalGridPleaseEnterKey": "Por favor, insira uma tecla",
+  "terminalGridTextMacro": "Macro de texto",
+  "terminalGridTextMacroSubtitle": "Toque para enviar texto predefinido",
+  "terminalGridMacroTextHint": "ex. ls -la",
+  "terminalGridMacroAppendEnter": "Enter",
+  "terminalGridPleaseEnterText": "Por favor, insira o texto",
+  "terminalGridSingleKey": "Tecla única",
+  "terminalGridComboKey": "Combinação",
+  "terminalGridMacroKey": "Macro",
+  "terminalCategoryCommon": "Comuns",
+  "terminalCategoryNav": "Navegação",
+  "terminalCategoryEdit": "Edição",
+  "terminalCategorySym": "Símbolos",
+  "terminalCategoryModifiers": "Modificadores",
+  "terminalCategoryCustom": "Personalizado",
+  "terminalSearchPresets": "Pesquisar teclas predefinidas...",
+  "terminalGridActionEdit": "Editar ação de envio",
+  "terminalGridActionKey": "Tecla a enviar",
+  "terminalGridActionModifiers": "Modificadores",
+  "terminalGridActionText": "Texto a enviar",
+  "terminalSearchNoMatch": "Nenhuma tecla correspondente"
 }

@@ -5941,4 +5941,196 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => 'Değiştirilen Komut';
+
+  @override
+  String get terminalGridEditLayout => 'Kısayol Düzenini Düzenle';
+
+  @override
+  String get terminalGridSave => 'Kaydet';
+
+  @override
+  String get terminalGridCancel => 'İptal';
+
+  @override
+  String get terminalGridUndo => 'Geri Al';
+
+  @override
+  String get terminalGridDiscardConfirm =>
+      'Kaydedilmemiş değişiklikler atılsın mı?';
+
+  @override
+  String get terminalGridSaveFailed => 'Kısayol çubuğu düzeni kaydedilemedi';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      'Kısayol çubuğu yapılandırması bozuk. Varsayılan düzene sıfırlansın mı?';
+
+  @override
+  String get terminalGridCorruptedReset => 'Sıfırla';
+
+  @override
+  String get terminalGridAddTab => 'Ekle';
+
+  @override
+  String get terminalGridKeyTab => 'Tuş';
+
+  @override
+  String get terminalGridSetTab => 'Ayarlar';
+
+  @override
+  String get terminalGridCurrentPage => 'Sayfa';
+
+  @override
+  String get terminalGridAddPage => '＋ Sayfa Ekle';
+
+  @override
+  String get terminalGridDeletePage => 'Sayfayı Sil';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return '$page. sayfa ve içindeki tüm tuşlar silinsin mi?';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'Bu Tuşu Sil';
+
+  @override
+  String get terminalGridRows => 'Klavye Satırları';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 satır, varsayılan 2 satır';
+
+  @override
+  String get terminalGridInvertedT => 'Ters-T Ok Grubu';
+
+  @override
+  String get terminalGridInvertedTSubtitle =>
+      '4 bağımsız tuşa bölmek için kapatın';
+
+  @override
+  String get terminalGridSplitArrows => 'Bağımsız Tuşlara Böl';
+
+  @override
+  String get terminalGridDeleteArrows => 'Ok Grubunu Sil';
+
+  @override
+  String get terminalGridReset => 'Varsayılan Düzeni Geri Yükle';
+
+  @override
+  String get terminalGridResetConfirm =>
+      'Varsayılan kısayol düzenine sıfırlansın mı?';
+
+  @override
+  String get terminalGridNoSpace =>
+      'Mevcut sayfada boş yer yok. Sayfa ekleyin, satır artırın veya tuş silin.';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      'Ters-T ok grubu en az 2 satır gerektirir. Önce ayarlardan okları ayırın.';
+
+  @override
+  String get terminalGridArrowsNeedSpace =>
+      'Ters-T ok grubu geçerli sayfada 3×2 boş alan gerektirir.';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage => 'En az bir sayfa korunmalıdır';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return '$page. sayfada yeterli alan yok. Önce bazı tuşları silin veya taşıyın.';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported =>
+      'Meta tuşu terminal protokolü tarafından desteklenmiyor';
+
+  @override
+  String get terminalGridSelectKeyHint =>
+      'Özellikleri düzenlemek için bir tuşa dokunun\nKonumu değiştirmek için basılı tutup sürükleyin';
+
+  @override
+  String get terminalGridDisplayName => 'Görünen Ad';
+
+  @override
+  String get terminalGridActionSend => 'Gönder';
+
+  @override
+  String get terminalGridWidth => 'Genişlik (birim)';
+
+  @override
+  String get terminalGridCustomCombo => 'Özel Kısayol';
+
+  @override
+  String get terminalGridCustomComboHint =>
+      'Değiştiricileri işaretleyin + tuş girin';
+
+  @override
+  String get terminalGridKeyHint => 'Tuş, örn. C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => 'Görünen ad (isteğe bağlı)';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'Lütfen bir tuş girin';
+
+  @override
+  String get terminalGridTextMacro => 'Metin Makrosu';
+
+  @override
+  String get terminalGridTextMacroSubtitle =>
+      'Önceden belirlenmiş metni tek dokunuşla gönderin';
+
+  @override
+  String get terminalGridMacroTextHint => 'örn. ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => 'Enter';
+
+  @override
+  String get terminalGridPleaseEnterText => 'Lütfen metin girin';
+
+  @override
+  String get terminalGridSingleKey => 'Tek Tuş';
+
+  @override
+  String get terminalGridComboKey => 'Kombinasyon';
+
+  @override
+  String get terminalGridMacroKey => 'Makro';
+
+  @override
+  String get terminalCategoryCommon => 'Sık Kullanılan';
+
+  @override
+  String get terminalCategoryNav => 'Gezinme';
+
+  @override
+  String get terminalCategoryEdit => 'Düzenleme';
+
+  @override
+  String get terminalCategorySym => 'Semboller';
+
+  @override
+  String get terminalCategoryModifiers => 'Değiştiriciler';
+
+  @override
+  String get terminalCategoryCustom => 'Özel';
+
+  @override
+  String get terminalSearchPresets => 'Önceden ayarlanmış tuşları ara...';
+
+  @override
+  String get terminalGridActionEdit => 'Gönderme Eylemini Düzenle';
+
+  @override
+  String get terminalGridActionKey => 'Gönderilecek Tuş';
+
+  @override
+  String get terminalGridActionModifiers => 'Değiştiriciler';
+
+  @override
+  String get terminalGridActionText => 'Gönderilecek Metin';
+
+  @override
+  String get terminalSearchNoMatch => 'Eşleşen tuş yok';
 }

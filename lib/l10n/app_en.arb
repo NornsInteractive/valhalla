@@ -2284,5 +2284,78 @@
   "agentUpdateNeverChecked": "Never checked",
   "agentUpdateCodexMigrationTitle": "Install New Adapter & Switch Agent",
   "agentUpdateCodexMigrationNotice": "This update installs a standalone official adapter and safely points this agent to it. Existing binaries, history, and configuration are preserved for seamless rollback.",
-  "agentUpdateReplacementCommand": "Replacement Command"
+  "agentUpdateReplacementCommand": "Replacement Command",
+  "terminalGridEditLayout": "Edit Layout",
+  "terminalGridSave": "Save",
+  "terminalGridCancel": "Cancel",
+  "terminalGridUndo": "Undo",
+  "terminalGridDiscardConfirm": "Discard unsaved changes?",
+  "terminalGridSaveFailed": "Failed to save accessory bar layout",
+  "terminalGridCorruptedPrompt": "Accessory bar configuration is corrupted. Reset to default layout?",
+  "terminalGridCorruptedReset": "Reset",
+  "terminalGridAddTab": "Add",
+  "terminalGridKeyTab": "Key",
+  "terminalGridSetTab": "Settings",
+  "terminalGridCurrentPage": "Page",
+  "terminalGridAddPage": "＋ Add Page",
+  "terminalGridDeletePage": "Delete Page",
+  "terminalGridDeletePageConfirm": "Delete page {page} and all its keys?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "Delete Key",
+  "terminalGridRows": "Keyboard Rows",
+  "terminalGridRowsSubtitle": "1–5 rows, default 2 rows",
+  "terminalGridInvertedT": "Inverted-T Arrow Group",
+  "terminalGridInvertedTSubtitle": "Toggle off to split into 4 independent arrow keys",
+  "terminalGridSplitArrows": "Split into Independent Keys",
+  "terminalGridDeleteArrows": "Delete Arrow Group",
+  "terminalGridReset": "Reset Layout",
+  "terminalGridResetConfirm": "Reset to default accessory bar layout?",
+  "terminalGridNoSpace": "No free space on current page. Add a page, increase rows, or remove keys.",
+  "terminalGridArrowsNeedTwoRows": "Inverted-T arrows require at least 2 rows. Split arrows first in settings.",
+  "terminalGridArrowsNeedSpace": "Inverted-T arrows require a 3×2 space on the current page.",
+  "terminalGridKeepAtLeastOnePage": "Keep at least one page",
+  "terminalGridPageSpaceInsufficient": "Page {page} has insufficient space. Remove or move some keys first.",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "Meta key is not supported by terminal",
+  "terminalGridSelectKeyHint": "Tap a key to edit properties\nHold and drag to reorder",
+  "terminalGridDisplayName": "Display Name",
+  "terminalGridActionSend": "Send",
+  "terminalGridWidth": "Width (units)",
+  "terminalGridCustomCombo": "Custom Shortcut",
+  "terminalGridCustomComboHint": "Check modifiers + enter key",
+  "terminalGridKeyHint": "Key, e.g. C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "Display name (optional)",
+  "terminalGridPleaseEnterKey": "Please enter a key",
+  "terminalGridTextMacro": "Text Macro",
+  "terminalGridTextMacroSubtitle": "One-tap to send text",
+  "terminalGridMacroTextHint": "e.g. ls -la",
+  "terminalGridMacroAppendEnter": "Enter",
+  "terminalGridPleaseEnterText": "Please enter text",
+  "terminalGridSingleKey": "Single Key",
+  "terminalGridComboKey": "Combo",
+  "terminalGridMacroKey": "Macro",
+  "terminalCategoryCommon": "Common",
+  "terminalCategoryNav": "Navigation",
+  "terminalCategoryEdit": "Edit",
+  "terminalCategorySym": "Symbols",
+  "terminalCategoryModifiers": "Modifiers",
+  "terminalCategoryCustom": "Custom",
+  "terminalSearchPresets": "Search preset keys...",
+  "terminalGridActionEdit": "Edit Action",
+  "terminalGridActionKey": "Key to Send",
+  "terminalGridActionModifiers": "Modifiers",
+  "terminalGridActionText": "Text to Send",
+  "terminalSearchNoMatch": "No matching keys"
 }

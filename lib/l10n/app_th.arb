@@ -2248,7 +2248,13 @@
   "sftpToolbarPreferenceSaveFailed": "บันทึกการตั้งค่าแถบเครื่องมือไม่สำเร็จ",
   "sftpToolbarActionView": "สลับมุมมอง",
   "agentUpdateNotice": "{count, plural, other{มีอัปเดตเอเจนต์ {count} รายการ}}",
-  "@agentUpdateNotice": { "placeholders": { "count": { "type": "int" } } },
+  "@agentUpdateNotice": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "agentUpdateViewAction": "ดู",
   "agentUpdateCheckAll": "ตรวจหาอัปเดต",
   "agentUpdateCheck": "ตรวจหาอัปเดต",
@@ -2278,5 +2284,78 @@
   "agentUpdateNeverChecked": "ไม่เคยตรวจสอบ",
   "agentUpdateCodexMigrationTitle": "ติดตั้งอะแดปเตอร์ใหม่และสลับเอเจนต์นี้",
   "agentUpdateCodexMigrationNotice": "โปรแกรมและการกำหนดค่าเดิมจะยังคงอยู่ ติดตั้งอะแดปเตอร์ใหม่แบบสแตนด์อโลนแล้วสลับการเชื่อมต่อ และสามารถย้อนกลับได้อย่างปลอดภัยหากเกิดปัญหา",
-  "agentUpdateReplacementCommand": "คำสั่งหลังสลับ"
+  "agentUpdateReplacementCommand": "คำสั่งหลังสลับ",
+  "terminalGridEditLayout": "แก้ไขเค้าโครงปุ่มลัด",
+  "terminalGridSave": "บันทึก",
+  "terminalGridCancel": "ยกเลิก",
+  "terminalGridUndo": "เลิกทำ",
+  "terminalGridDiscardConfirm": "ละทิ้งการเปลี่ยนแปลงที่ยังไม่ได้บันทึกหรือไม่?",
+  "terminalGridSaveFailed": "บันทึกเค้าโครงแถบปุ่มลัดไม่สำเร็จ",
+  "terminalGridCorruptedPrompt": "ข้อมูลการกำหนดค่าแถบปุ่มลัดเสียหาย รีเซ็ตเป็นเค้าโครงเริ่มต้นหรือไม่?",
+  "terminalGridCorruptedReset": "รีเซ็ต",
+  "terminalGridAddTab": "เพิ่ม",
+  "terminalGridKeyTab": "ปุ่ม",
+  "terminalGridSetTab": "ตั้งค่า",
+  "terminalGridCurrentPage": "หน้าปัจจุบัน",
+  "terminalGridAddPage": "＋ เพิ่มหน้า",
+  "terminalGridDeletePage": "ลบหน้า",
+  "terminalGridDeletePageConfirm": "ลบหน้า {page} และปุ่มทั้งหมดในหน้านี้หรือไม่?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "ลบปุ่มนี้",
+  "terminalGridRows": "จำนวนแถวแป้นพิมพ์",
+  "terminalGridRowsSubtitle": "1–5 แถว, ค่าเริ่มต้น 2 แถว",
+  "terminalGridInvertedT": "กลุ่มลูกศร T คว่ำ",
+  "terminalGridInvertedTSubtitle": "ปิดเพื่อแยกออกเป็น 4 ปุ่มอิสระ",
+  "terminalGridSplitArrows": "แยกเป็นปุ่มอิสระ",
+  "terminalGridDeleteArrows": "ลบกลุ่มลูกศร",
+  "terminalGridReset": "คืนค่าเค้าโครงเริ่มต้น",
+  "terminalGridResetConfirm": "รีเซ็ตเป็นเค้าโครงปุ่มลัดเริ่มต้นหรือไม่?",
+  "terminalGridNoSpace": "ไม่มีช่องว่างในหน้าปัจจุบัน เพิ่มหน้า เพิ่มแถว หรือลบปุ่มออก",
+  "terminalGridArrowsNeedTwoRows": "กลุ่มลูกศร T คว่ำต้องใช้พื้นที่อย่างน้อย 2 แถว กรุณาแยกปุ่มในการตั้งค่าก่อน",
+  "terminalGridArrowsNeedSpace": "กลุ่มลูกศร T คว่ำต้องการพื้นที่ว่าง 3×2 ในหน้าปัจจุบัน",
+  "terminalGridKeepAtLeastOnePage": "ต้องมีอย่างน้อยหนึ่งหน้า",
+  "terminalGridPageSpaceInsufficient": "พื้นที่ในหน้า {page} ไม่เพียงพอ กรุณาลบหรือย้ายปุ่มออกก่อน",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "โพรโทคอลเทอร์มินัลไม่รองรับปุ่ม Meta",
+  "terminalGridSelectKeyHint": "แตะปุ่มเพื่อแก้ไขคุณสมบัติ\nแตะค้างแล้วลากเพื่อจัดตำแหน่งใหม่",
+  "terminalGridDisplayName": "ชื่อที่แสดง",
+  "terminalGridActionSend": "ส่ง",
+  "terminalGridWidth": "ความกว้าง (ช่อง)",
+  "terminalGridCustomCombo": "ปุ่มผสมแบบกำหนดเอง",
+  "terminalGridCustomComboHint": "เลือกปุ่มปรับค่า + ใส่ปุ่ม",
+  "terminalGridKeyHint": "ปุ่ม เช่น C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "ชื่อที่แสดง (ไม่บังคับ)",
+  "terminalGridPleaseEnterKey": "กรุณาใส่ปุ่ม",
+  "terminalGridTextMacro": "มาโครข้อความ",
+  "terminalGridTextMacroSubtitle": "แตะครั้งเดียวเพื่อส่งข้อความ",
+  "terminalGridMacroTextHint": "เช่น ls -la",
+  "terminalGridMacroAppendEnter": "Enter",
+  "terminalGridPleaseEnterText": "กรุณาใส่ข้อความ",
+  "terminalGridSingleKey": "ปุ่มเดี่ยว",
+  "terminalGridComboKey": "ปุ่มผสม",
+  "terminalGridMacroKey": "มาโคร",
+  "terminalCategoryCommon": "ใช้บ่อย",
+  "terminalCategoryNav": "การนำทาง",
+  "terminalCategoryEdit": "แก้ไข",
+  "terminalCategorySym": "สัญลักษณ์",
+  "terminalCategoryModifiers": "ปุ่มปรับค่า",
+  "terminalCategoryCustom": "กำหนดเอง",
+  "terminalSearchPresets": "ค้นหาปุ่มที่ตั้งไว้ล่วงหน้า...",
+  "terminalGridActionEdit": "แก้ไขการกระทำที่ส่ง",
+  "terminalGridActionKey": "ปุ่มที่ต้องการส่ง",
+  "terminalGridActionModifiers": "ปุ่มปรับค่า",
+  "terminalGridActionText": "ข้อความที่ต้องการส่ง",
+  "terminalSearchNoMatch": "ไม่มีปุ่มที่ตรงกัน"
 }

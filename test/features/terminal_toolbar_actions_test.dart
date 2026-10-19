@@ -608,8 +608,7 @@ void main() {
   // 320dp / textScale 2：按键栏横向溢出时，键盘按钮必须留在滚动区之外、
   // 贴在方向区左侧的固定列里、>=44dp，并且在拖动固定键后仍然可点（不被裁掉）。
   testWidgets(
-    '320dp + textScale 2 keeps one keyboard button outside the pinned key '
-    'scroll and reachable after a drag',
+    '320dp and 2x text preserve system controls through page swipes',
     (tester) async {
       const size = Size(320, 640);
       tester.view.physicalSize = size;
@@ -620,158 +619,41 @@ void main() {
       final notifier = _Notifier(SshTerminalState(tabs: [tab]));
       tab.terminal.write('remote banner\r\n');
       await _pumpNarrow(tester, notifier, size: size, textScale: 2);
-
-      final keyboardButton = find.byKey(
+      final keyboard = find.byKey(
         const Key('terminal_accessory_keyboard_button'),
       );
-
-      expect(keyboardButton, findsOneWidget, reason: 'SSH 只能有一个键盘按钮，不得出现重复浮窗');
-      expect(
-        find.ancestor(
-          of: keyboardButton,
-          matching: find.byType(SingleChildScrollView),
-        ),
-        findsNothing,
-        reason: '键盘按钮必须在横向滚动区之外，否则窄屏下会被裁掉',
-      );
-
-      final pinnedKey = find.byKey(const Key('terminal_accessory_key_ESC'));
-      expect(pinnedKey, findsOneWidget);
-      final pinnedScroller = find.ancestor(
-        of: pinnedKey,
-        matching: find.byType(SingleChildScrollView),
-      );
-      expect(
-        pinnedScroller,
-        findsOneWidget,
-        reason: '固定键必须位于唯一的横向滚动区内，拖动目标才能唯一确定',
-      );
-
-      // 布局：固定键滚动区 | 更多/键盘同列 | 方向区贴屏幕右内边距。
-      // 键盘按钮的锚点是方向区，而不是屏幕右侧 70% 处。
-      void expectAccessoryColumnGeometry(Rect rect, String stage) {
-        final directionPad = tester.getRect(
-          find.byKey(const Key('terminal_direction_pad')),
-        );
-        final moreRect = tester.getRect(
-          find.byKey(const Key('terminal_accessory_more_button')),
-        );
-        final scrollerRect = tester.getRect(pinnedScroller);
-
-        expect(
-          rect.width,
-          greaterThanOrEqualTo(44),
-          reason: '$stage：键盘按钮命中目标必须 >=44dp',
-        );
-        expect(
-          rect.height,
-          greaterThanOrEqualTo(44),
-          reason: '$stage：键盘按钮命中目标必须 >=44dp',
-        );
-        expect(
-          rect.right,
-          lessThanOrEqualTo(size.width),
-          reason: '$stage：按钮必须完整落在屏幕内（右侧）',
-        );
-        expect(
-          rect.left,
-          greaterThanOrEqualTo(0),
-          reason: '$stage：按钮必须完整落在屏幕内（左侧）',
-        );
-        expect(
-          rect.bottom,
-          greaterThan(size.height * 0.7),
-          reason: '$stage：按钮应位于屏幕下方',
-        );
-        expect(
-          directionPad.right,
-          lessThanOrEqualTo(size.width),
-          reason: '$stage：方向区必须完整落在屏幕内',
-        );
-        expect(
-          directionPad.right,
-          greaterThanOrEqualTo(size.width - 16),
-          reason: '$stage：方向区 right 必须贴近屏幕右内边距',
-        );
-        expect(
-          rect.right,
-          lessThanOrEqualTo(directionPad.left + 0.5),
-          reason: '$stage：键盘列必须位于方向区左侧',
-        );
-        expect(
-          rect.right,
-          greaterThanOrEqualTo(directionPad.left - 4),
-          reason: '$stage：键盘 right 必须紧邻方向区 left（间隙 <= 4dp）',
-        );
-        expect(
-          rect.left,
-          greaterThanOrEqualTo(scrollerRect.right - 0.5),
-          reason: '$stage：键盘列不得盖到固定键滚动区',
-        );
-        expect(
-          moreRect.left,
-          greaterThanOrEqualTo(scrollerRect.right - 0.5),
-          reason: '$stage：更多键不得盖到固定键滚动区',
-        );
-        expect(
-          moreRect.center.dx,
-          closeTo(rect.center.dx, 0.5),
-          reason: '$stage：更多与键盘必须同列',
-        );
-        expect(
-          moreRect.left,
-          greaterThanOrEqualTo(rect.left - 0.5),
-          reason: '$stage：更多键必须落在键盘列内',
-        );
-        expect(
-          moreRect.right,
-          lessThanOrEqualTo(rect.right + 0.5),
-          reason: '$stage：更多键必须落在键盘列内',
-        );
-        expect(
-          moreRect.bottom,
-          lessThanOrEqualTo(rect.top + 0.5),
-          reason: '$stage：更多键必须在键盘键正上方',
-        );
+      final more = find.byKey(const Key('terminal_accessory_more_button'));
+      expect(keyboard, findsOneWidget);
+      expect(more, findsOneWidget);
+      void expectSystemGeometry() {
+        final k = tester.getRect(keyboard), m = tester.getRect(more);
+        for (final rect in [k, m]) {
+          expect(rect.width, greaterThanOrEqualTo(44));
+          expect(rect.height, greaterThanOrEqualTo(44));
+          expect(rect.left, greaterThanOrEqualTo(0));
+          expect(rect.right, lessThanOrEqualTo(size.width));
+        }
+        expect(m.center.dx, closeTo(k.center.dx, 0.5));
+        expect(m.bottom, lessThanOrEqualTo(k.top + 0.5));
       }
 
-      final initialKeyboardRect = tester.getRect(keyboardButton);
-      expectAccessoryColumnGeometry(initialKeyboardRect, '初始');
-
-      final beforeLeft = tester.getRect(pinnedKey).left;
-      await tester.drag(pinnedScroller, const Offset(-300, 0));
+      expectSystemGeometry();
+      final initial = tester.getRect(keyboard);
+      final group = find.byKey(const Key('terminal_accessory_key_ARROWS'));
+      final groupRect = tester.getRect(group);
+      await tester.dragFrom(groupRect.center, const Offset(-140, 0));
       await tester.pumpAndSettle();
-
       expect(
-        tester.getRect(pinnedKey).left,
-        lessThan(beforeLeft - 50),
-        reason: '前置条件：固定键行必须真的发生了横向滚动',
-      );
-      expect(
-        find.ancestor(
-          of: keyboardButton,
-          matching: find.byType(SingleChildScrollView),
-        ),
+        group,
         findsNothing,
-        reason: '横向滚动不得把键盘按钮卷入滚动区',
+        reason: 'swipe must really change the grid page',
       );
-      expectAccessoryColumnGeometry(tester.getRect(keyboardButton), '拖动后');
-      expect(
-        tester.getRect(keyboardButton),
-        initialKeyboardRect,
-        reason: '横向滚动不得移动滚动区之外的键盘列',
-      );
-
-      // 拖动后按钮仍可点：点击必须真实打开输入连接（被遮挡则该断言失败）。
-      await tester.tap(keyboardButton);
+      expectSystemGeometry();
+      expect(tester.getRect(keyboard), initial);
+      await tester.tap(keyboard);
       await tester.pump();
       await tester.pump();
-
-      expect(
-        _terminalState(tester).hasInputConnection,
-        isTrue,
-        reason: '横向滚动后固定键盘按钮必须仍然可以点开输入连接',
-      );
+      expect(_terminalState(tester).hasInputConnection, isTrue);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       tab.bridge.dispose();

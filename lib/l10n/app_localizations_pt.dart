@@ -6007,4 +6007,195 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => 'Comando substituto';
+
+  @override
+  String get terminalGridEditLayout => 'Editar layout da barra';
+
+  @override
+  String get terminalGridSave => 'Salvar';
+
+  @override
+  String get terminalGridCancel => 'Cancelar';
+
+  @override
+  String get terminalGridUndo => 'Desfazer';
+
+  @override
+  String get terminalGridDiscardConfirm => 'Descartar alterações não salvas?';
+
+  @override
+  String get terminalGridSaveFailed => 'Falha ao salvar o layout da barra';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      'A configuração da barra está corrompida. Restaurar layout padrão?';
+
+  @override
+  String get terminalGridCorruptedReset => 'Redefinir';
+
+  @override
+  String get terminalGridAddTab => 'Adicionar';
+
+  @override
+  String get terminalGridKeyTab => 'Tecla';
+
+  @override
+  String get terminalGridSetTab => 'Ajustes';
+
+  @override
+  String get terminalGridCurrentPage => 'Página';
+
+  @override
+  String get terminalGridAddPage => '＋ Adicionar página';
+
+  @override
+  String get terminalGridDeletePage => 'Excluir página';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return 'Excluir a página $page e todas as suas teclas?';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'Excluir tecla';
+
+  @override
+  String get terminalGridRows => 'Linhas do teclado';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 linhas, padrão 2 linhas';
+
+  @override
+  String get terminalGridInvertedT => 'Setas em T invertido';
+
+  @override
+  String get terminalGridInvertedTSubtitle =>
+      'Desative para separar em 4 teclas independentes';
+
+  @override
+  String get terminalGridSplitArrows => 'Separar em teclas independentes';
+
+  @override
+  String get terminalGridDeleteArrows => 'Excluir grupo de setas';
+
+  @override
+  String get terminalGridReset => 'Restaurar layout padrão';
+
+  @override
+  String get terminalGridResetConfirm =>
+      'Restaurar o layout padrão de atalhos?';
+
+  @override
+  String get terminalGridNoSpace =>
+      'Sem espaço nesta página. Adicione uma página, aumente as linhas ou exclua teclas.';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      'As setas em T invertido requerem ao menos 2 linhas. Separe-as nas configurações.';
+
+  @override
+  String get terminalGridArrowsNeedSpace =>
+      'As setas em T invertido requerem espaço de 3×2 na página atual.';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage => 'Mantenha ao menos uma página';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return 'Espaço insuficiente na página $page. Mova ou exclua algumas teclas primeiro.';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported =>
+      'A tecla Meta não é suportada pelo protocolo do terminal';
+
+  @override
+  String get terminalGridSelectKeyHint =>
+      'Toque em uma tecla para editar\nSegure e arraste para reposicionar';
+
+  @override
+  String get terminalGridDisplayName => 'Nome exibido';
+
+  @override
+  String get terminalGridActionSend => 'Enviar';
+
+  @override
+  String get terminalGridWidth => 'Largura (blocos)';
+
+  @override
+  String get terminalGridCustomCombo => 'Atalho personalizado';
+
+  @override
+  String get terminalGridCustomComboHint =>
+      'Marque modificadores + insira tecla';
+
+  @override
+  String get terminalGridKeyHint => 'Tecla, ex. C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => 'Nome exibido (opcional)';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'Por favor, insira uma tecla';
+
+  @override
+  String get terminalGridTextMacro => 'Macro de texto';
+
+  @override
+  String get terminalGridTextMacroSubtitle =>
+      'Toque para enviar texto predefinido';
+
+  @override
+  String get terminalGridMacroTextHint => 'ex. ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => 'Enter';
+
+  @override
+  String get terminalGridPleaseEnterText => 'Por favor, insira o texto';
+
+  @override
+  String get terminalGridSingleKey => 'Tecla única';
+
+  @override
+  String get terminalGridComboKey => 'Combinação';
+
+  @override
+  String get terminalGridMacroKey => 'Macro';
+
+  @override
+  String get terminalCategoryCommon => 'Comuns';
+
+  @override
+  String get terminalCategoryNav => 'Navegação';
+
+  @override
+  String get terminalCategoryEdit => 'Edição';
+
+  @override
+  String get terminalCategorySym => 'Símbolos';
+
+  @override
+  String get terminalCategoryModifiers => 'Modificadores';
+
+  @override
+  String get terminalCategoryCustom => 'Personalizado';
+
+  @override
+  String get terminalSearchPresets => 'Pesquisar teclas predefinidas...';
+
+  @override
+  String get terminalGridActionEdit => 'Editar ação de envio';
+
+  @override
+  String get terminalGridActionKey => 'Tecla a enviar';
+
+  @override
+  String get terminalGridActionModifiers => 'Modificadores';
+
+  @override
+  String get terminalGridActionText => 'Texto a enviar';
+
+  @override
+  String get terminalSearchNoMatch => 'Nenhuma tecla correspondente';
 }

@@ -11,7 +11,7 @@ void main() {
   for (final width in [320.0, 360.0, 430.0]) {
     for (final direction in TextDirection.values) {
       testWidgets(
-        'resident inline inverted-T directions keep physical layout and usable touch targets $width $direction',
+        'free-grid inverted-T preserves physical layout and full touch targets $width $direction',
         (tester) async {
           await tester.binding.setSurfaceSize(Size(width, 760));
           addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -71,16 +71,12 @@ void main() {
             find.byKey(const Key('terminal_direction_pad_dismiss')),
             findsNothing,
           );
-          expect(
-            find.byKey(const Key('terminal_accessory_key_FN')),
-            findsNothing,
-          );
           for (final label in ['↑', '↓', '←', '→']) {
             expect(key(label), findsOneWidget);
           }
 
           final barRect = tester.getRect(find.byType(TerminalAccessoryBar));
-          expect(barRect.height, lessThanOrEqualTo(88));
+          expect(barRect.height, 98);
 
           await tester.ensureVisible(
             find.byKey(const Key('terminal_accessory_key_ARROWS')),
@@ -99,7 +95,7 @@ void main() {
           for (final label in ['↑', '↓', '←', '→']) {
             final rect = tester.getRect(
               find
-                  .descendant(
+                  .ancestor(
                     of: key(label),
                     matching: find.byType(HoldRepeatKey),
                   )
@@ -111,9 +107,8 @@ void main() {
             expect(rect.right, lessThanOrEqualTo(width));
           }
 
-          // More / keyboard sit in one fixed column immediately to the LEFT
-          // of the pinned inverted-T direction pad (the pad owns the right
-          // edge), still stacked with the keyboard underneath.
+          // Only system controls reserve the last column; the direction group
+          // remains a freely placed grid item and does not own the right edge.
           final moreRect = tester.getRect(
             find.byKey(const Key('terminal_accessory_more_button')),
           );
@@ -128,19 +123,19 @@ void main() {
           expect(moreRect.right, lessThanOrEqualTo(width));
           expect(padRect.right, lessThanOrEqualTo(width));
           expect(
-            barNow.right - padRect.right,
+            barNow.right - keyboardRect.right,
             lessThanOrEqualTo(8),
-            reason: '固定方向区必须贴在底栏最右端',
+            reason: '系统按键保留在最后一列',
           );
           expect(
-            keyboardRect.right,
-            lessThanOrEqualTo(padRect.left),
-            reason: '键盘列必须在固定方向区左侧',
+            keyboardRect.left,
+            greaterThanOrEqualTo(padRect.right),
+            reason: '方向组不能覆盖系统列',
           );
           expect(
-            moreRect.right,
-            lessThanOrEqualTo(padRect.left),
-            reason: '更多列必须在固定方向区左侧',
+            moreRect.left,
+            greaterThanOrEqualTo(padRect.right),
+            reason: '方向组不能覆盖更多按键',
           );
           expect(
             moreRect.center.dx,

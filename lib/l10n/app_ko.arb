@@ -2284,5 +2284,78 @@
   "agentUpdateNeverChecked": "확인된 적 없음",
   "agentUpdateCodexMigrationTitle": "새 어댑터 설치 및 이 에이전트로 전환",
   "agentUpdateCodexMigrationNotice": "기존 프로그램 및 설정은 유지되며, 독립적인 새 버전 어댑터를 설치한 후 연결을 전환합니다. 문제 발생 시 안전하게 롤백할 수 있습니다.",
-  "agentUpdateReplacementCommand": "전환 후 명령"
+  "agentUpdateReplacementCommand": "전환 후 명령",
+  "terminalGridEditLayout": "단축키 레이아웃 편집",
+  "terminalGridSave": "저장",
+  "terminalGridCancel": "취소",
+  "terminalGridUndo": "실행 취소",
+  "terminalGridDiscardConfirm": "저장되지 않은 변경사항이 손실됩니다. 취소하시겠습니까?",
+  "terminalGridSaveFailed": "레이아웃 저장에 실패했습니다",
+  "terminalGridCorruptedPrompt": "단축키 바 설정이 손상되었습니다. 기본값으로 재설정하시겠습니까?",
+  "terminalGridCorruptedReset": "재설정",
+  "terminalGridAddTab": "추가",
+  "terminalGridKeyTab": "키",
+  "terminalGridSetTab": "설정",
+  "terminalGridCurrentPage": "현재 페이지",
+  "terminalGridAddPage": "＋ 페이지 추가",
+  "terminalGridDeletePage": "페이지 삭제",
+  "terminalGridDeletePageConfirm": "{page} 페이지와 모든 키를 삭제하시겠습니까?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "이 키 삭제",
+  "terminalGridRows": "키보드 표시 줄 수",
+  "terminalGridRowsSubtitle": "1–5 줄, 기본 2 줄",
+  "terminalGridInvertedT": "역T자형 방향키 고정",
+  "terminalGridInvertedTSubtitle": "끄면 4개의 독립 키로 분리됩니다",
+  "terminalGridSplitArrows": "독립 키로 분리",
+  "terminalGridDeleteArrows": "방향키 그룹 삭제",
+  "terminalGridReset": "기본 레이아웃 복원",
+  "terminalGridResetConfirm": "기본 단축키 레이아웃으로 초기화하시겠습니까?",
+  "terminalGridNoSpace": "현재 페이지에 빈 공간이 없습니다. 페이지를 추가하거나 줄 수를 늘리세요",
+  "terminalGridArrowsNeedTwoRows": "역T자형 방향키는 2줄 이상 필요합니다. 설정에서 먼저 분리하세요",
+  "terminalGridArrowsNeedSpace": "역T자형 방향키는 현재 페이지에 3×2 공간이 필요합니다",
+  "terminalGridKeepAtLeastOnePage": "최소 한 페이지는 유지해야 합니다",
+  "terminalGridPageSpaceInsufficient": "{page} 페이지의 공간이 부족합니다. 일부 키를 먼저 삭제하거나 이동하세요",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "터미널 프로토콜이 Meta 키를 지원하지 않습니다",
+  "terminalGridSelectKeyHint": "키를 눌러 속성 편집\n길게 눌러 드래그하여 위치 이동",
+  "terminalGridDisplayName": "표시 이름",
+  "terminalGridActionSend": "전송",
+  "terminalGridWidth": "너비(칸)",
+  "terminalGridCustomCombo": "사용자 정의 조합키",
+  "terminalGridCustomComboHint": "수정자 키 선택 + 키 입력",
+  "terminalGridKeyHint": "키(예: C / F5 / Tab)",
+  "terminalGridDisplayNameOptional": "표시 이름(선택 사항)",
+  "terminalGridPleaseEnterKey": "키를 입력하세요",
+  "terminalGridTextMacro": "텍스트 매크로",
+  "terminalGridTextMacroSubtitle": "한 번 탭하여 텍스트 전송",
+  "terminalGridMacroTextHint": "예: ls -la",
+  "terminalGridMacroAppendEnter": "엔터 추가",
+  "terminalGridPleaseEnterText": "텍스트를 입력하세요",
+  "terminalGridSingleKey": "단일 키",
+  "terminalGridComboKey": "조합키",
+  "terminalGridMacroKey": "텍스트 매크로",
+  "terminalCategoryCommon": "자주 사용",
+  "terminalCategoryNav": "탐색",
+  "terminalCategoryEdit": "편집",
+  "terminalCategorySym": "기호",
+  "terminalCategoryModifiers": "수정자 키",
+  "terminalCategoryCustom": "사용자 정의",
+  "terminalSearchPresets": "프리셋 키 검색...",
+  "terminalGridActionEdit": "전송 동작 편집",
+  "terminalGridActionKey": "전송할 키",
+  "terminalGridActionModifiers": "수정자 키",
+  "terminalGridActionText": "전송할 텍스트",
+  "terminalSearchNoMatch": "일치하는 키 없음"
 }

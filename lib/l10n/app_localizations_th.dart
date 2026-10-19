@@ -5914,4 +5914,193 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => 'คำสั่งหลังสลับ';
+
+  @override
+  String get terminalGridEditLayout => 'แก้ไขเค้าโครงปุ่มลัด';
+
+  @override
+  String get terminalGridSave => 'บันทึก';
+
+  @override
+  String get terminalGridCancel => 'ยกเลิก';
+
+  @override
+  String get terminalGridUndo => 'เลิกทำ';
+
+  @override
+  String get terminalGridDiscardConfirm =>
+      'ละทิ้งการเปลี่ยนแปลงที่ยังไม่ได้บันทึกหรือไม่?';
+
+  @override
+  String get terminalGridSaveFailed => 'บันทึกเค้าโครงแถบปุ่มลัดไม่สำเร็จ';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      'ข้อมูลการกำหนดค่าแถบปุ่มลัดเสียหาย รีเซ็ตเป็นเค้าโครงเริ่มต้นหรือไม่?';
+
+  @override
+  String get terminalGridCorruptedReset => 'รีเซ็ต';
+
+  @override
+  String get terminalGridAddTab => 'เพิ่ม';
+
+  @override
+  String get terminalGridKeyTab => 'ปุ่ม';
+
+  @override
+  String get terminalGridSetTab => 'ตั้งค่า';
+
+  @override
+  String get terminalGridCurrentPage => 'หน้าปัจจุบัน';
+
+  @override
+  String get terminalGridAddPage => '＋ เพิ่มหน้า';
+
+  @override
+  String get terminalGridDeletePage => 'ลบหน้า';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return 'ลบหน้า $page และปุ่มทั้งหมดในหน้านี้หรือไม่?';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'ลบปุ่มนี้';
+
+  @override
+  String get terminalGridRows => 'จำนวนแถวแป้นพิมพ์';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 แถว, ค่าเริ่มต้น 2 แถว';
+
+  @override
+  String get terminalGridInvertedT => 'กลุ่มลูกศร T คว่ำ';
+
+  @override
+  String get terminalGridInvertedTSubtitle => 'ปิดเพื่อแยกออกเป็น 4 ปุ่มอิสระ';
+
+  @override
+  String get terminalGridSplitArrows => 'แยกเป็นปุ่มอิสระ';
+
+  @override
+  String get terminalGridDeleteArrows => 'ลบกลุ่มลูกศร';
+
+  @override
+  String get terminalGridReset => 'คืนค่าเค้าโครงเริ่มต้น';
+
+  @override
+  String get terminalGridResetConfirm =>
+      'รีเซ็ตเป็นเค้าโครงปุ่มลัดเริ่มต้นหรือไม่?';
+
+  @override
+  String get terminalGridNoSpace =>
+      'ไม่มีช่องว่างในหน้าปัจจุบัน เพิ่มหน้า เพิ่มแถว หรือลบปุ่มออก';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      'กลุ่มลูกศร T คว่ำต้องใช้พื้นที่อย่างน้อย 2 แถว กรุณาแยกปุ่มในการตั้งค่าก่อน';
+
+  @override
+  String get terminalGridArrowsNeedSpace =>
+      'กลุ่มลูกศร T คว่ำต้องการพื้นที่ว่าง 3×2 ในหน้าปัจจุบัน';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage => 'ต้องมีอย่างน้อยหนึ่งหน้า';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return 'พื้นที่ในหน้า $page ไม่เพียงพอ กรุณาลบหรือย้ายปุ่มออกก่อน';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported =>
+      'โพรโทคอลเทอร์มินัลไม่รองรับปุ่ม Meta';
+
+  @override
+  String get terminalGridSelectKeyHint =>
+      'แตะปุ่มเพื่อแก้ไขคุณสมบัติ\nแตะค้างแล้วลากเพื่อจัดตำแหน่งใหม่';
+
+  @override
+  String get terminalGridDisplayName => 'ชื่อที่แสดง';
+
+  @override
+  String get terminalGridActionSend => 'ส่ง';
+
+  @override
+  String get terminalGridWidth => 'ความกว้าง (ช่อง)';
+
+  @override
+  String get terminalGridCustomCombo => 'ปุ่มผสมแบบกำหนดเอง';
+
+  @override
+  String get terminalGridCustomComboHint => 'เลือกปุ่มปรับค่า + ใส่ปุ่ม';
+
+  @override
+  String get terminalGridKeyHint => 'ปุ่ม เช่น C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => 'ชื่อที่แสดง (ไม่บังคับ)';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'กรุณาใส่ปุ่ม';
+
+  @override
+  String get terminalGridTextMacro => 'มาโครข้อความ';
+
+  @override
+  String get terminalGridTextMacroSubtitle => 'แตะครั้งเดียวเพื่อส่งข้อความ';
+
+  @override
+  String get terminalGridMacroTextHint => 'เช่น ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => 'Enter';
+
+  @override
+  String get terminalGridPleaseEnterText => 'กรุณาใส่ข้อความ';
+
+  @override
+  String get terminalGridSingleKey => 'ปุ่มเดี่ยว';
+
+  @override
+  String get terminalGridComboKey => 'ปุ่มผสม';
+
+  @override
+  String get terminalGridMacroKey => 'มาโคร';
+
+  @override
+  String get terminalCategoryCommon => 'ใช้บ่อย';
+
+  @override
+  String get terminalCategoryNav => 'การนำทาง';
+
+  @override
+  String get terminalCategoryEdit => 'แก้ไข';
+
+  @override
+  String get terminalCategorySym => 'สัญลักษณ์';
+
+  @override
+  String get terminalCategoryModifiers => 'ปุ่มปรับค่า';
+
+  @override
+  String get terminalCategoryCustom => 'กำหนดเอง';
+
+  @override
+  String get terminalSearchPresets => 'ค้นหาปุ่มที่ตั้งไว้ล่วงหน้า...';
+
+  @override
+  String get terminalGridActionEdit => 'แก้ไขการกระทำที่ส่ง';
+
+  @override
+  String get terminalGridActionKey => 'ปุ่มที่ต้องการส่ง';
+
+  @override
+  String get terminalGridActionModifiers => 'ปุ่มปรับค่า';
+
+  @override
+  String get terminalGridActionText => 'ข้อความที่ต้องการส่ง';
+
+  @override
+  String get terminalSearchNoMatch => 'ไม่มีปุ่มที่ตรงกัน';
 }

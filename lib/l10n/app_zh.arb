@@ -2284,5 +2284,78 @@
   "agentUpdateNeverChecked": "从未检查",
   "agentUpdateCodexMigrationTitle": "安装新版适配器并切换此 Agent",
   "agentUpdateCodexMigrationNotice": "将保留现有程序与配置，安装独立的新版适配器后切换连接，出现问题可安全回退。",
-  "agentUpdateReplacementCommand": "切换后的命令"
+  "agentUpdateReplacementCommand": "切换后的命令",
+  "terminalGridEditLayout": "编辑快捷键布局",
+  "terminalGridSave": "保存",
+  "terminalGridCancel": "取消",
+  "terminalGridUndo": "撤销",
+  "terminalGridDiscardConfirm": "未保存的修改将丢失，确定取消吗？",
+  "terminalGridSaveFailed": "保存快捷键布局失败",
+  "terminalGridCorruptedPrompt": "快捷栏配置数据损坏，是否重置为默认布局？",
+  "terminalGridCorruptedReset": "重置",
+  "terminalGridAddTab": "添加",
+  "terminalGridKeyTab": "按键",
+  "terminalGridSetTab": "设置",
+  "terminalGridCurrentPage": "当前页",
+  "terminalGridAddPage": "＋ 新增页",
+  "terminalGridDeletePage": "删除页",
+  "terminalGridDeletePageConfirm": "删除第 {page} 页及其所有按键？",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "删除这个按键",
+  "terminalGridRows": "键盘显示行数",
+  "terminalGridRowsSubtitle": "1–5 行，默认 2 行",
+  "terminalGridInvertedT": "方向键倒T固定",
+  "terminalGridInvertedTSubtitle": "关闭后拆成 4 个独立按键",
+  "terminalGridSplitArrows": "拆成独立按键",
+  "terminalGridDeleteArrows": "删除方向键组",
+  "terminalGridReset": "恢复默认布局",
+  "terminalGridResetConfirm": "确定要重置为默认快捷键布局吗？",
+  "terminalGridNoSpace": "当前页没有空位，请先新增页、增加行数或删除按键",
+  "terminalGridArrowsNeedTwoRows": "倒T方向键需要至少 2 行，请先在「设置」里拆开方向键",
+  "terminalGridArrowsNeedSpace": "当前页需要 3×2 的空位",
+  "terminalGridKeepAtLeastOnePage": "至少保留一页",
+  "terminalGridPageSpaceInsufficient": "第 {page} 页空间不足，请先删除或移动一些按键",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "该终端协议不支持 Meta 键",
+  "terminalGridSelectKeyHint": "点击键盘上的按键进行选择\n按住拖动可调整位置",
+  "terminalGridDisplayName": "显示名",
+  "terminalGridActionSend": "发送",
+  "terminalGridWidth": "宽度（格）",
+  "terminalGridCustomCombo": "自定义组合键",
+  "terminalGridCustomComboHint": "勾选修饰键 + 输入按键",
+  "terminalGridKeyHint": "按键，如 C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "显示名(可选)",
+  "terminalGridPleaseEnterKey": "请输入按键",
+  "terminalGridTextMacro": "文本宏",
+  "terminalGridTextMacroSubtitle": "点一下发送整段文本",
+  "terminalGridMacroTextHint": "如 ls -la",
+  "terminalGridMacroAppendEnter": "回车",
+  "terminalGridPleaseEnterText": "请输入文本",
+  "terminalGridSingleKey": "单键",
+  "terminalGridComboKey": "组合键",
+  "terminalGridMacroKey": "文本宏",
+  "terminalCategoryCommon": "常用",
+  "terminalCategoryNav": "导航",
+  "terminalCategoryEdit": "编辑",
+  "terminalCategorySym": "符号",
+  "terminalCategoryModifiers": "修饰键",
+  "terminalCategoryCustom": "自定义",
+  "terminalSearchPresets": "搜索预设按键...",
+  "terminalGridActionEdit": "编辑发送动作",
+  "terminalGridActionKey": "发送按键",
+  "terminalGridActionModifiers": "附加修饰键",
+  "terminalGridActionText": "发送文本",
+  "terminalSearchNoMatch": "无匹配按键"
 }

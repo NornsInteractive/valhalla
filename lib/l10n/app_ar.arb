@@ -2284,5 +2284,78 @@
   "agentUpdateNeverChecked": "لم يتم التحقق مطلقًا",
   "agentUpdateCodexMigrationTitle": "تثبيت المحول الجديد والتبديل إلى هذا الوكيل",
   "agentUpdateCodexMigrationNotice": "سيتم الاحتفاظ بالبرنامج والإعدادات الحالية، وتثبيت محول جديد مستقل ثم تحويل الاتصال، مع إمكانية التراجع بأمان في حالة حدوث مشاكل.",
-  "agentUpdateReplacementCommand": "الأمر البديل"
+  "agentUpdateReplacementCommand": "الأمر البديل",
+  "terminalGridEditLayout": "تعديل تخطيط الأزرار",
+  "terminalGridSave": "حفظ",
+  "terminalGridCancel": "إلغاء",
+  "terminalGridUndo": "تراجع",
+  "terminalGridDiscardConfirm": "هل تريد تجاهل التغييرات غير المحفوظة؟",
+  "terminalGridSaveFailed": "فشل حفظ تخطيط شريط الأزرار",
+  "terminalGridCorruptedPrompt": "تكوين شريط الأزرار تالف. هل تريد استعادة التخطيط الافتراضي؟",
+  "terminalGridCorruptedReset": "إعادة ضبط",
+  "terminalGridAddTab": "إضافة",
+  "terminalGridKeyTab": "زر",
+  "terminalGridSetTab": "الإعدادات",
+  "terminalGridCurrentPage": "الصفحة",
+  "terminalGridAddPage": "＋ إضافة صفحة",
+  "terminalGridDeletePage": "حذف الصفحة",
+  "terminalGridDeletePageConfirm": "هل تريد حذف الصفحة {page} وجميع أزرارها؟",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "حذف الزر",
+  "terminalGridRows": "صفوف لوحة المفاتيح",
+  "terminalGridRowsSubtitle": "1–5 صفوف، الافتراضي 2 صف",
+  "terminalGridInvertedT": "مجموعة أسهم حرف T مقلوب",
+  "terminalGridInvertedTSubtitle": "عطّل للفصل إلى 4 أزرار مستقلة",
+  "terminalGridSplitArrows": "فصل إلى أزرار مستقلة",
+  "terminalGridDeleteArrows": "حذف مجموعة الأسهم",
+  "terminalGridReset": "استعادة التخطيط الافتراضي",
+  "terminalGridResetConfirm": "هل تريد إعادة التعيين إلى تخطيط الأزرار الافتراضي؟",
+  "terminalGridNoSpace": "لا توجد مساحة شاغرة في الصفحة الحالية. أضف صفحة، زد الصفوف، أو احذف أزراراً.",
+  "terminalGridArrowsNeedTwoRows": "تتطلب أسهم T المقلوب صفين على الأقل. افصل الأسهم أولاً في الإعدادات.",
+  "terminalGridArrowsNeedSpace": "تتطلب أسهم T المقلوب مساحة 3×2 في الصفحة الحالية.",
+  "terminalGridKeepAtLeastOnePage": "يجب الاحتفاظ بصفحة واحدة على الأقل",
+  "terminalGridPageSpaceInsufficient": "المساحة في الصفحة {page} غير كافية. احذف أو انقل بعض الأزرار أولاً.",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "زر Meta غير مدعوم في بروتوكول الطرفية",
+  "terminalGridSelectKeyHint": "اضغط على زر لتعديل خصائصه\nاضغط مطولاً واسحب لتغيير موضعه",
+  "terminalGridDisplayName": "الاسم المعروض",
+  "terminalGridActionSend": "إرسال",
+  "terminalGridWidth": "العرض (خانات)",
+  "terminalGridCustomCombo": "اختصار مخصص",
+  "terminalGridCustomComboHint": "حدد المفاتيح التبديلية + أدخل الزر",
+  "terminalGridKeyHint": "زر، مثل C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "الاسم المعروض (اختياري)",
+  "terminalGridPleaseEnterKey": "يرجى إدخال الزر",
+  "terminalGridTextMacro": "ماكرو نصي",
+  "terminalGridTextMacroSubtitle": "نقرة واحدة لإرسال نص محدد",
+  "terminalGridMacroTextHint": "مثل ls -la",
+  "terminalGridMacroAppendEnter": "إدخال",
+  "terminalGridPleaseEnterText": "يرجى إدخال النص",
+  "terminalGridSingleKey": "زر مفرد",
+  "terminalGridComboKey": "اختصار مركب",
+  "terminalGridMacroKey": "ماكرو",
+  "terminalCategoryCommon": "شائعة",
+  "terminalCategoryNav": "التنقل",
+  "terminalCategoryEdit": "تحرير",
+  "terminalCategorySym": "رموز",
+  "terminalCategoryModifiers": "مفاتيح التبديل",
+  "terminalCategoryCustom": "مخصص",
+  "terminalSearchPresets": "البحث في الأزرار الجاهزة...",
+  "terminalGridActionEdit": "تعديل إجراء الإرسال",
+  "terminalGridActionKey": "الزر المراد إرساله",
+  "terminalGridActionModifiers": "مفاتيح التبديل",
+  "terminalGridActionText": "النص المراد إرساله",
+  "terminalSearchNoMatch": "لا توجد مفاتيح مطابقة"
 }

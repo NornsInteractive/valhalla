@@ -2284,5 +2284,78 @@
   "agentUpdateNeverChecked": "從未檢查",
   "agentUpdateCodexMigrationTitle": "安裝新版配接器並切換此 Agent",
   "agentUpdateCodexMigrationNotice": "將保留現有程式與設定，安裝獨立的新版配接器後切換連線，發生問題可安全復原。",
-  "agentUpdateReplacementCommand": "切換後的命令"
+  "agentUpdateReplacementCommand": "切換後的命令",
+  "terminalGridEditLayout": "編輯快捷鍵佈局",
+  "terminalGridSave": "儲存",
+  "terminalGridCancel": "取消",
+  "terminalGridUndo": "復原",
+  "terminalGridDiscardConfirm": "未儲存的修改將會遺失，確定取消嗎？",
+  "terminalGridSaveFailed": "儲存快捷鍵佈局失敗",
+  "terminalGridCorruptedPrompt": "快捷列設定資料損毀，是否重設為預設佈局？",
+  "terminalGridCorruptedReset": "重設",
+  "terminalGridAddTab": "新增",
+  "terminalGridKeyTab": "按鍵",
+  "terminalGridSetTab": "設定",
+  "terminalGridCurrentPage": "目前頁",
+  "terminalGridAddPage": "＋ 新增頁",
+  "terminalGridDeletePage": "刪除頁",
+  "terminalGridDeletePageConfirm": "刪除第 {page} 頁及其所有按鍵？",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "刪除此按鍵",
+  "terminalGridRows": "鍵盤顯示列數",
+  "terminalGridRowsSubtitle": "1–5 列，預設 2 列",
+  "terminalGridInvertedT": "方向鍵倒T固定",
+  "terminalGridInvertedTSubtitle": "關閉後拆成 4 個獨立按鍵",
+  "terminalGridSplitArrows": "拆成獨立按鍵",
+  "terminalGridDeleteArrows": "刪除方向鍵組",
+  "terminalGridReset": "恢復預設佈局",
+  "terminalGridResetConfirm": "確定要重設為預設快捷鍵佈局嗎？",
+  "terminalGridNoSpace": "目前頁沒有空位，請先新增頁、增加列數或刪除按鍵",
+  "terminalGridArrowsNeedTwoRows": "倒T方向鍵需要至少 2 列，請先在「設定」中拆開方向鍵",
+  "terminalGridArrowsNeedSpace": "目前頁需要 3×2 的空位",
+  "terminalGridKeepAtLeastOnePage": "至少保留一頁",
+  "terminalGridPageSpaceInsufficient": "第 {page} 頁空間不足，請先刪除或移動部分按鍵",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "該終端協定不支援 Meta 鍵",
+  "terminalGridSelectKeyHint": "點擊鍵盤上的按鍵進行選取\n按住拖曳可調整位置",
+  "terminalGridDisplayName": "顯示名稱",
+  "terminalGridActionSend": "傳送",
+  "terminalGridWidth": "寬度（格）",
+  "terminalGridCustomCombo": "自訂組合鍵",
+  "terminalGridCustomComboHint": "勾選修飾鍵 + 輸入按鍵",
+  "terminalGridKeyHint": "按鍵，如 C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "顯示名稱(選填)",
+  "terminalGridPleaseEnterKey": "請輸入按鍵",
+  "terminalGridTextMacro": "文字巨集",
+  "terminalGridTextMacroSubtitle": "點一下傳送整段文字",
+  "terminalGridMacroTextHint": "如 ls -la",
+  "terminalGridMacroAppendEnter": "換行",
+  "terminalGridPleaseEnterText": "請輸入文字",
+  "terminalGridSingleKey": "單鍵",
+  "terminalGridComboKey": "組合鍵",
+  "terminalGridMacroKey": "文字巨集",
+  "terminalCategoryCommon": "常用",
+  "terminalCategoryNav": "導航",
+  "terminalCategoryEdit": "編輯",
+  "terminalCategorySym": "符號",
+  "terminalCategoryModifiers": "修飾鍵",
+  "terminalCategoryCustom": "自訂",
+  "terminalSearchPresets": "搜尋預設按鍵...",
+  "terminalGridActionEdit": "編輯傳送動作",
+  "terminalGridActionKey": "傳送按鍵",
+  "terminalGridActionModifiers": "附加修飾鍵",
+  "terminalGridActionText": "傳送文字",
+  "terminalSearchNoMatch": "無相符按鍵"
 }

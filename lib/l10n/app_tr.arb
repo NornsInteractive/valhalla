@@ -2248,7 +2248,13 @@
   "sftpToolbarPreferenceSaveFailed": "Araç çubuğu tercihi kaydedilemedi",
   "sftpToolbarActionView": "Görünümü Değiştir",
   "agentUpdateNotice": "{count, plural, one{1 ajan güncellemesi mevcut} other{{count} ajan güncellemesi mevcut}}",
-  "@agentUpdateNotice": { "placeholders": { "count": { "type": "int" } } },
+  "@agentUpdateNotice": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "agentUpdateViewAction": "Görüntüle",
   "agentUpdateCheckAll": "Güncellemeleri Kontrol Et",
   "agentUpdateCheck": "Güncellemeyi Kontrol Et",
@@ -2278,5 +2284,78 @@
   "agentUpdateNeverChecked": "Hiç kontrol edilmedi",
   "agentUpdateCodexMigrationTitle": "Yeni Adaptörü Yükle ve Bu Ajanı Değiştir",
   "agentUpdateCodexMigrationNotice": "Mevcut program ve yapılandırma korunur. Bağımsız yeni bir adaptör kurulduktan sonra bağlantı aktarılır ve sorun çıkarsa güvenle geri dönülebilir.",
-  "agentUpdateReplacementCommand": "Değiştirilen Komut"
+  "agentUpdateReplacementCommand": "Değiştirilen Komut",
+  "terminalGridEditLayout": "Kısayol Düzenini Düzenle",
+  "terminalGridSave": "Kaydet",
+  "terminalGridCancel": "İptal",
+  "terminalGridUndo": "Geri Al",
+  "terminalGridDiscardConfirm": "Kaydedilmemiş değişiklikler atılsın mı?",
+  "terminalGridSaveFailed": "Kısayol çubuğu düzeni kaydedilemedi",
+  "terminalGridCorruptedPrompt": "Kısayol çubuğu yapılandırması bozuk. Varsayılan düzene sıfırlansın mı?",
+  "terminalGridCorruptedReset": "Sıfırla",
+  "terminalGridAddTab": "Ekle",
+  "terminalGridKeyTab": "Tuş",
+  "terminalGridSetTab": "Ayarlar",
+  "terminalGridCurrentPage": "Sayfa",
+  "terminalGridAddPage": "＋ Sayfa Ekle",
+  "terminalGridDeletePage": "Sayfayı Sil",
+  "terminalGridDeletePageConfirm": "{page}. sayfa ve içindeki tüm tuşlar silinsin mi?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "Bu Tuşu Sil",
+  "terminalGridRows": "Klavye Satırları",
+  "terminalGridRowsSubtitle": "1–5 satır, varsayılan 2 satır",
+  "terminalGridInvertedT": "Ters-T Ok Grubu",
+  "terminalGridInvertedTSubtitle": "4 bağımsız tuşa bölmek için kapatın",
+  "terminalGridSplitArrows": "Bağımsız Tuşlara Böl",
+  "terminalGridDeleteArrows": "Ok Grubunu Sil",
+  "terminalGridReset": "Varsayılan Düzeni Geri Yükle",
+  "terminalGridResetConfirm": "Varsayılan kısayol düzenine sıfırlansın mı?",
+  "terminalGridNoSpace": "Mevcut sayfada boş yer yok. Sayfa ekleyin, satır artırın veya tuş silin.",
+  "terminalGridArrowsNeedTwoRows": "Ters-T ok grubu en az 2 satır gerektirir. Önce ayarlardan okları ayırın.",
+  "terminalGridArrowsNeedSpace": "Ters-T ok grubu geçerli sayfada 3×2 boş alan gerektirir.",
+  "terminalGridKeepAtLeastOnePage": "En az bir sayfa korunmalıdır",
+  "terminalGridPageSpaceInsufficient": "{page}. sayfada yeterli alan yok. Önce bazı tuşları silin veya taşıyın.",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "Meta tuşu terminal protokolü tarafından desteklenmiyor",
+  "terminalGridSelectKeyHint": "Özellikleri düzenlemek için bir tuşa dokunun\nKonumu değiştirmek için basılı tutup sürükleyin",
+  "terminalGridDisplayName": "Görünen Ad",
+  "terminalGridActionSend": "Gönder",
+  "terminalGridWidth": "Genişlik (birim)",
+  "terminalGridCustomCombo": "Özel Kısayol",
+  "terminalGridCustomComboHint": "Değiştiricileri işaretleyin + tuş girin",
+  "terminalGridKeyHint": "Tuş, örn. C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "Görünen ad (isteğe bağlı)",
+  "terminalGridPleaseEnterKey": "Lütfen bir tuş girin",
+  "terminalGridTextMacro": "Metin Makrosu",
+  "terminalGridTextMacroSubtitle": "Önceden belirlenmiş metni tek dokunuşla gönderin",
+  "terminalGridMacroTextHint": "örn. ls -la",
+  "terminalGridMacroAppendEnter": "Enter",
+  "terminalGridPleaseEnterText": "Lütfen metin girin",
+  "terminalGridSingleKey": "Tek Tuş",
+  "terminalGridComboKey": "Kombinasyon",
+  "terminalGridMacroKey": "Makro",
+  "terminalCategoryCommon": "Sık Kullanılan",
+  "terminalCategoryNav": "Gezinme",
+  "terminalCategoryEdit": "Düzenleme",
+  "terminalCategorySym": "Semboller",
+  "terminalCategoryModifiers": "Değiştiriciler",
+  "terminalCategoryCustom": "Özel",
+  "terminalSearchPresets": "Önceden ayarlanmış tuşları ara...",
+  "terminalGridActionEdit": "Gönderme Eylemini Düzenle",
+  "terminalGridActionKey": "Gönderilecek Tuş",
+  "terminalGridActionModifiers": "Değiştiriciler",
+  "terminalGridActionText": "Gönderilecek Metin",
+  "terminalSearchNoMatch": "Eşleşen tuş yok"
 }

@@ -2248,7 +2248,13 @@
   "sftpToolbarPreferenceSaveFailed": "Gagal menyimpan preferensi bilah alat",
   "sftpToolbarActionView": "Alihkan Tampilan",
   "agentUpdateNotice": "{count, plural, other{{count} pembaruan agen tersedia}}",
-  "@agentUpdateNotice": { "placeholders": { "count": { "type": "int" } } },
+  "@agentUpdateNotice": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "agentUpdateViewAction": "Lihat",
   "agentUpdateCheckAll": "Periksa Pembaruan",
   "agentUpdateCheck": "Periksa Pembaruan",
@@ -2278,5 +2284,78 @@
   "agentUpdateNeverChecked": "Belum pernah diperiksa",
   "agentUpdateCodexMigrationTitle": "Pasang Adaptor Baru & Alihkan Agen",
   "agentUpdateCodexMigrationNotice": "Program dan konfigurasi saat ini akan dipertahankan. Adaptor baru independen dipasang lalu koneksi dialihkan, dengan rollback aman jika ada masalah.",
-  "agentUpdateReplacementCommand": "Perintah Pengganti"
+  "agentUpdateReplacementCommand": "Perintah Pengganti",
+  "terminalGridEditLayout": "Edit Tata Letak Tombol",
+  "terminalGridSave": "Simpan",
+  "terminalGridCancel": "Batal",
+  "terminalGridUndo": "Urungkan",
+  "terminalGridDiscardConfirm": "Buang perubahan yang belum disimpan?",
+  "terminalGridSaveFailed": "Gagal menyimpan tata letak bilah pintasan",
+  "terminalGridCorruptedPrompt": "Konfigurasi bilah pintasan rusak. Setel ulang ke tata letak default?",
+  "terminalGridCorruptedReset": "Setel Ulang",
+  "terminalGridAddTab": "Tambah",
+  "terminalGridKeyTab": "Tombol",
+  "terminalGridSetTab": "Pengaturan",
+  "terminalGridCurrentPage": "Halaman",
+  "terminalGridAddPage": "＋ Tambah Halaman",
+  "terminalGridDeletePage": "Hapus Halaman",
+  "terminalGridDeletePageConfirm": "Hapus halaman {page} beserta semua tombolnya?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "Hapus Tombol",
+  "terminalGridRows": "Baris Keyboard",
+  "terminalGridRowsSubtitle": "1–5 baris, default 2 baris",
+  "terminalGridInvertedT": "Grup Panah T Terbalik",
+  "terminalGridInvertedTSubtitle": "Matikan untuk memisahkan menjadi 4 tombol mandiri",
+  "terminalGridSplitArrows": "Pisahkan Menjadi Tombol Mandiri",
+  "terminalGridDeleteArrows": "Hapus Grup Panah",
+  "terminalGridReset": "Pulihkan Tata Letak Default",
+  "terminalGridResetConfirm": "Setel ulang ke tata letak tombol pintasan default?",
+  "terminalGridNoSpace": "Tidak ada ruang kosong di halaman ini. Tambah halaman, tambah baris, atau hapus tombol.",
+  "terminalGridArrowsNeedTwoRows": "Panah T terbalik memerlukan minimal 2 baris. Pisahkan panah di pengaturan terlebih dahulu.",
+  "terminalGridArrowsNeedSpace": "Panah T terbalik memerlukan ruang 3×2 di halaman saat ini.",
+  "terminalGridKeepAtLeastOnePage": "Pertahankan minimal satu halaman",
+  "terminalGridPageSpaceInsufficient": "Ruang pada halaman {page} tidak cukup. Hapus atau pindahkan beberapa tombol terlebih dahulu.",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "Tombol Meta tidak didukung oleh protokol terminal",
+  "terminalGridSelectKeyHint": "Ketuk tombol untuk mengedit properti\nTahan dan seret untuk mengatur ulang posisi",
+  "terminalGridDisplayName": "Nama Tampilan",
+  "terminalGridActionSend": "Kirim",
+  "terminalGridWidth": "Lebar (kotak)",
+  "terminalGridCustomCombo": "Pintasan Kustom",
+  "terminalGridCustomComboHint": "Centang pengubah + masukkan tombol",
+  "terminalGridKeyHint": "Tombol, mis. C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "Nama tampilan (opsional)",
+  "terminalGridPleaseEnterKey": "Silakan masukkan tombol",
+  "terminalGridTextMacro": "Makro Teks",
+  "terminalGridTextMacroSubtitle": "Satu ketukan untuk mengirim teks",
+  "terminalGridMacroTextHint": "mis. ls -la",
+  "terminalGridMacroAppendEnter": "Enter",
+  "terminalGridPleaseEnterText": "Silakan masukkan teks",
+  "terminalGridSingleKey": "Tombol Tunggal",
+  "terminalGridComboKey": "Kombinasi",
+  "terminalGridMacroKey": "Makro",
+  "terminalCategoryCommon": "Umum",
+  "terminalCategoryNav": "Navigasi",
+  "terminalCategoryEdit": "Edit",
+  "terminalCategorySym": "Simbol",
+  "terminalCategoryModifiers": "Pengubah",
+  "terminalCategoryCustom": "Kustom",
+  "terminalSearchPresets": "Cari tombol preset...",
+  "terminalGridActionEdit": "Edit Aksi Kirim",
+  "terminalGridActionKey": "Tombol untuk Dikirim",
+  "terminalGridActionModifiers": "Pengubah",
+  "terminalGridActionText": "Teks untuk Dikirim",
+  "terminalSearchNoMatch": "Tidak ada tombol yang cocok"
 }

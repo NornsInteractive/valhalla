@@ -1,14 +1,23 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/storage_providers.dart';
+import '../../../data/models/terminal_accessory_layout.dart';
+import 'direction_key_color_dialog.dart';
+
+export '../../../data/models/terminal_accessory_layout.dart';
 
 enum ModifierLockState { inactive, oneShot, locked }
 
 /// Helper widget that repeats invoking [onPressed] while held down.
-/// Cancels cleanly on pointer up, pointer cancel, or disposal.
+/// Differentiates between tap, hold, and drag:
+/// - A tap (press and release quickly) fires [onPressed] once on pointer up.
+/// - A hold (finger held for >200ms without dragging) fires [onPressed] and repeats.
+/// - A drag (finger moved >18dp) cancels repeat and tap so horizontal page swipes never fire.
+/// Cancels cleanly on pointer up, drag, pointer cancel, or disposal.
 class HoldRepeatKey extends StatefulWidget {
   final VoidCallback onPressed;
   final Widget child;
@@ -32,8 +41,12 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey>
   Timer? _initialTimer;
   Timer? _repeatTimer;
   int? _activePointerId;
+  Offset? _downPosition;
+  bool _isDragSlopExceeded = false;
+  bool _hasFired = false;
   bool _isHeld = false;
   bool _isDisposed = false;
+  static const double _kDragSlop = 18.0;
 
   @override
   void initState() {
@@ -60,7 +73,7 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey>
     });
   }
 
-  void _start(int pointerId) {
+  void _start(int pointerId, Offset position) {
     if (_activePointerId != null) {
       _cancel();
     }
@@ -72,20 +85,28 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey>
       return;
     }
     _activePointerId = pointerId;
+    _downPosition = position;
+    _isDragSlopExceeded = false;
+    _hasFired = false;
     _notifyHold(true);
-    widget.onPressed();
-    _initialTimer = Timer(const Duration(milliseconds: 350), () {
+
+    _initialTimer = Timer(const Duration(milliseconds: 200), () {
       final currentLifecycle = WidgetsBinding.instance.lifecycleState;
       if (!mounted ||
+          _isDragSlopExceeded ||
           (currentLifecycle != null &&
               currentLifecycle != AppLifecycleState.resumed) ||
           (widget.canRepeat != null && !widget.canRepeat!())) {
         _cancel();
         return;
       }
+      _hasFired = true;
+      widget.onPressed();
+
       _repeatTimer = Timer.periodic(const Duration(milliseconds: 70), (_) {
         final tickLifecycle = WidgetsBinding.instance.lifecycleState;
         if (!mounted ||
+            _isDragSlopExceeded ||
             (tickLifecycle != null &&
                 tickLifecycle != AppLifecycleState.resumed) ||
             (widget.canRepeat != null && !widget.canRepeat!())) {
@@ -129,11 +150,23 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey>
       behavior: HitTestBehavior.opaque,
       onPointerDown: (e) {
         if (_activePointerId == null) {
-          _start(e.pointer);
+          _start(e.pointer, e.position);
+        }
+      },
+      onPointerMove: (e) {
+        if (e.pointer == _activePointerId && _downPosition != null) {
+          if ((e.position - _downPosition!).distance > _kDragSlop) {
+            _isDragSlopExceeded = true;
+            _cancel();
+          }
         }
       },
       onPointerUp: (e) {
         if (e.pointer == _activePointerId) {
+          if (!_isDragSlopExceeded && !_hasFired) {
+            _hasFired = true;
+            widget.onPressed();
+          }
           _cancel();
         }
       },
@@ -242,238 +275,6 @@ class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
   }
 }
 
-// =============================================================================
-// Accessory Item Data Model & Grid Engine
-// Matching project prototype: SSH 快捷键栏原型.html
-// =============================================================================
-
-const int kAccessoryCols = 8;
-const double kAccessoryCellHeight = 42.0;
-const List<String> kModifierNames = ['Ctrl', 'Alt', 'Shift', 'Meta', 'Fn', 'CTRL', 'ALT', 'SHIFT', 'META', 'FN'];
-const List<List<dynamic>> kArrowOffsets = [
-  ['↑', 1, 0],
-  ['←', 0, 1],
-  ['↓', 1, 1],
-  ['→', 2, 1],
-];
-
-class AccessoryItem {
-  String id;
-  String t; // 'k' (key), 'g' (group/arrows), 'i' (ime/keyboard)
-  String l; // label
-  String s; // send string / text macro
-  int w; // width in grid units (1..3)
-  int h; // height in grid units (1..2)
-  int c; // column (0..7)
-  int r; // row (0..rows-1)
-  int p; // page index (0..np-1)
-  String kind; // 'key', 'combo', 'text'
-  bool m; // modifier (Ctrl, Alt, Shift, Meta)
-  int arrow; // 1 if split from arrow group
-
-  AccessoryItem({
-    required this.id,
-    this.t = 'k',
-    required this.l,
-    String? s,
-    this.w = 1,
-    this.h = 1,
-    this.c = 0,
-    this.r = 0,
-    this.p = 0,
-    this.kind = 'key',
-    this.m = false,
-    this.arrow = 0,
-  }) : s = s ?? l;
-
-  AccessoryItem copyWith({
-    String? id,
-    String? t,
-    String? l,
-    String? s,
-    int? w,
-    int? h,
-    int? c,
-    int? r,
-    int? p,
-    String? kind,
-    bool? m,
-    int? arrow,
-  }) {
-    return AccessoryItem(
-      id: id ?? this.id,
-      t: t ?? this.t,
-      l: l ?? this.l,
-      s: s ?? this.s,
-      w: w ?? this.w,
-      h: h ?? this.h,
-      c: c ?? this.c,
-      r: r ?? this.r,
-      p: p ?? this.p,
-      kind: kind ?? this.kind,
-      m: m ?? this.m,
-      arrow: arrow ?? this.arrow,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    't': t,
-    'l': l,
-    's': s,
-    'w': w,
-    'h': h,
-    'c': c,
-    'r': r,
-    'p': p,
-    'kind': kind,
-    'm': m,
-    'arrow': arrow,
-  };
-
-  factory AccessoryItem.fromJson(Map<String, dynamic> json) {
-    return AccessoryItem(
-      id: json['id'] as String? ?? 'k_${Random().nextInt(99999)}',
-      t: json['t'] as String? ?? 'k',
-      l: json['l'] as String? ?? '',
-      s: json['s'] as String?,
-      w: (json['w'] as num?)?.toInt() ?? 1,
-      h: (json['h'] as num?)?.toInt() ?? 1,
-      c: (json['c'] as num?)?.toInt() ?? 0,
-      r: (json['r'] as num?)?.toInt() ?? 0,
-      p: (json['p'] as num?)?.toInt() ?? 0,
-      kind: json['kind'] as String? ?? 'key',
-      m: json['m'] as bool? ?? false,
-      arrow: (json['arrow'] as num?)?.toInt() ?? 0,
-    );
-  }
-}
-
-/// Creates default items as specified in the prototype `def()`.
-List<AccessoryItem> createDefaultAccessoryItems() {
-  int n = 0;
-  final it = <AccessoryItem>[];
-
-  // Page 0:
-  // (0,0): ESC, (1,0): TAB, (2,0): CTRL, (3,0): ALT
-  // (0,1): SHIFT, (1,1): PASTE, (2,1): /, (3,1): ~
-  // (4..6, 0..1): arrows group
-  // (7,0): -, (7,1): ime (⌨)
-  final page0Keys = [
-    'ESC', 'TAB', 'CTRL', 'ALT',
-    'SHIFT', 'PASTE', '/', '~', '-',
-  ];
-
-  for (int i = 0; i < page0Keys.length; i++) {
-    final l = page0Keys[i];
-    final isMod = kModifierNames.contains(l);
-    final o = AccessoryItem(
-      id: 'd${n++}',
-      l: l,
-      s: l,
-      p: 0,
-      m: isMod,
-    );
-    if (i < 8) {
-      o.c = i % 4;
-      o.r = i >> 2;
-    } else {
-      o.c = 7;
-      o.r = 0;
-    }
-    it.add(o);
-  }
-
-  // Inverted-T arrows group at (4, 0)
-  it.add(AccessoryItem(
-    id: 'arrows',
-    t: 'g',
-    l: 'arrows',
-    c: 4,
-    r: 0,
-    w: 3,
-    h: 2,
-    p: 0,
-  ));
-
-  // Page 1:
-  final page1Keys = [
-    'Home', 'End', 'PgUp', 'PgDn', 'Ins', 'Del', 'Ctrl+C', 'Ctrl+D',
-    'Ctrl+Z', 'Ctrl+L', 'Ctrl+R', 'Ctrl+A', 'Ctrl+E', 'Ctrl+U', 'Ctrl+W',
-  ];
-
-  for (int i = 0; i < page1Keys.length; i++) {
-    final l = page1Keys[i];
-    it.add(AccessoryItem(
-      id: 'd${n++}',
-      l: l,
-      s: l,
-      p: 1,
-      kind: l.contains('+') ? 'combo' : 'key',
-      c: i % 8,
-      r: i >> 3,
-    ));
-  }
-
-  // Keyboard button (⌨), fixed on right-bottom of all pages
-  it.add(AccessoryItem(
-    id: 'ime',
-    t: 'i',
-    l: '⌨',
-    w: 1,
-    h: 1,
-    p: 0,
-  ));
-
-  return it;
-}
-
-/// Helper functions matching prototype rules
-AccessoryItem getEffectivePos(AccessoryItem o, int rows) {
-  if (o.t == 'i') {
-    return o.copyWith(c: kAccessoryCols - 1, r: rows - 1, w: 1, h: 1);
-  }
-  return o;
-}
-
-bool isItemVisible(AccessoryItem o, int page) {
-  return o.t == 'i' || o.p == page;
-}
-
-bool checkCollision(
-  List<AccessoryItem> items,
-  AccessoryItem? ignoreItem,
-  int c,
-  int r,
-  int w,
-  int h,
-  int page,
-  int rows,
-) {
-  return items.any((p) {
-    if (p == ignoreItem || !(p.t == 'i' || p.p == page)) return false;
-    final q = getEffectivePos(p, rows);
-    return c < q.c + q.w && c + w > q.c && r < q.r + q.h && r + h > q.r;
-  });
-}
-
-List<int>? findFreeSpot(
-  List<AccessoryItem> items,
-  int w,
-  int h,
-  int page,
-  int rows,
-) {
-  for (int r = 0; r <= rows - h; r++) {
-    for (int c = 0; c <= kAccessoryCols - w; c++) {
-      if (!checkCollision(items, null, c, r, w, h, page, rows)) {
-        return [c, r];
-      }
-    }
-  }
-  return null;
-}
-
 String formatKeyLabel(String l) {
   return l
       .replaceAll('Ctrl+', '^')
@@ -488,25 +289,46 @@ double fontSizeForLabel(String text) {
   return 13.0;
 }
 
-// Preset categories from prototype SETS
+// Preset categories for Add tab
 final Map<String, List<String>> kPresetSets = {
-  '常用': [
-    'Esc', 'Tab', 'Enter', 'Backspace', 'Space', 'Del', 'Ins',
-    'Ctrl+C', 'Ctrl+D', 'Ctrl+Z', 'Ctrl+L', 'Ctrl+R', 'Ctrl+A', 'Ctrl+E', 'Ctrl+U', 'Ctrl+W', 'Ctrl+K'
+  'common': [
+    'Esc',
+    'Tab',
+    'Enter',
+    'Backspace',
+    'Space',
+    'Del',
+    'Ins',
+    'Ctrl+C',
+    'Ctrl+D',
+    'Ctrl+Z',
+    'Ctrl+L',
+    'Ctrl+R',
+    'Ctrl+A',
+    'Ctrl+E',
+    'Ctrl+U',
+    'Ctrl+W',
+    'Ctrl+K',
   ],
-  'Ctrl+': [
+  'ctrl': [
     ...List.generate(26, (i) => 'Ctrl+${String.fromCharCode(65 + i)}'),
-    'Ctrl+[', 'Ctrl+]', 'Ctrl+\\', 'Ctrl+Space',
+    'Ctrl+[',
+    'Ctrl+]',
+    'Ctrl+\\',
+    'Ctrl+Space',
   ],
-  'Alt+': [
+  'alt': [
     ...List.generate(26, (i) => 'Alt+${String.fromCharCode(65 + i)}'),
-    'Alt+.', 'Alt+Backspace', 'Alt+Enter',
+    'Alt+.',
+    'Alt+Backspace',
+    'Alt+Enter',
   ],
-  'F键': List.generate(12, (i) => 'F${i + 1}'),
-  '导航': ['↑', '↓', '←', '→', 'Home', 'End', 'PgUp', 'PgDn', 'Ins', 'Del'],
-  '符号': '| / \\ ~ - _ . , : ; * & ! @ # \$ % ^ = + ? \' " ` ( ) [ ] { } < >'.split(' '),
-  '修饰': ['Ctrl', 'Alt', 'Shift', 'Meta'],
-  '自定义': [],
+  'fkeys': List.generate(12, (i) => 'F${i + 1}'),
+  'nav': ['↑', '↓', '←', '→', 'Home', 'End', 'PgUp', 'PgDn', 'Ins', 'Del'],
+  'sym': '| / \\ ~ - _ . , : ; * & ! @ # \$ % ^ = + ? \' " ` ( ) [ ] { } < >'
+      .split(' '),
+  'modifiers': ['Ctrl', 'Alt', 'Shift', 'Fn'],
+  'custom': [],
 };
 
 // =============================================================================
@@ -514,7 +336,9 @@ final Map<String, List<String>> kPresetSets = {
 // =============================================================================
 
 class TerminalAccessoryBar extends ConsumerStatefulWidget {
-  final void Function(String key, {bool isCtrl, bool isAlt, bool isShift}) onKey;
+  final void Function(String key, {bool isCtrl, bool isAlt, bool isShift})
+  onKey;
+  final void Function(String text, {bool appendEnter})? onText;
   final VoidCallback onToggleCtrl;
   final VoidCallback? onLockCtrl;
   final VoidCallback onToggleAlt;
@@ -543,12 +367,13 @@ class TerminalAccessoryBar extends ConsumerStatefulWidget {
   final ValueChanged<double>? onHeightChanged;
 
   static double calculateBaseHeight(int rows) {
-    return 28.0 + rows * kAccessoryCellHeight;
+    return 10.0 + rows * kAccessoryCellHeight;
   }
 
   const TerminalAccessoryBar({
     super.key,
     required this.onKey,
+    this.onText,
     required this.onToggleCtrl,
     this.onLockCtrl,
     required this.onToggleAlt,
@@ -584,24 +409,57 @@ class TerminalAccessoryBar extends ConsumerStatefulWidget {
 
 class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     with WidgetsBindingObserver {
-  List<AccessoryItem> _items = [];
-  int _np = 2;
-  int _rows = 2;
+  late TerminalAccessoryLayout _masterLayout;
+  late TerminalAccessoryLayout _draftLayout;
+  late TerminalAccessoryLayout _originalLayout;
+  final List<TerminalAccessoryLayout> _undoStack = [];
+  bool _isDirty = false;
+  bool _isSaving = false;
+
+  // Projection & sizing cache
+  int _masterRevision = 0;
+  TerminalAccessoryLayout? _cachedProjection;
+  int? _cachedProjRevision;
+  int? _cachedProjColumns;
+  int? _cachedProjRows;
+
+  double? _cachedMinCellWidth;
+  int? _cachedMinCellRevision;
+  TextScaler? _cachedTextScaler;
+  Locale? _cachedLocale;
+
   int _page = 0;
   bool _edit = false;
   final Set<String> _mods = {};
   String? _sel;
   String _st = 'add'; // 'add', 'key', 'set'
-  String _cat = '常用';
+  String _cat = 'common';
   bool _isExpanded = false;
   String _expandedCategory = 'Fn';
+  bool _hasCorruptedStorage = false;
 
   // Dragging state
   String? _draggingId;
   Offset? _dragOffset;
   bool _isDragMoving = false;
+  int? _dragTargetC;
+  int? _dragTargetR;
+  bool _dragTargetValid = false;
+
+  // Swipe gesture dx accumulator
+  double _swipeDragDx = 0.0;
+
+  // Arrow hold states (keyed by canonical arrow '↑', '↓', '←', '→')
+  final Map<String, bool> _arrowHeld = {
+    '↑': false,
+    '↓': false,
+    '←': false,
+    '→': false,
+  };
 
   // Text editing controllers for Tab 'key' & Tab 'add' (custom)
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
   final TextEditingController _labelCtrl = TextEditingController();
   final TextEditingController _customKeyCtrl = TextEditingController();
   final TextEditingController _customLabelCtrl = TextEditingController();
@@ -611,9 +469,18 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     'Ctrl': false,
     'Alt': false,
     'Shift': false,
-    'Meta': false,
   };
-  bool _macroEnterCheckbox = true;
+  bool _macroEnterCheckbox = false; // "默认新增宏不回车，旧宏行为保留"
+
+  // Action editing controllers for Tab 'key'
+  final TextEditingController _actionKeyCtrl = TextEditingController();
+  final TextEditingController _actionTextCtrl = TextEditingController();
+  final Map<String, bool> _actionModCheckboxes = {
+    'CTRL': false,
+    'ALT': false,
+    'SHIFT': false,
+  };
+  bool _actionAppendEnterCheckbox = false;
 
   AppLifecycleState _appLifecycleState = AppLifecycleState.resumed;
 
@@ -624,7 +491,9 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     _loadConfig();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        widget.onHeightChanged?.call(TerminalAccessoryBar.calculateBaseHeight(_rows));
+        widget.onHeightChanged?.call(
+          TerminalAccessoryBar.calculateBaseHeight(_masterLayout.rows),
+        );
       }
     });
   }
@@ -632,11 +501,14 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _searchCtrl.dispose();
     _labelCtrl.dispose();
     _customKeyCtrl.dispose();
     _customLabelCtrl.dispose();
     _macroLabelCtrl.dispose();
     _macroTextCtrl.dispose();
+    _actionKeyCtrl.dispose();
+    _actionTextCtrl.dispose();
     super.dispose();
   }
 
@@ -654,103 +526,307 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   void _loadConfig() {
     try {
       final storage = ref.read(localStorageServiceProvider);
+      final error = storage.getTerminalGridConfigError();
       final raw = storage.getTerminalGridConfig();
-      if (raw != null && raw.isNotEmpty) {
+      if (error != null && raw == null) {
+        _hasCorruptedStorage = true;
+        _masterLayout = TerminalAccessoryLayout.defaultLayout();
+      } else if (raw != null && raw.isNotEmpty) {
         final data = jsonDecode(raw) as Map<String, dynamic>;
-        final rawItems = data['items'] as List<dynamic>?;
-        if (rawItems != null && rawItems.isNotEmpty) {
-          _items = rawItems
-              .map((e) => AccessoryItem.fromJson(Map<String, dynamic>.from(e as Map)))
-              .toList();
-          _np = (data['np'] as num?)?.toInt() ?? 2;
-          _rows = (data['rows'] as num?)?.toInt() ?? 2;
-          return;
+        final schema = data['schemaVersion'] ?? 1;
+        _masterLayout = TerminalAccessoryLayout.fromJson(data);
+        // v1 direction color fallback from old storage seed; v2 explicit null stays null
+        if (schema == 1 && _masterLayout.directionSeedColor == null) {
+          final fallbackSeed = storage.getTerminalDirectionKeySeedColorValue();
+          if (fallbackSeed != null) {
+            _masterLayout = _masterLayout.copyWith(
+              directionSeedColor: fallbackSeed,
+            );
+          }
         }
+        _hasCorruptedStorage = false;
+      } else {
+        _masterLayout = TerminalAccessoryLayout.defaultLayout();
+        _hasCorruptedStorage = false;
       }
-    } catch (_) {}
-    _items = createDefaultAccessoryItems();
-    _np = 2;
-    _rows = 2;
+    } catch (_) {
+      _masterLayout = TerminalAccessoryLayout.defaultLayout();
+    }
+    _draftLayout = _masterLayout.copy();
+    _originalLayout = _masterLayout.copy();
   }
 
-  Future<void> _saveConfig() async {
+  double _computeMinCellWidth(
+    BuildContext context,
+    Iterable<AccessoryItem> items,
+  ) {
+    final textScaler = MediaQuery.textScalerOf(context);
+    final locale = Localizations.maybeLocaleOf(context);
+    if (_cachedMinCellWidth != null &&
+        _cachedMinCellRevision == _masterRevision &&
+        _cachedTextScaler == textScaler &&
+        _cachedLocale == locale) {
+      return _cachedMinCellWidth!;
+    }
+    double maxW = 44.0;
+    for (final item in items) {
+      if (item.t == 'g' || item.t == 'i' || item.t == 'more') continue;
+      final label = formatKeyLabel(item.l);
+      final painter = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: TextStyle(
+            fontFamily: 'JetBrains Mono',
+            fontSize: fontSizeForLabel(label),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        textScaler: textScaler,
+      )..layout();
+      final w = math.max(1, item.w);
+      final cellReq = (painter.width + 8.0) / w;
+      maxW = math.max(maxW, cellReq);
+    }
+    _cachedMinCellWidth = maxW;
+    _cachedMinCellRevision = _masterRevision;
+    _cachedTextScaler = textScaler;
+    _cachedLocale = locale;
+    return maxW;
+  }
+
+  int _calculateColumns(double boardWidth, double minCellWidth) {
+    final baseCols = accessoryColumnsForWidth(
+      boardWidth + 8,
+      minCellWidth: minCellWidth,
+    );
+    int minCols = 4;
+    if (_masterLayout.rows == 1) {
+      final customItems = _masterLayout.items.where(
+        (i) => i.t != 'i' && i.t != 'more',
+      );
+      final maxItemW = customItems.isEmpty
+          ? 1
+          : customItems.map((i) => i.w).reduce(math.max);
+      minCols = math.max(4, maxItemW + 2);
+    }
+    return baseCols.clamp(minCols, 8);
+  }
+
+  TerminalAccessoryLayout _getProjectedLayout(int columns) {
+    if (_cachedProjection == null ||
+        _cachedProjRevision != _masterRevision ||
+        _cachedProjColumns != columns ||
+        _cachedProjRows != _masterLayout.rows) {
+      _cachedProjection = _masterLayout.project(columns);
+      _cachedProjRevision = _masterRevision;
+      _cachedProjColumns = columns;
+      _cachedProjRows = _masterLayout.rows;
+    }
+    return _cachedProjection!;
+  }
+
+  void _enterEditMode(int columns) {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _edit = true;
+      _isExpanded = false;
+      _draftLayout = _masterLayout.project(columns);
+      _originalLayout = _draftLayout.copy();
+      _undoStack.clear();
+      _isDirty = false;
+      _sel = null;
+      _st = 'add';
+    });
+  }
+
+  void _mutateDraft(void Function() mutation) {
+    if (_isSaving) return;
+    if (_undoStack.length >= 50) {
+      _undoStack.removeAt(0);
+    }
+    _undoStack.add(_draftLayout.copy());
+    mutation();
+    _isDirty = !_draftLayout.hasSameContent(_originalLayout);
+    setState(() {});
+  }
+
+  void _undo() {
+    if (_undoStack.isEmpty || _isSaving) return;
+    setState(() {
+      _draftLayout = _undoStack.removeLast();
+      _isDirty = !_draftLayout.hasSameContent(_originalLayout);
+      if (_page >= _draftLayout.pages) {
+        _page = math.max(0, _draftLayout.pages - 1);
+      }
+      if (!_draftLayout.items.any((i) => i.id == _sel)) {
+        _sel = null;
+      } else {
+        _syncKeyProperties();
+      }
+    });
+  }
+
+  Future<void> _saveEdit() async {
+    if (_isSaving) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _isSaving = true);
     try {
+      final toSave = _draftLayout.copy();
+      toSave.validate(enforceSystemSlots: true);
       final storage = ref.read(localStorageServiceProvider);
-      final data = {
-        'items': _items.map((e) => e.toJson()).toList(),
-        'np': _np,
-        'rows': _rows,
-      };
-      await storage.setTerminalGridConfig(jsonEncode(data));
-    } catch (_) {}
+      await storage.setTerminalGridConfig(jsonEncode(toSave.toJson()));
+      if (!mounted) return;
+      final oldRows = _masterLayout.rows;
+      _masterLayout = toSave.copy();
+      _originalLayout = toSave.copy();
+      _masterRevision++;
+      _cachedProjection = null;
+      _cachedMinCellWidth = null;
+      _undoStack.clear();
+      _isDirty = false;
+      _isSaving = false;
+      _edit = false;
+      _sel = null;
+      FocusScope.of(context).unfocus();
+      if (_masterLayout.rows != oldRows) {
+        widget.onHeightChanged?.call(
+          TerminalAccessoryBar.calculateBaseHeight(_masterLayout.rows),
+        );
+      }
+      setState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.terminalGridSaveFailed),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _cancelEdit() async {
+    if (_isSaving) return;
+    if (_isDirty) {
+      final discard = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(context.l10n.terminalGridDiscardConfirm),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(context.l10n.confirm),
+            ),
+          ],
+        ),
+      );
+      if (discard != true || !mounted) return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _edit = false;
+      _sel = null;
+      _undoStack.clear();
+      _isDirty = false;
+      _draftLayout = _masterLayout.copy();
+    });
   }
 
   void _press(AccessoryItem o) {
-    if (o.m) {
-      final upper = o.l.toUpperCase();
-      if (upper == 'CTRL') {
+    if (_edit) return;
+
+    final act = o.action;
+    if (!act.supported) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.terminalGridMetaNotSupported),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (act.type == 'keyboard') {
+      widget.onToggleKeyboard?.call();
+      return;
+    }
+
+    if (act.type == 'more') {
+      setState(() {
+        _isExpanded = !_isExpanded;
+      });
+      return;
+    }
+
+    if (act.type == 'paste') {
+      widget.onPaste();
+      return;
+    }
+
+    if (act.type == 'modifier') {
+      final modKey = act.key.toUpperCase();
+      if (modKey == 'CTRL') {
         widget.onToggleCtrl();
         return;
       }
-      if (upper == 'ALT') {
+      if (modKey == 'ALT') {
         widget.onToggleAlt();
         return;
       }
-      if (upper == 'SHIFT') {
+      if (modKey == 'SHIFT') {
         widget.onToggleShift?.call();
         return;
       }
-      if (upper == 'FN' || upper == 'META') {
+      if (modKey == 'FN') {
         widget.onToggleFn?.call();
         return;
       }
       setState(() {
-        if (_mods.contains(o.l)) {
-          _mods.remove(o.l);
+        if (_mods.contains(modKey)) {
+          _mods.remove(modKey);
         } else {
-          _mods.add(o.l);
+          _mods.add(modKey);
         }
       });
       return;
     }
 
-    if (o.t == 'i') {
-      widget.onToggleKeyboard?.call();
+    if (act.type == 'text') {
+      if (widget.onText != null) {
+        widget.onText!(act.text, appendEnter: act.appendEnter);
+      }
       return;
     }
 
-    if (o.l.toUpperCase() == 'PASTE') {
-      widget.onPaste();
-      return;
-    }
-
-    final isCtrl = widget.isCtrlActive ||
+    final isCtrl =
+        act.modifiers.contains('CTRL') ||
+        widget.isCtrlActive ||
         widget.ctrlState == ModifierLockState.oneShot ||
         widget.ctrlState == ModifierLockState.locked ||
         widget.isCtrlHeld ||
         _mods.any((m) => m.toUpperCase() == 'CTRL');
-    final isAlt = widget.isAltActive ||
+    final isAlt =
+        act.modifiers.contains('ALT') ||
+        widget.isAltActive ||
         widget.altState == ModifierLockState.oneShot ||
         widget.altState == ModifierLockState.locked ||
         widget.isAltHeld ||
         _mods.any((m) => m.toUpperCase() == 'ALT');
-    final isShift = widget.shiftState == ModifierLockState.oneShot ||
+    final isShift =
+        act.modifiers.contains('SHIFT') ||
+        widget.shiftState == ModifierLockState.oneShot ||
         widget.shiftState == ModifierLockState.locked ||
         widget.isShiftHeld ||
         _mods.any((m) => m.toUpperCase() == 'SHIFT');
 
-    if (o.kind == 'text') {
-      // Text macro
-      widget.onKey(o.s);
-    } else {
-      if (o.s.startsWith('Ctrl+')) {
-        widget.onKey(o.s.substring(5).toUpperCase(), isCtrl: true, isAlt: isAlt, isShift: isShift);
-      } else if (o.s.startsWith('Alt+')) {
-        widget.onKey(o.s.substring(4).toUpperCase(), isCtrl: isCtrl, isAlt: true, isShift: isShift);
-      } else {
-        widget.onKey(o.s, isCtrl: isCtrl, isAlt: isAlt, isShift: isShift);
-      }
-    }
+    widget.onKey(act.key, isCtrl: isCtrl, isAlt: isAlt, isShift: isShift);
 
     if (_mods.isNotEmpty) {
       setState(() {
@@ -760,182 +836,213 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   }
 
   void _placeItem(AccessoryItem o) {
-    final s = findFreeSpot(_items, 1, 1, _page, _rows);
+    final s = findFreeSpot(
+      _draftLayout.items,
+      1,
+      1,
+      _page,
+      _draftLayout.rows,
+      columns: _draftLayout.columns,
+    );
     if (s == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('当前页没有空位，请先新增页、增加行数或删除按键'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.l10n.terminalGridNoSpace),
+          duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
-    o.id = 'n${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(9999)}';
+    o.id =
+        'n${DateTime.now().millisecondsSinceEpoch}_${math.Random().nextInt(9999)}';
     o.p = _page;
     o.c = s[0];
     o.r = s[1];
-    setState(() {
-      _items.add(o);
+    _mutateDraft(() {
+      _draftLayout.items.add(o);
       _sel = o.id;
       _st = 'key';
-      _labelCtrl.text = o.l;
+      _syncKeyProperties();
     });
-    _saveConfig();
   }
 
   void _setRows(int n) {
-    n = n.clamp(1, 5);
-    if (n == _rows) return;
+    if (n < 1 || n > 5 || n == _draftLayout.rows || _isSaving) return;
 
-    if (_items.any((i) => i.t == 'g') && n < 2) {
+    if (_draftLayout.items.any((i) => i.t == 'g') && n < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('倒T方向键需要至少 2 行，请先在「设置」里拆开方向键'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.l10n.terminalGridArrowsNeedTwoRows),
+          duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    final snap = jsonEncode(_items.map((e) => e.toJson()).toList());
-    final old = _rows;
-    _rows = n;
-
-    final bad = _items.where((i) =>
-        i.t != 'i' &&
-        (i.r + i.h > _rows ||
-            (i.c + i.w > kAccessoryCols - 1 && i.r + i.h > _rows - 1))).toList();
-
-    for (final o in bad) {
-      o.c = -99;
-      final s = findFreeSpot(_items, o.w, o.h, o.p, _rows);
-      if (s == null) {
-        _items = (jsonDecode(snap) as List)
-            .map((e) => AccessoryItem.fromJson(Map<String, dynamic>.from(e as Map)))
-            .toList();
-        _rows = old;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('第 ${o.p + 1} 页空间不足，请先删除或移动一些按键'),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        setState(() {});
-        return;
-      }
-      o.c = s[0];
-      o.r = s[1];
+    try {
+      final candidate = _draftLayout.project(_draftLayout.columns, rows: n);
+      _mutateDraft(() {
+        _draftLayout = candidate;
+        if (_page >= _draftLayout.pages) {
+          _page = _draftLayout.pages - 1;
+        }
+      });
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.terminalGridNoSpace),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
-
-    _saveConfig();
-    setState(() {});
   }
 
   void _toggleArrows() {
-    final g = _items.where((i) => i.t == 'g').firstOrNull;
+    final g = _draftLayout.items.where((i) => i.t == 'g').firstOrNull;
     if (g != null) {
-      setState(() {
-        _items.remove(g);
+      _mutateDraft(() {
+        _draftLayout.items.remove(g);
         for (final arr in kArrowOffsets) {
           final l = arr[0] as String;
           final x = arr[1] as int;
           final y = arr[2] as int;
-          _items.add(AccessoryItem(
-            id: 'a$l',
-            l: l,
-            s: l,
-            arrow: 1,
-            p: g.p,
-            c: g.c + x,
-            r: g.r + y,
-          ));
+          _draftLayout.items.add(
+            AccessoryItem(
+              id: 'a$l',
+              l: l,
+              s: l,
+              arrow: 1,
+              p: g.p,
+              c: g.c + x,
+              r: g.r + y,
+              action: TerminalAccessoryAction(type: 'key', key: l),
+            ),
+          );
         }
         _sel = null;
       });
     } else {
-      if (_rows < 2) {
+      if (_draftLayout.rows < 2) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('请先把行数增加到 2 行以上'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(context.l10n.terminalGridArrowsNeedTwoRows),
+            duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
           ),
         );
         return;
       }
-      final old = _items.where((i) => i.arrow == 1).toList();
-      _items.removeWhere((i) => i.arrow == 1);
-      final s = findFreeSpot(_items, 3, 2, _page, _rows);
+      final oldArrows = _draftLayout.items.where((i) => i.arrow == 1).toList();
+      final targetPage = oldArrows.isNotEmpty ? oldArrows.first.p : _page;
+      final candidates = _draftLayout.items.where((i) => i.arrow != 1).toList();
+
+      var s = findFreeSpot(
+        candidates,
+        3,
+        2,
+        targetPage,
+        _draftLayout.rows,
+        columns: _draftLayout.columns,
+      );
+      var chosenPage = targetPage;
+      if (s == null && _page != targetPage) {
+        s = findFreeSpot(
+          candidates,
+          3,
+          2,
+          _page,
+          _draftLayout.rows,
+          columns: _draftLayout.columns,
+        );
+        chosenPage = _page;
+      }
       if (s == null) {
-        _items.addAll(old);
+        for (var p = 0; p < _draftLayout.pages; p++) {
+          s = findFreeSpot(
+            candidates,
+            3,
+            2,
+            p,
+            _draftLayout.rows,
+            columns: _draftLayout.columns,
+          );
+          if (s != null) {
+            chosenPage = p;
+            break;
+          }
+        }
+      }
+
+      if (s == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('当前页需要 3×2 的空位'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(context.l10n.terminalGridArrowsNeedSpace),
+            duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
           ),
         );
-        setState(() {});
         return;
       }
-      setState(() {
-        _items.add(AccessoryItem(
+      _mutateDraft(() {
+        _draftLayout.items.removeWhere((i) => i.arrow == 1);
+        final newGroup = AccessoryItem(
           id: 'arrows',
           t: 'g',
           l: 'arrows',
-          c: s[0],
+          c: s![0],
           r: s[1],
           w: 3,
           h: 2,
-          p: _page,
-        ));
-        _sel = 'arrows';
+          p: chosenPage,
+          action: const TerminalAccessoryAction(type: 'key'),
+        );
+        _draftLayout.items.add(newGroup);
+        _page = chosenPage;
+        _sel = newGroup.id;
         _st = 'key';
       });
     }
-    _saveConfig();
   }
 
   void _resetToDefault() {
     showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('重置布局'),
-        content: const Text('确定要重置为默认快捷键布局吗？'),
+        title: Text(context.l10n.terminalGridReset),
+        content: Text(context.l10n.terminalGridResetConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('重置'),
+            child: Text(context.l10n.terminalGridCorruptedReset),
           ),
         ],
       ),
     ).then((confirm) {
       if (confirm == true && mounted) {
-        setState(() {
-          _items = createDefaultAccessoryItems();
-          _np = 2;
-          _rows = 2;
+        _mutateDraft(() {
+          _draftLayout = TerminalAccessoryLayout.defaultLayout().project(
+            _draftLayout.columns,
+          );
           _page = 0;
           _sel = null;
         });
-        _saveConfig();
       }
     });
   }
 
   void _deleteCurrentPage() {
-    if (_np < 2) {
+    if (_draftLayout.pages < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('至少保留一页'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.l10n.terminalGridKeepAtLeastOnePage),
+          duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -944,60 +1051,130 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('删除页面'),
-        content: Text('删除第 ${_page + 1} 页及其所有按键？'),
+        title: Text(context.l10n.terminalGridDeletePage),
+        content: Text(context.l10n.terminalGridDeletePageConfirm(_page + 1)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF7B80)),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFFF7B80),
+            ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('删除'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
     ).then((confirm) {
       if (confirm == true && mounted) {
-        setState(() {
-          _items.removeWhere((o) => o.t != 'i' && o.p == _page);
-          for (final o in _items) {
-            if (o.t != 'i' && o.p > _page) {
+        _mutateDraft(() {
+          _draftLayout.items.removeWhere(
+            (o) => o.t != 'i' && o.t != 'more' && o.p == _page,
+          );
+          for (final o in _draftLayout.items) {
+            if (o.t != 'i' && o.t != 'more' && o.p > _page) {
               o.p--;
             }
           }
-          _np--;
-          _page = _page.clamp(0, _np - 1);
+          final newPages = _draftLayout.pages - 1;
+          _draftLayout = _draftLayout.copyWith(pages: newPages);
+          _page = _page.clamp(0, newPages - 1);
           _sel = null;
         });
-        _saveConfig();
       }
     });
   }
 
+  void _syncKeyProperties() {
+    final o = _draftLayout.items.where((i) => i.id == _sel).firstOrNull;
+    if (o == null) return;
+    _labelCtrl.text = o.l;
+    if (o.action.type == 'key') {
+      _actionKeyCtrl.text = o.action.key;
+      _actionModCheckboxes['CTRL'] = o.action.modifiers.contains('CTRL');
+      _actionModCheckboxes['ALT'] = o.action.modifiers.contains('ALT');
+      _actionModCheckboxes['SHIFT'] = o.action.modifiers.contains('SHIFT');
+    } else if (o.action.type == 'text') {
+      _actionTextCtrl.text = o.action.text;
+      _actionAppendEnterCheckbox = o.action.appendEnter;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFF1A1D23),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (_edit) FocusScope(child: _buildEditSheet(context)),
-            if (_isExpanded && !_edit)
-              ExcludeFocus(
-                excluding: true,
-                child: _buildExpandedPanel(context),
-              ),
-            ExcludeFocus(
-              excluding: true,
-              child: _buildBar(context),
-            ),
-          ],
+    final theme = Theme.of(context);
+    final barBgColor = theme.colorScheme.surfaceContainer;
+
+    return PopScope(
+      canPop: !_edit && !_isSaving,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _edit && !_isSaving) {
+          _cancelEdit();
+        }
+      },
+      child: Container(
+        color: barBgColor,
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_hasCorruptedStorage) _buildCorruptedWarning(context),
+              if (_edit) FocusScope(child: _buildEditSheet(context)),
+              if (_isExpanded && !_edit)
+                ExcludeFocus(
+                  excluding: true,
+                  child: _buildExpandedPanel(context),
+                ),
+              ExcludeFocus(excluding: true, child: _buildBar(context)),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCorruptedWarning(BuildContext context) {
+    return Container(
+      color: Theme.of(context).colorScheme.errorContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            size: 16,
+            color: Theme.of(context).colorScheme.onErrorContainer,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.terminalGridCorruptedPrompt,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              final defaultLayout = TerminalAccessoryLayout.defaultLayout();
+              final storage = ref.read(localStorageServiceProvider);
+              await storage.setTerminalGridConfig(
+                jsonEncode(defaultLayout.toJson()),
+              );
+              setState(() {
+                _masterLayout = defaultLayout;
+                _draftLayout = defaultLayout.copy();
+                _cachedProjection = null;
+                _hasCorruptedStorage = false;
+              });
+            },
+            child: Text(context.l10n.terminalGridCorruptedReset),
+          ),
+        ],
       ),
     );
   }
@@ -1007,124 +1184,124 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   // ===========================================================================
 
   Widget _buildBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final barBgColor = theme.colorScheme.surfaceContainer;
+    final borderColor = theme.colorScheme.outlineVariant;
+
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1D23),
-        border: _edit
-            ? null
-            : const Border(
-                top: BorderSide(color: Color(0xFF2A2E37), width: 1),
-              ),
-      ),
-      padding: const EdgeInsets.only(top: 6, bottom: 12),
+      decoration: BoxDecoration(color: barBgColor),
+      foregroundDecoration: _edit
+          ? null
+          : BoxDecoration(
+              border: Border(top: BorderSide(color: borderColor, width: 1)),
+            ),
+      padding: const EdgeInsets.only(top: 4, bottom: 6),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final boardWidth = constraints.maxWidth - 8; // 4px margin on each side
-          final cw = boardWidth / kAccessoryCols;
-          final boardHeight = _rows * kAccessoryCellHeight;
+          final boardWidth = constraints.maxWidth - 8;
+          // In edit mode, columns is FIXED to draft columns (geometric baseline)
+          final minCellW = _computeMinCellWidth(context, _masterLayout.items);
+          final columns = _edit
+              ? _draftLayout.columns
+              : _calculateColumns(boardWidth, minCellW);
+          final currentLayout = _edit
+              ? _draftLayout
+              : _getProjectedLayout(columns);
+          final pages = currentLayout.pages;
+          if (_page >= pages) {
+            _page = math.max(0, pages - 1);
+          }
+          final cw = math.max(44.0, boardWidth / columns);
+          final totalBoardWidth = cw * columns;
+          final boardHeight = currentLayout.rows * kAccessoryCellHeight;
+
+          Widget boardContent = SizedBox(
+            width: totalBoardWidth,
+            height: boardHeight,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                if (_edit &&
+                    _isDragMoving &&
+                    _dragTargetC != null &&
+                    _dragTargetR != null &&
+                    _draggingId != null)
+                  ..._buildDropIndicator(currentLayout, cw),
+
+                ...currentLayout.items
+                    .where((o) => isItemVisible(o, _page))
+                    .map(
+                      (o) => _buildItemWidget(o, cw, currentLayout, columns),
+                    ),
+
+                _buildSystemKey(
+                  AccessoryItem(id: 'more', t: 'more', l: '...'),
+                  cw,
+                  currentLayout,
+                  columns,
+                ),
+                _buildSystemKey(
+                  AccessoryItem(id: 'ime', t: 'i', l: '⌨'),
+                  cw,
+                  currentLayout,
+                  columns,
+                ),
+              ],
+            ),
+          );
+
+          if (totalBoardWidth > boardWidth) {
+            boardContent = SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: _edit
+                  ? const ClampingScrollPhysics()
+                  : const NeverScrollableScrollPhysics(),
+              child: boardContent,
+            );
+          }
 
           return SizedBox(
-            height: boardHeight + 10,
-            child: Stack(
-              children: [
-                Positioned(
-                  left: 4,
-                  top: 0,
-                  width: boardWidth,
-                  height: boardHeight,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onHorizontalDragEnd: (details) {
-                      if (_edit) return;
+            height: boardHeight,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onHorizontalDragStart: _edit
+                  ? null
+                  : (details) {
+                      _swipeDragDx = 0.0;
+                    },
+              onHorizontalDragUpdate: _edit
+                  ? null
+                  : (details) {
+                      _swipeDragDx += details.delta.dx;
+                    },
+              onHorizontalDragEnd: _edit
+                  ? null
+                  : (details) {
                       final v = details.primaryVelocity ?? 0;
-                      if (v < -200) {
-                        if (_page < _np - 1) {
+                      final dx = _swipeDragDx;
+                      if (v < -200 || dx < -60) {
+                        if (_page < pages - 1) {
                           setState(() => _page++);
                         }
-                      } else if (v > 200) {
+                      } else if (v > 200 || dx > 60) {
                         if (_page > 0) {
                           setState(() => _page--);
                         }
                       }
                     },
-                    child: Container(
-                      decoration: _edit
-                          ? BoxDecoration(
-                              border: Border.all(color: const Color(0x1AFFFFFF)),
-                            )
-                          : null,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          ..._items
-                              .where((o) => isItemVisible(o, _page))
-                              .map((o) => _buildItemWidget(o, cw)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Pagination dots & More button
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: SizedBox(
-                    height: 12,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        if (_np > 1)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: List.generate(_np, (i) {
-                              final isOn = i == _page;
-                              return Container(
-                                width: 5,
-                                height: 5,
-                                margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isOn
-                                      ? const Color(0xFF8FB4FF)
-                                      : const Color(0xFF3A4150),
-                                ),
-                              );
-                            }),
-                          ),
-                        Positioned(
-                          right: 4,
-                          top: -6,
-                          child: Semantics(
-                            button: true,
-                            label: 'More',
-                            child: GestureDetector(
-                              key: const Key('terminal_accessory_more_button'),
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                setState(() {
-                                  _isExpanded = !_isExpanded;
-                                });
-                              },
-                              child: const SizedBox(
-                                width: 28,
-                                height: 24,
-                                child: Center(
-                                  child: Icon(
-                                    Icons.more_horiz,
-                                    size: 16,
-                                    color: Color(0xFF5B6475),
-                                  ),
-                                ),
-                              ),
-                            ),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: _edit
+                    ? BoxDecoration(
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant.withValues(
+                            alpha: 0.3,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+                      )
+                    : null,
+                child: boardContent,
+              ),
             ),
           );
         },
@@ -1132,112 +1309,336 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     );
   }
 
-  Widget _buildItemWidget(AccessoryItem o, double cw) {
-    final q = getEffectivePos(o, _rows);
+  List<Widget> _buildDropIndicator(
+    TerminalAccessoryLayout currentLayout,
+    double cw,
+  ) {
+    final o = currentLayout.items.firstWhere(
+      (i) => i.id == _draggingId,
+      orElse: () => AccessoryItem(id: '', l: ''),
+    );
+    if (o.id.isEmpty) return [];
+
+    return [
+      Positioned(
+        left: _dragTargetC! * cw,
+        top: _dragTargetR! * kAccessoryCellHeight,
+        width: o.w * cw,
+        height: o.h * kAccessoryCellHeight,
+        child: Container(
+          margin: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: _dragTargetValid
+                ? const Color(0x334C8DFF)
+                : const Color(0x33FF4D4F),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _dragTargetValid
+                  ? const Color(0xFF4C8DFF)
+                  : const Color(0xFFFF4D4F),
+              width: 1.5,
+            ),
+          ),
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildSystemKey(
+    AccessoryItem item,
+    double cw,
+    TerminalAccessoryLayout currentLayout,
+    int columns,
+  ) {
+    final theme = Theme.of(context);
+    final q = getEffectivePos(item, currentLayout.rows, columns: columns);
+    final left = q.c * cw;
+    final top = q.r * kAccessoryCellHeight;
+    final isIme = item.t == 'i';
+    final isKeyboardActive = widget.isKeyboardActive ?? false;
+
+    final normalBg = theme.colorScheme.surfaceContainerHigh;
+    final normalFg = theme.colorScheme.onSurface;
+    final activeBg = theme.colorScheme.primary;
+    final activeFg = theme.colorScheme.onPrimary;
+
+    Widget child;
+    if (isIme) {
+      child = Tooltip(
+        message: context.l10n.terminalToggleKeyboard,
+        child: Semantics(
+          button: true,
+          label: context.l10n.terminalToggleKeyboard,
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isKeyboardActive ? activeBg : normalBg,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x66000000),
+                    offset: Offset(0, 1),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '⌨',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isKeyboardActive ? activeFg : normalFg,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      child = Tooltip(
+        message: context.l10n.navMore,
+        child: Semantics(
+          button: true,
+          label:
+              '${context.l10n.navMore}, ${context.l10n.terminalGridCurrentPage} ${_page + 1}/${currentLayout.pages}',
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: Container(
+              decoration: BoxDecoration(
+                color: _isExpanded ? activeBg : normalBg,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x66000000),
+                    offset: Offset(0, 1),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: currentLayout.pages > 1
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.more_horiz,
+                          size: 14,
+                          color: _isExpanded ? activeFg : normalFg,
+                        ),
+                        Text(
+                          '${_page + 1}/${currentLayout.pages}',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: _isExpanded
+                                ? activeFg
+                                : const Color(0xFF8FB4FF),
+                            height: 1.0,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Icon(
+                      Icons.more_horiz,
+                      size: 18,
+                      color: _isExpanded ? activeFg : normalFg,
+                    ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Positioned(
+      key: isIme
+          ? const Key('terminal_accessory_keyboard_button')
+          : const Key('terminal_accessory_more_button'),
+      left: left,
+      top: top,
+      width: cw,
+      height: kAccessoryCellHeight,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          if (_edit) return;
+          if (isIme) {
+            widget.onToggleKeyboard?.call();
+          } else {
+            setState(() => _isExpanded = !_isExpanded);
+          }
+        },
+        child: child,
+      ),
+    );
+  }
+
+  Widget _buildItemWidget(
+    AccessoryItem o,
+    double cw,
+    TerminalAccessoryLayout currentLayout,
+    int columns,
+  ) {
+    if (o.t == 'i' || o.t == 'more') return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isSelected = _edit && _sel == o.id;
     final isDragging = _edit && _draggingId == o.id;
 
-    double left = q.c * cw;
-    double top = q.r * kAccessoryCellHeight;
+    double left = o.c * cw;
+    double top = o.r * kAccessoryCellHeight;
     if (isDragging && _dragOffset != null) {
       left += _dragOffset!.dx;
       top += _dragOffset!.dy;
     }
 
-    final width = q.w * cw;
-    final height = q.h * kAccessoryCellHeight;
+    final width = o.w * cw;
+    final height = o.h * kAccessoryCellHeight;
 
     if (o.t == 'g') {
       return Positioned(
-        key: const Key('terminal_accessory_key_ARROWS'),
+        key: Key('terminal_accessory_positioned_${o.id}'),
         left: left,
         top: top,
         width: width,
         height: height,
-        child: Opacity(
-          opacity: isDragging ? 0.85 : 1.0,
-          child: _buildArrowGroup(o, cw, isSelected),
+        child: KeyedSubtree(
+          key: const Key('terminal_accessory_key_ARROWS'),
+          child: Opacity(
+            opacity: isDragging ? 0.85 : 1.0,
+            child: _buildArrowGroup(o, cw, isSelected, currentLayout, columns),
+          ),
         ),
       );
     }
 
-    final upper = o.l.toUpperCase();
-    final isModifier = o.m || kModifierNames.contains(upper);
+    // Decouple display label from actual modifiers: check o.action.type and o.action.key!
+    final isModifier = o.action.type == 'modifier';
+    final modKey = o.action.key.toUpperCase();
 
-    final isLocked = (upper == 'CTRL' && widget.ctrlState == ModifierLockState.locked) ||
-        (upper == 'ALT' && widget.altState == ModifierLockState.locked) ||
-        (upper == 'SHIFT' && widget.shiftState == ModifierLockState.locked) ||
-        (upper == 'FN' && widget.fnState == ModifierLockState.locked);
+    final isLocked =
+        (modKey == 'CTRL' && widget.ctrlState == ModifierLockState.locked) ||
+        (modKey == 'ALT' && widget.altState == ModifierLockState.locked) ||
+        (modKey == 'SHIFT' && widget.shiftState == ModifierLockState.locked) ||
+        (modKey == 'FN' && widget.fnState == ModifierLockState.locked);
 
-    final isOneShot = (upper == 'CTRL' && widget.ctrlState == ModifierLockState.oneShot) ||
-        (upper == 'ALT' && widget.altState == ModifierLockState.oneShot) ||
-        (upper == 'SHIFT' && widget.shiftState == ModifierLockState.oneShot) ||
-        (upper == 'FN' && widget.fnState == ModifierLockState.oneShot);
+    final isOneShot =
+        (modKey == 'CTRL' && widget.ctrlState == ModifierLockState.oneShot) ||
+        (modKey == 'ALT' && widget.altState == ModifierLockState.oneShot) ||
+        (modKey == 'SHIFT' && widget.shiftState == ModifierLockState.oneShot) ||
+        (modKey == 'FN' && widget.fnState == ModifierLockState.oneShot);
 
-    final isHeld = (upper == 'CTRL' && widget.isCtrlHeld) ||
-        (upper == 'ALT' && widget.isAltHeld) ||
-        (upper == 'SHIFT' && widget.isShiftHeld) ||
-        (upper == 'FN' && widget.isFnHeld);
+    final isHeld =
+        (modKey == 'CTRL' && widget.isCtrlHeld) ||
+        (modKey == 'ALT' && widget.isAltHeld) ||
+        (modKey == 'SHIFT' && widget.isShiftHeld) ||
+        (modKey == 'FN' && widget.isFnHeld);
 
-    final isKeyboardActive = widget.isKeyboardActive ?? false;
-    final isAct = _mods.contains(o.l) ||
+    final isAct =
+        _mods.contains(modKey) ||
         isLocked ||
         isOneShot ||
         isHeld ||
-        (o.t == 'i' && isKeyboardActive) ||
-        (upper == 'CTRL' && widget.isCtrlActive) ||
-        (upper == 'ALT' && widget.isAltActive);
+        (modKey == 'CTRL' && widget.isCtrlActive) ||
+        (modKey == 'ALT' && widget.isAltActive);
 
+    final isArrowSingle =
+        o.arrow == 1 || const ['↑', '↓', '←', '→'].contains(o.action.key);
     final displayLabel = formatKeyLabel(o.l);
-    final isPaste = upper == 'PASTE';
+    final isPaste =
+        o.action.type == 'paste' || o.action.key.toUpperCase() == 'PASTE';
+    final isUnsupported = !o.action.supported;
 
-    final keyName = (isModifier || const ['ESC', 'TAB', 'CTRL', 'ALT', 'SHIFT', 'PASTE', 'FN'].contains(upper))
-        ? upper
-        : o.l;
+    Color buttonColor;
+    Color textColor;
+    if (isUnsupported) {
+      buttonColor = isDark
+          ? const Color(0xFF22262E)
+          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
+      textColor = isDark ? const Color(0xFF666E7F) : theme.colorScheme.outline;
+    } else if (isArrowSingle) {
+      final isPressed = _arrowHeld[o.action.key] ?? false;
+      if (currentLayout.directionSeedColor != null) {
+        final scheme = ColorScheme.fromSeed(
+          seedColor: Color(currentLayout.directionSeedColor!),
+          brightness: theme.brightness,
+        );
+        buttonColor = isPressed ? scheme.primary : scheme.secondaryContainer;
+        textColor = isPressed ? scheme.onPrimary : scheme.onSecondaryContainer;
+      } else {
+        buttonColor = isPressed
+            ? theme.colorScheme.primary
+            : theme.colorScheme.surfaceContainerHigh;
+        textColor = isPressed
+            ? theme.colorScheme.onPrimary
+            : theme.colorScheme.onSurface;
+      }
+    } else {
+      buttonColor = isAct
+          ? theme.colorScheme.primary
+          : theme.colorScheme.surfaceContainerHigh;
+      textColor = isAct
+          ? theme.colorScheme.onPrimary
+          : theme.colorScheme.onSurface;
+    }
 
-    final keyContainer = Container(
-      decoration: BoxDecoration(
-        color: isAct ? const Color(0xFF2F6FED) : const Color(0xFF2E333D),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x66000000),
-            offset: Offset(0, 1),
-            blurRadius: 0,
-          ),
-        ],
-        border: _edit
-            ? (isSelected
-                ? Border.all(color: const Color(0xFF4C8DFF), width: 2)
-                : Border.all(color: const Color(0xFF5B6475), style: BorderStyle.solid, width: 1))
-            : null,
-      ),
-      alignment: Alignment.center,
-      child: isPaste
-          ? const Icon(Icons.content_paste, size: 16, color: Color(0xFFE6E9EF))
-          : Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                Text(
-                  displayLabel,
-                  style: TextStyle(
-                    fontFamily: 'JetBrains Mono',
-                    fontSize: fontSizeForLabel(displayLabel),
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFFE6E9EF),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (isLocked)
-                  const Positioned(
-                    top: 2,
-                    right: 2,
-                    child: Icon(Icons.lock, size: 9, color: Color(0xFFE6E9EF)),
-                  ),
-              ],
+    final keyContainer = Padding(
+      padding: const EdgeInsets.all(2),
+      child: Container(
+        decoration: BoxDecoration(
+          color: buttonColor,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x66000000),
+              offset: Offset(0, 1),
+              blurRadius: 0,
             ),
+          ],
+          border: _edit
+              ? (isSelected
+                    ? Border.all(color: theme.colorScheme.primary, width: 2)
+                    : Border.all(
+                        color: theme.colorScheme.outlineVariant,
+                        style: BorderStyle.solid,
+                        width: 1,
+                      ))
+              : null,
+        ),
+        alignment: Alignment.center,
+        child: isPaste
+            ? Icon(Icons.content_paste, size: 16, color: textColor)
+            : Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Text(
+                      displayLabel,
+                      style: TextStyle(
+                        fontFamily: 'JetBrains Mono',
+                        fontSize: fontSizeForLabel(displayLabel),
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                        decoration: isUnsupported
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (isLocked)
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: Icon(Icons.lock, size: 9, color: textColor),
+                    ),
+                ],
+              ),
+      ),
     );
 
     Widget itemInteractive;
@@ -1248,96 +1649,184 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
           setState(() {
             _sel = o.id;
             _st = 'key';
-            _labelCtrl.text = o.l;
+            _syncKeyProperties();
           });
         },
-        onPanStart: o.t == 'i'
-            ? null
-            : (d) {
-                setState(() {
-                  _draggingId = o.id;
-                  _dragOffset = Offset.zero;
-                  _isDragMoving = false;
-                  _sel = o.id;
-                  _st = 'key';
-                  _labelCtrl.text = o.l;
-                });
-              },
-        onPanUpdate: o.t == 'i'
-            ? null
-            : (d) {
-                setState(() {
-                  _dragOffset = (_dragOffset ?? Offset.zero) + d.delta;
-                  if (_dragOffset!.distance >= 6) {
-                    _isDragMoving = true;
-                  }
-                });
-              },
-        onPanEnd: o.t == 'i'
-            ? null
-            : (d) {
-                if (_isDragMoving && _dragOffset != null) {
-                  final ol = o.c * cw;
-                  final ot = o.r * kAccessoryCellHeight;
-                  final newL = ol + _dragOffset!.dx;
-                  final newT = ot + _dragOffset!.dy;
-                  final targetC = ((newL / cw).round()).clamp(0, kAccessoryCols - o.w);
-                  final targetR = ((newT / kAccessoryCellHeight).round()).clamp(0, _rows - o.h);
+        onPanStart: (d) {
+          setState(() {
+            _draggingId = o.id;
+            _dragOffset = Offset.zero;
+            _isDragMoving = false;
+            _sel = o.id;
+            _st = 'key';
+            _syncKeyProperties();
+            _dragTargetC = o.c;
+            _dragTargetR = o.r;
+            _dragTargetValid = true;
+          });
+        },
+        onPanUpdate: (d) {
+          setState(() {
+            _dragOffset = (_dragOffset ?? Offset.zero) + d.delta;
+            if (_dragOffset!.distance >= 6) {
+              _isDragMoving = true;
+            }
+            final newL = o.c * cw + _dragOffset!.dx;
+            final newT = o.r * kAccessoryCellHeight + _dragOffset!.dy;
 
-                  if (!checkCollision(_items, o, targetC, targetR, o.w, o.h, _page, _rows)) {
-                    o.c = targetC;
-                    o.r = targetR;
-                  } else {
-                    // Swap with colliding 1x1 key
-                    final p = _items.where((item) =>
+            // Cross-page dragging trigger
+            if (newL < -16 && _page > 0) {
+              _page--;
+              _dragOffset = Offset(cw * (columns - o.w), _dragOffset!.dy);
+            } else if (newL > columns * cw + 16 &&
+                _page < currentLayout.pages - 1) {
+              _page++;
+              _dragOffset = Offset(-cw * o.w, _dragOffset!.dy);
+            }
+
+            _dragTargetC = ((newL / cw).round()).clamp(0, columns - o.w);
+            _dragTargetR = ((newT / kAccessoryCellHeight).round()).clamp(
+              0,
+              currentLayout.rows - o.h,
+            );
+
+            final collision = checkCollision(
+              currentLayout.items,
+              o,
+              _dragTargetC!,
+              _dragTargetR!,
+              o.w,
+              o.h,
+              _page,
+              currentLayout.rows,
+              columns: columns,
+            );
+            if (!collision) {
+              _dragTargetValid = true;
+            } else {
+              final p = currentLayout.items
+                  .where(
+                    (item) =>
                         item != o &&
                         item.t != 'i' &&
+                        item.t != 'more' &&
+                        item.p == _page &&
+                        _dragTargetC! < item.c + item.w &&
+                        _dragTargetC! + o.w > item.c &&
+                        _dragTargetR! < item.r + item.h &&
+                        _dragTargetR! + o.h > item.r,
+                  )
+                  .firstOrNull;
+              _dragTargetValid =
+                  (p != null &&
+                  canSwapAccessoryItems(
+                    currentLayout.items,
+                    o,
+                    p,
+                    currentLayout.rows,
+                    columns: columns,
+                  ));
+            }
+          });
+        },
+        onPanEnd: (d) {
+          if (_isDragMoving &&
+              _dragOffset != null &&
+              _dragTargetC != null &&
+              _dragTargetR != null) {
+            final targetC = _dragTargetC!;
+            final targetR = _dragTargetR!;
+
+            if (!checkCollision(
+              currentLayout.items,
+              o,
+              targetC,
+              targetR,
+              o.w,
+              o.h,
+              _page,
+              currentLayout.rows,
+              columns: columns,
+            )) {
+              _mutateDraft(() {
+                o.p = _page;
+                o.c = targetC;
+                o.r = targetR;
+              });
+            } else {
+              final p = currentLayout.items
+                  .where(
+                    (item) =>
+                        item != o &&
+                        item.t != 'i' &&
+                        item.t != 'more' &&
                         item.p == _page &&
                         targetC < item.c + item.w &&
                         targetC + o.w > item.c &&
                         targetR < item.r + item.h &&
-                        targetR + o.h > item.r).firstOrNull;
-                    if (p != null &&
-                        p.t == 'k' &&
-                        o.t == 'k' &&
-                        p.w == o.w &&
-                        !checkCollision(_items, p, o.c, o.r, p.w, p.h, _page, _rows)) {
-                      final oldC = o.c, oldR = o.r;
-                      o.c = p.c;
-                      o.r = p.r;
-                      p.c = oldC;
-                      p.r = oldR;
-                    }
-                  }
-                  _saveConfig();
-                }
-                setState(() {
-                  _draggingId = null;
-                  _dragOffset = null;
-                  _isDragMoving = false;
+                        targetR + o.h > item.r,
+                  )
+                  .firstOrNull;
+              if (p != null &&
+                  canSwapAccessoryItems(
+                    currentLayout.items,
+                    o,
+                    p,
+                    currentLayout.rows,
+                    columns: columns,
+                  )) {
+                _mutateDraft(() {
+                  o.p = _page;
+                  final oldC = o.c, oldR = o.r;
+                  o.c = p.c;
+                  o.r = p.r;
+                  p.c = oldC;
+                  p.r = oldR;
                 });
-              },
+              } else {
+                _page = o.p;
+              }
+            }
+          } else {
+            _page = o.p;
+          }
+          setState(() {
+            _draggingId = null;
+            _dragOffset = null;
+            _isDragMoving = false;
+            _dragTargetC = null;
+            _dragTargetR = null;
+          });
+        },
+        child: keyContainer,
+      );
+    } else if (isArrowSingle) {
+      itemInteractive = HoldRepeatKey(
+        onPressed: () => _press(o),
+        canRepeat: _canRepeat,
+        onHoldChanged: (held) {
+          setState(() => _arrowHeld[o.action.key] = held);
+        },
         child: keyContainer,
       );
     } else if (isModifier) {
       itemInteractive = _ModifierKeyButton(
-        label: o.l,
-        state: upper == 'CTRL'
+        label: modKey,
+        state: modKey == 'CTRL'
             ? widget.ctrlState
-            : (upper == 'ALT'
-                ? widget.altState
-                : (upper == 'SHIFT'
-                    ? widget.shiftState
-                    : (upper == 'FN' ? widget.fnState : null))),
+            : (modKey == 'ALT'
+                  ? widget.altState
+                  : (modKey == 'SHIFT'
+                        ? widget.shiftState
+                        : (modKey == 'FN' ? widget.fnState : null))),
         onTap: () => _press(o),
-        onLongPress: () {
-          setState(() {
-            _edit = true;
-            _sel = o.id;
-            _st = 'key';
-            _labelCtrl.text = o.l;
-          });
-        },
+        onLongPress: modKey == 'CTRL'
+            ? widget.onLockCtrl
+            : (modKey == 'ALT'
+                  ? widget.onLockAlt
+                  : (modKey == 'SHIFT'
+                        ? widget.onLockShift
+                        : (modKey == 'FN' ? widget.onLockFn : null))),
         onModifierDown: widget.onModifierDown,
         onModifierUp: widget.onModifierUp,
         onModifierCancel: widget.onModifierCancel,
@@ -1348,74 +1837,78 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     } else {
       itemInteractive = GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () {
-          if (o.t == 'i') {
-            widget.onToggleKeyboard?.call();
-            return;
-          }
-          _press(o);
-        },
-        onLongPress: o.t == 'i'
-            ? null
-            : () {
-                setState(() {
-                  _edit = true;
-                  _sel = o.id;
-                  _st = 'key';
-                  _labelCtrl.text = o.l;
-                });
-              },
+        onTap: () => _press(o),
         child: keyContainer,
       );
     }
 
+    final keyName =
+        (isModifier ||
+            const [
+              'ESC',
+              'TAB',
+              'CTRL',
+              'ALT',
+              'SHIFT',
+              'PASTE',
+              'FN',
+            ].contains(o.action.key.toUpperCase()))
+        ? o.action.key.toUpperCase()
+        : o.l;
+
     return Positioned(
-      key: o.t == 'i'
-          ? const Key('terminal_accessory_keyboard_button')
-          : Key('terminal_accessory_key_$keyName'),
+      key: Key('terminal_accessory_positioned_${o.id}'),
       left: left,
       top: top,
       width: width,
       height: height,
-      child: Opacity(
-        opacity: isDragging ? 0.85 : 1.0,
-        child: Padding(
-          padding: const EdgeInsets.all(3),
+      child: KeyedSubtree(
+        key: Key('terminal_accessory_key_$keyName'),
+        child: Opacity(
+          opacity: isDragging ? 0.85 : 1.0,
           child: itemInteractive,
         ),
       ),
     );
   }
 
-  Widget _buildArrowGroup(AccessoryItem o, double cw, bool isSelected) {
+  Widget _buildArrowGroup(
+    AccessoryItem o,
+    double cw,
+    bool isSelected,
+    TerminalAccessoryLayout currentLayout,
+    int columns,
+  ) {
+    final theme = Theme.of(context);
+    final scheme = currentLayout.directionSeedColor != null
+        ? ColorScheme.fromSeed(
+            seedColor: Color(currentLayout.directionSeedColor!),
+            brightness: theme.brightness,
+          )
+        : null;
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
         if (_edit) {
           setState(() {
-            _sel = 'arrows';
+            _sel = o.id;
             _st = 'key';
           });
         }
       },
-      onLongPress: _edit
-          ? null
-          : () {
-              setState(() {
-                _edit = true;
-                _sel = 'arrows';
-                _st = 'key';
-              });
-            },
       onPanStart: !_edit
           ? null
           : (d) {
               setState(() {
-                _draggingId = 'arrows';
+                _draggingId = o.id;
                 _dragOffset = Offset.zero;
                 _isDragMoving = false;
-                _sel = 'arrows';
+                _sel = o.id;
                 _st = 'key';
+                _dragTargetC = o.c;
+                _dragTargetR = o.r;
+                _dragTargetValid = true;
               });
             },
       onPanUpdate: !_edit
@@ -1426,29 +1919,59 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                 if (_dragOffset!.distance >= 6) {
                   _isDragMoving = true;
                 }
+                final newL = o.c * cw + _dragOffset!.dx;
+                final newT = o.r * kAccessoryCellHeight + _dragOffset!.dy;
+                _dragTargetC = ((newL / cw).round()).clamp(0, columns - 3);
+                _dragTargetR = ((newT / kAccessoryCellHeight).round()).clamp(
+                  0,
+                  currentLayout.rows - 2,
+                );
+                _dragTargetValid = !checkCollision(
+                  currentLayout.items,
+                  o,
+                  _dragTargetC!,
+                  _dragTargetR!,
+                  3,
+                  2,
+                  _page,
+                  currentLayout.rows,
+                  columns: columns,
+                );
               });
             },
       onPanEnd: !_edit
           ? null
           : (d) {
-              if (_isDragMoving && _dragOffset != null) {
-                final ol = o.c * cw;
-                final ot = o.r * kAccessoryCellHeight;
-                final newL = ol + _dragOffset!.dx;
-                final newT = ot + _dragOffset!.dy;
-                final targetC = ((newL / cw).round()).clamp(0, kAccessoryCols - 3);
-                final targetR = ((newT / kAccessoryCellHeight).round()).clamp(0, _rows - 2);
+              if (_isDragMoving &&
+                  _dragOffset != null &&
+                  _dragTargetC != null &&
+                  _dragTargetR != null) {
+                final targetC = _dragTargetC!;
+                final targetR = _dragTargetR!;
 
-                if (!checkCollision(_items, o, targetC, targetR, 3, 2, _page, _rows)) {
-                  o.c = targetC;
-                  o.r = targetR;
-                  _saveConfig();
+                if (!checkCollision(
+                  currentLayout.items,
+                  o,
+                  targetC,
+                  targetR,
+                  3,
+                  2,
+                  _page,
+                  currentLayout.rows,
+                  columns: columns,
+                )) {
+                  _mutateDraft(() {
+                    o.c = targetC;
+                    o.r = targetR;
+                  });
                 }
               }
               setState(() {
                 _draggingId = null;
                 _dragOffset = null;
                 _isDragMoving = false;
+                _dragTargetC = null;
+                _dragTargetR = null;
               });
             },
       child: Container(
@@ -1457,58 +1980,94 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
             ? BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 border: isSelected
-                    ? Border.all(color: const Color(0xFF4C8DFF), width: 2)
-                    : Border.all(color: const Color(0xFF5B6475), width: 1),
+                    ? Border.all(color: theme.colorScheme.primary, width: 2)
+                    : Border.all(
+                        color: theme.colorScheme.outlineVariant,
+                        width: 1,
+                      ),
               )
             : null,
-        child: Stack(
-          children: kArrowOffsets.map((arr) {
-            final label = arr[0] as String;
-            final x = arr[1] as int;
-            final y = arr[2] as int;
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Stack(
+            children: kArrowOffsets.map((arr) {
+              final label = arr[0] as String;
+              final x = arr[1] as int;
+              final y = arr[2] as int;
+              final isHeld = _arrowHeld[label] ?? false;
 
-            return Positioned(
-              left: x * cw,
-              top: y * kAccessoryCellHeight,
-              width: cw,
-              height: kAccessoryCellHeight,
-              child: Padding(
-                padding: const EdgeInsets.all(3),
+              Color cellColor;
+              Color arrowTextColor;
+              if (scheme != null) {
+                cellColor = isHeld ? scheme.primary : scheme.secondaryContainer;
+                arrowTextColor = isHeld
+                    ? scheme.onPrimary
+                    : scheme.onSecondaryContainer;
+              } else {
+                cellColor = isHeld
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.surfaceContainerHigh;
+                arrowTextColor = isHeld
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.onSurface;
+              }
+
+              return Positioned(
+                left: x * cw,
+                top: y * kAccessoryCellHeight,
+                width: cw,
+                height: kAccessoryCellHeight,
                 child: HoldRepeatKey(
                   onPressed: () {
                     if (!_edit) {
-                      _press(AccessoryItem(id: 'temp', l: label, s: label));
+                      _press(
+                        AccessoryItem(
+                          id: 'temp',
+                          l: label,
+                          s: label,
+                          action: TerminalAccessoryAction(
+                            type: 'key',
+                            key: label,
+                          ),
+                        ),
+                      );
                     }
                   },
                   canRepeat: _canRepeat,
-                  child: Container(
-                    key: Key('terminal_accessory_key_$label'),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF3A4150),
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x66000000),
-                          offset: Offset(0, 1),
-                          blurRadius: 0,
+                  onHoldChanged: (held) {
+                    setState(() => _arrowHeld[label] = held);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Container(
+                      key: Key('terminal_accessory_key_$label'),
+                      decoration: BoxDecoration(
+                        color: cellColor,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x66000000),
+                            offset: Offset(0, 1),
+                            blurRadius: 0,
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontFamily: 'JetBrains Mono',
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: arrowTextColor,
                         ),
-                      ],
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        fontFamily: 'JetBrains Mono',
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFE6E9EF),
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
@@ -1519,78 +2078,179 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   // ===========================================================================
 
   Widget _buildExpandedPanel(BuildContext context) {
-    const categories = ['Nav', 'Edit', 'Sym', 'Fn'];
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final panelBg = scheme.surfaceContainerHigh;
+    final borderCol = scheme.outlineVariant;
+
+    final categories = [
+      ('Nav', context.l10n.terminalCategoryNav),
+      ('Edit', context.l10n.terminalCategoryEdit),
+      ('Sym', context.l10n.terminalCategorySym),
+      ('Fn', 'Fn'),
+    ];
+
+    // Page count strictly from projected layout
+    final width = MediaQuery.sizeOf(context).width;
+    final boardWidth = width - 8;
+    final minCellW = _computeMinCellWidth(context, _masterLayout.items);
+    final columns = _calculateColumns(boardWidth, minCellW);
+    final pages = _getProjectedLayout(columns).pages;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF232730),
-        border: Border(
-          bottom: BorderSide(color: Color(0xFF2A2E37), width: 1),
-        ),
+      decoration: BoxDecoration(
+        color: panelBg,
+        border: Border(bottom: BorderSide(color: borderCol, width: 1)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: categories.map((cat) {
-                      final isSelected = _expandedCategory == cat;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => setState(() => _expandedCategory = cat),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isSelected ? const Color(0x332F6FED) : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected ? const Color(0xFF2F6FED) : const Color(0xFF3A4150),
-                              ),
-                            ),
-                            child: Text(
-                              cat,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                color: isSelected ? const Color(0xFF8FB4FF) : const Color(0xFFAAB2C3),
-                              ),
+          if (pages > 1) ...[
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  Text(
+                    context.l10n.terminalGridCurrentPage,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  ...List.generate(pages, (p) {
+                    final isCurrent = p == _page;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: GestureDetector(
+                        onTap: () => setState(() => _page = p),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isCurrent
+                                ? scheme.primary
+                                : scheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${p + 1}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: isCurrent
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isCurrent
+                                  ? scheme.onPrimary
+                                  : scheme.onSurfaceVariant,
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    side: BorderSide(color: scheme.primary),
+                  ),
+                  onPressed: () {
+                    final boardWidth = MediaQuery.of(context).size.width - 8;
+                    final minW = _computeMinCellWidth(
+                      context,
+                      _masterLayout.items,
+                    );
+                    _enterEditMode(_calculateColumns(boardWidth, minW));
+                  },
+                  icon: Icon(Icons.tune, size: 14, color: scheme.primary),
+                  label: Text(
+                    context.l10n.terminalGridEditLayout,
+                    softWrap: true,
+                    style: TextStyle(fontSize: 12, color: scheme.primary),
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _edit = true;
-                    _st = 'add';
-                    _isExpanded = false;
-                  });
-                },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  child: Icon(Icons.tune, size: 16, color: Color(0xFFAAB2C3)),
-                ),
-              ),
-              GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => setState(() => _isExpanded = false),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  child: Icon(Icons.close, size: 16, color: Color(0xFFAAB2C3)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    size: 18,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 6),
+          // Category Pills
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: categories.map((entry) {
+                final key = entry.$1;
+                final localizedLabel = entry.$2;
+                final isSelected = _expandedCategory == key;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _expandedCategory = key),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? scheme.primary.withValues(alpha: 0.15)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? scheme.primary
+                              : scheme.outlineVariant,
+                        ),
+                      ),
+                      child: Text(
+                        localizedLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: isSelected
+                              ? scheme.primary
+                              : scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           ),
           const SizedBox(height: 6),
           SingleChildScrollView(
@@ -1607,29 +2267,46 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   List<Widget> _buildExpandedCategoryKeys(BuildContext context, String cat) {
     if (cat == 'Nav') {
       return ['HOME', 'END', 'PGUP', 'PGDN'].map((k) {
-        return _buildQuickKey(k, () => _handleKey(k));
+        return _buildQuickKey(k, () => _handleQuickKey(k));
       }).toList();
     }
     if (cat == 'Edit') {
-      return ['Ctrl+C', 'Ctrl+D', 'Ctrl+A', 'Ctrl+E', 'Ctrl+U', 'Ctrl+W', 'Ctrl+Z', 'INSERT', 'DELETE', 'BACKSPACE', 'ENTER'].map((k) {
-        return _buildQuickKey(k, () => _handleKey(k));
+      return [
+        'Ctrl+C',
+        'Ctrl+D',
+        'Ctrl+A',
+        'Ctrl+E',
+        'Ctrl+U',
+        'Ctrl+W',
+        'Ctrl+Z',
+        'INSERT',
+        'DELETE',
+        'BACKSPACE',
+        'ENTER',
+      ].map((k) {
+        return _buildQuickKey(k, () => _handleQuickKey(k));
       }).toList();
     }
     if (cat == 'Sym') {
       return ['/', '-', '_', '|', '~', '.', ':', '='].map((k) {
-        return _buildQuickKey(k, () => _handleKey(k));
+        return _buildQuickKey(k, () => _handleQuickKey(k));
       }).toList();
     }
     if (cat == 'Fn') {
       return [
         _buildQuickModifierKey('FN'),
-        ...List.generate(12, (i) => 'F${i + 1}').map((k) => _buildQuickKey(k, () => _handleKey(k))),
+        ...List.generate(
+          12,
+          (i) => 'F${i + 1}',
+        ).map((k) => _buildQuickKey(k, () => _handleQuickKey(k))),
       ];
     }
     return [];
   }
 
   Widget _buildQuickKey(String label, VoidCallback onTap) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.only(right: 6, bottom: 2),
       child: GestureDetector(
@@ -1639,17 +2316,17 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
           key: Key('terminal_accessory_key_$label'),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF2E333D),
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: const Color(0xFF3A4150)),
+            border: Border.all(color: scheme.outlineVariant),
           ),
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontFamily: 'JetBrains Mono',
               fontWeight: FontWeight.bold,
-              color: Color(0xFFE6E9EF),
+              color: scheme.onSurface,
             ),
           ),
         ),
@@ -1658,6 +2335,8 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   }
 
   Widget _buildQuickModifierKey(String modifier) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final upper = modifier.toUpperCase();
     final state = upper == 'FN' ? widget.fnState : null;
     final isLocked = state == ModifierLockState.locked;
@@ -1673,6 +2352,7 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         onTap: () {
           if (upper == 'FN') widget.onToggleFn?.call();
         },
+        onLongPress: upper == 'FN' ? widget.onLockFn : null,
         onModifierDown: widget.onModifierDown,
         onModifierUp: widget.onModifierUp,
         onModifierCancel: widget.onModifierCancel,
@@ -1682,25 +2362,31 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
           key: Key('terminal_accessory_key_$upper'),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: isAct ? const Color(0xFF2F6FED) : const Color(0xFF2E333D),
+            color: isAct ? scheme.primary : scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: const Color(0xFF3A4150)),
+            border: Border.all(
+              color: isAct ? scheme.primary : scheme.outlineVariant,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 modifier,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontFamily: 'JetBrains Mono',
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFE6E9EF),
+                  color: isAct ? scheme.onPrimary : scheme.onSurface,
                 ),
               ),
               if (isLocked) ...[
                 const SizedBox(width: 3),
-                const Icon(Icons.lock, size: 10, color: Color(0xFFE6E9EF)),
+                Icon(
+                  Icons.lock,
+                  size: 10,
+                  color: isAct ? scheme.onPrimary : scheme.onSurface,
+                ),
               ],
             ],
           ),
@@ -1709,134 +2395,198 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     );
   }
 
-  void _handleKey(String key) {
-    if (key.startsWith('Ctrl+')) {
-      widget.onKey(key.substring(5).toUpperCase(), isCtrl: true);
-    } else if (key.startsWith('Alt+')) {
-      widget.onKey(key.substring(4).toUpperCase(), isAlt: true);
-    } else {
-      widget.onKey(key);
-    }
-  }
-
-  void _onEditDone() {
-    FocusScope.of(context).unfocus();
-    setState(() {
-      _edit = false;
-      _sel = null;
-    });
-    widget.onHeightChanged?.call(TerminalAccessoryBar.calculateBaseHeight(_rows));
+  void _handleQuickKey(String key) {
+    final item = AccessoryItem(id: 'quick-$key', l: key, s: key);
+    _press(item);
   }
 
   // ===========================================================================
-  // Edit Sheet (Matching .sheet in prototype)
+  // Edit Sheet (Draft Management)
   // ===========================================================================
 
   Widget _buildEditSheet(BuildContext context) {
     final mediaQuery = MediaQuery.maybeOf(context);
     final screenHeight = mediaQuery?.size.height ?? 800.0;
     final viewInsetsBottom = mediaQuery?.viewInsets.bottom ?? 0.0;
-    final safeHeight = (screenHeight - viewInsetsBottom - 140).clamp(180.0, 300.0);
+    final safeArea = mediaQuery?.padding ?? EdgeInsets.zero;
+    final baseBarHeight = TerminalAccessoryBar.calculateBaseHeight(
+      _draftLayout.rows,
+    );
+    const spacing = 16.0;
+    final availableHeight =
+        screenHeight -
+        viewInsetsBottom -
+        safeArea.top -
+        safeArea.bottom -
+        baseBarHeight -
+        spacing;
+    final safeHeight = availableHeight.clamp(0.0, 320.0);
+
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return Container(
       constraints: BoxConstraints(maxHeight: safeHeight),
-      decoration: const BoxDecoration(
-        color: Color(0xFF161A20),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        border: Border(
-          top: BorderSide(color: Color(0xFF2A2E37), width: 1),
-        ),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        border: Border(top: BorderSide(color: scheme.outlineVariant, width: 1)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Top Segmented Control & Done Button
+          // Top Actions Row: Cancel, Undo, Save
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
               children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF232730),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.all(2),
-                    child: Row(
-                      children: [
-                        _buildSegmentButton('add', '添加'),
-                        _buildSegmentButton('key', '按键'),
-                        _buildSegmentButton('set', '设置'),
-                      ],
+                TextButton(
+                  onPressed: _isSaving ? null : _cancelEdit,
+                  child: Text(
+                    context.l10n.cancel,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF2F6FED),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: context.l10n.terminalGridUndo,
+                      onPressed: (_undoStack.isNotEmpty && !_isSaving)
+                          ? _undo
+                          : null,
+                      icon: Icon(
+                        Icons.undo,
+                        size: 18,
+                        color: (_undoStack.isNotEmpty && !_isSaving)
+                            ? scheme.primary
+                            : scheme.outline,
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                  ),
-                  onPressed: _onEditDone,
-                  child: const Text(
-                    '完成',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
+                    const SizedBox(width: 4),
+                    FilledButton(
+                      key: const Key('terminal_grid_save_button'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: scheme.primary,
+                        foregroundColor: scheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                      ),
+                      onPressed: _isSaving ? null : _saveEdit,
+                      child: _isSaving
+                          ? SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: scheme.onPrimary,
+                              ),
+                            )
+                          : Text(
+                              context.l10n.terminalGridSave,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          // Pager Row
+          // Segments Row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 0, 10, 6),
+            child: Container(
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.all(2),
+              child: Row(
+                children: [
+                  _buildSegmentButton('add', context.l10n.terminalGridAddTab),
+                  _buildSegmentButton('key', context.l10n.terminalGridKeyTab),
+                  _buildSegmentButton('set', context.l10n.terminalGridSetTab),
+                ],
+              ),
+            ),
+          ),
+          // Pager Row (wrapped in horizontal scroll to prevent overflow)
           Container(
             padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFF22262E), width: 1)),
-            ),
-            child: Row(
-              children: [
-                const Text(
-                  '当前页',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF8B93A3)),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: scheme.outlineVariant.withValues(alpha: 0.5),
+                  width: 1,
                 ),
-                const SizedBox(width: 8),
-                _buildSmallButton('‹', () {
-                  if (_page > 0) {
-                    setState(() => _page--);
-                  }
-                }),
-                Container(
-                  constraints: const BoxConstraints(minWidth: 36),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '${_page + 1} / $_np',
-                    style: const TextStyle(
+              ),
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  Text(
+                    context.l10n.terminalGridCurrentPage,
+                    style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFE6E9EF),
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
-                ),
-                _buildSmallButton('›', () {
-                  if (_page < _np - 1) {
-                    setState(() => _page++);
-                  }
-                }),
-                const Spacer(),
-                _buildSmallButton('＋ 新增页', () {
-                  setState(() {
-                    _np++;
-                    _page = _np - 1;
-                  });
-                  _saveConfig();
-                }),
-                const SizedBox(width: 6),
-                _buildSmallButton('删除页', _deleteCurrentPage, isDanger: true),
-              ],
+                  const SizedBox(width: 8),
+                  _buildSmallButton('‹', () {
+                    if (_page > 0) {
+                      setState(() => _page--);
+                    }
+                  }),
+                  Container(
+                    constraints: const BoxConstraints(minWidth: 36),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${_page + 1} / ${_draftLayout.pages}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  _buildSmallButton('›', () {
+                    if (_page < _draftLayout.pages - 1) {
+                      setState(() => _page++);
+                    }
+                  }),
+                  const SizedBox(width: 12),
+                  _buildSmallButton(context.l10n.terminalGridAddPage, () {
+                    _mutateDraft(() {
+                      final newPages = _draftLayout.pages + 1;
+                      _draftLayout = _draftLayout.copyWith(pages: newPages);
+                      _page = newPages - 1;
+                    });
+                  }),
+                  const SizedBox(width: 6),
+                  _buildSmallButton(
+                    context.l10n.terminalGridDeletePage,
+                    _deleteCurrentPage,
+                    isDanger: true,
+                  ),
+                ],
+              ),
             ),
           ),
           // Body of Sheet
@@ -1852,6 +2602,7 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   }
 
   Widget _buildSegmentButton(String key, String text) {
+    final scheme = Theme.of(context).colorScheme;
     final isOn = _st == key;
     return Expanded(
       child: GestureDetector(
@@ -1863,17 +2614,21 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         },
         child: Container(
           decoration: BoxDecoration(
-            color: isOn ? const Color(0xFF3A4150) : Colors.transparent,
+            color: isOn
+                ? scheme.primary.withValues(alpha: 0.15)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           padding: const EdgeInsets.symmetric(vertical: 6),
           alignment: Alignment.center,
           child: Text(
             text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 13,
               fontWeight: isOn ? FontWeight.w600 : FontWeight.normal,
-              color: isOn ? Colors.white : const Color(0xFF9AA3B5),
+              color: isOn ? scheme.primary : scheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -1881,13 +2636,18 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     );
   }
 
-  Widget _buildSmallButton(String text, VoidCallback onPressed, {bool isDanger = false}) {
+  Widget _buildSmallButton(
+    String text,
+    VoidCallback onPressed, {
+    bool isDanger = false,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onPressed,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF2A2E37),
+          color: scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -1895,7 +2655,7 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
           text,
           style: TextStyle(
             fontSize: 12,
-            color: isDanger ? const Color(0xFFFF7B80) : const Color(0xFFD8DEE9),
+            color: isDanger ? scheme.error : scheme.onSurface,
             fontWeight: isDanger ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -1917,51 +2677,130 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   }
 
   // ---------------------------------------------------------------------------
-  // Tab 1: 添加 (Add Keys)
+  // Tab 1: 添加 (Add Keys with Search)
   // ---------------------------------------------------------------------------
 
   Widget _buildTabAdd(BuildContext context) {
-    final categories = kPresetSets.keys.toList();
+    final categoryList = [
+      ('common', context.l10n.terminalCategoryCommon),
+      ('ctrl', 'Ctrl+'),
+      ('alt', 'Alt+'),
+      ('fkeys', 'F1-F12'),
+      ('nav', context.l10n.terminalCategoryNav),
+      ('sym', context.l10n.terminalCategorySym),
+      ('modifiers', context.l10n.terminalCategoryModifiers),
+      ('custom', context.l10n.terminalCategoryCustom),
+    ];
+
+    List<String> itemsToDisplay;
+    if (_searchQuery.isNotEmpty) {
+      final allPresets = kPresetSets.values
+          .expand((list) => list)
+          .toSet()
+          .toList();
+      itemsToDisplay = allPresets
+          .where((k) => k.toLowerCase().contains(_searchQuery))
+          .toList();
+    } else {
+      itemsToDisplay = kPresetSets[_cat] ?? [];
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Category Pills
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: categories.map((k) {
-              final isOn = _cat == k;
-              return Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: GestureDetector(
-                  onTap: () => setState(() => _cat = k),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isOn ? const Color(0x222F6FED) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isOn ? const Color(0xFF2F6FED) : const Color(0xFF2F3541),
+        // Preset Search Bar
+        TextField(
+          controller: _searchCtrl,
+          autofocus: false,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          decoration: InputDecoration(
+            isDense: true,
+            hintText: context.l10n.terminalSearchPresets,
+            hintStyle: TextStyle(
+              fontSize: 11,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 6,
+            ),
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
+          ),
+          onChanged: (val) {
+            setState(() {
+              _searchQuery = val.trim().toLowerCase();
+            });
+          },
+        ),
+        const SizedBox(height: 8),
+
+        // Category Pills (shown when not searching)
+        if (_searchQuery.isEmpty)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: categoryList.map((entry) {
+                final k = entry.$1;
+                final localizedName = entry.$2;
+                final isOn = _cat == k;
+                final theme = Theme.of(context);
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _cat = k),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isOn
+                            ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isOn
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outlineVariant,
+                        ),
                       ),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 3),
-                    child: Text(
-                      k,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isOn ? const Color(0xFF8FB4FF) : const Color(0xFFAAB2C3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 3,
+                      ),
+                      child: Text(
+                        localizedName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isOn
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurfaceVariant,
+                          fontWeight: isOn
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
-        if (_cat != '自定义') ...[
-          _buildPresetGrid(kPresetSets[_cat] ?? []),
+        if (_searchQuery.isNotEmpty || _cat != 'custom') ...[
+          _buildPresetGrid(itemsToDisplay),
         ] else ...[
           _buildCustomSection(context),
         ],
@@ -1970,6 +2809,21 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   }
 
   Widget _buildPresetGrid(List<String> list) {
+    if (list.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Center(
+          child: Text(
+            context.l10n.terminalSearchNoMatch,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      );
+    }
+
     const perPage = 12;
     final pageCount = (list.length / perPage).ceil();
 
@@ -1979,7 +2833,10 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         itemCount: pageCount,
         itemBuilder: (context, pageIndex) {
           final start = pageIndex * perPage;
-          final subList = list.sublist(start, min(start + perPage, list.length));
+          final subList = list.sublist(
+            start,
+            math.min(start + perPage, list.length),
+          );
 
           return GridView.builder(
             physics: const NeverScrollableScrollPhysics(),
@@ -1995,27 +2852,33 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
               return GestureDetector(
                 onTap: () {
                   final isMod = kModifierNames.contains(label);
-                  _placeItem(AccessoryItem(
-                    id: 'temp',
-                    l: label,
-                    s: label,
-                    m: isMod,
-                    kind: (label.length > 1 && label.contains('+')) ? 'combo' : 'key',
-                  ));
+                  _placeItem(
+                    AccessoryItem(
+                      id: 'temp',
+                      l: label,
+                      s: label,
+                      m: isMod,
+                      kind: (label.length > 1 && label.contains('+'))
+                          ? 'combo'
+                          : 'key',
+                    ),
+                  );
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2A2E37),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   alignment: Alignment.center,
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'JetBrains Mono',
                       fontSize: 12,
-                      color: Color(0xFFD8DEE9),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -2030,17 +2893,18 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   }
 
   Widget _buildCustomSection(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '自定义组合键：勾选修饰键 + 输入按键',
-          style: TextStyle(fontSize: 12, color: Color(0xFF8B93A3)),
+        Text(
+          '${context.l10n.terminalGridCustomCombo}：${context.l10n.terminalGridCustomComboHint}',
+          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
         ),
         const SizedBox(height: 6),
         Wrap(
           spacing: 12,
-          children: ['Ctrl', 'Alt', 'Shift', 'Meta'].map((m) {
+          children: ['Ctrl', 'Alt', 'Shift'].map((m) {
             final checked = _customModCheckboxes[m] ?? false;
             return GestureDetector(
               onTap: () => setState(() => _customModCheckboxes[m] = !checked),
@@ -2050,9 +2914,13 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                   Checkbox(
                     value: checked,
                     visualDensity: VisualDensity.compact,
-                    onChanged: (v) => setState(() => _customModCheckboxes[m] = v ?? false),
+                    onChanged: (v) =>
+                        setState(() => _customModCheckboxes[m] = v ?? false),
                   ),
-                  Text(m, style: const TextStyle(fontSize: 12, color: Color(0xFFD8DEE9))),
+                  Text(
+                    m,
+                    style: TextStyle(fontSize: 12, color: scheme.onSurface),
+                  ),
                 ],
               ),
             );
@@ -2065,17 +2933,36 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
               flex: 2,
               child: TextField(
                 controller: _customKeyCtrl,
-                style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13, color: Color(0xFFE6E9EF)),
+                autofocus: false,
+                style: TextStyle(
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: 13,
+                  color: scheme.onSurface,
+                ),
                 decoration: InputDecoration(
-                  hintText: '按键，如 C / F5 / Tab',
-                  hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF8B93A3)),
+                  hintText: context.l10n.terminalGridKeyHint,
+                  hintStyle: TextStyle(
+                    fontSize: 11,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 7,
+                  ),
                   filled: true,
-                  fillColor: const Color(0xFF232730),
+                  fillColor: scheme.surfaceContainerHighest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF3A4150)),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.primary),
                   ),
                 ),
               ),
@@ -2085,17 +2972,36 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
               flex: 2,
               child: TextField(
                 controller: _customLabelCtrl,
-                style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13, color: Color(0xFFE6E9EF)),
+                autofocus: false,
+                style: TextStyle(
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: 13,
+                  color: scheme.onSurface,
+                ),
                 decoration: InputDecoration(
-                  hintText: '显示名(可选)',
-                  hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF8B93A3)),
+                  hintText: context.l10n.terminalGridDisplayNameOptional,
+                  hintStyle: TextStyle(
+                    fontSize: 11,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 7,
+                  ),
                   filled: true,
-                  fillColor: const Color(0xFF232730),
+                  fillColor: scheme.surfaceContainerHighest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF3A4150)),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.primary),
                   ),
                 ),
               ),
@@ -2103,44 +3009,64 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
             const SizedBox(width: 6),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2F6FED),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                backgroundColor: scheme.primary,
+                foregroundColor: scheme.onPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
               ),
               onPressed: () {
                 var k = _customKeyCtrl.text.trim();
                 if (k.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('请输入按键')),
+                    SnackBar(
+                      content: Text(context.l10n.terminalGridPleaseEnterKey),
+                    ),
                   );
                   return;
                 }
-                k = k.length == 1 ? k.toUpperCase() : k[0].toUpperCase() + k.substring(1);
+                k = k.length == 1
+                    ? k.toUpperCase()
+                    : k[0].toUpperCase() + k.substring(1);
                 final ms = _customModCheckboxes.entries
                     .where((e) => e.value)
-                    .map((e) => e.key)
+                    .map((e) => e.key.toUpperCase())
                     .toList();
                 final s = [...ms, k].join('+');
                 final l = _customLabelCtrl.text.trim().isNotEmpty
                     ? _customLabelCtrl.text.trim()
                     : s;
-                _placeItem(AccessoryItem(
-                  id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
-                  l: l,
-                  s: s,
-                  kind: ms.isNotEmpty ? 'combo' : 'key',
-                ));
+                _placeItem(
+                  AccessoryItem(
+                    id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+                    l: l,
+                    s: s,
+                    kind: ms.isNotEmpty ? 'combo' : 'key',
+                    action: TerminalAccessoryAction(
+                      type: 'key',
+                      key: k,
+                      modifiers: ms,
+                    ),
+                  ),
+                );
               },
-              child: const Text('添加', style: TextStyle(fontSize: 12)),
+              child: Text(
+                context.l10n.terminalGridAddTab,
+                style: const TextStyle(fontSize: 12),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 14),
 
         // Text Macro section
-        const Text(
-          '文本宏：点一下发送整段文本',
-          style: TextStyle(fontSize: 12, color: Color(0xFF8B93A3)),
+        Text(
+          '${context.l10n.terminalGridTextMacro}：${context.l10n.terminalGridTextMacroSubtitle}',
+          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
         ),
         const SizedBox(height: 6),
         Row(
@@ -2149,17 +3075,36 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
               flex: 1,
               child: TextField(
                 controller: _macroLabelCtrl,
-                style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13, color: Color(0xFFE6E9EF)),
+                autofocus: false,
+                style: TextStyle(
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: 13,
+                  color: scheme.onSurface,
+                ),
                 decoration: InputDecoration(
-                  hintText: '显示名',
-                  hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF8B93A3)),
+                  hintText: context.l10n.terminalGridDisplayName,
+                  hintStyle: TextStyle(
+                    fontSize: 11,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 7,
+                  ),
                   filled: true,
-                  fillColor: const Color(0xFF232730),
+                  fillColor: scheme.surfaceContainerHighest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF3A4150)),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.primary),
                   ),
                 ),
               ),
@@ -2169,17 +3114,36 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
               flex: 2,
               child: TextField(
                 controller: _macroTextCtrl,
-                style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13, color: Color(0xFFE6E9EF)),
+                autofocus: false,
+                style: TextStyle(
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: 13,
+                  color: scheme.onSurface,
+                ),
                 decoration: InputDecoration(
-                  hintText: '如 ls -la',
-                  hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF8B93A3)),
+                  hintText: context.l10n.terminalGridMacroTextHint,
+                  hintStyle: TextStyle(
+                    fontSize: 11,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 7,
+                  ),
                   filled: true,
-                  fillColor: const Color(0xFF232730),
+                  fillColor: scheme.surfaceContainerHighest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF3A4150)),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.primary),
                   ),
                 ),
               ),
@@ -2190,37 +3154,59 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                 Checkbox(
                   value: _macroEnterCheckbox,
                   visualDensity: VisualDensity.compact,
-                  onChanged: (v) => setState(() => _macroEnterCheckbox = v ?? true),
+                  onChanged: (v) =>
+                      setState(() => _macroEnterCheckbox = v ?? false),
                 ),
-                const Text('回车', style: TextStyle(fontSize: 12, color: Color(0xFFD8DEE9))),
+                Text(
+                  context.l10n.terminalGridMacroAppendEnter,
+                  style: TextStyle(fontSize: 12, color: scheme.onSurface),
+                ),
               ],
             ),
             const SizedBox(width: 6),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2F6FED),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                backgroundColor: scheme.primary,
+                foregroundColor: scheme.onPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
               ),
               onPressed: () {
                 final t = _macroTextCtrl.text;
                 if (t.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('请输入文本')),
+                    SnackBar(
+                      content: Text(context.l10n.terminalGridPleaseEnterText),
+                    ),
                   );
                   return;
                 }
                 final l = _macroLabelCtrl.text.trim().isNotEmpty
                     ? _macroLabelCtrl.text.trim()
                     : (t.length > 4 ? t.substring(0, 4) : t);
-                _placeItem(AccessoryItem(
-                  id: 'macro_${DateTime.now().millisecondsSinceEpoch}',
-                  l: l,
-                  s: t + (_macroEnterCheckbox ? '\n' : ''),
-                  kind: 'text',
-                ));
+                _placeItem(
+                  AccessoryItem(
+                    id: 'macro_${DateTime.now().millisecondsSinceEpoch}',
+                    l: l,
+                    s: t,
+                    kind: 'text',
+                    action: TerminalAccessoryAction(
+                      type: 'text',
+                      text: t,
+                      appendEnter: _macroEnterCheckbox,
+                    ),
+                  ),
+                );
               },
-              child: const Text('添加', style: TextStyle(fontSize: 12)),
+              child: Text(
+                context.l10n.terminalGridAddTab,
+                style: const TextStyle(fontSize: 12),
+              ),
             ),
           ],
         ),
@@ -2229,20 +3215,25 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   }
 
   // ---------------------------------------------------------------------------
-  // Tab 2: 按键 (Key Properties)
+  // Tab 2: 按键 (Key Properties with Editable Action)
   // ---------------------------------------------------------------------------
 
   Widget _buildTabKey(BuildContext context) {
-    final o = _items.where((i) => i.id == _sel).firstOrNull;
+    final scheme = Theme.of(context).colorScheme;
+    final o = _draftLayout.items.where((i) => i.id == _sel).firstOrNull;
 
     if (o == null) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
         child: Center(
           child: Text(
-            '点击键盘上的按键进行选择\n按住拖动可调整位置',
+            context.l10n.terminalGridSelectKeyHint,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: Color(0xFF8B93A3), height: 1.6),
+            style: TextStyle(
+              fontSize: 13,
+              color: scheme.onSurfaceVariant,
+              height: 1.6,
+            ),
           ),
         ),
       );
@@ -2253,85 +3244,349 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildPropertyRow(
-            title: '方向键组',
-            subtitle: '倒T形状固定，只能整体拖动',
-            trailing: _buildSmallButton('拆成独立按键', _toggleArrows),
+            title: context.l10n.terminalGridInvertedT,
+            subtitle: context.l10n.terminalGridInvertedTSubtitle,
+            trailing: _buildSmallButton(
+              context.l10n.terminalGridSplitArrows,
+              _toggleArrows,
+            ),
+          ),
+          // Move to Page
+          _buildPropertyRow(
+            title: context.l10n.terminalGridCurrentPage,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildStepperButton('‹', () {
+                  if (o.p > 0) {
+                    final s = findFreeSpot(
+                      _draftLayout.items,
+                      o.w,
+                      o.h,
+                      o.p - 1,
+                      _draftLayout.rows,
+                      columns: _draftLayout.columns,
+                    );
+                    if (s != null) {
+                      _mutateDraft(() {
+                        o.p--;
+                        o.c = s[0];
+                        o.r = s[1];
+                        _page = o.p;
+                      });
+                    }
+                  }
+                }),
+                Container(
+                  constraints: const BoxConstraints(minWidth: 32),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${o.p + 1}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                ),
+                _buildStepperButton('›', () {
+                  if (o.p < _draftLayout.pages - 1) {
+                    final s = findFreeSpot(
+                      _draftLayout.items,
+                      o.w,
+                      o.h,
+                      o.p + 1,
+                      _draftLayout.rows,
+                      columns: _draftLayout.columns,
+                    );
+                    if (s != null) {
+                      _mutateDraft(() {
+                        o.p++;
+                        o.c = s[0];
+                        o.r = s[1];
+                        _page = o.p;
+                      });
+                    }
+                  }
+                }),
+              ],
+            ),
           ),
           const SizedBox(height: 10),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2A2E37),
-              foregroundColor: const Color(0xFFFF7B80),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              backgroundColor: scheme.errorContainer,
+              foregroundColor: scheme.onErrorContainer,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 9),
             ),
             onPressed: () {
-              setState(() {
-                _items.remove(o);
+              _mutateDraft(() {
+                _draftLayout.items.remove(o);
                 _sel = null;
               });
-              _saveConfig();
             },
-            child: const Text('删除方向键组', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(
+              context.l10n.terminalGridDeleteArrows,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       );
     }
 
-    final kindMap = {'key': '单键', 'combo': '组合键', 'text': '文本宏'};
-    final kd = kindMap[o.kind] ?? '单键';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Label TextField
+        // Display Name (Label)
         _buildPropertyRow(
-          title: '显示名',
+          title: context.l10n.terminalGridDisplayName,
           trailing: SizedBox(
             width: 140,
             child: TextField(
               controller: _labelCtrl,
-              style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13, color: Color(0xFFE6E9EF)),
+              autofocus: false,
+              style: TextStyle(
+                fontFamily: 'JetBrains Mono',
+                fontSize: 13,
+                color: scheme.onSurface,
+              ),
               decoration: InputDecoration(
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 7,
+                ),
                 filled: true,
-                fillColor: const Color(0xFF232730),
+                fillColor: scheme.surfaceContainerHighest,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF3A4150)),
+                  borderSide: BorderSide(color: scheme.outlineVariant),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: scheme.outlineVariant),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: scheme.primary),
                 ),
               ),
               onChanged: (val) {
-                o.l = val.isNotEmpty ? val : ' ';
-                _saveConfig();
-                setState(() {});
+                _mutateDraft(() {
+                  o.l = val.isNotEmpty ? val : ' ';
+                });
               },
             ),
           ),
         ),
-        // Send string
-        _buildPropertyRow(
-          title: '发送 · $kd',
-          trailing: Text(
-            o.s.replaceAll('\n', '⏎'),
-            style: const TextStyle(
-              fontFamily: 'JetBrains Mono',
-              fontSize: 12,
-              color: Color(0xFF8B93A3),
+
+        // Action Editing Section
+        if (o.action.type == 'key') ...[
+          _buildPropertyRow(
+            title: context.l10n.terminalGridActionKey,
+            trailing: SizedBox(
+              width: 140,
+              child: TextField(
+                controller: _actionKeyCtrl,
+                autofocus: false,
+                style: TextStyle(
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: 13,
+                  color: scheme.onSurface,
+                ),
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 7,
+                  ),
+                  filled: true,
+                  fillColor: scheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.primary),
+                  ),
+                ),
+                onChanged: (val) {
+                  final k = val.trim();
+                  if (k.isNotEmpty) {
+                    _mutateDraft(() {
+                      final activeMods = _actionModCheckboxes.entries
+                          .where((e) => e.value)
+                          .map((e) => e.key)
+                          .toList();
+                      final newAction = TerminalAccessoryAction(
+                        type: 'key',
+                        key: k,
+                        modifiers: activeMods,
+                      );
+                      final updated = o.copyWith(
+                        action: newAction,
+                        s: [...activeMods, k].join('+'),
+                      );
+                      final idx = _draftLayout.items.indexOf(o);
+                      _draftLayout.items[idx] = updated;
+                    });
+                  }
+                },
+              ),
             ),
           ),
-        ),
+          _buildPropertyRow(
+            title: context.l10n.terminalGridActionModifiers,
+            trailing: Wrap(
+              spacing: 6,
+              children: ['CTRL', 'ALT', 'SHIFT'].map((m) {
+                final checked = _actionModCheckboxes[m] ?? false;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _actionModCheckboxes[m] = !checked);
+                    _mutateDraft(() {
+                      final activeMods = _actionModCheckboxes.entries
+                          .where((e) => e.value)
+                          .map((e) => e.key)
+                          .toList();
+                      final newAction = TerminalAccessoryAction(
+                        type: 'key',
+                        key: o.action.key,
+                        modifiers: activeMods,
+                      );
+                      final updated = o.copyWith(
+                        action: newAction,
+                        s: [...activeMods, o.action.key].join('+'),
+                      );
+                      final idx = _draftLayout.items.indexOf(o);
+                      _draftLayout.items[idx] = updated;
+                    });
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Checkbox(
+                        value: checked,
+                        visualDensity: VisualDensity.compact,
+                        onChanged: (v) {
+                          setState(() => _actionModCheckboxes[m] = v ?? false);
+                          _mutateDraft(() {
+                            final activeMods = _actionModCheckboxes.entries
+                                .where((e) => e.value)
+                                .map((e) => e.key)
+                                .toList();
+                            final newAction = TerminalAccessoryAction(
+                              type: 'key',
+                              key: o.action.key,
+                              modifiers: activeMods,
+                            );
+                            final updated = o.copyWith(
+                              action: newAction,
+                              s: [...activeMods, o.action.key].join('+'),
+                            );
+                            final idx = _draftLayout.items.indexOf(o);
+                            _draftLayout.items[idx] = updated;
+                          });
+                        },
+                      ),
+                      Text(
+                        m,
+                        style: TextStyle(fontSize: 11, color: scheme.onSurface),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ] else if (o.action.type == 'text') ...[
+          _buildPropertyRow(
+            title: context.l10n.terminalGridActionText,
+            trailing: SizedBox(
+              width: 140,
+              child: TextField(
+                controller: _actionTextCtrl,
+                autofocus: false,
+                style: TextStyle(
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: 13,
+                  color: scheme.onSurface,
+                ),
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 7,
+                  ),
+                  filled: true,
+                  fillColor: scheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: scheme.primary),
+                  ),
+                ),
+                onChanged: (val) {
+                  _mutateDraft(() {
+                    final newAction = TerminalAccessoryAction(
+                      type: 'text',
+                      text: val,
+                      appendEnter: _actionAppendEnterCheckbox,
+                    );
+                    final updated = o.copyWith(action: newAction, s: val);
+                    final idx = _draftLayout.items.indexOf(o);
+                    _draftLayout.items[idx] = updated;
+                  });
+                },
+              ),
+            ),
+          ),
+          _buildPropertyRow(
+            title: context.l10n.terminalGridMacroAppendEnter,
+            trailing: Switch(
+              value: _actionAppendEnterCheckbox,
+              activeTrackColor: scheme.primary,
+              onChanged: (v) {
+                setState(() => _actionAppendEnterCheckbox = v);
+                _mutateDraft(() {
+                  final newAction = TerminalAccessoryAction(
+                    type: 'text',
+                    text: o.action.text,
+                    appendEnter: v,
+                  );
+                  final updated = o.copyWith(action: newAction);
+                  final idx = _draftLayout.items.indexOf(o);
+                  _draftLayout.items[idx] = updated;
+                });
+              },
+            ),
+          ),
+        ],
+
         // Width stepper
         _buildPropertyRow(
-          title: '宽度（格）',
+          title: context.l10n.terminalGridWidth,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildStepperButton('−', () {
                 if (o.w > 1) {
-                  setState(() => o.w--);
-                  _saveConfig();
+                  _mutateDraft(() => o.w--);
                 }
               }),
               Container(
@@ -2339,14 +3594,89 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                 alignment: Alignment.center,
                 child: Text(
                   '${o.w}',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFE6E9EF)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
               _buildStepperButton('＋', () {
-                if (o.w < 3 && o.c + o.w + 1 <= kAccessoryCols) {
-                  if (!checkCollision(_items, o, o.c, o.r, o.w + 1, o.h, o.p, _rows)) {
-                    setState(() => o.w++);
-                    _saveConfig();
+                if (o.w < 3 && o.c + o.w + 1 <= _draftLayout.columns) {
+                  if (!checkCollision(
+                    _draftLayout.items,
+                    o,
+                    o.c,
+                    o.r,
+                    o.w + 1,
+                    o.h,
+                    o.p,
+                    _draftLayout.rows,
+                    columns: _draftLayout.columns,
+                  )) {
+                    _mutateDraft(() => o.w++);
+                  }
+                }
+              }),
+            ],
+          ),
+        ),
+
+        // Move to Page
+        _buildPropertyRow(
+          title: context.l10n.terminalGridCurrentPage,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildStepperButton('‹', () {
+                if (o.p > 0) {
+                  final s = findFreeSpot(
+                    _draftLayout.items,
+                    o.w,
+                    o.h,
+                    o.p - 1,
+                    _draftLayout.rows,
+                    columns: _draftLayout.columns,
+                  );
+                  if (s != null) {
+                    _mutateDraft(() {
+                      o.p--;
+                      o.c = s[0];
+                      o.r = s[1];
+                      _page = o.p;
+                    });
+                  }
+                }
+              }),
+              Container(
+                constraints: const BoxConstraints(minWidth: 32),
+                alignment: Alignment.center,
+                child: Text(
+                  '${o.p + 1}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: scheme.onSurface,
+                  ),
+                ),
+              ),
+              _buildStepperButton('›', () {
+                if (o.p < _draftLayout.pages - 1) {
+                  final s = findFreeSpot(
+                    _draftLayout.items,
+                    o.w,
+                    o.h,
+                    o.p + 1,
+                    _draftLayout.rows,
+                    columns: _draftLayout.columns,
+                  );
+                  if (s != null) {
+                    _mutateDraft(() {
+                      o.p++;
+                      o.c = s[0];
+                      o.r = s[1];
+                      _page = o.p;
+                    });
                   }
                 }
               }),
@@ -2356,19 +3686,23 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         const SizedBox(height: 10),
         FilledButton(
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF2A2E37),
-            foregroundColor: const Color(0xFFFF7B80),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            backgroundColor: scheme.errorContainer,
+            foregroundColor: scheme.onErrorContainer,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
             padding: const EdgeInsets.symmetric(vertical: 9),
           ),
           onPressed: () {
-            setState(() {
-              _items.remove(o);
+            _mutateDraft(() {
+              _draftLayout.items.remove(o);
               _sel = null;
             });
-            _saveConfig();
           },
-          child: const Text('删除这个按键', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: Text(
+            context.l10n.terminalGridDeleteKey,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );
@@ -2379,45 +3713,97 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   // ---------------------------------------------------------------------------
 
   Widget _buildTabSet(BuildContext context) {
-    final hasArrowGroup = _items.any((i) => i.t == 'g');
+    final scheme = Theme.of(context).colorScheme;
+    final hasArrowGroup = _draftLayout.items.any((i) => i.t == 'g');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Rows Stepper
         _buildPropertyRow(
-          title: '键盘显示行数',
-          subtitle: '1–5 行，默认 2 行',
+          title: context.l10n.terminalGridRows,
+          subtitle: context.l10n.terminalGridRowsSubtitle,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildStepperButton('−', () => _setRows(_rows - 1)),
+              _buildStepperButton('−', () => _setRows(_draftLayout.rows - 1)),
               Container(
                 constraints: const BoxConstraints(minWidth: 28),
                 alignment: Alignment.center,
                 child: Text(
-                  '$_rows',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFE6E9EF)),
+                  '${_draftLayout.rows}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
-              _buildStepperButton('＋', () => _setRows(_rows + 1)),
+              _buildStepperButton('＋', () => _setRows(_draftLayout.rows + 1)),
             ],
           ),
         ),
         // Toggle Arrows Switch
         _buildPropertyRow(
-          title: '方向键倒T固定',
-          subtitle: '关闭后拆成 4 个独立按键',
+          title: context.l10n.terminalGridInvertedT,
+          subtitle: context.l10n.terminalGridInvertedTSubtitle,
           trailing: Switch(
             value: hasArrowGroup,
-            activeTrackColor: const Color(0xFF2F6FED),
+            activeTrackColor: scheme.primary,
             onChanged: (val) => _toggleArrows(),
+          ),
+        ),
+        // Direction key color
+        _buildPropertyRow(
+          title: context.l10n.terminalDirectionKeyColor,
+          subtitle: _draftLayout.directionSeedColor != null
+              ? null
+              : context.l10n.terminalDirectionKeyColorDefault,
+          trailing: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            ),
+            onPressed: () async {
+              final result = await DirectionKeyColorDialog.show(
+                context,
+                initialColorValue: _draftLayout.directionSeedColor,
+              );
+              if (result != null && mounted) {
+                _mutateDraft(() {
+                  _draftLayout = _draftLayout.copyWith(
+                    directionSeedColor: result.colorValue,
+                    clearDirectionSeedColor: result.resetToTheme,
+                  );
+                });
+              }
+            },
+            icon: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: _draftLayout.directionSeedColor != null
+                    ? Color(_draftLayout.directionSeedColor!)
+                    : Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+            label: Text(
+              _draftLayout.directionSeedColor != null
+                  ? '#${(_draftLayout.directionSeedColor! & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}'
+                  : context.l10n.terminalDirectionKeyColorDefault,
+              style: const TextStyle(fontSize: 12),
+            ),
           ),
         ),
         // Reset button
         _buildPropertyRow(
-          title: '恢复默认布局',
-          trailing: _buildSmallButton('重置', _resetToDefault, isDanger: true),
+          title: context.l10n.terminalGridReset,
+          trailing: _buildSmallButton(
+            context.l10n.terminalGridCorruptedReset,
+            _resetToDefault,
+            isDanger: true,
+          ),
         ),
       ],
     );
@@ -2428,40 +3814,79 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     String? subtitle,
     required Widget trailing,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFF22262E), width: 1)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scheme = Theme.of(context).colorScheme;
+        final isNarrow = constraints.maxWidth < 280;
+        final titleColumn = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                color: scheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+              ),
+            ],
+          ],
+        );
+
+        if (isNarrow) {
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: scheme.outlineVariant.withValues(alpha: 0.5),
+                  width: 1,
+                ),
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 13, color: Color(0xFFE6E9EF), fontWeight: FontWeight.w500),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF8B93A3)),
-                  ),
-                ],
+                titleColumn,
+                const SizedBox(height: 6),
+                Align(alignment: Alignment.centerRight, child: trailing),
               ],
             ),
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: scheme.outlineVariant.withValues(alpha: 0.5),
+                width: 1,
+              ),
+            ),
           ),
-          trailing,
-        ],
-      ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(child: titleColumn),
+              const SizedBox(width: 8),
+              trailing,
+            ],
+          ),
+        );
+      },
     );
   }
 
   Widget _buildStepperButton(String text, VoidCallback onPressed) {
+    final scheme = Theme.of(context).colorScheme;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onPressed,
@@ -2469,13 +3894,17 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          color: const Color(0xFF2A2E37),
+          color: scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(15),
         ),
         alignment: Alignment.center,
         child: Text(
           text,
-          style: const TextStyle(fontSize: 16, color: Color(0xFFD8DEE9), fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 16,
+            color: scheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );

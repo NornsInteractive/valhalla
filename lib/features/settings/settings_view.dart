@@ -24,7 +24,6 @@ import 'widgets/default_agent_dialog.dart';
 import 'widgets/remote_file_toolbar_dialog.dart';
 import 'widgets/trusted_hosts_dialog.dart';
 import '../../core/providers/terminal_provider.dart';
-import '../terminal/widgets/customize_pinned_keys_dialog.dart';
 import '../terminal/widgets/terminal_history_drawer.dart';
 
 class SettingsView extends ConsumerStatefulWidget {
@@ -39,12 +38,14 @@ class _SettingsSearchItem {
   final String subtitle;
   final IconData icon;
   final VoidCallback onTap;
+  final List<String>? keywords;
 
   const _SettingsSearchItem({
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.onTap,
+    this.keywords,
   });
 }
 
@@ -56,6 +57,24 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _showAccessoryGridEditGuide(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.terminalGridEditLayout),
+        content: Text(
+          '${context.l10n.navTerminal} → ${context.l10n.navMore} → ${context.l10n.terminalGridEditLayout}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(context.l10n.confirm),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showDetailSheet(
@@ -273,10 +292,15 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         onTap: () => _showTerminalFontSizeDialog(context),
       ),
       _SettingsSearchItem(
-        title: l10n.settingsTerminalPinnedKeys,
-        subtitle: l10n.settingsTerminalPinnedKeysSubtitle,
-        icon: Icons.keyboard_outlined,
-        onTap: () => CustomizePinnedKeysDialog.show(context),
+        title: l10n.terminalGridEditLayout,
+        subtitle:
+            '${l10n.navTerminal} → ${l10n.navMore} → ${l10n.terminalGridEditLayout}',
+        icon: Icons.tune,
+        keywords: [
+          l10n.settingsTerminalPinnedKeys,
+          l10n.settingsTerminalPinnedKeysSubtitle,
+        ],
+        onTap: () => _showAccessoryGridEditGuide(context),
       ),
       _SettingsSearchItem(
         title: l10n.settingsKnownHosts,
@@ -481,7 +505,11 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
           .where(
             (item) =>
                 item.title.toLowerCase().contains(_searchQuery) ||
-                item.subtitle.toLowerCase().contains(_searchQuery),
+                item.subtitle.toLowerCase().contains(_searchQuery) ||
+                (item.keywords != null &&
+                    item.keywords!.any(
+                      (k) => k.toLowerCase().contains(_searchQuery),
+                    )),
           )
           .toList();
 
@@ -1492,15 +1520,15 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
             dense: true,
             leading: const Icon(Icons.tune),
             title: Text(
-              context.l10n.settingsTerminalPinnedKeys,
+              context.l10n.terminalGridEditLayout,
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
             subtitle: Text(
-              context.l10n.settingsTerminalPinnedKeysSubtitle,
+              '${context.l10n.navTerminal} → ${context.l10n.navMore} → ${context.l10n.terminalGridEditLayout}',
               style: const TextStyle(fontSize: 11),
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => CustomizePinnedKeysDialog.show(context),
+            onTap: () => _showAccessoryGridEditGuide(context),
           ),
           const Divider(height: 1),
           ListTile(
@@ -1899,10 +1927,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
             ListTile(
               key: const Key('settings_file_toolbar_tile'),
               contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.tune,
-                color: context.colorScheme.primary,
-              ),
+              leading: Icon(Icons.tune, color: context.colorScheme.primary),
               title: Text(
                 context.l10n.sftpConfigureToolbar,
                 style: const TextStyle(

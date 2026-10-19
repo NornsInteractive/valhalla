@@ -1037,40 +1037,94 @@ void main() {
       terminal = Terminal(maxLines: 100);
     });
 
-    testWidgets('Edit sheet TextFields can request focus and accept text input', (tester) async {
-      await tester.pumpWidget(_canvas(terminal));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'text macro preserves raw payload and explicit Enter bypasses armed modifiers',
+      (tester) async {
+        final pasted = <String>[];
+        final keys = <Map<String, Object>>[];
+        await tester.pumpWidget(
+          _canvas(
+            terminal,
+            onPasteText: pasted.add,
+            onKey: (key, {isCtrl = false, isAlt = false, isShift = false}) =>
+                keys.add({
+                  'key': key,
+                  'ctrl': isCtrl,
+                  'alt': isAlt,
+                  'shift': isShift,
+                }),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('terminal_accessory_key_CTRL')));
+        await tester.pumpAndSettle();
+        final bar = tester.widget<TerminalAccessoryBar>(
+          find.byType(TerminalAccessoryBar),
+        );
+        bar.onText!('echo "hello world"', appendEnter: false);
+        expect(pasted, ['echo "hello world"']);
+        expect(keys, isEmpty);
+        bar.onText!('pwd', appendEnter: true);
+        expect(pasted, ['echo "hello world"', 'pwd']);
+        expect(keys, [
+          {'key': 'ENTER', 'ctrl': false, 'alt': false, 'shift': false},
+        ]);
+      },
+    );
 
-      // Enter edit mode by long pressing a key
-      await tester.longPress(find.text('ESC'));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Edit sheet TextFields can request focus and accept text input',
+      (tester) async {
+        await tester.pumpWidget(_canvas(terminal));
+        await tester.pumpAndSettle();
 
-      // "完成" button is visible
-      expect(find.text('完成'), findsOneWidget);
+        // Editing is explicit; ordinary long presses must not enter the editor.
+        await tester.tap(
+          find.byKey(const Key('terminal_accessory_more_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Edit Layout'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('terminal_accessory_key_ESC')));
+        await tester.pumpAndSettle();
 
-      // In Tab 'add' or 'key', find a TextField
-      final textField = find.byType(TextField);
-      expect(textField, findsWidgets);
+        expect(
+          find.byKey(const Key('terminal_grid_save_button')),
+          findsOneWidget,
+        );
 
-      // Tap the TextField to gain focus
-      await tester.tap(textField.first);
-      await tester.pumpAndSettle();
+        // In Tab 'add' or 'key', find a TextField
+        final textField = find.byType(TextField);
+        expect(textField, findsWidgets);
 
-      // Type text into the TextField
-      await tester.enterText(textField.first, 'TestKey');
-      await tester.pumpAndSettle();
-      expect(
-        find.byWidgetPredicate((w) => w is EditableText && w.controller.text == 'TestKey'),
-        findsOneWidget,
-      );
+        // Tap the TextField to gain focus
+        await tester.tap(textField.first);
+        await tester.pumpAndSettle();
 
-      // Tap '完成' to exit edit mode
-      await tester.tap(find.text('完成'));
-      await tester.pumpAndSettle();
-      expect(find.text('完成'), findsNothing);
-    });
+        // Type text into the TextField
+        await tester.enterText(textField.first, 'TestKey');
+        await tester.pumpAndSettle();
+        expect(
+          find.byWidgetPredicate(
+            (w) => w is EditableText && w.controller.text == 'TestKey',
+          ),
+          findsOneWidget,
+        );
 
-    testWidgets('Keyboard button single-tap opens IME even after being closed', (tester) async {
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Confirm'));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('terminal_grid_save_button')),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets('Keyboard button single-tap opens IME even after being closed', (
+      tester,
+    ) async {
       await tester.pumpWidget(_canvas(terminal));
       await tester.pumpAndSettle();
 
@@ -1098,39 +1152,45 @@ void main() {
       });
     });
 
-    testWidgets('Opening edit sheet or quick panel does not change TerminalView size', (tester) async {
-      await tester.pumpWidget(_canvas(terminal, width: 800, height: 600));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Opening edit sheet or quick panel does not change TerminalView size',
+      (tester) async {
+        await tester.pumpWidget(_canvas(terminal, width: 800, height: 600));
+        await tester.pumpAndSettle();
 
-      final terminalViewFinder = find.byType(TerminalView);
-      final initialSize = tester.getSize(terminalViewFinder);
+        final terminalViewFinder = find.byType(TerminalView);
+        final initialSize = tester.getSize(terminalViewFinder);
 
-      // Open quick panel ('...')
-      final moreBtn = find.byKey(const Key('terminal_accessory_more_button'));
-      await tester.tap(moreBtn);
-      await tester.pumpAndSettle();
+        // Open quick panel ('...')
+        final moreBtn = find.byKey(const Key('terminal_accessory_more_button'));
+        await tester.tap(moreBtn);
+        await tester.pumpAndSettle();
 
-      // TerminalView size must remain identical
-      expect(tester.getSize(terminalViewFinder), initialSize);
+        // TerminalView size must remain identical
+        expect(tester.getSize(terminalViewFinder), initialSize);
 
-      // Close quick panel
-      await tester.tap(moreBtn);
-      await tester.pumpAndSettle();
-      expect(tester.getSize(terminalViewFinder), initialSize);
+        // Close quick panel
+        await tester.tap(moreBtn);
+        await tester.pumpAndSettle();
+        expect(tester.getSize(terminalViewFinder), initialSize);
 
-      // Enter edit mode by long pressing 'ESC'
-      await tester.longPress(find.text('ESC'));
-      await tester.pumpAndSettle();
-      expect(find.text('完成'), findsOneWidget);
+        await tester.tap(moreBtn);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Edit Layout'));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('terminal_grid_save_button')),
+          findsOneWidget,
+        );
 
-      // TerminalView size must remain identical
-      expect(tester.getSize(terminalViewFinder), initialSize);
+        // TerminalView size must remain identical
+        expect(tester.getSize(terminalViewFinder), initialSize);
 
-      // Tap '完成'
-      await tester.tap(find.text('完成'));
-      await tester.pumpAndSettle();
-      expect(tester.getSize(terminalViewFinder), initialSize);
-    });
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect(tester.getSize(terminalViewFinder), initialSize);
+      },
+    );
   });
 }
 

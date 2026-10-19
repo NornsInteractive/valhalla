@@ -6034,4 +6034,197 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => 'Commande de remplacement';
+
+  @override
+  String get terminalGridEditLayout => 'Modifier la disposition';
+
+  @override
+  String get terminalGridSave => 'Enregistrer';
+
+  @override
+  String get terminalGridCancel => 'Annuler';
+
+  @override
+  String get terminalGridUndo => 'Annuler la frappe';
+
+  @override
+  String get terminalGridDiscardConfirm =>
+      'Ignorer les modifications non enregistrées ?';
+
+  @override
+  String get terminalGridSaveFailed =>
+      'Échec de l\'enregistrement de la disposition';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      'La configuration de la barre est corrompue. Réinitialiser la disposition ?';
+
+  @override
+  String get terminalGridCorruptedReset => 'Réinitialiser';
+
+  @override
+  String get terminalGridAddTab => 'Ajouter';
+
+  @override
+  String get terminalGridKeyTab => 'Touche';
+
+  @override
+  String get terminalGridSetTab => 'Paramètres';
+
+  @override
+  String get terminalGridCurrentPage => 'Page';
+
+  @override
+  String get terminalGridAddPage => '＋ Ajouter une page';
+
+  @override
+  String get terminalGridDeletePage => 'Supprimer la page';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return 'Supprimer la page $page et toutes ses touches ?';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'Supprimer cette touche';
+
+  @override
+  String get terminalGridRows => 'Lignes du clavier';
+
+  @override
+  String get terminalGridRowsSubtitle => '1 à 5 lignes, 2 par défaut';
+
+  @override
+  String get terminalGridInvertedT => 'Flèches en T inversé';
+
+  @override
+  String get terminalGridInvertedTSubtitle =>
+      'Désactiver pour séparer en 4 touches indépendantes';
+
+  @override
+  String get terminalGridSplitArrows => 'Séparer en touches indépendantes';
+
+  @override
+  String get terminalGridDeleteArrows => 'Supprimer le groupe de flèches';
+
+  @override
+  String get terminalGridReset => 'Rétablir la disposition par défaut';
+
+  @override
+  String get terminalGridResetConfirm =>
+      'Réinitialiser la disposition des raccourcis par défaut ?';
+
+  @override
+  String get terminalGridNoSpace =>
+      'Aucun espace libre sur cette page. Ajoutez une page, augmentez les lignes ou supprimez des touches.';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      'Le groupe de flèches nécessite au moins 2 lignes. Séparez les flèches dans les paramètres.';
+
+  @override
+  String get terminalGridArrowsNeedSpace =>
+      'Le groupe de flèches nécessite un espace 3×2 sur la page actuelle.';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage => 'Conservez au moins une page';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return 'Espace insuffisant sur la page $page. Déplacez ou supprimez des touches d\'abord.';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported =>
+      'La touche Meta n\'est pas prise en charge par ce terminal';
+
+  @override
+  String get terminalGridSelectKeyHint =>
+      'Touchez une touche pour modifier\nMaintenez et glissez pour repositionner';
+
+  @override
+  String get terminalGridDisplayName => 'Nom affiché';
+
+  @override
+  String get terminalGridActionSend => 'Envoyer';
+
+  @override
+  String get terminalGridWidth => 'Largeur (cases)';
+
+  @override
+  String get terminalGridCustomCombo => 'Raccourci personnalisé';
+
+  @override
+  String get terminalGridCustomComboHint =>
+      'Cochez les modificateurs + saisissez la touche';
+
+  @override
+  String get terminalGridKeyHint => 'Touche, ex. C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => 'Nom affiché (optionnel)';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'Veuillez saisir une touche';
+
+  @override
+  String get terminalGridTextMacro => 'Macro texte';
+
+  @override
+  String get terminalGridTextMacroSubtitle =>
+      'Un clic pour envoyer un texte complet';
+
+  @override
+  String get terminalGridMacroTextHint => 'ex. ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => 'Entrée';
+
+  @override
+  String get terminalGridPleaseEnterText => 'Veuillez saisir un texte';
+
+  @override
+  String get terminalGridSingleKey => 'Touche simple';
+
+  @override
+  String get terminalGridComboKey => 'Combinaison';
+
+  @override
+  String get terminalGridMacroKey => 'Macro';
+
+  @override
+  String get terminalCategoryCommon => 'Courants';
+
+  @override
+  String get terminalCategoryNav => 'Navigation';
+
+  @override
+  String get terminalCategoryEdit => 'Édition';
+
+  @override
+  String get terminalCategorySym => 'Symboles';
+
+  @override
+  String get terminalCategoryModifiers => 'Modificateurs';
+
+  @override
+  String get terminalCategoryCustom => 'Personnalisé';
+
+  @override
+  String get terminalSearchPresets => 'Rechercher des touches...';
+
+  @override
+  String get terminalGridActionEdit => 'Modifier l\'action';
+
+  @override
+  String get terminalGridActionKey => 'Touche à envoyer';
+
+  @override
+  String get terminalGridActionModifiers => 'Modificateurs';
+
+  @override
+  String get terminalGridActionText => 'Texte à envoyer';
+
+  @override
+  String get terminalSearchNoMatch => 'Aucune touche correspondante';
 }

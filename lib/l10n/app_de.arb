@@ -2284,5 +2284,78 @@
   "agentUpdateNeverChecked": "Nie geprüft",
   "agentUpdateCodexMigrationTitle": "Neuen Adapter installieren & Agent wechseln",
   "agentUpdateCodexMigrationNotice": "Vorhandene Programme und Konfigurationen bleiben erhalten. Es wird ein separater neuer Adapter installiert und verknüpft; bei Problemen ist ein sicheres Rollback möglich.",
-  "agentUpdateReplacementCommand": "Befehl nach Wechsel"
+  "agentUpdateReplacementCommand": "Befehl nach Wechsel",
+  "terminalGridEditLayout": "Tastenlayout bearbeiten",
+  "terminalGridSave": "Speichern",
+  "terminalGridCancel": "Abbrechen",
+  "terminalGridUndo": "Rückgängig",
+  "terminalGridDiscardConfirm": "Nicht gespeicherte Änderungen verwerfen?",
+  "terminalGridSaveFailed": "Fehler beim Speichern des Tastenlayouts",
+  "terminalGridCorruptedPrompt": "Tastenleisten-Konfiguration ist beschädigt. Auf Standard zurücksetzen?",
+  "terminalGridCorruptedReset": "Zurücksetzen",
+  "terminalGridAddTab": "Hinzufügen",
+  "terminalGridKeyTab": "Taste",
+  "terminalGridSetTab": "Einstellungen",
+  "terminalGridCurrentPage": "Seite",
+  "terminalGridAddPage": "＋ Seite hinzufügen",
+  "terminalGridDeletePage": "Seite löschen",
+  "terminalGridDeletePageConfirm": "Seite {page} und alle darin enthaltenen Tasten löschen?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "Taste löschen",
+  "terminalGridRows": "Tastaturzeilen",
+  "terminalGridRowsSubtitle": "1–5 Zeilen, Standard: 2 Zeilen",
+  "terminalGridInvertedT": "Umgekehrtes T-Pfeilkreuz",
+  "terminalGridInvertedTSubtitle": "Ausschalten, um in 4 Einzeltasten aufzuteilen",
+  "terminalGridSplitArrows": "In Einzeltasten aufteilen",
+  "terminalGridDeleteArrows": "Pfeiltastengruppe löschen",
+  "terminalGridReset": "Standardlayout wiederherstellen",
+  "terminalGridResetConfirm": "Auf Standard-Tastenlayout zurücksetzen?",
+  "terminalGridNoSpace": "Kein Platz auf dieser Seite. Seite hinzufügen, Zeilenanzahl erhöhen oder Tasten löschen.",
+  "terminalGridArrowsNeedTwoRows": "Das Pfeilkreuz benötigt mindestens 2 Zeilen. Teilen Sie die Tasten zuerst in den Einstellungen auf.",
+  "terminalGridArrowsNeedSpace": "Das Pfeilkreuz benötigt ein 3×2-Feld auf der aktuellen Seite.",
+  "terminalGridKeepAtLeastOnePage": "Mindestens eine Seite muss erhalten bleiben",
+  "terminalGridPageSpaceInsufficient": "Zu wenig Platz auf Seite {page}. Entfernen oder verschieben Sie zuerst Tasten.",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "Meta-Taste wird vom Terminalprotokoll nicht unterstützt",
+  "terminalGridSelectKeyHint": "Taste antippen zum Bearbeiten\nGedrückt halten und ziehen zum Verschieben",
+  "terminalGridDisplayName": "Anzeigename",
+  "terminalGridActionSend": "Senden",
+  "terminalGridWidth": "Breite (Felder)",
+  "terminalGridCustomCombo": "Eigene Tastenkombination",
+  "terminalGridCustomComboHint": "Modifikatoren wählen + Taste eingeben",
+  "terminalGridKeyHint": "Taste, z. B. C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "Anzeigename (optional)",
+  "terminalGridPleaseEnterKey": "Bitte Taste eingeben",
+  "terminalGridTextMacro": "Text-Makro",
+  "terminalGridTextMacroSubtitle": "Ein Fingertipp zum Senden von Text",
+  "terminalGridMacroTextHint": "z. B. ls -la",
+  "terminalGridMacroAppendEnter": "Eingabe",
+  "terminalGridPleaseEnterText": "Bitte Text eingeben",
+  "terminalGridSingleKey": "Einzeltaste",
+  "terminalGridComboKey": "Kombination",
+  "terminalGridMacroKey": "Makro",
+  "terminalCategoryCommon": "Häufig",
+  "terminalCategoryNav": "Navigation",
+  "terminalCategoryEdit": "Bearbeiten",
+  "terminalCategorySym": "Symbole",
+  "terminalCategoryModifiers": "Modifikatoren",
+  "terminalCategoryCustom": "Benutzerdefiniert",
+  "terminalSearchPresets": "Voreingestellte Tasten suchen...",
+  "terminalGridActionEdit": "Sendeaktion bearbeiten",
+  "terminalGridActionKey": "Zu sendende Taste",
+  "terminalGridActionModifiers": "Modifikatoren",
+  "terminalGridActionText": "Zu sendender Text",
+  "terminalSearchNoMatch": "Keine passenden Tasten"
 }

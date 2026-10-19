@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valhalla/core/utils/terminal_keys.dart';
@@ -79,6 +80,13 @@ Future<void> _commit(WidgetTester tester, String text) async {
 }
 
 void main() {
+  setUpAll(() async {
+    final mono = FontLoader('JetBrains Mono')
+      ..addFont(rootBundle.load('assets/fonts/JetBrainsMono-400.ttf'))
+      ..addFont(rootBundle.load('assets/fonts/JetBrainsMono-600.ttf'));
+    await mono.load();
+  });
+
   for (final committed in ['a\n', '中文\r\n', 'hello \n']) {
     testWidgets(
       'Gboard batched text plus Enter preserves committed prefix and consumes Ctrl: $committed',

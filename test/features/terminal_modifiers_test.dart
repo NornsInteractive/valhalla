@@ -237,12 +237,16 @@ void main() {
 
       final onTextInput = inputHook(tester);
 
-      await tester.tap(find.byKey(const Key('terminal_accessory_key_FN')));
+      await tester.tap(
+        find.byKey(const Key('terminal_accessory_key_FN')).first,
+      );
       await tester.pumpAndSettle();
       expect(onTextInput('1'), isTrue, reason: 'Fn+1 必须交给本地 Fn 映射');
       expect(bytes(), '<ESC>OP', reason: 'Fn+1 -> F1 -> ESC OP');
 
-      await tester.tap(find.byKey(const Key('terminal_accessory_key_FN')));
+      await tester.tap(
+        find.byKey(const Key('terminal_accessory_key_FN')).first,
+      );
       await tester.pumpAndSettle();
       expect(
         onTextInput('\b'),

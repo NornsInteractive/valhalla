@@ -5940,4 +5940,196 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => 'स्विच के बाद का कमांड';
+
+  @override
+  String get terminalGridEditLayout => 'शॉर्टकट लेआउट संपादित करें';
+
+  @override
+  String get terminalGridSave => 'सहेजें';
+
+  @override
+  String get terminalGridCancel => 'रद्द करें';
+
+  @override
+  String get terminalGridUndo => 'पूर्ववत करें';
+
+  @override
+  String get terminalGridDiscardConfirm =>
+      'क्या आप बिना सहेजे गए परिवर्तनों को छोड़ना चाहते हैं?';
+
+  @override
+  String get terminalGridSaveFailed => 'शॉर्टकट लेआउट सहेजने में विफल';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      'शॉर्टकट बार कॉन्फ़िगरेशन दूषित है। डिफ़ॉल्ट लेआउट पर रीसेट करें?';
+
+  @override
+  String get terminalGridCorruptedReset => 'रीसेट करें';
+
+  @override
+  String get terminalGridAddTab => 'जोड़ें';
+
+  @override
+  String get terminalGridKeyTab => 'कुंजी';
+
+  @override
+  String get terminalGridSetTab => 'सेटिंग्स';
+
+  @override
+  String get terminalGridCurrentPage => 'पृष्ठ';
+
+  @override
+  String get terminalGridAddPage => '＋ पृष्ठ जोड़ें';
+
+  @override
+  String get terminalGridDeletePage => 'पृष्ठ हटाएं';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return 'क्या पृष्ठ $page और उसकी सभी कुंजियों को हटाना है?';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'कुंजी हटाएं';
+
+  @override
+  String get terminalGridRows => 'कीबोर्ड पंक्तियाँ';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 पंक्तियाँ, डिफ़ॉल्ट 2 पंक्तियाँ';
+
+  @override
+  String get terminalGridInvertedT => 'उल्टा-टी तीर समूह';
+
+  @override
+  String get terminalGridInvertedTSubtitle =>
+      '4 अलग-अलग कुंजियों में विभाजित करने के लिए बंद करें';
+
+  @override
+  String get terminalGridSplitArrows => 'अलग कुंजियों में विभाजित करें';
+
+  @override
+  String get terminalGridDeleteArrows => 'तीर समूह हटाएं';
+
+  @override
+  String get terminalGridReset => 'डिफ़ॉल्ट लेआउट पुनर्स्थापित करें';
+
+  @override
+  String get terminalGridResetConfirm =>
+      'क्या डिफ़ॉल्ट शॉर्टकट लेआउट पर रीसेट करना चाहते हैं?';
+
+  @override
+  String get terminalGridNoSpace =>
+      'वर्तमान पृष्ठ पर कोई खाली स्थान नहीं है। पृष्ठ जोड़ें, पंक्तियाँ बढ़ाएँ या कुंजियाँ हटाएँ।';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      'उल्टा-टी तीरों के लिए कम से कम 2 पंक्तियों की आवश्यकता है। पहले सेटिंग्स में विभाजित करें।';
+
+  @override
+  String get terminalGridArrowsNeedSpace =>
+      'उल्टा-टी तीरों के लिए वर्तमान पृष्ठ पर 3×2 स्थान की आवश्यकता है।';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage =>
+      'कम से कम एक पृष्ठ रखना आवश्यक है';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return 'पृष्ठ $page पर अपर्याप्त स्थान है। पहले कुछ कुंजियाँ हटाएँ या स्थानांतरित करें।';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported =>
+      'टर्मिनल प्रोटोकॉल द्वारा Meta कुंजी समर्थित नहीं है';
+
+  @override
+  String get terminalGridSelectKeyHint =>
+      'गुण संपादित करने के लिए कुंजी टैप करें\nपुनः व्यवस्थित करने के लिए दबाकर खींचें';
+
+  @override
+  String get terminalGridDisplayName => 'प्रदर्शित नाम';
+
+  @override
+  String get terminalGridActionSend => 'भेजें';
+
+  @override
+  String get terminalGridWidth => 'चौड़ाई (इकाइयाँ)';
+
+  @override
+  String get terminalGridCustomCombo => 'कस्टम शॉर्टकट';
+
+  @override
+  String get terminalGridCustomComboHint => 'संशोधक चुनें + कुंजी दर्ज करें';
+
+  @override
+  String get terminalGridKeyHint => 'कुंजी, जैसे C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => 'प्रदर्शित नाम (वैकल्पिक)';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'कृपया एक कुंजी दर्ज करें';
+
+  @override
+  String get terminalGridTextMacro => 'टेक्स्ट मैक्रो';
+
+  @override
+  String get terminalGridTextMacroSubtitle =>
+      'पाठ भेजने के लिए एक बार टैप करें';
+
+  @override
+  String get terminalGridMacroTextHint => 'जैसे ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => 'एंटर';
+
+  @override
+  String get terminalGridPleaseEnterText => 'कृपया टेक्स्ट दर्ज करें';
+
+  @override
+  String get terminalGridSingleKey => 'एकल कुंजी';
+
+  @override
+  String get terminalGridComboKey => 'संयोजन';
+
+  @override
+  String get terminalGridMacroKey => 'मैक्रो';
+
+  @override
+  String get terminalCategoryCommon => 'सामान्य';
+
+  @override
+  String get terminalCategoryNav => 'नेविगेशन';
+
+  @override
+  String get terminalCategoryEdit => 'संपादन';
+
+  @override
+  String get terminalCategorySym => 'प्रतीक';
+
+  @override
+  String get terminalCategoryModifiers => 'संशोधक';
+
+  @override
+  String get terminalCategoryCustom => 'कस्टम';
+
+  @override
+  String get terminalSearchPresets => 'प्रीसेट कुंजियाँ खोजें...';
+
+  @override
+  String get terminalGridActionEdit => 'भेजने की क्रिया संपादित करें';
+
+  @override
+  String get terminalGridActionKey => 'भेजने वाली कुंजी';
+
+  @override
+  String get terminalGridActionModifiers => 'संशोधक';
+
+  @override
+  String get terminalGridActionText => 'भेजने वाला पाठ';
+
+  @override
+  String get terminalSearchNoMatch => 'कोई मेल खाने वाली कुंजी नहीं';
 }

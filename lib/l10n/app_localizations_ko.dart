@@ -5697,4 +5697,187 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => '전환 후 명령';
+
+  @override
+  String get terminalGridEditLayout => '단축키 레이아웃 편집';
+
+  @override
+  String get terminalGridSave => '저장';
+
+  @override
+  String get terminalGridCancel => '취소';
+
+  @override
+  String get terminalGridUndo => '실행 취소';
+
+  @override
+  String get terminalGridDiscardConfirm => '저장되지 않은 변경사항이 손실됩니다. 취소하시겠습니까?';
+
+  @override
+  String get terminalGridSaveFailed => '레이아웃 저장에 실패했습니다';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      '단축키 바 설정이 손상되었습니다. 기본값으로 재설정하시겠습니까?';
+
+  @override
+  String get terminalGridCorruptedReset => '재설정';
+
+  @override
+  String get terminalGridAddTab => '추가';
+
+  @override
+  String get terminalGridKeyTab => '키';
+
+  @override
+  String get terminalGridSetTab => '설정';
+
+  @override
+  String get terminalGridCurrentPage => '현재 페이지';
+
+  @override
+  String get terminalGridAddPage => '＋ 페이지 추가';
+
+  @override
+  String get terminalGridDeletePage => '페이지 삭제';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return '$page 페이지와 모든 키를 삭제하시겠습니까?';
+  }
+
+  @override
+  String get terminalGridDeleteKey => '이 키 삭제';
+
+  @override
+  String get terminalGridRows => '키보드 표시 줄 수';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 줄, 기본 2 줄';
+
+  @override
+  String get terminalGridInvertedT => '역T자형 방향키 고정';
+
+  @override
+  String get terminalGridInvertedTSubtitle => '끄면 4개의 독립 키로 분리됩니다';
+
+  @override
+  String get terminalGridSplitArrows => '독립 키로 분리';
+
+  @override
+  String get terminalGridDeleteArrows => '방향키 그룹 삭제';
+
+  @override
+  String get terminalGridReset => '기본 레이아웃 복원';
+
+  @override
+  String get terminalGridResetConfirm => '기본 단축키 레이아웃으로 초기화하시겠습니까?';
+
+  @override
+  String get terminalGridNoSpace => '현재 페이지에 빈 공간이 없습니다. 페이지를 추가하거나 줄 수를 늘리세요';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      '역T자형 방향키는 2줄 이상 필요합니다. 설정에서 먼저 분리하세요';
+
+  @override
+  String get terminalGridArrowsNeedSpace => '역T자형 방향키는 현재 페이지에 3×2 공간이 필요합니다';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage => '최소 한 페이지는 유지해야 합니다';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return '$page 페이지의 공간이 부족합니다. 일부 키를 먼저 삭제하거나 이동하세요';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported => '터미널 프로토콜이 Meta 키를 지원하지 않습니다';
+
+  @override
+  String get terminalGridSelectKeyHint => '키를 눌러 속성 편집\n길게 눌러 드래그하여 위치 이동';
+
+  @override
+  String get terminalGridDisplayName => '표시 이름';
+
+  @override
+  String get terminalGridActionSend => '전송';
+
+  @override
+  String get terminalGridWidth => '너비(칸)';
+
+  @override
+  String get terminalGridCustomCombo => '사용자 정의 조합키';
+
+  @override
+  String get terminalGridCustomComboHint => '수정자 키 선택 + 키 입력';
+
+  @override
+  String get terminalGridKeyHint => '키(예: C / F5 / Tab)';
+
+  @override
+  String get terminalGridDisplayNameOptional => '표시 이름(선택 사항)';
+
+  @override
+  String get terminalGridPleaseEnterKey => '키를 입력하세요';
+
+  @override
+  String get terminalGridTextMacro => '텍스트 매크로';
+
+  @override
+  String get terminalGridTextMacroSubtitle => '한 번 탭하여 텍스트 전송';
+
+  @override
+  String get terminalGridMacroTextHint => '예: ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => '엔터 추가';
+
+  @override
+  String get terminalGridPleaseEnterText => '텍스트를 입력하세요';
+
+  @override
+  String get terminalGridSingleKey => '단일 키';
+
+  @override
+  String get terminalGridComboKey => '조합키';
+
+  @override
+  String get terminalGridMacroKey => '텍스트 매크로';
+
+  @override
+  String get terminalCategoryCommon => '자주 사용';
+
+  @override
+  String get terminalCategoryNav => '탐색';
+
+  @override
+  String get terminalCategoryEdit => '편집';
+
+  @override
+  String get terminalCategorySym => '기호';
+
+  @override
+  String get terminalCategoryModifiers => '수정자 키';
+
+  @override
+  String get terminalCategoryCustom => '사용자 정의';
+
+  @override
+  String get terminalSearchPresets => '프리셋 키 검색...';
+
+  @override
+  String get terminalGridActionEdit => '전송 동작 편집';
+
+  @override
+  String get terminalGridActionKey => '전송할 키';
+
+  @override
+  String get terminalGridActionModifiers => '수정자 키';
+
+  @override
+  String get terminalGridActionText => '전송할 텍스트';
+
+  @override
+  String get terminalSearchNoMatch => '일치하는 키 없음';
 }

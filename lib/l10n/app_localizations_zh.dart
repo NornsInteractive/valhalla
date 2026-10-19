@@ -5609,6 +5609,187 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => '切换后的命令';
+
+  @override
+  String get terminalGridEditLayout => '编辑快捷键布局';
+
+  @override
+  String get terminalGridSave => '保存';
+
+  @override
+  String get terminalGridCancel => '取消';
+
+  @override
+  String get terminalGridUndo => '撤销';
+
+  @override
+  String get terminalGridDiscardConfirm => '未保存的修改将丢失，确定取消吗？';
+
+  @override
+  String get terminalGridSaveFailed => '保存快捷键布局失败';
+
+  @override
+  String get terminalGridCorruptedPrompt => '快捷栏配置数据损坏，是否重置为默认布局？';
+
+  @override
+  String get terminalGridCorruptedReset => '重置';
+
+  @override
+  String get terminalGridAddTab => '添加';
+
+  @override
+  String get terminalGridKeyTab => '按键';
+
+  @override
+  String get terminalGridSetTab => '设置';
+
+  @override
+  String get terminalGridCurrentPage => '当前页';
+
+  @override
+  String get terminalGridAddPage => '＋ 新增页';
+
+  @override
+  String get terminalGridDeletePage => '删除页';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return '删除第 $page 页及其所有按键？';
+  }
+
+  @override
+  String get terminalGridDeleteKey => '删除这个按键';
+
+  @override
+  String get terminalGridRows => '键盘显示行数';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 行，默认 2 行';
+
+  @override
+  String get terminalGridInvertedT => '方向键倒T固定';
+
+  @override
+  String get terminalGridInvertedTSubtitle => '关闭后拆成 4 个独立按键';
+
+  @override
+  String get terminalGridSplitArrows => '拆成独立按键';
+
+  @override
+  String get terminalGridDeleteArrows => '删除方向键组';
+
+  @override
+  String get terminalGridReset => '恢复默认布局';
+
+  @override
+  String get terminalGridResetConfirm => '确定要重置为默认快捷键布局吗？';
+
+  @override
+  String get terminalGridNoSpace => '当前页没有空位，请先新增页、增加行数或删除按键';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows => '倒T方向键需要至少 2 行，请先在「设置」里拆开方向键';
+
+  @override
+  String get terminalGridArrowsNeedSpace => '当前页需要 3×2 的空位';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage => '至少保留一页';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return '第 $page 页空间不足，请先删除或移动一些按键';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported => '该终端协议不支持 Meta 键';
+
+  @override
+  String get terminalGridSelectKeyHint => '点击键盘上的按键进行选择\n按住拖动可调整位置';
+
+  @override
+  String get terminalGridDisplayName => '显示名';
+
+  @override
+  String get terminalGridActionSend => '发送';
+
+  @override
+  String get terminalGridWidth => '宽度（格）';
+
+  @override
+  String get terminalGridCustomCombo => '自定义组合键';
+
+  @override
+  String get terminalGridCustomComboHint => '勾选修饰键 + 输入按键';
+
+  @override
+  String get terminalGridKeyHint => '按键，如 C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => '显示名(可选)';
+
+  @override
+  String get terminalGridPleaseEnterKey => '请输入按键';
+
+  @override
+  String get terminalGridTextMacro => '文本宏';
+
+  @override
+  String get terminalGridTextMacroSubtitle => '点一下发送整段文本';
+
+  @override
+  String get terminalGridMacroTextHint => '如 ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => '回车';
+
+  @override
+  String get terminalGridPleaseEnterText => '请输入文本';
+
+  @override
+  String get terminalGridSingleKey => '单键';
+
+  @override
+  String get terminalGridComboKey => '组合键';
+
+  @override
+  String get terminalGridMacroKey => '文本宏';
+
+  @override
+  String get terminalCategoryCommon => '常用';
+
+  @override
+  String get terminalCategoryNav => '导航';
+
+  @override
+  String get terminalCategoryEdit => '编辑';
+
+  @override
+  String get terminalCategorySym => '符号';
+
+  @override
+  String get terminalCategoryModifiers => '修饰键';
+
+  @override
+  String get terminalCategoryCustom => '自定义';
+
+  @override
+  String get terminalSearchPresets => '搜索预设按键...';
+
+  @override
+  String get terminalGridActionEdit => '编辑发送动作';
+
+  @override
+  String get terminalGridActionKey => '发送按键';
+
+  @override
+  String get terminalGridActionModifiers => '附加修饰键';
+
+  @override
+  String get terminalGridActionText => '发送文本';
+
+  @override
+  String get terminalSearchNoMatch => '无匹配按键';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -11217,4 +11398,185 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get agentUpdateReplacementCommand => '切換後的命令';
+
+  @override
+  String get terminalGridEditLayout => '編輯快捷鍵佈局';
+
+  @override
+  String get terminalGridSave => '儲存';
+
+  @override
+  String get terminalGridCancel => '取消';
+
+  @override
+  String get terminalGridUndo => '復原';
+
+  @override
+  String get terminalGridDiscardConfirm => '未儲存的修改將會遺失，確定取消嗎？';
+
+  @override
+  String get terminalGridSaveFailed => '儲存快捷鍵佈局失敗';
+
+  @override
+  String get terminalGridCorruptedPrompt => '快捷列設定資料損毀，是否重設為預設佈局？';
+
+  @override
+  String get terminalGridCorruptedReset => '重設';
+
+  @override
+  String get terminalGridAddTab => '新增';
+
+  @override
+  String get terminalGridKeyTab => '按鍵';
+
+  @override
+  String get terminalGridSetTab => '設定';
+
+  @override
+  String get terminalGridCurrentPage => '目前頁';
+
+  @override
+  String get terminalGridAddPage => '＋ 新增頁';
+
+  @override
+  String get terminalGridDeletePage => '刪除頁';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return '刪除第 $page 頁及其所有按鍵？';
+  }
+
+  @override
+  String get terminalGridDeleteKey => '刪除此按鍵';
+
+  @override
+  String get terminalGridRows => '鍵盤顯示列數';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 列，預設 2 列';
+
+  @override
+  String get terminalGridInvertedT => '方向鍵倒T固定';
+
+  @override
+  String get terminalGridInvertedTSubtitle => '關閉後拆成 4 個獨立按鍵';
+
+  @override
+  String get terminalGridSplitArrows => '拆成獨立按鍵';
+
+  @override
+  String get terminalGridDeleteArrows => '刪除方向鍵組';
+
+  @override
+  String get terminalGridReset => '恢復預設佈局';
+
+  @override
+  String get terminalGridResetConfirm => '確定要重設為預設快捷鍵佈局嗎？';
+
+  @override
+  String get terminalGridNoSpace => '目前頁沒有空位，請先新增頁、增加列數或刪除按鍵';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows => '倒T方向鍵需要至少 2 列，請先在「設定」中拆開方向鍵';
+
+  @override
+  String get terminalGridArrowsNeedSpace => '目前頁需要 3×2 的空位';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage => '至少保留一頁';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return '第 $page 頁空間不足，請先刪除或移動部分按鍵';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported => '該終端協定不支援 Meta 鍵';
+
+  @override
+  String get terminalGridSelectKeyHint => '點擊鍵盤上的按鍵進行選取\n按住拖曳可調整位置';
+
+  @override
+  String get terminalGridDisplayName => '顯示名稱';
+
+  @override
+  String get terminalGridActionSend => '傳送';
+
+  @override
+  String get terminalGridWidth => '寬度（格）';
+
+  @override
+  String get terminalGridCustomCombo => '自訂組合鍵';
+
+  @override
+  String get terminalGridCustomComboHint => '勾選修飾鍵 + 輸入按鍵';
+
+  @override
+  String get terminalGridKeyHint => '按鍵，如 C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => '顯示名稱(選填)';
+
+  @override
+  String get terminalGridPleaseEnterKey => '請輸入按鍵';
+
+  @override
+  String get terminalGridTextMacro => '文字巨集';
+
+  @override
+  String get terminalGridTextMacroSubtitle => '點一下傳送整段文字';
+
+  @override
+  String get terminalGridMacroTextHint => '如 ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => '換行';
+
+  @override
+  String get terminalGridPleaseEnterText => '請輸入文字';
+
+  @override
+  String get terminalGridSingleKey => '單鍵';
+
+  @override
+  String get terminalGridComboKey => '組合鍵';
+
+  @override
+  String get terminalGridMacroKey => '文字巨集';
+
+  @override
+  String get terminalCategoryCommon => '常用';
+
+  @override
+  String get terminalCategoryNav => '導航';
+
+  @override
+  String get terminalCategoryEdit => '編輯';
+
+  @override
+  String get terminalCategorySym => '符號';
+
+  @override
+  String get terminalCategoryModifiers => '修飾鍵';
+
+  @override
+  String get terminalCategoryCustom => '自訂';
+
+  @override
+  String get terminalSearchPresets => '搜尋預設按鍵...';
+
+  @override
+  String get terminalGridActionEdit => '編輯傳送動作';
+
+  @override
+  String get terminalGridActionKey => '傳送按鍵';
+
+  @override
+  String get terminalGridActionModifiers => '附加修飾鍵';
+
+  @override
+  String get terminalGridActionText => '傳送文字';
+
+  @override
+  String get terminalSearchNoMatch => '無相符按鍵';
 }

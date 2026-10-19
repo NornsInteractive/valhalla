@@ -10700,6 +10700,360 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Replacement Command'**
   String get agentUpdateReplacementCommand;
+
+  /// No description provided for @terminalGridEditLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Layout'**
+  String get terminalGridEditLayout;
+
+  /// No description provided for @terminalGridSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get terminalGridSave;
+
+  /// No description provided for @terminalGridCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get terminalGridCancel;
+
+  /// No description provided for @terminalGridUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get terminalGridUndo;
+
+  /// No description provided for @terminalGridDiscardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard unsaved changes?'**
+  String get terminalGridDiscardConfirm;
+
+  /// No description provided for @terminalGridSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save accessory bar layout'**
+  String get terminalGridSaveFailed;
+
+  /// No description provided for @terminalGridCorruptedPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Accessory bar configuration is corrupted. Reset to default layout?'**
+  String get terminalGridCorruptedPrompt;
+
+  /// No description provided for @terminalGridCorruptedReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get terminalGridCorruptedReset;
+
+  /// No description provided for @terminalGridAddTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get terminalGridAddTab;
+
+  /// No description provided for @terminalGridKeyTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Key'**
+  String get terminalGridKeyTab;
+
+  /// No description provided for @terminalGridSetTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get terminalGridSetTab;
+
+  /// No description provided for @terminalGridCurrentPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page'**
+  String get terminalGridCurrentPage;
+
+  /// No description provided for @terminalGridAddPage.
+  ///
+  /// In en, this message translates to:
+  /// **'＋ Add Page'**
+  String get terminalGridAddPage;
+
+  /// No description provided for @terminalGridDeletePage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Page'**
+  String get terminalGridDeletePage;
+
+  /// No description provided for @terminalGridDeletePageConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete page {page} and all its keys?'**
+  String terminalGridDeletePageConfirm(int page);
+
+  /// No description provided for @terminalGridDeleteKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Key'**
+  String get terminalGridDeleteKey;
+
+  /// No description provided for @terminalGridRows.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard Rows'**
+  String get terminalGridRows;
+
+  /// No description provided for @terminalGridRowsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'1–5 rows, default 2 rows'**
+  String get terminalGridRowsSubtitle;
+
+  /// No description provided for @terminalGridInvertedT.
+  ///
+  /// In en, this message translates to:
+  /// **'Inverted-T Arrow Group'**
+  String get terminalGridInvertedT;
+
+  /// No description provided for @terminalGridInvertedTSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle off to split into 4 independent arrow keys'**
+  String get terminalGridInvertedTSubtitle;
+
+  /// No description provided for @terminalGridSplitArrows.
+  ///
+  /// In en, this message translates to:
+  /// **'Split into Independent Keys'**
+  String get terminalGridSplitArrows;
+
+  /// No description provided for @terminalGridDeleteArrows.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Arrow Group'**
+  String get terminalGridDeleteArrows;
+
+  /// No description provided for @terminalGridReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Layout'**
+  String get terminalGridReset;
+
+  /// No description provided for @terminalGridResetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to default accessory bar layout?'**
+  String get terminalGridResetConfirm;
+
+  /// No description provided for @terminalGridNoSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'No free space on current page. Add a page, increase rows, or remove keys.'**
+  String get terminalGridNoSpace;
+
+  /// No description provided for @terminalGridArrowsNeedTwoRows.
+  ///
+  /// In en, this message translates to:
+  /// **'Inverted-T arrows require at least 2 rows. Split arrows first in settings.'**
+  String get terminalGridArrowsNeedTwoRows;
+
+  /// No description provided for @terminalGridArrowsNeedSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Inverted-T arrows require a 3×2 space on the current page.'**
+  String get terminalGridArrowsNeedSpace;
+
+  /// No description provided for @terminalGridKeepAtLeastOnePage.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep at least one page'**
+  String get terminalGridKeepAtLeastOnePage;
+
+  /// No description provided for @terminalGridPageSpaceInsufficient.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} has insufficient space. Remove or move some keys first.'**
+  String terminalGridPageSpaceInsufficient(int page);
+
+  /// No description provided for @terminalGridMetaNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Meta key is not supported by terminal'**
+  String get terminalGridMetaNotSupported;
+
+  /// No description provided for @terminalGridSelectKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a key to edit properties\nHold and drag to reorder'**
+  String get terminalGridSelectKeyHint;
+
+  /// No description provided for @terminalGridDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display Name'**
+  String get terminalGridDisplayName;
+
+  /// No description provided for @terminalGridActionSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get terminalGridActionSend;
+
+  /// No description provided for @terminalGridWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Width (units)'**
+  String get terminalGridWidth;
+
+  /// No description provided for @terminalGridCustomCombo.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Shortcut'**
+  String get terminalGridCustomCombo;
+
+  /// No description provided for @terminalGridCustomComboHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check modifiers + enter key'**
+  String get terminalGridCustomComboHint;
+
+  /// No description provided for @terminalGridKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Key, e.g. C / F5 / Tab'**
+  String get terminalGridKeyHint;
+
+  /// No description provided for @terminalGridDisplayNameOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name (optional)'**
+  String get terminalGridDisplayNameOptional;
+
+  /// No description provided for @terminalGridPleaseEnterKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a key'**
+  String get terminalGridPleaseEnterKey;
+
+  /// No description provided for @terminalGridTextMacro.
+  ///
+  /// In en, this message translates to:
+  /// **'Text Macro'**
+  String get terminalGridTextMacro;
+
+  /// No description provided for @terminalGridTextMacroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'One-tap to send text'**
+  String get terminalGridTextMacroSubtitle;
+
+  /// No description provided for @terminalGridMacroTextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. ls -la'**
+  String get terminalGridMacroTextHint;
+
+  /// No description provided for @terminalGridMacroAppendEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter'**
+  String get terminalGridMacroAppendEnter;
+
+  /// No description provided for @terminalGridPleaseEnterText.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter text'**
+  String get terminalGridPleaseEnterText;
+
+  /// No description provided for @terminalGridSingleKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Single Key'**
+  String get terminalGridSingleKey;
+
+  /// No description provided for @terminalGridComboKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Combo'**
+  String get terminalGridComboKey;
+
+  /// No description provided for @terminalGridMacroKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Macro'**
+  String get terminalGridMacroKey;
+
+  /// No description provided for @terminalCategoryCommon.
+  ///
+  /// In en, this message translates to:
+  /// **'Common'**
+  String get terminalCategoryCommon;
+
+  /// No description provided for @terminalCategoryNav.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation'**
+  String get terminalCategoryNav;
+
+  /// No description provided for @terminalCategoryEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get terminalCategoryEdit;
+
+  /// No description provided for @terminalCategorySym.
+  ///
+  /// In en, this message translates to:
+  /// **'Symbols'**
+  String get terminalCategorySym;
+
+  /// No description provided for @terminalCategoryModifiers.
+  ///
+  /// In en, this message translates to:
+  /// **'Modifiers'**
+  String get terminalCategoryModifiers;
+
+  /// No description provided for @terminalCategoryCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get terminalCategoryCustom;
+
+  /// No description provided for @terminalSearchPresets.
+  ///
+  /// In en, this message translates to:
+  /// **'Search preset keys...'**
+  String get terminalSearchPresets;
+
+  /// No description provided for @terminalGridActionEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Action'**
+  String get terminalGridActionEdit;
+
+  /// No description provided for @terminalGridActionKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Key to Send'**
+  String get terminalGridActionKey;
+
+  /// No description provided for @terminalGridActionModifiers.
+  ///
+  /// In en, this message translates to:
+  /// **'Modifiers'**
+  String get terminalGridActionModifiers;
+
+  /// No description provided for @terminalGridActionText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text to Send'**
+  String get terminalGridActionText;
+
+  /// No description provided for @terminalSearchNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching keys'**
+  String get terminalSearchNoMatch;
 }
 
 class _AppLocalizationsDelegate

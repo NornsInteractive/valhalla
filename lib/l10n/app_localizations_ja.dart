@@ -5705,4 +5705,186 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => '切り替え後のコマンド';
+
+  @override
+  String get terminalGridEditLayout => 'ショートカットの配置を編集';
+
+  @override
+  String get terminalGridSave => '保存';
+
+  @override
+  String get terminalGridCancel => 'キャンセル';
+
+  @override
+  String get terminalGridUndo => '元に戻す';
+
+  @override
+  String get terminalGridDiscardConfirm => '未保存の変更は破棄されます。よろしいですか？';
+
+  @override
+  String get terminalGridSaveFailed => '配置の保存に失敗しました';
+
+  @override
+  String get terminalGridCorruptedPrompt => 'ショートカットバー設定が破損しています。デフォルトに戻しますか？';
+
+  @override
+  String get terminalGridCorruptedReset => 'リセット';
+
+  @override
+  String get terminalGridAddTab => '追加';
+
+  @override
+  String get terminalGridKeyTab => 'キー';
+
+  @override
+  String get terminalGridSetTab => '設定';
+
+  @override
+  String get terminalGridCurrentPage => '現在のページ';
+
+  @override
+  String get terminalGridAddPage => '＋ ページ追加';
+
+  @override
+  String get terminalGridDeletePage => 'ページ削除';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return 'ページ $page とそのすべてのキーを削除しますか？';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'このキーを削除';
+
+  @override
+  String get terminalGridRows => 'キーボード表示行数';
+
+  @override
+  String get terminalGridRowsSubtitle => '1〜5行（デフォルト2行）';
+
+  @override
+  String get terminalGridInvertedT => '逆T字カーソルキー固定';
+
+  @override
+  String get terminalGridInvertedTSubtitle => 'オフにすると4つの独立キーに分離';
+
+  @override
+  String get terminalGridSplitArrows => '独立キーに分離';
+
+  @override
+  String get terminalGridDeleteArrows => 'カーソルキーグループを削除';
+
+  @override
+  String get terminalGridReset => 'デフォルト配置に戻す';
+
+  @override
+  String get terminalGridResetConfirm => 'デフォルトのショートカット配置にリセットしますか？';
+
+  @override
+  String get terminalGridNoSpace =>
+      '現在のページに空きがありません。ページ追加、行数変更、またはキー削除を行ってください';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows => '逆T字キーには2行以上必要です。設定でキーを分離してください';
+
+  @override
+  String get terminalGridArrowsNeedSpace => '逆T字キーには3×2の空きスペースが必要です';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage => '最低1ページは必要です';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return 'ページ $page に十分な空きがありません。キーを移動または削除してください';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported => '端末プロトコルがMetaキーに対応していません';
+
+  @override
+  String get terminalGridSelectKeyHint => 'キーをタップしてプロパティ編集\n長押しドラッグで位置調整';
+
+  @override
+  String get terminalGridDisplayName => '表示名';
+
+  @override
+  String get terminalGridActionSend => '送信';
+
+  @override
+  String get terminalGridWidth => '幅（マス）';
+
+  @override
+  String get terminalGridCustomCombo => 'カスタムコンボキー';
+
+  @override
+  String get terminalGridCustomComboHint => '修飾キーを選択 + キーを入力';
+
+  @override
+  String get terminalGridKeyHint => 'キー名（例: C, F5, Tab）';
+
+  @override
+  String get terminalGridDisplayNameOptional => '表示名（任意）';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'キーを入力してください';
+
+  @override
+  String get terminalGridTextMacro => 'テキストマクロ';
+
+  @override
+  String get terminalGridTextMacroSubtitle => 'タップで定型テキストを一括送信';
+
+  @override
+  String get terminalGridMacroTextHint => '例: ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => '改行';
+
+  @override
+  String get terminalGridPleaseEnterText => 'テキストを入力してください';
+
+  @override
+  String get terminalGridSingleKey => '単一キー';
+
+  @override
+  String get terminalGridComboKey => 'コンボキー';
+
+  @override
+  String get terminalGridMacroKey => 'マクロ';
+
+  @override
+  String get terminalCategoryCommon => '常用';
+
+  @override
+  String get terminalCategoryNav => 'ナビゲーション';
+
+  @override
+  String get terminalCategoryEdit => '編集';
+
+  @override
+  String get terminalCategorySym => '記号';
+
+  @override
+  String get terminalCategoryModifiers => '修飾キー';
+
+  @override
+  String get terminalCategoryCustom => 'カスタム';
+
+  @override
+  String get terminalSearchPresets => 'プリセットキーを検索...';
+
+  @override
+  String get terminalGridActionEdit => '送信動作を編集';
+
+  @override
+  String get terminalGridActionKey => '送信キー';
+
+  @override
+  String get terminalGridActionModifiers => '修飾キー';
+
+  @override
+  String get terminalGridActionText => '送信テキスト';
+
+  @override
+  String get terminalSearchNoMatch => '一致するキーはありません';
 }

@@ -13,6 +13,7 @@ import '../models/nas_media.dart';
 import '../models/nas_source.dart';
 import '../models/terminal_history.dart';
 import '../models/remote_file_toolbar_action.dart';
+import '../models/terminal_accessory_layout.dart';
 
 /// 本地持久化服务 (SharedPreferences 快速存取)
 class LocalStorageService {
@@ -249,15 +250,52 @@ class LocalStorageService {
   }
 
   static const _keyTerminalGrid = 'valhalla_terminal_grid_v1';
+  static const _keyTerminalGridV2 = 'valhalla_terminal_grid_v2';
 
   String? getTerminalGridConfig() {
-    final raw = _prefs.get(_keyTerminalGrid);
-    return raw is String ? raw : null;
+    for (final key in [_keyTerminalGridV2, _keyTerminalGrid]) {
+      final raw = _prefs.get(key);
+      if (raw is! String) continue;
+      try {
+        TerminalAccessoryLayout.fromJson(
+          Map<String, dynamic>.from(jsonDecode(raw) as Map),
+        );
+        return raw;
+      } catch (_) {
+        // Leave invalid data untouched; a valid legacy record can still recover it.
+      }
+    }
+    return null;
+  }
+
+  String? getTerminalGridConfigError() {
+    for (final key in [_keyTerminalGridV2, _keyTerminalGrid]) {
+      final raw = _prefs.get(key);
+      if (raw == null) continue;
+      try {
+        if (raw is! String) {
+          throw const FormatException('TERMINAL_GRID_INVALID');
+        }
+        TerminalAccessoryLayout.fromJson(
+          Map<String, dynamic>.from(jsonDecode(raw) as Map),
+        );
+        // A valid newer record wins over obsolete invalid legacy data.
+        return null;
+      } catch (_) {
+        return 'TERMINAL_GRID_INVALID';
+      }
+    }
+    return null;
   }
 
   Future<void> setTerminalGridConfig(String json) async {
+    final layout = TerminalAccessoryLayout.fromJson(
+      Map<String, dynamic>.from(jsonDecode(json) as Map),
+    );
+    layout.validate(enforceSystemSlots: true);
+    final encoded = jsonEncode(layout.toJson());
     try {
-      if (!await _prefs.setString(_keyTerminalGrid, json)) {
+      if (!await _prefs.setString(_keyTerminalGridV2, encoded)) {
         throw StateError('SETTINGS_SAVE_FAILED');
       }
     } catch (_) {
@@ -442,6 +480,7 @@ class LocalStorageService {
     'valhalla_terminal_pinned_keys_v1': 'strings',
     _keyTerminalAccessory: 'string',
     _keyTerminalGrid: 'string',
+    _keyTerminalGridV2: 'string',
     'valhalla_update_auto_v1': 'bool',
     _keyCliHistoryPageSize: 'int',
     _keyFileSortKey: 'string',

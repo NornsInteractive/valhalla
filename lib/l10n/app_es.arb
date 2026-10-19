@@ -2284,5 +2284,78 @@
   "agentUpdateNeverChecked": "Nunca comprobado",
   "agentUpdateCodexMigrationTitle": "Instalar nuevo adaptador y cambiar este agente",
   "agentUpdateCodexMigrationNotice": "Se conservarán el programa y la configuración existentes, instalando un adaptador independiente y cambiando la conexión, con reversión segura en caso de problemas.",
-  "agentUpdateReplacementCommand": "Comando de sustitución"
+  "agentUpdateReplacementCommand": "Comando de sustitución",
+  "terminalGridEditLayout": "Editar diseño de barra",
+  "terminalGridSave": "Guardar",
+  "terminalGridCancel": "Cancelar",
+  "terminalGridUndo": "Deshacer",
+  "terminalGridDiscardConfirm": "¿Descartar los cambios no guardados?",
+  "terminalGridSaveFailed": "Error al guardar el diseño de la barra",
+  "terminalGridCorruptedPrompt": "La configuración de la barra está dañada. ¿Restablecer al diseño predeterminado?",
+  "terminalGridCorruptedReset": "Restablecer",
+  "terminalGridAddTab": "Añadir",
+  "terminalGridKeyTab": "Tecla",
+  "terminalGridSetTab": "Ajustes",
+  "terminalGridCurrentPage": "Página",
+  "terminalGridAddPage": "＋ Añadir página",
+  "terminalGridDeletePage": "Eliminar página",
+  "terminalGridDeletePageConfirm": "¿Eliminar la página {page} y todas sus teclas?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "Eliminar tecla",
+  "terminalGridRows": "Filas del teclado",
+  "terminalGridRowsSubtitle": "1–5 filas, predeterminado 2 filas",
+  "terminalGridInvertedT": "Flechas en T invertida",
+  "terminalGridInvertedTSubtitle": "Desactivar para separar en 4 teclas independientes",
+  "terminalGridSplitArrows": "Separar en teclas independientes",
+  "terminalGridDeleteArrows": "Eliminar grupo de flechas",
+  "terminalGridReset": "Restablecer diseño",
+  "terminalGridResetConfirm": "¿Restablecer el diseño de accesos rápidos por defecto?",
+  "terminalGridNoSpace": "No hay espacio libre en la página actual. Añada una página, aumente filas o elimine teclas.",
+  "terminalGridArrowsNeedTwoRows": "Las flechas en T invertida requieren al menos 2 filas. Separe las flechas primero en ajustes.",
+  "terminalGridArrowsNeedSpace": "Las flechas en T invertida requieren un espacio de 3×2 en la página actual.",
+  "terminalGridKeepAtLeastOnePage": "Conserve al menos una página",
+  "terminalGridPageSpaceInsufficient": "Espacio insuficiente en la página {page}. Elimine o mueva algunas teclas primero.",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "La tecla Meta no es compatible con el protocolo del terminal",
+  "terminalGridSelectKeyHint": "Toque una tecla para editarla\nMantenga presionado y arrastre para ordenar",
+  "terminalGridDisplayName": "Nombre visible",
+  "terminalGridActionSend": "Enviar",
+  "terminalGridWidth": "Ancho (celdas)",
+  "terminalGridCustomCombo": "Atajo personalizado",
+  "terminalGridCustomComboHint": "Marque modificadores e ingrese tecla",
+  "terminalGridKeyHint": "Tecla, ej. C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "Nombre visible (opcional)",
+  "terminalGridPleaseEnterKey": "Por favor introduzca una tecla",
+  "terminalGridTextMacro": "Macro de texto",
+  "terminalGridTextMacroSubtitle": "Toque para enviar texto predefinido",
+  "terminalGridMacroTextHint": "ej. ls -la",
+  "terminalGridMacroAppendEnter": "Intro",
+  "terminalGridPleaseEnterText": "Por favor introduzca un texto",
+  "terminalGridSingleKey": "Tecla simple",
+  "terminalGridComboKey": "Combinación",
+  "terminalGridMacroKey": "Macro",
+  "terminalCategoryCommon": "Comunes",
+  "terminalCategoryNav": "Navegación",
+  "terminalCategoryEdit": "Edición",
+  "terminalCategorySym": "Símbolos",
+  "terminalCategoryModifiers": "Modificadores",
+  "terminalCategoryCustom": "Personalizado",
+  "terminalSearchPresets": "Buscar teclas predefinidas...",
+  "terminalGridActionEdit": "Editar acción de envío",
+  "terminalGridActionKey": "Tecla a enviar",
+  "terminalGridActionModifiers": "Modificadores",
+  "terminalGridActionText": "Texto a enviar",
+  "terminalSearchNoMatch": "No hay teclas coincidentes"
 }

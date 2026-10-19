@@ -5994,4 +5994,195 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => 'Команда замены';
+
+  @override
+  String get terminalGridEditLayout => 'Изменить раскладку панели';
+
+  @override
+  String get terminalGridSave => 'Сохранить';
+
+  @override
+  String get terminalGridCancel => 'Отмена';
+
+  @override
+  String get terminalGridUndo => 'Отменить';
+
+  @override
+  String get terminalGridDiscardConfirm => 'Отменить несохраненные изменения?';
+
+  @override
+  String get terminalGridSaveFailed => 'Не удалось сохранить раскладку панели';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      'Конфигурация панели повреждена. Восстановить стандартную раскладку?';
+
+  @override
+  String get terminalGridCorruptedReset => 'Сбросить';
+
+  @override
+  String get terminalGridAddTab => 'Добавить';
+
+  @override
+  String get terminalGridKeyTab => 'Клавиша';
+
+  @override
+  String get terminalGridSetTab => 'Настройки';
+
+  @override
+  String get terminalGridCurrentPage => 'Страница';
+
+  @override
+  String get terminalGridAddPage => '＋ Добавить страницу';
+
+  @override
+  String get terminalGridDeletePage => 'Удалить страницу';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return 'Удалить страницу $page и все её клавиши?';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'Удалить клавишу';
+
+  @override
+  String get terminalGridRows => 'Строк на панели';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 строк, по умолчанию 2';
+
+  @override
+  String get terminalGridInvertedT => 'Блок стрелок (перевернутая T)';
+
+  @override
+  String get terminalGridInvertedTSubtitle =>
+      'Отключите, чтобы разделить на 4 отдельные клавиши';
+
+  @override
+  String get terminalGridSplitArrows => 'Разделить на отдельные клавиши';
+
+  @override
+  String get terminalGridDeleteArrows => 'Удалить блок стрелок';
+
+  @override
+  String get terminalGridReset => 'Восстановить раскладку по умолчанию';
+
+  @override
+  String get terminalGridResetConfirm =>
+      'Восстановить стандартную раскладку клавиш?';
+
+  @override
+  String get terminalGridNoSpace =>
+      'Нет свободного места на странице. Добавьте страницу, увеличьте строки или удалите клавиши.';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      'Блок стрелок требует минимум 2 строки. Разделите стрелки в настройках.';
+
+  @override
+  String get terminalGridArrowsNeedSpace =>
+      'Блок стрелок требует пространство 3×2 на текущей странице.';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage =>
+      'Необходимо сохранить хотя бы одну страницу';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return 'Недостаточно места на странице $page. Удалите или переместите клавиши.';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported =>
+      'Клавиша Meta не поддерживается протоколом терминала';
+
+  @override
+  String get terminalGridSelectKeyHint =>
+      'Нажмите на клавишу для редактирования\nУдерживайте и перетаскивайте для изменения положения';
+
+  @override
+  String get terminalGridDisplayName => 'Название';
+
+  @override
+  String get terminalGridActionSend => 'Отправка';
+
+  @override
+  String get terminalGridWidth => 'Ширина (ячеек)';
+
+  @override
+  String get terminalGridCustomCombo => 'Пользовательское сочетание';
+
+  @override
+  String get terminalGridCustomComboHint =>
+      'Выберите модификаторы + введите клавишу';
+
+  @override
+  String get terminalGridKeyHint => 'Клавиша, например C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => 'Название (необязательно)';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'Пожалуйста, введите клавишу';
+
+  @override
+  String get terminalGridTextMacro => 'Текстовый макрос';
+
+  @override
+  String get terminalGridTextMacroSubtitle => 'Отправка текста в одно касание';
+
+  @override
+  String get terminalGridMacroTextHint => 'например ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => 'Ввод';
+
+  @override
+  String get terminalGridPleaseEnterText => 'Пожалуйста, введите текст';
+
+  @override
+  String get terminalGridSingleKey => 'Клавиша';
+
+  @override
+  String get terminalGridComboKey => 'Сочетание';
+
+  @override
+  String get terminalGridMacroKey => 'Макрос';
+
+  @override
+  String get terminalCategoryCommon => 'Частые';
+
+  @override
+  String get terminalCategoryNav => 'Навигация';
+
+  @override
+  String get terminalCategoryEdit => 'Правка';
+
+  @override
+  String get terminalCategorySym => 'Символы';
+
+  @override
+  String get terminalCategoryModifiers => 'Модификаторы';
+
+  @override
+  String get terminalCategoryCustom => 'Свои';
+
+  @override
+  String get terminalSearchPresets => 'Поиск клавиш...';
+
+  @override
+  String get terminalGridActionEdit => 'Редактировать действие';
+
+  @override
+  String get terminalGridActionKey => 'Отправляемая клавиша';
+
+  @override
+  String get terminalGridActionModifiers => 'Модификаторы';
+
+  @override
+  String get terminalGridActionText => 'Отправляемый текст';
+
+  @override
+  String get terminalSearchNoMatch => 'Нет подходящих клавиш';
 }

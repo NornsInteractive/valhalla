@@ -731,6 +731,19 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
     }
   }
 
+  void _handleText(String text, {bool appendEnter = false}) {
+    if (text.isNotEmpty) {
+      if (widget.onPasteText != null) {
+        widget.onPasteText!(text);
+      } else {
+        widget.terminal.paste(text);
+      }
+    }
+    if (appendEnter) {
+      widget.onKey('ENTER');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // 叶子节点 watch 字号：设置里拖动滑块时画布直接重渲染，不惊动
@@ -740,6 +753,7 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
     final accessoryBar = widget.showAccessoryBar
         ? TerminalAccessoryBar(
             onKey: _handleKey,
+            onText: _handleText,
             onToggleCtrl: () => _toggleModifier('CTRL'),
             onLockCtrl: () => _lockModifier('CTRL'),
             onToggleAlt: () => _toggleModifier('ALT'),
@@ -828,7 +842,9 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 TextButton.icon(
-                                  key: const Key('terminal_copy_selection_button'),
+                                  key: const Key(
+                                    'terminal_copy_selection_button',
+                                  ),
                                   onPressed: _copySelection,
                                   icon: const Icon(Icons.copy, size: 14),
                                   label: Text(
@@ -847,7 +863,9 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
                                   ),
                                 ),
                                 IconButton(
-                                  key: const Key('terminal_clear_selection_button'),
+                                  key: const Key(
+                                    'terminal_clear_selection_button',
+                                  ),
                                   icon: const Icon(Icons.close, size: 14),
                                   onPressed: () => _controller.clearSelection(),
                                   visualDensity: VisualDensity.compact,
@@ -866,17 +884,11 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
               ),
             ),
             if (widget.footer != null) widget.footer!,
-            if (widget.showAccessoryBar)
-              SizedBox(height: effectiveBottomSpace),
+            if (widget.showAccessoryBar) SizedBox(height: effectiveBottomSpace),
           ],
         ),
         if (accessoryBar != null)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: accessoryBar,
-          ),
+          Positioned(left: 0, right: 0, bottom: 0, child: accessoryBar),
       ],
     );
   }

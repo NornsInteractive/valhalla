@@ -5906,4 +5906,193 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => 'Replacement Command';
+
+  @override
+  String get terminalGridEditLayout => 'Edit Layout';
+
+  @override
+  String get terminalGridSave => 'Save';
+
+  @override
+  String get terminalGridCancel => 'Cancel';
+
+  @override
+  String get terminalGridUndo => 'Undo';
+
+  @override
+  String get terminalGridDiscardConfirm => 'Discard unsaved changes?';
+
+  @override
+  String get terminalGridSaveFailed => 'Failed to save accessory bar layout';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      'Accessory bar configuration is corrupted. Reset to default layout?';
+
+  @override
+  String get terminalGridCorruptedReset => 'Reset';
+
+  @override
+  String get terminalGridAddTab => 'Add';
+
+  @override
+  String get terminalGridKeyTab => 'Key';
+
+  @override
+  String get terminalGridSetTab => 'Settings';
+
+  @override
+  String get terminalGridCurrentPage => 'Page';
+
+  @override
+  String get terminalGridAddPage => '＋ Add Page';
+
+  @override
+  String get terminalGridDeletePage => 'Delete Page';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return 'Delete page $page and all its keys?';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'Delete Key';
+
+  @override
+  String get terminalGridRows => 'Keyboard Rows';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 rows, default 2 rows';
+
+  @override
+  String get terminalGridInvertedT => 'Inverted-T Arrow Group';
+
+  @override
+  String get terminalGridInvertedTSubtitle =>
+      'Toggle off to split into 4 independent arrow keys';
+
+  @override
+  String get terminalGridSplitArrows => 'Split into Independent Keys';
+
+  @override
+  String get terminalGridDeleteArrows => 'Delete Arrow Group';
+
+  @override
+  String get terminalGridReset => 'Reset Layout';
+
+  @override
+  String get terminalGridResetConfirm =>
+      'Reset to default accessory bar layout?';
+
+  @override
+  String get terminalGridNoSpace =>
+      'No free space on current page. Add a page, increase rows, or remove keys.';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      'Inverted-T arrows require at least 2 rows. Split arrows first in settings.';
+
+  @override
+  String get terminalGridArrowsNeedSpace =>
+      'Inverted-T arrows require a 3×2 space on the current page.';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage => 'Keep at least one page';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return 'Page $page has insufficient space. Remove or move some keys first.';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported =>
+      'Meta key is not supported by terminal';
+
+  @override
+  String get terminalGridSelectKeyHint =>
+      'Tap a key to edit properties\nHold and drag to reorder';
+
+  @override
+  String get terminalGridDisplayName => 'Display Name';
+
+  @override
+  String get terminalGridActionSend => 'Send';
+
+  @override
+  String get terminalGridWidth => 'Width (units)';
+
+  @override
+  String get terminalGridCustomCombo => 'Custom Shortcut';
+
+  @override
+  String get terminalGridCustomComboHint => 'Check modifiers + enter key';
+
+  @override
+  String get terminalGridKeyHint => 'Key, e.g. C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => 'Display name (optional)';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'Please enter a key';
+
+  @override
+  String get terminalGridTextMacro => 'Text Macro';
+
+  @override
+  String get terminalGridTextMacroSubtitle => 'One-tap to send text';
+
+  @override
+  String get terminalGridMacroTextHint => 'e.g. ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => 'Enter';
+
+  @override
+  String get terminalGridPleaseEnterText => 'Please enter text';
+
+  @override
+  String get terminalGridSingleKey => 'Single Key';
+
+  @override
+  String get terminalGridComboKey => 'Combo';
+
+  @override
+  String get terminalGridMacroKey => 'Macro';
+
+  @override
+  String get terminalCategoryCommon => 'Common';
+
+  @override
+  String get terminalCategoryNav => 'Navigation';
+
+  @override
+  String get terminalCategoryEdit => 'Edit';
+
+  @override
+  String get terminalCategorySym => 'Symbols';
+
+  @override
+  String get terminalCategoryModifiers => 'Modifiers';
+
+  @override
+  String get terminalCategoryCustom => 'Custom';
+
+  @override
+  String get terminalSearchPresets => 'Search preset keys...';
+
+  @override
+  String get terminalGridActionEdit => 'Edit Action';
+
+  @override
+  String get terminalGridActionKey => 'Key to Send';
+
+  @override
+  String get terminalGridActionModifiers => 'Modifiers';
+
+  @override
+  String get terminalGridActionText => 'Text to Send';
+
+  @override
+  String get terminalSearchNoMatch => 'No matching keys';
 }

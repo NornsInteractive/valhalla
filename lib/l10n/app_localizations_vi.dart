@@ -5937,4 +5937,194 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => 'Lệnh thay thế';
+
+  @override
+  String get terminalGridEditLayout => 'Chỉnh sửa bố cục phím tắt';
+
+  @override
+  String get terminalGridSave => 'Lưu';
+
+  @override
+  String get terminalGridCancel => 'Hủy';
+
+  @override
+  String get terminalGridUndo => 'Hoàn tác';
+
+  @override
+  String get terminalGridDiscardConfirm => 'Hủy các thay đổi chưa lưu?';
+
+  @override
+  String get terminalGridSaveFailed => 'Không thể lưu bố cục phím tắt';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      'Cấu hình thanh phím tắt bị hỏng. Đặt lại về bố cục mặc định?';
+
+  @override
+  String get terminalGridCorruptedReset => 'Đặt lại';
+
+  @override
+  String get terminalGridAddTab => 'Thêm';
+
+  @override
+  String get terminalGridKeyTab => 'Phím';
+
+  @override
+  String get terminalGridSetTab => 'Cài đặt';
+
+  @override
+  String get terminalGridCurrentPage => 'Trang';
+
+  @override
+  String get terminalGridAddPage => '＋ Thêm trang';
+
+  @override
+  String get terminalGridDeletePage => 'Xóa trang';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return 'Xóa trang $page và tất cả các phím trong đó?';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'Xóa phím này';
+
+  @override
+  String get terminalGridRows => 'Số hàng bàn phím';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 hàng, mặc định 2 hàng';
+
+  @override
+  String get terminalGridInvertedT => 'Cụm phím mũi tên chữ T ngược';
+
+  @override
+  String get terminalGridInvertedTSubtitle =>
+      'Tắt để tách thành 4 phím mũi tên riêng biệt';
+
+  @override
+  String get terminalGridSplitArrows => 'Tách thành các phím riêng biệt';
+
+  @override
+  String get terminalGridDeleteArrows => 'Xóa nhóm phím mũi tên';
+
+  @override
+  String get terminalGridReset => 'Khôi phục bố cục mặc định';
+
+  @override
+  String get terminalGridResetConfirm =>
+      'Khôi phục về bố cục phím tắt mặc định?';
+
+  @override
+  String get terminalGridNoSpace =>
+      'Không còn ô trống trên trang hiện tại. Thêm trang, tăng hàng hoặc xóa bớt phím.';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      'Phím mũi tên chữ T ngược cần ít nhất 2 hàng. Hãy tách phím trong cài đặt trước.';
+
+  @override
+  String get terminalGridArrowsNeedSpace =>
+      'Phím mũi tên chữ T ngược cần ô trống 3×2 trên trang hiện tại.';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage => 'Phải giữ lại ít nhất một trang';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return 'Trang $page không đủ khoảng trống. Hãy xóa hoặc di chuyển bớt phím.';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported =>
+      'Phím Meta không được giao thức terminal hỗ trợ';
+
+  @override
+  String get terminalGridSelectKeyHint =>
+      'Nhấn vào phím để chỉnh sửa thuộc tính\nNhấn giữ và kéo để đổi vị trí';
+
+  @override
+  String get terminalGridDisplayName => 'Tên hiển thị';
+
+  @override
+  String get terminalGridActionSend => 'Gửi';
+
+  @override
+  String get terminalGridWidth => 'Chiều rộng (ô)';
+
+  @override
+  String get terminalGridCustomCombo => 'Tổ hợp phím tùy chỉnh';
+
+  @override
+  String get terminalGridCustomComboHint => 'Chọn phím bổ trợ + nhập phím';
+
+  @override
+  String get terminalGridKeyHint => 'Phím, vd: C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => 'Tên hiển thị (tùy chọn)';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'Vui lòng nhập phím';
+
+  @override
+  String get terminalGridTextMacro => 'Macro văn bản';
+
+  @override
+  String get terminalGridTextMacroSubtitle =>
+      'Chạm để gửi đoạn văn bản định sẵn';
+
+  @override
+  String get terminalGridMacroTextHint => 'vd: ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => 'Enter';
+
+  @override
+  String get terminalGridPleaseEnterText => 'Vui lòng nhập văn bản';
+
+  @override
+  String get terminalGridSingleKey => 'Phím đơn';
+
+  @override
+  String get terminalGridComboKey => 'Tổ hợp phím';
+
+  @override
+  String get terminalGridMacroKey => 'Macro';
+
+  @override
+  String get terminalCategoryCommon => 'Thường dùng';
+
+  @override
+  String get terminalCategoryNav => 'Điều hướng';
+
+  @override
+  String get terminalCategoryEdit => 'Chỉnh sửa';
+
+  @override
+  String get terminalCategorySym => 'Ký hiệu';
+
+  @override
+  String get terminalCategoryModifiers => 'Phím bổ trợ';
+
+  @override
+  String get terminalCategoryCustom => 'Tùy chỉnh';
+
+  @override
+  String get terminalSearchPresets => 'Tìm kiếm phím cài sẵn...';
+
+  @override
+  String get terminalGridActionEdit => 'Chỉnh sửa hành động gửi';
+
+  @override
+  String get terminalGridActionKey => 'Phím cần gửi';
+
+  @override
+  String get terminalGridActionModifiers => 'Phím bổ trợ';
+
+  @override
+  String get terminalGridActionText => 'Văn bản cần gửi';
+
+  @override
+  String get terminalSearchNoMatch => 'Không có phím phù hợp';
 }

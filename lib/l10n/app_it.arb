@@ -2284,5 +2284,78 @@
   "agentUpdateNeverChecked": "Mai verificato",
   "agentUpdateCodexMigrationTitle": "Installa nuovo adattatore e scambia agente",
   "agentUpdateCodexMigrationNotice": "Programma e configurazione esistenti verranno conservati. Viene installato un nuovo adattatore indipendente e scambiata la connessione, con ripristino sicuro in caso di problemi.",
-  "agentUpdateReplacementCommand": "Comando sostitutivo"
+  "agentUpdateReplacementCommand": "Comando sostitutivo",
+  "terminalGridEditLayout": "Modifica layout barra",
+  "terminalGridSave": "Salva",
+  "terminalGridCancel": "Annulla",
+  "terminalGridUndo": "Annulla azione",
+  "terminalGridDiscardConfirm": "Ignorare le modifiche non salvate?",
+  "terminalGridSaveFailed": "Impossibile salvare il layout della barra",
+  "terminalGridCorruptedPrompt": "La configurazione della barra è danneggiata. Ripristinare il layout predefinito?",
+  "terminalGridCorruptedReset": "Ripristina",
+  "terminalGridAddTab": "Aggiungi",
+  "terminalGridKeyTab": "Tasto",
+  "terminalGridSetTab": "Impostazioni",
+  "terminalGridCurrentPage": "Pagina",
+  "terminalGridAddPage": "＋ Aggiungi pagina",
+  "terminalGridDeletePage": "Elimina pagina",
+  "terminalGridDeletePageConfirm": "Eliminare la pagina {page} e tutti i suoi tasti?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "Elimina tasto",
+  "terminalGridRows": "Righe tastiera",
+  "terminalGridRowsSubtitle": "1–5 righe, predefinito 2 righe",
+  "terminalGridInvertedT": "Frecce a T invertita",
+  "terminalGridInvertedTSubtitle": "Disattiva per dividere in 4 tasti indipendenti",
+  "terminalGridSplitArrows": "Dividi in tasti indipendenti",
+  "terminalGridDeleteArrows": "Elimina gruppo frecce",
+  "terminalGridReset": "Ripristina layout predefinito",
+  "terminalGridResetConfirm": "Ripristinare il layout predefinito delle scorciatoie?",
+  "terminalGridNoSpace": "Nessuno spazio disponibile nella pagina corrente. Aggiungi una pagina, aumenta le righe o rimuovi tasti.",
+  "terminalGridArrowsNeedTwoRows": "Le frecce a T invertita richiedono almeno 2 righe. Dividile nelle impostazioni.",
+  "terminalGridArrowsNeedSpace": "Le frecce a T invertita richiedono uno spazio 3×2 nella pagina corrente.",
+  "terminalGridKeepAtLeastOnePage": "Mantieni almeno una pagina",
+  "terminalGridPageSpaceInsufficient": "Spazio insufficiente nella pagina {page}. Rimuovi o sposta prima alcuni tasti.",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "Il tasto Meta non è supportato dal protocollo del terminale",
+  "terminalGridSelectKeyHint": "Tocca un tasto per modificarlo\nTieni premuto e trascina per riordinare",
+  "terminalGridDisplayName": "Nome visualizzato",
+  "terminalGridActionSend": "Invia",
+  "terminalGridWidth": "Larghezza (caselle)",
+  "terminalGridCustomCombo": "Scorciatoia personalizzata",
+  "terminalGridCustomComboHint": "Seleziona modificatori + inserisci tasto",
+  "terminalGridKeyHint": "Tasto, es. C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "Nome visualizzato (opzionale)",
+  "terminalGridPleaseEnterKey": "Inserisci un tasto",
+  "terminalGridTextMacro": "Macro di testo",
+  "terminalGridTextMacroSubtitle": "Un tocco per inviare testo predefinito",
+  "terminalGridMacroTextHint": "es. ls -la",
+  "terminalGridMacroAppendEnter": "Invio",
+  "terminalGridPleaseEnterText": "Inserisci il testo",
+  "terminalGridSingleKey": "Tasto singolo",
+  "terminalGridComboKey": "Combinazione",
+  "terminalGridMacroKey": "Macro",
+  "terminalCategoryCommon": "Comuni",
+  "terminalCategoryNav": "Navigazione",
+  "terminalCategoryEdit": "Modifica",
+  "terminalCategorySym": "Simboli",
+  "terminalCategoryModifiers": "Modificatori",
+  "terminalCategoryCustom": "Personalizzato",
+  "terminalSearchPresets": "Cerca tasti predefiniti...",
+  "terminalGridActionEdit": "Modifica azione di invio",
+  "terminalGridActionKey": "Tasto da inviare",
+  "terminalGridActionModifiers": "Modificatori",
+  "terminalGridActionText": "Testo da inviare",
+  "terminalSearchNoMatch": "Nessun tasto corrispondente"
 }

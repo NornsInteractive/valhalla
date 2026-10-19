@@ -5946,4 +5946,198 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => 'Perintah Pengganti';
+
+  @override
+  String get terminalGridEditLayout => 'Edit Tata Letak Tombol';
+
+  @override
+  String get terminalGridSave => 'Simpan';
+
+  @override
+  String get terminalGridCancel => 'Batal';
+
+  @override
+  String get terminalGridUndo => 'Urungkan';
+
+  @override
+  String get terminalGridDiscardConfirm =>
+      'Buang perubahan yang belum disimpan?';
+
+  @override
+  String get terminalGridSaveFailed =>
+      'Gagal menyimpan tata letak bilah pintasan';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      'Konfigurasi bilah pintasan rusak. Setel ulang ke tata letak default?';
+
+  @override
+  String get terminalGridCorruptedReset => 'Setel Ulang';
+
+  @override
+  String get terminalGridAddTab => 'Tambah';
+
+  @override
+  String get terminalGridKeyTab => 'Tombol';
+
+  @override
+  String get terminalGridSetTab => 'Pengaturan';
+
+  @override
+  String get terminalGridCurrentPage => 'Halaman';
+
+  @override
+  String get terminalGridAddPage => '＋ Tambah Halaman';
+
+  @override
+  String get terminalGridDeletePage => 'Hapus Halaman';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return 'Hapus halaman $page beserta semua tombolnya?';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'Hapus Tombol';
+
+  @override
+  String get terminalGridRows => 'Baris Keyboard';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 baris, default 2 baris';
+
+  @override
+  String get terminalGridInvertedT => 'Grup Panah T Terbalik';
+
+  @override
+  String get terminalGridInvertedTSubtitle =>
+      'Matikan untuk memisahkan menjadi 4 tombol mandiri';
+
+  @override
+  String get terminalGridSplitArrows => 'Pisahkan Menjadi Tombol Mandiri';
+
+  @override
+  String get terminalGridDeleteArrows => 'Hapus Grup Panah';
+
+  @override
+  String get terminalGridReset => 'Pulihkan Tata Letak Default';
+
+  @override
+  String get terminalGridResetConfirm =>
+      'Setel ulang ke tata letak tombol pintasan default?';
+
+  @override
+  String get terminalGridNoSpace =>
+      'Tidak ada ruang kosong di halaman ini. Tambah halaman, tambah baris, atau hapus tombol.';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      'Panah T terbalik memerlukan minimal 2 baris. Pisahkan panah di pengaturan terlebih dahulu.';
+
+  @override
+  String get terminalGridArrowsNeedSpace =>
+      'Panah T terbalik memerlukan ruang 3×2 di halaman saat ini.';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage =>
+      'Pertahankan minimal satu halaman';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return 'Ruang pada halaman $page tidak cukup. Hapus atau pindahkan beberapa tombol terlebih dahulu.';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported =>
+      'Tombol Meta tidak didukung oleh protokol terminal';
+
+  @override
+  String get terminalGridSelectKeyHint =>
+      'Ketuk tombol untuk mengedit properti\nTahan dan seret untuk mengatur ulang posisi';
+
+  @override
+  String get terminalGridDisplayName => 'Nama Tampilan';
+
+  @override
+  String get terminalGridActionSend => 'Kirim';
+
+  @override
+  String get terminalGridWidth => 'Lebar (kotak)';
+
+  @override
+  String get terminalGridCustomCombo => 'Pintasan Kustom';
+
+  @override
+  String get terminalGridCustomComboHint =>
+      'Centang pengubah + masukkan tombol';
+
+  @override
+  String get terminalGridKeyHint => 'Tombol, mis. C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => 'Nama tampilan (opsional)';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'Silakan masukkan tombol';
+
+  @override
+  String get terminalGridTextMacro => 'Makro Teks';
+
+  @override
+  String get terminalGridTextMacroSubtitle =>
+      'Satu ketukan untuk mengirim teks';
+
+  @override
+  String get terminalGridMacroTextHint => 'mis. ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => 'Enter';
+
+  @override
+  String get terminalGridPleaseEnterText => 'Silakan masukkan teks';
+
+  @override
+  String get terminalGridSingleKey => 'Tombol Tunggal';
+
+  @override
+  String get terminalGridComboKey => 'Kombinasi';
+
+  @override
+  String get terminalGridMacroKey => 'Makro';
+
+  @override
+  String get terminalCategoryCommon => 'Umum';
+
+  @override
+  String get terminalCategoryNav => 'Navigasi';
+
+  @override
+  String get terminalCategoryEdit => 'Edit';
+
+  @override
+  String get terminalCategorySym => 'Simbol';
+
+  @override
+  String get terminalCategoryModifiers => 'Pengubah';
+
+  @override
+  String get terminalCategoryCustom => 'Kustom';
+
+  @override
+  String get terminalSearchPresets => 'Cari tombol preset...';
+
+  @override
+  String get terminalGridActionEdit => 'Edit Aksi Kirim';
+
+  @override
+  String get terminalGridActionKey => 'Tombol untuk Dikirim';
+
+  @override
+  String get terminalGridActionModifiers => 'Pengubah';
+
+  @override
+  String get terminalGridActionText => 'Teks untuk Dikirim';
+
+  @override
+  String get terminalSearchNoMatch => 'Tidak ada tombol yang cocok';
 }

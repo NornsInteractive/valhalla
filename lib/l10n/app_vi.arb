@@ -2248,7 +2248,13 @@
   "sftpToolbarPreferenceSaveFailed": "Không thể lưu tùy chọn thanh công cụ",
   "sftpToolbarActionView": "Chuyển chế độ xem",
   "agentUpdateNotice": "{count, plural, other{Có {count} bản cập nhật tác nhân}}",
-  "@agentUpdateNotice": { "placeholders": { "count": { "type": "int" } } },
+  "@agentUpdateNotice": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "agentUpdateViewAction": "Xem",
   "agentUpdateCheckAll": "Kiểm tra cập nhật",
   "agentUpdateCheck": "Kiểm tra cập nhật",
@@ -2278,5 +2284,78 @@
   "agentUpdateNeverChecked": "Chưa từng kiểm tra",
   "agentUpdateCodexMigrationTitle": "Cài đặt bộ điều hợp mới và chuyển đổi Agent này",
   "agentUpdateCodexMigrationNotice": "Chương trình và cấu hình hiện tại sẽ được giữ nguyên, cài đặt bộ điều hợp mới độc lập rồi chuyển kết nối, có thể quay lại an toàn nếu có sự cố.",
-  "agentUpdateReplacementCommand": "Lệnh thay thế"
+  "agentUpdateReplacementCommand": "Lệnh thay thế",
+  "terminalGridEditLayout": "Chỉnh sửa bố cục phím tắt",
+  "terminalGridSave": "Lưu",
+  "terminalGridCancel": "Hủy",
+  "terminalGridUndo": "Hoàn tác",
+  "terminalGridDiscardConfirm": "Hủy các thay đổi chưa lưu?",
+  "terminalGridSaveFailed": "Không thể lưu bố cục phím tắt",
+  "terminalGridCorruptedPrompt": "Cấu hình thanh phím tắt bị hỏng. Đặt lại về bố cục mặc định?",
+  "terminalGridCorruptedReset": "Đặt lại",
+  "terminalGridAddTab": "Thêm",
+  "terminalGridKeyTab": "Phím",
+  "terminalGridSetTab": "Cài đặt",
+  "terminalGridCurrentPage": "Trang",
+  "terminalGridAddPage": "＋ Thêm trang",
+  "terminalGridDeletePage": "Xóa trang",
+  "terminalGridDeletePageConfirm": "Xóa trang {page} và tất cả các phím trong đó?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "Xóa phím này",
+  "terminalGridRows": "Số hàng bàn phím",
+  "terminalGridRowsSubtitle": "1–5 hàng, mặc định 2 hàng",
+  "terminalGridInvertedT": "Cụm phím mũi tên chữ T ngược",
+  "terminalGridInvertedTSubtitle": "Tắt để tách thành 4 phím mũi tên riêng biệt",
+  "terminalGridSplitArrows": "Tách thành các phím riêng biệt",
+  "terminalGridDeleteArrows": "Xóa nhóm phím mũi tên",
+  "terminalGridReset": "Khôi phục bố cục mặc định",
+  "terminalGridResetConfirm": "Khôi phục về bố cục phím tắt mặc định?",
+  "terminalGridNoSpace": "Không còn ô trống trên trang hiện tại. Thêm trang, tăng hàng hoặc xóa bớt phím.",
+  "terminalGridArrowsNeedTwoRows": "Phím mũi tên chữ T ngược cần ít nhất 2 hàng. Hãy tách phím trong cài đặt trước.",
+  "terminalGridArrowsNeedSpace": "Phím mũi tên chữ T ngược cần ô trống 3×2 trên trang hiện tại.",
+  "terminalGridKeepAtLeastOnePage": "Phải giữ lại ít nhất một trang",
+  "terminalGridPageSpaceInsufficient": "Trang {page} không đủ khoảng trống. Hãy xóa hoặc di chuyển bớt phím.",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "Phím Meta không được giao thức terminal hỗ trợ",
+  "terminalGridSelectKeyHint": "Nhấn vào phím để chỉnh sửa thuộc tính\nNhấn giữ và kéo để đổi vị trí",
+  "terminalGridDisplayName": "Tên hiển thị",
+  "terminalGridActionSend": "Gửi",
+  "terminalGridWidth": "Chiều rộng (ô)",
+  "terminalGridCustomCombo": "Tổ hợp phím tùy chỉnh",
+  "terminalGridCustomComboHint": "Chọn phím bổ trợ + nhập phím",
+  "terminalGridKeyHint": "Phím, vd: C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "Tên hiển thị (tùy chọn)",
+  "terminalGridPleaseEnterKey": "Vui lòng nhập phím",
+  "terminalGridTextMacro": "Macro văn bản",
+  "terminalGridTextMacroSubtitle": "Chạm để gửi đoạn văn bản định sẵn",
+  "terminalGridMacroTextHint": "vd: ls -la",
+  "terminalGridMacroAppendEnter": "Enter",
+  "terminalGridPleaseEnterText": "Vui lòng nhập văn bản",
+  "terminalGridSingleKey": "Phím đơn",
+  "terminalGridComboKey": "Tổ hợp phím",
+  "terminalGridMacroKey": "Macro",
+  "terminalCategoryCommon": "Thường dùng",
+  "terminalCategoryNav": "Điều hướng",
+  "terminalCategoryEdit": "Chỉnh sửa",
+  "terminalCategorySym": "Ký hiệu",
+  "terminalCategoryModifiers": "Phím bổ trợ",
+  "terminalCategoryCustom": "Tùy chỉnh",
+  "terminalSearchPresets": "Tìm kiếm phím cài sẵn...",
+  "terminalGridActionEdit": "Chỉnh sửa hành động gửi",
+  "terminalGridActionKey": "Phím cần gửi",
+  "terminalGridActionModifiers": "Phím bổ trợ",
+  "terminalGridActionText": "Văn bản cần gửi",
+  "terminalSearchNoMatch": "Không có phím phù hợp"
 }

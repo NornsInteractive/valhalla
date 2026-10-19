@@ -55,6 +55,48 @@ void main() {
   });
 
   group('SettingsView Navigation Settings', () {
+    testWidgets(
+      'legacy accessory search points to grid editor without writing old preferences',
+      (tester) async {
+        final storage = await _freshStorage();
+        await storage.setTerminalGridConfig(
+          '{"schemaVersion":2,"rows":2,"columns":8,"np":1,"items":[]}',
+        );
+        final original = storage.getTerminalGridConfig();
+        final prefs = await SharedPreferences.getInstance();
+        final keys = prefs.getKeys().toSet();
+        await tester.pumpWidget(
+          _buildSettingsApp(
+            overrides: [localStorageServiceProvider.overrideWithValue(storage)],
+            locale: const Locale('en'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('settings_search_field')),
+          'Accessory Bar Keys',
+        );
+        await tester.pumpAndSettle();
+        final entry = find.widgetWithText(ListTile, 'Edit Layout');
+        expect(entry, findsOneWidget);
+        await tester.tap(entry);
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('Terminal → More → Edit Layout'),
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Confirm'));
+        await tester.pumpAndSettle();
+        expect(storage.getTerminalGridConfig(), original);
+        expect(prefs.getKeys(), keys);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     for (final language in ['en', 'ar']) {
       testWidgets('compact groups fit 320dp 2x $language', (tester) async {
         tester.view.physicalSize = const Size(320, 1000);

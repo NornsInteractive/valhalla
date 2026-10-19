@@ -2248,7 +2248,13 @@
   "sftpToolbarPreferenceSaveFailed": "टूलबार प्राथमिकता सहेजने में विफल",
   "sftpToolbarActionView": "दृश्य बदलें",
   "agentUpdateNotice": "{count, plural, =1{1 एजेंट अपडेट उपलब्ध है} other{{count} एजेंट अपडेट उपलब्ध हैं}}",
-  "@agentUpdateNotice": { "placeholders": { "count": { "type": "int" } } },
+  "@agentUpdateNotice": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "agentUpdateViewAction": "देखें",
   "agentUpdateCheckAll": "अपडेट जांचें",
   "agentUpdateCheck": "अपडेट जांचें",
@@ -2278,5 +2284,78 @@
   "agentUpdateNeverChecked": "कभी नहीं जाँचा गया",
   "agentUpdateCodexMigrationTitle": "नया एडेप्टर इंस्टॉल करें और इस एजेंट पर स्विच करें",
   "agentUpdateCodexMigrationNotice": "मौजूदा प्रोग्राम और कॉन्फ़िगरेशन सुरक्षित रहेंगे। एक स्वतंत्र नया एडेप्टर इंस्टॉल करके कनेक्शन बदला जाएगा, समस्या होने पर सुरक्षित रूप से वापस लौटा जा सकता है।",
-  "agentUpdateReplacementCommand": "स्विच के बाद का कमांड"
+  "agentUpdateReplacementCommand": "स्विच के बाद का कमांड",
+  "terminalGridEditLayout": "शॉर्टकट लेआउट संपादित करें",
+  "terminalGridSave": "सहेजें",
+  "terminalGridCancel": "रद्द करें",
+  "terminalGridUndo": "पूर्ववत करें",
+  "terminalGridDiscardConfirm": "क्या आप बिना सहेजे गए परिवर्तनों को छोड़ना चाहते हैं?",
+  "terminalGridSaveFailed": "शॉर्टकट लेआउट सहेजने में विफल",
+  "terminalGridCorruptedPrompt": "शॉर्टकट बार कॉन्फ़िगरेशन दूषित है। डिफ़ॉल्ट लेआउट पर रीसेट करें?",
+  "terminalGridCorruptedReset": "रीसेट करें",
+  "terminalGridAddTab": "जोड़ें",
+  "terminalGridKeyTab": "कुंजी",
+  "terminalGridSetTab": "सेटिंग्स",
+  "terminalGridCurrentPage": "पृष्ठ",
+  "terminalGridAddPage": "＋ पृष्ठ जोड़ें",
+  "terminalGridDeletePage": "पृष्ठ हटाएं",
+  "terminalGridDeletePageConfirm": "क्या पृष्ठ {page} और उसकी सभी कुंजियों को हटाना है?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "कुंजी हटाएं",
+  "terminalGridRows": "कीबोर्ड पंक्तियाँ",
+  "terminalGridRowsSubtitle": "1–5 पंक्तियाँ, डिफ़ॉल्ट 2 पंक्तियाँ",
+  "terminalGridInvertedT": "उल्टा-टी तीर समूह",
+  "terminalGridInvertedTSubtitle": "4 अलग-अलग कुंजियों में विभाजित करने के लिए बंद करें",
+  "terminalGridSplitArrows": "अलग कुंजियों में विभाजित करें",
+  "terminalGridDeleteArrows": "तीर समूह हटाएं",
+  "terminalGridReset": "डिफ़ॉल्ट लेआउट पुनर्स्थापित करें",
+  "terminalGridResetConfirm": "क्या डिफ़ॉल्ट शॉर्टकट लेआउट पर रीसेट करना चाहते हैं?",
+  "terminalGridNoSpace": "वर्तमान पृष्ठ पर कोई खाली स्थान नहीं है। पृष्ठ जोड़ें, पंक्तियाँ बढ़ाएँ या कुंजियाँ हटाएँ।",
+  "terminalGridArrowsNeedTwoRows": "उल्टा-टी तीरों के लिए कम से कम 2 पंक्तियों की आवश्यकता है। पहले सेटिंग्स में विभाजित करें।",
+  "terminalGridArrowsNeedSpace": "उल्टा-टी तीरों के लिए वर्तमान पृष्ठ पर 3×2 स्थान की आवश्यकता है।",
+  "terminalGridKeepAtLeastOnePage": "कम से कम एक पृष्ठ रखना आवश्यक है",
+  "terminalGridPageSpaceInsufficient": "पृष्ठ {page} पर अपर्याप्त स्थान है। पहले कुछ कुंजियाँ हटाएँ या स्थानांतरित करें।",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "टर्मिनल प्रोटोकॉल द्वारा Meta कुंजी समर्थित नहीं है",
+  "terminalGridSelectKeyHint": "गुण संपादित करने के लिए कुंजी टैप करें\nपुनः व्यवस्थित करने के लिए दबाकर खींचें",
+  "terminalGridDisplayName": "प्रदर्शित नाम",
+  "terminalGridActionSend": "भेजें",
+  "terminalGridWidth": "चौड़ाई (इकाइयाँ)",
+  "terminalGridCustomCombo": "कस्टम शॉर्टकट",
+  "terminalGridCustomComboHint": "संशोधक चुनें + कुंजी दर्ज करें",
+  "terminalGridKeyHint": "कुंजी, जैसे C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "प्रदर्शित नाम (वैकल्पिक)",
+  "terminalGridPleaseEnterKey": "कृपया एक कुंजी दर्ज करें",
+  "terminalGridTextMacro": "टेक्स्ट मैक्रो",
+  "terminalGridTextMacroSubtitle": "पाठ भेजने के लिए एक बार टैप करें",
+  "terminalGridMacroTextHint": "जैसे ls -la",
+  "terminalGridMacroAppendEnter": "एंटर",
+  "terminalGridPleaseEnterText": "कृपया टेक्स्ट दर्ज करें",
+  "terminalGridSingleKey": "एकल कुंजी",
+  "terminalGridComboKey": "संयोजन",
+  "terminalGridMacroKey": "मैक्रो",
+  "terminalCategoryCommon": "सामान्य",
+  "terminalCategoryNav": "नेविगेशन",
+  "terminalCategoryEdit": "संपादन",
+  "terminalCategorySym": "प्रतीक",
+  "terminalCategoryModifiers": "संशोधक",
+  "terminalCategoryCustom": "कस्टम",
+  "terminalSearchPresets": "प्रीसेट कुंजियाँ खोजें...",
+  "terminalGridActionEdit": "भेजने की क्रिया संपादित करें",
+  "terminalGridActionKey": "भेजने वाली कुंजी",
+  "terminalGridActionModifiers": "संशोधक",
+  "terminalGridActionText": "भेजने वाला पाठ",
+  "terminalSearchNoMatch": "कोई मेल खाने वाली कुंजी नहीं"
 }

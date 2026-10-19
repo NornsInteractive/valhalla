@@ -2284,5 +2284,78 @@
   "agentUpdateNeverChecked": "未確認",
   "agentUpdateCodexMigrationTitle": "新しいアダプターをインストールしてこのAgentに切り替え",
   "agentUpdateCodexMigrationNotice": "既存のプログラムと設定は保持され、独立した新版アダプターをインストールした後に接続を切り替えます。問題発生時は安全にロールバックできます。",
-  "agentUpdateReplacementCommand": "切り替え後のコマンド"
+  "agentUpdateReplacementCommand": "切り替え後のコマンド",
+  "terminalGridEditLayout": "ショートカットの配置を編集",
+  "terminalGridSave": "保存",
+  "terminalGridCancel": "キャンセル",
+  "terminalGridUndo": "元に戻す",
+  "terminalGridDiscardConfirm": "未保存の変更は破棄されます。よろしいですか？",
+  "terminalGridSaveFailed": "配置の保存に失敗しました",
+  "terminalGridCorruptedPrompt": "ショートカットバー設定が破損しています。デフォルトに戻しますか？",
+  "terminalGridCorruptedReset": "リセット",
+  "terminalGridAddTab": "追加",
+  "terminalGridKeyTab": "キー",
+  "terminalGridSetTab": "設定",
+  "terminalGridCurrentPage": "現在のページ",
+  "terminalGridAddPage": "＋ ページ追加",
+  "terminalGridDeletePage": "ページ削除",
+  "terminalGridDeletePageConfirm": "ページ {page} とそのすべてのキーを削除しますか？",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "このキーを削除",
+  "terminalGridRows": "キーボード表示行数",
+  "terminalGridRowsSubtitle": "1〜5行（デフォルト2行）",
+  "terminalGridInvertedT": "逆T字カーソルキー固定",
+  "terminalGridInvertedTSubtitle": "オフにすると4つの独立キーに分離",
+  "terminalGridSplitArrows": "独立キーに分離",
+  "terminalGridDeleteArrows": "カーソルキーグループを削除",
+  "terminalGridReset": "デフォルト配置に戻す",
+  "terminalGridResetConfirm": "デフォルトのショートカット配置にリセットしますか？",
+  "terminalGridNoSpace": "現在のページに空きがありません。ページ追加、行数変更、またはキー削除を行ってください",
+  "terminalGridArrowsNeedTwoRows": "逆T字キーには2行以上必要です。設定でキーを分離してください",
+  "terminalGridArrowsNeedSpace": "逆T字キーには3×2の空きスペースが必要です",
+  "terminalGridKeepAtLeastOnePage": "最低1ページは必要です",
+  "terminalGridPageSpaceInsufficient": "ページ {page} に十分な空きがありません。キーを移動または削除してください",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "端末プロトコルがMetaキーに対応していません",
+  "terminalGridSelectKeyHint": "キーをタップしてプロパティ編集\n長押しドラッグで位置調整",
+  "terminalGridDisplayName": "表示名",
+  "terminalGridActionSend": "送信",
+  "terminalGridWidth": "幅（マス）",
+  "terminalGridCustomCombo": "カスタムコンボキー",
+  "terminalGridCustomComboHint": "修飾キーを選択 + キーを入力",
+  "terminalGridKeyHint": "キー名（例: C, F5, Tab）",
+  "terminalGridDisplayNameOptional": "表示名（任意）",
+  "terminalGridPleaseEnterKey": "キーを入力してください",
+  "terminalGridTextMacro": "テキストマクロ",
+  "terminalGridTextMacroSubtitle": "タップで定型テキストを一括送信",
+  "terminalGridMacroTextHint": "例: ls -la",
+  "terminalGridMacroAppendEnter": "改行",
+  "terminalGridPleaseEnterText": "テキストを入力してください",
+  "terminalGridSingleKey": "単一キー",
+  "terminalGridComboKey": "コンボキー",
+  "terminalGridMacroKey": "マクロ",
+  "terminalCategoryCommon": "常用",
+  "terminalCategoryNav": "ナビゲーション",
+  "terminalCategoryEdit": "編集",
+  "terminalCategorySym": "記号",
+  "terminalCategoryModifiers": "修飾キー",
+  "terminalCategoryCustom": "カスタム",
+  "terminalSearchPresets": "プリセットキーを検索...",
+  "terminalGridActionEdit": "送信動作を編集",
+  "terminalGridActionKey": "送信キー",
+  "terminalGridActionModifiers": "修飾キー",
+  "terminalGridActionText": "送信テキスト",
+  "terminalSearchNoMatch": "一致するキーはありません"
 }

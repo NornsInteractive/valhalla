@@ -6005,4 +6005,198 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => 'Befehl nach Wechsel';
+
+  @override
+  String get terminalGridEditLayout => 'Tastenlayout bearbeiten';
+
+  @override
+  String get terminalGridSave => 'Speichern';
+
+  @override
+  String get terminalGridCancel => 'Abbrechen';
+
+  @override
+  String get terminalGridUndo => 'Rückgängig';
+
+  @override
+  String get terminalGridDiscardConfirm =>
+      'Nicht gespeicherte Änderungen verwerfen?';
+
+  @override
+  String get terminalGridSaveFailed =>
+      'Fehler beim Speichern des Tastenlayouts';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      'Tastenleisten-Konfiguration ist beschädigt. Auf Standard zurücksetzen?';
+
+  @override
+  String get terminalGridCorruptedReset => 'Zurücksetzen';
+
+  @override
+  String get terminalGridAddTab => 'Hinzufügen';
+
+  @override
+  String get terminalGridKeyTab => 'Taste';
+
+  @override
+  String get terminalGridSetTab => 'Einstellungen';
+
+  @override
+  String get terminalGridCurrentPage => 'Seite';
+
+  @override
+  String get terminalGridAddPage => '＋ Seite hinzufügen';
+
+  @override
+  String get terminalGridDeletePage => 'Seite löschen';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return 'Seite $page und alle darin enthaltenen Tasten löschen?';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'Taste löschen';
+
+  @override
+  String get terminalGridRows => 'Tastaturzeilen';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 Zeilen, Standard: 2 Zeilen';
+
+  @override
+  String get terminalGridInvertedT => 'Umgekehrtes T-Pfeilkreuz';
+
+  @override
+  String get terminalGridInvertedTSubtitle =>
+      'Ausschalten, um in 4 Einzeltasten aufzuteilen';
+
+  @override
+  String get terminalGridSplitArrows => 'In Einzeltasten aufteilen';
+
+  @override
+  String get terminalGridDeleteArrows => 'Pfeiltastengruppe löschen';
+
+  @override
+  String get terminalGridReset => 'Standardlayout wiederherstellen';
+
+  @override
+  String get terminalGridResetConfirm =>
+      'Auf Standard-Tastenlayout zurücksetzen?';
+
+  @override
+  String get terminalGridNoSpace =>
+      'Kein Platz auf dieser Seite. Seite hinzufügen, Zeilenanzahl erhöhen oder Tasten löschen.';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      'Das Pfeilkreuz benötigt mindestens 2 Zeilen. Teilen Sie die Tasten zuerst in den Einstellungen auf.';
+
+  @override
+  String get terminalGridArrowsNeedSpace =>
+      'Das Pfeilkreuz benötigt ein 3×2-Feld auf der aktuellen Seite.';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage =>
+      'Mindestens eine Seite muss erhalten bleiben';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return 'Zu wenig Platz auf Seite $page. Entfernen oder verschieben Sie zuerst Tasten.';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported =>
+      'Meta-Taste wird vom Terminalprotokoll nicht unterstützt';
+
+  @override
+  String get terminalGridSelectKeyHint =>
+      'Taste antippen zum Bearbeiten\nGedrückt halten und ziehen zum Verschieben';
+
+  @override
+  String get terminalGridDisplayName => 'Anzeigename';
+
+  @override
+  String get terminalGridActionSend => 'Senden';
+
+  @override
+  String get terminalGridWidth => 'Breite (Felder)';
+
+  @override
+  String get terminalGridCustomCombo => 'Eigene Tastenkombination';
+
+  @override
+  String get terminalGridCustomComboHint =>
+      'Modifikatoren wählen + Taste eingeben';
+
+  @override
+  String get terminalGridKeyHint => 'Taste, z. B. C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => 'Anzeigename (optional)';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'Bitte Taste eingeben';
+
+  @override
+  String get terminalGridTextMacro => 'Text-Makro';
+
+  @override
+  String get terminalGridTextMacroSubtitle =>
+      'Ein Fingertipp zum Senden von Text';
+
+  @override
+  String get terminalGridMacroTextHint => 'z. B. ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => 'Eingabe';
+
+  @override
+  String get terminalGridPleaseEnterText => 'Bitte Text eingeben';
+
+  @override
+  String get terminalGridSingleKey => 'Einzeltaste';
+
+  @override
+  String get terminalGridComboKey => 'Kombination';
+
+  @override
+  String get terminalGridMacroKey => 'Makro';
+
+  @override
+  String get terminalCategoryCommon => 'Häufig';
+
+  @override
+  String get terminalCategoryNav => 'Navigation';
+
+  @override
+  String get terminalCategoryEdit => 'Bearbeiten';
+
+  @override
+  String get terminalCategorySym => 'Symbole';
+
+  @override
+  String get terminalCategoryModifiers => 'Modifikatoren';
+
+  @override
+  String get terminalCategoryCustom => 'Benutzerdefiniert';
+
+  @override
+  String get terminalSearchPresets => 'Voreingestellte Tasten suchen...';
+
+  @override
+  String get terminalGridActionEdit => 'Sendeaktion bearbeiten';
+
+  @override
+  String get terminalGridActionKey => 'Zu sendende Taste';
+
+  @override
+  String get terminalGridActionModifiers => 'Modifikatoren';
+
+  @override
+  String get terminalGridActionText => 'Zu sendender Text';
+
+  @override
+  String get terminalSearchNoMatch => 'Keine passenden Tasten';
 }

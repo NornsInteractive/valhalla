@@ -2284,5 +2284,78 @@
   "agentUpdateNeverChecked": "Никогда не проверялось",
   "agentUpdateCodexMigrationTitle": "Установить новый адаптер и переключить этого агента",
   "agentUpdateCodexMigrationNotice": "Существующая программа и конфигурация сохраняются. Устанавливается отдельный новый адаптер и переключается подключение; при проблемах возможен безопасный откат.",
-  "agentUpdateReplacementCommand": "Команда замены"
+  "agentUpdateReplacementCommand": "Команда замены",
+  "terminalGridEditLayout": "Изменить раскладку панели",
+  "terminalGridSave": "Сохранить",
+  "terminalGridCancel": "Отмена",
+  "terminalGridUndo": "Отменить",
+  "terminalGridDiscardConfirm": "Отменить несохраненные изменения?",
+  "terminalGridSaveFailed": "Не удалось сохранить раскладку панели",
+  "terminalGridCorruptedPrompt": "Конфигурация панели повреждена. Восстановить стандартную раскладку?",
+  "terminalGridCorruptedReset": "Сбросить",
+  "terminalGridAddTab": "Добавить",
+  "terminalGridKeyTab": "Клавиша",
+  "terminalGridSetTab": "Настройки",
+  "terminalGridCurrentPage": "Страница",
+  "terminalGridAddPage": "＋ Добавить страницу",
+  "terminalGridDeletePage": "Удалить страницу",
+  "terminalGridDeletePageConfirm": "Удалить страницу {page} и все её клавиши?",
+  "@terminalGridDeletePageConfirm": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridDeleteKey": "Удалить клавишу",
+  "terminalGridRows": "Строк на панели",
+  "terminalGridRowsSubtitle": "1–5 строк, по умолчанию 2",
+  "terminalGridInvertedT": "Блок стрелок (перевернутая T)",
+  "terminalGridInvertedTSubtitle": "Отключите, чтобы разделить на 4 отдельные клавиши",
+  "terminalGridSplitArrows": "Разделить на отдельные клавиши",
+  "terminalGridDeleteArrows": "Удалить блок стрелок",
+  "terminalGridReset": "Восстановить раскладку по умолчанию",
+  "terminalGridResetConfirm": "Восстановить стандартную раскладку клавиш?",
+  "terminalGridNoSpace": "Нет свободного места на странице. Добавьте страницу, увеличьте строки или удалите клавиши.",
+  "terminalGridArrowsNeedTwoRows": "Блок стрелок требует минимум 2 строки. Разделите стрелки в настройках.",
+  "terminalGridArrowsNeedSpace": "Блок стрелок требует пространство 3×2 на текущей странице.",
+  "terminalGridKeepAtLeastOnePage": "Необходимо сохранить хотя бы одну страницу",
+  "terminalGridPageSpaceInsufficient": "Недостаточно места на странице {page}. Удалите или переместите клавиши.",
+  "@terminalGridPageSpaceInsufficient": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalGridMetaNotSupported": "Клавиша Meta не поддерживается протоколом терминала",
+  "terminalGridSelectKeyHint": "Нажмите на клавишу для редактирования\nУдерживайте и перетаскивайте для изменения положения",
+  "terminalGridDisplayName": "Название",
+  "terminalGridActionSend": "Отправка",
+  "terminalGridWidth": "Ширина (ячеек)",
+  "terminalGridCustomCombo": "Пользовательское сочетание",
+  "terminalGridCustomComboHint": "Выберите модификаторы + введите клавишу",
+  "terminalGridKeyHint": "Клавиша, например C / F5 / Tab",
+  "terminalGridDisplayNameOptional": "Название (необязательно)",
+  "terminalGridPleaseEnterKey": "Пожалуйста, введите клавишу",
+  "terminalGridTextMacro": "Текстовый макрос",
+  "terminalGridTextMacroSubtitle": "Отправка текста в одно касание",
+  "terminalGridMacroTextHint": "например ls -la",
+  "terminalGridMacroAppendEnter": "Ввод",
+  "terminalGridPleaseEnterText": "Пожалуйста, введите текст",
+  "terminalGridSingleKey": "Клавиша",
+  "terminalGridComboKey": "Сочетание",
+  "terminalGridMacroKey": "Макрос",
+  "terminalCategoryCommon": "Частые",
+  "terminalCategoryNav": "Навигация",
+  "terminalCategoryEdit": "Правка",
+  "terminalCategorySym": "Символы",
+  "terminalCategoryModifiers": "Модификаторы",
+  "terminalCategoryCustom": "Свои",
+  "terminalSearchPresets": "Поиск клавиш...",
+  "terminalGridActionEdit": "Редактировать действие",
+  "terminalGridActionKey": "Отправляемая клавиша",
+  "terminalGridActionModifiers": "Модификаторы",
+  "terminalGridActionText": "Отправляемый текст",
+  "terminalSearchNoMatch": "Нет подходящих клавиш"
 }

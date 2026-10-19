@@ -5892,4 +5892,195 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get agentUpdateReplacementCommand => 'الأمر البديل';
+
+  @override
+  String get terminalGridEditLayout => 'تعديل تخطيط الأزرار';
+
+  @override
+  String get terminalGridSave => 'حفظ';
+
+  @override
+  String get terminalGridCancel => 'إلغاء';
+
+  @override
+  String get terminalGridUndo => 'تراجع';
+
+  @override
+  String get terminalGridDiscardConfirm =>
+      'هل تريد تجاهل التغييرات غير المحفوظة؟';
+
+  @override
+  String get terminalGridSaveFailed => 'فشل حفظ تخطيط شريط الأزرار';
+
+  @override
+  String get terminalGridCorruptedPrompt =>
+      'تكوين شريط الأزرار تالف. هل تريد استعادة التخطيط الافتراضي؟';
+
+  @override
+  String get terminalGridCorruptedReset => 'إعادة ضبط';
+
+  @override
+  String get terminalGridAddTab => 'إضافة';
+
+  @override
+  String get terminalGridKeyTab => 'زر';
+
+  @override
+  String get terminalGridSetTab => 'الإعدادات';
+
+  @override
+  String get terminalGridCurrentPage => 'الصفحة';
+
+  @override
+  String get terminalGridAddPage => '＋ إضافة صفحة';
+
+  @override
+  String get terminalGridDeletePage => 'حذف الصفحة';
+
+  @override
+  String terminalGridDeletePageConfirm(int page) {
+    return 'هل تريد حذف الصفحة $page وجميع أزرارها؟';
+  }
+
+  @override
+  String get terminalGridDeleteKey => 'حذف الزر';
+
+  @override
+  String get terminalGridRows => 'صفوف لوحة المفاتيح';
+
+  @override
+  String get terminalGridRowsSubtitle => '1–5 صفوف، الافتراضي 2 صف';
+
+  @override
+  String get terminalGridInvertedT => 'مجموعة أسهم حرف T مقلوب';
+
+  @override
+  String get terminalGridInvertedTSubtitle => 'عطّل للفصل إلى 4 أزرار مستقلة';
+
+  @override
+  String get terminalGridSplitArrows => 'فصل إلى أزرار مستقلة';
+
+  @override
+  String get terminalGridDeleteArrows => 'حذف مجموعة الأسهم';
+
+  @override
+  String get terminalGridReset => 'استعادة التخطيط الافتراضي';
+
+  @override
+  String get terminalGridResetConfirm =>
+      'هل تريد إعادة التعيين إلى تخطيط الأزرار الافتراضي؟';
+
+  @override
+  String get terminalGridNoSpace =>
+      'لا توجد مساحة شاغرة في الصفحة الحالية. أضف صفحة، زد الصفوف، أو احذف أزراراً.';
+
+  @override
+  String get terminalGridArrowsNeedTwoRows =>
+      'تتطلب أسهم T المقلوب صفين على الأقل. افصل الأسهم أولاً في الإعدادات.';
+
+  @override
+  String get terminalGridArrowsNeedSpace =>
+      'تتطلب أسهم T المقلوب مساحة 3×2 في الصفحة الحالية.';
+
+  @override
+  String get terminalGridKeepAtLeastOnePage =>
+      'يجب الاحتفاظ بصفحة واحدة على الأقل';
+
+  @override
+  String terminalGridPageSpaceInsufficient(int page) {
+    return 'المساحة في الصفحة $page غير كافية. احذف أو انقل بعض الأزرار أولاً.';
+  }
+
+  @override
+  String get terminalGridMetaNotSupported =>
+      'زر Meta غير مدعوم في بروتوكول الطرفية';
+
+  @override
+  String get terminalGridSelectKeyHint =>
+      'اضغط على زر لتعديل خصائصه\nاضغط مطولاً واسحب لتغيير موضعه';
+
+  @override
+  String get terminalGridDisplayName => 'الاسم المعروض';
+
+  @override
+  String get terminalGridActionSend => 'إرسال';
+
+  @override
+  String get terminalGridWidth => 'العرض (خانات)';
+
+  @override
+  String get terminalGridCustomCombo => 'اختصار مخصص';
+
+  @override
+  String get terminalGridCustomComboHint =>
+      'حدد المفاتيح التبديلية + أدخل الزر';
+
+  @override
+  String get terminalGridKeyHint => 'زر، مثل C / F5 / Tab';
+
+  @override
+  String get terminalGridDisplayNameOptional => 'الاسم المعروض (اختياري)';
+
+  @override
+  String get terminalGridPleaseEnterKey => 'يرجى إدخال الزر';
+
+  @override
+  String get terminalGridTextMacro => 'ماكرو نصي';
+
+  @override
+  String get terminalGridTextMacroSubtitle => 'نقرة واحدة لإرسال نص محدد';
+
+  @override
+  String get terminalGridMacroTextHint => 'مثل ls -la';
+
+  @override
+  String get terminalGridMacroAppendEnter => 'إدخال';
+
+  @override
+  String get terminalGridPleaseEnterText => 'يرجى إدخال النص';
+
+  @override
+  String get terminalGridSingleKey => 'زر مفرد';
+
+  @override
+  String get terminalGridComboKey => 'اختصار مركب';
+
+  @override
+  String get terminalGridMacroKey => 'ماكرو';
+
+  @override
+  String get terminalCategoryCommon => 'شائعة';
+
+  @override
+  String get terminalCategoryNav => 'التنقل';
+
+  @override
+  String get terminalCategoryEdit => 'تحرير';
+
+  @override
+  String get terminalCategorySym => 'رموز';
+
+  @override
+  String get terminalCategoryModifiers => 'مفاتيح التبديل';
+
+  @override
+  String get terminalCategoryCustom => 'مخصص';
+
+  @override
+  String get terminalSearchPresets => 'البحث في الأزرار الجاهزة...';
+
+  @override
+  String get terminalGridActionEdit => 'تعديل إجراء الإرسال';
+
+  @override
+  String get terminalGridActionKey => 'الزر المراد إرساله';
+
+  @override
+  String get terminalGridActionModifiers => 'مفاتيح التبديل';
+
+  @override
+  String get terminalGridActionText => 'النص المراد إرساله';
+
+  @override
+  String get terminalSearchNoMatch => 'لا توجد مفاتيح مطابقة';
 }
