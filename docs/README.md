@@ -1,8 +1,8 @@
 # Valhalla - 研发项目全生命周期文档体系
 
 最新交付（2026-10-19）：[1.0.13+14 发布记录](../agent-workflow/2026-10-19-v1013-release.md)。
-正式签名Android三架构APK／AAB及Linux x64已本地构建并公开GitHub；分发四包已登记，
-仍保持隐藏，待确认移除本次空占位后公开并验证代理下载。当前不能视为分发已上线。
+正式签名Android三架构APK／AAB及Linux x64已本地构建并公开GitHub；分发平台四包已公开，
+整包SHA256与八项Range 206校验通过，全部经平台代理、不跳转GitHub；历史版本不变。
 本批没有新Windows／Apple包、未安装设备，验收范围和旧包名迁移限制在记录及发布手册中列明。
 [NAS 重绘、终端历史与紧凑浏览契约](../agent-workflow/2026-10-14-nas-terminal-compact.md)
 保留前一源码阶段的范围、进度与验证历史，不代表最新发布状态。
