@@ -27,6 +27,9 @@ python3 tool/release.py --resume build/local-packages/v1.0.14-release
 带时间戳的证据目录保留，不删除缓存。若首次准备阶段因未选中的改动停止，先人工核对index及
 state，完成相同版本的提交并登记source，不能重新发起新批次。
 
+已冻结构建后允许独立提交仅tool/docs/agent-workflow的发布流程修复再续跑；要求原源码是当前HEAD祖先，
+产品树没有变化，二进制仍标注原实际源码提交，不移动原标签。MCP和公开API沿用curl传输，避免运行环境对Python客户端的403。
+
 分发平台当前会自动生成无文件/URL/哈希的主包占位。脚本只对自己创建的本批隐藏版本、
 下载0/大小0且无R2文件/URL/哈希的占位备份并移除，再登记真实包；不删除任何历史包或实际文件。
 版本和各包均`use_proxy=true`，下载不跟随重定向，哈希或Range不匹配不报告完成。

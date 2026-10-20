@@ -1,5 +1,6 @@
 import unittest
-from release import next_version, normalize
+from unittest.mock import patch
+from release import Release, next_version, normalize
 
 
 class ReleaseTests(unittest.TestCase):
@@ -16,6 +17,22 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(normalize([{'id': 'old', 'download_count': 1, 'packages': [{'download_count': 2}]}]),
                          normalize([{'id': 'old', 'download_count': 3, 'packages': [{'download_count': 4}]}]))
         self.assertNotEqual(normalize({'file_sha256': 'one'}), normalize({'file_sha256': 'two'}))
+
+    def test_resume_accepts_only_committed_automation_changes_after_build(self):
+        release = Release.__new__(Release)
+        release.state = {'source': 'old', 'built': True}
+        with patch('release.subprocess.check_output', side_effect=['new\n', '', 'tool/release.py\ndocs/README.md\n']), patch('release.subprocess.run') as run:
+            release.validate_source()
+            run.assert_called_once()
+        for changed in ['lib/main.dart\n', 'pubspec.yaml\n']:
+            with patch('release.subprocess.check_output', side_effect=['new\n', '', changed]), patch('release.subprocess.run'), self.assertRaises(RuntimeError):
+                release.validate_source()
+
+    def test_resume_rejects_dirty_tree(self):
+        release = Release.__new__(Release)
+        release.state = {'source': 'same', 'built': True}
+        with patch('release.subprocess.check_output', side_effect=['same\n', ' M tool/release.py']), self.assertRaises(RuntimeError):
+            release.validate_source()
 
 
 if __name__ == '__main__':

@@ -10,7 +10,6 @@ import re
 import subprocess
 import sys
 import time
-import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY = 'NornsInteractive/valhalla'
@@ -78,9 +77,16 @@ class Release:
         if os.environ.get('YGG_TOKEN'):
             headers['Authorization'] = 'Bearer ' + os.environ['YGG_TOKEN']
         body = dict(jsonrpc='2.0', id=time.time_ns(), method='tools/call', params=dict(name=name, arguments=args))
-        request = urllib.request.Request(MCP, json.dumps(body).encode(), headers)
-        with urllib.request.urlopen(request, timeout=90) as response:
-            raw = response.read().decode()
+        command = ['curl', '--fail-with-body', '--silent', '--show-error', '--max-time', '90', MCP]
+        # Pass optional credentials through stdin config, never process argv/logs.
+        config = ''.join('header = ' + json.dumps(k + ': ' + v) + '\n' for k, v in headers.items())
+        payload = self.work / 'mcp-request.json'
+        payload.write_text(json.dumps(body))
+        command += ['--config', '-', '--data-binary', '@' + str(payload)]
+        response = subprocess.run(command, input=config, capture_output=True, text=True)
+        if response.returncode:
+            raise RuntimeError('MCP HTTP transport failed; stop and inspect access, do not retry writes blindly')
+        raw = response.stdout
         raw = json.loads(raw) if raw.lstrip().startswith('{') else next(
             json.loads(line[5:].strip()) for line in raw.splitlines() if line.startswith('data: {'))
         evidence = self.work / f'mcp-{time.time_ns()}-{name}.json'
@@ -100,8 +106,13 @@ class Release:
 
     def validate_source(self):
         actual = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-        if actual != self.state.get('source') or subprocess.check_output(['git', 'status', '--porcelain'], text=True):
+        if subprocess.check_output(['git', 'status', '--porcelain'], text=True):
             raise RuntimeError('Release source changed or worktree dirty; do not resume with different source')
+        if actual != self.state.get('source'):
+            subprocess.run(['git', 'merge-base', '--is-ancestor', self.state['source'], actual], check=True)
+            changed = subprocess.check_output(['git', 'diff', '--name-only', self.state['source'], actual], text=True).splitlines()
+            if not self.state.get('built') or any(not p.startswith(('tool/', 'docs/', 'agent-workflow/')) for p in changed):
+                raise RuntimeError('Cannot resume with changed product source')
 
     def build_packages(self):
         self.validate_source()
@@ -156,7 +167,8 @@ class Release:
             if file.stat().st_size != item['size'] or sha(file) != item['sha256']:
                 raise RuntimeError('Frozen asset changed')
         self.run('push', ['git', 'push', 'origin', 'HEAD:main'])
-        if self.gh(f'repos/{REPOSITORY}/commits/main')['sha'] != self.state['source']:
+        head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+        if self.gh(f'repos/{REPOSITORY}/commits/main')['sha'] != head:
             raise RuntimeError('Remote main mismatch')
         releases = self.gh(f'repos/{REPOSITORY}/releases?per_page=100&_fresh={time.time_ns()}')
         matches = [r for r in releases if r['tag_name'] == self.tag]
@@ -251,8 +263,9 @@ class Release:
         frozen = {a['name']: a for a in json.loads((self.work / 'frozen-assets.json').read_text())}
         for package in version['packages']:
             query = urllib.parse.urlencode(dict(app_id=APP, version_code=0, channel='default', platform=package['platform'], arch=package['arch']))
-            with urllib.request.urlopen('https://ygg.norns.cc.cd/api/v1/app/latest?' + query, timeout=60) as response:
-                data = json.load(response)['data']
+            response = subprocess.run(['curl', '--fail', '--silent', '--show-error', '--max-time', '60',
+                'https://ygg.norns.cc.cd/api/v1/app/latest?' + query], capture_output=True, text=True, check=True)
+            data = json.loads(response.stdout)['data']
             if data['latest_version_name'] != self.state['version']:
                 raise RuntimeError('Public latest mismatch')
             matches = [p for p in data['packages'] if p['id'] == package['id']]
