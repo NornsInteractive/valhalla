@@ -124,3 +124,10 @@ UI均由原Valhalla AgY会话、`gemini-3.8-flash-high`／effort high修改，�
 执行全项目`flutter analyze --no-pub .`：No issues found、exit 0。原345项完整回归证据继续有效，
 产品文件SHA256保持上述值，`git diff --check`通过。此次仅补充独立复核，未打包、安装、推送或发布。
 原始工具调用与结果：`build/local-packages/20261019-terminal-motion/opencode-relogin-verification.jsonl`。
+
+### 2026-10-20 发布状态更新
+
+用户随后要求长期自动升版和发布，取代本记录前阶段“不打包不发布”约定。
+本批已作为1.0.14+15正式发布GitHub与Ygg代理分发，包含上述UI改动；原实现由AgY交付，未由主代理改UI。
+构建阶段OpenCode免费MiMo执行可续跑发布脚本，460项相关回归与27项清单回归通过，完整产物及下载验证通过。
+详见[正式发布台账](2026-10-20-v1014-release.md)。本次没有ADB安装或实机手感验收。

@@ -330,7 +330,7 @@ def main():
                 raise RuntimeError('Index already contains changes; preserve and resolve before release')
             for file in args.files:
                 path = (ROOT / file).resolve()
-                if not path.is_relative_to(ROOT) or any(x in path.parts for x in ['.git', 'build']) or path.suffix in ['.p12', '.jks', '.keystore']:
+                if not path.is_file() or not path.is_relative_to(ROOT) or any(x in path.parts for x in ['.git', 'build']) or path.suffix in ['.p12', '.jks', '.keystore']:
                     raise RuntimeError('Unsafe commit path')
             pubspec = ROOT / 'pubspec.yaml'
             text = pubspec.read_text()

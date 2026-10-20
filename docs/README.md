@@ -1,9 +1,11 @@
 # Valhalla - 研发项目全生命周期文档体系
 
-当前未发布改动：[SSH快捷栏交互与局部动效](../agent-workflow/2026-10-19-terminal-accessory-motion.md)已完成代码与345项相关回归，
-静态分析零问题；仍为1.0.13+14，未打包、安装或推送发布，现有安装包不会自动得到这些修改。
+最新交付（2026-10-20）：[1.0.14+15 发布记录](../agent-workflow/2026-10-20-v1014-release.md)。
+[SSH快捷栏局部动效](../agent-workflow/2026-10-19-terminal-accessory-motion.md)已正式打包；Android三架构APK/AAB、Linux x64
+已发布GitHub及分发平台代理，四整包SHA256和八项Range通过。构建门禁460项相关回归、27项清单测试通过，分析零问题。
+后续每批修改完成后自动新增版本发布，入口见[可续跑发布脚本](../tool/RELEASE.md)；不启动Actions，本批未ADB安装。
 
-最新交付（2026-10-19）：[1.0.13+14 发布记录](../agent-workflow/2026-10-19-v1013-release.md)。
+前次交付（2026-10-19）：[1.0.13+14 发布记录](../agent-workflow/2026-10-19-v1013-release.md)。
 正式签名Android三架构APK／AAB及Linux x64已本地构建并公开GitHub；分发平台四包已公开，
 整包SHA256与八项Range 206校验通过，全部经平台代理、不跳转GitHub；历史版本不变。
 本批没有新Windows／Apple包、未安装设备，验收范围和旧包名迁移限制在记录及发布手册中列明。
