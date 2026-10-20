@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show SchedulerPhase;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/storage_providers.dart';
@@ -180,6 +181,277 @@ class _HoldRepeatKeyState extends State<HoldRepeatKey>
   }
 }
 
+/// Lightweight key feedback wrapper providing immediate visual response (~120ms)
+/// without triggering full-bar setState or stealing gestures from horizontal swipes.
+class _AccessoryKeyFeedback extends StatefulWidget {
+  final VoidCallback? onTap;
+  final Widget Function(BuildContext context, bool isPressed) builder;
+
+  const _AccessoryKeyFeedback({this.onTap, required this.builder});
+
+  @override
+  State<_AccessoryKeyFeedback> createState() => _AccessoryKeyFeedbackState();
+}
+
+class _AccessoryKeyFeedbackState extends State<_AccessoryKeyFeedback>
+    with WidgetsBindingObserver {
+  static const double _kSlop = 18.0;
+  int? _activePointerId;
+  int? _cancelledPointerId;
+  Offset? _downPosition;
+  bool _isPressed = false;
+  bool _isPhysicalDown = false;
+  bool _isPhysicalCancelled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!TickerMode.of(context) &&
+        (_isPressed || _activePointerId != null || _isPhysicalDown)) {
+      _cancel();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed &&
+        (_isPressed || _activePointerId != null || _isPhysicalDown)) {
+      _cancel();
+    }
+  }
+
+  void _cancel() {
+    if (_isPhysicalDown) {
+      _isPhysicalCancelled = true;
+      _cancelledPointerId = _activePointerId;
+    }
+    _isPhysicalDown = false;
+    _downPosition = null;
+    _activePointerId = null;
+    if (_isPressed) {
+      if (mounted) {
+        setState(() {
+          _isPressed = false;
+        });
+      } else {
+        _isPressed = false;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _isPressed = false;
+    _activePointerId = null;
+    _cancelledPointerId = null;
+    _downPosition = null;
+    _isPhysicalDown = false;
+    _isPhysicalCancelled = true;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final animDuration = disableAnimations
+        ? Duration.zero
+        : const Duration(milliseconds: 120);
+
+    final isTickerActive = TickerMode.of(context);
+    final effectivePressed = isTickerActive && _isPressed;
+
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (e) {
+        if (!mounted || _activePointerId != null) return;
+        _activePointerId = e.pointer;
+        _downPosition = e.position;
+        _isPhysicalDown = true;
+        _isPhysicalCancelled = false;
+        setState(() => _isPressed = true);
+      },
+      onPointerMove: (e) {
+        if (!mounted) return;
+        if (e.pointer == _activePointerId && _downPosition != null) {
+          if ((e.position - _downPosition!).distance > _kSlop) {
+            _cancel();
+          }
+        }
+      },
+      onPointerUp: (e) {
+        if (!mounted) return;
+        if (e.pointer == _cancelledPointerId) {
+          _cancelledPointerId = null;
+        }
+        if (e.pointer == _activePointerId) {
+          _isPhysicalDown = false;
+          _activePointerId = null;
+          _downPosition = null;
+          if (_isPressed) {
+            setState(() => _isPressed = false);
+          }
+        }
+      },
+      onPointerCancel: (e) {
+        if (!mounted) return;
+        if (e.pointer == _activePointerId || e.pointer == _cancelledPointerId) {
+          _isPhysicalDown = false;
+          _activePointerId = null;
+          _cancelledPointerId = null;
+          _isPhysicalCancelled = false;
+          _downPosition = null;
+          if (_isPressed) {
+            setState(() => _isPressed = false);
+          }
+        }
+      },
+      child: Semantics(
+        button: true,
+        enabled: widget.onTap != null,
+        onTap: widget.onTap,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          excludeFromSemantics: true,
+          onTap: () {
+            if (!mounted) return;
+            if (_isPhysicalCancelled) {
+              _isPhysicalCancelled = false;
+              _cancelledPointerId = null;
+              return;
+            }
+            widget.onTap?.call();
+          },
+          child: RepaintBoundary(
+            child: AnimatedScale(
+              scale: effectivePressed ? 0.95 : 1.0,
+              duration: animDuration,
+              curve: Curves.easeOutCubic,
+              child: widget.builder(context, effectivePressed),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Lightweight self-contained arrow key cell wrapping HoldRepeatKey
+/// without triggering full-bar setState on hold changes.
+class _ArrowKeyCell extends StatefulWidget {
+  final String label;
+  final Key? containerKey;
+  final ColorScheme? scheme;
+  final ThemeData theme;
+  final bool isEdit;
+  final bool Function()? canRepeat;
+  final VoidCallback onPressed;
+
+  const _ArrowKeyCell({
+    required this.label,
+    this.containerKey,
+    required this.scheme,
+    required this.theme,
+    required this.isEdit,
+    required this.canRepeat,
+    required this.onPressed,
+  });
+
+  @override
+  State<_ArrowKeyCell> createState() => _ArrowKeyCellState();
+}
+
+class _ArrowKeyCellState extends State<_ArrowKeyCell> {
+  bool _isHeld = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final animDuration = disableAnimations
+        ? Duration.zero
+        : const Duration(milliseconds: 120);
+
+    final isTickerActive = TickerMode.of(context);
+    final effectiveHeld = isTickerActive && _isHeld;
+
+    Color cellColor;
+    Color arrowTextColor;
+    if (widget.scheme != null) {
+      cellColor = effectiveHeld
+          ? widget.scheme!.primary
+          : widget.scheme!.secondaryContainer;
+      arrowTextColor = effectiveHeld
+          ? widget.scheme!.onPrimary
+          : widget.scheme!.onSecondaryContainer;
+    } else {
+      cellColor = effectiveHeld
+          ? widget.theme.colorScheme.primary
+          : widget.theme.colorScheme.surfaceContainerHigh;
+      arrowTextColor = effectiveHeld
+          ? widget.theme.colorScheme.onPrimary
+          : widget.theme.colorScheme.onSurface;
+    }
+
+    return HoldRepeatKey(
+      onPressed: () {
+        if (!widget.isEdit) {
+          widget.onPressed();
+        }
+      },
+      canRepeat: widget.canRepeat,
+      onHoldChanged: (held) {
+        if (_isHeld != held) {
+          setState(() => _isHeld = held);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: RepaintBoundary(
+          child: AnimatedScale(
+            scale: effectiveHeld ? 0.95 : 1.0,
+            duration: animDuration,
+            curve: Curves.easeOutCubic,
+            child: Container(
+              key: widget.containerKey,
+              decoration: BoxDecoration(
+                color: cellColor,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: effectiveHeld
+                    ? const []
+                    : const [
+                        BoxShadow(
+                          color: Color(0x66000000),
+                          offset: Offset(0, 1),
+                          blurRadius: 0,
+                        ),
+                      ],
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                widget.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: fontSizeForLabel(widget.label),
+                  fontWeight: FontWeight.bold,
+                  color: arrowTextColor,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ModifierKeyButton extends StatefulWidget {
   final String label;
   final ModifierLockState? state;
@@ -190,6 +462,7 @@ class _ModifierKeyButton extends StatefulWidget {
   final void Function(String modifier)? onModifierCancel;
   final bool isHeld;
   final bool isActive;
+  final bool Function()? isOwnerMounted;
   final Widget child;
 
   const _ModifierKeyButton({
@@ -202,6 +475,7 @@ class _ModifierKeyButton extends StatefulWidget {
     this.onModifierCancel,
     this.isHeld = false,
     this.isActive = false,
+    this.isOwnerMounted,
     required this.child,
   });
 
@@ -209,27 +483,133 @@ class _ModifierKeyButton extends StatefulWidget {
   State<_ModifierKeyButton> createState() => _ModifierKeyButtonState();
 }
 
-class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
+class _ModifierKeyButtonState extends State<_ModifierKeyButton>
+    with WidgetsBindingObserver {
   int? _activePointerId;
+  int? _cancelledPointerId;
   Offset? _downPosition;
   bool _isDragSlopExceeded = false;
+  bool _isPhysicalDown = false;
+  bool _isPhysicalCancelled = false;
+  int _cancelGeneration = 0;
   static const double _kTouchSlop = 18.0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!TickerMode.of(context) &&
+        (_activePointerId != null || _isPhysicalDown)) {
+      _cancelModifier();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed &&
+        (_activePointerId != null || _isPhysicalDown)) {
+      _cancelModifier();
+    }
+  }
+
+  void _safeNotifyCancel(String upper) {
+    final generation = ++_cancelGeneration;
+    final onCancel = widget.onModifierCancel;
+    final isOwnerMounted = widget.isOwnerMounted;
+
+    void notify() {
+      final ownerAlive = isOwnerMounted?.call() ?? true;
+      if (ownerAlive && _cancelGeneration == generation) {
+        onCancel?.call(upper);
+      }
+    }
+
+    if (WidgetsBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => notify());
+    } else {
+      scheduleMicrotask(notify);
+    }
+  }
+
+  void _cancelModifier() {
+    final upper = widget.label.toUpperCase();
+    if (_isPhysicalDown) {
+      _isPhysicalCancelled = true;
+      _cancelledPointerId = _activePointerId;
+    }
+    _isPhysicalDown = false;
+    _downPosition = null;
+    if (_activePointerId != null) {
+      if (mounted) {
+        setState(() {
+          _activePointerId = null;
+        });
+      } else {
+        _activePointerId = null;
+      }
+      _safeNotifyCancel(upper);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (_activePointerId != null || _isPhysicalDown) {
+      final upper = widget.label.toUpperCase();
+      _safeNotifyCancel(upper);
+    }
+    _activePointerId = null;
+    _cancelledPointerId = null;
+    _isPhysicalDown = false;
+    _isPhysicalCancelled = true;
+    _downPosition = null;
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final upper = widget.label.toUpperCase();
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final animDuration = disableAnimations
+        ? Duration.zero
+        : const Duration(milliseconds: 120);
+
+    final isTickerActive = TickerMode.of(context);
+    final isDepressed =
+        isTickerActive && (widget.isHeld || _activePointerId != null);
+
+    final content = RepaintBoundary(
+      child: AnimatedScale(
+        scale: isDepressed ? 0.95 : 1.0,
+        duration: animDuration,
+        curve: Curves.easeOutCubic,
+        child: widget.child,
+      ),
+    );
+
     if (widget.onModifierDown != null) {
       return Listener(
         behavior: HitTestBehavior.opaque,
         onPointerDown: (event) {
-          if (_activePointerId != null) return;
-          _activePointerId = event.pointer;
-          _downPosition = event.position;
-          _isDragSlopExceeded = false;
+          if (!mounted || _activePointerId != null) return;
+          _cancelGeneration++;
+          setState(() {
+            _activePointerId = event.pointer;
+            _downPosition = event.position;
+            _isPhysicalDown = true;
+            _isPhysicalCancelled = false;
+            _isDragSlopExceeded = false;
+          });
           widget.onModifierDown!(upper);
         },
         onPointerMove: (event) {
-          if (event.pointer != _activePointerId) return;
+          if (!mounted || event.pointer != _activePointerId) return;
           if (_downPosition != null) {
             final delta = event.position - _downPosition!;
             if (delta.distance > _kTouchSlop) {
@@ -238,10 +618,17 @@ class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
           }
         },
         onPointerUp: (event) {
+          if (!mounted) return;
+          if (event.pointer == _cancelledPointerId) {
+            _cancelledPointerId = null;
+          }
           if (event.pointer != _activePointerId) return;
-          _activePointerId = null;
+          _isPhysicalDown = false;
+          setState(() {
+            _activePointerId = null;
+          });
           if (_isDragSlopExceeded) {
-            widget.onModifierCancel?.call(upper);
+            _safeNotifyCancel(upper);
           } else {
             if (widget.onModifierUp != null) {
               widget.onModifierUp!(upper);
@@ -251,9 +638,19 @@ class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
           }
         },
         onPointerCancel: (event) {
-          if (event.pointer != _activePointerId) return;
-          _activePointerId = null;
-          widget.onModifierCancel?.call(upper);
+          if (!mounted) return;
+          if (event.pointer == _activePointerId ||
+              event.pointer == _cancelledPointerId) {
+            _isPhysicalDown = false;
+            _cancelledPointerId = null;
+            _isPhysicalCancelled = false;
+            if (_activePointerId != null) {
+              setState(() {
+                _activePointerId = null;
+              });
+              _safeNotifyCancel(upper);
+            }
+          }
         },
         child: Material(
           color: Colors.transparent,
@@ -261,15 +658,243 @@ class _ModifierKeyButtonState extends State<_ModifierKeyButton> {
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: () {},
-            child: widget.child,
+            child: content,
           ),
         ),
       );
     }
-    return GestureDetector(
+    return Listener(
       behavior: HitTestBehavior.opaque,
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
+      onPointerDown: (event) {
+        if (!mounted || _activePointerId != null) return;
+        _cancelGeneration++;
+        setState(() {
+          _activePointerId = event.pointer;
+          _downPosition = event.position;
+          _isPhysicalDown = true;
+          _isPhysicalCancelled = false;
+          _isDragSlopExceeded = false;
+        });
+      },
+      onPointerMove: (event) {
+        if (!mounted || event.pointer != _activePointerId) return;
+        if (_downPosition != null) {
+          final delta = event.position - _downPosition!;
+          if (delta.distance > _kTouchSlop) {
+            _cancelModifier();
+          }
+        }
+      },
+      onPointerUp: (event) {
+        if (!mounted) return;
+        if (event.pointer == _cancelledPointerId) {
+          _cancelledPointerId = null;
+        }
+        if (event.pointer == _activePointerId) {
+          _isPhysicalDown = false;
+          setState(() {
+            _activePointerId = null;
+          });
+        }
+      },
+      onPointerCancel: (event) {
+        if (!mounted) return;
+        if (event.pointer == _activePointerId ||
+            event.pointer == _cancelledPointerId) {
+          _isPhysicalDown = false;
+          _cancelledPointerId = null;
+          _isPhysicalCancelled = false;
+          if (_activePointerId != null) {
+            setState(() {
+              _activePointerId = null;
+            });
+          }
+        }
+      },
+      child: Semantics(
+        button: true,
+        enabled: widget.onTap != null,
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          excludeFromSemantics: true,
+          onTap: () {
+            if (!mounted) return;
+            if (_isPhysicalCancelled) {
+              _isPhysicalCancelled = false;
+              _cancelledPointerId = null;
+              return;
+            }
+            widget.onTap?.call();
+          },
+          onLongPress: () {
+            if (!mounted) return;
+            if (_isPhysicalCancelled) {
+              _isPhysicalCancelled = false;
+              _cancelledPointerId = null;
+              return;
+            }
+            widget.onLongPress?.call();
+          },
+          child: content,
+        ),
+      ),
+    );
+  }
+}
+
+/// Self-contained paint-only translation wrapper for drag-and-drop feedback.
+/// Moves with finger instantly without relayout, then settles over 120ms to zero offset.
+class _AccessoryItemTransform extends StatefulWidget {
+  final String itemId;
+  final Widget child;
+  final Offset dragOffset;
+  final bool isDragging;
+  final Offset? settleStartOffset;
+  final int settleGeneration;
+  final VoidCallback? onSettleComplete;
+
+  const _AccessoryItemTransform({
+    super.key,
+    required this.itemId,
+    required this.child,
+    this.dragOffset = Offset.zero,
+    this.isDragging = false,
+    this.settleStartOffset,
+    this.settleGeneration = 0,
+    this.onSettleComplete,
+  });
+
+  @override
+  State<_AccessoryItemTransform> createState() =>
+      _AccessoryItemTransformState();
+}
+
+class _AccessoryItemTransformState extends State<_AccessoryItemTransform>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  late AnimationController _controller;
+  Animatable<Offset>? _settleTween;
+  bool _isSettling = false;
+  int _lastHandledGeneration = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!TickerMode.of(context) ||
+        (MediaQuery.maybeDisableAnimationsOf(context) ?? false)) {
+      if (_isSettling || _controller.isAnimating) {
+        _stopAndReset();
+        widget.onSettleComplete?.call();
+      }
+    } else if (!_isSettling &&
+        widget.settleStartOffset != null &&
+        widget.settleGeneration != _lastHandledGeneration &&
+        !widget.isDragging) {
+      _checkSettle();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed &&
+        (_isSettling || _controller.isAnimating)) {
+      _stopAndReset();
+      widget.onSettleComplete?.call();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _AccessoryItemTransform oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isDragging) {
+      if (_isSettling || _controller.isAnimating) {
+        _stopAndReset();
+      }
+    } else if (widget.settleGeneration != _lastHandledGeneration &&
+        widget.settleStartOffset != null) {
+      _checkSettle();
+    }
+  }
+
+  void _stopAndReset() {
+    if (_controller.isAnimating) {
+      _controller.stop();
+    }
+    _isSettling = false;
+    _settleTween = null;
+  }
+
+  void _safeNotifyComplete(int generation) {
+    if (!mounted || _lastHandledGeneration != generation) return;
+    widget.onSettleComplete?.call();
+  }
+
+  void _checkSettle() {
+    if (widget.settleStartOffset == null ||
+        widget.settleGeneration == _lastHandledGeneration ||
+        widget.isDragging) {
+      return;
+    }
+    _lastHandledGeneration = widget.settleGeneration;
+    final currentGen = widget.settleGeneration;
+
+    final disableAnimations =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final isTickerActive = TickerMode.of(context);
+
+    if (disableAnimations || !isTickerActive) {
+      _stopAndReset();
+      _safeNotifyComplete(currentGen);
+      return;
+    }
+
+    _isSettling = true;
+    _settleTween = Tween<Offset>(
+      begin: widget.settleStartOffset,
+      end: Offset.zero,
+    ).chain(CurveTween(curve: Curves.easeOutCubic));
+
+    _controller.forward(from: 0.0).catchError((_) {}).then((_) {
+      if (mounted && _lastHandledGeneration == currentGen && _isSettling) {
+        _isSettling = false;
+        _settleTween = null;
+        _safeNotifyComplete(currentGen);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _stopAndReset();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        Offset currentOffset = Offset.zero;
+        if (widget.isDragging) {
+          currentOffset = widget.dragOffset;
+        } else if (_isSettling && _settleTween != null) {
+          currentOffset = _settleTween!.evaluate(_controller);
+        }
+        return Transform.translate(offset: currentOffset, child: child);
+      },
       child: widget.child,
     );
   }
@@ -429,6 +1054,8 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   Locale? _cachedLocale;
 
   int _page = 0;
+  int _previousPage = 0;
+  int _pageDirection = 1;
   bool _edit = false;
   final Set<String> _mods = {};
   String? _sel;
@@ -445,17 +1072,12 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   int? _dragTargetC;
   int? _dragTargetR;
   bool _dragTargetValid = false;
+  String? _settlingId;
+  Offset? _settleStartOffset;
+  int _settleGeneration = 0;
 
   // Swipe gesture dx accumulator
   double _swipeDragDx = 0.0;
-
-  // Arrow hold states (keyed by canonical arrow '↑', '↓', '←', '→')
-  final Map<String, bool> _arrowHeld = {
-    '↑': false,
-    '↓': false,
-    '←': false,
-    '→': false,
-  };
 
   // Text editing controllers for Tab 'key' & Tab 'add' (custom)
   final TextEditingController _searchCtrl = TextEditingController();
@@ -631,6 +1253,8 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     setState(() {
       _edit = true;
       _isExpanded = false;
+      _settlingId = null;
+      _settleStartOffset = null;
       _draftLayout = _masterLayout.project(columns);
       _originalLayout = _draftLayout.copy();
       _undoStack.clear();
@@ -688,6 +1312,8 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
       _isSaving = false;
       _edit = false;
       _sel = null;
+      _settlingId = null;
+      _settleStartOffset = null;
       FocusScope.of(context).unfocus();
       if (_masterLayout.rows != oldRows) {
         widget.onHeightChanged?.call(
@@ -732,6 +1358,8 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     setState(() {
       _edit = false;
       _sel = null;
+      _settlingId = null;
+      _settleStartOffset = null;
       _undoStack.clear();
       _isDirty = false;
       _draftLayout = _masterLayout.copy();
@@ -1106,6 +1734,28 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final barBgColor = theme.colorScheme.surfaceContainer;
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final panelDuration = disableAnimations
+        ? Duration.zero
+        : const Duration(milliseconds: 180);
+
+    Widget panelChild;
+    if (_edit) {
+      panelChild = KeyedSubtree(
+        key: const ValueKey<String>('panel_edit'),
+        child: FocusScope(child: _buildEditSheet(context)),
+      );
+    } else if (_isExpanded) {
+      panelChild = KeyedSubtree(
+        key: const ValueKey<String>('panel_more'),
+        child: ExcludeFocus(
+          excluding: true,
+          child: _buildExpandedPanel(context),
+        ),
+      );
+    } else {
+      panelChild = const SizedBox.shrink(key: ValueKey<String>('panel_none'));
+    }
 
     return PopScope(
       canPop: !_edit && !_isSaving,
@@ -1123,12 +1773,43 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (_hasCorruptedStorage) _buildCorruptedWarning(context),
-              if (_edit) FocusScope(child: _buildEditSheet(context)),
-              if (_isExpanded && !_edit)
-                ExcludeFocus(
-                  excluding: true,
-                  child: _buildExpandedPanel(context),
-                ),
+              AnimatedSwitcher(
+                duration: panelDuration,
+                reverseDuration: panelDuration,
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeOutCubic,
+                layoutBuilder: (currentChild, previousChildren) {
+                  return Stack(
+                    alignment: Alignment.bottomCenter,
+                    clipBehavior: Clip.none,
+                    children: [
+                      ...previousChildren.map(
+                        (child) => IgnorePointer(
+                          ignoring: true,
+                          child: ExcludeFocus(
+                            excluding: true,
+                            child: TickerMode(enabled: false, child: child),
+                          ),
+                        ),
+                      ),
+                      ?currentChild,
+                    ],
+                  );
+                },
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.0, 0.08),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: panelChild,
+              ),
               ExcludeFocus(excluding: true, child: _buildBar(context)),
             ],
           ),
@@ -1187,6 +1868,10 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     final theme = Theme.of(context);
     final barBgColor = theme.colorScheme.surfaceContainer;
     final borderColor = theme.colorScheme.outlineVariant;
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final pageAnimDuration = disableAnimations
+        ? Duration.zero
+        : const Duration(milliseconds: 160);
 
     return Container(
       decoration: BoxDecoration(color: barBgColor),
@@ -1211,6 +1896,10 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
           if (_page >= pages) {
             _page = math.max(0, pages - 1);
           }
+          if (_page != _previousPage) {
+            _pageDirection = _page > _previousPage ? 1 : -1;
+            _previousPage = _page;
+          }
           final cw = math.max(44.0, boardWidth / columns);
           final totalBoardWidth = cw * columns;
           final boardHeight = currentLayout.rows * kAccessoryCellHeight;
@@ -1228,11 +1917,75 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                     _draggingId != null)
                   ..._buildDropIndicator(currentLayout, cw),
 
-                ...currentLayout.items
-                    .where((o) => isItemVisible(o, _page))
-                    .map(
-                      (o) => _buildItemWidget(o, cw, currentLayout, columns),
+                if (_edit)
+                  ...currentLayout.items
+                      .where((o) => isItemVisible(o, _page))
+                      .map(
+                        (o) => _buildItemWidget(o, cw, currentLayout, columns),
+                      )
+                else
+                  ClipRect(
+                    child: AnimatedSwitcher(
+                      duration: pageAnimDuration,
+                      reverseDuration: pageAnimDuration,
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeOutCubic,
+                      layoutBuilder: (currentChild, previousChildren) {
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            ...previousChildren.map(
+                              (child) => IgnorePointer(
+                                ignoring: true,
+                                child: ExcludeFocus(
+                                  excluding: true,
+                                  child: TickerMode(
+                                    enabled: false,
+                                    child: child,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            ?currentChild,
+                          ],
+                        );
+                      },
+                      transitionBuilder: (child, animation) {
+                        final isIncoming =
+                            (child.key as ValueKey<int>?)?.value == _page;
+                        return SlideTransition(
+                          position: Tween<Offset>(
+                            begin: isIncoming
+                                ? Offset(0.2 * _pageDirection, 0.0)
+                                : Offset(-0.2 * _pageDirection, 0.0),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        );
+                      },
+                      child: KeyedSubtree(
+                        key: ValueKey<int>(_page),
+                        child: SizedBox(
+                          width: totalBoardWidth,
+                          height: boardHeight,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: currentLayout.items
+                                .where((o) => isItemVisible(o, _page))
+                                .map(
+                                  (o) => _buildItemWidget(
+                                    o,
+                                    cw,
+                                    currentLayout,
+                                    columns,
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ),
+                      ),
                     ),
+                  ),
 
                 _buildSystemKey(
                   AccessoryItem(id: 'more', t: 'more', l: '...'),
@@ -1246,6 +1999,48 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                   currentLayout,
                   columns,
                 ),
+
+                if (!_edit && pages > 1)
+                  Positioned(
+                    bottom: -5,
+                    left: 0,
+                    right: 0,
+                    child: IgnorePointer(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 120),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(math.min(pages, 7), (
+                              index,
+                            ) {
+                              final displayDots = math.min(pages, 7);
+                              final activeIndex = pages <= 7
+                                  ? _page
+                                  : ((_page / (pages - 1)) * (displayDots - 1))
+                                        .round();
+                              final isActive = index == activeIndex;
+                              return Container(
+                                width: isActive ? 8 : 3,
+                                height: 2,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 1.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isActive
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outlineVariant
+                                            .withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(1),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           );
@@ -1313,11 +2108,17 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     TerminalAccessoryLayout currentLayout,
     double cw,
   ) {
+    final theme = Theme.of(context);
     final o = currentLayout.items.firstWhere(
       (i) => i.id == _draggingId,
       orElse: () => AccessoryItem(id: '', l: ''),
     );
     if (o.id.isEmpty) return [];
+
+    final validBg = theme.colorScheme.primary.withValues(alpha: 0.2);
+    final validBorder = theme.colorScheme.primary;
+    final invalidBg = theme.colorScheme.error.withValues(alpha: 0.2);
+    final invalidBorder = theme.colorScheme.error;
 
     return [
       Positioned(
@@ -1328,14 +2129,10 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         child: Container(
           margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: _dragTargetValid
-                ? const Color(0x334C8DFF)
-                : const Color(0x33FF4D4F),
+            color: _dragTargetValid ? validBg : invalidBg,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: _dragTargetValid
-                  ? const Color(0xFF4C8DFF)
-                  : const Color(0xFFFF4D4F),
+              color: _dragTargetValid ? validBorder : invalidBorder,
               width: 1.5,
             ),
           ),
@@ -1362,94 +2159,6 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     final activeBg = theme.colorScheme.primary;
     final activeFg = theme.colorScheme.onPrimary;
 
-    Widget child;
-    if (isIme) {
-      child = Tooltip(
-        message: context.l10n.terminalToggleKeyboard,
-        child: Semantics(
-          button: true,
-          label: context.l10n.terminalToggleKeyboard,
-          child: Padding(
-            padding: const EdgeInsets.all(2),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isKeyboardActive ? activeBg : normalBg,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x66000000),
-                    offset: Offset(0, 1),
-                    blurRadius: 0,
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '⌨',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: isKeyboardActive ? activeFg : normalFg,
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    } else {
-      child = Tooltip(
-        message: context.l10n.navMore,
-        child: Semantics(
-          button: true,
-          label:
-              '${context.l10n.navMore}, ${context.l10n.terminalGridCurrentPage} ${_page + 1}/${currentLayout.pages}',
-          child: Padding(
-            padding: const EdgeInsets.all(2),
-            child: Container(
-              decoration: BoxDecoration(
-                color: _isExpanded ? activeBg : normalBg,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x66000000),
-                    offset: Offset(0, 1),
-                    blurRadius: 0,
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: currentLayout.pages > 1
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.more_horiz,
-                          size: 14,
-                          color: _isExpanded ? activeFg : normalFg,
-                        ),
-                        Text(
-                          '${_page + 1}/${currentLayout.pages}',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: _isExpanded
-                                ? activeFg
-                                : const Color(0xFF8FB4FF),
-                            height: 1.0,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Icon(
-                      Icons.more_horiz,
-                      size: 18,
-                      color: _isExpanded ? activeFg : normalFg,
-                    ),
-            ),
-          ),
-        ),
-      );
-    }
-
     return Positioned(
       key: isIme
           ? const Key('terminal_accessory_keyboard_button')
@@ -1458,8 +2167,7 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
       top: top,
       width: cw,
       height: kAccessoryCellHeight,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: _AccessoryKeyFeedback(
         onTap: () {
           if (_edit) return;
           if (isIme) {
@@ -1468,7 +2176,99 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
             setState(() => _isExpanded = !_isExpanded);
           }
         },
-        child: child,
+        builder: (context, isPressed) {
+          final isHighlighted = isIme ? isKeyboardActive : _isExpanded;
+          final baseBg = isHighlighted ? activeBg : normalBg;
+          final effectiveBg = isPressed
+              ? Color.lerp(baseBg, theme.colorScheme.primary, 0.35)!
+              : baseBg;
+          final fg = isHighlighted ? activeFg : normalFg;
+          final animDuration =
+              MediaQuery.maybeDisableAnimationsOf(context) ?? false
+              ? Duration.zero
+              : const Duration(milliseconds: 120);
+
+          if (isIme) {
+            return Tooltip(
+              message: context.l10n.terminalToggleKeyboard,
+              child: Semantics(
+                button: true,
+                label: context.l10n.terminalToggleKeyboard,
+                child: Padding(
+                  padding: const EdgeInsets.all(2),
+                  child: AnimatedContainer(
+                    duration: animDuration,
+                    curve: Curves.easeOutCubic,
+                    decoration: BoxDecoration(
+                      color: effectiveBg,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: isPressed
+                          ? const []
+                          : const [
+                              BoxShadow(
+                                color: Color(0x66000000),
+                                offset: Offset(0, 1),
+                                blurRadius: 0,
+                              ),
+                            ],
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('⌨', style: TextStyle(fontSize: 16, color: fg)),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return Tooltip(
+            message: context.l10n.navMore,
+            child: Semantics(
+              button: true,
+              label:
+                  '${context.l10n.navMore}, ${context.l10n.terminalGridCurrentPage} ${_page + 1}/${currentLayout.pages}',
+              child: Padding(
+                padding: const EdgeInsets.all(2),
+                child: AnimatedContainer(
+                  duration: animDuration,
+                  curve: Curves.easeOutCubic,
+                  decoration: BoxDecoration(
+                    color: effectiveBg,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: isPressed
+                        ? const []
+                        : const [
+                            BoxShadow(
+                              color: Color(0x66000000),
+                              offset: Offset(0, 1),
+                              blurRadius: 0,
+                            ),
+                          ],
+                  ),
+                  alignment: Alignment.center,
+                  child: currentLayout.pages > 1
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.more_horiz, size: 14, color: fg),
+                            Text(
+                              '${_page + 1}/${currentLayout.pages}',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: isHighlighted
+                                    ? activeFg
+                                    : const Color(0xFF8FB4FF),
+                                height: 1.0,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Icon(Icons.more_horiz, size: 18, color: fg),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -1488,10 +2288,6 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
 
     double left = o.c * cw;
     double top = o.r * kAccessoryCellHeight;
-    if (isDragging && _dragOffset != null) {
-      left += _dragOffset!.dx;
-      top += _dragOffset!.dy;
-    }
 
     final width = o.w * cw;
     final height = o.h * kAccessoryCellHeight;
@@ -1505,9 +2301,29 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         height: height,
         child: KeyedSubtree(
           key: const Key('terminal_accessory_key_ARROWS'),
-          child: Opacity(
-            opacity: isDragging ? 0.85 : 1.0,
-            child: _buildArrowGroup(o, cw, isSelected, currentLayout, columns),
+          child: _AccessoryItemTransform(
+            key: ValueKey('trans_${o.id}'),
+            itemId: o.id,
+            dragOffset: isDragging ? (_dragOffset ?? Offset.zero) : Offset.zero,
+            isDragging: isDragging,
+            settleStartOffset: _settlingId == o.id ? _settleStartOffset : null,
+            settleGeneration: _settlingId == o.id ? _settleGeneration : 0,
+            onSettleComplete: () {
+              if (_settlingId == o.id) {
+                _settlingId = null;
+                _settleStartOffset = null;
+              }
+            },
+            child: Opacity(
+              opacity: isDragging ? 0.85 : 1.0,
+              child: _buildArrowGroup(
+                o,
+                cw,
+                isSelected,
+                currentLayout,
+                columns,
+              ),
+            ),
           ),
         ),
       );
@@ -1552,27 +2368,51 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
 
     Color buttonColor;
     Color textColor;
+    Border? modBorder;
+    bool showLock = false;
+    bool showOneShotDot = false;
+
     if (isUnsupported) {
       buttonColor = isDark
           ? const Color(0xFF22262E)
           : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
       textColor = isDark ? const Color(0xFF666E7F) : theme.colorScheme.outline;
+    } else if (isModifier) {
+      if (isLocked) {
+        buttonColor = theme.colorScheme.primary;
+        textColor = theme.colorScheme.onPrimary;
+        modBorder = Border.all(
+          color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
+          width: 1.5,
+        );
+        showLock = true;
+      } else if (isHeld) {
+        buttonColor = theme.colorScheme.primary;
+        textColor = theme.colorScheme.onPrimary;
+      } else if (isOneShot) {
+        buttonColor = theme.colorScheme.primaryContainer;
+        textColor = theme.colorScheme.onPrimaryContainer;
+        modBorder = Border.all(color: theme.colorScheme.primary, width: 1.5);
+        showOneShotDot = true;
+      } else {
+        buttonColor = isAct
+            ? theme.colorScheme.primary
+            : theme.colorScheme.surfaceContainerHigh;
+        textColor = isAct
+            ? theme.colorScheme.onPrimary
+            : theme.colorScheme.onSurface;
+      }
     } else if (isArrowSingle) {
-      final isPressed = _arrowHeld[o.action.key] ?? false;
       if (currentLayout.directionSeedColor != null) {
         final scheme = ColorScheme.fromSeed(
           seedColor: Color(currentLayout.directionSeedColor!),
           brightness: theme.brightness,
         );
-        buttonColor = isPressed ? scheme.primary : scheme.secondaryContainer;
-        textColor = isPressed ? scheme.onPrimary : scheme.onSecondaryContainer;
+        buttonColor = scheme.secondaryContainer;
+        textColor = scheme.onSecondaryContainer;
       } else {
-        buttonColor = isPressed
-            ? theme.colorScheme.primary
-            : theme.colorScheme.surfaceContainerHigh;
-        textColor = isPressed
-            ? theme.colorScheme.onPrimary
-            : theme.colorScheme.onSurface;
+        buttonColor = theme.colorScheme.surfaceContainerHigh;
+        textColor = theme.colorScheme.onSurface;
       }
     } else {
       buttonColor = isAct
@@ -1583,19 +2423,27 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
           : theme.colorScheme.onSurface;
     }
 
+    final animDuration = MediaQuery.maybeDisableAnimationsOf(context) ?? false
+        ? Duration.zero
+        : const Duration(milliseconds: 120);
+
     final keyContainer = Padding(
       padding: const EdgeInsets.all(2),
-      child: Container(
+      child: AnimatedContainer(
+        duration: animDuration,
+        curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           color: buttonColor,
           borderRadius: BorderRadius.circular(8),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x66000000),
-              offset: Offset(0, 1),
-              blurRadius: 0,
-            ),
-          ],
+          boxShadow: isHeld
+              ? const []
+              : const [
+                  BoxShadow(
+                    color: Color(0x66000000),
+                    offset: Offset(0, 1),
+                    blurRadius: 0,
+                  ),
+                ],
           border: _edit
               ? (isSelected
                     ? Border.all(color: theme.colorScheme.primary, width: 2)
@@ -1604,7 +2452,7 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                         style: BorderStyle.solid,
                         width: 1,
                       ))
-              : null,
+              : (isModifier ? modBorder : null),
         ),
         alignment: Alignment.center,
         child: isPaste
@@ -1630,11 +2478,24 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (isLocked)
+                  if (showLock)
                     Positioned(
                       top: 2,
                       right: 2,
                       child: Icon(Icons.lock, size: 9, color: textColor),
+                    )
+                  else if (showOneShotDot)
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: textColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -1663,6 +2524,8 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
             _dragTargetC = o.c;
             _dragTargetR = o.r;
             _dragTargetValid = true;
+            _settlingId = null;
+            _settleStartOffset = null;
           });
         },
         onPanUpdate: (d) {
@@ -1736,6 +2599,11 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
               _dragTargetR != null) {
             final targetC = _dragTargetC!;
             final targetR = _dragTargetR!;
+            final oldC = o.c;
+            final oldR = o.r;
+            final oldLeft = oldC * cw;
+            final oldTop = oldR * kAccessoryCellHeight;
+            final dragOffsetSnapshot = _dragOffset!;
 
             if (!checkCollision(
               currentLayout.items,
@@ -1777,37 +2645,66 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                   )) {
                 _mutateDraft(() {
                   o.p = _page;
-                  final oldC = o.c, oldR = o.r;
+                  final prevC = o.c, prevR = o.r;
                   o.c = p.c;
                   o.r = p.r;
-                  p.c = oldC;
-                  p.r = oldR;
+                  p.c = prevC;
+                  p.r = prevR;
                 });
               } else {
                 _page = o.p;
               }
             }
+
+            final newLeft = o.c * cw;
+            final newTop = o.r * kAccessoryCellHeight;
+            final startOffset = Offset(
+              oldLeft + dragOffsetSnapshot.dx - newLeft,
+              oldTop + dragOffsetSnapshot.dy - newTop,
+            );
+
+            setState(() {
+              _draggingId = null;
+              _dragOffset = null;
+              _isDragMoving = false;
+              _dragTargetC = null;
+              _dragTargetR = null;
+              _settlingId = o.id;
+              _settleStartOffset = startOffset;
+              _settleGeneration++;
+            });
           } else {
             _page = o.p;
+            setState(() {
+              _draggingId = null;
+              _dragOffset = null;
+              _isDragMoving = false;
+              _dragTargetC = null;
+              _dragTargetR = null;
+            });
           }
-          setState(() {
-            _draggingId = null;
-            _dragOffset = null;
-            _isDragMoving = false;
-            _dragTargetC = null;
-            _dragTargetR = null;
-          });
         },
         child: keyContainer,
       );
     } else if (isArrowSingle) {
-      itemInteractive = HoldRepeatKey(
-        onPressed: () => _press(o),
-        canRepeat: _canRepeat,
-        onHoldChanged: (held) {
-          setState(() => _arrowHeld[o.action.key] = held);
+      final scheme = currentLayout.directionSeedColor != null
+          ? ColorScheme.fromSeed(
+              seedColor: Color(currentLayout.directionSeedColor!),
+              brightness: theme.brightness,
+            )
+          : null;
+      final itemPage = o.p;
+      itemInteractive = _ArrowKeyCell(
+        label: displayLabel,
+        scheme: scheme,
+        theme: theme,
+        isEdit: _edit,
+        canRepeat: () => !_edit && _page == itemPage && _canRepeat(),
+        onPressed: () {
+          if (!_edit && _page == itemPage) {
+            _press(o);
+          }
         },
-        child: keyContainer,
       );
     } else if (isModifier) {
       itemInteractive = _ModifierKeyButton(
@@ -1832,13 +2729,63 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         onModifierCancel: widget.onModifierCancel,
         isHeld: isHeld,
         isActive: isAct,
+        isOwnerMounted: () => mounted,
         child: keyContainer,
       );
     } else {
-      itemInteractive = GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      itemInteractive = _AccessoryKeyFeedback(
         onTap: () => _press(o),
-        child: keyContainer,
+        builder: (context, isPressed) {
+          final effectiveBg = isPressed
+              ? Color.lerp(buttonColor, theme.colorScheme.primary, 0.25)!
+              : buttonColor;
+          return Padding(
+            padding: const EdgeInsets.all(2),
+            child: AnimatedContainer(
+              duration: animDuration,
+              curve: Curves.easeOutCubic,
+              decoration: BoxDecoration(
+                color: effectiveBg,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: isPressed
+                    ? const []
+                    : const [
+                        BoxShadow(
+                          color: Color(0x66000000),
+                          offset: Offset(0, 1),
+                          blurRadius: 0,
+                        ),
+                      ],
+              ),
+              alignment: Alignment.center,
+              child: isPaste
+                  ? Icon(Icons.content_paste, size: 16, color: textColor)
+                  : Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        Directionality(
+                          textDirection: TextDirection.ltr,
+                          child: Text(
+                            displayLabel,
+                            style: TextStyle(
+                              fontFamily: 'JetBrains Mono',
+                              fontSize: fontSizeForLabel(displayLabel),
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                              decoration: isUnsupported
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          );
+        },
       );
     }
 
@@ -1864,9 +2811,23 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
       height: height,
       child: KeyedSubtree(
         key: Key('terminal_accessory_key_$keyName'),
-        child: Opacity(
-          opacity: isDragging ? 0.85 : 1.0,
-          child: itemInteractive,
+        child: _AccessoryItemTransform(
+          key: ValueKey('trans_${o.id}'),
+          itemId: o.id,
+          dragOffset: isDragging ? (_dragOffset ?? Offset.zero) : Offset.zero,
+          isDragging: isDragging,
+          settleStartOffset: _settlingId == o.id ? _settleStartOffset : null,
+          settleGeneration: _settlingId == o.id ? _settleGeneration : 0,
+          onSettleComplete: () {
+            if (_settlingId == o.id) {
+              _settlingId = null;
+              _settleStartOffset = null;
+            }
+          },
+          child: Opacity(
+            opacity: isDragging ? 0.85 : 1.0,
+            child: itemInteractive,
+          ),
         ),
       ),
     );
@@ -1909,6 +2870,8 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                 _dragTargetC = o.c;
                 _dragTargetR = o.r;
                 _dragTargetValid = true;
+                _settlingId = null;
+                _settleStartOffset = null;
               });
             },
       onPanUpdate: !_edit
@@ -1948,6 +2911,9 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                   _dragTargetR != null) {
                 final targetC = _dragTargetC!;
                 final targetR = _dragTargetR!;
+                final oldLeft = o.c * cw;
+                final oldTop = o.r * kAccessoryCellHeight;
+                final dragOffsetSnapshot = _dragOffset!;
 
                 if (!checkCollision(
                   currentLayout.items,
@@ -1965,14 +2931,33 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                     o.r = targetR;
                   });
                 }
+
+                final newLeft = o.c * cw;
+                final newTop = o.r * kAccessoryCellHeight;
+                final startOffset = Offset(
+                  oldLeft + dragOffsetSnapshot.dx - newLeft,
+                  oldTop + dragOffsetSnapshot.dy - newTop,
+                );
+
+                setState(() {
+                  _draggingId = null;
+                  _dragOffset = null;
+                  _isDragMoving = false;
+                  _dragTargetC = null;
+                  _dragTargetR = null;
+                  _settlingId = o.id;
+                  _settleStartOffset = startOffset;
+                  _settleGeneration++;
+                });
+              } else {
+                setState(() {
+                  _draggingId = null;
+                  _dragOffset = null;
+                  _isDragMoving = false;
+                  _dragTargetC = null;
+                  _dragTargetR = null;
+                });
               }
-              setState(() {
-                _draggingId = null;
-                _dragOffset = null;
-                _isDragMoving = false;
-                _dragTargetC = null;
-                _dragTargetR = null;
-              });
             },
       child: Container(
         key: const Key('terminal_direction_pad'),
@@ -1994,32 +2979,21 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
               final label = arr[0] as String;
               final x = arr[1] as int;
               final y = arr[2] as int;
-              final isHeld = _arrowHeld[label] ?? false;
-
-              Color cellColor;
-              Color arrowTextColor;
-              if (scheme != null) {
-                cellColor = isHeld ? scheme.primary : scheme.secondaryContainer;
-                arrowTextColor = isHeld
-                    ? scheme.onPrimary
-                    : scheme.onSecondaryContainer;
-              } else {
-                cellColor = isHeld
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.surfaceContainerHigh;
-                arrowTextColor = isHeld
-                    ? theme.colorScheme.onPrimary
-                    : theme.colorScheme.onSurface;
-              }
 
               return Positioned(
                 left: x * cw,
                 top: y * kAccessoryCellHeight,
                 width: cw,
                 height: kAccessoryCellHeight,
-                child: HoldRepeatKey(
+                child: _ArrowKeyCell(
+                  label: label,
+                  containerKey: Key('terminal_accessory_key_$label'),
+                  scheme: scheme,
+                  theme: theme,
+                  isEdit: _edit,
+                  canRepeat: () => !_edit && _page == o.p && _canRepeat(),
                   onPressed: () {
-                    if (!_edit) {
+                    if (!_edit && _page == o.p) {
                       _press(
                         AccessoryItem(
                           id: 'temp',
@@ -2033,37 +3007,6 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                       );
                     }
                   },
-                  canRepeat: _canRepeat,
-                  onHoldChanged: (held) {
-                    setState(() => _arrowHeld[label] = held);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(2),
-                    child: Container(
-                      key: Key('terminal_accessory_key_$label'),
-                      decoration: BoxDecoration(
-                        color: cellColor,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x66000000),
-                            offset: Offset(0, 1),
-                            blurRadius: 0,
-                          ),
-                        ],
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        label,
-                        style: TextStyle(
-                          fontFamily: 'JetBrains Mono',
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: arrowTextColor,
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               );
             }).toList(),
@@ -2215,38 +3158,41 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                 final isSelected = _expandedCategory == key;
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
+                  child: _AccessoryKeyFeedback(
                     onTap: () => setState(() => _expandedCategory = key),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? scheme.primary.withValues(alpha: 0.15)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected
-                              ? scheme.primary
-                              : scheme.outlineVariant,
+                    builder: (context, isPressed) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
                         ),
-                      ),
-                      child: Text(
-                        localizedLabel,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                        decoration: BoxDecoration(
                           color: isSelected
-                              ? scheme.primary
-                              : scheme.onSurfaceVariant,
+                              ? scheme.primary.withValues(alpha: 0.15)
+                              : (isPressed
+                                    ? scheme.surfaceContainerHighest
+                                    : Colors.transparent),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? scheme.primary
+                                : scheme.outlineVariant,
+                          ),
                         ),
-                      ),
-                    ),
+                        child: Text(
+                          localizedLabel,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? scheme.primary
+                                : scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 );
               }).toList(),
@@ -2309,27 +3255,52 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     final scheme = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.only(right: 6, bottom: 2),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: _AccessoryKeyFeedback(
         onTap: onTap,
-        child: Container(
-          key: Key('terminal_accessory_key_$label'),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: scheme.outlineVariant),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontFamily: 'JetBrains Mono',
-              fontWeight: FontWeight.bold,
-              color: scheme.onSurface,
+        builder: (context, isPressed) {
+          final bgColor = isPressed
+              ? Color.lerp(
+                  scheme.surfaceContainerHighest,
+                  scheme.primary,
+                  0.25,
+                )!
+              : scheme.surfaceContainerHighest;
+          final animDuration =
+              MediaQuery.maybeDisableAnimationsOf(context) ?? false
+              ? Duration.zero
+              : const Duration(milliseconds: 120);
+          return AnimatedContainer(
+            key: Key('terminal_accessory_key_$label'),
+            duration: animDuration,
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: isPressed ? scheme.primary : scheme.outlineVariant,
+              ),
+              boxShadow: isPressed
+                  ? const []
+                  : const [
+                      BoxShadow(
+                        color: Color(0x33000000),
+                        offset: Offset(0, 1),
+                        blurRadius: 0,
+                      ),
+                    ],
             ),
-          ),
-        ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'JetBrains Mono',
+                fontWeight: FontWeight.bold,
+                color: isPressed ? scheme.primary : scheme.onSurface,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -2343,6 +3314,32 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
     final isOneShot = state == ModifierLockState.oneShot;
     final isHeld = upper == 'FN' ? widget.isFnHeld : false;
     final isAct = isLocked || isOneShot || isHeld || _mods.contains(modifier);
+
+    Color buttonColor;
+    Color textColor;
+    Border? border;
+    if (isLocked) {
+      buttonColor = scheme.primary;
+      textColor = scheme.onPrimary;
+      border = Border.all(
+        color: scheme.onPrimary.withValues(alpha: 0.7),
+        width: 1.5,
+      );
+    } else if (isHeld) {
+      buttonColor = scheme.primary;
+      textColor = scheme.onPrimary;
+      border = Border.all(color: scheme.primary);
+    } else if (isOneShot) {
+      buttonColor = scheme.primaryContainer;
+      textColor = scheme.onPrimaryContainer;
+      border = Border.all(color: scheme.primary, width: 1.5);
+    } else {
+      buttonColor = isAct ? scheme.primary : scheme.surfaceContainerHighest;
+      textColor = isAct ? scheme.onPrimary : scheme.onSurface;
+      border = Border.all(
+        color: isAct ? scheme.primary : scheme.outlineVariant,
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.only(right: 6, bottom: 2),
@@ -2358,15 +3355,27 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
         onModifierCancel: widget.onModifierCancel,
         isHeld: isHeld,
         isActive: isAct,
-        child: Container(
+        isOwnerMounted: () => mounted,
+        child: AnimatedContainer(
           key: Key('terminal_accessory_key_$upper'),
+          duration: MediaQuery.maybeDisableAnimationsOf(context) ?? false
+              ? Duration.zero
+              : const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: isAct ? scheme.primary : scheme.surfaceContainerHighest,
+            color: buttonColor,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: isAct ? scheme.primary : scheme.outlineVariant,
-            ),
+            border: border,
+            boxShadow: isHeld
+                ? const []
+                : const [
+                    BoxShadow(
+                      color: Color(0x33000000),
+                      offset: Offset(0, 1),
+                      blurRadius: 0,
+                    ),
+                  ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -2377,15 +3386,21 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                   fontSize: 12,
                   fontFamily: 'JetBrains Mono',
                   fontWeight: FontWeight.bold,
-                  color: isAct ? scheme.onPrimary : scheme.onSurface,
+                  color: textColor,
                 ),
               ),
               if (isLocked) ...[
                 const SizedBox(width: 3),
-                Icon(
-                  Icons.lock,
-                  size: 10,
-                  color: isAct ? scheme.onPrimary : scheme.onSurface,
+                Icon(Icons.lock, size: 10, color: textColor),
+              ] else if (isOneShot) ...[
+                const SizedBox(width: 3),
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: textColor,
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ],
             ],
