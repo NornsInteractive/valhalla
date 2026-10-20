@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from release import Release, next_version, normalize
+from release import Release, next_version, normalize, virtual_placeholder
 
 
 class ReleaseTests(unittest.TestCase):
@@ -33,6 +33,12 @@ class ReleaseTests(unittest.TestCase):
         release.state = {'source': 'same', 'built': True}
         with patch('release.subprocess.check_output', side_effect=['same\n', ' M tool/release.py']), self.assertRaises(RuntimeError):
             release.validate_source()
+
+    def test_virtual_fallback_is_not_a_registered_package(self):
+        empty = {'id': 'pkg_def_ver_new', 'version_id': 'ver_new', 'file_size': 0}
+        self.assertTrue(virtual_placeholder(empty))
+        self.assertFalse(virtual_placeholder({**empty, 'id': 'pkg_real'}))
+        self.assertFalse(virtual_placeholder({**empty, 'file_sha256': 'not-empty'}))
 
 
 if __name__ == '__main__':

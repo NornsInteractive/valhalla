@@ -37,6 +37,11 @@ def normalize(value):
     return value
 
 
+def virtual_placeholder(package):
+    return (package['id'] == 'pkg_def_' + package['version_id']
+            and not any(package.get(k) for k in ['file_key', 'external_url', 'file_sha256', 'file_size', 'download_count']))
+
+
 class Release:
     def __init__(self, work):
         self.work = work
@@ -236,7 +241,7 @@ class Release:
             expected = dict(platform=artifact['platform'], arch=arch, file_name=artifact['name'],
                 file_size=artifact['size'], file_sha256=artifact['sha256'], use_proxy=True,
                 external_url=f'https://github.com/{REPOSITORY}/releases/download/{self.tag}/{artifact["name"]}')
-            matches = [p for p in version['packages'] if p['platform'] == expected['platform'] and p['arch'] == arch]
+            matches = [p for p in version['packages'] if p['platform'] == expected['platform'] and p['arch'] == arch and not virtual_placeholder(p)]
             for package in matches:
                 if all(package.get(k) == v for k, v in expected.items()):
                     continue
@@ -247,13 +252,15 @@ class Release:
                     self.mcp('ygg_delete_version_package', {'package_id': package['id']})
                 else:
                     raise RuntimeError('Existing distribution package mismatch; no deletion permitted')
-            remaining = [p for p in self.versions()[0]['packages'] if p['platform'] == expected['platform'] and p['arch'] == arch]
+            remaining = [p for p in self.versions()[0]['packages'] if p['platform'] == expected['platform'] and p['arch'] == arch and not virtual_placeholder(p)]
             if not remaining:
                 self.mcp('ygg_add_version_package', dict(version_id=version['id'], **expected))
         version = self.versions()[0]
         if len(version['packages']) != 4:
             raise RuntimeError('Expected exactly four distribution packages')
-        self.mcp('ygg_update_version', dict(version_id=version['id'], channel='default', is_published=True, use_proxy=True))
+        arm = next(p for p in version['packages'] if p['platform'] == 'android' and p['arch'] == 'arm64-v8a')
+        self.mcp('ygg_update_version', dict(version_id=version['id'], channel='default', is_published=True, use_proxy=True,
+            external_url=arm['external_url'], file_name=arm['file_name']))
         self.state['ygg'] = True
         self.save()
 
