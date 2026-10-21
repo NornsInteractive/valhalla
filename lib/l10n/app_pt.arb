@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "Tecla a enviar",
   "terminalGridActionModifiers": "Modificadores",
   "terminalGridActionText": "Texto a enviar",
-  "terminalSearchNoMatch": "Nenhuma tecla correspondente"
+  "terminalSearchNoMatch": "Nenhuma tecla correspondente",
+  "terminalStatusEndedUnrecoverable": "Encerrada · Não recuperável",
+  "terminalStatusUnavailable": "Fonte não disponível",
+  "terminalGroupUnconfirmed": "Não confirmado",
+  "terminalGroupUnavailable": "Fonte não disponível",
+  "terminalExternalBadge": "Externo",
+  "terminalAttachedClients": "Clientes: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "Ocultar do histórico",
+  "terminalUnhideSession": "Reexibir",
+  "terminalHiddenSessionsTitle": "Sessões ocultas",
+  "terminalNoHiddenSessions": "Nenhuma sessão oculta",
+  "terminalSocketSources": "Fontes de socket",
+  "terminalSourceBuiltin": "Integrado",
+  "terminalSourceCustom": "Personalizado",
+  "terminalAddSocketSource": "Adicionar fonte de socket",
+  "terminalSocketKindNamed": "Socket nomeado (-L)",
+  "terminalSocketKindPath": "Socket de caminho (-S)",
+  "terminalSocketInputHint": "Nome do socket ou caminho absoluto",
+  "terminalSocketInvalid": "Formato de socket inválido. Sockets nomeados usam 1-64 caracteres alfanuméricos; por caminho devem iniciar com / e sem '..'",
+  "terminalSocketExists": "Esta fonte de socket já foi adicionada.",
+  "terminalTerminateClientsWarning": "Aviso: {count} cliente(s) conectado(s). O encerramento desconectará todos.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "Encerrar sessão",
+  "terminalSocketLabel": "Socket",
+  "terminalServerLabel": "Servidor",
+  "terminalSocketErrorsBanner": "{count} erro(s) em fontes de socket",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

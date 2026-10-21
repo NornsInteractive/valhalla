@@ -5887,4 +5887,83 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => '一致するキーはありません';
+
+  @override
+  String get terminalStatusEndedUnrecoverable => '終了済み・復元不可';
+
+  @override
+  String get terminalStatusUnavailable => 'ソース未設定';
+
+  @override
+  String get terminalGroupUnconfirmed => '未確認';
+
+  @override
+  String get terminalGroupUnavailable => 'ソース未設定';
+
+  @override
+  String get terminalExternalBadge => '外部';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return 'クライアント: $count';
+  }
+
+  @override
+  String get terminalHideSession => '履歴から非表示';
+
+  @override
+  String get terminalUnhideSession => '再表示';
+
+  @override
+  String get terminalHiddenSessionsTitle => '非表示のセッション';
+
+  @override
+  String get terminalNoHiddenSessions => '非表示のセッションはありません';
+
+  @override
+  String get terminalSocketSources => 'ソケットソース管理';
+
+  @override
+  String get terminalSourceBuiltin => '内蔵';
+
+  @override
+  String get terminalSourceCustom => 'カスタム';
+
+  @override
+  String get terminalAddSocketSource => 'ソケットソースを追加';
+
+  @override
+  String get terminalSocketKindNamed => '名前付きソケット (-L)';
+
+  @override
+  String get terminalSocketKindPath => 'パスソケット (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'ソケット名または絶対パス';
+
+  @override
+  String get terminalSocketInvalid =>
+      '無効なソケット形式です。名前付きは1〜64文字の英数字、パスは/で始まり\'..\'を含まない必要があります';
+
+  @override
+  String get terminalSocketExists => 'このソケットソースは既に追加されています。';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return '警告: 現在 $count 台のクライアントが接続しています。終了するとすべて切断されます。';
+  }
+
+  @override
+  String get terminalTerminateSession => 'セッション終了';
+
+  @override
+  String get terminalSocketLabel => 'ソケット';
+
+  @override
+  String get terminalServerLabel => 'サーバー';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count 個のソケットソースエラー';
+  }
 }

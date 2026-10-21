@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "Zu sendende Taste",
   "terminalGridActionModifiers": "Modifikatoren",
   "terminalGridActionText": "Zu sendender Text",
-  "terminalSearchNoMatch": "Keine passenden Tasten"
+  "terminalSearchNoMatch": "Keine passenden Tasten",
+  "terminalStatusEndedUnrecoverable": "Beendet · Nicht wiederherstellbar",
+  "terminalStatusUnavailable": "Quelle nicht verfügbar",
+  "terminalGroupUnconfirmed": "Unbestätigt",
+  "terminalGroupUnavailable": "Quelle nicht verfügbar",
+  "terminalExternalBadge": "Extern",
+  "terminalAttachedClients": "Verbindungen: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "Aus Verlauf ausblenden",
+  "terminalUnhideSession": "Einblenden",
+  "terminalHiddenSessionsTitle": "Ausgeblendete Sitzungen",
+  "terminalNoHiddenSessions": "Keine ausgeblendeten Sitzungen",
+  "terminalSocketSources": "Socket-Quellen",
+  "terminalSourceBuiltin": "Integriert",
+  "terminalSourceCustom": "Benutzerdefiniert",
+  "terminalAddSocketSource": "Socket-Quelle hinzufügen",
+  "terminalSocketKindNamed": "Benannter Socket (-L)",
+  "terminalSocketKindPath": "Pfad-Socket (-S)",
+  "terminalSocketInputHint": "Socket-Name oder absoluter Pfad",
+  "terminalSocketInvalid": "Ungültiges Socket-Format. Benannte Sockets: 1–64 alphanumerische Zeichen; Pfad-Sockets müssen mit / beginnen und dürfen kein '..' enthalten",
+  "terminalSocketExists": "Diese Socket-Quelle ist bereits vorhanden.",
+  "terminalTerminateClientsWarning": "Warnung: Aktuell sind {count} Client(s) verbunden. Das Beenden trennt alle Verbindungen.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "Sitzung beenden",
+  "terminalSocketLabel": "Socket",
+  "terminalServerLabel": "Server",
+  "terminalSocketErrorsBanner": "{count} Socket-Quellenfehler",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

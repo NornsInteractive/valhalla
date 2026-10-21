@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "Phím cần gửi",
   "terminalGridActionModifiers": "Phím bổ trợ",
   "terminalGridActionText": "Văn bản cần gửi",
-  "terminalSearchNoMatch": "Không có phím phù hợp"
+  "terminalSearchNoMatch": "Không có phím phù hợp",
+  "terminalStatusEndedUnrecoverable": "Đã kết thúc · Không thể khôi phục",
+  "terminalStatusUnavailable": "Nguồn không khả dụng",
+  "terminalGroupUnconfirmed": "Chưa xác nhận",
+  "terminalGroupUnavailable": "Nguồn không khả dụng",
+  "terminalExternalBadge": "Bên ngoài",
+  "terminalAttachedClients": "Máy khách: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "Ẩn khỏi lịch sử",
+  "terminalUnhideSession": "Bỏ ẩn",
+  "terminalHiddenSessionsTitle": "Phiên đã ẩn",
+  "terminalNoHiddenSessions": "Không có phiên nào bị ẩn",
+  "terminalSocketSources": "Quản lý nguồn socket",
+  "terminalSourceBuiltin": "Tích hợp sẵn",
+  "terminalSourceCustom": "Tùy chỉnh",
+  "terminalAddSocketSource": "Thêm nguồn socket",
+  "terminalSocketKindNamed": "Socket có tên (-L)",
+  "terminalSocketKindPath": "Socket đường dẫn (-S)",
+  "terminalSocketInputHint": "Tên socket hoặc đường dẫn tuyệt đối",
+  "terminalSocketInvalid": "Định dạng socket không hợp lệ. Socket có tên dùng 1-64 ký tự chữ số; đường dẫn phải bắt đầu bằng / và không chứa '..'",
+  "terminalSocketExists": "Nguồn socket này đã được thêm.",
+  "terminalTerminateClientsWarning": "Cảnh báo: Hiện có {count} máy khách đang kết nối. Việc kết thúc sẽ ngắt kết nối tất cả.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "Kết thúc phiên",
+  "terminalSocketLabel": "Socket",
+  "terminalServerLabel": "Máy chủ",
+  "terminalSocketErrorsBanner": "{count} lỗi nguồn socket",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

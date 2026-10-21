@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "Tasto da inviare",
   "terminalGridActionModifiers": "Modificatori",
   "terminalGridActionText": "Testo da inviare",
-  "terminalSearchNoMatch": "Nessun tasto corrispondente"
+  "terminalSearchNoMatch": "Nessun tasto corrispondente",
+  "terminalStatusEndedUnrecoverable": "Terminata · Non recuperabile",
+  "terminalStatusUnavailable": "Sorgente non disponibile",
+  "terminalGroupUnconfirmed": "Non confermato",
+  "terminalGroupUnavailable": "Sorgente non disponibile",
+  "terminalExternalBadge": "Esterno",
+  "terminalAttachedClients": "Client: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "Nascondi dalla cronologia",
+  "terminalUnhideSession": "Mostra di nuovo",
+  "terminalHiddenSessionsTitle": "Sessioni nascoste",
+  "terminalNoHiddenSessions": "Nessuna sessione nascosta",
+  "terminalSocketSources": "Sorgenti socket",
+  "terminalSourceBuiltin": "Integrato",
+  "terminalSourceCustom": "Personalizzato",
+  "terminalAddSocketSource": "Aggiungi sorgente socket",
+  "terminalSocketKindNamed": "Socket con nome (-L)",
+  "terminalSocketKindPath": "Socket con percorso (-S)",
+  "terminalSocketInputHint": "Nome socket o percorso assoluto",
+  "terminalSocketInvalid": "Formato socket non valido. Socket con nome: 1-64 caratteri alfanumerici; con percorso: devono iniziare con / e non contenere '..'",
+  "terminalSocketExists": "Questa sorgente socket è già presente.",
+  "terminalTerminateClientsWarning": "Attenzione: {count} client attualmente collegati. La terminazione li disconnetterà tutti.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "Termina sessione",
+  "terminalSocketLabel": "Socket",
+  "terminalServerLabel": "Server",
+  "terminalSocketErrorsBanner": "{count} errore/i sorgente socket",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

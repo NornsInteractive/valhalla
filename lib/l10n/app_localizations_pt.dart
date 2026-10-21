@@ -6198,4 +6198,83 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => 'Nenhuma tecla correspondente';
+
+  @override
+  String get terminalStatusEndedUnrecoverable => 'Encerrada · Não recuperável';
+
+  @override
+  String get terminalStatusUnavailable => 'Fonte não disponível';
+
+  @override
+  String get terminalGroupUnconfirmed => 'Não confirmado';
+
+  @override
+  String get terminalGroupUnavailable => 'Fonte não disponível';
+
+  @override
+  String get terminalExternalBadge => 'Externo';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return 'Clientes: $count';
+  }
+
+  @override
+  String get terminalHideSession => 'Ocultar do histórico';
+
+  @override
+  String get terminalUnhideSession => 'Reexibir';
+
+  @override
+  String get terminalHiddenSessionsTitle => 'Sessões ocultas';
+
+  @override
+  String get terminalNoHiddenSessions => 'Nenhuma sessão oculta';
+
+  @override
+  String get terminalSocketSources => 'Fontes de socket';
+
+  @override
+  String get terminalSourceBuiltin => 'Integrado';
+
+  @override
+  String get terminalSourceCustom => 'Personalizado';
+
+  @override
+  String get terminalAddSocketSource => 'Adicionar fonte de socket';
+
+  @override
+  String get terminalSocketKindNamed => 'Socket nomeado (-L)';
+
+  @override
+  String get terminalSocketKindPath => 'Socket de caminho (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'Nome do socket ou caminho absoluto';
+
+  @override
+  String get terminalSocketInvalid =>
+      'Formato de socket inválido. Sockets nomeados usam 1-64 caracteres alfanuméricos; por caminho devem iniciar com / e sem \'..\'';
+
+  @override
+  String get terminalSocketExists => 'Esta fonte de socket já foi adicionada.';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return 'Aviso: $count cliente(s) conectado(s). O encerramento desconectará todos.';
+  }
+
+  @override
+  String get terminalTerminateSession => 'Encerrar sessão';
+
+  @override
+  String get terminalSocketLabel => 'Socket';
+
+  @override
+  String get terminalServerLabel => 'Servidor';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count erro(s) em fontes de socket';
+  }
 }

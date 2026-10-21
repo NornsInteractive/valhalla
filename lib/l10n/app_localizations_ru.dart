@@ -6185,4 +6185,83 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => 'Нет подходящих клавиш';
+
+  @override
+  String get terminalStatusEndedUnrecoverable => 'Завершена · Не восстановить';
+
+  @override
+  String get terminalStatusUnavailable => 'Источник недоступен';
+
+  @override
+  String get terminalGroupUnconfirmed => 'Не подтверждено';
+
+  @override
+  String get terminalGroupUnavailable => 'Источник недоступен';
+
+  @override
+  String get terminalExternalBadge => 'Внешний';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return 'Клиентов: $count';
+  }
+
+  @override
+  String get terminalHideSession => 'Скрыть из истории';
+
+  @override
+  String get terminalUnhideSession => 'Показать снова';
+
+  @override
+  String get terminalHiddenSessionsTitle => 'Скрытые сессии';
+
+  @override
+  String get terminalNoHiddenSessions => 'Нет скрытых сессий';
+
+  @override
+  String get terminalSocketSources => 'Источники сокетов';
+
+  @override
+  String get terminalSourceBuiltin => 'Встроенный';
+
+  @override
+  String get terminalSourceCustom => 'Пользовательский';
+
+  @override
+  String get terminalAddSocketSource => 'Добавить источник сокета';
+
+  @override
+  String get terminalSocketKindNamed => 'Именованный сокет (-L)';
+
+  @override
+  String get terminalSocketKindPath => 'Сокет по пути (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'Имя сокета или абсолютный путь';
+
+  @override
+  String get terminalSocketInvalid =>
+      'Неверный формат сокета. Именованные: 1–64 буквы/цифры; по пути: должны начинаться с / и не содержать \'..\'';
+
+  @override
+  String get terminalSocketExists => 'Этот источник сокета уже добавлен.';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return 'Внимание: подключено клиентов: $count. Завершение отключит всех клиентов.';
+  }
+
+  @override
+  String get terminalTerminateSession => 'Завершить сессию';
+
+  @override
+  String get terminalSocketLabel => 'Сокет';
+
+  @override
+  String get terminalServerLabel => 'Сервер';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return 'Ошибок источников сокетов: $count';
+  }
 }

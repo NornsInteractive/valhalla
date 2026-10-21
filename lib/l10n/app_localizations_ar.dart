@@ -6083,4 +6083,83 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => 'لا توجد مفاتيح مطابقة';
+
+  @override
+  String get terminalStatusEndedUnrecoverable => 'منتهية · لا يمكن الاستعادة';
+
+  @override
+  String get terminalStatusUnavailable => 'المصدر غير متاح';
+
+  @override
+  String get terminalGroupUnconfirmed => 'غير مؤكد';
+
+  @override
+  String get terminalGroupUnavailable => 'المصدر غير متاح';
+
+  @override
+  String get terminalExternalBadge => 'خارجي';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return 'العملاء: $count';
+  }
+
+  @override
+  String get terminalHideSession => 'إخفاء من السجل';
+
+  @override
+  String get terminalUnhideSession => 'إلغاء الإخفاء';
+
+  @override
+  String get terminalHiddenSessionsTitle => 'الجلسات المخفية';
+
+  @override
+  String get terminalNoHiddenSessions => 'لا توجد جلسات مخفية';
+
+  @override
+  String get terminalSocketSources => 'مصادر المقبس';
+
+  @override
+  String get terminalSourceBuiltin => 'مدمج';
+
+  @override
+  String get terminalSourceCustom => 'مخصص';
+
+  @override
+  String get terminalAddSocketSource => 'إضافة مصدر مقبس';
+
+  @override
+  String get terminalSocketKindNamed => 'مقبس مسمى (-L)';
+
+  @override
+  String get terminalSocketKindPath => 'مقبس المسار (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'اسم المقبس أو المسار المطلق';
+
+  @override
+  String get terminalSocketInvalid =>
+      'تنسيق المقبس غير صالح. المقابس المسماة تستخدم 1-64 حرفًا وأرقامًا؛ مقابس المسار يجب أن تبدأ بـ / ولا تحتوي على \'..\'';
+
+  @override
+  String get terminalSocketExists => 'مصدر المقبس هذا مضاف بالفعل.';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return 'تحذير: يوجد حاليًا $count عميل متصل بهذه الجلسة. الإنهاء سيقطع اتصال الجميع.';
+  }
+
+  @override
+  String get terminalTerminateSession => 'إنهاء الجلسة';
+
+  @override
+  String get terminalSocketLabel => 'مقبس';
+
+  @override
+  String get terminalServerLabel => 'الخادم';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count خطأ في مصدر المقبس';
+  }
 }

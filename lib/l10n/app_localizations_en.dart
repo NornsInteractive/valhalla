@@ -6095,4 +6095,83 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => 'No matching keys';
+
+  @override
+  String get terminalStatusEndedUnrecoverable => 'Ended · Cannot restore';
+
+  @override
+  String get terminalStatusUnavailable => 'Source Unavailable';
+
+  @override
+  String get terminalGroupUnconfirmed => 'Unconfirmed';
+
+  @override
+  String get terminalGroupUnavailable => 'Source Unavailable';
+
+  @override
+  String get terminalExternalBadge => 'External';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return 'Clients: $count';
+  }
+
+  @override
+  String get terminalHideSession => 'Hide from History';
+
+  @override
+  String get terminalUnhideSession => 'Unhide';
+
+  @override
+  String get terminalHiddenSessionsTitle => 'Hidden Sessions';
+
+  @override
+  String get terminalNoHiddenSessions => 'No hidden sessions';
+
+  @override
+  String get terminalSocketSources => 'Socket Sources';
+
+  @override
+  String get terminalSourceBuiltin => 'Built-in';
+
+  @override
+  String get terminalSourceCustom => 'Custom';
+
+  @override
+  String get terminalAddSocketSource => 'Add Socket Source';
+
+  @override
+  String get terminalSocketKindNamed => 'Named Socket (-L)';
+
+  @override
+  String get terminalSocketKindPath => 'Path Socket (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'Socket name or absolute path';
+
+  @override
+  String get terminalSocketInvalid =>
+      'Invalid socket format. Named sockets use 1-64 alphanumeric chars; path sockets must start with / and contain no \'..\'';
+
+  @override
+  String get terminalSocketExists => 'This socket source is already added.';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return 'Warning: $count client(s) currently attached to this session. Terminating will disconnect all of them.';
+  }
+
+  @override
+  String get terminalTerminateSession => 'Terminate Session';
+
+  @override
+  String get terminalSocketLabel => 'Socket';
+
+  @override
+  String get terminalServerLabel => 'Server';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count socket source error(s)';
+  }
 }

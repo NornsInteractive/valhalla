@@ -6133,4 +6133,83 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => 'Eşleşen tuş yok';
+
+  @override
+  String get terminalStatusEndedUnrecoverable => 'Sonlandı · Geri yüklenemez';
+
+  @override
+  String get terminalStatusUnavailable => 'Kaynak kullanılamıyor';
+
+  @override
+  String get terminalGroupUnconfirmed => 'Doğrulanmamış';
+
+  @override
+  String get terminalGroupUnavailable => 'Kaynak kullanılamıyor';
+
+  @override
+  String get terminalExternalBadge => 'Harici';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return 'İstemciler: $count';
+  }
+
+  @override
+  String get terminalHideSession => 'Geçmişten gizle';
+
+  @override
+  String get terminalUnhideSession => 'Gizlemeyi kaldır';
+
+  @override
+  String get terminalHiddenSessionsTitle => 'Gizli oturumlar';
+
+  @override
+  String get terminalNoHiddenSessions => 'Gizli oturum yok';
+
+  @override
+  String get terminalSocketSources => 'Soket kaynakları';
+
+  @override
+  String get terminalSourceBuiltin => 'Dahili';
+
+  @override
+  String get terminalSourceCustom => 'Özel';
+
+  @override
+  String get terminalAddSocketSource => 'Soket kaynağı ekle';
+
+  @override
+  String get terminalSocketKindNamed => 'Adlandırılmış soket (-L)';
+
+  @override
+  String get terminalSocketKindPath => 'Yol soketi (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'Soket adı veya mutlak yol';
+
+  @override
+  String get terminalSocketInvalid =>
+      'Geçersiz soket biçimi. Adlandırılmış soketler 1-64 alfanümerik karakter; yol soketleri / ile başlamalı ve \'..\' içermemelidir';
+
+  @override
+  String get terminalSocketExists => 'Bu soket kaynağı zaten eklenmiş.';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return 'Uyarı: Bu oturuma bağlı $count istemci var. Sonlandırma hepsinin bağlantısını kesecektir.';
+  }
+
+  @override
+  String get terminalTerminateSession => 'Oturumu sonlandır';
+
+  @override
+  String get terminalSocketLabel => 'Soket';
+
+  @override
+  String get terminalServerLabel => 'Sunucu';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count soket kaynağı hatası';
+  }
 }

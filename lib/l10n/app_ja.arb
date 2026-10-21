@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "送信キー",
   "terminalGridActionModifiers": "修飾キー",
   "terminalGridActionText": "送信テキスト",
-  "terminalSearchNoMatch": "一致するキーはありません"
+  "terminalSearchNoMatch": "一致するキーはありません",
+  "terminalStatusEndedUnrecoverable": "終了済み・復元不可",
+  "terminalStatusUnavailable": "ソース未設定",
+  "terminalGroupUnconfirmed": "未確認",
+  "terminalGroupUnavailable": "ソース未設定",
+  "terminalExternalBadge": "外部",
+  "terminalAttachedClients": "クライアント: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "履歴から非表示",
+  "terminalUnhideSession": "再表示",
+  "terminalHiddenSessionsTitle": "非表示のセッション",
+  "terminalNoHiddenSessions": "非表示のセッションはありません",
+  "terminalSocketSources": "ソケットソース管理",
+  "terminalSourceBuiltin": "内蔵",
+  "terminalSourceCustom": "カスタム",
+  "terminalAddSocketSource": "ソケットソースを追加",
+  "terminalSocketKindNamed": "名前付きソケット (-L)",
+  "terminalSocketKindPath": "パスソケット (-S)",
+  "terminalSocketInputHint": "ソケット名または絶対パス",
+  "terminalSocketInvalid": "無効なソケット形式です。名前付きは1〜64文字の英数字、パスは/で始まり'..'を含まない必要があります",
+  "terminalSocketExists": "このソケットソースは既に追加されています。",
+  "terminalTerminateClientsWarning": "警告: 現在 {count} 台のクライアントが接続しています。終了するとすべて切断されます。",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "セッション終了",
+  "terminalSocketLabel": "ソケット",
+  "terminalServerLabel": "サーバー",
+  "terminalSocketErrorsBanner": "{count} 個のソケットソースエラー",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -5790,6 +5790,85 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => '无匹配按键';
+
+  @override
+  String get terminalStatusEndedUnrecoverable => '已结束·无法恢复';
+
+  @override
+  String get terminalStatusUnavailable => '来源未配置';
+
+  @override
+  String get terminalGroupUnconfirmed => '未确认状态';
+
+  @override
+  String get terminalGroupUnavailable => '来源未配置';
+
+  @override
+  String get terminalExternalBadge => '外部';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return '客户端: $count';
+  }
+
+  @override
+  String get terminalHideSession => '从历史中隐藏';
+
+  @override
+  String get terminalUnhideSession => '取消隐藏';
+
+  @override
+  String get terminalHiddenSessionsTitle => '已隐藏会话';
+
+  @override
+  String get terminalNoHiddenSessions => '暂无已隐藏会话';
+
+  @override
+  String get terminalSocketSources => '会话来源管理';
+
+  @override
+  String get terminalSourceBuiltin => '内置';
+
+  @override
+  String get terminalSourceCustom => '自定义';
+
+  @override
+  String get terminalAddSocketSource => '添加会话来源';
+
+  @override
+  String get terminalSocketKindNamed => '具名 Socket (-L)';
+
+  @override
+  String get terminalSocketKindPath => '绝对路径 Socket (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'Socket 名称或绝对路径';
+
+  @override
+  String get terminalSocketInvalid =>
+      'Socket 格式无效。具名 Socket 限 1-64 位字母数字；路径 Socket 必须以 / 开头且不含 \'..\'';
+
+  @override
+  String get terminalSocketExists => '该会话来源已存在。';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return '警告：当前有 $count 个客户端连接到此会话，终止将强制断开所有客户端。';
+  }
+
+  @override
+  String get terminalTerminateSession => '终止会话';
+
+  @override
+  String get terminalSocketLabel => 'Socket';
+
+  @override
+  String get terminalServerLabel => '服务器';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count 个会话来源探测异常';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -11579,4 +11658,83 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get terminalSearchNoMatch => '無相符按鍵';
+
+  @override
+  String get terminalStatusEndedUnrecoverable => '已結束·無法恢復';
+
+  @override
+  String get terminalStatusUnavailable => '來源未配置';
+
+  @override
+  String get terminalGroupUnconfirmed => '未確認狀態';
+
+  @override
+  String get terminalGroupUnavailable => '來源未配置';
+
+  @override
+  String get terminalExternalBadge => '外部';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return '用戶端: $count';
+  }
+
+  @override
+  String get terminalHideSession => '從歷史中隱藏';
+
+  @override
+  String get terminalUnhideSession => '取消隱藏';
+
+  @override
+  String get terminalHiddenSessionsTitle => '已隱藏會話';
+
+  @override
+  String get terminalNoHiddenSessions => '暫無已隱藏會話';
+
+  @override
+  String get terminalSocketSources => '會話來源管理';
+
+  @override
+  String get terminalSourceBuiltin => '內建';
+
+  @override
+  String get terminalSourceCustom => '自訂';
+
+  @override
+  String get terminalAddSocketSource => '新增會話來源';
+
+  @override
+  String get terminalSocketKindNamed => '具名 Socket (-L)';
+
+  @override
+  String get terminalSocketKindPath => '絕對路徑 Socket (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'Socket 名稱或絕對路徑';
+
+  @override
+  String get terminalSocketInvalid =>
+      'Socket 格式無效。具名 Socket 限 1-64 位英數字；路徑 Socket 必須以 / 開頭且不含 \'..\'';
+
+  @override
+  String get terminalSocketExists => '該會話來源已存在。';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return '警告：目前有 $count 個用戶端連線到此會話，終止將強制中斷所有用戶端。';
+  }
+
+  @override
+  String get terminalTerminateSession => '終止會話';
+
+  @override
+  String get terminalSocketLabel => 'Socket';
+
+  @override
+  String get terminalServerLabel => '伺服器';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count 個會話來源探測異常';
+  }
 }

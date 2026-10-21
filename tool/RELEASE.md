@@ -35,7 +35,7 @@ state，完成相同版本的提交并登记source，不能重新发起新批次
 最后一条真实包删除后，平台可能返回`pkg_def_<version_id>`虚拟兼容项；脚本不删除它，且不把它当作已登记包。
 版本和各包均`use_proxy=true`，下载不跟随重定向，哈希或Range不匹配不报告完成。
 
-依赖：Flutter/Android SDK、Java、Linux编译依赖、Python3.11+、gh、curl、git。
+依赖：Flutter/Android SDK、Java、Linux编译依赖、Python3.11+、gh、curl、git、tmux（隔离会话回归）。
 GitHub用现有gh登录或GH_TOKEN；分发可选`YGG_TOKEN`环境变量，不写入文件/日志。
 签名目录默认`/home/dev/.local/share/valhalla-signing`，可由`VALHALLA_SIGN_DIR`覆盖，需包含
 `android-release.p12`和`android-release.password`，别名valhalla；证书指纹固定校验。

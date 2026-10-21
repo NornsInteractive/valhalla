@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "发送按键",
   "terminalGridActionModifiers": "附加修饰键",
   "terminalGridActionText": "发送文本",
-  "terminalSearchNoMatch": "无匹配按键"
+  "terminalSearchNoMatch": "无匹配按键",
+  "terminalStatusEndedUnrecoverable": "已结束·无法恢复",
+  "terminalStatusUnavailable": "来源未配置",
+  "terminalGroupUnconfirmed": "未确认状态",
+  "terminalGroupUnavailable": "来源未配置",
+  "terminalExternalBadge": "外部",
+  "terminalAttachedClients": "客户端: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "从历史中隐藏",
+  "terminalUnhideSession": "取消隐藏",
+  "terminalHiddenSessionsTitle": "已隐藏会话",
+  "terminalNoHiddenSessions": "暂无已隐藏会话",
+  "terminalSocketSources": "会话来源管理",
+  "terminalSourceBuiltin": "内置",
+  "terminalSourceCustom": "自定义",
+  "terminalAddSocketSource": "添加会话来源",
+  "terminalSocketKindNamed": "具名 Socket (-L)",
+  "terminalSocketKindPath": "绝对路径 Socket (-S)",
+  "terminalSocketInputHint": "Socket 名称或绝对路径",
+  "terminalSocketInvalid": "Socket 格式无效。具名 Socket 限 1-64 位字母数字；路径 Socket 必须以 / 开头且不含 '..'",
+  "terminalSocketExists": "该会话来源已存在。",
+  "terminalTerminateClientsWarning": "警告：当前有 {count} 个客户端连接到此会话，终止将强制断开所有客户端。",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "终止会话",
+  "terminalSocketLabel": "Socket",
+  "terminalServerLabel": "服务器",
+  "terminalSocketErrorsBanner": "{count} 个会话来源探测异常",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

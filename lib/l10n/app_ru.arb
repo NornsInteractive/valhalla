@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "Отправляемая клавиша",
   "terminalGridActionModifiers": "Модификаторы",
   "terminalGridActionText": "Отправляемый текст",
-  "terminalSearchNoMatch": "Нет подходящих клавиш"
+  "terminalSearchNoMatch": "Нет подходящих клавиш",
+  "terminalStatusEndedUnrecoverable": "Завершена · Не восстановить",
+  "terminalStatusUnavailable": "Источник недоступен",
+  "terminalGroupUnconfirmed": "Не подтверждено",
+  "terminalGroupUnavailable": "Источник недоступен",
+  "terminalExternalBadge": "Внешний",
+  "terminalAttachedClients": "Клиентов: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "Скрыть из истории",
+  "terminalUnhideSession": "Показать снова",
+  "terminalHiddenSessionsTitle": "Скрытые сессии",
+  "terminalNoHiddenSessions": "Нет скрытых сессий",
+  "terminalSocketSources": "Источники сокетов",
+  "terminalSourceBuiltin": "Встроенный",
+  "terminalSourceCustom": "Пользовательский",
+  "terminalAddSocketSource": "Добавить источник сокета",
+  "terminalSocketKindNamed": "Именованный сокет (-L)",
+  "terminalSocketKindPath": "Сокет по пути (-S)",
+  "terminalSocketInputHint": "Имя сокета или абсолютный путь",
+  "terminalSocketInvalid": "Неверный формат сокета. Именованные: 1–64 буквы/цифры; по пути: должны начинаться с / и не содержать '..'",
+  "terminalSocketExists": "Этот источник сокета уже добавлен.",
+  "terminalTerminateClientsWarning": "Внимание: подключено клиентов: {count}. Завершение отключит всех клиентов.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "Завершить сессию",
+  "terminalSocketLabel": "Сокет",
+  "terminalServerLabel": "Сервер",
+  "terminalSocketErrorsBanner": "Ошибок источников сокетов: {count}",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

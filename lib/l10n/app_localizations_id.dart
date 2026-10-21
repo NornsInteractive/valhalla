@@ -6140,4 +6140,84 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => 'Tidak ada tombol yang cocok';
+
+  @override
+  String get terminalStatusEndedUnrecoverable =>
+      'Berakhir · Tidak dapat dipulihkan';
+
+  @override
+  String get terminalStatusUnavailable => 'Sumber tidak tersedia';
+
+  @override
+  String get terminalGroupUnconfirmed => 'Belum dikonfirmasi';
+
+  @override
+  String get terminalGroupUnavailable => 'Sumber tidak tersedia';
+
+  @override
+  String get terminalExternalBadge => 'Eksternal';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return 'Klien: $count';
+  }
+
+  @override
+  String get terminalHideSession => 'Sembunyikan dari riwayat';
+
+  @override
+  String get terminalUnhideSession => 'Batalkan sembunyikan';
+
+  @override
+  String get terminalHiddenSessionsTitle => 'Sesi tersembunyi';
+
+  @override
+  String get terminalNoHiddenSessions => 'Tidak ada sesi tersembunyi';
+
+  @override
+  String get terminalSocketSources => 'Sumber soket';
+
+  @override
+  String get terminalSourceBuiltin => 'Bawaan';
+
+  @override
+  String get terminalSourceCustom => 'Kustom';
+
+  @override
+  String get terminalAddSocketSource => 'Tambah sumber soket';
+
+  @override
+  String get terminalSocketKindNamed => 'Soket bernama (-L)';
+
+  @override
+  String get terminalSocketKindPath => 'Soket jalur (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'Nama soket atau jalur absolut';
+
+  @override
+  String get terminalSocketInvalid =>
+      'Format soket tidak valid. Soket bernama gunakan 1-64 karakter alfanumerik; soket jalur harus diawali / dan tanpa \'..\'';
+
+  @override
+  String get terminalSocketExists => 'Sumber soket ini sudah ditambahkan.';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return 'Peringatan: $count klien saat ini terhubung ke sesi ini. Penghentian akan memutuskan semuanya.';
+  }
+
+  @override
+  String get terminalTerminateSession => 'Hentikan sesi';
+
+  @override
+  String get terminalSocketLabel => 'Soket';
+
+  @override
+  String get terminalServerLabel => 'Server';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count kesalahan sumber soket';
+  }
 }

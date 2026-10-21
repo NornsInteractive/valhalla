@@ -11054,6 +11054,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No matching keys'**
   String get terminalSearchNoMatch;
+
+  /// No description provided for @terminalStatusEndedUnrecoverable.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended · Cannot restore'**
+  String get terminalStatusEndedUnrecoverable;
+
+  /// No description provided for @terminalStatusUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Source Unavailable'**
+  String get terminalStatusUnavailable;
+
+  /// No description provided for @terminalGroupUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unconfirmed'**
+  String get terminalGroupUnconfirmed;
+
+  /// No description provided for @terminalGroupUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Source Unavailable'**
+  String get terminalGroupUnavailable;
+
+  /// No description provided for @terminalExternalBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'External'**
+  String get terminalExternalBadge;
+
+  /// No description provided for @terminalAttachedClients.
+  ///
+  /// In en, this message translates to:
+  /// **'Clients: {count}'**
+  String terminalAttachedClients(int count);
+
+  /// No description provided for @terminalHideSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide from History'**
+  String get terminalHideSession;
+
+  /// No description provided for @terminalUnhideSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Unhide'**
+  String get terminalUnhideSession;
+
+  /// No description provided for @terminalHiddenSessionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden Sessions'**
+  String get terminalHiddenSessionsTitle;
+
+  /// No description provided for @terminalNoHiddenSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'No hidden sessions'**
+  String get terminalNoHiddenSessions;
+
+  /// No description provided for @terminalSocketSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Socket Sources'**
+  String get terminalSocketSources;
+
+  /// No description provided for @terminalSourceBuiltin.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in'**
+  String get terminalSourceBuiltin;
+
+  /// No description provided for @terminalSourceCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get terminalSourceCustom;
+
+  /// No description provided for @terminalAddSocketSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Socket Source'**
+  String get terminalAddSocketSource;
+
+  /// No description provided for @terminalSocketKindNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Named Socket (-L)'**
+  String get terminalSocketKindNamed;
+
+  /// No description provided for @terminalSocketKindPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Path Socket (-S)'**
+  String get terminalSocketKindPath;
+
+  /// No description provided for @terminalSocketInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Socket name or absolute path'**
+  String get terminalSocketInputHint;
+
+  /// No description provided for @terminalSocketInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid socket format. Named sockets use 1-64 alphanumeric chars; path sockets must start with / and contain no \'..\''**
+  String get terminalSocketInvalid;
+
+  /// No description provided for @terminalSocketExists.
+  ///
+  /// In en, this message translates to:
+  /// **'This socket source is already added.'**
+  String get terminalSocketExists;
+
+  /// No description provided for @terminalTerminateClientsWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning: {count} client(s) currently attached to this session. Terminating will disconnect all of them.'**
+  String terminalTerminateClientsWarning(int count);
+
+  /// No description provided for @terminalTerminateSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminate Session'**
+  String get terminalTerminateSession;
+
+  /// No description provided for @terminalSocketLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Socket'**
+  String get terminalSocketLabel;
+
+  /// No description provided for @terminalServerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Server'**
+  String get terminalServerLabel;
+
+  /// No description provided for @terminalSocketErrorsBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} socket source error(s)'**
+  String terminalSocketErrorsBanner(int count);
 }
 
 class _AppLocalizationsDelegate

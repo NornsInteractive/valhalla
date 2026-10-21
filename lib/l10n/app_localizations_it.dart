@@ -6203,4 +6203,83 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => 'Nessun tasto corrispondente';
+
+  @override
+  String get terminalStatusEndedUnrecoverable => 'Terminata · Non recuperabile';
+
+  @override
+  String get terminalStatusUnavailable => 'Sorgente non disponibile';
+
+  @override
+  String get terminalGroupUnconfirmed => 'Non confermato';
+
+  @override
+  String get terminalGroupUnavailable => 'Sorgente non disponibile';
+
+  @override
+  String get terminalExternalBadge => 'Esterno';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return 'Client: $count';
+  }
+
+  @override
+  String get terminalHideSession => 'Nascondi dalla cronologia';
+
+  @override
+  String get terminalUnhideSession => 'Mostra di nuovo';
+
+  @override
+  String get terminalHiddenSessionsTitle => 'Sessioni nascoste';
+
+  @override
+  String get terminalNoHiddenSessions => 'Nessuna sessione nascosta';
+
+  @override
+  String get terminalSocketSources => 'Sorgenti socket';
+
+  @override
+  String get terminalSourceBuiltin => 'Integrato';
+
+  @override
+  String get terminalSourceCustom => 'Personalizzato';
+
+  @override
+  String get terminalAddSocketSource => 'Aggiungi sorgente socket';
+
+  @override
+  String get terminalSocketKindNamed => 'Socket con nome (-L)';
+
+  @override
+  String get terminalSocketKindPath => 'Socket con percorso (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'Nome socket o percorso assoluto';
+
+  @override
+  String get terminalSocketInvalid =>
+      'Formato socket non valido. Socket con nome: 1-64 caratteri alfanumerici; con percorso: devono iniziare con / e non contenere \'..\'';
+
+  @override
+  String get terminalSocketExists => 'Questa sorgente socket è già presente.';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return 'Attenzione: $count client attualmente collegati. La terminazione li disconnetterà tutti.';
+  }
+
+  @override
+  String get terminalTerminateSession => 'Termina sessione';
+
+  @override
+  String get terminalSocketLabel => 'Socket';
+
+  @override
+  String get terminalServerLabel => 'Server';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count errore/i sorgente socket';
+  }
 }

@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "전송할 키",
   "terminalGridActionModifiers": "수정자 키",
   "terminalGridActionText": "전송할 텍스트",
-  "terminalSearchNoMatch": "일치하는 키 없음"
+  "terminalSearchNoMatch": "일치하는 키 없음",
+  "terminalStatusEndedUnrecoverable": "종료됨 · 복원 불가",
+  "terminalStatusUnavailable": "소스 미설정",
+  "terminalGroupUnconfirmed": "미확인",
+  "terminalGroupUnavailable": "소스 미설정",
+  "terminalExternalBadge": "외부",
+  "terminalAttachedClients": "클라이언트: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "기록에서 숨기기",
+  "terminalUnhideSession": "숨기기 취소",
+  "terminalHiddenSessionsTitle": "숨겨진 세션",
+  "terminalNoHiddenSessions": "숨겨진 세션 없음",
+  "terminalSocketSources": "소켓 소스 관리",
+  "terminalSourceBuiltin": "기본 내장",
+  "terminalSourceCustom": "사용자 지정",
+  "terminalAddSocketSource": "소켓 소스 추가",
+  "terminalSocketKindNamed": "지정된 소켓 (-L)",
+  "terminalSocketKindPath": "경로 소켓 (-S)",
+  "terminalSocketInputHint": "소켓 이름 또는 절대 경로",
+  "terminalSocketInvalid": "잘못된 소켓 형식입니다. 이름 있는 소켓은 1~64자의 영숫자여야 하며, 경로 소켓은 /로 시작하고 '..'을 포함할 수 없습니다",
+  "terminalSocketExists": "이 소켓 소스는 이미 추가되었습니다.",
+  "terminalTerminateClientsWarning": "경고: 현재 {count}개의 클라이언트가 연결되어 있습니다. 종료하면 모두 연결이 끊어집니다.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "세션 종료",
+  "terminalSocketLabel": "소켓",
+  "terminalServerLabel": "서버",
+  "terminalSocketErrorsBanner": "{count}개 소켓 소스 오류",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

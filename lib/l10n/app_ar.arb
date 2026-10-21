@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "الزر المراد إرساله",
   "terminalGridActionModifiers": "مفاتيح التبديل",
   "terminalGridActionText": "النص المراد إرساله",
-  "terminalSearchNoMatch": "لا توجد مفاتيح مطابقة"
+  "terminalSearchNoMatch": "لا توجد مفاتيح مطابقة",
+  "terminalStatusEndedUnrecoverable": "منتهية · لا يمكن الاستعادة",
+  "terminalStatusUnavailable": "المصدر غير متاح",
+  "terminalGroupUnconfirmed": "غير مؤكد",
+  "terminalGroupUnavailable": "المصدر غير متاح",
+  "terminalExternalBadge": "خارجي",
+  "terminalAttachedClients": "العملاء: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "إخفاء من السجل",
+  "terminalUnhideSession": "إلغاء الإخفاء",
+  "terminalHiddenSessionsTitle": "الجلسات المخفية",
+  "terminalNoHiddenSessions": "لا توجد جلسات مخفية",
+  "terminalSocketSources": "مصادر المقبس",
+  "terminalSourceBuiltin": "مدمج",
+  "terminalSourceCustom": "مخصص",
+  "terminalAddSocketSource": "إضافة مصدر مقبس",
+  "terminalSocketKindNamed": "مقبس مسمى (-L)",
+  "terminalSocketKindPath": "مقبس المسار (-S)",
+  "terminalSocketInputHint": "اسم المقبس أو المسار المطلق",
+  "terminalSocketInvalid": "تنسيق المقبس غير صالح. المقابس المسماة تستخدم 1-64 حرفًا وأرقامًا؛ مقابس المسار يجب أن تبدأ بـ / ولا تحتوي على '..'",
+  "terminalSocketExists": "مصدر المقبس هذا مضاف بالفعل.",
+  "terminalTerminateClientsWarning": "تحذير: يوجد حاليًا {count} عميل متصل بهذه الجلسة. الإنهاء سيقطع اتصال الجميع.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "إنهاء الجلسة",
+  "terminalSocketLabel": "مقبس",
+  "terminalServerLabel": "الخادم",
+  "terminalSocketErrorsBanner": "{count} خطأ في مصدر المقبس",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

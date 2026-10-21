@@ -32,11 +32,15 @@ class TmuxSessionInfo {
     required this.name,
     required this.createdAt,
     required this.attachedClients,
+    this.socket = TmuxSocketSource.app,
+    this.identity,
   });
 
   final String name;
   final DateTime createdAt;
   final int attachedClients;
+  final TmuxSocketSource socket;
+  final TmuxSessionIdentity? identity;
 }
 
 /// 终端会话是否运行在 tmux 中。
@@ -79,6 +83,8 @@ class TerminalSessionBridge {
 
   final TerminalSessionIntent sessionIntent;
   final String? tmuxSessionName;
+  TmuxSocketSource tmuxSocket;
+  TmuxSessionIdentity? tmuxIdentity;
   String get remoteSessionName =>
       tmuxSessionName ?? TmuxSessionPlanner.sessionName(serverId, terminalId);
   String? get activeTmuxSessionName =>
@@ -166,13 +172,30 @@ class TerminalSessionBridge {
     this.terminalId = '0',
     this.sessionIntent = TerminalSessionIntent.createFresh,
     this.tmuxSessionName,
+    this.tmuxSocket = TmuxSocketSource.app,
+    this.tmuxIdentity,
     this.preferTmux = false,
     this.launchCommand,
     this.remoteExecCommand,
     this.ptyAllocateTimeout = defaultPtyAllocateTimeout,
   }) {
+    tmuxIdentity?.validate();
+    if ((tmuxIdentity != null || tmuxSocket.id != TmuxSocketSource.app.id) &&
+        (tmuxIdentity == null ||
+            tmuxSessionName == null ||
+            sessionIntent != TerminalSessionIntent.restoreExisting)) {
+      throw ArgumentError('TMUX_INVALID_SESSION_IDENTITY');
+    }
     if (tmuxSessionName != null &&
-        (!TmuxSessionPlanner.isSessionForServer(tmuxSessionName!, serverId) ||
+        RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(tmuxSessionName!)) {
+      throw ArgumentError('TMUX_INVALID_SESSION_NAME');
+    }
+    if (tmuxSessionName != null &&
+        ((tmuxIdentity == null &&
+                !TmuxSessionPlanner.isSessionForServer(
+                  tmuxSessionName!,
+                  serverId,
+                )) ||
             sessionIntent != TerminalSessionIntent.restoreExisting)) {
       throw ArgumentError('TMUX_INVALID_SESSION_NAME');
     }
@@ -289,14 +312,19 @@ class TerminalSessionBridge {
   static Future<List<TmuxSessionInfo>> discoverTmuxSessions(
     SSHClient client, {
     required String serverId,
+    TmuxSocketSource socket = TmuxSocketSource.app,
+    bool includeExternal = false,
   }) async {
+    if (!includeExternal && socket.id != TmuxSocketSource.app.id) {
+      throw ArgumentError('TMUX_INVALID_SESSION_IDENTITY');
+    }
     final path = await _queryTmuxPath(client);
     final result = await _runTmuxQuery(
       client,
-      TmuxSessionPlanner.listSessionsCommand.replaceFirst(
-        'tmux ',
-        '${cliShellQuote(path)} ',
-      ),
+      (includeExternal
+              ? TmuxSessionPlanner.discoverCommand(socket)
+              : TmuxSessionPlanner.listSessionsCommand)
+          .replaceFirst('tmux ', '${cliShellQuote(path)} '),
     );
     if (result.exitCode != 0) {
       if (result.exitCode == 1 && _isMissingTmuxServer(result.stderr)) {
@@ -310,6 +338,36 @@ class TerminalSessionBridge {
     final sessions = <TmuxSessionInfo>[];
     for (final line in const LineSplitter().convert(result.stdout)) {
       final fields = line.split('\t');
+      if (includeExternal) {
+        if (fields.length != 6 ||
+            fields[5].isEmpty ||
+            RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(fields[5])) {
+          throw const SSHConnectionException('TMUX_HISTORY_INVALID_RESPONSE');
+        }
+        final identity = TmuxSessionIdentity.fromJson({
+          'sessionId': fields[0],
+          'createdSeconds': int.tryParse(fields[1]),
+          'serverPid': int.tryParse(fields[3]),
+          'socketPath': fields[4],
+        });
+        final attached = int.tryParse(fields[2]);
+        if (attached == null || attached < 0) {
+          throw const SSHConnectionException('TMUX_HISTORY_INVALID_RESPONSE');
+        }
+        sessions.add(
+          TmuxSessionInfo(
+            name: fields[5],
+            createdAt: DateTime.fromMillisecondsSinceEpoch(
+              identity.createdSeconds * 1000,
+              isUtc: true,
+            ),
+            attachedClients: attached,
+            socket: socket,
+            identity: identity,
+          ),
+        );
+        continue;
+      }
       if (fields.isEmpty ||
           !TmuxSessionPlanner.isSessionForServer(fields.first, serverId)) {
         continue;
@@ -344,20 +402,58 @@ class TerminalSessionBridge {
     SSHClient client,
     String name, {
     String? tmuxPath,
+    TmuxSocketSource socket = TmuxSocketSource.app,
+    TmuxSessionIdentity? identity,
   }) async {
-    final command = TmuxSessionPlanner.hasSessionCommand(name);
+    if (identity == null && socket.id != TmuxSocketSource.app.id) {
+      throw ArgumentError('TMUX_INVALID_SESSION_IDENTITY');
+    }
+    final command = identity == null
+        ? TmuxSessionPlanner.hasSessionCommand(name)
+        : TmuxSessionPlanner.identityCommand(socket, identity);
     final path = tmuxPath ?? await _queryTmuxPath(client);
     final result = await _runTmuxQuery(
       client,
       command.replaceFirst('tmux ', '${cliShellQuote(path)} '),
     );
-    if (result.exitCode == 0) return true;
+    if (result.exitCode == 0) {
+      if (identity == null) return true;
+      final fields = result.stdout.trimRight().split('\t');
+      if (fields.length != 4) {
+        throw const SSHConnectionException('TMUX_HISTORY_INVALID_RESPONSE');
+      }
+      // Missing targets can exit 0 with empty session fields and valid server fields.
+      if (fields[0].isEmpty &&
+          fields[1].isEmpty &&
+          (int.tryParse(fields[2]) ?? 0) > 0 &&
+          fields[3].startsWith('/') &&
+          !RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(fields[3])) {
+        return false;
+      }
+      final actual = TmuxSessionIdentity.fromJson({
+        'sessionId': fields[0],
+        'createdSeconds': int.tryParse(fields[1]),
+        'serverPid': int.tryParse(fields[2]),
+        'socketPath': fields[3],
+      });
+      return actual.key == identity.key;
+    }
     if (result.exitCode == 1 &&
         (_isMissingTmuxServer(result.stderr) ||
             result.stderr.trim() == "can't find session: $name" ||
             result.stderr.trim() == "can't find session: =$name" ||
             result.stderr.trim() == "session not found: $name" ||
             result.stderr.trim() == "session not found: =$name")) {
+      return false;
+    }
+    if (identity != null &&
+        result.exitCode == 1 &&
+        (result.stderr.trim() == "can't find session: ${identity.sessionId}" ||
+            result.stderr.trim() == "can't find pane: ${identity.sessionId}" ||
+            result.stderr.trim() ==
+                "can't find window: ${identity.sessionId}" ||
+            result.stderr.trim() ==
+                "session not found: ${identity.sessionId}")) {
       return false;
     }
     throw SSHConnectionException('TMUX_SESSION_CHECK_FAILED', result.exitCode);
@@ -376,17 +472,39 @@ class TerminalSessionBridge {
     SSHClient client,
     String name, {
     required String tmuxPath,
+    TmuxSocketSource socket = TmuxSocketSource.app,
+    TmuxSessionIdentity? identity,
   }) async {
     if (!TmuxSessionPlanner.isTmuxAvailable(tmuxPath)) {
       throw const SSHConnectionException('TMUX_DETECTION_FAILED');
     }
+    if (identity != null &&
+        !await tmuxSessionExists(
+          client,
+          name,
+          tmuxPath: tmuxPath,
+          socket: socket,
+          identity: identity,
+        )) {
+      return;
+    }
     final result = await _runTmuxQuery(
       client,
-      TmuxSessionPlanner.killSessionCommand(
+      TmuxSessionPlanner.existingCommand(
+        'kill-session',
         name,
+        socket: socket,
+        identity: identity,
       ).replaceFirst('tmux ', '${cliShellQuote(tmuxPath)} '),
     );
     if (result.exitCode != 0) {
+      if (identity != null &&
+          result.exitCode == 1 &&
+          (_isMissingTmuxServer(result.stderr) ||
+              result.stderr.trim() ==
+                  "can't find session: ${identity.sessionId}")) {
+        return;
+      }
       throw SSHConnectionException(
         'TERMINAL_HISTORY_TERMINATE_FAILED',
         result.exitCode,
@@ -547,6 +665,8 @@ class TerminalSessionBridge {
           client,
           remoteSessionName,
           tmuxPath: tmuxPath,
+          socket: tmuxSocket,
+          identity: tmuxIdentity,
         );
         if (!current()) return;
         if (restoring && !exists) {
@@ -579,7 +699,12 @@ class TerminalSessionBridge {
       );
       final tmuxCommand = useTmux
           ? (restoring
-                    ? TmuxSessionPlanner.attachCommand(remoteSessionName)
+                    ? TmuxSessionPlanner.existingCommand(
+                        'attach-session',
+                        remoteSessionName,
+                        socket: tmuxSocket,
+                        identity: tmuxIdentity,
+                      )
                     : TmuxSessionPlanner.createCommand(
                         serverId,
                         terminalId,
@@ -774,7 +899,12 @@ class TerminalSessionBridge {
         return;
       }
       if (client.isClosed) return;
-      final exists = await tmuxSessionExists(client, remoteSessionName);
+      final exists = await tmuxSessionExists(
+        client,
+        remoteSessionName,
+        socket: tmuxSocket,
+        identity: tmuxIdentity,
+      );
       if (!current() || exists) return;
       _isSessionOpen = false;
       _lastError = const TerminalSessionMissingException();

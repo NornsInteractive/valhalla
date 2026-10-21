@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "Tombol untuk Dikirim",
   "terminalGridActionModifiers": "Pengubah",
   "terminalGridActionText": "Teks untuk Dikirim",
-  "terminalSearchNoMatch": "Tidak ada tombol yang cocok"
+  "terminalSearchNoMatch": "Tidak ada tombol yang cocok",
+  "terminalStatusEndedUnrecoverable": "Berakhir · Tidak dapat dipulihkan",
+  "terminalStatusUnavailable": "Sumber tidak tersedia",
+  "terminalGroupUnconfirmed": "Belum dikonfirmasi",
+  "terminalGroupUnavailable": "Sumber tidak tersedia",
+  "terminalExternalBadge": "Eksternal",
+  "terminalAttachedClients": "Klien: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "Sembunyikan dari riwayat",
+  "terminalUnhideSession": "Batalkan sembunyikan",
+  "terminalHiddenSessionsTitle": "Sesi tersembunyi",
+  "terminalNoHiddenSessions": "Tidak ada sesi tersembunyi",
+  "terminalSocketSources": "Sumber soket",
+  "terminalSourceBuiltin": "Bawaan",
+  "terminalSourceCustom": "Kustom",
+  "terminalAddSocketSource": "Tambah sumber soket",
+  "terminalSocketKindNamed": "Soket bernama (-L)",
+  "terminalSocketKindPath": "Soket jalur (-S)",
+  "terminalSocketInputHint": "Nama soket atau jalur absolut",
+  "terminalSocketInvalid": "Format soket tidak valid. Soket bernama gunakan 1-64 karakter alfanumerik; soket jalur harus diawali / dan tanpa '..'",
+  "terminalSocketExists": "Sumber soket ini sudah ditambahkan.",
+  "terminalTerminateClientsWarning": "Peringatan: {count} klien saat ini terhubung ke sesi ini. Penghentian akan memutuskan semuanya.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "Hentikan sesi",
+  "terminalSocketLabel": "Soket",
+  "terminalServerLabel": "Server",
+  "terminalSocketErrorsBanner": "{count} kesalahan sumber soket",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

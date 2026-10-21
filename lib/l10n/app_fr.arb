@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "Touche à envoyer",
   "terminalGridActionModifiers": "Modificateurs",
   "terminalGridActionText": "Texte à envoyer",
-  "terminalSearchNoMatch": "Aucune touche correspondante"
+  "terminalSearchNoMatch": "Aucune touche correspondante",
+  "terminalStatusEndedUnrecoverable": "Terminée · Non récupérable",
+  "terminalStatusUnavailable": "Source non disponible",
+  "terminalGroupUnconfirmed": "Non confirmé",
+  "terminalGroupUnavailable": "Source non disponible",
+  "terminalExternalBadge": "Externe",
+  "terminalAttachedClients": "Clients : {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "Masquer de l'historique",
+  "terminalUnhideSession": "Afficher à nouveau",
+  "terminalHiddenSessionsTitle": "Sessions masquées",
+  "terminalNoHiddenSessions": "Aucune session masquée",
+  "terminalSocketSources": "Sources de socket",
+  "terminalSourceBuiltin": "Intégré",
+  "terminalSourceCustom": "Personnalisé",
+  "terminalAddSocketSource": "Ajouter une source de socket",
+  "terminalSocketKindNamed": "Socket nommé (-L)",
+  "terminalSocketKindPath": "Socket par chemin (-S)",
+  "terminalSocketInputHint": "Nom du socket ou chemin absolu",
+  "terminalSocketInvalid": "Format de socket non valide. Sockets nommés : 1-64 caractères alphanumériques ; par chemin : doit débuter par / sans '..'",
+  "terminalSocketExists": "Cette source de socket est déjà ajoutée.",
+  "terminalTerminateClientsWarning": "Avertissement : {count} client(s) connecté(s). La fermeture les déconnectera tous.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "Terminer la session",
+  "terminalSocketLabel": "Socket",
+  "terminalServerLabel": "Serveur",
+  "terminalSocketErrorsBanner": "{count} erreur(s) de source de socket",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

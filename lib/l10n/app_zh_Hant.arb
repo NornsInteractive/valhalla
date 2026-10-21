@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "傳送按鍵",
   "terminalGridActionModifiers": "附加修飾鍵",
   "terminalGridActionText": "傳送文字",
-  "terminalSearchNoMatch": "無相符按鍵"
+  "terminalSearchNoMatch": "無相符按鍵",
+  "terminalStatusEndedUnrecoverable": "已結束·無法恢復",
+  "terminalStatusUnavailable": "來源未配置",
+  "terminalGroupUnconfirmed": "未確認狀態",
+  "terminalGroupUnavailable": "來源未配置",
+  "terminalExternalBadge": "外部",
+  "terminalAttachedClients": "用戶端: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "從歷史中隱藏",
+  "terminalUnhideSession": "取消隱藏",
+  "terminalHiddenSessionsTitle": "已隱藏會話",
+  "terminalNoHiddenSessions": "暫無已隱藏會話",
+  "terminalSocketSources": "會話來源管理",
+  "terminalSourceBuiltin": "內建",
+  "terminalSourceCustom": "自訂",
+  "terminalAddSocketSource": "新增會話來源",
+  "terminalSocketKindNamed": "具名 Socket (-L)",
+  "terminalSocketKindPath": "絕對路徑 Socket (-S)",
+  "terminalSocketInputHint": "Socket 名稱或絕對路徑",
+  "terminalSocketInvalid": "Socket 格式無效。具名 Socket 限 1-64 位英數字；路徑 Socket 必須以 / 開頭且不含 '..'",
+  "terminalSocketExists": "該會話來源已存在。",
+  "terminalTerminateClientsWarning": "警告：目前有 {count} 個用戶端連線到此會話，終止將強制中斷所有用戶端。",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "終止會話",
+  "terminalSocketLabel": "Socket",
+  "terminalServerLabel": "伺服器",
+  "terminalSocketErrorsBanner": "{count} 個會話來源探測異常",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

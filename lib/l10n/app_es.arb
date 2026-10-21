@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "Tecla a enviar",
   "terminalGridActionModifiers": "Modificadores",
   "terminalGridActionText": "Texto a enviar",
-  "terminalSearchNoMatch": "No hay teclas coincidentes"
+  "terminalSearchNoMatch": "No hay teclas coincidentes",
+  "terminalStatusEndedUnrecoverable": "Finalizada · No recuperable",
+  "terminalStatusUnavailable": "Fuente no disponible",
+  "terminalGroupUnconfirmed": "Sin confirmar",
+  "terminalGroupUnavailable": "Fuente no disponible",
+  "terminalExternalBadge": "Externo",
+  "terminalAttachedClients": "Clientes: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "Ocultar del historial",
+  "terminalUnhideSession": "Mostrar",
+  "terminalHiddenSessionsTitle": "Sesiones ocultas",
+  "terminalNoHiddenSessions": "No hay sesiones ocultas",
+  "terminalSocketSources": "Fuentes de socket",
+  "terminalSourceBuiltin": "Integrado",
+  "terminalSourceCustom": "Personalizado",
+  "terminalAddSocketSource": "Agregar fuente de socket",
+  "terminalSocketKindNamed": "Socket con nombre (-L)",
+  "terminalSocketKindPath": "Socket por ruta (-S)",
+  "terminalSocketInputHint": "Nombre de socket o ruta absoluta",
+  "terminalSocketInvalid": "Formato de socket inválido. Sockets con nombre: 1-64 caracteres alfanuméricos; por ruta deben iniciar con / y sin '..'",
+  "terminalSocketExists": "Esta fuente de socket ya está agregada.",
+  "terminalTerminateClientsWarning": "Advertencia: {count} cliente(s) conectado(s). Terminar desconectará a todos.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "Terminar sesión",
+  "terminalSocketLabel": "Socket",
+  "terminalServerLabel": "Servidor",
+  "terminalSocketErrorsBanner": "{count} error(es) en fuentes de socket",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

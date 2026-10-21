@@ -6103,4 +6103,84 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => 'ไม่มีปุ่มที่ตรงกัน';
+
+  @override
+  String get terminalStatusEndedUnrecoverable =>
+      'สิ้นสุดแล้ว · ไม่สามารถกู้คืนได้';
+
+  @override
+  String get terminalStatusUnavailable => 'ไม่มีแหล่งที่มา';
+
+  @override
+  String get terminalGroupUnconfirmed => 'ยังไม่ยืนยัน';
+
+  @override
+  String get terminalGroupUnavailable => 'ไม่มีแหล่งที่มา';
+
+  @override
+  String get terminalExternalBadge => 'ภายนอก';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return 'ไคลเอนต์: $count';
+  }
+
+  @override
+  String get terminalHideSession => 'ซ่อนจากประวัติ';
+
+  @override
+  String get terminalUnhideSession => 'ยกเลิกการซ่อน';
+
+  @override
+  String get terminalHiddenSessionsTitle => 'เซสชันที่ซ่อนอยู่';
+
+  @override
+  String get terminalNoHiddenSessions => 'ไม่มีเซสชันที่ซ่อนอยู่';
+
+  @override
+  String get terminalSocketSources => 'แหล่งที่มาของซ็อกเก็ต';
+
+  @override
+  String get terminalSourceBuiltin => 'ในตัว';
+
+  @override
+  String get terminalSourceCustom => 'กำหนดเอง';
+
+  @override
+  String get terminalAddSocketSource => 'เพิ่มแหล่งที่มาของซ็อกเก็ต';
+
+  @override
+  String get terminalSocketKindNamed => 'ซ็อกเก็ตที่มีชื่อ (-L)';
+
+  @override
+  String get terminalSocketKindPath => 'ซ็อกเก็ตตามเส้นทาง (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'ชื่อซ็อกเก็ตหรือเส้นทางแบบสัมบูรณ์';
+
+  @override
+  String get terminalSocketInvalid =>
+      'รูปแบบซ็อกเก็ตไม่ถูกต้อง ซ็อกเก็ตที่มีชื่อใช้ตัวอักษรและตัวเลข 1-64 ตัว ซ็อกเก็ตเส้นทางต้องขึ้นต้นด้วย / และไม่มี \'..\'';
+
+  @override
+  String get terminalSocketExists => 'แหล่งที่มาของซ็อกเก็ตนี้ถูกเพิ่มแล้ว';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return 'คำเตือน: มี $count ไคลเอนต์เชื่อมต่อกับเซสชันนี้ในปัจจุบัน การสิ้นสุดจะตัดการเชื่อมต่อทั้งหมด';
+  }
+
+  @override
+  String get terminalTerminateSession => 'ยุติเซสชัน';
+
+  @override
+  String get terminalSocketLabel => 'ซ็อกเก็ต';
+
+  @override
+  String get terminalServerLabel => 'เซิร์ฟเวอร์';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return 'ข้อผิดพลาดของแหล่งที่มาของซ็อกเก็ต $count รายการ';
+  }
 }

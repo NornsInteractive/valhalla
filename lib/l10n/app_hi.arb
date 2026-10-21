@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "भेजने वाली कुंजी",
   "terminalGridActionModifiers": "संशोधक",
   "terminalGridActionText": "भेजने वाला पाठ",
-  "terminalSearchNoMatch": "कोई मेल खाने वाली कुंजी नहीं"
+  "terminalSearchNoMatch": "कोई मेल खाने वाली कुंजी नहीं",
+  "terminalStatusEndedUnrecoverable": "समाप्त · पुनर्स्थापित नहीं हो सकता",
+  "terminalStatusUnavailable": "स्रोत अनुपलब्ध",
+  "terminalGroupUnconfirmed": "अपुष्ट",
+  "terminalGroupUnavailable": "स्रोत अनुपलब्ध",
+  "terminalExternalBadge": "बाहरी",
+  "terminalAttachedClients": "क्लाइंट: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "इतिहास से छिपाएं",
+  "terminalUnhideSession": "छिपाना रद्द करें",
+  "terminalHiddenSessionsTitle": "छिपे हुए सत्र",
+  "terminalNoHiddenSessions": "कोई छिपा हुआ सत्र नहीं",
+  "terminalSocketSources": "सॉकेट स्रोत",
+  "terminalSourceBuiltin": "अंतर्निहित",
+  "terminalSourceCustom": "कस्टम",
+  "terminalAddSocketSource": "सॉकेट स्रोत जोड़ें",
+  "terminalSocketKindNamed": "नामित सॉकेट (-L)",
+  "terminalSocketKindPath": "पाथ सॉकेट (-S)",
+  "terminalSocketInputHint": "सॉकेट नाम या पूर्ण पथ",
+  "terminalSocketInvalid": "अमान्य सॉकेट प्रारूप। नामित सॉकेट 1-64 अक्षरांकीय वर्ण; पाथ सॉकेट / से शुरू होना चाहिए और '..' नहीं होना चाहिए",
+  "terminalSocketExists": "यह सॉकेट स्रोत पहले से जोड़ा जा चुका है।",
+  "terminalTerminateClientsWarning": "चेतावनी: वर्तमान में {count} क्लाइंट इस सत्र से जुड़े हैं। समाप्त करने से वे सभी डिस्कनेक्ट हो जाएंगे।",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "सत्र समाप्त करें",
+  "terminalSocketLabel": "सॉकेट",
+  "terminalServerLabel": "सर्वर",
+  "terminalSocketErrorsBanner": "{count} सॉकेट स्रोत त्रुटियां",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -6132,4 +6132,84 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => 'कोई मेल खाने वाली कुंजी नहीं';
+
+  @override
+  String get terminalStatusEndedUnrecoverable =>
+      'समाप्त · पुनर्स्थापित नहीं हो सकता';
+
+  @override
+  String get terminalStatusUnavailable => 'स्रोत अनुपलब्ध';
+
+  @override
+  String get terminalGroupUnconfirmed => 'अपुष्ट';
+
+  @override
+  String get terminalGroupUnavailable => 'स्रोत अनुपलब्ध';
+
+  @override
+  String get terminalExternalBadge => 'बाहरी';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return 'क्लाइंट: $count';
+  }
+
+  @override
+  String get terminalHideSession => 'इतिहास से छिपाएं';
+
+  @override
+  String get terminalUnhideSession => 'छिपाना रद्द करें';
+
+  @override
+  String get terminalHiddenSessionsTitle => 'छिपे हुए सत्र';
+
+  @override
+  String get terminalNoHiddenSessions => 'कोई छिपा हुआ सत्र नहीं';
+
+  @override
+  String get terminalSocketSources => 'सॉकेट स्रोत';
+
+  @override
+  String get terminalSourceBuiltin => 'अंतर्निहित';
+
+  @override
+  String get terminalSourceCustom => 'कस्टम';
+
+  @override
+  String get terminalAddSocketSource => 'सॉकेट स्रोत जोड़ें';
+
+  @override
+  String get terminalSocketKindNamed => 'नामित सॉकेट (-L)';
+
+  @override
+  String get terminalSocketKindPath => 'पाथ सॉकेट (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'सॉकेट नाम या पूर्ण पथ';
+
+  @override
+  String get terminalSocketInvalid =>
+      'अमान्य सॉकेट प्रारूप। नामित सॉकेट 1-64 अक्षरांकीय वर्ण; पाथ सॉकेट / से शुरू होना चाहिए और \'..\' नहीं होना चाहिए';
+
+  @override
+  String get terminalSocketExists => 'यह सॉकेट स्रोत पहले से जोड़ा जा चुका है।';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return 'चेतावनी: वर्तमान में $count क्लाइंट इस सत्र से जुड़े हैं। समाप्त करने से वे सभी डिस्कनेक्ट हो जाएंगे।';
+  }
+
+  @override
+  String get terminalTerminateSession => 'सत्र समाप्त करें';
+
+  @override
+  String get terminalSocketLabel => 'सॉकेट';
+
+  @override
+  String get terminalServerLabel => 'सर्वर';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count सॉकेट स्रोत त्रुटियां';
+  }
 }

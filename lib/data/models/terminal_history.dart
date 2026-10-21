@@ -5,8 +5,11 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter/widgets.dart' show StringCharacters;
 
 import 'server_profile.dart';
+import 'tmux_socket_source.dart';
 
-enum TerminalHistoryStatus { unknown, available, open, ended }
+export 'tmux_socket_source.dart';
+
+enum TerminalHistoryStatus { unknown, available, open, ended, unavailable }
 
 /// Device-local metadata only; terminal output and authentication are never saved.
 @immutable
@@ -19,6 +22,10 @@ class TerminalHistoryRecord {
   final DateTime createdAt;
   final DateTime lastUsedAt;
   final bool isLegacy;
+  final TmuxSocketSource socket;
+  final TmuxSessionIdentity? identity;
+  final bool isExternal;
+  final int attachedClients;
 
   const TerminalHistoryRecord({
     required this.id,
@@ -29,6 +36,10 @@ class TerminalHistoryRecord {
     required this.createdAt,
     required this.lastUsedAt,
     this.isLegacy = false,
+    this.socket = TmuxSocketSource.app,
+    this.identity,
+    this.isExternal = false,
+    this.attachedClients = 0,
   });
 
   static String targetFor(ServerProfile server) => sha256
@@ -53,15 +64,23 @@ class TerminalHistoryRecord {
     String? title,
     DateTime? lastUsedAt,
     bool? isLegacy,
+    TmuxSessionIdentity? identity,
+    int? attachedClients,
+    String? remoteSessionName,
+    TmuxSocketSource? socket,
   }) => TerminalHistoryRecord(
     id: id,
     serverId: serverId,
     targetKey: targetKey,
-    remoteSessionName: remoteSessionName,
+    remoteSessionName: remoteSessionName ?? this.remoteSessionName,
     title: title ?? this.title,
     createdAt: createdAt,
     lastUsedAt: lastUsedAt ?? this.lastUsedAt,
     isLegacy: isLegacy ?? this.isLegacy,
+    socket: socket ?? this.socket,
+    identity: identity ?? this.identity,
+    isExternal: isExternal,
+    attachedClients: attachedClients ?? this.attachedClients,
   );
 
   Map<String, Object> toJson() => {
@@ -72,6 +91,9 @@ class TerminalHistoryRecord {
     'title': title,
     'createdAt': createdAt.toUtc().toIso8601String(),
     'lastUsedAt': lastUsedAt.toUtc().toIso8601String(),
+    'socket': socket.toJson(),
+    if (identity != null) 'identity': identity!.toJson(),
+    'isExternal': isExternal,
   };
 
   factory TerminalHistoryRecord.fromJson(Map<String, dynamic> json) {
@@ -83,13 +105,31 @@ class TerminalHistoryRecord {
       title: validateTitle(json['title'] as String),
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastUsedAt: DateTime.parse(json['lastUsedAt'] as String),
+      socket: json['socket'] == null
+          ? TmuxSocketSource.app
+          : TmuxSocketSource.fromJson(
+              Map<String, dynamic>.from(json['socket'] as Map),
+            ),
+      identity: json['identity'] == null
+          ? null
+          : TmuxSessionIdentity.fromJson(
+              Map<String, dynamic>.from(json['identity'] as Map),
+            ),
+      isExternal: json['isExternal'] == true,
     );
     if (record.id.isEmpty ||
         record.serverId.isEmpty ||
         !RegExp(r'^[a-f0-9]{64}$').hasMatch(record.targetKey) ||
-        !RegExp(
-          r'^valhalla_[A-Za-z0-9_-]+$',
-        ).hasMatch(record.remoteSessionName)) {
+        (record.identity == null &&
+            !RegExp(
+              r'^valhalla_[A-Za-z0-9_-]+$',
+            ).hasMatch(record.remoteSessionName)) ||
+        record.remoteSessionName.isEmpty ||
+        RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(record.remoteSessionName)) {
+      throw const FormatException('TERMINAL_HISTORY_INVALID');
+    }
+    if (record.identity == null &&
+        record.socket.id != TmuxSocketSource.app.id) {
       throw const FormatException('TERMINAL_HISTORY_INVALID');
     }
     return record;
@@ -101,15 +141,19 @@ class TerminalHistorySnapshot {
   final List<TerminalHistoryRecord> records;
   final String? defaultRecordId;
   final List<String> forgottenSessionNames;
+  final List<TmuxSocketSource> socketSources;
+  final List<String> hiddenRecordIds;
 
   const TerminalHistorySnapshot({
     this.records = const [],
     this.defaultRecordId,
     this.forgottenSessionNames = const [],
+    this.socketSources = const [],
+    this.hiddenRecordIds = const [],
   });
 
   Map<String, Object?> toJson() => {
-    'version': 1,
+    'version': 2,
     'records': records
         .where((item) => !item.isLegacy)
         .map((item) => item.toJson())
@@ -117,10 +161,12 @@ class TerminalHistorySnapshot {
     'defaultRecordId': defaultRecordId,
     if (forgottenSessionNames.isNotEmpty)
       'forgottenSessionNames': forgottenSessionNames,
+    'socketSources': socketSources.map((s) => s.toJson()).toList(),
+    'hiddenRecordIds': hiddenRecordIds,
   };
 
   factory TerminalHistorySnapshot.fromJson(Map<String, dynamic> json) {
-    if (json['version'] != 1) {
+    if (json['version'] != 1 && json['version'] != 2) {
       throw const FormatException('TERMINAL_HISTORY_INVALID');
     }
     final records = (json['records'] as List)
@@ -131,7 +177,13 @@ class TerminalHistorySnapshot {
         )
         .toList();
     if (records.map((item) => item.id).toSet().length != records.length ||
-        records.map((item) => item.remoteSessionName).toSet().length !=
+        records
+                .map(
+                  (item) =>
+                      '${item.socket.id}/${item.identity?.key ?? item.remoteSessionName}',
+                )
+                .toSet()
+                .length !=
             records.length) {
       throw const FormatException('TERMINAL_HISTORY_INVALID');
     }
@@ -147,6 +199,14 @@ class TerminalHistorySnapshot {
       records: List.unmodifiable(records),
       defaultRecordId: json['defaultRecordId'] as String?,
       forgottenSessionNames: List.unmodifiable(forgotten.toSet()),
+      socketSources: List.unmodifiable(
+        (json['socketSources'] as List? ?? []).map(
+          (s) => TmuxSocketSource.fromJson(Map<String, dynamic>.from(s as Map)),
+        ),
+      ),
+      hiddenRecordIds: List.unmodifiable(
+        List<String>.from(json['hiddenRecordIds'] as List? ?? []),
+      ),
     );
   }
 }

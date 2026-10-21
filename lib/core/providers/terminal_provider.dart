@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show StringCharacters;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:xterm/xterm.dart';
@@ -84,6 +85,9 @@ class SshTerminalState {
   final List<TerminalHistoryRecord> history;
   final Map<String, TerminalHistoryStatus> historyStatuses;
   final String? defaultHistoryId;
+  final List<TmuxSocketSource> socketSources;
+  final List<String> hiddenRecordIds;
+  final Map<String, String> socketErrors;
   final bool isInitialized;
   final bool isInitializing;
   final bool isHistoryLoading;
@@ -100,6 +104,9 @@ class SshTerminalState {
     this.history = const [],
     this.historyStatuses = const {},
     this.defaultHistoryId,
+    this.socketSources = const [],
+    this.hiddenRecordIds = const [],
+    this.socketErrors = const {},
     this.isInitialized = false,
     this.isInitializing = false,
     this.isHistoryLoading = false,
@@ -123,6 +130,9 @@ class SshTerminalState {
     List<TerminalHistoryRecord>? history,
     Map<String, TerminalHistoryStatus>? historyStatuses,
     String? defaultHistoryId,
+    List<TmuxSocketSource>? socketSources,
+    List<String>? hiddenRecordIds,
+    Map<String, String>? socketErrors,
     bool clearDefaultHistory = false,
     bool? isInitialized,
     bool? isInitializing,
@@ -146,6 +156,9 @@ class SshTerminalState {
       defaultHistoryId: clearDefaultHistory
           ? null
           : (defaultHistoryId ?? this.defaultHistoryId),
+      socketSources: socketSources ?? this.socketSources,
+      hiddenRecordIds: hiddenRecordIds ?? this.hiddenRecordIds,
+      socketErrors: socketErrors ?? this.socketErrors,
       isInitialized: isInitialized ?? this.isInitialized,
       isInitializing: isInitializing ?? this.isInitializing,
       isHistoryLoading: isHistoryLoading ?? this.isHistoryLoading,
@@ -177,6 +190,85 @@ class _TerminalWorkspace {
 }
 
 class TerminalNotifier extends Notifier<SshTerminalState> {
+  Timer? _historyTimer;
+  bool _historyVisible = false;
+
+  void setHistoryVisible(bool visible) {
+    _historyVisible = visible;
+    _historyTimer?.cancel();
+    _historyTimer = null;
+    if (!visible) return;
+    unawaited(refreshHistory());
+    _historyTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => unawaited(refreshHistory()),
+    );
+  }
+
+  Future<void> addSocketSource(
+    TmuxSocketSource source, {
+    String? expectedTargetKey,
+  }) async {
+    final workspace = _current;
+    if (expectedTargetKey != null &&
+        workspace?.targetKey != expectedTargetKey) {
+      throw StateError('TERMINAL_HISTORY_TARGET_CHANGED');
+    }
+    if (workspace == null ||
+        source.isBuiltin ||
+        workspace.value.socketSources.any((s) => s.id == source.id)) {
+      return;
+    }
+    await _saveHistory(
+      workspace,
+      (current) => current,
+      updateSocketSources: (sources) => sources.any((s) => s.id == source.id)
+          ? sources
+          : [...sources, source],
+    );
+    await workspace.refreshing;
+    if (_isCurrent(workspace)) await refreshHistory();
+  }
+
+  Future<void> removeSocketSource(
+    String sourceId, {
+    String? expectedTargetKey,
+  }) async {
+    final workspace = _current;
+    if (expectedTargetKey != null &&
+        workspace?.targetKey != expectedTargetKey) {
+      throw StateError('TERMINAL_HISTORY_TARGET_CHANGED');
+    }
+    if (workspace == null) return;
+    await _saveHistory(
+      workspace,
+      (current) =>
+          current.records.any(
+            (r) => r.id == current.defaultRecordId && r.socket.id == sourceId,
+          )
+          ? TerminalHistorySnapshot(records: current.records)
+          : current,
+      updateSocketSources: (sources) =>
+          sources.where((s) => s.id != sourceId).toList(),
+    );
+    await workspace.refreshing;
+    if (_isCurrent(workspace)) await refreshHistory();
+  }
+
+  Future<void> unhideHistory(String id, {String? expectedTargetKey}) async {
+    final workspace = _current;
+    if (expectedTargetKey != null &&
+        workspace?.targetKey != expectedTargetKey) {
+      throw StateError('TERMINAL_HISTORY_TARGET_CHANGED');
+    }
+    if (workspace == null) return;
+    await _saveHistory(
+      workspace,
+      (current) => current,
+      updateHiddenRecordIds: (ids) => ids.where((item) => item != id).toList(),
+    );
+  }
+
   final Map<String, _TerminalWorkspace> _workspaces = {};
   _TerminalWorkspace? _current;
   static const _uuid = Uuid();
@@ -204,6 +296,7 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
           (prev?.isConnected != true ||
               prev?.activeServerId != next.activeServerId)) {
         unawaited(rebindAfterReconnect());
+        if (_historyVisible) unawaited(refreshHistory());
       } else if (!next.isConnected) {
         final workspace = _current;
         if (workspace != null) {
@@ -211,13 +304,18 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
           state = state.copyWith(
             historyStatuses: {
               for (final record in state.history)
-                record.id: TerminalHistoryStatus.unknown,
+                record.id:
+                    state.historyStatuses[record.id] ==
+                        TerminalHistoryStatus.ended
+                    ? TerminalHistoryStatus.ended
+                    : TerminalHistoryStatus.unknown,
             },
           );
         }
       }
     });
     ref.onDispose(() {
+      _historyTimer?.cancel();
       for (final workspace in _workspaces.values) {
         _disposeWorkspace(workspace);
       }
@@ -259,6 +357,8 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
               moshAvailable: server.moshEnabled,
               history: snapshot.records,
               defaultHistoryId: snapshot.defaultRecordId,
+              socketSources: snapshot.socketSources,
+              hiddenRecordIds: snapshot.hiddenRecordIds,
               errorCode: errorCode,
             ),
           )
@@ -410,8 +510,11 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
 
   Future<void> _saveHistory(
     _TerminalWorkspace workspace,
-    TerminalHistorySnapshot Function(TerminalHistorySnapshot) update,
-  ) {
+    TerminalHistorySnapshot Function(TerminalHistorySnapshot) update, {
+    List<TmuxSocketSource> Function(List<TmuxSocketSource>)?
+    updateSocketSources,
+    List<String> Function(List<String>)? updateHiddenRecordIds,
+  }) {
     final pending = workspace.saveTail.then((_) async {
       if (!_valid(workspace)) return;
       if (!workspace.historyReadable) {
@@ -430,10 +533,20 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       };
       final snapshot = TerminalHistorySnapshot(
         records: updated.records
-            .where((record) => !forgotten.contains(record.remoteSessionName))
+            .where(
+              (record) =>
+                  record.socket.id != TmuxSocketSource.app.id ||
+                  !forgotten.contains(record.remoteSessionName),
+            )
             .toList(),
         defaultRecordId: updated.defaultRecordId,
         forgottenSessionNames: forgotten.toList(),
+        socketSources:
+            updateSocketSources?.call(workspace.value.socketSources) ??
+            workspace.value.socketSources,
+        hiddenRecordIds:
+            updateHiddenRecordIds?.call(workspace.value.hiddenRecordIds) ??
+            workspace.value.hiddenRecordIds,
       );
       await ref
           .read(localStorageServiceProvider)
@@ -457,6 +570,8 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
           ],
           defaultHistoryId: snapshot.defaultRecordId,
           clearDefaultHistory: snapshot.defaultRecordId == null,
+          socketSources: snapshot.socketSources,
+          hiddenRecordIds: snapshot.hiddenRecordIds,
         ),
       );
     });
@@ -567,6 +682,8 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     String? targetKey,
     TerminalSessionIntent sessionIntent = TerminalSessionIntent.createFresh,
     String? tmuxSessionName,
+    TmuxSocketSource tmuxSocket = TmuxSocketSource.app,
+    TmuxSessionIdentity? tmuxIdentity,
   }) {
     final terminal = Terminal(maxLines: 1500);
     final bridge = TerminalSessionBridge(
@@ -578,6 +695,8 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       preferTmux: preferTmux,
       sessionIntent: sessionIntent,
       tmuxSessionName: tmuxSessionName,
+      tmuxSocket: tmuxSocket,
+      tmuxIdentity: tmuxIdentity,
     );
 
     return TerminalTab(
@@ -708,12 +827,15 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     final name = tab.bridge.activeTmuxSessionName;
     if (!_valid(workspace) ||
         name == null ||
-        workspace.forgottenSessionNames.contains(name) ||
+        (tab.bridge.tmuxSocket.id == TmuxSocketSource.app.id &&
+            workspace.forgottenSessionNames.contains(name)) ||
         tab.bridge.state != TerminalConnectionState.connected ||
         !workspace.value.tabs.any((item) => item.id == tab.id)) {
       return;
     }
     try {
+      final client = _clientFor(workspace);
+      final epoch = workspace.connectionEpoch;
       await _saveHistory(workspace, (current) {
         final liveTab = workspace.value.tabs
             .where((item) => item.id == tab.id)
@@ -723,7 +845,11 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
             .firstOrNull;
         final now = DateTime.now().toUtc();
         final record =
-            existing?.copyWith(lastUsedAt: now, isLegacy: false) ??
+            existing?.copyWith(
+              lastUsedAt: now,
+              isLegacy: false,
+              identity: tab.bridge.tmuxIdentity,
+            ) ??
             TerminalHistoryRecord(
               id: tab.id,
               serverId: workspace.server.id,
@@ -732,6 +858,8 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
               title: liveTab?.title ?? tab.title,
               createdAt: now,
               lastUsedAt: now,
+              socket: tab.bridge.tmuxSocket,
+              identity: tab.bridge.tmuxIdentity,
             );
         return TerminalHistorySnapshot(
           records: [
@@ -757,6 +885,40 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
           ),
         );
       }
+      // Queue the first save before any metadata I/O, preserving immediate rename/close ordering.
+      if (tab.bridge.tmuxIdentity == null && client != null) {
+        try {
+          final sessions = await TerminalSessionBridge.discoverTmuxSessions(
+            client,
+            serverId: workspace.server.id,
+            socket: tab.bridge.tmuxSocket,
+            includeExternal: true,
+          );
+          if (!_isCurrent(workspace) || epoch != workspace.connectionEpoch) {
+            return;
+          }
+          final identity = sessions
+              .where((s) => s.name == name)
+              .firstOrNull
+              ?.identity;
+          if (identity == null) return;
+          tab.bridge.tmuxIdentity = identity;
+          await _saveHistory(
+            workspace,
+            (current) => TerminalHistorySnapshot(
+              records: [
+                for (final record in current.records)
+                  record.id == tab.id
+                      ? record.copyWith(identity: identity)
+                      : record,
+              ],
+              defaultRecordId: current.defaultRecordId,
+            ),
+          );
+        } catch (_) {
+          // Metadata failure does not tear down the PTY; later discovery can retry binding.
+        }
+      }
     } catch (error, stack) {
       _report(workspace, 'TERMINAL_HISTORY_SAVE_FAILED', error, stack);
     }
@@ -773,118 +935,178 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
 
   Future<void> _refreshHistory(_TerminalWorkspace workspace) async {
     final client = _clientFor(workspace);
-    if (client == null) {
-      _publish(
-        workspace,
-        workspace.value.copyWith(
-          historyStatuses: {
-            for (final item in workspace.value.history)
-              item.id: TerminalHistoryStatus.unknown,
-          },
-          errorCode: 'SSH_DISCONNECTED',
-        ),
-      );
-      return;
-    }
+    if (client == null) return;
     final epoch = workspace.connectionEpoch;
-    _publish(
-      workspace,
-      workspace.value.copyWith(isHistoryLoading: true, clearError: true),
-    );
+    final sources = [
+      TmuxSocketSource.app,
+      TmuxSocketSource.standard,
+      ...workspace.value.socketSources,
+    ];
+    _publish(workspace, workspace.value.copyWith(isHistoryLoading: true));
+    final found = <TmuxSessionInfo>[];
+    final errors = <String, String>{};
+    final complete = <String>{};
     try {
-      final sessions = await TerminalSessionBridge.discoverTmuxSessions(
-        client,
-        serverId: workspace.server.id,
-      );
-      if (!_isCurrent(workspace) || epoch != workspace.connectionEpoch) return;
-      final allowLegacy = await ref
-          .read(localStorageServiceProvider)
-          .claimLegacyTerminalTarget(workspace.server.id, workspace.targetKey);
+      // Bounded workers: a slow or inaccessible custom socket cannot flood SSH.
+      var cursor = 0;
+      Future<void> worker() async {
+        while (cursor < sources.length) {
+          final source = sources[cursor++];
+          try {
+            final sessions = await TerminalSessionBridge.discoverTmuxSessions(
+              client,
+              serverId: workspace.server.id,
+              socket: source,
+              includeExternal: true,
+            );
+            found.addAll(sessions);
+            complete.add(source.id);
+          } catch (_) {
+            errors[source.id] = 'TMUX_HISTORY_QUERY_FAILED';
+          }
+          if (!_isCurrent(workspace) || epoch != workspace.connectionEpoch) {
+            return;
+          }
+        }
+      }
+
+      await Future.wait([worker(), worker()]);
       if (!_isCurrent(workspace) ||
           epoch != workspace.connectionEpoch ||
           !identical(client, _clientFor(workspace))) {
         return;
       }
-      final names = sessions.map((session) => session.name).toSet();
-      final records = [
-        ...workspace.value.history.where(
-          (record) =>
-              !record.isLegacy || names.contains(record.remoteSessionName),
-        ),
-      ];
-      final known = records.map((record) => record.remoteSessionName).toSet();
-      final legacyPrefix = TmuxSessionPlanner.sessionName(
-        workspace.server.id,
-        '',
+      if (sources.map((s) => s.id).join('\n') !=
+          [
+            TmuxSocketSource.app,
+            TmuxSocketSource.standard,
+            ...workspace.value.socketSources,
+          ].map((s) => s.id).join('\n')) {
+        return;
+      }
+      found.sort(
+        (a, b) => sources
+            .indexWhere((s) => s.id == a.socket.id)
+            .compareTo(sources.indexWhere((s) => s.id == b.socket.id)),
       );
-      final scopedPrefix = '$legacyPrefix${workspace.targetKey}_';
-      for (final session in sessions) {
-        if (known.contains(session.name) ||
+      final sourceIds = sources.map((s) => s.id).toSet();
+      final byIdentity = {
+        for (final session in found) session.identity!.key: session,
+      };
+      final bySourceIdentity = {
+        for (final session in found)
+          '${session.socket.id}\x00${session.identity!.key}': session,
+      };
+      final byName = {
+        for (final session in found)
+          '${session.socket.id}\x00${session.name}': session,
+      };
+      final records = <TerminalHistoryRecord>[];
+      final statuses = <String, TerminalHistoryStatus>{};
+      final known = <String>{};
+      for (final record in workspace.value.history) {
+        final session = record.identity != null
+            ? (bySourceIdentity['${record.socket.id}\x00${record.identity!.key}'] ??
+                  byIdentity[record.identity!.key])
+            : byName['${record.socket.id}\x00${record.remoteSessionName}'];
+        var updated = record;
+        if (!sourceIds.contains(record.socket.id) && session == null) {
+          statuses[record.id] = TerminalHistoryStatus.unavailable;
+        } else if (session != null) {
+          updated = record.copyWith(
+            identity: session.identity,
+            attachedClients: session.attachedClients,
+            remoteSessionName: session.name,
+            socket: session.socket,
+          );
+          known.add(session.identity!.key);
+          statuses[record.id] =
+              workspace.value.tabs.any(
+                (t) =>
+                    t.id == record.id &&
+                    t.bridge.state == TerminalConnectionState.connected,
+              )
+              ? TerminalHistoryStatus.open
+              : TerminalHistoryStatus.available;
+          for (final tab in workspace.value.tabs.where(
+            (t) => t.id == record.id,
+          )) {
+            tab.bridge.tmuxIdentity = session.identity;
+            tab.bridge.tmuxSocket = updated.socket;
+          }
+        } else if (complete.contains(record.socket.id)) {
+          statuses[record.id] = TerminalHistoryStatus.ended;
+        } else {
+          statuses[record.id] =
+              workspace.value.historyStatuses[record.id] ==
+                  TerminalHistoryStatus.ended
+              ? TerminalHistoryStatus.ended
+              : TerminalHistoryStatus.unknown;
+        }
+        records.add(updated);
+      }
+      final prefix =
+          '${TmuxSessionPlanner.sessionName(workspace.server.id, '')}${workspace.targetKey}_';
+      final recordIds = records.map((r) => r.id).toSet();
+      for (final session in found) {
+        final identity = session.identity!;
+        if (!known.add(identity.key)) continue;
+        if (session.socket.id == TmuxSocketSource.app.id &&
             workspace.forgottenSessionNames.contains(session.name)) {
           continue;
         }
-        final scopedId = session.name.startsWith(scopedPrefix)
-            ? session.name.substring(scopedPrefix.length)
-            : null;
-        final scoped =
+        final own =
+            session.socket.id == TmuxSocketSource.app.id &&
+            session.name.startsWith(prefix);
+        final scopedId = own ? session.name.substring(prefix.length) : null;
+        final id =
             scopedId != null &&
-            RegExp(
-              r'^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$',
-            ).hasMatch(scopedId);
-        final legacyId = session.name.startsWith(legacyPrefix)
-            ? session.name.substring(legacyPrefix.length)
-            : '';
-        final legacy =
-            allowLegacy &&
-            RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(workspace.server.id) &&
-            RegExp(r'^\d{1,12}$').hasMatch(legacyId);
-        if (scoped || legacy) {
-          records.add(
-            TerminalHistoryRecord(
-              id: scoped
-                  ? scopedId
-                  : 'legacy-${workspace.targetKey}-${session.name}',
-              serverId: workspace.server.id,
-              targetKey: workspace.targetKey,
-              remoteSessionName: session.name,
-              title: scoped ? 'bash' : 'bash #$legacyId',
-              createdAt: session.createdAt,
-              lastUsedAt: session.createdAt,
-              isLegacy: true,
-            ),
-          );
-        }
+                RegExp(r'^[a-f0-9-]{36}$').hasMatch(scopedId) &&
+                !recordIds.contains(scopedId)
+            ? scopedId
+            : 'remote-${identity.key}';
+        if (!recordIds.add(id)) continue;
+        final record = TerminalHistoryRecord(
+          id: id,
+          serverId: workspace.server.id,
+          targetKey: workspace.targetKey,
+          remoteSessionName: session.name,
+          title: own ? 'bash' : session.name.characters.take(64).toString(),
+          createdAt: session.createdAt,
+          lastUsedAt: session.createdAt,
+          isLegacy: true,
+          socket: session.socket,
+          identity: identity,
+          isExternal: !own,
+          attachedClients: session.attachedClients,
+        );
+        records.add(record);
+        statuses[id] = TerminalHistoryStatus.available;
       }
       records.sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
       _publish(
         workspace,
         workspace.value.copyWith(
           history: List.unmodifiable(records),
-          historyStatuses: {
-            for (final record in records)
-              record.id: !names.contains(record.remoteSessionName)
-                  ? TerminalHistoryStatus.ended
-                  : workspace.value.tabs.any(
-                      (tab) =>
-                          tab.id == record.id &&
-                          tab.bridge.state == TerminalConnectionState.connected,
-                    )
-                  ? TerminalHistoryStatus.open
-                  : TerminalHistoryStatus.available,
-          },
+          historyStatuses: statuses,
+          socketErrors: errors,
         ),
+      );
+      // Display remote truth immediately; never wait on a pending rename/default disk write.
+      unawaited(
+        _saveHistory(workspace, (current) {
+          final id = current.defaultRecordId;
+          return id != null &&
+                  workspace.value.historyStatuses[id] ==
+                      TerminalHistoryStatus.ended
+              ? TerminalHistorySnapshot(records: current.records)
+              : current;
+        }).catchError((Object error, StackTrace stack) {
+          _report(workspace, 'TERMINAL_HISTORY_SAVE_FAILED', error, stack);
+        }),
       );
     } catch (error, stack) {
       if (_isCurrent(workspace) && epoch == workspace.connectionEpoch) {
-        _publish(
-          workspace,
-          workspace.value.copyWith(
-            historyStatuses: {
-              for (final record in workspace.value.history)
-                record.id: TerminalHistoryStatus.unknown,
-            },
-          ),
-        );
         _report(workspace, 'TERMINAL_HISTORY_REFRESH_FAILED', error, stack);
       }
     } finally {
@@ -920,6 +1142,27 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
         record.serverId != workspace.server.id) {
       return;
     }
+    if (record.identity == null) {
+      await refreshHistory();
+      if (!_isCurrent(workspace)) return;
+      record =
+          workspace.value.history.where((r) => r.id == record.id).firstOrNull ??
+          record;
+    }
+    final status = workspace.value.historyStatuses[record.id];
+    if (status == TerminalHistoryStatus.ended) {
+      await _handleMissing(workspace, record, isStartup: isStartup);
+      return;
+    }
+    if (status == TerminalHistoryStatus.unavailable ||
+        record.identity == null ||
+        ![
+          TmuxSocketSource.app.id,
+          TmuxSocketSource.standard.id,
+          ...workspace.value.socketSources.map((s) => s.id),
+        ].contains(record.socket.id)) {
+      throw StateError('TERMINAL_HISTORY_UNVERIFIED');
+    }
     final openIndex = workspace.value.tabs.indexWhere(
       (tab) => tab.id == record.id,
     );
@@ -937,6 +1180,8 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     final exists = await TerminalSessionBridge.tmuxSessionExists(
       client,
       record.remoteSessionName,
+      socket: record.socket,
+      identity: record.identity,
     );
     if (!_isCurrent(workspace) ||
         epoch != workspace.connectionEpoch ||
@@ -965,6 +1210,8 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       preferTmux: true,
       sessionIntent: TerminalSessionIntent.restoreExisting,
       tmuxSessionName: record.remoteSessionName,
+      tmuxSocket: record.socket,
+      tmuxIdentity: record.identity,
     );
     workspace.startupApplied = true;
     _appendTab(workspace, tab);
@@ -1044,14 +1291,21 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     final workspace = _current;
     if (workspace == null) return;
     try {
+      if (id != null) await refreshHistory();
+      if (!_isCurrent(workspace)) {
+        throw StateError('TERMINAL_HISTORY_TARGET_CHANGED');
+      }
       await _saveHistory(workspace, (current) {
         if (id != null) {
           final record = current.records
               .where((item) => item.id == id)
               .firstOrNull;
           if (record == null ||
-              workspace.value.historyStatuses[id] ==
-                  TerminalHistoryStatus.ended) {
+              (workspace.value.historyStatuses[id] !=
+                      TerminalHistoryStatus.available &&
+                  workspace.value.historyStatuses[id] !=
+                      TerminalHistoryStatus.open) ||
+              workspace.value.hiddenRecordIds.contains(id)) {
             throw StateError('TERMINAL_SESSION_MISSING');
           }
           if (record.isLegacy &&
@@ -1081,6 +1335,10 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
         throw StateError('TERMINAL_SESSION_MISSING');
       }
     } catch (error, stack) {
+      if (error is StateError &&
+          error.message == 'TERMINAL_HISTORY_TARGET_CHANGED') {
+        rethrow;
+      }
       _report(workspace, 'TERMINAL_DEFAULT_SAVE_FAILED', error, stack);
       rethrow;
     }
@@ -1171,14 +1429,20 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
           .firstOrNull;
       if (record == null) return;
       if (record.targetKey != workspace.targetKey ||
-          record.serverId != workspace.server.id ||
-          !TmuxSessionPlanner.isSessionForServer(
-            record.remoteSessionName,
-            workspace.server.id,
-          )) {
+          record.serverId != workspace.server.id) {
         throw StateError('TERMINAL_HISTORY_INVALID');
       }
       if (terminateRemote) {
+        if (![
+          TmuxSocketSource.app.id,
+          TmuxSocketSource.standard.id,
+          ...workspace.value.socketSources.map((s) => s.id),
+        ].contains(record.socket.id)) {
+          throw StateError('TERMINAL_HISTORY_UNVERIFIED');
+        }
+        if (record.identity == null) {
+          throw StateError('TERMINAL_HISTORY_UNVERIFIED');
+        }
         final client = _clientFor(workspace);
         if (client == null) throw StateError('SSH_DISCONNECTED');
         final epoch = workspace.connectionEpoch;
@@ -1192,6 +1456,8 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
           client,
           record.remoteSessionName,
           tmuxPath: tmuxPath,
+          socket: record.socket,
+          identity: record.identity,
         );
         if (!currentTarget()) throw StateError('SSH_DISCONNECTED');
         if (exists) {
@@ -1199,6 +1465,8 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
             client,
             record.remoteSessionName,
             tmuxPath: tmuxPath,
+            socket: record.socket,
+            identity: record.identity,
           );
         }
         terminating = false;
@@ -1206,31 +1474,25 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       await _saveHistory(
         workspace,
         (current) => TerminalHistorySnapshot(
-          records: current.records.where((item) => item.id != id).toList(),
+          records: current.records
+              .map(
+                (item) => item.id == id ? item.copyWith(isLegacy: false) : item,
+              )
+              .toList(),
           defaultRecordId: current.defaultRecordId == id
               ? null
               : current.defaultRecordId,
-          forgottenSessionNames: [
-            ...current.forgottenSessionNames,
-            record.remoteSessionName,
-          ],
         ),
+        updateHiddenRecordIds: (ids) =>
+            terminateRemote ? ids : {...ids, id}.toList(),
       );
       if (!_valid(workspace)) return;
-      if (terminateRemote) {
-        for (final tab in workspace.value.tabs.toList()) {
-          if (tab.id == id ||
-              tab.bridge.activeTmuxSessionName == record.remoteSessionName) {
-            _removeTab(workspace, tab.id);
-          }
-        }
-      }
       _publish(
         workspace,
         workspace.value.copyWith(
           historyStatuses: {
-            for (final entry in workspace.value.historyStatuses.entries)
-              if (entry.key != id) entry.key: entry.value,
+            ...workspace.value.historyStatuses,
+            if (terminateRemote) id: TerminalHistoryStatus.ended,
           },
         ),
       );
@@ -1475,6 +1737,14 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
         return;
       }
       if (!workspace.value.tabs.any((item) => item.id == tab.id)) continue;
+      if (tab.bridge.mode == TerminalSessionMode.tmux &&
+          ![
+            TmuxSocketSource.app.id,
+            TmuxSocketSource.standard.id,
+            ...workspace.value.socketSources.map((s) => s.id),
+          ].contains(tab.bridge.tmuxSocket.id)) {
+        continue;
+      }
       try {
         await workspace.starting[tab.id];
       } catch (error, stack) {

@@ -50,7 +50,11 @@ class LocalStorageService {
     String serverId,
     String targetKey,
   ) {
-    final raw = _prefs.getString(_terminalHistoryKey(serverId, targetKey));
+    final raw =
+        _prefs.getString(
+          'valhalla_terminal_history_v2::$serverId::$targetKey',
+        ) ??
+        _prefs.getString(_terminalHistoryKey(serverId, targetKey));
     if (raw == null) return const TerminalHistorySnapshot();
     final snapshot = TerminalHistorySnapshot.fromJson(
       Map<String, dynamic>.from(jsonDecode(raw) as Map),
@@ -75,7 +79,7 @@ class LocalStorageService {
     }
     try {
       if (!await _prefs.setString(
-        _terminalHistoryKey(serverId, targetKey),
+        'valhalla_terminal_history_v2::$serverId::$targetKey',
         jsonEncode(snapshot.toJson()),
       )) {
         throw const StorageException('TERMINAL_HISTORY_SAVE_FAILED');

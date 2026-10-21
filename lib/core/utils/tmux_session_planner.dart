@@ -1,16 +1,59 @@
 import 'shell_quote.dart';
+import '../../data/models/tmux_socket_source.dart';
+
+export '../../data/models/tmux_socket_source.dart';
 
 /// 终端会话在 tmux 中的命名与命令构造（纯逻辑）。
 ///
 /// 抽成独立单元有两个理由：
-/// 1. 命令拼装是安全敏感点 —— 必须保证**永远**只操作独立 socket，
-///    绝不能碰到默认 socket（那是用户自己 tmux 会话所在的地方）；
+/// 1. 新建始终使用App专用socket；外部会话仅通过明确来源与已校验身份操作。
 /// 2. 无副作用，测试可以直接断言生成的命令字符串。
 abstract final class TmuxSessionPlanner {
+  static String socketArguments(TmuxSocketSource socket) =>
+      socket.kind == TmuxSocketKind.app
+      ? '-L valhalla'
+      : socket.kind == TmuxSocketKind.standard
+      ? '-L default'
+      : '${socket.kind == TmuxSocketKind.path ? '-S' : '-L'} ${cliShellQuote(socket.value)}';
+
+  static String existingCommand(
+    String verb,
+    String name, {
+    TmuxSocketSource socket = TmuxSocketSource.app,
+    TmuxSessionIdentity? identity,
+  }) {
+    if (!const [
+      'attach-session',
+      'has-session',
+      'kill-session',
+    ].contains(verb)) {
+      throw ArgumentError('TMUX_INVALID_OPERATION');
+    }
+    identity?.validate();
+    if (identity == null && socket.id != TmuxSocketSource.app.id) {
+      throw ArgumentError('TMUX_INVALID_SESSION_IDENTITY');
+    }
+    if (identity == null) _validateName(name);
+    final target = identity?.sessionId ?? '=$name';
+    return 'tmux ${socketArguments(socket)} $verb -t ${cliShellQuote(target)}';
+  }
+
+  static String discoverCommand(TmuxSocketSource socket) =>
+      "tmux ${socketArguments(socket)} list-sessions -F '#{session_id}\t#{session_created}\t#{session_attached}\t#{pid}\t#{socket_path}\t#{session_name}'";
+
+  static String identityCommand(
+    TmuxSocketSource socket,
+    TmuxSessionIdentity identity,
+  ) {
+    identity.validate();
+    return 'tmux ${socketArguments(socket)} display-message -p -t ${cliShellQuote(identity.sessionId)} '
+        "'#{session_id}\t#{session_created}\t#{pid}\t#{socket_path}'";
+  }
+
   /// 专用 tmux socket 名。
   ///
   /// `-L <name>` 让 tmux 使用 `$TMPDIR/tmux-<uid>/<name>` 而不是默认 socket，
-  /// 从而与用户自己的 tmux 完全隔离。任何 tmux 调用都必须带上它。
+  /// 从而与用户自己的 tmux 隔离；用户明确选择外部历史时使用其配置的socket。
   static const socketName = 'valhalla';
 
   /// 会话名前缀，便于在 `tmux -L valhalla ls` 里识别归属。

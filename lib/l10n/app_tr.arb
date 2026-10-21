@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "Gönderilecek Tuş",
   "terminalGridActionModifiers": "Değiştiriciler",
   "terminalGridActionText": "Gönderilecek Metin",
-  "terminalSearchNoMatch": "Eşleşen tuş yok"
+  "terminalSearchNoMatch": "Eşleşen tuş yok",
+  "terminalStatusEndedUnrecoverable": "Sonlandı · Geri yüklenemez",
+  "terminalStatusUnavailable": "Kaynak kullanılamıyor",
+  "terminalGroupUnconfirmed": "Doğrulanmamış",
+  "terminalGroupUnavailable": "Kaynak kullanılamıyor",
+  "terminalExternalBadge": "Harici",
+  "terminalAttachedClients": "İstemciler: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "Geçmişten gizle",
+  "terminalUnhideSession": "Gizlemeyi kaldır",
+  "terminalHiddenSessionsTitle": "Gizli oturumlar",
+  "terminalNoHiddenSessions": "Gizli oturum yok",
+  "terminalSocketSources": "Soket kaynakları",
+  "terminalSourceBuiltin": "Dahili",
+  "terminalSourceCustom": "Özel",
+  "terminalAddSocketSource": "Soket kaynağı ekle",
+  "terminalSocketKindNamed": "Adlandırılmış soket (-L)",
+  "terminalSocketKindPath": "Yol soketi (-S)",
+  "terminalSocketInputHint": "Soket adı veya mutlak yol",
+  "terminalSocketInvalid": "Geçersiz soket biçimi. Adlandırılmış soketler 1-64 alfanümerik karakter; yol soketleri / ile başlamalı ve '..' içermemelidir",
+  "terminalSocketExists": "Bu soket kaynağı zaten eklenmiş.",
+  "terminalTerminateClientsWarning": "Uyarı: Bu oturuma bağlı {count} istemci var. Sonlandırma hepsinin bağlantısını kesecektir.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "Oturumu sonlandır",
+  "terminalSocketLabel": "Soket",
+  "terminalServerLabel": "Sunucu",
+  "terminalSocketErrorsBanner": "{count} soket kaynağı hatası",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

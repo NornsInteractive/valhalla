@@ -23,8 +23,10 @@ class SshTerminalView extends ConsumerStatefulWidget {
   ConsumerState<SshTerminalView> createState() => _SshTerminalViewState();
 }
 
-class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
+class _SshTerminalViewState extends ConsumerState<SshTerminalView>
+    with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  TerminalNotifier? _terminalNotifier;
   String? _lastInitializedTarget;
   bool _dismissedTmuxMissing = false;
   bool _showSessionRestored = false;
@@ -54,8 +56,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
         return;
       }
 
-      final offset =
-          tabBox.localToGlobal(Offset.zero, ancestor: scrollableBox);
+      final offset = tabBox.localToGlobal(Offset.zero, ancestor: scrollableBox);
       final tabLeft = offset.dx;
       final tabRight = tabLeft + tabBox.size.width;
       final viewportWidth = scrollableBox.size.width;
@@ -89,6 +90,8 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
   @override
   void initState() {
     super.initState();
+    _terminalNotifier = ref.read(terminalProvider.notifier);
+    WidgetsBinding.instance.addObserver(this);
     if (widget.active) {
       _scheduleEnsureInitialized();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -102,10 +105,25 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      _terminalNotifier?.setHistoryVisible(false);
+    } else if (widget.active &&
+        (_scaffoldKey.currentState?.isDrawerOpen ?? false)) {
+      _terminalNotifier?.setHistoryVisible(true);
+    }
+  }
+
+  @override
   void didUpdateWidget(SshTerminalView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.active && !oldWidget.active) {
       _scheduleEnsureInitialized();
+      if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+        _terminalNotifier?.setHistoryVisible(true);
+      }
+    } else if (!widget.active && oldWidget.active) {
+      _terminalNotifier?.setHistoryVisible(false);
     }
   }
 
@@ -127,6 +145,9 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _terminalNotifier?.setHistoryVisible(false);
+    _terminalNotifier = null;
     _tabScrollController.dispose();
     _sessionRestoredTimer?.cancel();
     _lastListenedBridge?.stateListenable.removeListener(_onBridgeStateChanged);
@@ -563,7 +584,8 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-              onPressed: () => ref.read(terminalProvider.notifier).clearNotice(),
+              onPressed: () =>
+                  ref.read(terminalProvider.notifier).clearNotice(),
             ),
           ],
         ),
@@ -605,7 +627,8 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-              onPressed: () => ref.read(terminalProvider.notifier).clearNotice(),
+              onPressed: () =>
+                  ref.read(terminalProvider.notifier).clearNotice(),
             ),
           ],
         ),
@@ -694,6 +717,12 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
       backgroundColor: Colors.transparent,
       drawer: const TerminalHistoryDrawer(),
       onDrawerChanged: (isOpened) {
+        final lifecycle = WidgetsBinding.instance.lifecycleState;
+        final isForeground =
+            lifecycle == null || lifecycle == AppLifecycleState.resumed;
+        _terminalNotifier?.setHistoryVisible(
+          isOpened && widget.active && isForeground,
+        );
         FocusManager.instance.primaryFocus?.unfocus();
       },
       body: Column(
@@ -728,8 +757,9 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView> {
                                       isShift: isShift,
                                     );
                               },
-                          onPaste: () =>
-                              ref.read(terminalProvider.notifier).pasteClipboard(),
+                          onPaste: () => ref
+                              .read(terminalProvider.notifier)
+                              .pasteClipboard(),
                           onPasteText: (text) {
                             final currentTabs = ref.read(terminalProvider).tabs;
                             if (currentTabs.contains(originatingTab)) {

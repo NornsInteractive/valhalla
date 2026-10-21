@@ -153,6 +153,7 @@ class Release:
         self.run('manifest-tests', ['python3', '-m', 'unittest', 'discover', '-s', 'tool', '-p', 'test_generate_update_manifest.py'])
         self.run('release-tests', ['python3', '-m', 'unittest', 'discover', '-s', 'tool', '-p', 'test_release.py'])
         tests = sorted(str(p.relative_to(ROOT)) for p in (ROOT / 'test').rglob('*terminal*test.dart'))
+        tests += sorted(str(p.relative_to(ROOT)) for p in (ROOT / 'test').rglob('*tmux*test.dart'))
         # Include the shared-canvas and input regressions, not unrelated app feature suites.
         tests += ['test/features/shared_terminal_canvas_test.dart', 'test/core/l10n_key_parity_test.dart']
         self.run('terminal-tests', ['flutter', 'test', '--no-pub', '--machine', *sorted(set(tests))])
@@ -346,7 +347,7 @@ def main():
             # Refuse unrelated modifications, including untracked source, instead of silently publishing them.
             if subprocess.check_output(['git', 'diff', '--name-only'], text=True).strip() or subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).strip():
                 raise RuntimeError('Unselected changes remain; inspect index and resume preparation manually')
-            subprocess.run(['git', 'commit', '-m', f'release: {version} terminal feedback [skip ci]'], check=True)
+            subprocess.run(['git', 'commit', '-m', f'release: {version} [skip ci]'], check=True)
             state['source'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
             (work / 'state.json').write_text(json.dumps(state, indent=2))
         release = Release(work)

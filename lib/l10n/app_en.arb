@@ -2357,5 +2357,50 @@
   "terminalGridActionKey": "Key to Send",
   "terminalGridActionModifiers": "Modifiers",
   "terminalGridActionText": "Text to Send",
-  "terminalSearchNoMatch": "No matching keys"
+  "terminalSearchNoMatch": "No matching keys",
+  "terminalStatusEndedUnrecoverable": "Ended · Cannot restore",
+  "terminalStatusUnavailable": "Source Unavailable",
+  "terminalGroupUnconfirmed": "Unconfirmed",
+  "terminalGroupUnavailable": "Source Unavailable",
+  "terminalExternalBadge": "External",
+  "terminalAttachedClients": "Clients: {count}",
+  "@terminalAttachedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalHideSession": "Hide from History",
+  "terminalUnhideSession": "Unhide",
+  "terminalHiddenSessionsTitle": "Hidden Sessions",
+  "terminalNoHiddenSessions": "No hidden sessions",
+  "terminalSocketSources": "Socket Sources",
+  "terminalSourceBuiltin": "Built-in",
+  "terminalSourceCustom": "Custom",
+  "terminalAddSocketSource": "Add Socket Source",
+  "terminalSocketKindNamed": "Named Socket (-L)",
+  "terminalSocketKindPath": "Path Socket (-S)",
+  "terminalSocketInputHint": "Socket name or absolute path",
+  "terminalSocketInvalid": "Invalid socket format. Named sockets use 1-64 alphanumeric chars; path sockets must start with / and contain no '..'",
+  "terminalSocketExists": "This socket source is already added.",
+  "terminalTerminateClientsWarning": "Warning: {count} client(s) currently attached to this session. Terminating will disconnect all of them.",
+  "@terminalTerminateClientsWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "terminalTerminateSession": "Terminate Session",
+  "terminalSocketLabel": "Socket",
+  "terminalServerLabel": "Server",
+  "terminalSocketErrorsBanner": "{count} socket source error(s)",
+  "@terminalSocketErrorsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

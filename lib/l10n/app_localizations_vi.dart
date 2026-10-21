@@ -6127,4 +6127,84 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => 'Không có phím phù hợp';
+
+  @override
+  String get terminalStatusEndedUnrecoverable =>
+      'Đã kết thúc · Không thể khôi phục';
+
+  @override
+  String get terminalStatusUnavailable => 'Nguồn không khả dụng';
+
+  @override
+  String get terminalGroupUnconfirmed => 'Chưa xác nhận';
+
+  @override
+  String get terminalGroupUnavailable => 'Nguồn không khả dụng';
+
+  @override
+  String get terminalExternalBadge => 'Bên ngoài';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return 'Máy khách: $count';
+  }
+
+  @override
+  String get terminalHideSession => 'Ẩn khỏi lịch sử';
+
+  @override
+  String get terminalUnhideSession => 'Bỏ ẩn';
+
+  @override
+  String get terminalHiddenSessionsTitle => 'Phiên đã ẩn';
+
+  @override
+  String get terminalNoHiddenSessions => 'Không có phiên nào bị ẩn';
+
+  @override
+  String get terminalSocketSources => 'Quản lý nguồn socket';
+
+  @override
+  String get terminalSourceBuiltin => 'Tích hợp sẵn';
+
+  @override
+  String get terminalSourceCustom => 'Tùy chỉnh';
+
+  @override
+  String get terminalAddSocketSource => 'Thêm nguồn socket';
+
+  @override
+  String get terminalSocketKindNamed => 'Socket có tên (-L)';
+
+  @override
+  String get terminalSocketKindPath => 'Socket đường dẫn (-S)';
+
+  @override
+  String get terminalSocketInputHint => 'Tên socket hoặc đường dẫn tuyệt đối';
+
+  @override
+  String get terminalSocketInvalid =>
+      'Định dạng socket không hợp lệ. Socket có tên dùng 1-64 ký tự chữ số; đường dẫn phải bắt đầu bằng / và không chứa \'..\'';
+
+  @override
+  String get terminalSocketExists => 'Nguồn socket này đã được thêm.';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return 'Cảnh báo: Hiện có $count máy khách đang kết nối. Việc kết thúc sẽ ngắt kết nối tất cả.';
+  }
+
+  @override
+  String get terminalTerminateSession => 'Kết thúc phiên';
+
+  @override
+  String get terminalSocketLabel => 'Socket';
+
+  @override
+  String get terminalServerLabel => 'Máy chủ';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count lỗi nguồn socket';
+  }
 }

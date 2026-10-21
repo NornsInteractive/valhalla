@@ -5880,4 +5880,83 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get terminalSearchNoMatch => '일치하는 키 없음';
+
+  @override
+  String get terminalStatusEndedUnrecoverable => '종료됨 · 복원 불가';
+
+  @override
+  String get terminalStatusUnavailable => '소스 미설정';
+
+  @override
+  String get terminalGroupUnconfirmed => '미확인';
+
+  @override
+  String get terminalGroupUnavailable => '소스 미설정';
+
+  @override
+  String get terminalExternalBadge => '외부';
+
+  @override
+  String terminalAttachedClients(int count) {
+    return '클라이언트: $count';
+  }
+
+  @override
+  String get terminalHideSession => '기록에서 숨기기';
+
+  @override
+  String get terminalUnhideSession => '숨기기 취소';
+
+  @override
+  String get terminalHiddenSessionsTitle => '숨겨진 세션';
+
+  @override
+  String get terminalNoHiddenSessions => '숨겨진 세션 없음';
+
+  @override
+  String get terminalSocketSources => '소켓 소스 관리';
+
+  @override
+  String get terminalSourceBuiltin => '기본 내장';
+
+  @override
+  String get terminalSourceCustom => '사용자 지정';
+
+  @override
+  String get terminalAddSocketSource => '소켓 소스 추가';
+
+  @override
+  String get terminalSocketKindNamed => '지정된 소켓 (-L)';
+
+  @override
+  String get terminalSocketKindPath => '경로 소켓 (-S)';
+
+  @override
+  String get terminalSocketInputHint => '소켓 이름 또는 절대 경로';
+
+  @override
+  String get terminalSocketInvalid =>
+      '잘못된 소켓 형식입니다. 이름 있는 소켓은 1~64자의 영숫자여야 하며, 경로 소켓은 /로 시작하고 \'..\'을 포함할 수 없습니다';
+
+  @override
+  String get terminalSocketExists => '이 소켓 소스는 이미 추가되었습니다.';
+
+  @override
+  String terminalTerminateClientsWarning(int count) {
+    return '경고: 현재 $count개의 클라이언트가 연결되어 있습니다. 종료하면 모두 연결이 끊어집니다.';
+  }
+
+  @override
+  String get terminalTerminateSession => '세션 종료';
+
+  @override
+  String get terminalSocketLabel => '소켓';
+
+  @override
+  String get terminalServerLabel => '서버';
+
+  @override
+  String terminalSocketErrorsBanner(int count) {
+    return '$count개 소켓 소스 오류';
+  }
 }
