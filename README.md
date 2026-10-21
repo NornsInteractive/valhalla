@@ -35,7 +35,7 @@ Windows 版支持单实例启动，重复打开时恢复现有窗口。顶部工
 
 ## 下载与安装
 
-最新 Android／Linux 包为 [v1.0.7](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.7)，也可通过[分发平台](https://ygg.norns.cc.cd/d/com.norns.valhalla)按平台和架构下载。Windows 保留 v1.0.5，可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) 安装；商店版本以 Microsoft Store 页面为准。
+最新 Android／Linux 包为 [v1.0.15](https://github.com/NornsInteractive/valhalla/releases/tag/v1.0.15)，也可通过[分发平台](https://ygg.norns.cc.cd/d/com.norns.valhalla)按平台和架构下载。Windows 保留 v1.0.5，可通过 [微软商店](https://apps.microsoft.com/store/detail/9MZ8ML12WH8R?cid=DevShareMCLPCS) 安装；商店版本以 Microsoft Store 页面为准。
 
 | 平台 | 安装方式 / 架构 | 下载 |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Valhalla - 研发项目全生命周期文档体系
 
-最新交付（2026-10-20）：[1.0.14+15 发布记录](../agent-workflow/2026-10-20-v1014-release.md)。
+最新交付（2026-10-21）：[1.0.15+16 发布记录](../agent-workflow/2026-10-21-v1015-release.md)。
 [SSH快捷栏局部动效](../agent-workflow/2026-10-19-terminal-accessory-motion.md)已正式打包；Android三架构APK/AAB、Linux x64
 已发布GitHub及分发平台代理，四整包SHA256和八项Range通过。构建门禁460项相关回归、27项清单测试通过，分析零问题。
 后续每批修改完成后自动新增版本发布，入口见[可续跑发布脚本](../tool/RELEASE.md)；不启动Actions，本批未ADB安装。
