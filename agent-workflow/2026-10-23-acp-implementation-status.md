@@ -1,9 +1,9 @@
 # ACP 后台持续运行实施状态
 
-当前 pubspec 仍为 1.0.15+16，修改未提交；独立验证入口已由 OpenCode
+当前版本为 1.0.16+17，已提交并发布；独立验证入口已由 OpenCode
 构建为 1.0.16 / code 4017，正式证书核对通过并已保留数据安装到 ADB。
 隔离测试已完成，已重新构建并安装正常 `lib/main.dart` 入口，仍保留用户数据。
-尚未公开发布；正式发布需执行仓库发布脚本。
+已通过仓库发布脚本完成 GitHub 与分发平台代理验收，见[发布回执](2026-10-23-v1016-release.md)。
 已快进合入远端 Windows 打包更新 `6accd8c`，未改其打包文件。
 
 ## 已实现
@@ -30,7 +30,7 @@
 2. `tool/acp_runtime_device_probe.dart` 已成功构建；它不读取生产配置，仅写独立 probe 目录。
 3. ADB 验收通过：5 个 chunk 后强制关闭，远端继续至 10 个，重开后恰好 30 个有序 chunk、远端仅一个 prompt。
 4. 正常 `lib/main.dart` 安装包已恢复并验收启动；原正式签名、1.0.16 / code 4017；模拟服务与 Agent 已按记录 PID 清理。
-5. 待发布：新版本 1.0.16+17 的正式构建、GitHub Release 与 Ygg 代理分发，依照 `tool/RELEASE.md`。
+5. 已发布：1.0.16+17 的 Android 三 APK/AAB、Linux x64；GitHub 17 附件与分发四包、整包哈希/八项 Range 校验通过。
 
 ## 当前执行限制
 

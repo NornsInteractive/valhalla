@@ -29,7 +29,7 @@ stderr 均处理完毕、stdin 已关闭、通道结束且 curl 返回有效成�
 抛错，仍取消 stderr 监听。该结果仅表示转发完成，认证仍以官方 RPC
 成功为准；不把模拟回归视为真实账号授权或实际网络断线根因证明。
 
-## 2026-10-23 ACP 持久运行接口（实现中）
+## 2026-10-23 ACP 持久运行接口（已实现）
 
 `assets/runtime/acp_broker.py` 为服务端用户级 stdio 代理，Python >= 3.9，
 使用 SQLite WAL 与私有 Unix socket。SSH `attach` 客户端退出不终止独立
