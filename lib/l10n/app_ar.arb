@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "مقبس",
   "terminalServerLabel": "الخادم",
   "terminalSocketErrorsBanner": "{count} خطأ في مصدر المقبس",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "بيئة تشغيل الوكيل الدائمة",
+  "persistentRuntimeDialogDescription": "قم بتمكين التشغيل في الخلفية لمواصلة المهام عند إغلاق التطبيق أو انقطاع الاتصال.",
+  "persistentRuntimeFeaturePythonTitle": "خدمة على مستوى المستخدم",
+  "persistentRuntimeFeaturePythonDesc": "تعمل عبر Python 3.9+ القياسي تحت حسابك دون الحاجة لصلاحيات root.",
+  "persistentRuntimeFeatureSshTitle": "عبر SSH فقط",
+  "persistentRuntimeFeatureSshDesc": "لا يتم فتح أي منافذ عامة. معزول بالكامل عبر اتصال SSH الحالي.",
+  "persistentRuntimeFeatureRetentionTitle": "الاحتفاظ بالمخرجات لمدة 7 أيام",
+  "persistentRuntimeFeatureRetentionDesc": "يتم حفظ المخرجات وسجلات التنفيذ على الخادم لمدة 7 أيام بعد الانتهاء.",
+  "persistentRuntimeFeatureDetachedTitle": "تشغيل مستقل في الخلفية",
+  "persistentRuntimeFeatureDetachedDesc": "يستمر الوكيل في العمل بسلاسة حتى لو تم إغلاق التطبيق.",
+  "persistentRuntimeEnableAction": "تمكين بيئة التشغيل",
+  "persistentRuntimeSettingUp": "جارٍ إعداد بيئة التشغيل على الخادم...",
+  "dismissRecoveryNoticeTooltip": "تجاهل الإشعار"
 }

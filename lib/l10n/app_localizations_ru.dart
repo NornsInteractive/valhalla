@@ -6264,4 +6264,50 @@ class AppLocalizationsRu extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return 'Ошибок источников сокетов: $count';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle =>
+      'Постоянная среда выполнения Agent';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'Включите фоновое выполнение, чтобы задачи продолжались при закрытии приложения или отключении сети.';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => 'Пользовательская служба';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'Работает через стандартный Python 3.9+ под вашей учетной записью без прав root.';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'Только SSH';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'Никакие публичные порты не открываются. Полная изоляция через существующий SSH.';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle =>
+      'Хранение результатов 7 дней';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'Вывод и журналы выполнения сохраняются на сервере в течение 7 дней после завершения.';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'Автономное выполнение';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'Agent продолжает надежно выполняться в фоне даже при выходе из приложения.';
+
+  @override
+  String get persistentRuntimeEnableAction => 'Включить среду';
+
+  @override
+  String get persistentRuntimeSettingUp => 'Настройка среды на сервере...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'Закрыть уведомление';
 }

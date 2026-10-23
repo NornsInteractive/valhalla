@@ -6183,4 +6183,50 @@ class AppLocalizationsTh extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return 'ข้อผิดพลาดของแหล่งที่มาของซ็อกเก็ต $count รายการ';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => 'รันไทม์ Agent แบบทำงานต่อเนื่อง';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'เปิดใช้งานการทำงานเบื้องหลังเพื่อให้งานทำงานต่อเมื่อปิดแอปหรือขาดการเชื่อมต่อ';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => 'บริการระดับผู้ใช้';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'ทำงานผ่าน Python 3.9+ มาตรฐานภายใต้บัญชีของคุณโดยไม่ต้องใช้สิทธิ์ root';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'ผ่าน SSH เท่านั้น';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'ไม่มีการเปิดพอร์ตสาธารณะ ปลอดภัยและแยกส่วนผ่านการเชื่อมต่อ SSH ที่มีอยู่';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle => 'เก็บผลลัพธ์ไว้ 7 วัน';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'ผลลัพธ์และบันทึกการทำงานจะถูกเก็บไว้บนเซิร์ฟเวอร์เป็นเวลา 7 วันหลังเสร็จสิ้น';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle =>
+      'ทำงานต่อเนื่องในเบื้องหลัง';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'Agent จะทำงานต่อในเบื้องหลังอย่างราบรื่นแม้จะปิดแอป';
+
+  @override
+  String get persistentRuntimeEnableAction => 'เปิดใช้งานรันไทม์';
+
+  @override
+  String get persistentRuntimeSettingUp =>
+      'กำลังกำหนดค่ารันไทม์บนเซิร์ฟเวอร์...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'ปิดการแจ้งเตือน';
 }

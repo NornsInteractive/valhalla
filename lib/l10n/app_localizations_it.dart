@@ -6282,4 +6282,50 @@ class AppLocalizationsIt extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count errore/i sorgente socket';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => 'Runtime persistente dell\'agente';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'Abilita l\'esecuzione in background per continuare le attività se l\'app viene chiusa o disconnessa.';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => 'Servizio a livello utente';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'Esegue tramite Python 3.9+ standard sotto il tuo account senza privilegi di root.';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'Solo SSH';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'Nessuna porta pubblica aperta. Completamente isolato tramite la connessione SSH esistente.';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle =>
+      'Conservazione output per 7 giorni';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'I log e gli output vengono conservati sul server per 7 giorni dopo il completamento.';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'Esecuzione autonoma';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'L\'agente continua l\'esecuzione in background anche se l\'app viene chiusa.';
+
+  @override
+  String get persistentRuntimeEnableAction => 'Abilita runtime';
+
+  @override
+  String get persistentRuntimeSettingUp =>
+      'Configurazione del runtime sul server in corso...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'Ignora avviso';
 }

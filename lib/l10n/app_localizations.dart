@@ -11198,6 +11198,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} socket source error(s)'**
   String terminalSocketErrorsBanner(int count);
+
+  /// No description provided for @persistentRuntimeDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Persistent Agent Runtime'**
+  String get persistentRuntimeDialogTitle;
+
+  /// No description provided for @persistentRuntimeDialogDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable background execution to keep tasks running when the app is closed or disconnected.'**
+  String get persistentRuntimeDialogDescription;
+
+  /// No description provided for @persistentRuntimeFeaturePythonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'User-level Service'**
+  String get persistentRuntimeFeaturePythonTitle;
+
+  /// No description provided for @persistentRuntimeFeaturePythonDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs via standard Python 3.9+ under your account without root privileges.'**
+  String get persistentRuntimeFeaturePythonDesc;
+
+  /// No description provided for @persistentRuntimeFeatureSshTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SSH Only'**
+  String get persistentRuntimeFeatureSshTitle;
+
+  /// No description provided for @persistentRuntimeFeatureSshDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'No public ports or network endpoints opened. Fully isolated.'**
+  String get persistentRuntimeFeatureSshDesc;
+
+  /// No description provided for @persistentRuntimeFeatureRetentionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'7-Day Output Retention'**
+  String get persistentRuntimeFeatureRetentionTitle;
+
+  /// No description provided for @persistentRuntimeFeatureRetentionDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Execution outputs are preserved on your server for 7 days after completion.'**
+  String get persistentRuntimeFeatureRetentionDesc;
+
+  /// No description provided for @persistentRuntimeFeatureDetachedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Detached Execution'**
+  String get persistentRuntimeFeatureDetachedTitle;
+
+  /// No description provided for @persistentRuntimeFeatureDetachedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent continues running seamlessly even if the app closes.'**
+  String get persistentRuntimeFeatureDetachedDesc;
+
+  /// No description provided for @persistentRuntimeEnableAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Runtime'**
+  String get persistentRuntimeEnableAction;
+
+  /// No description provided for @persistentRuntimeSettingUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuring runtime on server...'**
+  String get persistentRuntimeSettingUp;
+
+  /// No description provided for @dismissRecoveryNoticeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss notice'**
+  String get dismissRecoveryNoticeTooltip;
 }
 
 class _AppLocalizationsDelegate

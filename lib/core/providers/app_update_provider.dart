@@ -33,6 +33,7 @@ class AppUpdateState {
   final AppUpdateDownloadPhase downloadPhase;
   final double bytesPerSecond;
   final bool opening;
+  final bool pendingAutomaticPrompt;
   const AppUpdateState({
     this.automaticCheck = true,
     this.checking = false,
@@ -47,6 +48,7 @@ class AppUpdateState {
     this.downloadPhase = AppUpdateDownloadPhase.transferring,
     this.bytesPerSecond = 0,
     this.opening = false,
+    this.pendingAutomaticPrompt = false,
   });
 
   int? get remainingSeconds =>
@@ -73,6 +75,7 @@ class AppUpdateState {
     AppUpdateDownloadPhase? downloadPhase,
     double? bytesPerSecond,
     bool? opening,
+    bool? pendingAutomaticPrompt,
   }) => AppUpdateState(
     automaticCheck: automaticCheck ?? this.automaticCheck,
     checking: checking ?? this.checking,
@@ -87,6 +90,8 @@ class AppUpdateState {
     downloadPhase: downloadPhase ?? this.downloadPhase,
     bytesPerSecond: bytesPerSecond ?? this.bytesPerSecond,
     opening: opening ?? this.opening,
+    pendingAutomaticPrompt:
+        pendingAutomaticPrompt ?? this.pendingAutomaticPrompt,
   );
 }
 
@@ -101,6 +106,9 @@ final appUpdateProvider = NotifierProvider<AppUpdateNotifier, AppUpdateState>(
 
 /// Production opts in at the root; isolated widgets never perform HTTP checks.
 final automaticUpdateChecksEnabledProvider = Provider<bool>((ref) => false);
+final appUpdateNowProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
 
 class AppUpdateNotifier extends Notifier<AppUpdateState> {
   static const platformChannel = MethodChannel('valhalla/updates');
@@ -112,6 +120,14 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
   Future<void>? _openTask;
   int _downloadEpoch = 0;
   int _releaseEpoch = 0;
+  Future<void>? _dailyCheck;
+  bool _claimingAutomaticPrompt = false;
+  String? _claimedPromptDate;
+
+  String _localDate(DateTime time) {
+    final local = time.toLocal();
+    return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
+  }
 
   void _reportDownload(
     String status,
@@ -230,22 +246,134 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
 
   Future<void> setAutomaticCheck(bool value) async {
     await ref.read(localStorageServiceProvider).setAutomaticUpdateCheck(value);
-    if (ref.mounted) state = state.copyWith(automaticCheck: value);
+    if (ref.mounted) {
+      state = state.copyWith(
+        automaticCheck: value,
+        pendingAutomaticPrompt: value ? null : false,
+      );
+    }
     if (value) await checkIfDue();
   }
 
-  Future<void> checkIfDue() async {
+  Future<void> checkIfDue() =>
+      _dailyCheck ??= _checkDaily().whenComplete(() => _dailyCheck = null);
+
+  Future<void> _checkDaily() async {
     if (!ref.read(automaticUpdateChecksEnabledProvider) ||
         !state.automaticCheck ||
         !ref.read(appVisibilityProvider)) {
       return;
     }
-    final last = state.checkedAt;
-    if (last != null &&
-        DateTime.now().difference(last) < const Duration(hours: 24)) {
-      return;
+    try {
+      final storage = ref.read(localStorageServiceProvider);
+      final now = ref.read(appUpdateNowProvider)();
+      final today = _localDate(now);
+      final record = storage.getUpdatePromptRecord();
+      final lastAttempt = DateTime.tryParse(
+        record['lastAttemptAt'] as String? ?? '',
+      );
+      if (record['lastSuccessDate'] == today) {
+        // A verified daily result may have been saved before a modal/app exit
+        // prevented presentation. Restore that unclaimed notice, not old caches.
+        state = state.copyWith(
+          pendingAutomaticPrompt:
+              state.automaticCheck &&
+              state.updateAvailable &&
+              state.release != null &&
+              record['lastPromptDate'] != today,
+        );
+        return;
+      }
+      if (lastAttempt != null &&
+          !now.isBefore(lastAttempt) &&
+          now.difference(lastAttempt) < const Duration(minutes: 15)) {
+        return;
+      }
+      await storage.saveUpdatePromptRecord({
+        ...record,
+        'lastAttemptAt': now.toUtc().toIso8601String(),
+      });
+      if (!ref.mounted) return;
+      await check();
+      if (!ref.mounted || state.error != null || state.checkedAt == null) {
+        return;
+      }
+      final latest = storage.getUpdatePromptRecord();
+      final completedDate = _localDate(ref.read(appUpdateNowProvider)());
+      await storage.saveUpdatePromptRecord({
+        ...latest,
+        'lastSuccessDate': completedDate,
+      });
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        pendingAutomaticPrompt:
+            state.automaticCheck &&
+            state.updateAvailable &&
+            state.release != null &&
+            latest['lastPromptDate'] != completedDate,
+      );
+    } catch (error, stack) {
+      unawaited(AppDiagnostics.instance.record('updates.daily', error, stack));
     }
-    await check();
+  }
+
+  Future<bool> claimAutomaticPrompt() async {
+    if (_claimingAutomaticPrompt ||
+        !state.pendingAutomaticPrompt ||
+        !state.automaticCheck ||
+        !state.updateAvailable ||
+        state.release == null ||
+        !ref.read(appVisibilityProvider)) {
+      return false;
+    }
+    _claimingAutomaticPrompt = true;
+    state = state.copyWith(pendingAutomaticPrompt: false);
+    try {
+      final storage = ref.read(localStorageServiceProvider);
+      final record = storage.getUpdatePromptRecord();
+      final today = _localDate(ref.read(appUpdateNowProvider)());
+      if (record['lastPromptDate'] == today) return false;
+      await storage.saveUpdatePromptRecord({
+        ...record,
+        'lastPromptDate': today,
+      });
+      _claimedPromptDate = today;
+      if (!ref.mounted) return false;
+      if (!ref.read(appVisibilityProvider) || !state.updateAvailable) {
+        await deferAutomaticPrompt();
+        return false;
+      }
+      return true;
+    } catch (error, stack) {
+      unawaited(AppDiagnostics.instance.record('updates.prompt', error, stack));
+      return false;
+    } finally {
+      _claimingAutomaticPrompt = false;
+    }
+  }
+
+  Future<void> deferAutomaticPrompt() async {
+    final date = _claimedPromptDate;
+    if (date == null) return;
+    _claimedPromptDate = null;
+    try {
+      final storage = ref.read(localStorageServiceProvider);
+      final record = storage.getUpdatePromptRecord();
+      if (record['lastPromptDate'] == date) {
+        await storage.saveUpdatePromptRecord(
+          {...record}..remove('lastPromptDate'),
+        );
+      }
+      if (ref.mounted) {
+        state = state.copyWith(
+          pendingAutomaticPrompt: state.automaticCheck && state.updateAvailable,
+        );
+      }
+    } catch (error, stack) {
+      unawaited(
+        AppDiagnostics.instance.record('updates.prompt.defer', error, stack),
+      );
+    }
   }
 
   Future<void> check() =>
@@ -282,7 +410,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
             architecture: architecture,
           );
       if (!ref.mounted) return;
-      final checked = DateTime.now().toUtc();
+      final checked = ref.read(appUpdateNowProvider)().toUtc();
       _cache = {
         'source': AppUpdateService.cacheSource,
         'checkedAt': checked.toIso8601String(),

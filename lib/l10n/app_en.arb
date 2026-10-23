@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "Server",
   "terminalSocketErrorsBanner": "{count} socket source error(s)",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "Persistent Agent Runtime",
+  "persistentRuntimeDialogDescription": "Enable background execution to keep tasks running when the app is closed or disconnected.",
+  "persistentRuntimeFeaturePythonTitle": "User-level Service",
+  "persistentRuntimeFeaturePythonDesc": "Runs via standard Python 3.9+ under your account without root privileges.",
+  "persistentRuntimeFeatureSshTitle": "SSH Only",
+  "persistentRuntimeFeatureSshDesc": "No public ports or network endpoints opened. Fully isolated.",
+  "persistentRuntimeFeatureRetentionTitle": "7-Day Output Retention",
+  "persistentRuntimeFeatureRetentionDesc": "Execution outputs are preserved on your server for 7 days after completion.",
+  "persistentRuntimeFeatureDetachedTitle": "Detached Execution",
+  "persistentRuntimeFeatureDetachedDesc": "Agent continues running seamlessly even if the app closes.",
+  "persistentRuntimeEnableAction": "Enable Runtime",
+  "persistentRuntimeSettingUp": "Configuring runtime on server...",
+  "dismissRecoveryNoticeTooltip": "Dismiss notice"
 }

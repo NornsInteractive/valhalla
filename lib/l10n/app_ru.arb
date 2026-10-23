@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "Сокет",
   "terminalServerLabel": "Сервер",
   "terminalSocketErrorsBanner": "Ошибок источников сокетов: {count}",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "Постоянная среда выполнения Agent",
+  "persistentRuntimeDialogDescription": "Включите фоновое выполнение, чтобы задачи продолжались при закрытии приложения или отключении сети.",
+  "persistentRuntimeFeaturePythonTitle": "Пользовательская служба",
+  "persistentRuntimeFeaturePythonDesc": "Работает через стандартный Python 3.9+ под вашей учетной записью без прав root.",
+  "persistentRuntimeFeatureSshTitle": "Только SSH",
+  "persistentRuntimeFeatureSshDesc": "Никакие публичные порты не открываются. Полная изоляция через существующий SSH.",
+  "persistentRuntimeFeatureRetentionTitle": "Хранение результатов 7 дней",
+  "persistentRuntimeFeatureRetentionDesc": "Вывод и журналы выполнения сохраняются на сервере в течение 7 дней после завершения.",
+  "persistentRuntimeFeatureDetachedTitle": "Автономное выполнение",
+  "persistentRuntimeFeatureDetachedDesc": "Agent продолжает надежно выполняться в фоне даже при выходе из приложения.",
+  "persistentRuntimeEnableAction": "Включить среду",
+  "persistentRuntimeSettingUp": "Настройка среды на сервере...",
+  "dismissRecoveryNoticeTooltip": "Закрыть уведомление"
 }

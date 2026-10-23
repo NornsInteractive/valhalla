@@ -6162,4 +6162,50 @@ class AppLocalizationsAr extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count خطأ في مصدر المقبس';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => 'بيئة تشغيل الوكيل الدائمة';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'قم بتمكين التشغيل في الخلفية لمواصلة المهام عند إغلاق التطبيق أو انقطاع الاتصال.';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => 'خدمة على مستوى المستخدم';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'تعمل عبر Python 3.9+ القياسي تحت حسابك دون الحاجة لصلاحيات root.';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'عبر SSH فقط';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'لا يتم فتح أي منافذ عامة. معزول بالكامل عبر اتصال SSH الحالي.';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle =>
+      'الاحتفاظ بالمخرجات لمدة 7 أيام';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'يتم حفظ المخرجات وسجلات التنفيذ على الخادم لمدة 7 أيام بعد الانتهاء.';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'تشغيل مستقل في الخلفية';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'يستمر الوكيل في العمل بسلاسة حتى لو تم إغلاق التطبيق.';
+
+  @override
+  String get persistentRuntimeEnableAction => 'تمكين بيئة التشغيل';
+
+  @override
+  String get persistentRuntimeSettingUp =>
+      'جارٍ إعداد بيئة التشغيل على الخادم...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'تجاهل الإشعار';
 }

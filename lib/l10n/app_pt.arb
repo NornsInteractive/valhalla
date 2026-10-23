@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "Servidor",
   "terminalSocketErrorsBanner": "{count} erro(s) em fontes de socket",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "Ambiente de execução persistente",
+  "persistentRuntimeDialogDescription": "Ative a execução em segundo plano para manter as tarefas ativas quando o app for fechado ou desconectado.",
+  "persistentRuntimeFeaturePythonTitle": "Serviço no nível do usuário",
+  "persistentRuntimeFeaturePythonDesc": "Executa com Python 3.9+ padrão na sua conta sem privilégios de root.",
+  "persistentRuntimeFeatureSshTitle": "Apenas SSH",
+  "persistentRuntimeFeatureSshDesc": "Nenhuma porta pública aberta. Totalmente isolado via conexão SSH existente.",
+  "persistentRuntimeFeatureRetentionTitle": "Retenção de saídas por 7 dias",
+  "persistentRuntimeFeatureRetentionDesc": "Saídas e registros são mantidos no servidor por 7 dias após a conclusão.",
+  "persistentRuntimeFeatureDetachedTitle": "Execução desvinculada",
+  "persistentRuntimeFeatureDetachedDesc": "O agente continua executando em segundo plano mesmo que o app seja fechado.",
+  "persistentRuntimeEnableAction": "Ativar ambiente",
+  "persistentRuntimeSettingUp": "Configurando ambiente no servidor...",
+  "dismissRecoveryNoticeTooltip": "Dispensar aviso"
 }

@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "Soket",
   "terminalServerLabel": "Sunucu",
   "terminalSocketErrorsBanner": "{count} soket kaynağı hatası",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "Kalıcı Ajan Çalışma Zamanı",
+  "persistentRuntimeDialogDescription": "Uygulama kapandığında veya bağlantı koptuğunda görevlerin sürmesi için arka planda çalıştırmayı etkinleştirin.",
+  "persistentRuntimeFeaturePythonTitle": "Kullanıcı Düzeyinde Hizmet",
+  "persistentRuntimeFeaturePythonDesc": "Root yetkisi gerektirmeden hesabınızdaki standart Python 3.9+ ile çalışır.",
+  "persistentRuntimeFeatureSshTitle": "Yalnızca SSH",
+  "persistentRuntimeFeatureSshDesc": "Hiçbir genel port açılmaz. Mevcut SSH üzerinden tamamen yalıtılmış çalışır.",
+  "persistentRuntimeFeatureRetentionTitle": "7 Günlük Çıktı Saklama",
+  "persistentRuntimeFeatureRetentionDesc": "Tamamlanan görev çıktıları ve günlükler 7 gün boyunca sunucuda saklanır.",
+  "persistentRuntimeFeatureDetachedTitle": "Bağımsız Çalışma",
+  "persistentRuntimeFeatureDetachedDesc": "Uygulama kapatılsa bile ajan arka planda kesintisiz çalışmaya devam eder.",
+  "persistentRuntimeEnableAction": "Çalışma Zamanını Etkinleştir",
+  "persistentRuntimeSettingUp": "Sunucuda çalışma zamanı yapılandırılıyor...",
+  "dismissRecoveryNoticeTooltip": "Bildirimi kapat"
 }

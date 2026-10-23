@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "ซ็อกเก็ต",
   "terminalServerLabel": "เซิร์ฟเวอร์",
   "terminalSocketErrorsBanner": "ข้อผิดพลาดของแหล่งที่มาของซ็อกเก็ต {count} รายการ",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "รันไทม์ Agent แบบทำงานต่อเนื่อง",
+  "persistentRuntimeDialogDescription": "เปิดใช้งานการทำงานเบื้องหลังเพื่อให้งานทำงานต่อเมื่อปิดแอปหรือขาดการเชื่อมต่อ",
+  "persistentRuntimeFeaturePythonTitle": "บริการระดับผู้ใช้",
+  "persistentRuntimeFeaturePythonDesc": "ทำงานผ่าน Python 3.9+ มาตรฐานภายใต้บัญชีของคุณโดยไม่ต้องใช้สิทธิ์ root",
+  "persistentRuntimeFeatureSshTitle": "ผ่าน SSH เท่านั้น",
+  "persistentRuntimeFeatureSshDesc": "ไม่มีการเปิดพอร์ตสาธารณะ ปลอดภัยและแยกส่วนผ่านการเชื่อมต่อ SSH ที่มีอยู่",
+  "persistentRuntimeFeatureRetentionTitle": "เก็บผลลัพธ์ไว้ 7 วัน",
+  "persistentRuntimeFeatureRetentionDesc": "ผลลัพธ์และบันทึกการทำงานจะถูกเก็บไว้บนเซิร์ฟเวอร์เป็นเวลา 7 วันหลังเสร็จสิ้น",
+  "persistentRuntimeFeatureDetachedTitle": "ทำงานต่อเนื่องในเบื้องหลัง",
+  "persistentRuntimeFeatureDetachedDesc": "Agent จะทำงานต่อในเบื้องหลังอย่างราบรื่นแม้จะปิดแอป",
+  "persistentRuntimeEnableAction": "เปิดใช้งานรันไทม์",
+  "persistentRuntimeSettingUp": "กำลังกำหนดค่ารันไทม์บนเซิร์ฟเวอร์...",
+  "dismissRecoveryNoticeTooltip": "ปิดการแจ้งเตือน"
 }

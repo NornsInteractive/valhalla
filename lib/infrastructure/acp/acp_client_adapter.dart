@@ -31,7 +31,21 @@ class AcpAuthMethod {
 ///
 /// 这些类型是基础设施层与 provider 层之间的稳定契约，与 acpd 的 wire 类型
 /// 解耦，避免 UI 状态直接依赖协议 schema。
-sealed class ACPEvent {}
+sealed class ACPEvent {
+  String? runtimeTurnId;
+  int? runtimeSequence;
+}
+
+class ACPPersistentStatusEvent extends ACPEvent {
+  final String status;
+  final bool settled;
+  final bool caughtUp;
+  ACPPersistentStatusEvent(
+    this.status, {
+    this.settled = true,
+    this.caughtUp = false,
+  });
+}
 
 class ACPAuthorizationRequestEvent extends ACPEvent {
   final AcpOAuthRequest request;
@@ -231,7 +245,34 @@ class ACPClientAdapter {
 
   final StreamController<ACPEvent> _eventController =
       StreamController<ACPEvent>.broadcast(sync: true);
-  Stream<ACPEvent> get eventStream => _eventController.stream;
+  Stream<ACPEvent> get eventStream => _eventController.stream.map((event) {
+    final ssh = transport;
+    if (ssh is AcpSshTransport && ssh.isPersistent) {
+      event.runtimeTurnId = ssh.currentTurnId;
+      event.runtimeSequence = ssh.lastSequence;
+    }
+    return event;
+  });
+  bool get isPersistent =>
+      transport is AcpSshTransport &&
+      (transport as AcpSshTransport).isPersistent;
+  int get runtimeCursor => transport is AcpSshTransport
+      ? (transport as AcpSshTransport).lastSequence
+      : 0;
+  String? get persistentRuntimeKey => transport is AcpSshTransport
+      ? (transport as AcpSshTransport).runtimeKey
+      : null;
+  String? get persistentTurnId => transport is AcpSshTransport
+      ? (transport as AcpSshTransport).runtimeTurnId
+      : null;
+  StreamSubscription<Map<String, dynamic>>? _runtimeSubscription;
+  void setPersistentTurn(String id) {
+    final ssh = transport;
+    if (ssh is AcpSshTransport) {
+      ssh.outgoingTurnId = id;
+      ssh.runtimeTurnId = id;
+    }
+  }
 
   ClientConnection? _connection;
   String? _sessionId;
@@ -467,6 +508,36 @@ class ACPClientAdapter {
     if (_initialized) return;
 
     final ssh = transport;
+    if (ssh is AcpSshTransport &&
+        ssh.isPersistent &&
+        _runtimeSubscription == null) {
+      _runtimeSubscription = ssh.runtimeEvents.listen((event) {
+        if (_disposed) return;
+        final status = event['state'] as String?;
+        if (status != null) {
+          _eventController.add(
+            ACPPersistentStatusEvent(
+              status,
+              settled: event['type'] != 'status',
+              caughtUp: event['type'] == 'caught_up',
+            ),
+          );
+        }
+        final currentTurn =
+            ssh.outgoingTurnId == null || event['turnId'] == ssh.outgoingTurnId;
+        if (currentTurn && event['type'] == 'turn' && status == 'completed') {
+          _complete();
+        } else if (currentTurn &&
+            event['type'] == 'turn' &&
+            (status == 'failed' || status == 'exited')) {
+          _emitError(
+            status == 'exited'
+                ? 'ACP_RUNTIME_AGENT_EXITED'
+                : 'ACP_RUNTIME_TURN_FAILED',
+          );
+        }
+      });
+    }
     if (ssh is AcpSshTransport && _authorizationSubscription == null) {
       _authorizationSubscription = ssh.authorizationRequests.listen((request) {
         if (!_disposed) {
@@ -700,6 +771,7 @@ class ACPClientAdapter {
   void _resetIdleTimer() {
     _idleTimer?.cancel();
     if (!_acceptContent ||
+        isPersistent ||
         _waitingPermissions > 0 ||
         _disposed ||
         _inBackground) {
@@ -778,6 +850,11 @@ class ACPClientAdapter {
   /// 下一次 [sendPrompt] 会在 `initialize` 之后、建会话之前执行
   /// `authenticate`，避免复用半认证的连接。
   Future<void> authenticate(String methodId) async {
+    if (isPersistent &&
+        (transport as AcpSshTransport).runtimeSessionId != null) {
+      // Reattaching the same live Agent must not restart its login flow.
+      return;
+    }
     if (_pendingAuthMethodId == methodId && _authenticated) return;
     _pendingAuthMethodId = methodId;
     _authenticated = false;
@@ -831,7 +908,7 @@ class ACPClientAdapter {
     RequestCancellation cancellation,
   ) async {
     if (_disposed ||
-        (!_acceptContent && !captureReplay) ||
+        (!_acceptContent && !captureReplay && !isPersistent) ||
         params.sessionId != (_sessionId ?? resumeSessionId)) {
       return const _PermissionWireResponse(outcome: PermissionCancelled());
     }
@@ -919,7 +996,7 @@ class ACPClientAdapter {
     }
     onSessionUpdate?.call(update);
     // session/load replays history; local history already owns those messages.
-    if (!_acceptContent && !captureReplay) return;
+    if (!_acceptContent && !captureReplay && !isPersistent) return;
     switch (update) {
       case UserMessageChunk(:final chunk):
         if (captureReplay) {
@@ -1035,7 +1112,9 @@ class ACPClientAdapter {
 
   void dispose() {
     if (_disposed) return;
+    if (isPersistent) (transport as AcpSshTransport).detachWrites();
     _disposed = true;
+    unawaited(_runtimeSubscription?.cancel());
     unawaited(_authorizationSubscription?.cancel());
     _idleTimer?.cancel();
     _disposedSignal.complete();

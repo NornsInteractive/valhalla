@@ -322,6 +322,34 @@ class LocalStorageService {
     return value == null ? null : jsonDecode(value) as Map<String, dynamic>;
   }
 
+  Map<String, dynamic> getUpdatePromptRecord() {
+    final raw = _prefs.getString('valhalla_update_daily_prompt_v1');
+    return raw == null
+        ? <String, dynamic>{}
+        : Map<String, dynamic>.from(jsonDecode(raw) as Map);
+  }
+
+  Future<void> saveUpdatePromptRecord(Map<String, dynamic> value) async {
+    if (!await _prefs.setString(
+      'valhalla_update_daily_prompt_v1',
+      jsonEncode(value),
+    )) {
+      throw const FormatException('SETTINGS_SAVE_FAILED');
+    }
+  }
+
+  bool getPersistentAcpConsent(String identity) =>
+      _prefs.getBool('valhalla_acp_runtime_consent_v1_$identity') ?? false;
+
+  Future<void> setPersistentAcpConsent(String identity) async {
+    if (!await _prefs.setBool(
+      'valhalla_acp_runtime_consent_v1_$identity',
+      true,
+    )) {
+      throw const FormatException('SETTINGS_SAVE_FAILED');
+    }
+  }
+
   Future<void> saveUpdateCheckCache(Map<String, dynamic> value) async {
     if (!await _prefs.setString(
       'valhalla_update_check_ygg_v2',

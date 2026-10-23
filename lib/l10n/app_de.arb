@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "Server",
   "terminalSocketErrorsBanner": "{count} Socket-Quellenfehler",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "Persistente Agent-Laufzeit",
+  "persistentRuntimeDialogDescription": "Aktivieren Sie die Hintergrundausführung, damit Aufgaben weiterlaufen, wenn die App geschlossen oder getrennt wird.",
+  "persistentRuntimeFeaturePythonTitle": "Dienst auf Benutzerebene",
+  "persistentRuntimeFeaturePythonDesc": "Läuft ohne Root-Rechte über Standard-Python-3.9+ unter Ihrem Benutzerkonto.",
+  "persistentRuntimeFeatureSshTitle": "Nur SSH",
+  "persistentRuntimeFeatureSshDesc": "Keine öffentlichen Ports geöffnet. Vollständig isoliert über bestehendes SSH.",
+  "persistentRuntimeFeatureRetentionTitle": "7 Tage Ausgabespeicherung",
+  "persistentRuntimeFeatureRetentionDesc": "Ausführungsdaten und Protokolle verbleiben nach Abschluss 7 Tage auf dem Server.",
+  "persistentRuntimeFeatureDetachedTitle": "Entkoppelte Ausführung",
+  "persistentRuntimeFeatureDetachedDesc": "Der Agent läuft im Hintergrund zuverlässig weiter, selbst wenn die App beendet wird.",
+  "persistentRuntimeEnableAction": "Laufzeit aktivieren",
+  "persistentRuntimeSettingUp": "Laufzeit wird auf dem Server eingerichtet...",
+  "dismissRecoveryNoticeTooltip": "Hinweis verwerfen"
 }

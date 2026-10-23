@@ -59,3 +59,6 @@ docs_backup/
 
 # Private device captures (server details and local diagnostic history).
 /agent-workflow/evidence/2026-10-03-agy-login/
+
+# Local promotional articles, video projects, and captured media.
+/promo/

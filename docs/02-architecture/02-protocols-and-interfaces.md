@@ -29,6 +29,24 @@ stderr 均处理完毕、stdin 已关闭、通道结束且 curl 返回有效成�
 抛错，仍取消 stderr 监听。该结果仅表示转发完成，认证仍以官方 RPC
 成功为准；不把模拟回归视为真实账号授权或实际网络断线根因证明。
 
+## 2026-10-23 ACP 持久运行接口（实现中）
+
+`assets/runtime/acp_broker.py` 为服务端用户级 stdio 代理，Python >= 3.9，
+使用 SQLite WAL 与私有 Unix socket。SSH `attach` 客户端退出不终止独立
+进程组中的 Agent。每个本地对话/Agent 对应一个 runtime key；目标身份
+变化拒绝附着。无新增公网监听、提权安装或账号凭据迁移。
+
+`frame` 为原 ACP JSON-RPC；`status` 只表示初始快照，不能提前确认补传结束；
+`caught_up` 表示已交付游标之前输出；`turn` 表示完成/失败/取消。终态先于
+原 prompt 响应交付。prompt 使用稳定 turnId 去重，相同 ID 不同输入拒绝。
+本地 `AgentChatContext` 保存 runtime key 与 cursor，助手消息保存 runtimeTurnId；
+游标只在事件交付后推进，与消息在本地同一事务保存。恢复只附着/补传，不重发任务。
+待审批跨断线保留，手机端销毁适配器不回传拒绝；明确停止才取消任务及待审批。
+
+服务端输出完成后保留七天；主机重启、容器被删除、管理员终止、磁盘故障不在
+继续运行保证内。旧会话保留原数据与显式恢复路径，不宣称旧版已退出的进程可复活。
+实现和真实验收分开记录，见[实施契约](../handoffs/2026-10-23-acp-durable-runtime.md)。
+
 ## 2026-10-02 ACP 输出顺序与恢复兼容
 
 `ChatMessage.contentBlocks` 为可选 JSON 数组：text(start,end) 引用 `content`

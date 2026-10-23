@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "伺服器",
   "terminalSocketErrorsBanner": "{count} 個會話來源探測異常",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "持久化 Agent 執行階段",
+  "persistentRuntimeDialogDescription": "啟用背景持久化執行，在應用程式結束或網路中斷時讓任務在伺服器上繼續執行。",
+  "persistentRuntimeFeaturePythonTitle": "使用者層級服務",
+  "persistentRuntimeFeaturePythonDesc": "僅使用使用者帳號的標準 Python 3.9+ 執行，無需 root 權限。",
+  "persistentRuntimeFeatureSshTitle": "僅經由 SSH",
+  "persistentRuntimeFeatureSshDesc": "無需開放任何網路連接埠或服務，完全經由現有 SSH 通道隔離執行。",
+  "persistentRuntimeFeatureRetentionTitle": "輸出保留 7 天",
+  "persistentRuntimeFeatureRetentionDesc": "任務完成後的輸出與記錄在伺服器保留 7 天，方便隨時檢視。",
+  "persistentRuntimeFeatureDetachedTitle": "背景脫機執行",
+  "persistentRuntimeFeatureDetachedDesc": "即使關閉應用程式或切換網路，Agent 也會在背景繼續穩定執行。",
+  "persistentRuntimeEnableAction": "啟用執行階段",
+  "persistentRuntimeSettingUp": "正在伺服器上設定執行階段...",
+  "dismissRecoveryNoticeTooltip": "忽略通知"
 }

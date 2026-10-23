@@ -352,6 +352,7 @@ class ChatMessage {
   }
 
   final String? remoteMessageId;
+  final String? runtimeTurnId;
   final List<ChatAttachment> attachments;
   final ChatTurnStatus status;
 
@@ -370,6 +371,7 @@ class ChatMessage {
   const ChatMessage({
     this.contentBlocks = const [],
     this.remoteMessageId,
+    this.runtimeTurnId,
     this.attachments = const [],
     this.status = ChatTurnStatus.completed,
     this.failureCode,
@@ -387,6 +389,7 @@ class ChatMessage {
   ChatMessage copyWith({
     List<ChatContentBlock>? contentBlocks,
     String? remoteMessageId,
+    String? runtimeTurnId,
     List<ChatAttachment>? attachments,
     ChatTurnStatus? status,
     String? failureCode,
@@ -404,6 +407,7 @@ class ChatMessage {
     return ChatMessage(
       contentBlocks: contentBlocks ?? this.contentBlocks,
       remoteMessageId: remoteMessageId ?? this.remoteMessageId,
+      runtimeTurnId: runtimeTurnId ?? this.runtimeTurnId,
       attachments: attachments ?? this.attachments,
       status: status ?? this.status,
       failureCode: clearFailure ? null : failureCode ?? this.failureCode,
@@ -422,6 +426,7 @@ class ChatMessage {
   Map<String, dynamic> toJson() => {
     'contentBlocks': contentBlocks.map((block) => block.toJson()).toList(),
     'remoteMessageId': remoteMessageId,
+    'runtimeTurnId': runtimeTurnId,
     'attachments': attachments.map((a) => a.toJson()).toList(),
     'status': status.name,
     if (failureCode != null) 'failureCode': failureCode,
@@ -445,6 +450,7 @@ class ChatMessage {
             .whereType<ChatContentBlock>()
             .toList(),
     remoteMessageId: json['remoteMessageId'] as String?,
+    runtimeTurnId: json['runtimeTurnId'] as String?,
     attachments: (json['attachments'] as List? ?? const [])
         .map(
           (a) => ChatAttachment.fromJson(Map<String, dynamic>.from(a as Map)),
@@ -488,15 +494,37 @@ class ChatMessage {
 class AgentChatContext {
   final String? remoteSessionId;
   final int syncedMessageCount;
-  const AgentChatContext({this.remoteSessionId, this.syncedMessageCount = 0});
+  final String? persistentRuntimeKey;
+  final int runtimeCursor;
+  const AgentChatContext({
+    this.remoteSessionId,
+    this.syncedMessageCount = 0,
+    this.persistentRuntimeKey,
+    this.runtimeCursor = 0,
+  });
+  AgentChatContext copyWith({
+    String? remoteSessionId,
+    int? syncedMessageCount,
+    String? persistentRuntimeKey,
+    int? runtimeCursor,
+  }) => AgentChatContext(
+    remoteSessionId: remoteSessionId ?? this.remoteSessionId,
+    syncedMessageCount: syncedMessageCount ?? this.syncedMessageCount,
+    persistentRuntimeKey: persistentRuntimeKey ?? this.persistentRuntimeKey,
+    runtimeCursor: runtimeCursor ?? this.runtimeCursor,
+  );
   Map<String, dynamic> toJson() => {
     'remoteSessionId': remoteSessionId,
     'syncedMessageCount': syncedMessageCount,
+    'persistentRuntimeKey': persistentRuntimeKey,
+    'runtimeCursor': runtimeCursor,
   };
   factory AgentChatContext.fromJson(Map<String, dynamic> json) =>
       AgentChatContext(
         remoteSessionId: json['remoteSessionId'] as String?,
         syncedMessageCount: (json['syncedMessageCount'] as num?)?.toInt() ?? 0,
+        persistentRuntimeKey: json['persistentRuntimeKey'] as String?,
+        runtimeCursor: (json['runtimeCursor'] as num?)?.toInt() ?? 0,
       );
 }
 

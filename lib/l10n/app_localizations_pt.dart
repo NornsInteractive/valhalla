@@ -6277,4 +6277,51 @@ class AppLocalizationsPt extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count erro(s) em fontes de socket';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => 'Ambiente de execução persistente';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'Ative a execução em segundo plano para manter as tarefas ativas quando o app for fechado ou desconectado.';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle =>
+      'Serviço no nível do usuário';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'Executa com Python 3.9+ padrão na sua conta sem privilégios de root.';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'Apenas SSH';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'Nenhuma porta pública aberta. Totalmente isolado via conexão SSH existente.';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle =>
+      'Retenção de saídas por 7 dias';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'Saídas e registros são mantidos no servidor por 7 dias após a conclusão.';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'Execução desvinculada';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'O agente continua executando em segundo plano mesmo que o app seja fechado.';
+
+  @override
+  String get persistentRuntimeEnableAction => 'Ativar ambiente';
+
+  @override
+  String get persistentRuntimeSettingUp =>
+      'Configurando ambiente no servidor...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'Dispensar aviso';
 }

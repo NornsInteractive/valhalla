@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "Server",
   "terminalSocketErrorsBanner": "{count} errore/i sorgente socket",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "Runtime persistente dell'agente",
+  "persistentRuntimeDialogDescription": "Abilita l'esecuzione in background per continuare le attività se l'app viene chiusa o disconnessa.",
+  "persistentRuntimeFeaturePythonTitle": "Servizio a livello utente",
+  "persistentRuntimeFeaturePythonDesc": "Esegue tramite Python 3.9+ standard sotto il tuo account senza privilegi di root.",
+  "persistentRuntimeFeatureSshTitle": "Solo SSH",
+  "persistentRuntimeFeatureSshDesc": "Nessuna porta pubblica aperta. Completamente isolato tramite la connessione SSH esistente.",
+  "persistentRuntimeFeatureRetentionTitle": "Conservazione output per 7 giorni",
+  "persistentRuntimeFeatureRetentionDesc": "I log e gli output vengono conservati sul server per 7 giorni dopo il completamento.",
+  "persistentRuntimeFeatureDetachedTitle": "Esecuzione autonoma",
+  "persistentRuntimeFeatureDetachedDesc": "L'agente continua l'esecuzione in background anche se l'app viene chiusa.",
+  "persistentRuntimeEnableAction": "Abilita runtime",
+  "persistentRuntimeSettingUp": "Configurazione del runtime sul server in corso...",
+  "dismissRecoveryNoticeTooltip": "Ignora avviso"
 }

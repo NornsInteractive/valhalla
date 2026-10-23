@@ -6174,4 +6174,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count socket source error(s)';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => 'Persistent Agent Runtime';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'Enable background execution to keep tasks running when the app is closed or disconnected.';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => 'User-level Service';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'Runs via standard Python 3.9+ under your account without root privileges.';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'SSH Only';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'No public ports or network endpoints opened. Fully isolated.';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle => '7-Day Output Retention';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'Execution outputs are preserved on your server for 7 days after completion.';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'Detached Execution';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'Agent continues running seamlessly even if the app closes.';
+
+  @override
+  String get persistentRuntimeEnableAction => 'Enable Runtime';
+
+  @override
+  String get persistentRuntimeSettingUp => 'Configuring runtime on server...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'Dismiss notice';
 }

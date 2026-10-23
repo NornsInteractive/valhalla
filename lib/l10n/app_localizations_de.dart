@@ -6280,4 +6280,50 @@ class AppLocalizationsDe extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count Socket-Quellenfehler';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => 'Persistente Agent-Laufzeit';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'Aktivieren Sie die Hintergrundausführung, damit Aufgaben weiterlaufen, wenn die App geschlossen oder getrennt wird.';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => 'Dienst auf Benutzerebene';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'Läuft ohne Root-Rechte über Standard-Python-3.9+ unter Ihrem Benutzerkonto.';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'Nur SSH';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'Keine öffentlichen Ports geöffnet. Vollständig isoliert über bestehendes SSH.';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle =>
+      '7 Tage Ausgabespeicherung';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'Ausführungsdaten und Protokolle verbleiben nach Abschluss 7 Tage auf dem Server.';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'Entkoppelte Ausführung';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'Der Agent läuft im Hintergrund zuverlässig weiter, selbst wenn die App beendet wird.';
+
+  @override
+  String get persistentRuntimeEnableAction => 'Laufzeit aktivieren';
+
+  @override
+  String get persistentRuntimeSettingUp =>
+      'Laufzeit wird auf dem Server eingerichtet...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'Hinweis verwerfen';
 }

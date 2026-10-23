@@ -6220,4 +6220,49 @@ class AppLocalizationsId extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count kesalahan sumber soket';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => 'Runtime Agent Persisten';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'Aktifkan eksekusi latar belakang agar tugas tetap berjalan saat aplikasi ditutup atau terputus.';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => 'Layanan Tingkat Pengguna';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'Berjalan menggunakan Python 3.9+ standar di akun Anda tanpa hak akses root.';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'Hanya SSH';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'Tidak ada port publik yang dibuka. Terisolasi sepenuhnya melalui koneksi SSH yang ada.';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle => 'Retensi Output 7 Hari';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'Output eksekusi dan log disimpan di server selama 7 hari setelah selesai.';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'Eksekusi Terpisah';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'Agent terus berjalan di latar belakang bahkan jika aplikasi ditutup.';
+
+  @override
+  String get persistentRuntimeEnableAction => 'Aktifkan Runtime';
+
+  @override
+  String get persistentRuntimeSettingUp =>
+      'Mengonfigurasi runtime di server...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'Tutup pemberitahuan';
 }

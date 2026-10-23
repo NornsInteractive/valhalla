@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "ソケット",
   "terminalServerLabel": "サーバー",
   "terminalSocketErrorsBanner": "{count} 個のソケットソースエラー",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "永続 Agent ランタイム",
+  "persistentRuntimeDialogDescription": "バックグラウンド実行を有効にして、アプリの終了や切断時でもサーバー上でタスクを継続します。",
+  "persistentRuntimeFeaturePythonTitle": "ユーザー権限サービス",
+  "persistentRuntimeFeaturePythonDesc": "root 権限不要で、ユーザーアカウントの標準 Python 3.9+ を使用して実行します。",
+  "persistentRuntimeFeatureSshTitle": "SSH 経由のみ",
+  "persistentRuntimeFeatureSshDesc": "外部ポートやサービスは公開されず、既存の SSH 経由で安全に通信します。",
+  "persistentRuntimeFeatureRetentionTitle": "出力の7日間保持",
+  "persistentRuntimeFeatureRetentionDesc": "タスク完了後も、実行ログと出力がサーバー上に7日間安全に保持されます。",
+  "persistentRuntimeFeatureDetachedTitle": "バックグラウンド継続実行",
+  "persistentRuntimeFeatureDetachedDesc": "アプリを終了したり通信が途切れても、Agent はバックグラウンドで処理を継続します。",
+  "persistentRuntimeEnableAction": "ランタイムを有効化",
+  "persistentRuntimeSettingUp": "サーバー上でランタイムを設定中...",
+  "dismissRecoveryNoticeTooltip": "通知を閉じる"
 }

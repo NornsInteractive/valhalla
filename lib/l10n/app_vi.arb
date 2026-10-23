@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "Máy chủ",
   "terminalSocketErrorsBanner": "{count} lỗi nguồn socket",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "Môi trường thực thi Agent liên tục",
+  "persistentRuntimeDialogDescription": "Bật thực thi nền để tác vụ tiếp tục chạy khi ứng dụng bị đóng hoặc ngắt kết nối.",
+  "persistentRuntimeFeaturePythonTitle": "Dịch vụ cấp người dùng",
+  "persistentRuntimeFeaturePythonDesc": "Chạy qua Python 3.9+ tiêu chuẩn dưới tài khoản của bạn mà không cần quyền root.",
+  "persistentRuntimeFeatureSshTitle": "Chỉ qua SSH",
+  "persistentRuntimeFeatureSshDesc": "Không mở bất kỳ cổng mạng công khai nào. Hoàn toàn cách ly qua SSH hiện có.",
+  "persistentRuntimeFeatureRetentionTitle": "Lưu giữ kết quả 7 ngày",
+  "persistentRuntimeFeatureRetentionDesc": "Kết quả và nhật ký thực thi được giữ lại trên máy chủ trong 7 ngày sau khi hoàn thành.",
+  "persistentRuntimeFeatureDetachedTitle": "Thực thi tách biệt",
+  "persistentRuntimeFeatureDetachedDesc": "Agent vẫn tiếp tục chạy ổn định dưới nền ngay cả khi ứng dụng bị đóng.",
+  "persistentRuntimeEnableAction": "Bật môi trường thực thi",
+  "persistentRuntimeSettingUp": "Đang cấu hình môi trường thực thi trên máy chủ...",
+  "dismissRecoveryNoticeTooltip": "Bỏ qua thông báo"
 }

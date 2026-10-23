@@ -6212,4 +6212,50 @@ class AppLocalizationsTr extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count soket kaynağı hatası';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => 'Kalıcı Ajan Çalışma Zamanı';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'Uygulama kapandığında veya bağlantı koptuğunda görevlerin sürmesi için arka planda çalıştırmayı etkinleştirin.';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle =>
+      'Kullanıcı Düzeyinde Hizmet';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'Root yetkisi gerektirmeden hesabınızdaki standart Python 3.9+ ile çalışır.';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'Yalnızca SSH';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'Hiçbir genel port açılmaz. Mevcut SSH üzerinden tamamen yalıtılmış çalışır.';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle => '7 Günlük Çıktı Saklama';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'Tamamlanan görev çıktıları ve günlükler 7 gün boyunca sunucuda saklanır.';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'Bağımsız Çalışma';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'Uygulama kapatılsa bile ajan arka planda kesintisiz çalışmaya devam eder.';
+
+  @override
+  String get persistentRuntimeEnableAction => 'Çalışma Zamanını Etkinleştir';
+
+  @override
+  String get persistentRuntimeSettingUp =>
+      'Sunucuda çalışma zamanı yapılandırılıyor...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'Bildirimi kapat';
 }

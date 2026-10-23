@@ -5966,4 +5966,48 @@ class AppLocalizationsJa extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count 個のソケットソースエラー';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => '永続 Agent ランタイム';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'バックグラウンド実行を有効にして、アプリの終了や切断時でもサーバー上でタスクを継続します。';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => 'ユーザー権限サービス';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'root 権限不要で、ユーザーアカウントの標準 Python 3.9+ を使用して実行します。';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'SSH 経由のみ';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      '外部ポートやサービスは公開されず、既存の SSH 経由で安全に通信します。';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle => '出力の7日間保持';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'タスク完了後も、実行ログと出力がサーバー上に7日間安全に保持されます。';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'バックグラウンド継続実行';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'アプリを終了したり通信が途切れても、Agent はバックグラウンドで処理を継続します。';
+
+  @override
+  String get persistentRuntimeEnableAction => 'ランタイムを有効化';
+
+  @override
+  String get persistentRuntimeSettingUp => 'サーバー上でランタイムを設定中...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => '通知を閉じる';
 }

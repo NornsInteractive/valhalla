@@ -6306,4 +6306,52 @@ class AppLocalizationsFr extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count erreur(s) de source de socket';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle =>
+      'Environnement d\'exécution persistant';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'Activez l\'exécution en arrière-plan pour que les tâches continuent même si l\'application est fermée ou déconnectée.';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle =>
+      'Service au niveau utilisateur';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'Fonctionne avec Python 3.9+ standard sous votre compte sans privilèges root.';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'SSH uniquement';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'Aucun port public ouvert. Entièrement isolé via la connexion SSH existante.';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle =>
+      'Conservation des sorties 7 jours';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'Les sorties et journaux d\'exécution sont conservés sur le serveur pendant 7 jours après achèvement.';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'Exécution détachée';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'L\'agent poursuit son exécution en arrière-plan même après la fermeture de l\'application.';
+
+  @override
+  String get persistentRuntimeEnableAction => 'Activer l\'environnement';
+
+  @override
+  String get persistentRuntimeSettingUp =>
+      'Configuration de l\'environnement sur le serveur...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'Ignorer la notification';
 }

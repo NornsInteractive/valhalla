@@ -37,6 +37,7 @@ import 'widgets/chat_run_settings_dialog.dart';
 import 'widgets/chat_run_settings_strip.dart';
 import 'widgets/chat_commands_skills_dialog.dart';
 import 'widgets/image_zoom_dialog.dart';
+import 'widgets/persistent_runtime_consent_dialog.dart';
 import 'widgets/remote_workspace_browser_dialog.dart';
 
 class AiChatView extends ConsumerStatefulWidget {
@@ -59,6 +60,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   bool _isLoadingComposerCommands = false;
   AcpOAuthRequest? _lastAutoLaunchedAuthRequest;
   String? _authLaunchError;
+  bool _isShowingPersistentRuntimeConsentDialog = false;
 
   @override
   void initState() {
@@ -89,6 +91,16 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         return;
       }
       _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (ref.read(aiChatProvider).persistentRuntimeSetupRequired &&
+          !_isShowingPersistentRuntimeConsentDialog) {
+        _isShowingPersistentRuntimeConsentDialog = true;
+        PersistentRuntimeConsentDialog.show(context).whenComplete(() {
+          if (mounted) _isShowingPersistentRuntimeConsentDialog = false;
+        });
+      }
     });
   }
 
@@ -765,6 +777,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       if (nextSessionId != prevSessionId ||
           nextAgentId != prevAgentId ||
           nextServerId != prevServerId) {
+        _isShowingPersistentRuntimeConsentDialog = false;
         if (_promptController.text != next.draftText) {
           _promptController.text = next.draftText;
           _promptController.selection = TextSelection.collapsed(
@@ -913,6 +926,20 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
       if (hasNewTokenOrMessage) {
         _followBottomIfNeeded();
+      }
+
+      if (!next.persistentRuntimeSetupRequired) {
+        _isShowingPersistentRuntimeConsentDialog = false;
+      } else if (!_isShowingPersistentRuntimeConsentDialog) {
+        _isShowingPersistentRuntimeConsentDialog = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          PersistentRuntimeConsentDialog.show(context).whenComplete(() {
+            if (mounted) {
+              _isShowingPersistentRuntimeConsentDialog = false;
+            }
+          });
+        });
       }
     });
 
@@ -2749,14 +2776,15 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       final loginToken = registry.beginInteractiveLogin(currentProfile.id);
       if (loginToken == null) {
         if (mounted) {
-          final runtime =
-              ref.read(agentRegistryProvider).findRuntime(currentProfile.id);
+          final runtime = ref
+              .read(agentRegistryProvider)
+              .findRuntime(currentProfile.id);
           final errorMsg = runtime?.errorMessage == 'AGENT_UPDATE_IN_PROGRESS'
               ? context.l10n.agentUpdateInProgress
               : (runtime?.errorMessage ?? context.l10n.agentAuthRetryHint);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMsg)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(errorMsg)));
         }
         return;
       }

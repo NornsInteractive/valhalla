@@ -5869,6 +5869,50 @@ class AppLocalizationsZh extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count 个会话来源探测异常';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => '持久化 Agent 运行时';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      '启用后台持久化运行，在应用退出或网络断开时让任务在服务器上继续执行。';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => '用户级服务';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      '仅使用用户账户的标准 Python 3.9+ 运行，无需 root 权限。';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => '仅经由 SSH';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      '无需开放任何网络端口或服务，完全经由现有 SSH 通道隔离运行。';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle => '输出保留 7 天';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      '任务完成后的输出与日志在服务器保留 7 天，方便随时查看。';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => '后台脱机执行';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      '即使关闭应用或切换网络，Agent 也会在后台继续稳定执行。';
+
+  @override
+  String get persistentRuntimeEnableAction => '启用运行时';
+
+  @override
+  String get persistentRuntimeSettingUp => '正在服务器上配置运行时...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => '忽略通知';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -11737,4 +11781,48 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String terminalSocketErrorsBanner(int count) {
     return '$count 個會話來源探測異常';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => '持久化 Agent 執行階段';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      '啟用背景持久化執行，在應用程式結束或網路中斷時讓任務在伺服器上繼續執行。';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => '使用者層級服務';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      '僅使用使用者帳號的標準 Python 3.9+ 執行，無需 root 權限。';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => '僅經由 SSH';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      '無需開放任何網路連接埠或服務，完全經由現有 SSH 通道隔離執行。';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle => '輸出保留 7 天';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      '任務完成後的輸出與記錄在伺服器保留 7 天，方便隨時檢視。';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => '背景脫機執行';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      '即使關閉應用程式或切換網路，Agent 也會在背景繼續穩定執行。';
+
+  @override
+  String get persistentRuntimeEnableAction => '啟用執行階段';
+
+  @override
+  String get persistentRuntimeSettingUp => '正在伺服器上設定執行階段...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => '忽略通知';
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:acpd/acpd.dart';
@@ -12,13 +13,31 @@ import 'acp_oauth_request.dart';
 class AcpSshTransport implements LineTransport {
   final SSHSession session;
   final StreamController<TransportFrame> _incoming =
-      StreamController<TransportFrame>();
+      StreamController<TransportFrame>(sync: true);
+  final String? runtimeKey;
+  bool get isPersistent => runtimeKey != null;
+  int lastSequence = 0;
+  String? currentTurnId;
+  String? outgoingTurnId;
+  String? runtimeState;
+  String? runtimeSessionId;
+  String? runtimeTurnId;
+  bool backlogCaughtUp = false;
+  final Completer<void> _attached = Completer<void>();
+  Future<void> get attached => _attached.future;
+  final _runtimeEvents = StreamController<Map<String, dynamic>>.broadcast(
+    sync: true,
+  );
+  final _frameMetadata = Queue<Map<String, dynamic>>();
+  Stream<Map<String, dynamic>> get runtimeEvents => _runtimeEvents.stream;
   StreamSubscription<String>? _subscription;
   StreamSubscription<String>? _stderrSubscription;
   String _diagnosticTail = '';
   String get diagnosticTail => _diagnosticTail;
   int? get exitCode => session.exitCode;
   bool _closed = false;
+  bool _detaching = false;
+  void detachWrites() => _detaching = true;
   bool _paused = false;
   final _authorizationRequests = StreamController<AcpOAuthRequest>.broadcast();
   Stream<AcpOAuthRequest> get authorizationRequests =>
@@ -45,7 +64,9 @@ class AcpSshTransport implements LineTransport {
     }
   }
 
-  AcpSshTransport(this.session) {
+  AcpSshTransport(this.session, {this.runtimeKey, int afterSequence = 0}) {
+    lastSequence = afterSequence;
+    if (!isPersistent) _attached.complete();
     _stderrSubscription =
         LogSanitizer.stream(
           session.stderr
@@ -77,7 +98,48 @@ class AcpSshTransport implements LineTransport {
             if (_closed) return;
             if (line.trim().isNotEmpty) {
               try {
-                _incoming.add(TransportFrame.decode(line));
+                if (isPersistent) {
+                  final envelope = jsonDecode(line) as Map<String, dynamic>;
+                  final type = envelope['type'];
+                  if (type == 'status' || type == 'caught_up') {
+                    runtimeTurnId = envelope['turnId'] as String?;
+                  }
+                  final frame = envelope['frame'];
+                  if (type == 'frame' && frame is Map) {
+                    final decoded = TransportFrame.decode(jsonEncode(frame));
+                    _frameMetadata.add(envelope);
+                    _incoming.add(decoded);
+                  } else if (type == 'runtime_error') {
+                    final error = StateError(
+                      envelope['error'] as String? ?? 'ACP_RUNTIME_FAILED',
+                    );
+                    if (!_attached.isCompleted) _attached.completeError(error);
+                    _incoming.addError(error);
+                  } else {
+                    if (envelope['state'] is String) {
+                      runtimeState = envelope['state'] as String;
+                    }
+                    if (envelope['sessionId'] is String) {
+                      runtimeSessionId = envelope['sessionId'] as String;
+                    }
+                    _frameMetadata.add(envelope);
+                    _incoming.add(
+                      TransportFrame.decode(
+                        jsonEncode({
+                          'jsonrpc': '2.0',
+                          'method': '_valhalla/runtime',
+                          'params': envelope,
+                        }),
+                      ),
+                    );
+                    if ((type == 'status' || type == 'caught_up') &&
+                        !_attached.isCompleted) {
+                      _attached.complete();
+                    }
+                  }
+                } else {
+                  _incoming.add(TransportFrame.decode(line));
+                }
               } catch (error, stack) {
                 // A malformed stdout frame is a transport failure, not an
                 // uncaught callback exception which leaves prompt awaiting forever.
@@ -87,13 +149,30 @@ class AcpSshTransport implements LineTransport {
           },
           onError: _incoming.addError,
           onDone: () {
+            if (!_attached.isCompleted) {
+              _attached.completeError(StateError('ACP_RUNTIME_ATTACH_FAILED'));
+            }
             if (!_incoming.isClosed) _incoming.close();
           },
         );
   }
 
   @override
-  Stream<TransportFrame> get incoming => _incoming.stream;
+  Stream<TransportFrame> get incoming => _incoming.stream.map((frame) {
+    if (isPersistent) {
+      final metadata = _frameMetadata.removeFirst();
+      currentTurnId = metadata['turnId'] as String?;
+      if (metadata['seq'] is int && metadata['type'] != 'status') {
+        final seq = metadata['seq'] as int;
+        if (seq > lastSequence) lastSequence = seq;
+      }
+      if (metadata['type'] != 'frame') {
+        if (metadata['type'] == 'caught_up') backlogCaughtUp = true;
+        _runtimeEvents.add(metadata);
+      }
+    }
+    return frame;
+  });
 
   void pauseIncoming() {
     if (!_paused) {
@@ -111,14 +190,18 @@ class AcpSshTransport implements LineTransport {
 
   @override
   void send(TransportFrame frame) {
-    if (_closed) return;
-    session.stdin.add(utf8.encode(frame.toLine()));
+    if (_closed || _detaching) return;
+    final line = isPersistent
+        ? '${jsonEncode({'frame': jsonDecode(frame.toLine()), 'turnId': outgoingTurnId})}\n'
+        : frame.toLine();
+    session.stdin.add(utf8.encode(line));
   }
 
   @override
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
+    unawaited(_runtimeEvents.close());
     _authLine = '';
     unawaited(_authorizationRequests.close());
     // End the SSH streams before awaiting cancellation of the async sanitizer.

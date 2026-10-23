@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "소켓",
   "terminalServerLabel": "서버",
   "terminalSocketErrorsBanner": "{count}개 소켓 소스 오류",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "영구 Agent 런타임",
+  "persistentRuntimeDialogDescription": "앱이 종료되거나 연결이 끊겨도 서버에서 작업이 계속 실행되도록 백그라운드 런타임을 활성화합니다.",
+  "persistentRuntimeFeaturePythonTitle": "사용자 수준 서비스",
+  "persistentRuntimeFeaturePythonDesc": "root 권한 없이 사용자 계정의 표준 Python 3.9+를 통해 안전하게 실행됩니다.",
+  "persistentRuntimeFeatureSshTitle": "SSH 단독 사용",
+  "persistentRuntimeFeatureSshDesc": "공개 포트나 네트워크 서비스를 열지 않고 기존 SSH 터널만 사용합니다.",
+  "persistentRuntimeFeatureRetentionTitle": "출력 결과 7일간 보관",
+  "persistentRuntimeFeatureRetentionDesc": "작업 완료 후 실행 결과와 로그가 서버에 7일 동안 보관됩니다.",
+  "persistentRuntimeFeatureDetachedTitle": "백그라운드 지속 실행",
+  "persistentRuntimeFeatureDetachedDesc": "앱을 닫거나 네트워크가 변경되어도 Agent가 백그라운드에서 계속 실행됩니다.",
+  "persistentRuntimeEnableAction": "런타임 활성화",
+  "persistentRuntimeSettingUp": "서버에서 런타임 구성 중...",
+  "dismissRecoveryNoticeTooltip": "알림 닫기"
 }

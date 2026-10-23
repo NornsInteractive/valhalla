@@ -36,11 +36,14 @@ import '../nas/widgets/nas_mini_player.dart';
 import '../nas/widgets/nas_source_dialog.dart';
 import '../servers/server_form_dialog.dart';
 import '../settings/settings_view.dart';
+import '../settings/widgets/app_update_dialog.dart';
 import '../settings/widgets/windows_appearance_actions.dart';
 import '../system/system_view.dart';
 import '../terminal/terminal_view.dart';
 import '../../core/utils/session_recovery_summary.dart';
 import '../../core/providers/agent_update_provider.dart';
+import '../../core/providers/app_update_provider.dart';
+import '../../core/providers/app_visibility_provider.dart';
 import 'widgets/connection_status_banner.dart';
 
 int appSectionToViewIndex(AppSection section) => switch (section) {
@@ -168,6 +171,126 @@ class _MainShellState extends ConsumerState<MainShell> {
     }
   }
 
+  bool _isShowingAppUpdateDialog = false;
+  ModalRoute<dynamic>? _observedModalRoute;
+  Animation<double>? _observedSecondaryAnimation;
+  Timer? _updatePromptRetryTimer;
+
+  void _cancelUpdatePromptRetryTimer() {
+    _updatePromptRetryTimer?.cancel();
+    _updatePromptRetryTimer = null;
+  }
+
+  void _scheduleUpdatePromptRetry() {
+    if (_updatePromptRetryTimer != null) return;
+    _updatePromptRetryTimer = Timer(const Duration(milliseconds: 500), () {
+      _updatePromptRetryTimer = null;
+      if (!mounted) return;
+      _tryShowAutomaticUpdatePrompt();
+    });
+  }
+
+  void _handleFocusOrRouteChangedForUpdatePrompt() {
+    if (!mounted) return;
+    _tryShowAutomaticUpdatePrompt();
+  }
+
+  bool _isTextInputActive(BuildContext context) {
+    final insets = MediaQuery.maybeViewInsetsOf(context);
+    if (insets != null && insets.bottom > 0) return true;
+    final focus = FocusManager.instance.primaryFocus;
+    if (focus == null) return false;
+    final ctx = focus.context;
+    if (ctx == null) return false;
+    if (ctx.widget is EditableText) return true;
+    return ctx.findAncestorWidgetOfExactType<EditableText>() != null;
+  }
+
+  bool _isModalActive(BuildContext context) {
+    final route = ModalRoute.of(context);
+    if (route == null) return false;
+    return !route.isCurrent;
+  }
+
+  bool _isForeground() {
+    if (!ref.read(appVisibilityProvider)) return false;
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (lifecycle != null && lifecycle != AppLifecycleState.resumed) {
+      return false;
+    }
+    return true;
+  }
+
+  void _tryShowAutomaticUpdatePrompt() {
+    if (!mounted || _isShowingAppUpdateDialog) {
+      _cancelUpdatePromptRetryTimer();
+      return;
+    }
+    final pending = ref.read(
+      appUpdateProvider.select((s) => s.pendingAutomaticPrompt),
+    );
+    if (!pending) {
+      _cancelUpdatePromptRetryTimer();
+      return;
+    }
+    if (!_isForeground()) {
+      _cancelUpdatePromptRetryTimer();
+      return;
+    }
+    if (_isModalActive(context) || _isTextInputActive(context)) {
+      _scheduleUpdatePromptRetry();
+      return;
+    }
+
+    _cancelUpdatePromptRetryTimer();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _isShowingAppUpdateDialog) {
+        _cancelUpdatePromptRetryTimer();
+        return;
+      }
+      final stillPending = ref.read(
+        appUpdateProvider.select((s) => s.pendingAutomaticPrompt),
+      );
+      if (!stillPending) {
+        _cancelUpdatePromptRetryTimer();
+        return;
+      }
+      if (!_isForeground()) {
+        _cancelUpdatePromptRetryTimer();
+        return;
+      }
+      if (_isModalActive(context) || _isTextInputActive(context)) {
+        _scheduleUpdatePromptRetry();
+        return;
+      }
+
+      final claimed = await ref
+          .read(appUpdateProvider.notifier)
+          .claimAutomaticPrompt();
+      if (!claimed || !mounted) return;
+
+      if (!_isForeground() ||
+          _isModalActive(context) ||
+          _isTextInputActive(context)) {
+        await ref.read(appUpdateProvider.notifier).deferAutomaticPrompt();
+        if (_isForeground() && mounted) {
+          _scheduleUpdatePromptRetry();
+        }
+        return;
+      }
+
+      _isShowingAppUpdateDialog = true;
+      try {
+        await AppUpdateDialog.show(context);
+      } finally {
+        if (mounted) {
+          _isShowingAppUpdateDialog = false;
+        }
+      }
+    });
+  }
+
   late final Widget _dashboardView = DashboardView(
     onNavigate: _navigateToSectionIndex,
     onConnect: () => _handleConnect(),
@@ -248,8 +371,31 @@ class _MainShellState extends ConsumerState<MainShell> {
       ref.read(settingsProvider).effectiveStartupSection,
     );
     _downloadsChannel.setMethodCallHandler(_handleDownloadsMethodCall);
+    FocusManager.instance.addListener(
+      _handleFocusOrRouteChangedForUpdatePrompt,
+    );
     unawaited(_consumeLaunchAction());
     _notifyChatEnteredIfNeeded();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _tryShowAutomaticUpdatePrompt();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != _observedModalRoute) {
+      _observedSecondaryAnimation?.removeListener(
+        _handleFocusOrRouteChangedForUpdatePrompt,
+      );
+      _observedModalRoute = route;
+      _observedSecondaryAnimation = route?.secondaryAnimation;
+      _observedSecondaryAnimation?.addListener(
+        _handleFocusOrRouteChangedForUpdatePrompt,
+      );
+    }
   }
 
   Future<dynamic> _handleDownloadsMethodCall(MethodCall call) async {
@@ -321,6 +467,15 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   void dispose() {
+    _cancelUpdatePromptRetryTimer();
+    FocusManager.instance.removeListener(
+      _handleFocusOrRouteChangedForUpdatePrompt,
+    );
+    _observedSecondaryAnimation?.removeListener(
+      _handleFocusOrRouteChangedForUpdatePrompt,
+    );
+    _observedSecondaryAnimation = null;
+    _observedModalRoute = null;
     _manualConnectionNoticeTimer?.cancel();
     _manualConnectionNoticeTimer = null;
     _downloadsChannel.setMethodCallHandler(null);
@@ -917,6 +1072,25 @@ class _MainShellState extends ConsumerState<MainShell> {
       if (previous?.connectionKey != next?.connectionKey) {
         _clearManualConnectionNotice();
         _notifyChatEnteredIfNeeded();
+      }
+    });
+
+    ref.listen<bool>(
+      appUpdateProvider.select((s) => s.pendingAutomaticPrompt),
+      (previous, next) {
+        if (next) {
+          _tryShowAutomaticUpdatePrompt();
+        } else {
+          _cancelUpdatePromptRetryTimer();
+        }
+      },
+    );
+
+    ref.listen<bool>(appVisibilityProvider, (previous, next) {
+      if (next) {
+        _tryShowAutomaticUpdatePrompt();
+      } else {
+        _cancelUpdatePromptRetryTimer();
       }
     });
 
@@ -1771,11 +1945,7 @@ class MainBottomNavigationBar extends StatelessWidget {
               height: height,
               child: Stack(
                 children: [
-                  Positioned.fill(
-                    child: Row(
-                      children: children,
-                    ),
-                  ),
+                  Positioned.fill(child: Row(children: children)),
                   if (selectedIndex >= 0)
                     AnimatedPositionedDirectional(
                       top: 2,

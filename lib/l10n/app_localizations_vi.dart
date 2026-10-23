@@ -6207,4 +6207,50 @@ class AppLocalizationsVi extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count lỗi nguồn socket';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle =>
+      'Môi trường thực thi Agent liên tục';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'Bật thực thi nền để tác vụ tiếp tục chạy khi ứng dụng bị đóng hoặc ngắt kết nối.';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => 'Dịch vụ cấp người dùng';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'Chạy qua Python 3.9+ tiêu chuẩn dưới tài khoản của bạn mà không cần quyền root.';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'Chỉ qua SSH';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'Không mở bất kỳ cổng mạng công khai nào. Hoàn toàn cách ly qua SSH hiện có.';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle => 'Lưu giữ kết quả 7 ngày';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'Kết quả và nhật ký thực thi được giữ lại trên máy chủ trong 7 ngày sau khi hoàn thành.';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'Thực thi tách biệt';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'Agent vẫn tiếp tục chạy ổn định dưới nền ngay cả khi ứng dụng bị đóng.';
+
+  @override
+  String get persistentRuntimeEnableAction => 'Bật môi trường thực thi';
+
+  @override
+  String get persistentRuntimeSettingUp =>
+      'Đang cấu hình môi trường thực thi trên máy chủ...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'Bỏ qua thông báo';
 }

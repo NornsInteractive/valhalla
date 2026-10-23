@@ -213,6 +213,9 @@ class _ConnectionStatusBannerState
     final cliRecovery = ref.watch(
       cliChatProvider.select((s) => s.recoveryStatus),
     );
+    final aiRecoveryNoticeDismissed = ref.watch(
+      aiChatProvider.select((s) => s.recoveryNoticeDismissed),
+    );
 
     final recoveryEntries = sessionRecoveryEntries(
       acp: aiRecovery,
@@ -220,8 +223,18 @@ class _ConnectionStatusBannerState
       preferredMode: widget.mode,
     );
 
-    if (recoveryEntries.isNotEmpty) {
-      final primary = recoveryEntries.first;
+    final visibleRecoveryEntries = recoveryEntries.where((entry) {
+      if (entry.mode == SessionRecoveryMode.acp &&
+          aiRecoveryNoticeDismissed &&
+          (entry.status == SessionRecoveryStatus.incomplete ||
+              entry.status == SessionRecoveryStatus.failed)) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    if (visibleRecoveryEntries.isNotEmpty) {
+      final primary = visibleRecoveryEntries.first;
       final isAi = primary.mode == SessionRecoveryMode.acp;
       void handlePrimaryRetry() {
         if (isAi) {
@@ -264,19 +277,11 @@ class _ConnectionStatusBannerState
             color: context.vWarning,
           ),
           message: l10n.sessionRecoveryIncomplete,
-          trailing: TextButton(
-            key: const Key('sessionRecoveryRetryButton'),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              minimumSize: const Size(44, 44),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              foregroundColor: context.vWarning,
-            ),
-            onPressed: handlePrimaryRetry,
-            child: Text(
-              l10n.sessionRecoveryRetry,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-            ),
+          trailing: _buildRecoveryTrailing(
+            context,
+            isAi: isAi,
+            color: context.vWarning,
+            onRetry: handlePrimaryRetry,
           ),
         );
       }
@@ -288,19 +293,11 @@ class _ConnectionStatusBannerState
           color: context.vDanger,
           leading: Icon(Icons.error_outline, size: 16, color: context.vDanger),
           message: l10n.sessionRecoveryFailed,
-          trailing: TextButton(
-            key: const Key('sessionRecoveryRetryButton'),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              minimumSize: const Size(44, 44),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              foregroundColor: context.vDanger,
-            ),
-            onPressed: handlePrimaryRetry,
-            child: Text(
-              l10n.sessionRecoveryRetry,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-            ),
+          trailing: _buildRecoveryTrailing(
+            context,
+            isAi: isAi,
+            color: context.vDanger,
+            onRetry: handlePrimaryRetry,
           ),
         );
       }
@@ -796,6 +793,50 @@ class _ConnectionStatusBannerState
 
   String _formatTime(DateTime dt) =>
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
+
+  Widget _buildRecoveryTrailing(
+    BuildContext context, {
+    required bool isAi,
+    required Color color,
+    required VoidCallback onRetry,
+  }) {
+    final l10n = context.l10n;
+    final retryButton = TextButton(
+      key: const Key('sessionRecoveryRetryButton'),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        minimumSize: const Size(44, 44),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        foregroundColor: color,
+      ),
+      onPressed: onRetry,
+      child: Text(
+        l10n.sessionRecoveryRetry,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+      ),
+    );
+
+    if (!isAi) return retryButton;
+
+    return Wrap(
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4,
+      runSpacing: 4,
+      children: [
+        retryButton,
+        IconButton(
+          key: const Key('dismissAcpRecoveryNoticeButton'),
+          icon: Icon(Icons.close, size: 18, color: color),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          tooltip: l10n.dismissRecoveryNoticeTooltip,
+          onPressed: () =>
+              ref.read(aiChatProvider.notifier).dismissRecoveryNotice(),
+        ),
+      ],
+    );
+  }
 
   /// 细长状态横幅: 语义色 12% 染色底 + 1px 描边 + VRadius.input 圆角,
   /// 浮层不透明 surface + elevation 3, 出现时做一次性 Entrance (fade + slide), 尊重"减少动态效果"。

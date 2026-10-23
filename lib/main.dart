@@ -202,6 +202,7 @@ Future<void> main() async {
           autoConnectEnabledProvider.overrideWithValue(true),
           // 生产环境启用自动检查更新。默认值是 false，避免测试环境意外发起网络请求。
           automaticUpdateChecksEnabledProvider.overrideWithValue(true),
+          persistentAcpRuntimeEnabledProvider.overrideWithValue(true),
           // 传输完成通知。默认是 null（测试环境不该碰 MethodChannel），
           // 这里接上真实的 Android 通知。
           transferNotificationCallbackProvider.overrideWithValue(

@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "सॉकेट",
   "terminalServerLabel": "सर्वर",
   "terminalSocketErrorsBanner": "{count} सॉकेट स्रोत त्रुटियां",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "स्थायी एजेंट रनटाइम",
+  "persistentRuntimeDialogDescription": "ऐप बंद होने या डिस्कनेक्ट होने पर भी कार्यों को जारी रखने के लिए बैकग्राउंड निष्पादन सक्षम करें।",
+  "persistentRuntimeFeaturePythonTitle": "उपयोगकर्ता-स्तरीय सेवा",
+  "persistentRuntimeFeaturePythonDesc": "रूट अनुमति के बिना आपके खाते के मानक Python 3.9+ के माध्यम से चलती है।",
+  "persistentRuntimeFeatureSshTitle": "केवल SSH",
+  "persistentRuntimeFeatureSshDesc": "कोई सार्वजनिक पोर्ट नहीं खोला जाता। मौजूदा SSH के माध्यम से पूरी तरह सुरक्षित।",
+  "persistentRuntimeFeatureRetentionTitle": "7 दिनों का आउटपुट प्रतिधारण",
+  "persistentRuntimeFeatureRetentionDesc": "पूर्ण होने के बाद कार्य आउटपुट और लॉग 7 दिनों तक सर्वर पर सुरक्षित रहते हैं।",
+  "persistentRuntimeFeatureDetachedTitle": "बैकग्राउंड निष्पादन",
+  "persistentRuntimeFeatureDetachedDesc": "ऐप बंद होने पर भी एजेंट बैकग्राउंड में बिना किसी रुकावट के चलता रहता है।",
+  "persistentRuntimeEnableAction": "रनटाइम सक्षम करें",
+  "persistentRuntimeSettingUp": "सर्वर पर रनटाइम कॉन्फ़िगर हो रहा है...",
+  "dismissRecoveryNoticeTooltip": "सूचना हटाएं"
 }

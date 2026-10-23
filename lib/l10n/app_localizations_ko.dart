@@ -5959,4 +5959,48 @@ class AppLocalizationsKo extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count개 소켓 소스 오류';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => '영구 Agent 런타임';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      '앱이 종료되거나 연결이 끊겨도 서버에서 작업이 계속 실행되도록 백그라운드 런타임을 활성화합니다.';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => '사용자 수준 서비스';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'root 권한 없이 사용자 계정의 표준 Python 3.9+를 통해 안전하게 실행됩니다.';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'SSH 단독 사용';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      '공개 포트나 네트워크 서비스를 열지 않고 기존 SSH 터널만 사용합니다.';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle => '출력 결과 7일간 보관';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      '작업 완료 후 실행 결과와 로그가 서버에 7일 동안 보관됩니다.';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => '백그라운드 지속 실행';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      '앱을 닫거나 네트워크가 변경되어도 Agent가 백그라운드에서 계속 실행됩니다.';
+
+  @override
+  String get persistentRuntimeEnableAction => '런타임 활성화';
+
+  @override
+  String get persistentRuntimeSettingUp => '서버에서 런타임 구성 중...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => '알림 닫기';
 }

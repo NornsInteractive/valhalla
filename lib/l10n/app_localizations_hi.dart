@@ -6212,4 +6212,50 @@ class AppLocalizationsHi extends AppLocalizations {
   String terminalSocketErrorsBanner(int count) {
     return '$count सॉकेट स्रोत त्रुटियां';
   }
+
+  @override
+  String get persistentRuntimeDialogTitle => 'स्थायी एजेंट रनटाइम';
+
+  @override
+  String get persistentRuntimeDialogDescription =>
+      'ऐप बंद होने या डिस्कनेक्ट होने पर भी कार्यों को जारी रखने के लिए बैकग्राउंड निष्पादन सक्षम करें।';
+
+  @override
+  String get persistentRuntimeFeaturePythonTitle => 'उपयोगकर्ता-स्तरीय सेवा';
+
+  @override
+  String get persistentRuntimeFeaturePythonDesc =>
+      'रूट अनुमति के बिना आपके खाते के मानक Python 3.9+ के माध्यम से चलती है।';
+
+  @override
+  String get persistentRuntimeFeatureSshTitle => 'केवल SSH';
+
+  @override
+  String get persistentRuntimeFeatureSshDesc =>
+      'कोई सार्वजनिक पोर्ट नहीं खोला जाता। मौजूदा SSH के माध्यम से पूरी तरह सुरक्षित।';
+
+  @override
+  String get persistentRuntimeFeatureRetentionTitle =>
+      '7 दिनों का आउटपुट प्रतिधारण';
+
+  @override
+  String get persistentRuntimeFeatureRetentionDesc =>
+      'पूर्ण होने के बाद कार्य आउटपुट और लॉग 7 दिनों तक सर्वर पर सुरक्षित रहते हैं।';
+
+  @override
+  String get persistentRuntimeFeatureDetachedTitle => 'बैकग्राउंड निष्पादन';
+
+  @override
+  String get persistentRuntimeFeatureDetachedDesc =>
+      'ऐप बंद होने पर भी एजेंट बैकग्राउंड में बिना किसी रुकावट के चलता रहता है।';
+
+  @override
+  String get persistentRuntimeEnableAction => 'रनटाइम सक्षम करें';
+
+  @override
+  String get persistentRuntimeSettingUp =>
+      'सर्वर पर रनटाइम कॉन्फ़िगर हो रहा है...';
+
+  @override
+  String get dismissRecoveryNoticeTooltip => 'सूचना हटाएं';
 }

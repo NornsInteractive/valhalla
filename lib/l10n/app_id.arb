@@ -2396,11 +2396,24 @@
   "terminalSocketLabel": "Soket",
   "terminalServerLabel": "Server",
   "terminalSocketErrorsBanner": "{count} kesalahan sumber soket",
-  "@terminalSocketErrorsBanner": {
+"@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  }
+  },
+  "persistentRuntimeDialogTitle": "Runtime Agent Persisten",
+  "persistentRuntimeDialogDescription": "Aktifkan eksekusi latar belakang agar tugas tetap berjalan saat aplikasi ditutup atau terputus.",
+  "persistentRuntimeFeaturePythonTitle": "Layanan Tingkat Pengguna",
+  "persistentRuntimeFeaturePythonDesc": "Berjalan menggunakan Python 3.9+ standar di akun Anda tanpa hak akses root.",
+  "persistentRuntimeFeatureSshTitle": "Hanya SSH",
+  "persistentRuntimeFeatureSshDesc": "Tidak ada port publik yang dibuka. Terisolasi sepenuhnya melalui koneksi SSH yang ada.",
+  "persistentRuntimeFeatureRetentionTitle": "Retensi Output 7 Hari",
+  "persistentRuntimeFeatureRetentionDesc": "Output eksekusi dan log disimpan di server selama 7 hari setelah selesai.",
+  "persistentRuntimeFeatureDetachedTitle": "Eksekusi Terpisah",
+  "persistentRuntimeFeatureDetachedDesc": "Agent terus berjalan di latar belakang bahkan jika aplikasi ditutup.",
+  "persistentRuntimeEnableAction": "Aktifkan Runtime",
+  "persistentRuntimeSettingUp": "Mengonfigurasi runtime di server...",
+  "dismissRecoveryNoticeTooltip": "Tutup pemberitahuan"
 }
