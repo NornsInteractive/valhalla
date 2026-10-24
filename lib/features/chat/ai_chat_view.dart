@@ -51,7 +51,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   final TextEditingController _promptController = TextEditingController();
   final TextEditingController _sessionSearchController =
       TextEditingController();
-  final ScrollController _scrollController = ScrollController();
+  ScrollController _scrollController = ScrollController(
+    initialScrollOffset: 1000000.0,
+    keepScrollOffset: false,
+  );
+  bool _hasClampedToBottom = false;
   String? _selectedAuthMethodId;
   String? _scrolledSessionId;
   bool _pendingInitialHistory = false;
@@ -78,19 +82,15 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     final initialAgentId = initialChat.activeAgentProfile?.id;
     _scrolledSessionId = initialSessionId;
     _pendingInitialHistory =
-        initialChat.activeSession != null &&
+        initialChat.activeSession == null ||
         initialChat.activeSession!.messages.isEmpty;
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
-      final currentChat = ref.read(aiChatProvider);
-      final currentServer = ref.read(activeServerProvider);
-      if (currentChat.activeSessionId != initialSessionId ||
-          currentChat.activeAgentProfile?.id != initialAgentId ||
-          currentServer?.connectionKey != initialServerKey) {
-        return;
-      }
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      _clampToBottom(
+        expectedSessionId: initialSessionId,
+        expectedAgentId: initialAgentId,
+        expectedServerKey: initialServerKey,
+      );
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -106,6 +106,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
+    if (!_scrollController.position.hasContentDimensions) return;
     final max = _scrollController.position.maxScrollExtent;
     final current = _scrollController.offset;
     final nearBottom = (max - current) <= 80;
@@ -121,6 +122,96 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     _promptController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _resetScrollControllerForNewSession() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _scrollController = ScrollController(
+      initialScrollOffset: 1000000.0,
+      keepScrollOffset: false,
+    );
+    _scrollController.addListener(_onScroll);
+    _hasClampedToBottom = false;
+  }
+
+  void _clampToBottom({
+    String? expectedSessionId,
+    String? expectedAgentId,
+    Object? expectedServerKey,
+    int maxPasses = 5,
+  }) {
+    if (!mounted) return;
+    if (!_scrollController.hasClients) {
+      if (maxPasses > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _clampToBottom(
+            expectedSessionId: expectedSessionId,
+            expectedAgentId: expectedAgentId,
+            expectedServerKey: expectedServerKey,
+            maxPasses: maxPasses - 1,
+          );
+        });
+      }
+      return;
+    }
+
+    final currentChat = ref.read(aiChatProvider);
+    final currentServer = ref.read(activeServerProvider);
+    if (expectedSessionId != null &&
+        currentChat.activeSessionId != expectedSessionId) {
+      return;
+    }
+    if (expectedAgentId != null &&
+        currentChat.activeAgentProfile?.id != expectedAgentId) {
+      return;
+    }
+    if (expectedServerKey != null &&
+        currentServer?.connectionKey != expectedServerKey) {
+      return;
+    }
+
+    final pos = _scrollController.position;
+    if (!pos.hasContentDimensions) {
+      if (maxPasses > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _clampToBottom(
+            expectedSessionId: expectedSessionId,
+            expectedAgentId: expectedAgentId,
+            expectedServerKey: expectedServerKey,
+            maxPasses: maxPasses - 1,
+          );
+        });
+      }
+      return;
+    }
+
+    _userNearBottom = true;
+    final maxScroll = pos.maxScrollExtent;
+    if ((pos.pixels - maxScroll).abs() > 1.0) {
+      _scrollController.jumpTo(maxScroll);
+    }
+    if (!_hasClampedToBottom) {
+      setState(() {
+        _hasClampedToBottom = true;
+      });
+    }
+
+    if (maxPasses > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        final nextPos = _scrollController.position;
+        if (!nextPos.hasContentDimensions) return;
+        if ((nextPos.pixels - nextPos.maxScrollExtent).abs() > 1.0) {
+          _clampToBottom(
+            expectedSessionId: expectedSessionId,
+            expectedAgentId: expectedAgentId,
+            expectedServerKey: expectedServerKey,
+            maxPasses: maxPasses - 1,
+          );
+        }
+      });
+    }
   }
 
   void _scrollToBottom() {
@@ -786,43 +877,45 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         }
       }
 
-      if (nextSessionId != null && nextSessionId != _scrolledSessionId) {
+      final sessionOrAgentChanged =
+          (nextSessionId != null && nextSessionId != _scrolledSessionId) ||
+          (nextAgentId != null && nextAgentId != prevAgentId) ||
+          (nextServerId != null && nextServerId != prevServerId);
+
+      if (sessionOrAgentChanged && nextSessionId != null) {
         _scrolledSessionId = nextSessionId;
         _userNearBottom = true;
         _pendingInitialHistory = nextMessages.isEmpty;
+        _resetScrollControllerForNewSession();
         final targetSessionId = nextSessionId;
         final targetServerKey = ref.read(activeServerProvider)?.connectionKey;
         final targetAgentId = next.activeAgentProfile?.id;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || !_scrollController.hasClients) return;
-          final currentChat = ref.read(aiChatProvider);
-          final currentServer = ref.read(activeServerProvider);
-          if (currentChat.activeSessionId != targetSessionId ||
-              currentChat.activeAgentProfile?.id != targetAgentId ||
-              currentServer?.connectionKey != targetServerKey) {
-            return;
-          }
-          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+          _clampToBottom(
+            expectedSessionId: targetSessionId,
+            expectedAgentId: targetAgentId,
+            expectedServerKey: targetServerKey,
+          );
         });
         return;
       }
 
-      if (_pendingInitialHistory && nextMessages.isNotEmpty) {
+      final hasLoadedInitialMessages =
+          (_pendingInitialHistory || prevMessages.isEmpty) &&
+          nextMessages.isNotEmpty;
+
+      if (hasLoadedInitialMessages) {
         _pendingInitialHistory = false;
         _userNearBottom = true;
         final targetSessionId = nextSessionId;
         final targetServerKey = ref.read(activeServerProvider)?.connectionKey;
         final targetAgentId = next.activeAgentProfile?.id;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || !_scrollController.hasClients) return;
-          final currentChat = ref.read(aiChatProvider);
-          final currentServer = ref.read(activeServerProvider);
-          if (currentChat.activeSessionId != targetSessionId ||
-              currentChat.activeAgentProfile?.id != targetAgentId ||
-              currentServer?.connectionKey != targetServerKey) {
-            return;
-          }
-          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+          _clampToBottom(
+            expectedSessionId: targetSessionId,
+            expectedAgentId: targetAgentId,
+            expectedServerKey: targetServerKey,
+          );
         });
       }
 
@@ -1799,7 +1892,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         final currentMessages =
             listRef.read(aiChatProvider).activeSession?.messages ?? const [];
 
-        return ListView.builder(
+        final listView = ListView.builder(
           key: ValueKey('message_list_$sessionId'),
           controller: _scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1933,6 +2026,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ),
             );
           },
+        );
+
+        return Opacity(
+          opacity: _hasClampedToBottom ? 1.0 : 0.0,
+          child: listView,
         );
       },
     );
