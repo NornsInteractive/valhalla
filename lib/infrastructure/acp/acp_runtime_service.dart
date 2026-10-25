@@ -9,6 +9,55 @@ import '../../data/models/agent_profile.dart';
 import '../cli/agent_execution_target.dart';
 import 'acp_ssh_transport.dart';
 
+class AcpRuntimeStatus {
+  final String runtimeKey;
+  final String state;
+  final bool alive;
+  final bool childAlive;
+  final int protocolVersion;
+  final String? remoteSessionId;
+  final String? turnId;
+  const AcpRuntimeStatus({
+    required this.runtimeKey,
+    required this.state,
+    this.alive = false,
+    this.childAlive = false,
+    this.protocolVersion = 1,
+    this.remoteSessionId,
+    this.turnId,
+  });
+
+  bool get isBusy => state == 'running' || state == 'waiting_permission';
+  bool get canRecover =>
+      !childAlive &&
+      const {
+        'completed',
+        'failed',
+        'cancelled',
+        'exited',
+        'expired',
+        'retired',
+      }.contains(state);
+
+  factory AcpRuntimeStatus.fromJson(Map<String, dynamic> value) =>
+      AcpRuntimeStatus(
+        runtimeKey: value['runtimeKey'] as String,
+        state: value['state'] as String,
+        alive: value['alive'] == true,
+        childAlive: value['childAlive'] == true,
+        protocolVersion: (value['protocolVersion'] as num?)?.toInt() ?? 1,
+        remoteSessionId: value['sessionId'] as String?,
+        turnId: value['turnId'] as String?,
+      );
+}
+
+class AcpRuntimeUnavailableException implements Exception {
+  final AcpRuntimeStatus status;
+  const AcpRuntimeUnavailableException(this.status);
+  @override
+  String toString() => 'ACP_RUNTIME_UNAVAILABLE: ${status.state}';
+}
+
 /// User-owned broker installation; no sudo, package install, or public listener.
 class AcpRuntimeService {
   static Future<String>? _source;
@@ -19,9 +68,14 @@ class AcpRuntimeService {
   static String sessionKey(
     String identity,
     AgentProfile profile,
-    String sessionId,
-  ) => sha256
-      .convert(utf8.encode('$identity\n${profile.id}\n$sessionId'))
+    String sessionId, {
+    int generation = 0,
+  }) => sha256
+      .convert(
+        utf8.encode(
+          '$identity\n${profile.id}\n$sessionId${generation == 0 ? '' : '\n$generation'}',
+        ),
+      )
       .toString();
 
   static Future<Map<String, dynamic>> install(SSHClient ssh) async {
@@ -46,7 +100,7 @@ if not p.exists() or hashlib.sha256(p.read_bytes()).digest()!=hashlib.sha256(dat
  with os.fdopen(fd,'wb') as out: out.write(data)
  os.chmod(tmp,0o600)
  os.replace(tmp,p)
-print(json.dumps({'script':str(p),'python':sys.executable,'version':1}))
+print(json.dumps({'script':str(p),'python':sys.executable,'version':2}))
 ''';
     final command =
         'python3 -c ${cliShellQuote('exec(__import__("base64").b64decode("${base64Encode(utf8.encode(loader))}"))')}';
@@ -58,6 +112,92 @@ print(json.dumps({'script':str(p),'python':sys.executable,'version':1}))
         as Map<String, dynamic>;
   }
 
+  static Future<dynamic> _query(
+    SSHClient ssh,
+    Map<String, dynamic> installed,
+    String operation,
+    String argument,
+  ) async {
+    final result = await ssh
+        .runWithResult(
+          '${cliShellQuote(installed['python'] as String)} '
+          '${cliShellQuote(installed['script'] as String)} '
+          '$operation ${cliShellQuote(argument)}',
+        )
+        .timeout(const Duration(seconds: 30));
+    final dynamic value;
+    try {
+      value = jsonDecode(utf8.decode(result.stdout).trim());
+    } on FormatException {
+      throw StateError('ACP_RUNTIME_MANAGEMENT_FAILED');
+    }
+    if (value is Map && value['error'] is String) {
+      final code = value['error'] as String;
+      throw StateError(
+        code.startsWith('ACP_RUNTIME_')
+            ? code
+            : 'ACP_RUNTIME_MANAGEMENT_FAILED',
+      );
+    }
+    if (result.exitCode != 0) throw StateError('ACP_RUNTIME_MANAGEMENT_FAILED');
+    return value;
+  }
+
+  static String _argument(Map<String, dynamic> command) =>
+      base64Encode(utf8.encode(jsonEncode(command)));
+
+  static Future<AcpRuntimeStatus> inspect(
+    SSHClient ssh, {
+    required String runtimeKey,
+  }) async {
+    final value = await _query(
+      ssh,
+      await install(ssh),
+      'manage',
+      _argument({'key': runtimeKey, 'action': 'inspect'}),
+    );
+    return AcpRuntimeStatus.fromJson(Map<String, dynamic>.from(value as Map));
+  }
+
+  static Future<List<AcpRuntimeStatus>> activeForServer(
+    SSHClient ssh,
+    String serverId,
+  ) async {
+    final value = await _query(
+      ssh,
+      await install(ssh),
+      'active',
+      identity(serverId),
+    );
+    return (value as List)
+        .map(
+          (item) =>
+              AcpRuntimeStatus.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
+  }
+
+  static Future<void> manage(
+    SSHClient ssh, {
+    required String runtimeKey,
+    required String action,
+    bool stopRunning = false,
+  }) async {
+    if (!const {'retire', 'purge'}.contains(action)) {
+      throw ArgumentError('ACP_RUNTIME_COMMAND_INVALID');
+    }
+    await _query(
+      ssh,
+      await install(ssh),
+      'manage',
+      _argument({
+        'key': runtimeKey,
+        'action': action,
+        'stopRunning': stopRunning,
+      }),
+    );
+  }
+
   static Future<AcpSshTransport> open(
     SSHClient ssh,
     AgentProfile profile, {
@@ -67,10 +207,26 @@ print(json.dumps({'script':str(p),'python':sys.executable,'version':1}))
     String? initialModelId,
   }) async {
     final installed = await install(ssh);
+    final status = AcpRuntimeStatus.fromJson(
+      Map<String, dynamic>.from(
+        await _query(
+              ssh,
+              installed,
+              'manage',
+              _argument({'key': runtimeKey, 'action': 'inspect'}),
+            )
+            as Map,
+      ),
+    );
+    if (status.canRecover) throw AcpRuntimeUnavailableException(status);
+    if (!status.alive && status.isBusy) {
+      throw StateError('ACP_RUNTIME_UNFINISHED_PROCESS_EXITED');
+    }
     final config = base64Encode(
       utf8.encode(
         jsonEncode({
           'key': runtimeKey,
+          'serverScope': identity(profile.serverId),
           'afterSeq': afterSequence,
           'sessionId': remoteSessionId,
           'targetIdentity': identity(

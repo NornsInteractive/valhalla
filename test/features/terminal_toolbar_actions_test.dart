@@ -125,6 +125,8 @@ Future<void> _closeTab(WidgetTester tester, String id) async {
   final l10n = await AppLocalizations.delegate.load(const Locale('en'));
   await tester.tap(find.widgetWithText(ListTile, l10n.terminalCloseTab));
   await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('terminal_confirm_close_tab_button')));
+  await tester.pumpAndSettle();
 }
 
 void main() {

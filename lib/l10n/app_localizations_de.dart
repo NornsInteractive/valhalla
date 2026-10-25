@@ -6326,4 +6326,83 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'Hinweis verwerfen';
+
+  @override
+  String get terminalReconnectTab => 'Terminal wieder verbinden';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'Tab schließen';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'Das Schließen dieses Tabs trennt die Sitzung. Alle im Vordergrund ausgeführten Prozesse werden möglicherweise beendet.';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'Dieses Terminal läuft in tmux. Das Schließen des Tabs trennt ihn nur von der Ansicht; die Sitzung läuft im Hintergrund weiter.';
+
+  @override
+  String get terminalCloseActionTerminate => 'Beenden & Schließen';
+
+  @override
+  String get terminalCloseActionDetach => 'Trennen & Schließen';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'Aufgabe wird ausgeführt: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'Zur laufenden Sitzung zurückkehren';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'Der Server führt derzeit eine andere Aufgabe aus. Bitte warten, bis sie abgeschlossen ist.';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'Nur lokalen Eintrag löschen';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'Ausführung stoppen und Remote-Laufzeitdaten bereinigen';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'Stoppt den Remote-Hintergrundprozess und bereinigt den App-eigenen Laufzeit-Cache.';
+
+  @override
+  String get permissionViewDetails => 'Details anzeigen';
+
+  @override
+  String get permissionDetailsTitle => 'Berechtigungsanforderungsdetails';
+
+  @override
+  String get permissionToolLabel => 'Angeforderter Befehl/Tool';
+
+  @override
+  String get permissionCommandLabel => 'Auszuführender Befehl';
+
+  @override
+  String get permissionCopyCommand => 'Befehl kopieren';
+
+  @override
+  String get permissionCommandCopied => 'Befehl in Zwischenablage kopiert';
+
+  @override
+  String get chatScrollToLatest => 'Nach unten scrollen';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'Für diese Sitzung wurden keine verwalteten Laufzeitinstanzen gefunden.';
+
+  @override
+  String get deleteSessionAffectedRuntimes => 'Betroffene Laufzeitinstanzen:';
+
+  @override
+  String get deleteSessionInspectingRuntimes =>
+      'Remote-Laufzeiten werden überprüft...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'Server nicht verbunden. Nur lokales Löschen verfügbar.';
 }

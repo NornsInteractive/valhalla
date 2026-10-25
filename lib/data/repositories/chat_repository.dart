@@ -435,6 +435,59 @@ class ChatRepository {
     return id == null ? null : loadSession(id);
   }
 
+  Future<ChatSession?> findRuntimeSession(
+    String serverId,
+    String runtimeKey,
+  ) async {
+    await _writes;
+    final id = await _chatDb(
+      await _path(),
+      (db) =>
+          db.select(
+                "SELECT s.id FROM chat_sessions s, json_each(s.data,'\$.agentContexts') c "
+                "WHERE s.server_id=? AND json_extract(c.value,'\$.persistentRuntimeKey')=? "
+                'ORDER BY s.updated DESC LIMIT 1',
+                [serverId, runtimeKey],
+              ).firstOrNull?['id']
+              as String?,
+    );
+    return id == null ? null : loadSession(id);
+  }
+
+  Future<void> markRuntimesForRestart(String serverId, Set<String> agentIds) =>
+      _write((db) {
+        db.execute('BEGIN IMMEDIATE');
+        try {
+          for (final row in db.select(
+            'SELECT id,data FROM chat_sessions WHERE server_id=?',
+            [serverId],
+          )) {
+            final data =
+                jsonDecode(row['data'] as String) as Map<String, dynamic>;
+            final contexts = data['agentContexts'];
+            if (contexts is! Map) continue;
+            var changed = false;
+            for (final id in agentIds) {
+              final context = contexts[id];
+              if (context is Map && context['persistentRuntimeKey'] != null) {
+                context['runtimeRestartPending'] = true;
+                changed = true;
+              }
+            }
+            if (changed) {
+              db.execute('UPDATE chat_sessions SET data=? WHERE id=?', [
+                jsonEncode(data),
+                row['id'],
+              ]);
+            }
+          }
+          db.execute('COMMIT');
+        } catch (_) {
+          db.execute('ROLLBACK');
+          rethrow;
+        }
+      });
+
   Future<String> exportSession(String id) async {
     await _writes;
     return _chatDb(await _path(), (db) {

@@ -11276,6 +11276,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss notice'**
   String get dismissRecoveryNoticeTooltip;
+
+  /// No description provided for @terminalReconnectTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect Terminal'**
+  String get terminalReconnectTab;
+
+  /// No description provided for @terminalCloseTabConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Tab'**
+  String get terminalCloseTabConfirmTitle;
+
+  /// No description provided for @terminalClosePlainConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing this tab will disconnect the session. Any foreground process running in it may be terminated.'**
+  String get terminalClosePlainConfirmMessage;
+
+  /// No description provided for @terminalCloseTmuxConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This terminal is running in tmux. Closing this tab will only detach it from the view; the session will continue running in the background.'**
+  String get terminalCloseTmuxConfirmMessage;
+
+  /// No description provided for @terminalCloseActionTerminate.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminate & Close'**
+  String get terminalCloseActionTerminate;
+
+  /// No description provided for @terminalCloseActionDetach.
+  ///
+  /// In en, this message translates to:
+  /// **'Detach & Close'**
+  String get terminalCloseActionDetach;
+
+  /// Indicator banner showing which agent is actively executing a task
+  ///
+  /// In en, this message translates to:
+  /// **'Running task: {agentName}'**
+  String acpRunningSessionIndicator(String agentName);
+
+  /// No description provided for @acpReturnToRunningSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to Running Session'**
+  String get acpReturnToRunningSession;
+
+  /// No description provided for @acpServerBusySendDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is currently executing another task. Please wait for it to complete.'**
+  String get acpServerBusySendDisabled;
+
+  /// No description provided for @deleteSessionLocalOnlyOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete local record only'**
+  String get deleteSessionLocalOnlyOption;
+
+  /// No description provided for @deleteSessionStopAndPurgeOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop running and purge remote runtime data'**
+  String get deleteSessionStopAndPurgeOption;
+
+  /// No description provided for @deleteSessionPurgeRemoteWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This will stop the remote background process and purge app-owned runtime cache.'**
+  String get deleteSessionPurgeRemoteWarning;
+
+  /// No description provided for @permissionViewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get permissionViewDetails;
+
+  /// No description provided for @permissionDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission Request Details'**
+  String get permissionDetailsTitle;
+
+  /// No description provided for @permissionToolLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested Tool'**
+  String get permissionToolLabel;
+
+  /// No description provided for @permissionCommandLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Command to Execute'**
+  String get permissionCommandLabel;
+
+  /// No description provided for @permissionCopyCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Command'**
+  String get permissionCopyCommand;
+
+  /// No description provided for @permissionCommandCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Command copied to clipboard'**
+  String get permissionCommandCopied;
+
+  /// No description provided for @chatScrollToLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll to latest'**
+  String get chatScrollToLatest;
+
+  /// No description provided for @deleteSessionNoManagedRuntimes.
+  ///
+  /// In en, this message translates to:
+  /// **'No managed runtime instances found for this session.'**
+  String get deleteSessionNoManagedRuntimes;
+
+  /// No description provided for @deleteSessionAffectedRuntimes.
+  ///
+  /// In en, this message translates to:
+  /// **'Affected Runtime Instances:'**
+  String get deleteSessionAffectedRuntimes;
+
+  /// No description provided for @deleteSessionInspectingRuntimes.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspecting remote runtimes...'**
+  String get deleteSessionInspectingRuntimes;
+
+  /// No description provided for @deleteSessionOfflineNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Server disconnected. Only local deletion is available.'**
+  String get deleteSessionOfflineNotice;
 }
 
 class _AppLocalizationsDelegate

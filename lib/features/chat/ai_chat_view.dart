@@ -32,6 +32,8 @@ import '../../data/models/chat_run_settings.dart'
 import '../../infrastructure/acp/acp_client_adapter.dart'
     show AcpRemoteSession, AcpSlashCommand;
 import '../../infrastructure/acp/acp_oauth_request.dart';
+import '../../infrastructure/acp/acp_runtime_service.dart'
+    show AcpRuntimeStatus;
 import '../../infrastructure/cli/agent_execution_target.dart';
 import 'widgets/chat_run_settings_dialog.dart';
 import 'widgets/chat_run_settings_strip.dart';
@@ -60,6 +62,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   String? _scrolledSessionId;
   bool _pendingInitialHistory = false;
   bool _userNearBottom = true;
+  int _unreadMessageCount = 0;
+  int _lastSeenEndIndex = 0;
+  String? _lastSeenTailMessageId;
   bool _isSending = false;
   bool _isLoadingComposerCommands = false;
   AcpOAuthRequest? _lastAutoLaunchedAuthRequest;
@@ -77,13 +82,18 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       );
     }
     final initialChat = ref.read(aiChatProvider);
+    final initialSession = initialChat.activeSession;
     final initialSessionId = initialChat.activeSessionId;
     final initialServerKey = ref.read(activeServerProvider)?.connectionKey;
     final initialAgentId = initialChat.activeAgentProfile?.id;
     _scrolledSessionId = initialSessionId;
     _pendingInitialHistory =
-        initialChat.activeSession == null ||
-        initialChat.activeSession!.messages.isEmpty;
+        initialSession == null || initialSession.messages.isEmpty;
+    if (initialSession != null) {
+      _lastSeenEndIndex =
+          initialSession.messageOffset + initialSession.messages.length;
+      _lastSeenTailMessageId = initialSession.messages.lastOrNull?.id;
+    }
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _clampToBottom(
@@ -111,7 +121,17 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     final current = _scrollController.offset;
     final nearBottom = (max - current) <= 80;
     if (_userNearBottom != nearBottom) {
-      _userNearBottom = nearBottom;
+      setState(() {
+        _userNearBottom = nearBottom;
+        if (nearBottom) {
+          _unreadMessageCount = 0;
+          final session = ref.read(aiChatProvider).activeSession;
+          if (session != null) {
+            _lastSeenEndIndex = session.messageOffset + session.messages.length;
+            _lastSeenTailMessageId = session.messages.lastOrNull?.id;
+          }
+        }
+      });
     }
   }
 
@@ -214,13 +234,40 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     }
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottom({bool settle = false}) {
     if (!mounted || !_scrollController.hasClients) return;
-    _scrollController.animateTo(
+    final chatState = ref.read(aiChatProvider);
+    final targetSessionId = chatState.activeSessionId;
+    final targetServerKey = ref.read(activeServerProvider)?.connectionKey;
+    final targetAgentId = chatState.activeAgentProfile?.id;
+
+    final future = _scrollController.animateTo(
       _scrollController.position.maxScrollExtent,
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOut,
     );
+
+    if (settle) {
+      future
+          .then((_) {
+            if (!mounted || !_scrollController.hasClients || !_userNearBottom) {
+              return;
+            }
+            final currentChat = ref.read(aiChatProvider);
+            final currentServer = ref.read(activeServerProvider);
+            if (currentChat.activeSessionId != targetSessionId ||
+                currentChat.activeAgentProfile?.id != targetAgentId ||
+                currentServer?.connectionKey != targetServerKey) {
+              return;
+            }
+            _clampToBottom(
+              expectedSessionId: targetSessionId,
+              expectedAgentId: targetAgentId,
+              expectedServerKey: targetServerKey,
+            );
+          })
+          .catchError((_) {});
+    }
   }
 
   void _followBottomIfNeeded() {
@@ -524,6 +571,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     if ((text.isEmpty && chatState.attachments.isEmpty) ||
         _isSending ||
         chatState.isGenerating ||
+        (chatState.isServerBusy && !chatState.isViewingRun) ||
         chatState.isLoadingSettings ||
         chatState.isApplyingSettings ||
         chatState.isLoadingSessions ||
@@ -561,10 +609,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       _scrollToBottom();
     });
 
+    String? caughtError;
     try {
       await ref.read(aiChatProvider.notifier).sendMessage(text);
-    } catch (_) {
-      // Error handled by provider/state
+    } catch (e) {
+      caughtError = e.toString();
     } finally {
       if (mounted) {
         setState(() {
@@ -590,16 +639,26 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         currentSessionId == sentSessionId &&
         currentLaunchKey == sentLaunchKey;
 
-    if (!afterState.isGenerating &&
-        (afterState.lastErrorCode != null ||
-            afterState.authChallenge != null)) {
-      if (targetMatches && _promptController.text.isEmpty) {
-        _promptController.text = text;
-        _promptController.selection = TextSelection.collapsed(
-          offset: text.length,
-        );
-        ref.read(aiChatProvider.notifier).updateDraftText(text);
-      }
+    final errorCode = afterState.lastErrorCode ?? caughtError ?? '';
+    final isBusyOrPreparing =
+        errorCode.contains('ACP_RUNTIME_SERVER_BUSY') ||
+        errorCode.contains('PREPARING') ||
+        errorCode.contains('BUSY');
+
+    final shouldRestoreDraft =
+        targetMatches &&
+        _promptController.text.isEmpty &&
+        (isBusyOrPreparing ||
+            (!afterState.isGenerating &&
+                (afterState.lastErrorCode != null ||
+                    afterState.authChallenge != null)));
+
+    if (shouldRestoreDraft) {
+      _promptController.text = text;
+      _promptController.selection = TextSelection.collapsed(
+        offset: text.length,
+      );
+      ref.read(aiChatProvider.notifier).updateDraftText(text);
     }
   }
 
@@ -608,44 +667,315 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     String sessionId,
     String title,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final activeServer = ref.read(activeServerProvider);
+    final targetServerKey = activeServer?.connectionKey.toString();
+    final session = ref
+        .read(aiChatProvider)
+        .sessions
+        .where((s) => s.id == sessionId)
+        .firstOrNull;
+    final managedKeys =
+        session?.agentContexts.values
+            .map((c) => c.persistentRuntimeKey)
+            .whereType<String>()
+            .toSet() ??
+        const <String>{};
+    final bool hasManagedRuntimes = managedKeys.isNotEmpty;
+
+    bool stopAndClearRemote = false;
+    bool isDeleting = false;
+    bool isLoadingRuntimes = hasManagedRuntimes;
+    bool didStartInspect = false;
+    List<AcpRuntimeStatus>? runtimeStatuses;
+    String? inspectError;
+    String? errorMessage;
+
+    await showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.deleteSessionTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(ctx.l10n.deleteSessionConfirmMessage(title)),
-            const SizedBox(height: 8),
-            Text(
-              ctx.l10n.deleteSessionLocalOnlyNotice,
-              style: ctx.textTheme.bodySmall?.copyWith(
-                color: ctx.colorScheme.outline,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          if (hasManagedRuntimes && !didStartInspect) {
+            didStartInspect = true;
+            ref
+                .read(aiChatProvider.notifier)
+                .inspectSessionRuntimes(sessionId)
+                .then((statuses) {
+                  if (ctx.mounted) {
+                    setDialogState(() {
+                      isLoadingRuntimes = false;
+                      runtimeStatuses = statuses;
+                    });
+                  }
+                })
+                .catchError((e) {
+                  if (ctx.mounted) {
+                    setDialogState(() {
+                      isLoadingRuntimes = false;
+                      inspectError = e.toString();
+                    });
+                  }
+                });
+          }
+
+          return PopScope(
+            canPop: !isDeleting,
+            child: AlertDialog(
+              title: Text(ctx.l10n.deleteSessionTitle),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(ctx.l10n.deleteSessionConfirmMessage(title)),
+                    const SizedBox(height: 12),
+                    if (isLoadingRuntimes)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                ctx.l10n.deleteSessionInspectingRuntimes,
+                                style: ctx.textTheme.bodySmall?.copyWith(
+                                  color: ctx.colorScheme.outline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (runtimeStatuses != null && runtimeStatuses!.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: ctx.colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(VRadius.input),
+                          border: Border.all(
+                            color: ctx.colorScheme.outlineVariant.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ctx.l10n.deleteSessionAffectedRuntimes,
+                              style: ctx.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            ...runtimeStatuses!.map(
+                              (status) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 2,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      status.alive
+                                          ? Icons.check_circle_outline
+                                          : Icons.pause_circle_outline,
+                                      size: 14,
+                                      color: status.isBusy
+                                          ? ctx.colorScheme.primary
+                                          : ctx.colorScheme.outline,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        '${status.runtimeKey} (${status.state})',
+                                        style: ctx.textTheme.bodySmall
+                                            ?.copyWith(
+                                              fontFamily: 'monospace',
+                                              fontSize: 11,
+                                            ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (inspectError != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(
+                          ctx.l10n.deleteSessionOfflineNotice,
+                          style: ctx.textTheme.bodySmall?.copyWith(
+                            color: ctx.colorScheme.outline,
+                          ),
+                        ),
+                      ),
+                    RadioGroup<bool>(
+                      groupValue: stopAndClearRemote,
+                      onChanged: (val) {
+                        if (isDeleting || val == null) return;
+                        if (val && !hasManagedRuntimes) return;
+                        setDialogState(() {
+                          stopAndClearRemote = val;
+                          errorMessage = null;
+                        });
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RadioListTile<bool>(
+                            key: const Key('delete_session_mode_local_only'),
+                            value: false,
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            title: Text(
+                              ctx.l10n.deleteSessionLocalOnlyOption,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              ctx.l10n.deleteSessionLocalOnlyNotice,
+                              style: ctx.textTheme.bodySmall?.copyWith(
+                                color: ctx.colorScheme.outline,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          RadioListTile<bool>(
+                            key: const Key('delete_session_mode_purge_remote'),
+                            value: true,
+                            enabled: !isDeleting && hasManagedRuntimes,
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            title: Text(
+                              ctx.l10n.deleteSessionStopAndPurgeOption,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: hasManagedRuntimes
+                                    ? null
+                                    : ctx.colorScheme.outline,
+                              ),
+                            ),
+                            subtitle: Text(
+                              hasManagedRuntimes
+                                  ? ctx.l10n.deleteSessionPurgeRemoteWarning
+                                  : ctx.l10n.deleteSessionNoManagedRuntimes,
+                              style: ctx.textTheme.bodySmall?.copyWith(
+                                color: hasManagedRuntimes
+                                    ? ctx.colorScheme.error
+                                    : ctx.colorScheme.outline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (errorMessage != null) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: ctx.colorScheme.errorContainer.withValues(
+                            alpha: 0.5,
+                          ),
+                          borderRadius: BorderRadius.circular(VRadius.input),
+                          border: Border.all(
+                            color: ctx.colorScheme.error.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 16,
+                              color: ctx.colorScheme.error,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                errorMessage!,
+                                style: ctx.textTheme.bodySmall?.copyWith(
+                                  color: ctx.colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
+              actions: [
+                TextButton(
+                  onPressed: isDeleting ? null : () => Navigator.pop(ctx),
+                  child: Text(ctx.l10n.cancel),
+                ),
+                FilledButton(
+                  key: const Key('confirmDeleteSessionButton'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ctx.colorScheme.error,
+                  ),
+                  onPressed: isDeleting
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            isDeleting = true;
+                            errorMessage = null;
+                          });
+                          try {
+                            await ref
+                                .read(aiChatProvider.notifier)
+                                .deleteSession(
+                                  sessionId,
+                                  stopAndClearRemote: stopAndClearRemote,
+                                  expectedServerKey: targetServerKey,
+                                );
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                            }
+                          } catch (e) {
+                            if (ctx.mounted) {
+                              setDialogState(() {
+                                isDeleting = false;
+                                errorMessage = e.toString();
+                              });
+                            }
+                          }
+                        },
+                  child: isDeleting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(ctx.l10n.deleteSessionConfirmAction),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(ctx.l10n.cancel),
-          ),
-          FilledButton(
-            key: const Key('confirmDeleteSessionButton'),
-            style: FilledButton.styleFrom(
-              backgroundColor: ctx.colorScheme.error,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(ctx.l10n.deleteSessionConfirmAction),
-          ),
-        ],
+          );
+        },
       ),
     );
-
-    if (confirmed == true && mounted) {
-      await ref.read(aiChatProvider.notifier).deleteSession(sessionId);
-    }
   }
 
   Future<void> _showRenameSessionDialog(
@@ -853,9 +1183,81 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     );
   }
 
+  Widget _buildServerRunningBanner(
+    BuildContext context,
+    AcpActiveRun serverRun,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      elevation: 2,
+      child: Container(
+        key: const Key('acp_server_running_banner'),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: context.colorScheme.surfaceContainerHigh,
+          border: Border(
+            bottom: BorderSide(
+              color: context.colorScheme.primary.withValues(alpha: 0.2),
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: context.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                context.l10n.acpRunningSessionIndicator(serverRun.agentName),
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: context.colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.tonal(
+              key: const Key('acp_return_to_running_session_button'),
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 0,
+                ),
+              ),
+              onPressed: () {
+                ref.read(aiChatProvider.notifier).returnToRunningSession();
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_back, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    context.l10n.acpReturnToRunningSession,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<AiChatState>(aiChatProvider, (previous, next) {
+      final previousUnread = _unreadMessageCount;
       final prevSessionId = previous?.activeSession?.id;
       final nextSessionId = next.activeSession?.id;
       final prevMessages = previous?.activeSession?.messages ?? const [];
@@ -885,6 +1287,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       if (sessionOrAgentChanged && nextSessionId != null) {
         _scrolledSessionId = nextSessionId;
         _userNearBottom = true;
+        _unreadMessageCount = 0;
+        final nextEndIndex =
+            (next.activeSession?.messageOffset ?? 0) + nextMessages.length;
+        _lastSeenEndIndex = nextEndIndex;
+        _lastSeenTailMessageId = nextMessages.lastOrNull?.id;
         _pendingInitialHistory = nextMessages.isEmpty;
         _resetScrollControllerForNewSession();
         final targetSessionId = nextSessionId;
@@ -897,6 +1304,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             expectedServerKey: targetServerKey,
           );
         });
+        if (_unreadMessageCount != previousUnread) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() {});
+          });
+        }
         return;
       }
 
@@ -907,6 +1319,10 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       if (hasLoadedInitialMessages) {
         _pendingInitialHistory = false;
         _userNearBottom = true;
+        final nextEndIndex =
+            (next.activeSession?.messageOffset ?? 0) + nextMessages.length;
+        _lastSeenEndIndex = nextEndIndex;
+        _lastSeenTailMessageId = nextMessages.lastOrNull?.id;
         final targetSessionId = nextSessionId;
         final targetServerKey = ref.read(activeServerProvider)?.connectionKey;
         final targetAgentId = next.activeAgentProfile?.id;
@@ -916,6 +1332,36 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             expectedAgentId: targetAgentId,
             expectedServerKey: targetServerKey,
           );
+        });
+      }
+
+      if (!sessionOrAgentChanged &&
+          prevSessionId == nextSessionId &&
+          nextSessionId != null) {
+        final currentEndIndex =
+            (next.activeSession?.messageOffset ?? 0) + nextMessages.length;
+        final currentTailId = nextMessages.lastOrNull?.id;
+        if (!_userNearBottom) {
+          // Prepending older history decreases messageOffset, but currentEndIndex
+          // (messageOffset + length) and tail message ID remain unchanged.
+          // Only increment unread counter for new messages appended at the tail.
+          if (currentEndIndex > _lastSeenEndIndex &&
+              currentTailId != _lastSeenTailMessageId) {
+            final delta = currentEndIndex - _lastSeenEndIndex;
+            _unreadMessageCount += delta;
+            _lastSeenEndIndex = currentEndIndex;
+            _lastSeenTailMessageId = currentTailId;
+          }
+        } else {
+          _lastSeenEndIndex = currentEndIndex;
+          _lastSeenTailMessageId = currentTailId;
+          _unreadMessageCount = 0;
+        }
+      }
+
+      if (_unreadMessageCount != previousUnread) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() {});
         });
       }
 
@@ -1098,7 +1544,70 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     return _buildErrorBanner(bannerCode);
                   },
                 ),
-                Expanded(child: _buildMessageList()),
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Positioned.fill(child: _buildMessageList()),
+                      Consumer(
+                        builder: (ctx, ref, _) {
+                          final serverRun = ref.watch(
+                            aiChatProvider.select((s) => s.serverRun),
+                          );
+                          final isViewingRun = ref.watch(
+                            aiChatProvider.select((s) => s.isViewingRun),
+                          );
+                          if (serverRun != null &&
+                              !isViewingRun &&
+                              serverRun.isBusy) {
+                            return Positioned(
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              child: _buildServerRunningBanner(ctx, serverRun),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                      if (!_userNearBottom)
+                        Positioned(
+                          right: 16,
+                          bottom: 12,
+                          child: FloatingActionButton.small(
+                            key: const Key('chat_scroll_to_latest_button'),
+                            heroTag: 'chat_scroll_to_latest_button',
+                            tooltip: context.l10n.chatScrollToLatest,
+                            onPressed: () {
+                              _scrollToBottom(settle: true);
+                              setState(() {
+                                _userNearBottom = true;
+                                _unreadMessageCount = 0;
+                                final session = ref
+                                    .read(aiChatProvider)
+                                    .activeSession;
+                                if (session != null) {
+                                  _lastSeenEndIndex =
+                                      session.messageOffset +
+                                      session.messages.length;
+                                  _lastSeenTailMessageId =
+                                      session.messages.lastOrNull?.id;
+                                }
+                              });
+                            },
+                            child: _unreadMessageCount > 0
+                                ? Badge.count(
+                                    count: _unreadMessageCount,
+                                    child: const Icon(
+                                      Icons.keyboard_arrow_down,
+                                    ),
+                                  )
+                                : const Icon(Icons.keyboard_arrow_down),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
                 Consumer(
                   builder: (ctx, ref, _) {
                     final pendingPermission = ref.watch(
@@ -2704,10 +3213,26 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     final recoveryStatus = cardRef.watch(
       aiChatProvider.select((s) => s.recoveryStatus),
     );
+    final expectedCompleter = cardRef.watch(
+      aiChatProvider.select((s) => s.permissionCompleter),
+    );
+    final activeServer = cardRef.watch(activeServerProvider);
+    final expectedServerKey = activeServer?.connectionKey.toString() ?? '';
+
     final canRespond =
         isConnected &&
+        expectedCompleter != null &&
+        !expectedCompleter.isCompleted &&
         recoveryStatus != SessionRecoveryStatus.reconnecting &&
         recoveryStatus != SessionRecoveryStatus.syncing;
+
+    final summaryText = req.description.trim().isNotEmpty
+        ? req.description.trim()
+        : (req.command.trim().isNotEmpty
+              ? req.command.trim()
+              : (req.toolName.trim().isNotEmpty
+                    ? req.toolName.trim()
+                    : context.l10n.permissionRequired));
 
     return Container(
       margin: const EdgeInsets.all(VSpace.md),
@@ -2725,27 +3250,22 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               PulseDot(color: danger, size: 7),
               const SizedBox(width: 8),
               Icon(Icons.warning, color: danger, size: 20),
-              const SizedBox(width: 4),
-              Text(
-                context.l10n.permissionRequired,
-                style: context.textTheme.titleSmall?.copyWith(color: danger),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  context.l10n.permissionRequired,
+                  style: context.textTheme.titleSmall?.copyWith(color: danger),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          Text(req.description, style: context.textTheme.bodyMedium),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(VRadius.input),
-            ),
-            child: Text(
-              req.command,
-              style: monoTextStyle(fontSize: 12, color: context.vWarning),
-            ),
+          Text(
+            summaryText,
+            style: context.textTheme.bodyMedium,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 10),
           Align(
@@ -2756,47 +3276,92 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               runSpacing: 8,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
+                TextButton.icon(
+                  key: const Key('chat_permission_details_button'),
+                  icon: const Icon(Icons.open_in_full, size: 14),
+                  label: Text(context.l10n.permissionViewDetails),
+                  onPressed: () => _showPermissionDetailsModal(
+                    context,
+                    req,
+                    cardRef,
+                    canRespond,
+                    expectedCompleter: expectedCompleter,
+                    expectedServerKey: expectedServerKey,
+                  ),
+                ),
                 TextButton(
                   key: const Key('chat_permission_cancel'),
                   onPressed: canRespond
-                      ? () => notifier.respondPermission(null)
+                      ? () => notifier.respondToPermission(
+                          null,
+                          expectedCompleter: expectedCompleter,
+                          expectedServerKey: expectedServerKey,
+                        )
                       : null,
                   child: Text(context.l10n.cancel),
                 ),
-                if (req.options.isNotEmpty)
-                  ...req.options.map((option) {
-                    final isAllow = option.kind.toLowerCase().contains('allow');
-                    if (isAllow) {
-                      return FilledButton(
-                        key: Key('chat_permission_option_${option.id}'),
-                        style: req.isDangerous
-                            ? FilledButton.styleFrom(
-                                backgroundColor: context.colorScheme.error,
-                              )
-                            : null,
-                        onPressed: canRespond
-                            ? () => notifier.respondPermission(option.id)
-                            : null,
-                        child: Text(
-                          option.name.isNotEmpty ? option.name : option.id,
-                        ),
+                if (req.options.isNotEmpty) ...[
+                  Builder(
+                    builder: (ctx) {
+                      final primaryOption = req.options.firstWhere(
+                        (o) => o.kind.toLowerCase().contains('allow'),
+                        orElse: () => req.options.first,
                       );
-                    }
-                    return OutlinedButton(
-                      key: Key('chat_permission_option_${option.id}'),
-                      onPressed: canRespond
-                          ? () => notifier.respondPermission(option.id)
-                          : null,
-                      child: Text(
-                        option.name.isNotEmpty ? option.name : option.id,
-                      ),
-                    );
-                  })
-                else ...[
+                      final isAllow = primaryOption.kind.toLowerCase().contains(
+                        'allow',
+                      );
+                      return isAllow
+                          ? FilledButton(
+                              key: Key(
+                                'chat_permission_option_${primaryOption.id}',
+                              ),
+                              style: req.isDangerous
+                                  ? FilledButton.styleFrom(
+                                      backgroundColor:
+                                          context.colorScheme.error,
+                                    )
+                                  : null,
+                              onPressed: canRespond
+                                  ? () => notifier.respondToPermission(
+                                      primaryOption.id,
+                                      expectedCompleter: expectedCompleter,
+                                      expectedServerKey: expectedServerKey,
+                                    )
+                                  : null,
+                              child: Text(
+                                primaryOption.name.isNotEmpty
+                                    ? primaryOption.name
+                                    : primaryOption.id,
+                              ),
+                            )
+                          : OutlinedButton(
+                              key: Key(
+                                'chat_permission_option_${primaryOption.id}',
+                              ),
+                              onPressed: canRespond
+                                  ? () => notifier.respondToPermission(
+                                      primaryOption.id,
+                                      expectedCompleter: expectedCompleter,
+                                      expectedServerKey: expectedServerKey,
+                                    )
+                                  : null,
+                              child: Text(
+                                primaryOption.name.isNotEmpty
+                                    ? primaryOption.name
+                                    : primaryOption.id,
+                              ),
+                            );
+                    },
+                  ),
+                ] else ...[
                   OutlinedButton(
                     key: const Key('chat_permission_reject'),
                     onPressed: canRespond
-                        ? () => notifier.respondPermission(null)
+                        ? () => notifier.respondToPermission(
+                            null,
+                            expectedCompleter: expectedCompleter,
+                            expectedServerKey: expectedServerKey,
+                          )
                         : null,
                     child: Text(context.l10n.permissionReject),
                   ),
@@ -2807,6 +3372,270 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         ],
       ),
     );
+  }
+
+  void _showPermissionDetailsModal(
+    BuildContext context,
+    PermissionRequest req,
+    WidgetRef cardRef,
+    bool canRespond, {
+    required Completer<String?>? expectedCompleter,
+    required String expectedServerKey,
+  }) {
+    final notifier = cardRef.read(aiChatProvider.notifier);
+    final isDesktop = MediaQuery.of(context).size.width >= 600;
+    final isActionEnabled = canRespond && expectedCompleter != null;
+
+    Widget buildModalContent(BuildContext modalCtx) {
+      final mq = MediaQuery.of(modalCtx);
+      final availableHeight =
+          mq.size.height - mq.padding.vertical - mq.viewInsets.vertical;
+      final maxModalHeight = availableHeight > 0
+          ? (availableHeight * 0.8).clamp(0.0, availableHeight)
+          : 0.0;
+
+      return Padding(
+        padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxModalHeight, maxWidth: 640),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.security,
+                      color: req.isDangerous
+                          ? modalCtx.colorScheme.error
+                          : modalCtx.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        modalCtx.l10n.permissionDetailsTitle,
+                        style: modalCtx.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(modalCtx),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (req.toolName.isNotEmpty) ...[
+                        Text(
+                          modalCtx.l10n.permissionToolLabel,
+                          style: modalCtx.textTheme.labelMedium?.copyWith(
+                            color: modalCtx.colorScheme.outline,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          req.toolName,
+                          style: modalCtx.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      SizedBox(
+                        width: double.infinity,
+                        child: Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            Text(
+                              modalCtx.l10n.permissionCommandLabel,
+                              style: modalCtx.textTheme.labelMedium?.copyWith(
+                                color: modalCtx.colorScheme.outline,
+                              ),
+                            ),
+                            TextButton.icon(
+                              icon: const Icon(Icons.copy, size: 14),
+                              label: Text(modalCtx.l10n.permissionCopyCommand),
+                              onPressed: () {
+                                Clipboard.setData(
+                                  ClipboardData(text: req.command),
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      modalCtx.l10n.permissionCommandCopied,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(VRadius.input),
+                        ),
+                        child: SelectableText(
+                          req.command,
+                          style: monoTextStyle(
+                            fontSize: 12,
+                            color: modalCtx.vWarning,
+                          ),
+                        ),
+                      ),
+                      if (req.description.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          modalCtx.l10n.permissionDescription,
+                          style: modalCtx.textTheme.labelMedium?.copyWith(
+                            color: modalCtx.colorScheme.outline,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          req.description,
+                          style: modalCtx.textTheme.bodyMedium,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    TextButton(
+                      onPressed: isActionEnabled
+                          ? () {
+                              Navigator.pop(modalCtx);
+                              notifier.respondToPermission(
+                                null,
+                                expectedCompleter: expectedCompleter,
+                                expectedServerKey: expectedServerKey,
+                              );
+                            }
+                          : null,
+                      child: Text(modalCtx.l10n.cancel),
+                    ),
+                    if (req.options.isNotEmpty)
+                      ...req.options.map((option) {
+                        final isAllow = option.kind.toLowerCase().contains(
+                          'allow',
+                        );
+                        return isAllow
+                            ? FilledButton(
+                                key: Key(
+                                  'chat_permission_option_detail_${option.id}',
+                                ),
+                                style: req.isDangerous
+                                    ? FilledButton.styleFrom(
+                                        backgroundColor:
+                                            modalCtx.colorScheme.error,
+                                      )
+                                    : null,
+                                onPressed: isActionEnabled
+                                    ? () {
+                                        Navigator.pop(modalCtx);
+                                        notifier.respondToPermission(
+                                          option.id,
+                                          expectedCompleter: expectedCompleter,
+                                          expectedServerKey: expectedServerKey,
+                                        );
+                                      }
+                                    : null,
+                                child: Text(
+                                  option.name.isNotEmpty
+                                      ? option.name
+                                      : option.id,
+                                ),
+                              )
+                            : OutlinedButton(
+                                key: Key(
+                                  'chat_permission_option_detail_${option.id}',
+                                ),
+                                onPressed: isActionEnabled
+                                    ? () {
+                                        Navigator.pop(modalCtx);
+                                        notifier.respondToPermission(
+                                          option.id,
+                                          expectedCompleter: expectedCompleter,
+                                          expectedServerKey: expectedServerKey,
+                                        );
+                                      }
+                                    : null,
+                                child: Text(
+                                  option.name.isNotEmpty
+                                      ? option.name
+                                      : option.id,
+                                ),
+                              );
+                      })
+                    else
+                      OutlinedButton(
+                        onPressed: isActionEnabled
+                            ? () {
+                                Navigator.pop(modalCtx);
+                                notifier.respondToPermission(
+                                  null,
+                                  expectedCompleter: expectedCompleter,
+                                  expectedServerKey: expectedServerKey,
+                                );
+                              }
+                            : null,
+                        child: Text(modalCtx.l10n.permissionReject),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (isDesktop) {
+      showDialog<void>(
+        context: context,
+        builder: (ctx) =>
+            Dialog(clipBehavior: Clip.antiAlias, child: buildModalContent(ctx)),
+      );
+    } else {
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (ctx) => SafeArea(child: buildModalContent(ctx)),
+      );
+    }
   }
 
   Future<void> _handleProceedAuth(
@@ -3623,13 +4452,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   }
 
   String _chatStatusAwaitingAuthLabel(BuildContext context) {
-    try {
-      final dynamic l10n = context.l10n;
-      final dynamic val = l10n.chatStatusAwaitingAuth;
-      if (val is String && val.isNotEmpty) return val;
-    } catch (_) {}
-    final isZh = Localizations.localeOf(context).languageCode == 'zh';
-    return isZh ? '等待 ACP 认证' : 'Awaiting ACP Authentication';
+    return context.l10n.chatStatusAwaitingAuth;
   }
 
   bool _isAuthChallengeTargetMessage(ChatMessage msg, AiChatState state) {
@@ -4431,7 +5254,15 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         state.isLoadingSessions ||
         state.isLoadingMessages;
 
-    final canSend = hasActiveAgent && !isBusy && isConnected && !isRecovering;
+    final isServerBusyWithOtherSession =
+        state.isServerBusy && !state.isViewingRun;
+
+    final canSend =
+        hasActiveAgent &&
+        !isBusy &&
+        isConnected &&
+        !isRecovering &&
+        !isServerBusyWithOtherSession;
 
     final isDraft = state.activeSession == null;
     final rawWorkingDir =
@@ -4998,8 +5829,25 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                         foregroundColor: context.colorScheme.onError,
                       ),
                       tooltip: context.l10n.stopGeneration,
-                      onPressed: () =>
-                          ref.read(aiChatProvider.notifier).stopGeneration(),
+                      onPressed: () {
+                        final serverKey = ref
+                            .read(activeServerProvider)
+                            ?.connectionKey
+                            .toString();
+                        final sessionId = ref
+                            .read(aiChatProvider)
+                            .activeSessionId;
+                        if (serverKey != null && sessionId != null) {
+                          ref
+                              .read(aiChatProvider.notifier)
+                              .stopViewingRun(
+                                expectedServerKey: serverKey,
+                                expectedSessionId: sessionId,
+                              );
+                        } else {
+                          ref.read(aiChatProvider.notifier).stopGeneration();
+                        }
+                      },
                     ),
                   )
                 else
@@ -5007,6 +5855,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     child: IconButton.filled(
                       key: const Key('sendMessageButton'),
                       icon: const Icon(Icons.send, size: 18),
+                      tooltip: isServerBusyWithOtherSession
+                          ? context.l10n.acpServerBusySendDisabled
+                          : null,
                       onPressed: canSend ? _handleSend : null,
                     ),
                   ),

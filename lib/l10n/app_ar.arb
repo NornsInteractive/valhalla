@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "مقبس",
   "terminalServerLabel": "الخادم",
   "terminalSocketErrorsBanner": "{count} خطأ في مصدر المقبس",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "يستمر الوكيل في العمل بسلاسة حتى لو تم إغلاق التطبيق.",
   "persistentRuntimeEnableAction": "تمكين بيئة التشغيل",
   "persistentRuntimeSettingUp": "جارٍ إعداد بيئة التشغيل على الخادم...",
-  "dismissRecoveryNoticeTooltip": "تجاهل الإشعار"
+  "dismissRecoveryNoticeTooltip": "تجاهل الإشعار",
+  "terminalReconnectTab": "إعادة توصيل الطرفية",
+  "terminalCloseTabConfirmTitle": "إغلاق علامة التبويب",
+  "terminalClosePlainConfirmMessage": "سيؤدي إغلاق علامة التبويب هذه إلى قطع الاتصال. قد يتم إنهاء أي عملية قيد التشغيل في الواجهة.",
+  "terminalCloseTmuxConfirmMessage": "هذه الطرفية تعمل داخل tmux. إغلاق علامة التبويب سيفصلها فقط عن العرض الحالي؛ ستستمر الجلسة في الخلفية.",
+  "terminalCloseActionTerminate": "إنهاء وإغلاق",
+  "terminalCloseActionDetach": "فصل وإغلاق",
+  "acpRunningSessionIndicator": "مهمة قيد التشغيل: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "العودة إلى الجلسة النشطة",
+  "acpServerBusySendDisabled": "الخادم ينفذ مهمة أخرى حاليًا. يرجى الانتظار حتى تكتمل.",
+  "deleteSessionLocalOnlyOption": "حذف السجل المحلي فقط",
+  "deleteSessionStopAndPurgeOption": "إيقاف التشغيل وتطهير بيانات بيئة التشغيل البعيدة",
+  "deleteSessionPurgeRemoteWarning": "سيؤدي هذا إلى إيقاف العملية في الخلفية على الخادم وتطهير ذاكرة التخزين المؤقت الخاصة بالتطبيق.",
+  "permissionViewDetails": "عرض التفاصيل",
+  "permissionDetailsTitle": "تفاصيل طلب الإذن",
+  "permissionToolLabel": "الأداة المطلوبة",
+  "permissionCommandLabel": "الأمر المراد تنفيذه",
+  "permissionCopyCommand": "نسخ الأمر",
+  "permissionCommandCopied": "تم نسخ الأمر إلى الحافظة",
+  "chatScrollToLatest": "الانتقال إلى الأحدث",
+  "deleteSessionNoManagedRuntimes": "لم يتم العثور على مثيلات وقت تشغيل مُدارة لهذه الجلسة.",
+  "deleteSessionAffectedRuntimes": "مثيلات وقت التشغيل المتأثرة:",
+  "deleteSessionInspectingRuntimes": "جارٍ فحص بيئات التشغيل عن بُعد...",
+  "deleteSessionOfflineNotice": "الخادم غير متصل. الحذف المحلي فقط هو المتاح."
 }

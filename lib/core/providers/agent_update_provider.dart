@@ -6,6 +6,7 @@ import '../../data/models/agent_profile.dart';
 import '../../data/models/agent_update.dart';
 import '../../data/models/server_profile.dart';
 import '../../infrastructure/agents/agent_update_service.dart';
+import '../../infrastructure/acp/acp_runtime_service.dart';
 import '../logging/sanitizer.dart';
 import 'agent_registry_provider.dart';
 import 'agent_update_lock_provider.dart';
@@ -452,6 +453,23 @@ class AgentUpdatesNotifier extends Notifier<AgentUpdatesState> {
     }
   }
 
+  Future<void> _ensureRemoteRuntimeIdle(ServerProfile server) async {
+    if (!ref.read(persistentAcpRuntimeEnabledProvider) ||
+        !ref
+            .read(localStorageServiceProvider)
+            .getPersistentAcpConsent(
+              AcpRuntimeService.identity(server.connectionKey.toString()),
+            )) {
+      return;
+    }
+    final client = ref.read(sshClientManagerProvider).getClient(server.id);
+    if (client == null) throw const AgentUpdateException('SSH_DISCONNECTED');
+    final runs = await ref.read(acpServerRunsProvider)(client, server.id);
+    if (runs.any((run) => run.isBusy)) {
+      throw const AgentUpdateException('AGENT_UPDATE_BUSY');
+    }
+  }
+
   bool _busy(String serverId) {
     final registry = ref.read(agentRegistryProvider);
     if (registry.serverId == serverId &&
@@ -503,6 +521,10 @@ class AgentUpdatesNotifier extends Notifier<AgentUpdatesState> {
       throw const AgentUpdateException('AGENT_UPDATE_BUSY');
     }
     final epoch = _epoch;
+    await _ensureRemoteRuntimeIdle(server);
+    if (_busy(server.id) || !_current(epoch, server, profile)) {
+      throw const AgentUpdateException('AGENT_UPDATE_BUSY');
+    }
     final plan = await ref
         .read(agentUpdateServiceProvider)
         .prepare(server, profile, components: components);
@@ -545,6 +567,10 @@ class AgentUpdatesNotifier extends Notifier<AgentUpdatesState> {
     try {
       if (_busy(plan.server.id)) {
         throw const AgentUpdateException('AGENT_UPDATE_BUSY');
+      }
+      await _ensureRemoteRuntimeIdle(plan.server);
+      if (!_current(epoch, plan.server, plan.profile)) {
+        throw const AgentUpdateException('AGENT_UPDATE_TARGET_CHANGED');
       }
       final entry = (state.agents[plan.profile.id] ?? const AgentUpdateEntry())
           .copyWith(

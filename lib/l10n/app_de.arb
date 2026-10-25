@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "Server",
   "terminalSocketErrorsBanner": "{count} Socket-Quellenfehler",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "Der Agent läuft im Hintergrund zuverlässig weiter, selbst wenn die App beendet wird.",
   "persistentRuntimeEnableAction": "Laufzeit aktivieren",
   "persistentRuntimeSettingUp": "Laufzeit wird auf dem Server eingerichtet...",
-  "dismissRecoveryNoticeTooltip": "Hinweis verwerfen"
+  "dismissRecoveryNoticeTooltip": "Hinweis verwerfen",
+  "terminalReconnectTab": "Terminal wieder verbinden",
+  "terminalCloseTabConfirmTitle": "Tab schließen",
+  "terminalClosePlainConfirmMessage": "Das Schließen dieses Tabs trennt die Sitzung. Alle im Vordergrund ausgeführten Prozesse werden möglicherweise beendet.",
+  "terminalCloseTmuxConfirmMessage": "Dieses Terminal läuft in tmux. Das Schließen des Tabs trennt ihn nur von der Ansicht; die Sitzung läuft im Hintergrund weiter.",
+  "terminalCloseActionTerminate": "Beenden & Schließen",
+  "terminalCloseActionDetach": "Trennen & Schließen",
+  "acpRunningSessionIndicator": "Aufgabe wird ausgeführt: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "Zur laufenden Sitzung zurückkehren",
+  "acpServerBusySendDisabled": "Der Server führt derzeit eine andere Aufgabe aus. Bitte warten, bis sie abgeschlossen ist.",
+  "deleteSessionLocalOnlyOption": "Nur lokalen Eintrag löschen",
+  "deleteSessionStopAndPurgeOption": "Ausführung stoppen und Remote-Laufzeitdaten bereinigen",
+  "deleteSessionPurgeRemoteWarning": "Stoppt den Remote-Hintergrundprozess und bereinigt den App-eigenen Laufzeit-Cache.",
+  "permissionViewDetails": "Details anzeigen",
+  "permissionDetailsTitle": "Berechtigungsanforderungsdetails",
+  "permissionToolLabel": "Angeforderter Befehl/Tool",
+  "permissionCommandLabel": "Auszuführender Befehl",
+  "permissionCopyCommand": "Befehl kopieren",
+  "permissionCommandCopied": "Befehl in Zwischenablage kopiert",
+  "chatScrollToLatest": "Nach unten scrollen",
+  "deleteSessionNoManagedRuntimes": "Für diese Sitzung wurden keine verwalteten Laufzeitinstanzen gefunden.",
+  "deleteSessionAffectedRuntimes": "Betroffene Laufzeitinstanzen:",
+  "deleteSessionInspectingRuntimes": "Remote-Laufzeiten werden überprüft...",
+  "deleteSessionOfflineNotice": "Server nicht verbunden. Nur lokales Löschen verfügbar."
 }

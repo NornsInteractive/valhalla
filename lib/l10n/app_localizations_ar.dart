@@ -6208,4 +6208,83 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'تجاهل الإشعار';
+
+  @override
+  String get terminalReconnectTab => 'إعادة توصيل الطرفية';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'إغلاق علامة التبويب';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'سيؤدي إغلاق علامة التبويب هذه إلى قطع الاتصال. قد يتم إنهاء أي عملية قيد التشغيل في الواجهة.';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'هذه الطرفية تعمل داخل tmux. إغلاق علامة التبويب سيفصلها فقط عن العرض الحالي؛ ستستمر الجلسة في الخلفية.';
+
+  @override
+  String get terminalCloseActionTerminate => 'إنهاء وإغلاق';
+
+  @override
+  String get terminalCloseActionDetach => 'فصل وإغلاق';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'مهمة قيد التشغيل: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'العودة إلى الجلسة النشطة';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'الخادم ينفذ مهمة أخرى حاليًا. يرجى الانتظار حتى تكتمل.';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'حذف السجل المحلي فقط';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'إيقاف التشغيل وتطهير بيانات بيئة التشغيل البعيدة';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'سيؤدي هذا إلى إيقاف العملية في الخلفية على الخادم وتطهير ذاكرة التخزين المؤقت الخاصة بالتطبيق.';
+
+  @override
+  String get permissionViewDetails => 'عرض التفاصيل';
+
+  @override
+  String get permissionDetailsTitle => 'تفاصيل طلب الإذن';
+
+  @override
+  String get permissionToolLabel => 'الأداة المطلوبة';
+
+  @override
+  String get permissionCommandLabel => 'الأمر المراد تنفيذه';
+
+  @override
+  String get permissionCopyCommand => 'نسخ الأمر';
+
+  @override
+  String get permissionCommandCopied => 'تم نسخ الأمر إلى الحافظة';
+
+  @override
+  String get chatScrollToLatest => 'الانتقال إلى الأحدث';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'لم يتم العثور على مثيلات وقت تشغيل مُدارة لهذه الجلسة.';
+
+  @override
+  String get deleteSessionAffectedRuntimes => 'مثيلات وقت التشغيل المتأثرة:';
+
+  @override
+  String get deleteSessionInspectingRuntimes =>
+      'جارٍ فحص بيئات التشغيل عن بُعد...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'الخادم غير متصل. الحذف المحلي فقط هو المتاح.';
 }

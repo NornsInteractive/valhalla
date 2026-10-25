@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "Soket",
   "terminalServerLabel": "Server",
   "terminalSocketErrorsBanner": "{count} kesalahan sumber soket",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "Agent terus berjalan di latar belakang bahkan jika aplikasi ditutup.",
   "persistentRuntimeEnableAction": "Aktifkan Runtime",
   "persistentRuntimeSettingUp": "Mengonfigurasi runtime di server...",
-  "dismissRecoveryNoticeTooltip": "Tutup pemberitahuan"
+  "dismissRecoveryNoticeTooltip": "Tutup pemberitahuan",
+  "terminalReconnectTab": "Sambungkan Ulang Terminal",
+  "terminalCloseTabConfirmTitle": "Tutup Tab",
+  "terminalClosePlainConfirmMessage": "Menutup tab ini akan memutuskan sesi. Proses apa pun yang berjalan di latar depan dapat dihentikan.",
+  "terminalCloseTmuxConfirmMessage": "Terminal ini berjalan di tmux. Menutup tab hanya melepaskannya dari tampilan; sesi akan tetap berjalan di latar belakang.",
+  "terminalCloseActionTerminate": "Hentikan & Tutup",
+  "terminalCloseActionDetach": "Lepaskan & Tutup",
+  "acpRunningSessionIndicator": "Menjalankan tugas: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "Kembali ke Sesi yang Berjalan",
+  "acpServerBusySendDisabled": "Server sedang menjalankan tugas lain. Harap tunggu hingga selesai.",
+  "deleteSessionLocalOnlyOption": "Hapus catatan lokal saja",
+  "deleteSessionStopAndPurgeOption": "Hentikan eksekusi dan bersihkan data runtime jarak jauh",
+  "deleteSessionPurgeRemoteWarning": "Ini akan menghentikan proses latar belakang jarak jauh dan membersihkan cache runtime milik aplikasi.",
+  "permissionViewDetails": "Lihat Detail",
+  "permissionDetailsTitle": "Detail Permintaan Izin",
+  "permissionToolLabel": "Alat yang Diminta",
+  "permissionCommandLabel": "Perintah yang Dijalankan",
+  "permissionCopyCommand": "Salin Perintah",
+  "permissionCommandCopied": "Perintah disalin ke papan klip",
+  "chatScrollToLatest": "Gulir ke terbaru",
+  "deleteSessionNoManagedRuntimes": "Tidak ada instance runtime terkelola yang ditemukan untuk sesi ini.",
+  "deleteSessionAffectedRuntimes": "Instance Runtime yang Terpengaruh:",
+  "deleteSessionInspectingRuntimes": "Memeriksa runtime jarak jauh...",
+  "deleteSessionOfflineNotice": "Server terputus. Hanya penghapusan lokal yang tersedia."
 }

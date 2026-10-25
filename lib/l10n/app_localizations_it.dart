@@ -6328,4 +6328,83 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'Ignora avviso';
+
+  @override
+  String get terminalReconnectTab => 'Riconnetti terminale';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'Chiudi scheda';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'La chiusura di questa scheda disconnetterà la sessione. Eventuali processi in primo piano potrebbero essere interrotti.';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'Questo terminale è in esecuzione in tmux. La chiusura lo disconnette solo dalla vista; la sessione continuerà in background.';
+
+  @override
+  String get terminalCloseActionTerminate => 'Termina e chiudi';
+
+  @override
+  String get terminalCloseActionDetach => 'Scollega e chiudi';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'Attività in esecuzione: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'Torna alla sessione in esecuzione';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'Il server sta attualmente eseguendo un\'altra attività. Attendi il completamento.';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'Elimina solo il record locale';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'Arresta esecuzione ed elimina dati di runtime remoti';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'Arresterà il processo in background remoto ed eliminerà la cache di runtime dell\'app.';
+
+  @override
+  String get permissionViewDetails => 'Visualizza dettagli';
+
+  @override
+  String get permissionDetailsTitle => 'Dettagli richiesta di autorizzazione';
+
+  @override
+  String get permissionToolLabel => 'Strumento richiesto';
+
+  @override
+  String get permissionCommandLabel => 'Comando da eseguire';
+
+  @override
+  String get permissionCopyCommand => 'Copia comando';
+
+  @override
+  String get permissionCommandCopied => 'Comando copiato negli appunti';
+
+  @override
+  String get chatScrollToLatest => 'Vai al più recente';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'Nessuna istanza di runtime gestita trovata per questa sessione.';
+
+  @override
+  String get deleteSessionAffectedRuntimes => 'Istanze di runtime interessate:';
+
+  @override
+  String get deleteSessionInspectingRuntimes =>
+      'Ispezione dei runtime remoti in corso...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'Server disconnesso. È disponibile solo l\'eliminazione locale.';
 }

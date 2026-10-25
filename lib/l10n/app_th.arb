@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "ซ็อกเก็ต",
   "terminalServerLabel": "เซิร์ฟเวอร์",
   "terminalSocketErrorsBanner": "ข้อผิดพลาดของแหล่งที่มาของซ็อกเก็ต {count} รายการ",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "Agent จะทำงานต่อในเบื้องหลังอย่างราบรื่นแม้จะปิดแอป",
   "persistentRuntimeEnableAction": "เปิดใช้งานรันไทม์",
   "persistentRuntimeSettingUp": "กำลังกำหนดค่ารันไทม์บนเซิร์ฟเวอร์...",
-  "dismissRecoveryNoticeTooltip": "ปิดการแจ้งเตือน"
+  "dismissRecoveryNoticeTooltip": "ปิดการแจ้งเตือน",
+  "terminalReconnectTab": "เชื่อมต่อเทอร์มินัลใหม่",
+  "terminalCloseTabConfirmTitle": "ปิดแท็บ",
+  "terminalClosePlainConfirmMessage": "การปิดแท็บนี้จะยกเลิกการเชื่อมต่อเซสชัน กระบวนการเบื้องหน้าใดๆ อาจถูกยุติ",
+  "terminalCloseTmuxConfirmMessage": "เทอร์มินัลนี้ทำงานใน tmux การปิดแท็บจะเป็นเพียงการแยกออกจากมุมมองปัจจุบัน เซสชันจะยังคงทำงานในพื้นหลังต่อไป",
+  "terminalCloseActionTerminate": "ยุติและปิด",
+  "terminalCloseActionDetach": "แยกออกและปิด",
+  "acpRunningSessionIndicator": "กำลังดำเนินงาน: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "กลับไปยังเซสชันที่กำลังทำงาน",
+  "acpServerBusySendDisabled": "เซิร์ฟเวอร์กำลังดำเนินงานอื่นอยู่ โปรดรอจนกว่าจะเสร็จสิ้น",
+  "deleteSessionLocalOnlyOption": "ลบเฉพาะบันทึกในเครื่อง",
+  "deleteSessionStopAndPurgeOption": "หยุดการทำงานและล้างข้อมูลรันไทม์ระยะไกล",
+  "deleteSessionPurgeRemoteWarning": "การดำเนินการนี้จะหยุดกระบวนการเบื้องหลังระยะไกลและล้างแคชรันไทม์ของแอป",
+  "permissionViewDetails": "ดูรายละเอียด",
+  "permissionDetailsTitle": "รายละเอียดการขอสิทธิ์",
+  "permissionToolLabel": "เครื่องมือที่ร้องขอ",
+  "permissionCommandLabel": "คำสั่งที่จะดำเนินการ",
+  "permissionCopyCommand": "คัดลอกคำสั่ง",
+  "permissionCommandCopied": "คัดลอกคำสั่งไปยังคลิปบอร์ดแล้ว",
+  "chatScrollToLatest": "เลื่อนลงไปล่าสุด",
+  "deleteSessionNoManagedRuntimes": "ไม่พบอินสแตนซ์รันไทม์ที่ได้รับการจัดการสำหรับเซสชันนี้",
+  "deleteSessionAffectedRuntimes": "อินสแตนซ์รันไทม์ที่ได้รับผลกระทบ:",
+  "deleteSessionInspectingRuntimes": "กำลังตรวจสอบรันไทม์ระยะไกล...",
+  "deleteSessionOfflineNotice": "ตัดการเชื่อมต่อกับเซิร์ฟเวอร์แล้ว ใช้งานได้เฉพาะการลบในเครื่องเท่านั้น"
 }

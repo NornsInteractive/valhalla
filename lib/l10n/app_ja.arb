@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "ソケット",
   "terminalServerLabel": "サーバー",
   "terminalSocketErrorsBanner": "{count} 個のソケットソースエラー",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "アプリを終了したり通信が途切れても、Agent はバックグラウンドで処理を継続します。",
   "persistentRuntimeEnableAction": "ランタイムを有効化",
   "persistentRuntimeSettingUp": "サーバー上でランタイムを設定中...",
-  "dismissRecoveryNoticeTooltip": "通知を閉じる"
+  "dismissRecoveryNoticeTooltip": "通知を閉じる",
+  "terminalReconnectTab": "ターミナルを再接続",
+  "terminalCloseTabConfirmTitle": "タブを閉じる",
+  "terminalClosePlainConfirmMessage": "このタブを閉じると接続が切断されます。フォアグラウンドで実行中のプロセスは終了する可能性があります。",
+  "terminalCloseTmuxConfirmMessage": "このターミナルは tmux で実行されています。タブを閉じても現在のビューからデタッチされるだけで、セッションとタスクはバックグラウンドで保持されます。",
+  "terminalCloseActionTerminate": "終了して閉じる",
+  "terminalCloseActionDetach": "デタッチして閉じる",
+  "acpRunningSessionIndicator": "タスク実行中: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "実行中のセッションに戻る",
+  "acpServerBusySendDisabled": "サーバーは現在他のタスクを実行中です。完了するまでお待ちください",
+  "deleteSessionLocalOnlyOption": "ローカル記録のみ削除",
+  "deleteSessionStopAndPurgeOption": "実行を停止しリモートのランタイムデータを消去",
+  "deleteSessionPurgeRemoteWarning": "リモートのバックグラウンドプロセスを停止し、アプリ専用のランタイムキャッシュを消去します。",
+  "permissionViewDetails": "詳細を表示",
+  "permissionDetailsTitle": "権限承認の詳細",
+  "permissionToolLabel": "要求されたツール",
+  "permissionCommandLabel": "実行コマンド",
+  "permissionCopyCommand": "コマンドをコピー",
+  "permissionCommandCopied": "コマンドをクリップボードにコピーしました",
+  "chatScrollToLatest": "最新へ移動",
+  "deleteSessionNoManagedRuntimes": "このセッションには管理対象のランタイムインスタンスがありません。",
+  "deleteSessionAffectedRuntimes": "影響を受けるランタイムインスタンス:",
+  "deleteSessionInspectingRuntimes": "リモートランタイムを確認中...",
+  "deleteSessionOfflineNotice": "サーバーが未接続です。ローカル削除のみ利用可能です。"
 }

@@ -6265,4 +6265,84 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'Tutup pemberitahuan';
+
+  @override
+  String get terminalReconnectTab => 'Sambungkan Ulang Terminal';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'Tutup Tab';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'Menutup tab ini akan memutuskan sesi. Proses apa pun yang berjalan di latar depan dapat dihentikan.';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'Terminal ini berjalan di tmux. Menutup tab hanya melepaskannya dari tampilan; sesi akan tetap berjalan di latar belakang.';
+
+  @override
+  String get terminalCloseActionTerminate => 'Hentikan & Tutup';
+
+  @override
+  String get terminalCloseActionDetach => 'Lepaskan & Tutup';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'Menjalankan tugas: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'Kembali ke Sesi yang Berjalan';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'Server sedang menjalankan tugas lain. Harap tunggu hingga selesai.';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'Hapus catatan lokal saja';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'Hentikan eksekusi dan bersihkan data runtime jarak jauh';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'Ini akan menghentikan proses latar belakang jarak jauh dan membersihkan cache runtime milik aplikasi.';
+
+  @override
+  String get permissionViewDetails => 'Lihat Detail';
+
+  @override
+  String get permissionDetailsTitle => 'Detail Permintaan Izin';
+
+  @override
+  String get permissionToolLabel => 'Alat yang Diminta';
+
+  @override
+  String get permissionCommandLabel => 'Perintah yang Dijalankan';
+
+  @override
+  String get permissionCopyCommand => 'Salin Perintah';
+
+  @override
+  String get permissionCommandCopied => 'Perintah disalin ke papan klip';
+
+  @override
+  String get chatScrollToLatest => 'Gulir ke terbaru';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'Tidak ada instance runtime terkelola yang ditemukan untuk sesi ini.';
+
+  @override
+  String get deleteSessionAffectedRuntimes =>
+      'Instance Runtime yang Terpengaruh:';
+
+  @override
+  String get deleteSessionInspectingRuntimes =>
+      'Memeriksa runtime jarak jauh...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'Server terputus. Hanya penghapusan lokal yang tersedia.';
 }

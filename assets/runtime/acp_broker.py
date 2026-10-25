@@ -8,6 +8,7 @@ import pathlib
 import queue
 import re
 import signal
+import shutil
 import socket
 import sqlite3
 import subprocess
@@ -15,9 +16,216 @@ import sys
 import threading
 import time
 
-VERSION = 1
+VERSION = 2
 RETENTION = 7 * 86400
 MAX_LINE = 32 * 1024 * 1024
+TERMINAL_STATES = {"completed", "failed", "cancelled", "exited", "expired", "retired"}
+
+
+def existing_directory(key):
+    if not isinstance(key, str) or not re.fullmatch(r"[a-f0-9]{64}", key):
+        raise ValueError("ACP_RUNTIME_ID_INVALID")
+    root = pathlib.Path.home() / ".local/share/valhalla/acp-runtime-v1"
+    target = root / key
+    for path in (root, target):
+        if path.is_symlink() or (path.exists() and path.stat().st_uid != os.getuid()):
+            raise ValueError("ACP_RUNTIME_PATH_UNSAFE")
+    return target
+
+
+def read_meta(folder):
+    journal = folder / "journal.sqlite3"
+    for path in (journal, folder / "journal.sqlite3-wal", folder / "journal.sqlite3-shm"):
+        if path.is_symlink() or (path.exists() and path.stat().st_uid != os.getuid()):
+            raise ValueError("ACP_RUNTIME_PATH_UNSAFE")
+    if not journal.exists():
+        return {}
+    with sqlite3.connect(journal.as_uri() + "?mode=ro", uri=True, timeout=2) as db:
+        return {key: json.loads(value) for key, value in db.execute("SELECT key,value FROM meta")}
+
+
+def process_identity(pid):
+    try:
+        path = pathlib.Path("/proc") / str(int(pid))
+        if path.stat().st_uid != os.getuid():
+            return None
+        stat = (path / "stat").read_text().rsplit(")", 1)[1].split()
+        if stat[0] == 'Z':
+            return None
+        return {"pid": int(pid), "parent": int(stat[1]), "group": int(stat[2]),
+            "started": stat[19], "argv": (path / "cmdline").read_bytes().split(b"\0")[:-1]}
+    except (OSError, ValueError, TypeError):
+        return None
+
+
+
+def live_group(group):
+    members = []
+    for path in pathlib.Path("/proc").iterdir():
+        if not path.name.isdigit():
+            continue
+        try:
+            fields = (path / "stat").read_text().rsplit(")", 1)[1].split()
+            if int(fields[2]) == group and fields[0] != "Z":
+                if path.stat().st_uid != os.getuid():
+                    raise ValueError("ACP_RUNTIME_OWNERSHIP_UNVERIFIED")
+                members.append(int(path.name))
+        except (FileNotFoundError, ProcessLookupError):
+            continue
+    return members
+
+
+def stop_owned_group(identity):
+    group = identity["group"]
+    if not live_group(group):
+        return
+    current = process_identity(identity["pid"])
+    if current is None or any(current[key] != identity[key] for key in ("pid", "group", "started")):
+        raise ValueError("ACP_RUNTIME_OWNERSHIP_UNVERIFIED")
+    # Keep checking descendants after the verified group leader has exited.
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(group, sig)
+        except ProcessLookupError:
+            return
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            if not live_group(group):
+                return
+            time.sleep(.05)
+    raise ValueError("ACP_RUNTIME_STOP_TIMEOUT")
+
+
+def inspect_runtime(key):
+    folder = existing_directory(key)
+    meta = read_meta(folder)
+    result = {"runtimeKey": key, "state": meta.get("state", "missing"),
+        "alive": False, "childAlive": False, "protocolVersion": 1,
+        "sessionId": meta.get("sessionId"), "turnId": meta.get("turnId")}
+    address = folder.parent / (key[:24] + ".sock")
+    try:
+        with socket.socket(socket.AF_UNIX) as client:
+            client.settimeout(3)
+            client.connect(str(address))
+            client.sendall(encode({"action": "inspect"}))
+            frame = json.loads(client.makefile("rb").readline(MAX_LINE + 1))
+            if frame.get("type") in ("status", "management"):
+                return {**result, **frame, "alive": True,
+                    "childAlive": frame.get("childAlive", not meta.get("agentExited", False))}
+    except (OSError, ValueError):
+        pass
+    return result
+
+
+def legacy_retire(folder, meta, stop_running):
+    if meta.get("state") in ("running", "waiting_permission") and not stop_running:
+        raise ValueError("ACP_RUNTIME_TURN_IN_PROGRESS")
+    child = meta.get("childIdentity")
+    if isinstance(child, dict):
+        stop_owned_group(child)
+    pid = meta.get("pid")
+    observed = process_identity(pid)
+    if observed is None:
+        if pid is not None:
+            try:
+                os.kill(int(pid), 0)
+            except ProcessLookupError:
+                return
+            raise ValueError("ACP_RUNTIME_OWNERSHIP_UNVERIFIED")
+        return
+    argv = observed["argv"]
+    if len(argv) < 4 or argv[-2:] != [b"serve", os.fsencode(folder)]:
+        if meta.get("state") in TERMINAL_STATES:
+            return  # The recorded PID has been reused; never signal its new owner.
+        raise ValueError("ACP_RUNTIME_OWNERSHIP_UNVERIFIED")
+    children = pathlib.Path(f"/proc/{pid}/task/{pid}/children").read_text().split()
+    for child_pid in children:
+        child = process_identity(child_pid)
+        if child is None or child["parent"] != pid or child["group"] != child["pid"]:
+            raise ValueError("ACP_RUNTIME_OWNERSHIP_UNVERIFIED")
+        if process_identity(pid) != observed or process_identity(child_pid) != child:
+            raise ValueError("ACP_RUNTIME_OWNERSHIP_UNVERIFIED")
+        stop_owned_group(child)
+    if process_identity(pid) == observed:
+        os.kill(pid, signal.SIGTERM)
+
+
+def manage_runtime(command):
+    key, action = command["key"], command.get("action", "inspect")
+    folder = existing_directory(key)
+    if action == "inspect":
+        return inspect_runtime(key)
+    if action not in ("retire", "purge"):
+        raise ValueError("ACP_RUNTIME_COMMAND_INVALID")
+    if not folder.exists():
+        return {"runtimeKey": key, "state": "missing"}
+    # Reject links before making a connection or removing anything.
+    for path in folder.iterdir():
+        if path.is_symlink() or path.is_dir() or path.stat().st_uid != os.getuid():
+            raise ValueError("ACP_RUNTIME_PATH_UNSAFE")
+    status = inspect_runtime(key)
+    if status["state"] in ("running", "waiting_permission") and not command.get("stopRunning", False):
+        raise ValueError("ACP_RUNTIME_TURN_IN_PROGRESS")
+    if status["alive"] and status.get("protocolVersion", 1) >= 2:
+        with socket.socket(socket.AF_UNIX) as client:
+            client.settimeout(10)
+            client.connect(str(folder.parent / (key[:24] + ".sock")))
+            client.sendall(encode({"action": "retire", "stopRunning": command.get("stopRunning", False)}))
+            result = json.loads(client.makefile("rb").readline(MAX_LINE + 1))
+            if result.get("error"):
+                raise ValueError(result["error"])
+    else:
+        legacy_retire(folder, read_meta(folder), command.get("stopRunning", False))
+    lock_path = folder / "lock"
+    with lock_path.open("a") as lock:
+        deadline = time.monotonic() + 5
+        while True:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() >= deadline:
+                    raise ValueError("ACP_RUNTIME_STOP_TIMEOUT")
+                time.sleep(.05)
+        if action == "purge":
+            # Only one verified private runtime directory; never an Agent's history.
+            address = folder.parent / (key[:24] + ".sock")
+            if address.exists():
+                if address.is_symlink() or not address.is_socket() or address.stat().st_uid != os.getuid():
+                    raise ValueError("ACP_RUNTIME_PATH_UNSAFE")
+                address.unlink()
+            shutil.rmtree(folder)
+        else:
+            journal = folder / "journal.sqlite3"
+            if journal.exists():
+                with sqlite3.connect(journal) as db:
+                    db.execute("INSERT OR REPLACE INTO meta VALUES('state',?)", (json.dumps("retired"),))
+    return {"runtimeKey": key, "state": "purged" if action == "purge" else "retired"}
+
+
+def active_runtimes(scope, exclude=None, probe=True):
+    root = existing_directory("0" * 64).parent
+    if not root.exists():
+        return []
+    active = []
+    for path in root.iterdir():
+        if not re.fullmatch(r"[a-f0-9]{64}", path.name) or path.name == exclude:
+            continue
+        folder = existing_directory(path.name)
+        config_file = folder / "config.json"
+        if config_file.is_symlink():
+            raise ValueError("ACP_RUNTIME_PATH_UNSAFE")
+        try:
+            config = json.loads(config_file.read_text())
+            if config.get("serverScope") not in (None, scope):
+                continue
+            meta = read_meta(folder)
+            if meta.get("state") in ("running", "waiting_permission"):
+                active.append(inspect_runtime(path.name) if probe else
+                    {"runtimeKey": path.name, "state": meta["state"]})
+        except FileNotFoundError:
+            continue
+    return active
 
 
 def encode(value):
@@ -57,6 +265,8 @@ class Broker:
         self.clients = set()
         self.next_id = 0
         self.child = None
+        self.stopping = threading.Event()
+        self.scope_file = None
         self.set_meta("state", "ready")
         self.set_meta("pid", os.getpid())
         self.socket_path = str(folder.parent / (folder.name[:24] + ".sock"))
@@ -73,7 +283,11 @@ class Broker:
         self.server.settimeout(1)
         self.child = subprocess.Popen(self.config["argv"], stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, start_new_session=True)
-        threading.Thread(target=self.read_agent, daemon=True).start()
+        child_identity = process_identity(self.child.pid)
+        if child_identity is not None:
+            self.set_meta("childIdentity", {key: child_identity[key] for key in ("pid", "group", "started")})
+        self.agent_reader = threading.Thread(target=self.read_agent, daemon=True)
+        self.agent_reader.start()
         threading.Thread(target=self.drain_stderr, daemon=True).start()
 
     def get_meta(self, key, default=None):
@@ -90,9 +304,45 @@ class Broker:
 
     def snapshot(self):
         return {"type": "status", "runtimeKey": self.folder.name,
+            "protocolVersion": VERSION, "alive": True,
+            "childAlive": self.child is not None and self.child.poll() is None,
             "state": self.get_meta("state"), "turnId": self.get_meta("turnId"),
             "sessionId": self.get_meta("sessionId"),
             "seq": self.db.execute("SELECT COALESCE(MAX(seq),0) FROM events").fetchone()[0]}
+
+    def claim_scope(self, turn_id):
+        scope = self.config.get("serverScope")
+        if scope is None:
+            return
+        if not isinstance(scope, str) or not re.fullmatch(r"[a-f0-9]{64}", scope):
+            raise ValueError("ACP_RUNTIME_SCOPE_INVALID")
+        path = self.folder.parent / ("active-" + scope + ".lock")
+        fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+        stream = os.fdopen(fd, "r+")
+        try:
+            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # v1 brokers do not hold the new lock. Treat their unfinished turns as busy.
+            if active_runtimes(scope, exclude=self.folder.name, probe=False):
+                raise ValueError("ACP_RUNTIME_SERVER_BUSY")
+            stream.seek(0)
+            stream.truncate()
+            stream.write(json.dumps({"runtimeKey": self.folder.name, "turnId": turn_id}))
+            stream.flush()
+            self.scope_file = stream
+        except BlockingIOError:
+            stream.close()
+            raise ValueError("ACP_RUNTIME_SERVER_BUSY")
+        except Exception:
+            stream.close()
+            raise
+
+    def release_scope(self):
+        stream, self.scope_file = self.scope_file, None
+        if stream is not None:
+            stream.seek(0)
+            stream.truncate()
+            stream.flush()
+            stream.close()
 
     def send_agent(self, frame):
         self.child.stdin.write(encode(frame))
@@ -181,6 +431,7 @@ class Broker:
                             self.waiters.setdefault(existing, []).append((responses, rpc_id))
                             return
                     raise ValueError("ACP_RUNTIME_TURN_IN_PROGRESS")
+                self.claim_scope(turn_id)
                 self.set_meta("turnId", turn_id)
                 self.set_meta("input:" + turn_id, input_hash)
                 self.set_meta("state", "running")
@@ -227,6 +478,7 @@ class Broker:
                             self.set_meta("state", "cancelled" if cancelled else "failed" if "error" in frame else "completed")
                             self.set_meta("finishedAt", time.time())
                             self.set_meta("turn:" + turn_id, frame)
+                            self.release_scope()
                             completed_seq = self.event({"type": "turn", "state": self.get_meta("state"),
                                 "result": frame.get("result"), "error": frame.get("error")})
                         for responses, request_id in self.waiters.pop(wire_id, []):
@@ -254,7 +506,7 @@ class Broker:
             try:
                 with self.lock:
                     self.set_meta("agentExited", True)
-                    if self.get_meta("state") not in ("completed", "failed", "cancelled", "expired"):
+                    if self.get_meta("state") not in TERMINAL_STATES:
                         self.set_meta("state", "exited")
                         self.set_meta("finishedAt", time.time())
                         self.event({"type": "turn", "state": "exited", "error": "ACP_RUNTIME_AGENT_EXITED"})
@@ -263,6 +515,7 @@ class Broker:
                             responses.put({"type": "frame", "frame": {"jsonrpc": "2.0", "id": request_id,
                                 "error": {"code": -32001, "message": "ACP_RUNTIME_AGENT_EXITED"}}})
                     self.waiters.clear()
+                    self.release_scope()
             except sqlite3.Error:
                 with self.lock:
                     for responses in self.clients:
@@ -272,14 +525,15 @@ class Broker:
                     self.stop_agent()
 
     def stop_agent(self):
-        try:
-            os.killpg(self.child.pid, signal.SIGTERM)
+        if self.child is None:
+            return
+        identity = self.get_meta("childIdentity")
+        if identity is not None:
+            stop_owned_group(identity)
+        elif self.child.poll() is None:
+            raise ValueError("ACP_RUNTIME_OWNERSHIP_UNVERIFIED")
+        if self.child.poll() is None:
             self.child.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            os.killpg(self.child.pid, signal.SIGKILL)
-            self.child.wait(timeout=3)
-        except ProcessLookupError:
-            pass
 
     def client(self, connection):
         responses = queue.Queue()
@@ -289,6 +543,28 @@ class Broker:
         reader = connection.makefile("rb")
         try:
             hello = json.loads(reader.readline(MAX_LINE + 1))
+            if hello.get("action") in ("inspect", "retire"):
+                with self.lock:
+                    status = self.snapshot()
+                    if hello["action"] == "retire":
+                        if status["state"] in ("running", "waiting_permission") and not hello.get("stopRunning", False):
+                            connection.sendall(encode({"error": "ACP_RUNTIME_TURN_IN_PROGRESS"}))
+                            return
+                if hello["action"] == "retire":
+                    try:
+                        self.stop_agent()
+                    except (ValueError, OSError, subprocess.TimeoutExpired) as error:
+                        connection.sendall(encode({"error": str(error) if isinstance(error, ValueError) else "ACP_RUNTIME_STOP_TIMEOUT"}))
+                        return
+                    with self.lock:
+                        if status["state"] in ("running", "waiting_permission"):
+                            self.event({"type": "turn", "state": "cancelled"})
+                        self.set_meta("state", "retired")
+                        self.set_meta("finishedAt", time.time())
+                connection.sendall(encode({**status, "type": "management"}))
+                if hello["action"] == "retire":
+                    self.stopping.set()
+                return
             cursor = hello.get("afterSeq", 0)
             if not isinstance(cursor, int) or cursor < 0:
                 raise ValueError("ACP_RUNTIME_CURSOR_INVALID")
@@ -302,7 +578,7 @@ class Broker:
                         status = self.snapshot()
                         pending = list(self.pending_permissions.values())
                     connection.sendall(encode(status))
-                    while not stopped.is_set():
+                    while not stopped.is_set() and not self.stopping.is_set():
                         for _ in range(32):
                             try:
                                 delayed.append(responses.get_nowait())
@@ -342,7 +618,7 @@ class Broker:
                             caught_up = True
                         if not rows:
                             stopped.wait(.05)
-                except (OSError, ValueError):
+                except (OSError, ValueError, sqlite3.Error):
                     stopped.set()
                     try:
                         connection.shutdown(socket.SHUT_RDWR)
@@ -366,21 +642,35 @@ class Broker:
             connection.close()
 
     def serve(self):
-        while True:
-            try:
-                connection, _ = self.server.accept()
-                threading.Thread(target=self.client, args=(connection,), daemon=True).start()
-            except socket.timeout:
-                with self.lock:
-                    finished = self.get_meta("finishedAt")
-                    if self.get_meta("state") in ("completed", "failed", "cancelled", "exited") and finished and time.time() - finished > RETENTION:
-                        self.set_meta("state", "expired")
-                        self.db.execute("DELETE FROM events")
-                        self.db.execute("DELETE FROM meta WHERE key LIKE 'turn:%'")
-                        self.db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-                        self.db.execute("VACUUM")
-                        self.stop_agent()
+        try:
+            while not self.stopping.is_set():
+                try:
+                    connection, _ = self.server.accept()
+                    threading.Thread(target=self.client, args=(connection,), daemon=True).start()
+                except socket.timeout:
+                    with self.lock:
+                        finished = self.get_meta("finishedAt")
+                        expired = self.get_meta("state") in TERMINAL_STATES and finished and time.time() - finished > RETENTION
+                        if expired:
+                            self.set_meta("state", "expired")
+                            self.db.execute("DELETE FROM events")
+                            self.db.execute("DELETE FROM meta WHERE key LIKE 'turn:%'")
+                            self.db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                            self.db.execute("VACUUM")
+                    if expired:
                         return
+        finally:
+            self.stopping.set()
+            self.stop_agent()
+            self.agent_reader.join(timeout=3)
+            self.release_scope()
+            self.server.close()
+            try:
+                os.unlink(self.socket_path)
+            except FileNotFoundError:
+                pass
+            self.db.close()
+            self.lock_file.close()
 
 
 def attach(config):
@@ -448,6 +738,10 @@ if __name__ == "__main__":
             Broker(pathlib.Path(sys.argv[2])).serve()
         elif sys.argv[1] == "attach":
             attach(json.loads(base64.b64decode(sys.argv[2])))
+        elif sys.argv[1] == "manage":
+            print(json.dumps(manage_runtime(json.loads(base64.b64decode(sys.argv[2])))))
+        elif sys.argv[1] == "active":
+            print(json.dumps(active_runtimes(sys.argv[2])))
         else:
             raise ValueError("ACP_RUNTIME_COMMAND_INVALID")
     except Exception as error:

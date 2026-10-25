@@ -893,12 +893,62 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
                       child: InputChip(
                         key: ValueKey('terminal_tab_${tab.id}'),
                         selected: isSelected,
-                        avatar: Icon(
-                          isTmux ? Icons.layers_outlined : Icons.terminal,
-                          size: 14,
-                          color: isSelected
-                              ? context.colorScheme.primary
-                              : context.colorScheme.outline,
+                        avatar: ValueListenableBuilder<TerminalConnectionState>(
+                          valueListenable: tab.bridge.stateListenable,
+                          builder: (context, connState, _) {
+                            final Color dotColor;
+                            switch (connState) {
+                              case TerminalConnectionState.connected:
+                                dotColor = context.vSuccess;
+                                break;
+                              case TerminalConnectionState.connecting:
+                                dotColor = context.colorScheme.primary;
+                                break;
+                              case TerminalConnectionState.disconnected:
+                                dotColor = context.vWarning;
+                                break;
+                              case TerminalConnectionState.error:
+                                dotColor = context.vDanger;
+                                break;
+                            }
+                            return SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Icon(
+                                    isTmux
+                                        ? Icons.layers_outlined
+                                        : Icons.terminal,
+                                    size: 13,
+                                    color: isSelected
+                                        ? context.colorScheme.primary
+                                        : context.colorScheme.outline,
+                                  ),
+                                  Positioned(
+                                    right: 0,
+                                    bottom: 0,
+                                    child: Container(
+                                      key: ValueKey(
+                                        'terminal_tab_status_${tab.id}_${connState.name}',
+                                      ),
+                                      width: 5,
+                                      height: 5,
+                                      decoration: BoxDecoration(
+                                        color: dotColor,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: context.colorScheme.surface,
+                                          width: 0.8,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                         label: Tooltip(
                           triggerMode: TooltipTriggerMode.manual,
@@ -949,6 +999,16 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
               switch (value) {
                 case 'clear':
                   _handleClearScreen(state);
+                case 'reconnect':
+                  final activeTab = state.activeTab;
+                  final server = ref.read(activeServerProvider);
+                  if (activeTab != null && server != null) {
+                    final targetKey = TerminalHistoryRecord.targetFor(server);
+                    notifier.reconnectTab(
+                      activeTab.id,
+                      expectedTargetKey: targetKey,
+                    );
+                  }
                 case 'tmux_mode':
                   FocusManager.instance.primaryFocus?.unfocus();
                   _showTerminalDefaultModeDialog(context);
@@ -957,6 +1017,17 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
               }
             },
             itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                key: const Key('terminal_reconnect_menu_item'),
+                value: 'reconnect',
+                child: Row(
+                  children: [
+                    const Icon(Icons.refresh, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(context.l10n.terminalReconnectTab)),
+                  ],
+                ),
+              ),
               PopupMenuItem<String>(
                 key: const Key('terminal_clear_menu_item'),
                 value: 'clear',
@@ -1000,12 +1071,40 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
 
   void _showTabOptions(BuildContext context, int index, TerminalTab tab) {
     FocusManager.instance.primaryFocus?.unfocus();
+    final activeServer = ref.read(activeServerProvider);
+    final capturedTargetKey = activeServer == null
+        ? null
+        : TerminalHistoryRecord.targetFor(activeServer);
+
     showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              key: const Key('terminal_tab_option_reconnect'),
+              leading: const Icon(Icons.refresh),
+              title: Text(context.l10n.terminalReconnectTab),
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (capturedTargetKey == null) return;
+                try {
+                  await ref
+                      .read(terminalProvider.notifier)
+                      .reconnectTab(
+                        tab.id,
+                        expectedTargetKey: capturedTargetKey,
+                      );
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(e.toString())));
+                  }
+                }
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.edit_outlined),
               title: Text(context.l10n.rename),
@@ -1016,6 +1115,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
             ),
             if (ref.read(terminalProvider).tabs.length > 1)
               ListTile(
+                key: const Key('terminal_tab_option_close'),
                 leading: Icon(Icons.close, color: context.vDanger),
                 title: Text(
                   context.l10n.terminalCloseTab,
@@ -1023,13 +1123,83 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
-                  ref.read(terminalProvider.notifier).closeTab(index);
+                  _confirmAndCloseTab(context, tab, capturedTargetKey);
                 },
               ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _confirmAndCloseTab(
+    BuildContext context,
+    TerminalTab tab,
+    String? capturedTargetKey,
+  ) async {
+    if (capturedTargetKey == null) return;
+    final tabs = ref.read(terminalProvider).tabs;
+    if (tabs.length <= 1) return;
+
+    final isTmux = tab.bridge.mode == TerminalSessionMode.tmux;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          title: Text(dialogCtx.l10n.terminalCloseTabConfirmTitle),
+          content: Text(
+            isTmux
+                ? dialogCtx.l10n.terminalCloseTmuxConfirmMessage
+                : dialogCtx.l10n.terminalClosePlainConfirmMessage,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx, false),
+              child: Text(dialogCtx.l10n.cancel),
+            ),
+            FilledButton(
+              key: const Key('terminal_confirm_close_tab_button'),
+              style: FilledButton.styleFrom(
+                backgroundColor: isTmux
+                    ? dialogCtx.colorScheme.primary
+                    : dialogCtx.colorScheme.error,
+              ),
+              onPressed: () => Navigator.pop(dialogCtx, true),
+              child: Text(
+                isTmux
+                    ? dialogCtx.l10n.terminalCloseActionDetach
+                    : dialogCtx.l10n.terminalCloseActionTerminate,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && mounted) {
+      if (!context.mounted) return;
+      final currentServer = ref.read(activeServerProvider);
+      final currentTargetKey = currentServer == null
+          ? null
+          : TerminalHistoryRecord.targetFor(currentServer);
+      if (currentTargetKey != capturedTargetKey) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.stateError)));
+        return;
+      }
+      try {
+        await ref
+            .read(terminalProvider.notifier)
+            .closeTabById(tab.id, expectedTargetKey: capturedTargetKey);
+      } catch (e) {
+        if (mounted && context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(e.toString())));
+        }
+      }
+    }
   }
 
   void _handleClearScreen(SshTerminalState state) {

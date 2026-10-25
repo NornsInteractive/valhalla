@@ -496,28 +496,43 @@ class AgentChatContext {
   final int syncedMessageCount;
   final String? persistentRuntimeKey;
   final int runtimeCursor;
+  final int runtimeGeneration;
+  final bool runtimeRestartPending;
   const AgentChatContext({
     this.remoteSessionId,
     this.syncedMessageCount = 0,
     this.persistentRuntimeKey,
     this.runtimeCursor = 0,
+    this.runtimeGeneration = 0,
+    this.runtimeRestartPending = false,
   });
   AgentChatContext copyWith({
     String? remoteSessionId,
     int? syncedMessageCount,
     String? persistentRuntimeKey,
     int? runtimeCursor,
+    int? runtimeGeneration,
+    bool? runtimeRestartPending,
+    bool clearPersistentRuntime = false,
   }) => AgentChatContext(
     remoteSessionId: remoteSessionId ?? this.remoteSessionId,
     syncedMessageCount: syncedMessageCount ?? this.syncedMessageCount,
-    persistentRuntimeKey: persistentRuntimeKey ?? this.persistentRuntimeKey,
-    runtimeCursor: runtimeCursor ?? this.runtimeCursor,
+    persistentRuntimeKey: clearPersistentRuntime
+        ? null
+        : persistentRuntimeKey ?? this.persistentRuntimeKey,
+    runtimeCursor: clearPersistentRuntime
+        ? 0
+        : runtimeCursor ?? this.runtimeCursor,
+    runtimeGeneration: runtimeGeneration ?? this.runtimeGeneration,
+    runtimeRestartPending: runtimeRestartPending ?? this.runtimeRestartPending,
   );
   Map<String, dynamic> toJson() => {
     'remoteSessionId': remoteSessionId,
     'syncedMessageCount': syncedMessageCount,
     'persistentRuntimeKey': persistentRuntimeKey,
     'runtimeCursor': runtimeCursor,
+    'runtimeGeneration': runtimeGeneration,
+    'runtimeRestartPending': runtimeRestartPending,
   };
   factory AgentChatContext.fromJson(Map<String, dynamic> json) =>
       AgentChatContext(
@@ -525,6 +540,8 @@ class AgentChatContext {
         syncedMessageCount: (json['syncedMessageCount'] as num?)?.toInt() ?? 0,
         persistentRuntimeKey: json['persistentRuntimeKey'] as String?,
         runtimeCursor: (json['runtimeCursor'] as num?)?.toInt() ?? 0,
+        runtimeGeneration: (json['runtimeGeneration'] as num?)?.toInt() ?? 0,
+        runtimeRestartPending: json['runtimeRestartPending'] == true,
       );
 }
 

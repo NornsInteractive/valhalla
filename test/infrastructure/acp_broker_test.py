@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import importlib.util
 import json
 import os
 import pathlib
@@ -27,6 +28,10 @@ BROKER = (
     / "runtime"
     / "acp_broker.py"
 )
+
+BROKER_SPEC = importlib.util.spec_from_file_location("acp_broker", BROKER)
+acp_broker = importlib.util.module_from_spec(BROKER_SPEC)
+BROKER_SPEC.loader.exec_module(acp_broker)
 
 FAKE_AGENT = r'''
 import json, os, sys, time
@@ -304,6 +309,59 @@ class BrokerTestCase(unittest.TestCase):
             conn.close()
         return json.loads(row[0]) if row else None
 
+    def _folder_for_key(self, key: str) -> pathlib.Path:
+        return self._runtime_root() / key
+
+    def _handshake_attach(self, proc: subprocess.Popen, key: str, rpc_prefix: str = "init"):
+        self._send(proc, {
+            "jsonrpc": "2.0", "id": rpc_prefix + "-init", "method": "initialize",
+            "params": {},
+        })
+        self._read_frames(
+            proc,
+            lambda f: f.get("type") == "frame"
+            and f.get("frame", {}).get("id") == rpc_prefix + "-init",
+        )
+        self._send(proc, {
+            "jsonrpc": "2.0", "id": rpc_prefix + "-new", "method": "session/new",
+            "params": {},
+        })
+        self._read_frames(
+            proc,
+            lambda f: f.get("type") == "frame"
+            and f.get("frame", {}).get("id") == rpc_prefix + "-new",
+        )
+
+    def _send_attach(self, proc: subprocess.Popen, frame: dict, turn_id: str | None = None):
+        command = {"frame": frame}
+        if turn_id is not None:
+            command["turnId"] = turn_id
+        line = json.dumps(command, separators=(",", ":")) + "\n"
+        proc.stdin.write(line.encode())
+        proc.stdin.flush()
+
+    def _wait_attach_meta(self, key: str, key_field: str, expected, timeout: float = 12.0):
+        folder = self._folder_for_key(key)
+        deadline = time.time() + timeout
+        last = None
+        while time.time() < deadline:
+            db_path = folder / "journal.sqlite3"
+            if db_path.exists():
+                conn = sqlite3.connect(db_path)
+                try:
+                    row = conn.execute(
+                        "SELECT value FROM meta WHERE key=?", (key_field,)
+                    ).fetchone()
+                    last = json.loads(row[0]) if row else None
+                finally:
+                    conn.close()
+            if last == expected:
+                return last
+            time.sleep(0.05)
+        raise AssertionError(
+            "meta %s for key %s never became %r (last=%r)" % (key_field, key[:8], expected, last)
+        )
+
     def _journal_events(self) -> list[dict]:
         db_path = self._folder() / "journal.sqlite3"
         self.assertTrue(db_path.exists(), "journal missing at %s" % db_path)
@@ -361,11 +419,118 @@ class BrokerTestCase(unittest.TestCase):
             "meta %s never became %r (last=%r)" % (key_field, expected, last)
         )
 
+    def _meta_for_key(self, key: str, key_field: str):
+        db_path = self._folder_for_key(key) / "journal.sqlite3"
+        self.assertTrue(db_path.exists(), "journal missing at %s" % db_path)
+        conn = sqlite3.connect(db_path)
+        try:
+            row = conn.execute(
+                "SELECT value FROM meta WHERE key=?", (key_field,)
+            ).fetchone()
+        finally:
+            conn.close()
+        return json.loads(row[0]) if row else None
+
+    def _serve_pid_for_key(self, key: str) -> int:
+        pid = self._meta_for_key(key, "pid")
+        self.assertIsInstance(pid, int)
+        self.serve_pids.append(pid)
+        return pid
+
     def _serve_pid(self) -> int:
         pid = self._journal_meta("pid")
         self.assertIsInstance(pid, int)
         self.serve_pids.append(pid)
         return pid
+
+    def _shutdown_direct_broker(self, broker):
+        try:
+            broker.stop_agent()
+        finally:
+            broker.agent_reader.join(timeout=10.0)
+            reader_alive = broker.agent_reader.is_alive()
+            broker.release_scope()
+            try:
+                broker.server.close()
+            except OSError:
+                pass
+            try:
+                os.unlink(broker.socket_path)
+            except FileNotFoundError:
+                pass
+            with broker.lock:
+                broker.db.close()
+                broker.lock_file.close()
+        self.assertFalse(reader_alive, "broker.agent_reader still alive after stop")
+
+    def _make_v1_runtime(self, key: str, *, state: str, pid: int,
+                         argv: list | None = None,
+                         server_scope: str | None = None,
+                         child_identity: dict | None = None,
+                         extra_meta: dict | None = None) -> pathlib.Path:
+        folder = self._runtime_root() / key
+        folder.mkdir(parents=True, mode=0o700, exist_ok=True)
+        config = {
+            "key": key,
+            "argv": argv or [sys.executable, "-c", "pass"],
+            "launchIdentity": "v1-identity",
+        }
+        if server_scope is not None:
+            config["serverScope"] = server_scope
+        (folder / "config.json").write_text(json.dumps(config))
+        conn = sqlite3.connect(folder / "journal.sqlite3")
+        try:
+            conn.execute(
+                "CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+            )
+            conn.execute(
+                "INSERT INTO meta VALUES('state',?)", (json.dumps(state),)
+            )
+            conn.execute(
+                "INSERT INTO meta VALUES('pid',?)", (json.dumps(pid),)
+            )
+            if child_identity is not None:
+                conn.execute(
+                    "INSERT INTO meta VALUES('childIdentity',?)",
+                    (json.dumps(child_identity),),
+                )
+            for meta_key, meta_value in (extra_meta or {}).items():
+                conn.execute(
+                    "INSERT INTO meta VALUES(?,?)",
+                    (meta_key, json.dumps(meta_value)),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+        return folder
+
+    def _spawn_fixture(self, argv: list, *, new_session: bool = True) -> subprocess.Popen:
+        proc = subprocess.Popen(
+            argv,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=new_session,
+        )
+        self.spawned_pids.append(proc.pid)
+        self.spawned_procs.append(proc)
+        return proc
+
+    @staticmethod
+    def _identity_for_child(proc: subprocess.Popen) -> dict:
+        identity = acp_broker.process_identity(proc.pid)
+        if identity is None:
+            raise AssertionError("fixture process %d has no identity" % proc.pid)
+        return {key: identity[key] for key in ("pid", "group", "started")}
+
+    def _fake_serve_argv(self, folder: pathlib.Path) -> list:
+        return [
+            sys.executable,
+            "-c",
+            "import time; time.sleep(60)",
+            "serve",
+            str(folder),
+        ]
 
     def _assert_alive(self, pid: int):
         os.kill(pid, 0)
@@ -379,6 +544,22 @@ class BrokerTestCase(unittest.TestCase):
                 return
             time.sleep(0.05)
         raise AssertionError("pid %d still alive" % pid)
+
+    def _assert_no_live_process(self, pid: int, timeout: float = 5.0):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if acp_broker.process_identity(pid) is None:
+                return
+            time.sleep(0.05)
+        raise AssertionError("pid %d still has a live process identity" % pid)
+
+    def _wait_file(self, path: pathlib.Path, timeout: float = 5.0):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if path.exists():
+                return
+            time.sleep(0.02)
+        raise AssertionError("fixture file %s never appeared" % path)
 
     def _count_lines(self, path: pathlib.Path) -> int:
         if not path.exists():
@@ -428,6 +609,7 @@ class BrokerTestCase(unittest.TestCase):
         proc = self._start_attach(argv)
         self._handshake(proc, "path")
         self._wait_meta("state", "ready")
+        self._serve_pid()
         root = self._runtime_root()
         folder = self._folder()
         config_file = folder / "config.json"
@@ -482,6 +664,7 @@ class BrokerTestCase(unittest.TestCase):
         argv = self._agent_config(chunks=1, chunk_delay=0.05)
         proc = self._start_attach(argv)
         self._handshake(proc, "idem")
+        self._serve_pid()
         prompt = {
             "jsonrpc": "2.0", "id": "idem-prompt-1", "method": "session/prompt",
             "params": {"sessionId": self.session_id, "prompt": [{"type": "text", "text": "one"}]},
@@ -668,6 +851,7 @@ class BrokerTestCase(unittest.TestCase):
         argv = self._agent_config(chunks=1, chunk_delay=0.05, permission=True)
         proc = self._start_attach(argv)
         self._handshake(proc, "cancelperm")
+        self._serve_pid()
         self._send(proc, {
             "jsonrpc": "2.0", "id": "cp-prompt", "method": "session/prompt",
             "params": {"sessionId": self.session_id, "prompt": [{"type": "text", "text": "run"}]},
@@ -704,6 +888,7 @@ class BrokerTestCase(unittest.TestCase):
         argv = self._agent_config(chunks=0)
         proc = self._start_attach(argv)
         self._handshake(proc, "order")
+        self._serve_pid()
         self._send(proc, {
             "jsonrpc": "2.0", "id": "order-prompt", "method": "session/prompt",
             "params": {"sessionId": self.session_id, "prompt": [{"type": "text", "text": "go"}]},
@@ -736,6 +921,7 @@ class BrokerTestCase(unittest.TestCase):
         argv = self._agent_config(chunks=0, exit_after_prompt=True)
         proc = self._start_attach(argv)
         self._handshake(proc, "exit")
+        self._serve_pid()
         self._send(proc, {
             "jsonrpc": "2.0", "id": "exit-prompt", "method": "session/prompt",
             "params": {"sessionId": self.session_id, "prompt": [{"type": "text", "text": "go"}]},
@@ -847,6 +1033,686 @@ class BrokerTestCase(unittest.TestCase):
 
         self._kill_exact(serve_pid)
         self._stop_attach(proc)
+
+    def test_inspect_reports_runtime_status(self):
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv)
+        self._handshake(proc, "inspect")
+        self._wait_meta("state", "ready")
+        serve_pid = self._serve_pid()
+        self._stop_attach(proc)
+
+        payload = base64.b64encode(json.dumps({
+            "key": self.key, "action": "inspect"
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout.strip())
+        self.assertEqual(status["runtimeKey"], self.key)
+        self.assertEqual(status["state"], "ready")
+        self.assertTrue(status["alive"])
+        self.assertEqual(status["protocolVersion"], 2)
+        self.assertEqual(status["sessionId"], self.session_id)
+        self._kill_exact(serve_pid)
+
+    def test_inspect_missing_runtime_returns_missing_state(self):
+        fake_key = "0" * 64
+        payload = base64.b64encode(json.dumps({
+            "key": fake_key, "action": "inspect"
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout.strip())
+        self.assertEqual(status["runtimeKey"], fake_key)
+        self.assertEqual(status["state"], "missing")
+
+    def test_retire_idempotent_on_missing_runtime(self):
+        fake_key = "1" * 64
+        payload = base64.b64encode(json.dumps({
+            "key": fake_key, "action": "retire", "stopRunning": True
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout.strip())
+        self.assertEqual(status["runtimeKey"], fake_key)
+        self.assertEqual(status["state"], "missing")
+
+    def test_retire_running_requires_stop_running(self):
+        argv = self._agent_config(chunks=1, chunk_delay=0.2)
+        proc = self._start_attach(argv)
+        self._handshake(proc, "retirebusy")
+        self._send(proc, {
+            "jsonrpc": "2.0", "id": "retire-prompt", "method": "session/prompt",
+            "params": {"sessionId": self.session_id, "prompt": [{"type": "text", "text": "go"}]},
+        }, turn_id="turn-retirebusy")
+        self._wait_meta("state", "running")
+
+        payload = base64.b64encode(json.dumps({
+            "key": self.key, "action": "retire", "stopRunning": False
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("ACP_RUNTIME_TURN_IN_PROGRESS", result.stdout)
+
+        payload = base64.b64encode(json.dumps({
+            "key": self.key, "action": "retire", "stopRunning": True
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout.strip())
+        self.assertEqual(status["state"], "retired")
+        self._wait_meta("state", "retired")
+        serve_pid = self._journal_meta("pid")
+        self._assert_dead(serve_pid)
+        self._stop_attach(proc)
+
+    def test_purge_removes_only_verified_runtime_folder(self):
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv)
+        self._handshake(proc, "purge")
+        self._wait_meta("state", "ready")
+        serve_pid = self._serve_pid()
+        self._stop_attach(proc)
+        self._assert_alive(serve_pid)
+
+        folder = self._folder()
+        self.assertTrue(folder.exists())
+        socket_path = self._socket_path()
+        self.assertTrue(socket_path.exists())
+
+        payload = base64.b64encode(json.dumps({
+            "key": self.key, "action": "purge"
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout.strip())
+        self.assertEqual(status["state"], "purged")
+        self.assertFalse(folder.exists(), "runtime folder must be removed")
+        self.assertFalse(socket_path.exists(), "socket must be removed")
+
+    def test_purge_rejects_symlinked_or_nonowned_paths(self):
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv)
+        self._handshake(proc, "purgesafe")
+        self._wait_meta("state", "ready")
+        serve_pid = self._serve_pid()
+        self._stop_attach(proc)
+
+        folder = self._folder()
+        malicious = folder / "malicious_link"
+        malicious.symlink_to("/etc/passwd")
+
+        payload = base64.b64encode(json.dumps({
+            "key": self.key, "action": "purge"
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("ACP_RUNTIME_PATH_UNSAFE", result.stdout)
+        self.assertTrue(folder.exists(), "original folder must remain after rejected purge")
+        self._kill_exact(serve_pid)
+
+    def test_server_scope_excludes_other_scope_runtimes(self):
+        scope_a = "a" * 64
+        scope_b = "b" * 64
+        argv_a = self._agent_config(chunks=1, chunk_delay=10.0)
+        argv_b = self._agent_config(chunks=1, chunk_delay=10.0)
+        key_a = scope_a
+        key_b = scope_b
+
+        config_a = {"key": key_a, "argv": argv_a, "serverScope": scope_a}
+        config_b = {"key": key_b, "argv": argv_b, "serverScope": scope_b}
+        procs = []
+        for config in (config_a, config_b):
+            payload = base64.b64encode(json.dumps(config, separators=(",", ":")).encode()).decode()
+            proc = subprocess.Popen(
+                [sys.executable, str(BROKER), "attach", payload],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                bufsize=0, cwd=str(self.home), env={**os.environ, "HOME": str(self.home)},
+            )
+            self.spawned_pids.append(proc.pid)
+            self.spawned_procs.append(proc)
+            procs.append((proc, config["key"]))
+            # Handshake and start a turn to make it "running"
+            self._handshake_attach(proc, config["key"])
+            self._send_attach(proc, {
+                "jsonrpc": "2.0", "id": "scope-prompt", "method": "session/prompt",
+                "params": {"sessionId": self.session_id, "prompt": [{"type": "text", "text": "go"}]},
+            }, turn_id="turn-scope-" + config["key"][:8])
+            self._wait_attach_meta(config["key"], "state", "running")
+            self._serve_pid_for_key(config["key"])
+
+        active_a = subprocess.run(
+            [sys.executable, str(BROKER), "active", scope_a],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        active_b = subprocess.run(
+            [sys.executable, str(BROKER), "active", scope_b],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(active_a.returncode, 0, active_a.stderr)
+        self.assertEqual(active_b.returncode, 0, active_b.stderr)
+        runtimes_a = json.loads(active_a.stdout.strip())
+        runtimes_b = json.loads(active_b.stdout.strip())
+        self.assertEqual(len(runtimes_a), 1)
+        self.assertEqual(runtimes_a[0]["runtimeKey"], key_a)
+        self.assertEqual(len(runtimes_b), 1)
+        self.assertEqual(runtimes_b[0]["runtimeKey"], key_b)
+
+        for proc, key in procs:
+            self._stop_attach(proc)
+
+    def test_server_scope_v1_runtime_is_treated_as_busy(self):
+        scope = "c" * 64
+        key_v1 = "d" * 64
+        folder_v1 = self._make_v1_runtime(
+            key_v1, state="running", pid=999999, server_scope=scope
+        )
+
+        argv_v2 = self._agent_config(chunks=0)
+        config_v2 = {"key": "e" * 64, "argv": argv_v2, "serverScope": scope}
+        payload = base64.b64encode(json.dumps(config_v2, separators=(",", ":")).encode()).decode()
+        proc = subprocess.Popen(
+            [sys.executable, str(BROKER), "attach", payload],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            bufsize=0, cwd=str(self.home), env={**os.environ, "HOME": str(self.home)},
+        )
+        self.spawned_pids.append(proc.pid)
+        self.spawned_procs.append(proc)
+        try:
+            self._handshake_attach(proc, config_v2["key"])
+            self._serve_pid_for_key(config_v2["key"])
+            self._send_attach(proc, {
+                "jsonrpc": "2.0", "id": "scope-prompt", "method": "session/prompt",
+                "params": {"sessionId": self.session_id, "prompt": [{"type": "text", "text": "go"}]},
+            }, turn_id="turn-scope-test")
+            frames = self._read_frames(
+                proc,
+                lambda f: f.get("type") == "runtime_error"
+                and "SERVER_BUSY" in f.get("error", ""),
+                timeout=5.0,
+            )
+            self.assertTrue(any("ACP_RUNTIME_SERVER_BUSY" in f.get("error", "") for f in frames))
+        finally:
+            self._stop_attach(proc)
+
+        import shutil
+        shutil.rmtree(folder_v1)
+
+    def test_v1_protocol_version_inspect_shows_v1(self):
+        key_v1 = "f" * 64
+        folder_v1 = self._make_v1_runtime(
+            key_v1,
+            state="completed",
+            pid=999999,
+            extra_meta={"sessionId": "v1-session", "turnId": "v1-turn"},
+        )
+
+        payload = base64.b64encode(json.dumps({
+            "key": key_v1, "action": "inspect"
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout.strip())
+        self.assertEqual(status["runtimeKey"], key_v1)
+        self.assertEqual(status["state"], "completed")
+        self.assertFalse(status["alive"])
+        self.assertEqual(status["protocolVersion"], 1)
+        self.assertEqual(status["sessionId"], "v1-session")
+        self.assertEqual(status["turnId"], "v1-turn")
+
+        import shutil
+        shutil.rmtree(folder_v1)
+
+    def test_v1_runtime_can_be_retired_via_manage(self):
+        key_v1 = "1" * 64
+        folder_v1 = self._make_v1_runtime(
+            key_v1, state="completed", pid=999999
+        )
+        journal = folder_v1 / "journal.sqlite3"
+
+        payload = base64.b64encode(json.dumps({
+            "key": key_v1, "action": "retire"
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout.strip())
+        self.assertEqual(status["state"], "retired")
+
+        meta = acp_broker.read_meta(folder_v1)
+        self.assertEqual(meta["state"], "retired")
+
+        import shutil
+        shutil.rmtree(folder_v1)
+
+    def test_v1_runtime_running_requires_stop_running_and_kills_exact_pid(self):
+        key_v1 = "2" * 64
+        folder_v1 = self._runtime_root() / key_v1
+        folder_v1.mkdir(parents=True, mode=0o700)
+        leader = self._spawn_fixture(self._fake_serve_argv(folder_v1))
+        child = self._spawn_fixture([sys.executable, "-c", "import time; time.sleep(60)"])
+        child_identity = self._identity_for_child(child)
+        self._make_v1_runtime(
+            key_v1,
+            state="running",
+            pid=leader.pid,
+            argv=self._fake_serve_argv(folder_v1),
+            child_identity=child_identity,
+        )
+        # Re-create the config with the real leader argv used by ownership checks.
+        (folder_v1 / "config.json").write_text(json.dumps({
+            "key": key_v1, "argv": self._fake_serve_argv(folder_v1),
+            "launchIdentity": "v1-identity"
+        }))
+
+        payload = base64.b64encode(json.dumps({
+            "key": key_v1, "action": "retire", "stopRunning": False
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("ACP_RUNTIME_TURN_IN_PROGRESS", result.stdout)
+        self.assertIsNone(leader.poll())
+        self.assertIsNone(child.poll())
+
+        payload = base64.b64encode(json.dumps({
+            "key": key_v1, "action": "retire", "stopRunning": True
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout.strip())
+        self.assertEqual(status["state"], "retired")
+        self._assert_no_live_process(child.pid, timeout=5.0)
+        leader.wait(timeout=5.0)
+        self._assert_no_live_process(leader.pid, timeout=5.0)
+
+        import shutil
+        shutil.rmtree(folder_v1)
+
+    def test_v1_runtime_pid_reused_never_signals_new_owner(self):
+        key_v1 = "3" * 64
+        unrelated = self._spawn_fixture([
+            sys.executable, "-c", "import time; time.sleep(60)"
+        ])
+        folder_v1 = self._make_v1_runtime(
+            key_v1, state="completed", pid=unrelated.pid
+        )
+
+        payload = base64.b64encode(json.dumps({
+            "key": key_v1, "action": "retire", "stopRunning": True
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout.strip())
+        self.assertEqual(status["state"], "retired")
+        self.assertIsNone(unrelated.poll(), "reused PID must not be signalled")
+
+        import shutil
+        shutil.rmtree(folder_v1)
+
+    def test_child_process_cleanup_is_exact_pid_only(self):
+        argv = self._agent_config(chunks=0, exit_after_prompt=True)
+        proc = self._start_attach(argv)
+        self._handshake(proc, "childcleanup")
+        self._serve_pid()
+        self._send(proc, {
+            "jsonrpc": "2.0", "id": "child-prompt", "method": "session/prompt",
+            "params": {"sessionId": self.session_id, "prompt": [{"type": "text", "text": "go"}]},
+        }, turn_id="turn-childcleanup")
+        frames = self._read_frames(
+            proc,
+            lambda f: f.get("type") == "frame"
+            and f.get("frame", {}).get("id") == "child-prompt"
+            and "result" in f.get("frame", {}),
+        )
+        deadline = time.time() + 5
+        while time.time() < deadline and self._journal_meta("agentExited") is not True:
+            time.sleep(0.1)
+        self.assertTrue(self._journal_meta("agentExited"))
+        child_identity = self._journal_meta("childIdentity")
+        self.assertIsNotNone(child_identity)
+        child_pid = child_identity["pid"]
+        self.assertIsInstance(child_pid, int)
+        self._stop_attach(proc)
+
+        self._assert_dead(child_pid, timeout=5.0)
+
+    def test_legacy_retire_verifies_exact_argv_before_kill(self):
+        key_v1 = "4" * 64
+        folder_v1 = self._runtime_root() / key_v1
+        folder_v1.mkdir(parents=True, mode=0o700, exist_ok=True)
+        leader = self._spawn_fixture(self._fake_serve_argv(folder_v1))
+        child = self._spawn_fixture([
+            sys.executable, "-c", "import time; time.sleep(60)"
+        ])
+        self._make_v1_runtime(
+            key_v1,
+            state="completed",
+            pid=leader.pid,
+            argv=self._fake_serve_argv(folder_v1),
+            child_identity=self._identity_for_child(child),
+        )
+
+        meta = acp_broker.read_meta(folder_v1)
+        self.assertEqual(meta["state"], "completed")
+        acp_broker.legacy_retire(folder_v1, meta, stop_running=True)
+
+        self._assert_no_live_process(child.pid, timeout=5.0)
+        leader.wait(timeout=5.0)
+        self._assert_no_live_process(leader.pid, timeout=5.0)
+
+        import shutil
+        shutil.rmtree(folder_v1)
+
+    def test_legacy_retire_rejects_mismatched_argv_for_non_terminal_state(self):
+        key_v1 = "5" * 64
+        unrelated = self._spawn_fixture([
+            sys.executable, "-c", "import time; time.sleep(60)"
+        ])
+        folder_v1 = self._make_v1_runtime(
+            key_v1, state="running", pid=unrelated.pid
+        )
+
+        meta = acp_broker.read_meta(folder_v1)
+        with self.assertRaises(ValueError) as cm:
+            acp_broker.legacy_retire(folder_v1, meta, stop_running=True)
+        self.assertIn("ACP_RUNTIME_OWNERSHIP_UNVERIFIED", str(cm.exception))
+        self.assertIsNone(unrelated.poll(), "unverified process must not be signalled")
+        self.assertTrue(folder_v1.exists(), "failed retirement must keep the runtime folder")
+        self.assertTrue((folder_v1 / "journal.sqlite3").exists())
+
+        import shutil
+        shutil.rmtree(folder_v1)
+
+    def test_legacy_retire_allows_mismatched_argv_for_terminal_state(self):
+        key_v1 = "6" * 64
+        unrelated = self._spawn_fixture([
+            sys.executable, "-c", "import time; time.sleep(60)"
+        ])
+        folder_v1 = self._make_v1_runtime(
+            key_v1, state="completed", pid=unrelated.pid
+        )
+
+        meta = acp_broker.read_meta(folder_v1)
+        acp_broker.legacy_retire(folder_v1, meta, stop_running=True)
+        self.assertIsNone(unrelated.poll(), "reused PID must not be signalled")
+        self.assertTrue(folder_v1.exists())
+
+        import shutil
+        shutil.rmtree(folder_v1)
+
+    def test_broker_claim_scope_fails_when_v1_active_in_same_scope(self):
+        scope = "7" * 64
+        key_v1 = "8" * 64
+        folder_v1 = self._make_v1_runtime(
+            key_v1, state="running", pid=999999, server_scope=scope
+        )
+
+        key_v2 = "9" * 64
+        folder_v2 = self._runtime_root() / key_v2
+        folder_v2.mkdir(parents=True, mode=0o700)
+        config_file_v2 = folder_v2 / "config.json"
+        config_file_v2.write_text(json.dumps({
+            "key": key_v2, "argv": [sys.executable, "-c", "pass"],
+            "serverScope": scope, "launchIdentity": "v2-identity"
+        }))
+
+        broker = acp_broker.Broker(folder_v2)
+        try:
+            with self.assertRaises(ValueError) as cm:
+                broker.claim_scope("test-turn")
+            self.assertIn("ACP_RUNTIME_SERVER_BUSY", str(cm.exception))
+        finally:
+            self._shutdown_direct_broker(broker)
+
+        import shutil
+        shutil.rmtree(folder_v1)
+        shutil.rmtree(folder_v2)
+
+    def test_broker_claim_scope_succeeds_when_v1_completed_in_same_scope(self):
+        scope = "a" * 64
+        key_v1 = "b" * 64
+        folder_v1 = self._make_v1_runtime(
+            key_v1, state="completed", pid=999999, server_scope=scope
+        )
+
+        key_v2 = "c" * 64
+        folder_v2 = self._runtime_root() / key_v2
+        folder_v2.mkdir(parents=True, mode=0o700)
+        config_file_v2 = folder_v2 / "config.json"
+        config_file_v2.write_text(json.dumps({
+            "key": key_v2, "argv": [sys.executable, "-c", "pass"],
+            "serverScope": scope, "launchIdentity": "v2-identity"
+        }))
+
+        broker = acp_broker.Broker(folder_v2)
+        try:
+            broker.claim_scope("test-turn")
+            self.assertIsNotNone(broker.scope_file)
+        finally:
+            self._shutdown_direct_broker(broker)
+
+        import shutil
+        shutil.rmtree(folder_v1)
+        shutil.rmtree(folder_v2)
+
+    def test_broker_manage_retire_v2_sends_retire_via_socket(self):
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv)
+        self._handshake(proc, "retirev2")
+        self._wait_meta("state", "ready")
+        serve_pid = self._serve_pid()
+        self._stop_attach(proc)
+
+        payload = base64.b64encode(json.dumps({
+            "key": self.key, "action": "retire", "stopRunning": True
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout.strip())
+        self.assertEqual(status["state"], "retired")
+        self._wait_meta("state", "retired")
+        self._assert_dead(serve_pid)
+
+    def test_broker_manage_purge_v2_sends_retire_then_removes_folder(self):
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv)
+        self._handshake(proc, "purgev2")
+        self._wait_meta("state", "ready")
+        serve_pid = self._serve_pid()
+        self._stop_attach(proc)
+
+        payload = base64.b64encode(json.dumps({
+            "key": self.key, "action": "purge"
+        }, separators=(",", ":")).encode()).decode()
+        result = subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout.strip())
+        self.assertEqual(status["state"], "purged")
+        self.assertFalse(self._folder().exists())
+        self.assertFalse(self._socket_path().exists())
+
+    def test_stop_owned_group_kills_descendant_that_ignores_term(self):
+        script = self.home / "term_leader.py"
+        script.write_text(r'''
+import os, signal, sys, time
+pid_file, ready_file = sys.argv[1:3]
+child = os.fork()
+if child == 0:
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    with open(ready_file, "w") as handle:
+        handle.write("ready")
+    time.sleep(60)
+    os._exit(0)
+with open(pid_file, "w") as handle:
+    handle.write(str(child))
+time.sleep(60)
+''')
+        pid_file = self.home / "term_leader.pid"
+        ready_file = self.home / "term_leader.ready"
+        leader = subprocess.Popen(
+            [sys.executable, str(script), str(pid_file), str(ready_file)],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        self.spawned_pids.append(leader.pid)
+        self.spawned_procs.append(leader)
+        child_pid = None
+        try:
+            self._wait_file(pid_file)
+            self._wait_file(ready_file)
+            child_pid = int(pid_file.read_text().strip())
+            self.spawned_pids.append(child_pid)
+            identity = acp_broker.process_identity(leader.pid)
+            self.assertIsNotNone(identity)
+
+            acp_broker.stop_owned_group(identity)
+
+            leader.wait(timeout=5.0)
+            self._assert_no_live_process(leader.pid, timeout=5.0)
+            self._assert_no_live_process(child_pid, timeout=5.0)
+        finally:
+            if child_pid is not None:
+                self._kill_exact(child_pid)
+            self._stop_attach(leader)
+
+    def test_manage_refuses_unverified_orphan_without_deleting_directory(self):
+        key_v1 = "7" * 64
+        folder_v1 = self._runtime_root() / key_v1
+        script = self.home / "orphan_leader.py"
+        script.write_text(r'''
+import os, signal, sys, time
+pid_file, ready_file, leave_file = sys.argv[1:4]
+child = os.fork()
+if child == 0:
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    with open(ready_file, "w") as handle:
+        handle.write("ready")
+    time.sleep(60)
+    os._exit(0)
+with open(pid_file, "w") as handle:
+    handle.write(str(child))
+while not os.path.exists(leave_file):
+    time.sleep(0.02)
+os._exit(0)
+''')
+        pid_file = self.home / "orphan.pid"
+        ready_file = self.home / "orphan.ready"
+        leave_file = self.home / "orphan.leave"
+        leader = subprocess.Popen(
+            [sys.executable, str(script), str(pid_file), str(ready_file), str(leave_file)],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        self.spawned_pids.append(leader.pid)
+        self.spawned_procs.append(leader)
+        child_pid = None
+        try:
+            self._wait_file(pid_file)
+            self._wait_file(ready_file)
+            child_pid = int(pid_file.read_text().strip())
+            self.spawned_pids.append(child_pid)
+            child_identity = acp_broker.process_identity(child_pid)
+            self.assertIsNotNone(child_identity)
+            unverified = {
+                "pid": child_pid,
+                "group": child_identity["group"],
+                "started": "not-the-real-start-time",
+            }
+            self._make_v1_runtime(
+                key_v1,
+                state="running",
+                pid=leader.pid,
+                child_identity=unverified,
+            )
+
+            leave_file.write_text("leave")
+            leader.wait(timeout=5.0)
+            self._assert_no_live_process(leader.pid, timeout=5.0)
+
+            payload = base64.b64encode(json.dumps({
+                "key": key_v1, "action": "purge", "stopRunning": True
+            }, separators=(",", ":")).encode()).decode()
+            result = subprocess.run(
+                [sys.executable, str(BROKER), "manage", payload],
+                capture_output=True, text=True, timeout=10,
+                env={**os.environ, "HOME": str(self.home)},
+            )
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("ACP_RUNTIME_OWNERSHIP_UNVERIFIED", result.stdout)
+            self.assertTrue(folder_v1.exists(), "unverified purge must keep the folder")
+            self.assertTrue((folder_v1 / "journal.sqlite3").exists())
+            self.assertIsNotNone(
+                acp_broker.process_identity(child_pid),
+                "unverified orphan must not be signalled",
+            )
+        finally:
+            if child_pid is not None:
+                self._kill_exact(child_pid)
+            self._stop_attach(leader)
+
+        import shutil
+        shutil.rmtree(folder_v1)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

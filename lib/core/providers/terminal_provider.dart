@@ -1566,6 +1566,42 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     if (workspace != null) _removeTab(workspace, state.tabs[index].id);
   }
 
+  Future<void> closeTabById(
+    String id, {
+    required String expectedTargetKey,
+  }) async {
+    final workspace = _current;
+    if (workspace == null || workspace.targetKey != expectedTargetKey) {
+      throw StateError('TERMINAL_TARGET_CHANGED');
+    }
+    if (workspace.value.tabs.length <= 1) return;
+    if (!workspace.value.tabs.any((tab) => tab.id == id)) return;
+    workspace.interactionEpoch++;
+    _removeTab(workspace, id);
+  }
+
+  Future<void> reconnectTab(
+    String id, {
+    required String expectedTargetKey,
+  }) async {
+    final workspace = _current;
+    if (workspace == null || workspace.targetKey != expectedTargetKey) {
+      throw StateError('TERMINAL_TARGET_CHANGED');
+    }
+    final tab = workspace.value.tabs.where((tab) => tab.id == id).firstOrNull;
+    if (tab == null) return;
+    final client = _clientFor(workspace);
+    if (client == null) throw StateError('SSH_DISCONNECTED');
+    await workspace.starting[id];
+    if (!_isCurrent(workspace) ||
+        !workspace.value.tabs.contains(tab) ||
+        !identical(client, _clientFor(workspace))) {
+      throw StateError('TERMINAL_TARGET_CHANGED');
+    }
+    await tab.bridge.rebind(client);
+    if (_isCurrent(workspace)) _syncTmuxOffer();
+  }
+
   void _removeTab(_TerminalWorkspace workspace, String id) {
     final index = workspace.value.tabs.indexWhere((tab) => tab.id == id);
     if (index < 0) return;

@@ -6218,4 +6218,82 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'Dismiss notice';
+
+  @override
+  String get terminalReconnectTab => 'Reconnect Terminal';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'Close Tab';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'Closing this tab will disconnect the session. Any foreground process running in it may be terminated.';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'This terminal is running in tmux. Closing this tab will only detach it from the view; the session will continue running in the background.';
+
+  @override
+  String get terminalCloseActionTerminate => 'Terminate & Close';
+
+  @override
+  String get terminalCloseActionDetach => 'Detach & Close';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'Running task: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'Return to Running Session';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'The server is currently executing another task. Please wait for it to complete.';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'Delete local record only';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'Stop running and purge remote runtime data';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'This will stop the remote background process and purge app-owned runtime cache.';
+
+  @override
+  String get permissionViewDetails => 'View Details';
+
+  @override
+  String get permissionDetailsTitle => 'Permission Request Details';
+
+  @override
+  String get permissionToolLabel => 'Requested Tool';
+
+  @override
+  String get permissionCommandLabel => 'Command to Execute';
+
+  @override
+  String get permissionCopyCommand => 'Copy Command';
+
+  @override
+  String get permissionCommandCopied => 'Command copied to clipboard';
+
+  @override
+  String get chatScrollToLatest => 'Scroll to latest';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'No managed runtime instances found for this session.';
+
+  @override
+  String get deleteSessionAffectedRuntimes => 'Affected Runtime Instances:';
+
+  @override
+  String get deleteSessionInspectingRuntimes => 'Inspecting remote runtimes...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'Server disconnected. Only local deletion is available.';
 }

@@ -1918,4 +1918,68 @@ void main() {
       }
     },
   );
+
+  test(
+    'stable tab ids, target checks and last-tab retention govern close and reconnect',
+    () async {
+      final h = await _Harness.create();
+      await h.notifier.ensureInitialized();
+      await h.drain();
+      await h.notifier.addNewTab();
+      await h.notifier.addNewTab();
+      await h.drain();
+      final tabs = h.state.tabs;
+      expect(tabs, hasLength(3));
+      final firstId = tabs[0].id;
+      final middleId = tabs[1].id;
+      final lastId = tabs[2].id;
+      final target = TerminalHistoryRecord.targetFor(_server);
+
+      await expectLater(
+        h.notifier.closeTabById(middleId, expectedTargetKey: 'stale-target'),
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            'TERMINAL_TARGET_CHANGED',
+          ),
+        ),
+      );
+      expect(h.state.tabs.map((tab) => tab.id), [firstId, middleId, lastId]);
+
+      await h.notifier.closeTabById('missing-id', expectedTargetKey: target);
+      expect(h.state.tabs.map((tab) => tab.id), [firstId, middleId, lastId]);
+
+      h.notifier.selectTab(0);
+      await h.notifier.closeTabById(middleId, expectedTargetKey: target);
+      expect(h.state.tabs.map((tab) => tab.id), [firstId, lastId]);
+      expect(h.state.activeTab!.id, firstId);
+
+      final kept = h.state.tabs.last;
+      kept.terminal.write('kept across stale reconnect');
+      await expectLater(
+        h.notifier.reconnectTab(kept.id, expectedTargetKey: 'stale-target'),
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            'TERMINAL_TARGET_CHANGED',
+          ),
+        ),
+      );
+      expect(
+        kept.terminal.buffer.getText(),
+        contains('kept across stale reconnect'),
+      );
+      expect(h.state.tabs.map((tab) => tab.id), [firstId, lastId]);
+
+      await h.notifier.closeTabById(firstId, expectedTargetKey: target);
+      expect(h.state.tabs.single.id, lastId);
+      expect(h.state.tabs.single.terminal, same(kept.terminal));
+
+      await h.notifier.closeTabById(lastId, expectedTargetKey: target);
+      expect(h.state.tabs.single.id, lastId);
+      expect(h.state.tabs.single.terminal, same(kept.terminal));
+    },
+  );
 }

@@ -542,6 +542,8 @@ class _MockAiChatNotifier extends AiChatNotifier {
   bool bindActiveSessionCalled = false;
   bool deleteSessionCalled = false;
   String? deletedSessionId;
+  bool? deletedSessionStopAndClearRemote;
+  String? deletedSessionExpectedServerKey;
   bool setShareAgentSessionsCalled = false;
   bool? setShareAgentSessionsValue;
   bool sendMessageCalled = false;
@@ -557,8 +559,29 @@ class _MockAiChatNotifier extends AiChatNotifier {
     stopGenerationCalled = true;
   }
 
-  String? lastExpectedSessionId;
-  String? lastExpectedServerId;
+  String? lastExpectedServerKey;
+  String? lastExpectedViewingSessionId;
+
+  @override
+  Future<void> stopViewingRun({
+    required String expectedServerKey,
+    required String expectedSessionId,
+  }) async {
+    lastExpectedServerKey = expectedServerKey;
+    lastExpectedViewingSessionId = expectedSessionId;
+    final currentTarget = ref
+        .read(activeServerProvider)
+        ?.connectionKey
+        .toString();
+    if (currentTarget != expectedServerKey ||
+        state.activeSessionId != expectedSessionId) {
+      return;
+    }
+    await stopGeneration();
+  }
+
+  String? lastExpectedBindSessionId;
+  String? lastExpectedBindServerId;
 
   @override
   Future<void> bindActiveSessionToCurrentServer({
@@ -566,14 +589,20 @@ class _MockAiChatNotifier extends AiChatNotifier {
     String? expectedServerId,
   }) async {
     bindActiveSessionCalled = true;
-    lastExpectedSessionId = expectedSessionId;
-    lastExpectedServerId = expectedServerId;
+    lastExpectedBindSessionId = expectedSessionId;
+    lastExpectedBindServerId = expectedServerId;
   }
 
   @override
-  Future<void> deleteSession(String sessionId) async {
+  Future<void> deleteSession(
+    String sessionId, {
+    bool stopAndClearRemote = false,
+    String? expectedServerKey,
+  }) async {
     deleteSessionCalled = true;
     deletedSessionId = sessionId;
+    deletedSessionStopAndClearRemote = stopAndClearRemote;
+    deletedSessionExpectedServerKey = expectedServerKey;
   }
 
   @override

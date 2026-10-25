@@ -6003,4 +6003,79 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => '알림 닫기';
+
+  @override
+  String get terminalReconnectTab => '터미널 다시 연결';
+
+  @override
+  String get terminalCloseTabConfirmTitle => '탭 닫기';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      '이 탭을 닫으면 연결이 끊어집니다. 포그라운드에서 실행 중인 프로세스가 종료될 수 있습니다.';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      '이 터미널은 tmux에서 실행 중입니다. 탭을 닫아도 현재 뷰에서 분리(detach)될 뿐 세션과 작업은 백그라운드에 유지됩니다.';
+
+  @override
+  String get terminalCloseActionTerminate => '종료 후 닫기';
+
+  @override
+  String get terminalCloseActionDetach => '분리 후 닫기';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return '작업 실행 중: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => '실행 중인 세션으로 돌아가기';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      '현재 서버에서 다른 세션 작업을 실행 중입니다. 완료될 때까지 기다려 주세요';
+
+  @override
+  String get deleteSessionLocalOnlyOption => '로컬 기록만 삭제';
+
+  @override
+  String get deleteSessionStopAndPurgeOption => '실행 중지 및 원격 런타임 데이터 정리';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      '원격 백그라운드 프로세스를 중지하고 앱 전용 런타임 캐시를 정리합니다.';
+
+  @override
+  String get permissionViewDetails => '세부 정보 보기';
+
+  @override
+  String get permissionDetailsTitle => '권한 승인 세부 정보';
+
+  @override
+  String get permissionToolLabel => '요청된 도구';
+
+  @override
+  String get permissionCommandLabel => '실행할 명령';
+
+  @override
+  String get permissionCopyCommand => '명령 복사';
+
+  @override
+  String get permissionCommandCopied => '명령이 클립보드에 복사되었습니다';
+
+  @override
+  String get chatScrollToLatest => '최신으로 이동';
+
+  @override
+  String get deleteSessionNoManagedRuntimes => '이 세션에 관리되는 런타임 인스턴스가 없습니다.';
+
+  @override
+  String get deleteSessionAffectedRuntimes => '영향을 받는 런타임 인스턴스:';
+
+  @override
+  String get deleteSessionInspectingRuntimes => '원격 런타임 확인 중...';
+
+  @override
+  String get deleteSessionOfflineNotice => '서버 연결이 끊어졌습니다. 로컬 삭제만 가능합니다.';
 }

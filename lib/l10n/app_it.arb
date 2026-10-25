@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "Server",
   "terminalSocketErrorsBanner": "{count} errore/i sorgente socket",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "L'agente continua l'esecuzione in background anche se l'app viene chiusa.",
   "persistentRuntimeEnableAction": "Abilita runtime",
   "persistentRuntimeSettingUp": "Configurazione del runtime sul server in corso...",
-  "dismissRecoveryNoticeTooltip": "Ignora avviso"
+  "dismissRecoveryNoticeTooltip": "Ignora avviso",
+  "terminalReconnectTab": "Riconnetti terminale",
+  "terminalCloseTabConfirmTitle": "Chiudi scheda",
+  "terminalClosePlainConfirmMessage": "La chiusura di questa scheda disconnetterà la sessione. Eventuali processi in primo piano potrebbero essere interrotti.",
+  "terminalCloseTmuxConfirmMessage": "Questo terminale è in esecuzione in tmux. La chiusura lo disconnette solo dalla vista; la sessione continuerà in background.",
+  "terminalCloseActionTerminate": "Termina e chiudi",
+  "terminalCloseActionDetach": "Scollega e chiudi",
+  "acpRunningSessionIndicator": "Attività in esecuzione: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "Torna alla sessione in esecuzione",
+  "acpServerBusySendDisabled": "Il server sta attualmente eseguendo un'altra attività. Attendi il completamento.",
+  "deleteSessionLocalOnlyOption": "Elimina solo il record locale",
+  "deleteSessionStopAndPurgeOption": "Arresta esecuzione ed elimina dati di runtime remoti",
+  "deleteSessionPurgeRemoteWarning": "Arresterà il processo in background remoto ed eliminerà la cache di runtime dell'app.",
+  "permissionViewDetails": "Visualizza dettagli",
+  "permissionDetailsTitle": "Dettagli richiesta di autorizzazione",
+  "permissionToolLabel": "Strumento richiesto",
+  "permissionCommandLabel": "Comando da eseguire",
+  "permissionCopyCommand": "Copia comando",
+  "permissionCommandCopied": "Comando copiato negli appunti",
+  "chatScrollToLatest": "Vai al più recente",
+  "deleteSessionNoManagedRuntimes": "Nessuna istanza di runtime gestita trovata per questa sessione.",
+  "deleteSessionAffectedRuntimes": "Istanze di runtime interessate:",
+  "deleteSessionInspectingRuntimes": "Ispezione dei runtime remoti in corso...",
+  "deleteSessionOfflineNotice": "Server disconnesso. È disponibile solo l'eliminazione locale."
 }

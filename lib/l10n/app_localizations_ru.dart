@@ -6310,4 +6310,84 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'Закрыть уведомление';
+
+  @override
+  String get terminalReconnectTab => 'Переподключить терминал';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'Закрыть вкладку';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'Закрытие этой вкладки отключит сессию. Любой процесс, работающий на переднем плане, может быть завершен.';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'Этот терминал работает в tmux. Закрытие вкладки лишь отсоединит ее от текущего вида; сессия продолжит работу в фоне.';
+
+  @override
+  String get terminalCloseActionTerminate => 'Завершить и закрыть';
+
+  @override
+  String get terminalCloseActionDetach => 'Отсоединить и закрыть';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'Выполняется задача: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'Вернуться к активной сессии';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'Сервер в данный момент выполняет другую задачу. Пожалуйста, дождитесь завершения.';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'Удалить только локальную запись';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'Остановить и очистить удаленные данные среды';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'Это остановит фоновый процесс на удаленном сервере и очистит кэш среды приложения.';
+
+  @override
+  String get permissionViewDetails => 'Посмотреть детали';
+
+  @override
+  String get permissionDetailsTitle => 'Детали запроса разрешений';
+
+  @override
+  String get permissionToolLabel => 'Запрошенный инструмент';
+
+  @override
+  String get permissionCommandLabel => 'Команда для выполнения';
+
+  @override
+  String get permissionCopyCommand => 'Копировать команду';
+
+  @override
+  String get permissionCommandCopied => 'Команда скопирована в буфер обмена';
+
+  @override
+  String get chatScrollToLatest => 'К последнему сообщению';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'Для этой сессии не найдено управляемых экземпляров среды выполнения.';
+
+  @override
+  String get deleteSessionAffectedRuntimes =>
+      'Затронутые экземпляры среды выполнения:';
+
+  @override
+  String get deleteSessionInspectingRuntimes =>
+      'Проверка удаленных сред выполнения...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'Сервер отключен. Доступно только локальное удаление.';
 }

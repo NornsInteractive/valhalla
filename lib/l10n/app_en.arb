@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "Server",
   "terminalSocketErrorsBanner": "{count} socket source error(s)",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "Agent continues running seamlessly even if the app closes.",
   "persistentRuntimeEnableAction": "Enable Runtime",
   "persistentRuntimeSettingUp": "Configuring runtime on server...",
-  "dismissRecoveryNoticeTooltip": "Dismiss notice"
+  "dismissRecoveryNoticeTooltip": "Dismiss notice",
+  "terminalReconnectTab": "Reconnect Terminal",
+  "terminalCloseTabConfirmTitle": "Close Tab",
+  "terminalClosePlainConfirmMessage": "Closing this tab will disconnect the session. Any foreground process running in it may be terminated.",
+  "terminalCloseTmuxConfirmMessage": "This terminal is running in tmux. Closing this tab will only detach it from the view; the session will continue running in the background.",
+  "terminalCloseActionTerminate": "Terminate & Close",
+  "terminalCloseActionDetach": "Detach & Close",
+  "acpRunningSessionIndicator": "Running task: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "Return to Running Session",
+  "acpServerBusySendDisabled": "The server is currently executing another task. Please wait for it to complete.",
+  "deleteSessionLocalOnlyOption": "Delete local record only",
+  "deleteSessionStopAndPurgeOption": "Stop running and purge remote runtime data",
+  "deleteSessionPurgeRemoteWarning": "This will stop the remote background process and purge app-owned runtime cache.",
+  "permissionViewDetails": "View Details",
+  "permissionDetailsTitle": "Permission Request Details",
+  "permissionToolLabel": "Requested Tool",
+  "permissionCommandLabel": "Command to Execute",
+  "permissionCopyCommand": "Copy Command",
+  "permissionCommandCopied": "Command copied to clipboard",
+  "chatScrollToLatest": "Scroll to latest",
+  "deleteSessionNoManagedRuntimes": "No managed runtime instances found for this session.",
+  "deleteSessionAffectedRuntimes": "Affected Runtime Instances:",
+  "deleteSessionInspectingRuntimes": "Inspecting remote runtimes...",
+  "deleteSessionOfflineNotice": "Server disconnected. Only local deletion is available."
 }

@@ -6258,4 +6258,84 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'Bildirimi kapat';
+
+  @override
+  String get terminalReconnectTab => 'Terminali Yeniden Bağla';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'Sekmeyi Kapat';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'Bu sekmeyi kapatmak oturumun bağlantısını keser. Ön planda çalışan işlemler sonlandırılabilir.';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'Bu terminal tmux içinde çalışıyor. Sekmeyi kapatmak yalnızca görünümden ayırır; oturum arka planda çalışmaya devam eder.';
+
+  @override
+  String get terminalCloseActionTerminate => 'Sonlandır ve Kapat';
+
+  @override
+  String get terminalCloseActionDetach => 'Ayır ve Kapat';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'Görev yürütülüyor: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'Çalışan Oturuma Dön';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'Sunucu şu anda başka bir görev yürütüyor. Lütfen tamamlanmasını bekleyin.';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'Yalnızca yerel kaydı sil';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'Çalışmayı durdur ve uzak çalışma zamanı verilerini temizle';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'Uzak arka plan işlemini durdurur ve uygulamaya ait çalışma zamanı önbelleğini temizler.';
+
+  @override
+  String get permissionViewDetails => 'Ayrıntıları Görüntüle';
+
+  @override
+  String get permissionDetailsTitle => 'İzin İsteği Ayrıntıları';
+
+  @override
+  String get permissionToolLabel => 'İstenen Araç';
+
+  @override
+  String get permissionCommandLabel => 'Yürütülecek Komut';
+
+  @override
+  String get permissionCopyCommand => 'Komutu Kopyala';
+
+  @override
+  String get permissionCommandCopied => 'Komut panoya kopyalandı';
+
+  @override
+  String get chatScrollToLatest => 'En son mesaja kaydır';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'Bu oturum için yönetilen çalışma zamanı örneği bulunamadı.';
+
+  @override
+  String get deleteSessionAffectedRuntimes =>
+      'Etkilenen Çalışma Zamanı Örnekleri:';
+
+  @override
+  String get deleteSessionInspectingRuntimes =>
+      'Uzak çalışma zamanları denetleniyor...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'Sunucu bağlantısı kesildi. Yalnızca yerel silme kullanılabilir.';
 }

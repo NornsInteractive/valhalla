@@ -6010,4 +6010,79 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => '通知を閉じる';
+
+  @override
+  String get terminalReconnectTab => 'ターミナルを再接続';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'タブを閉じる';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'このタブを閉じると接続が切断されます。フォアグラウンドで実行中のプロセスは終了する可能性があります。';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'このターミナルは tmux で実行されています。タブを閉じても現在のビューからデタッチされるだけで、セッションとタスクはバックグラウンドで保持されます。';
+
+  @override
+  String get terminalCloseActionTerminate => '終了して閉じる';
+
+  @override
+  String get terminalCloseActionDetach => 'デタッチして閉じる';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'タスク実行中: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => '実行中のセッションに戻る';
+
+  @override
+  String get acpServerBusySendDisabled => 'サーバーは現在他のタスクを実行中です。完了するまでお待ちください';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'ローカル記録のみ削除';
+
+  @override
+  String get deleteSessionStopAndPurgeOption => '実行を停止しリモートのランタイムデータを消去';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'リモートのバックグラウンドプロセスを停止し、アプリ専用のランタイムキャッシュを消去します。';
+
+  @override
+  String get permissionViewDetails => '詳細を表示';
+
+  @override
+  String get permissionDetailsTitle => '権限承認の詳細';
+
+  @override
+  String get permissionToolLabel => '要求されたツール';
+
+  @override
+  String get permissionCommandLabel => '実行コマンド';
+
+  @override
+  String get permissionCopyCommand => 'コマンドをコピー';
+
+  @override
+  String get permissionCommandCopied => 'コマンドをクリップボードにコピーしました';
+
+  @override
+  String get chatScrollToLatest => '最新へ移動';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'このセッションには管理対象のランタイムインスタンスがありません。';
+
+  @override
+  String get deleteSessionAffectedRuntimes => '影響を受けるランタイムインスタンス:';
+
+  @override
+  String get deleteSessionInspectingRuntimes => 'リモートランタイムを確認中...';
+
+  @override
+  String get deleteSessionOfflineNotice => 'サーバーが未接続です。ローカル削除のみ利用可能です。';
 }

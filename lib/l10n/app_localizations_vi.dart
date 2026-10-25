@@ -6253,4 +6253,84 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'Bỏ qua thông báo';
+
+  @override
+  String get terminalReconnectTab => 'Kết nối lại terminal';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'Đóng thẻ';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'Đóng thẻ này sẽ ngắt kết nối phiên. Mọi tiến trình đang chạy ở tiền cảnh có thể bị chấm dứt.';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'Terminal này đang chạy trong tmux. Đóng thẻ chỉ tách nó khỏi chế độ xem; phiên sẽ tiếp tục chạy ở nền sau.';
+
+  @override
+  String get terminalCloseActionTerminate => 'Chấm dứt & Đóng';
+
+  @override
+  String get terminalCloseActionDetach => 'Tách & Đóng';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'Đang thực hiện tác vụ: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'Quay lại phiên đang chạy';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'Máy chủ hiện đang thực hiện một tác vụ khác. Vui lòng đợi hoàn thành.';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'Chỉ xóa bản ghi cục bộ';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'Dừng chạy và dọn sạch dữ liệu runtime từ xa';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'Thao tác này sẽ dừng tiến trình nền từ xa và dọn sạch bộ nhớ đệm runtime của ứng dụng.';
+
+  @override
+  String get permissionViewDetails => 'Xem chi tiết';
+
+  @override
+  String get permissionDetailsTitle => 'Chi tiết yêu cầu quyền';
+
+  @override
+  String get permissionToolLabel => 'Công cụ được yêu cầu';
+
+  @override
+  String get permissionCommandLabel => 'Lệnh cần thực thi';
+
+  @override
+  String get permissionCopyCommand => 'Sao chép lệnh';
+
+  @override
+  String get permissionCommandCopied => 'Đã sao chép lệnh vào khay nhớ tạm';
+
+  @override
+  String get chatScrollToLatest => 'Cuộn xuống mới nhất';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'Không tìm thấy phiên bản môi trường thực thi được quản lý nào cho phiên này.';
+
+  @override
+  String get deleteSessionAffectedRuntimes =>
+      'Các phiên bản runtime bị ảnh hưởng:';
+
+  @override
+  String get deleteSessionInspectingRuntimes =>
+      'Đang kiểm tra môi trường thực thi từ xa...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'Máy chủ bị ngắt kết nối. Chỉ có thể xóa cục bộ.';
 }

@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "Soket",
   "terminalServerLabel": "Sunucu",
   "terminalSocketErrorsBanner": "{count} soket kaynağı hatası",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "Uygulama kapatılsa bile ajan arka planda kesintisiz çalışmaya devam eder.",
   "persistentRuntimeEnableAction": "Çalışma Zamanını Etkinleştir",
   "persistentRuntimeSettingUp": "Sunucuda çalışma zamanı yapılandırılıyor...",
-  "dismissRecoveryNoticeTooltip": "Bildirimi kapat"
+  "dismissRecoveryNoticeTooltip": "Bildirimi kapat",
+  "terminalReconnectTab": "Terminali Yeniden Bağla",
+  "terminalCloseTabConfirmTitle": "Sekmeyi Kapat",
+  "terminalClosePlainConfirmMessage": "Bu sekmeyi kapatmak oturumun bağlantısını keser. Ön planda çalışan işlemler sonlandırılabilir.",
+  "terminalCloseTmuxConfirmMessage": "Bu terminal tmux içinde çalışıyor. Sekmeyi kapatmak yalnızca görünümden ayırır; oturum arka planda çalışmaya devam eder.",
+  "terminalCloseActionTerminate": "Sonlandır ve Kapat",
+  "terminalCloseActionDetach": "Ayır ve Kapat",
+  "acpRunningSessionIndicator": "Görev yürütülüyor: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "Çalışan Oturuma Dön",
+  "acpServerBusySendDisabled": "Sunucu şu anda başka bir görev yürütüyor. Lütfen tamamlanmasını bekleyin.",
+  "deleteSessionLocalOnlyOption": "Yalnızca yerel kaydı sil",
+  "deleteSessionStopAndPurgeOption": "Çalışmayı durdur ve uzak çalışma zamanı verilerini temizle",
+  "deleteSessionPurgeRemoteWarning": "Uzak arka plan işlemini durdurur ve uygulamaya ait çalışma zamanı önbelleğini temizler.",
+  "permissionViewDetails": "Ayrıntıları Görüntüle",
+  "permissionDetailsTitle": "İzin İsteği Ayrıntıları",
+  "permissionToolLabel": "İstenen Araç",
+  "permissionCommandLabel": "Yürütülecek Komut",
+  "permissionCopyCommand": "Komutu Kopyala",
+  "permissionCommandCopied": "Komut panoya kopyalandı",
+  "chatScrollToLatest": "En son mesaja kaydır",
+  "deleteSessionNoManagedRuntimes": "Bu oturum için yönetilen çalışma zamanı örneği bulunamadı.",
+  "deleteSessionAffectedRuntimes": "Etkilenen Çalışma Zamanı Örnekleri:",
+  "deleteSessionInspectingRuntimes": "Uzak çalışma zamanları denetleniyor...",
+  "deleteSessionOfflineNotice": "Sunucu bağlantısı kesildi. Yalnızca yerel silme kullanılabilir."
 }

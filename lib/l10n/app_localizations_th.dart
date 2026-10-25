@@ -6229,4 +6229,83 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'ปิดการแจ้งเตือน';
+
+  @override
+  String get terminalReconnectTab => 'เชื่อมต่อเทอร์มินัลใหม่';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'ปิดแท็บ';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'การปิดแท็บนี้จะยกเลิกการเชื่อมต่อเซสชัน กระบวนการเบื้องหน้าใดๆ อาจถูกยุติ';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'เทอร์มินัลนี้ทำงานใน tmux การปิดแท็บจะเป็นเพียงการแยกออกจากมุมมองปัจจุบัน เซสชันจะยังคงทำงานในพื้นหลังต่อไป';
+
+  @override
+  String get terminalCloseActionTerminate => 'ยุติและปิด';
+
+  @override
+  String get terminalCloseActionDetach => 'แยกออกและปิด';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'กำลังดำเนินงาน: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'กลับไปยังเซสชันที่กำลังทำงาน';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'เซิร์ฟเวอร์กำลังดำเนินงานอื่นอยู่ โปรดรอจนกว่าจะเสร็จสิ้น';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'ลบเฉพาะบันทึกในเครื่อง';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'หยุดการทำงานและล้างข้อมูลรันไทม์ระยะไกล';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'การดำเนินการนี้จะหยุดกระบวนการเบื้องหลังระยะไกลและล้างแคชรันไทม์ของแอป';
+
+  @override
+  String get permissionViewDetails => 'ดูรายละเอียด';
+
+  @override
+  String get permissionDetailsTitle => 'รายละเอียดการขอสิทธิ์';
+
+  @override
+  String get permissionToolLabel => 'เครื่องมือที่ร้องขอ';
+
+  @override
+  String get permissionCommandLabel => 'คำสั่งที่จะดำเนินการ';
+
+  @override
+  String get permissionCopyCommand => 'คัดลอกคำสั่ง';
+
+  @override
+  String get permissionCommandCopied => 'คัดลอกคำสั่งไปยังคลิปบอร์ดแล้ว';
+
+  @override
+  String get chatScrollToLatest => 'เลื่อนลงไปล่าสุด';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'ไม่พบอินสแตนซ์รันไทม์ที่ได้รับการจัดการสำหรับเซสชันนี้';
+
+  @override
+  String get deleteSessionAffectedRuntimes =>
+      'อินสแตนซ์รันไทม์ที่ได้รับผลกระทบ:';
+
+  @override
+  String get deleteSessionInspectingRuntimes => 'กำลังตรวจสอบรันไทม์ระยะไกล...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'ตัดการเชื่อมต่อกับเซิร์ฟเวอร์แล้ว ใช้งานได้เฉพาะการลบในเครื่องเท่านั้น';
 }

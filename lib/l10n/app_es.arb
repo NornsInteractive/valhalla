@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "Servidor",
   "terminalSocketErrorsBanner": "{count} error(es) en fuentes de socket",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "El agente continúa ejecutándose en segundo plano aunque se cierre la app.",
   "persistentRuntimeEnableAction": "Activar entorno",
   "persistentRuntimeSettingUp": "Configurando entorno en el servidor...",
-  "dismissRecoveryNoticeTooltip": "Descartar aviso"
+  "dismissRecoveryNoticeTooltip": "Descartar aviso",
+  "terminalReconnectTab": "Reconectar terminal",
+  "terminalCloseTabConfirmTitle": "Cerrar pestaña",
+  "terminalClosePlainConfirmMessage": "Cerrar esta pestaña desconectará la sesión. Cualquier proceso en primer plano puede ser terminado.",
+  "terminalCloseTmuxConfirmMessage": "Este terminal se ejecuta en tmux. Cerrar la pestaña solo lo desacopla de la vista; la sesión continuará en segundo plano.",
+  "terminalCloseActionTerminate": "Terminar y cerrar",
+  "terminalCloseActionDetach": "Desacoplar y cerrar",
+  "acpRunningSessionIndicator": "Ejecutando tarea: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "Volver a la sesión en ejecución",
+  "acpServerBusySendDisabled": "El servidor está ejecutando otra tarea actualmente. Por favor, espere a que termine.",
+  "deleteSessionLocalOnlyOption": "Eliminar solo el registro local",
+  "deleteSessionStopAndPurgeOption": "Detener ejecución y purgar datos de tiempo de ejecución remotos",
+  "deleteSessionPurgeRemoteWarning": "Esto detendrá el proceso en segundo plano remoto y purgará la caché de tiempo de ejecución de la app.",
+  "permissionViewDetails": "Ver detalles",
+  "permissionDetailsTitle": "Detalles de la solicitud de permiso",
+  "permissionToolLabel": "Herramienta solicitada",
+  "permissionCommandLabel": "Comando a ejecutar",
+  "permissionCopyCommand": "Copiar comando",
+  "permissionCommandCopied": "Comando copiado al portapapeles",
+  "chatScrollToLatest": "Desplazar al más reciente",
+  "deleteSessionNoManagedRuntimes": "No se encontraron instancias de entorno de ejecución administradas para esta sesión.",
+  "deleteSessionAffectedRuntimes": "Instancias de entorno de ejecución afectadas:",
+  "deleteSessionInspectingRuntimes": "Inspeccionando entornos remotos...",
+  "deleteSessionOfflineNotice": "Servidor desconectado. Solo está disponible la eliminación local."
 }

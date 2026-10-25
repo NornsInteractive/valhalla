@@ -6338,4 +6338,84 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'Descartar aviso';
+
+  @override
+  String get terminalReconnectTab => 'Reconectar terminal';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'Cerrar pestaña';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'Cerrar esta pestaña desconectará la sesión. Cualquier proceso en primer plano puede ser terminado.';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'Este terminal se ejecuta en tmux. Cerrar la pestaña solo lo desacopla de la vista; la sesión continuará en segundo plano.';
+
+  @override
+  String get terminalCloseActionTerminate => 'Terminar y cerrar';
+
+  @override
+  String get terminalCloseActionDetach => 'Desacoplar y cerrar';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'Ejecutando tarea: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'Volver a la sesión en ejecución';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'El servidor está ejecutando otra tarea actualmente. Por favor, espere a que termine.';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'Eliminar solo el registro local';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'Detener ejecución y purgar datos de tiempo de ejecución remotos';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'Esto detendrá el proceso en segundo plano remoto y purgará la caché de tiempo de ejecución de la app.';
+
+  @override
+  String get permissionViewDetails => 'Ver detalles';
+
+  @override
+  String get permissionDetailsTitle => 'Detalles de la solicitud de permiso';
+
+  @override
+  String get permissionToolLabel => 'Herramienta solicitada';
+
+  @override
+  String get permissionCommandLabel => 'Comando a ejecutar';
+
+  @override
+  String get permissionCopyCommand => 'Copiar comando';
+
+  @override
+  String get permissionCommandCopied => 'Comando copiado al portapapeles';
+
+  @override
+  String get chatScrollToLatest => 'Desplazar al más reciente';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'No se encontraron instancias de entorno de ejecución administradas para esta sesión.';
+
+  @override
+  String get deleteSessionAffectedRuntimes =>
+      'Instancias de entorno de ejecución afectadas:';
+
+  @override
+  String get deleteSessionInspectingRuntimes =>
+      'Inspeccionando entornos remotos...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'Servidor desconectado. Solo está disponible la eliminación local.';
 }

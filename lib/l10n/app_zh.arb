@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "服务器",
   "terminalSocketErrorsBanner": "{count} 个会话来源探测异常",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "即使关闭应用或切换网络，Agent 也会在后台继续稳定执行。",
   "persistentRuntimeEnableAction": "启用运行时",
   "persistentRuntimeSettingUp": "正在服务器上配置运行时...",
-  "dismissRecoveryNoticeTooltip": "忽略通知"
+  "dismissRecoveryNoticeTooltip": "忽略通知",
+  "terminalReconnectTab": "重新连接终端",
+  "terminalCloseTabConfirmTitle": "关闭标签页",
+  "terminalClosePlainConfirmMessage": "关闭此标签页将断开连接，正在前台运行的程序可能会被终止。",
+  "terminalCloseTmuxConfirmMessage": "此终端运行在 tmux 中。关闭标签页仅从当前视图分离，会话和任务将在后台继续保留运行。",
+  "terminalCloseActionTerminate": "结束并关闭",
+  "terminalCloseActionDetach": "分离并关闭",
+  "acpRunningSessionIndicator": "正在执行任务: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "返回运行中的会话",
+  "acpServerBusySendDisabled": "当前服务器正在执行其他会话任务，请等待完成",
+  "deleteSessionLocalOnlyOption": "仅删除本地记录",
+  "deleteSessionStopAndPurgeOption": "停止运行并清理远端运行时数据",
+  "deleteSessionPurgeRemoteWarning": "将停止该会话在远端的后台进程并删除应用专有运行时缓存。",
+  "permissionViewDetails": "查看详情",
+  "permissionDetailsTitle": "权限审批详情",
+  "permissionToolLabel": "请求工具",
+  "permissionCommandLabel": "执行命令",
+  "permissionCopyCommand": "复制命令",
+  "permissionCommandCopied": "命令已复制到剪贴板",
+  "chatScrollToLatest": "回到最新",
+  "deleteSessionNoManagedRuntimes": "当前会话无托管运行实例。",
+  "deleteSessionAffectedRuntimes": "受影响的运行实例：",
+  "deleteSessionInspectingRuntimes": "正在检查远端运行实例...",
+  "deleteSessionOfflineNotice": "服务器未连接，仅可执行本地删除。"
 }

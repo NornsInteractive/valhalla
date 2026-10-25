@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "Socket",
   "terminalServerLabel": "伺服器",
   "terminalSocketErrorsBanner": "{count} 個會話來源探測異常",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "即使關閉應用程式或切換網路，Agent 也會在背景繼續穩定執行。",
   "persistentRuntimeEnableAction": "啟用執行階段",
   "persistentRuntimeSettingUp": "正在伺服器上設定執行階段...",
-  "dismissRecoveryNoticeTooltip": "忽略通知"
+  "dismissRecoveryNoticeTooltip": "忽略通知",
+  "terminalReconnectTab": "重新連線終端",
+  "terminalCloseTabConfirmTitle": "關閉分頁",
+  "terminalClosePlainConfirmMessage": "關閉此分頁將中斷連線，正在前景執行的程式可能會被終止。",
+  "terminalCloseTmuxConfirmMessage": "此終端執行於 tmux 中。關閉分頁僅自目前檢視分離，工作階段與工作將在背景繼續保留執行。",
+  "terminalCloseActionTerminate": "結束並關閉",
+  "terminalCloseActionDetach": "分離並關閉",
+  "acpRunningSessionIndicator": "正在執行工作: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "返回執行中的工作階段",
+  "acpServerBusySendDisabled": "目前伺服器正在執行其他工作階段工作，請等待完成",
+  "deleteSessionLocalOnlyOption": "僅刪除本機記錄",
+  "deleteSessionStopAndPurgeOption": "停止執行並清理遠端執行階段資料",
+  "deleteSessionPurgeRemoteWarning": "將停止該工作階段在遠端的背景處理程序並刪除應用專屬執行階段快取。",
+  "permissionViewDetails": "查看詳情",
+  "permissionDetailsTitle": "權限審批詳情",
+  "permissionToolLabel": "請求工具",
+  "permissionCommandLabel": "執行命令",
+  "permissionCopyCommand": "複製命令",
+  "permissionCommandCopied": "命令已複製到剪貼簿",
+  "chatScrollToLatest": "回到最新",
+  "deleteSessionNoManagedRuntimes": "目前工作階段無託管執行個體。",
+  "deleteSessionAffectedRuntimes": "受影響的執行個體：",
+  "deleteSessionInspectingRuntimes": "正在檢查遠端執行個體...",
+  "deleteSessionOfflineNotice": "伺服器未連線，僅可執行本機刪除。"
 }

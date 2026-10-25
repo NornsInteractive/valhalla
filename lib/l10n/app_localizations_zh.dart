@@ -5913,6 +5913,78 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => '忽略通知';
+
+  @override
+  String get terminalReconnectTab => '重新连接终端';
+
+  @override
+  String get terminalCloseTabConfirmTitle => '关闭标签页';
+
+  @override
+  String get terminalClosePlainConfirmMessage => '关闭此标签页将断开连接，正在前台运行的程序可能会被终止。';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      '此终端运行在 tmux 中。关闭标签页仅从当前视图分离，会话和任务将在后台继续保留运行。';
+
+  @override
+  String get terminalCloseActionTerminate => '结束并关闭';
+
+  @override
+  String get terminalCloseActionDetach => '分离并关闭';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return '正在执行任务: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => '返回运行中的会话';
+
+  @override
+  String get acpServerBusySendDisabled => '当前服务器正在执行其他会话任务，请等待完成';
+
+  @override
+  String get deleteSessionLocalOnlyOption => '仅删除本地记录';
+
+  @override
+  String get deleteSessionStopAndPurgeOption => '停止运行并清理远端运行时数据';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning => '将停止该会话在远端的后台进程并删除应用专有运行时缓存。';
+
+  @override
+  String get permissionViewDetails => '查看详情';
+
+  @override
+  String get permissionDetailsTitle => '权限审批详情';
+
+  @override
+  String get permissionToolLabel => '请求工具';
+
+  @override
+  String get permissionCommandLabel => '执行命令';
+
+  @override
+  String get permissionCopyCommand => '复制命令';
+
+  @override
+  String get permissionCommandCopied => '命令已复制到剪贴板';
+
+  @override
+  String get chatScrollToLatest => '回到最新';
+
+  @override
+  String get deleteSessionNoManagedRuntimes => '当前会话无托管运行实例。';
+
+  @override
+  String get deleteSessionAffectedRuntimes => '受影响的运行实例：';
+
+  @override
+  String get deleteSessionInspectingRuntimes => '正在检查远端运行实例...';
+
+  @override
+  String get deleteSessionOfflineNotice => '服务器未连接，仅可执行本地删除。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -11825,4 +11897,77 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get dismissRecoveryNoticeTooltip => '忽略通知';
+
+  @override
+  String get terminalReconnectTab => '重新連線終端';
+
+  @override
+  String get terminalCloseTabConfirmTitle => '關閉分頁';
+
+  @override
+  String get terminalClosePlainConfirmMessage => '關閉此分頁將中斷連線，正在前景執行的程式可能會被終止。';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      '此終端執行於 tmux 中。關閉分頁僅自目前檢視分離，工作階段與工作將在背景繼續保留執行。';
+
+  @override
+  String get terminalCloseActionTerminate => '結束並關閉';
+
+  @override
+  String get terminalCloseActionDetach => '分離並關閉';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return '正在執行工作: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => '返回執行中的工作階段';
+
+  @override
+  String get acpServerBusySendDisabled => '目前伺服器正在執行其他工作階段工作，請等待完成';
+
+  @override
+  String get deleteSessionLocalOnlyOption => '僅刪除本機記錄';
+
+  @override
+  String get deleteSessionStopAndPurgeOption => '停止執行並清理遠端執行階段資料';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      '將停止該工作階段在遠端的背景處理程序並刪除應用專屬執行階段快取。';
+
+  @override
+  String get permissionViewDetails => '查看詳情';
+
+  @override
+  String get permissionDetailsTitle => '權限審批詳情';
+
+  @override
+  String get permissionToolLabel => '請求工具';
+
+  @override
+  String get permissionCommandLabel => '執行命令';
+
+  @override
+  String get permissionCopyCommand => '複製命令';
+
+  @override
+  String get permissionCommandCopied => '命令已複製到剪貼簿';
+
+  @override
+  String get chatScrollToLatest => '回到最新';
+
+  @override
+  String get deleteSessionNoManagedRuntimes => '目前工作階段無託管執行個體。';
+
+  @override
+  String get deleteSessionAffectedRuntimes => '受影響的執行個體：';
+
+  @override
+  String get deleteSessionInspectingRuntimes => '正在檢查遠端執行個體...';
+
+  @override
+  String get deleteSessionOfflineNotice => '伺服器未連線，僅可執行本機刪除。';
 }

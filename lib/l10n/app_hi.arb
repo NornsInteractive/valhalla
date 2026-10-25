@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "सॉकेट",
   "terminalServerLabel": "सर्वर",
   "terminalSocketErrorsBanner": "{count} सॉकेट स्रोत त्रुटियां",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "ऐप बंद होने पर भी एजेंट बैकग्राउंड में बिना किसी रुकावट के चलता रहता है।",
   "persistentRuntimeEnableAction": "रनटाइम सक्षम करें",
   "persistentRuntimeSettingUp": "सर्वर पर रनटाइम कॉन्फ़िगर हो रहा है...",
-  "dismissRecoveryNoticeTooltip": "सूचना हटाएं"
+  "dismissRecoveryNoticeTooltip": "सूचना हटाएं",
+  "terminalReconnectTab": "टर्मिनल पुनः कनेक्ट करें",
+  "terminalCloseTabConfirmTitle": "टैब बंद करें",
+  "terminalClosePlainConfirmMessage": "इस टैब को बंद करने से सत्र डिस्कनेक्ट हो जाएगा। अग्रभूमि में चल रही कोई भी प्रक्रिया समाप्त हो सकती है।",
+  "terminalCloseTmuxConfirmMessage": "यह टर्मिनल tmux में चल रहा है। टैब बंद करने से यह केवल दृश्य से अलग होगा; सत्र पृष्ठभूमि में चलता रहेगा।",
+  "terminalCloseActionTerminate": "समाप्त करें और बंद करें",
+  "terminalCloseActionDetach": "अलग करें और बंद करें",
+  "acpRunningSessionIndicator": "कार्य चल रहा है: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "सक्रिय सत्र पर वापस जाएं",
+  "acpServerBusySendDisabled": "सर्वर वर्तमान में दूसरा कार्य निष्पादित कर रहा है। कृपया इसके पूरा होने की प्रतीक्षा करें।",
+  "deleteSessionLocalOnlyOption": "केवल स्थानीय रिकॉर्ड हटाएं",
+  "deleteSessionStopAndPurgeOption": "रोकें और दूरस्थ रनटाइम डेटा साफ़ करें",
+  "deleteSessionPurgeRemoteWarning": "यह दूरस्थ पृष्ठभूमि प्रक्रिया को रोक देगा और ऐप के रनटाइम कैश को साफ़ कर देगा।",
+  "permissionViewDetails": "विवरण देखें",
+  "permissionDetailsTitle": "अनुमति अनुरोध विवरण",
+  "permissionToolLabel": "अनुरोधित टूल",
+  "permissionCommandLabel": "निष्पादित करने के लिए आदेश",
+  "permissionCopyCommand": "कमांड कॉपी करें",
+  "permissionCommandCopied": "कमांड क्लिपबोर्ड पर कॉपी किया गया",
+  "chatScrollToLatest": "नवीनतम पर स्क्रॉल करें",
+  "deleteSessionNoManagedRuntimes": "इस सत्र के लिए कोई प्रबंधित रनटाइम उदाहरण नहीं मिला।",
+  "deleteSessionAffectedRuntimes": "प्रभावित रनटाइम उदाहरण:",
+  "deleteSessionInspectingRuntimes": "रिमोट रनटाइम का निरीक्षण किया जा रहा है...",
+  "deleteSessionOfflineNotice": "सर्वर डिस्कनेक्ट हो गया है। केवल स्थानीय निष्कासन उपलब्ध है।"
 }

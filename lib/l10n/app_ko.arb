@@ -2396,7 +2396,7 @@
   "terminalSocketLabel": "소켓",
   "terminalServerLabel": "서버",
   "terminalSocketErrorsBanner": "{count}개 소켓 소스 오류",
-"@terminalSocketErrorsBanner": {
+  "@terminalSocketErrorsBanner": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -2415,5 +2415,36 @@
   "persistentRuntimeFeatureDetachedDesc": "앱을 닫거나 네트워크가 변경되어도 Agent가 백그라운드에서 계속 실행됩니다.",
   "persistentRuntimeEnableAction": "런타임 활성화",
   "persistentRuntimeSettingUp": "서버에서 런타임 구성 중...",
-  "dismissRecoveryNoticeTooltip": "알림 닫기"
+  "dismissRecoveryNoticeTooltip": "알림 닫기",
+  "terminalReconnectTab": "터미널 다시 연결",
+  "terminalCloseTabConfirmTitle": "탭 닫기",
+  "terminalClosePlainConfirmMessage": "이 탭을 닫으면 연결이 끊어집니다. 포그라운드에서 실행 중인 프로세스가 종료될 수 있습니다.",
+  "terminalCloseTmuxConfirmMessage": "이 터미널은 tmux에서 실행 중입니다. 탭을 닫아도 현재 뷰에서 분리(detach)될 뿐 세션과 작업은 백그라운드에 유지됩니다.",
+  "terminalCloseActionTerminate": "종료 후 닫기",
+  "terminalCloseActionDetach": "분리 후 닫기",
+  "acpRunningSessionIndicator": "작업 실행 중: {agentName}",
+  "@acpRunningSessionIndicator": {
+    "description": "Indicator banner showing which agent is actively executing a task",
+    "placeholders": {
+      "agentName": {
+        "type": "String"
+      }
+    }
+  },
+  "acpReturnToRunningSession": "실행 중인 세션으로 돌아가기",
+  "acpServerBusySendDisabled": "현재 서버에서 다른 세션 작업을 실행 중입니다. 완료될 때까지 기다려 주세요",
+  "deleteSessionLocalOnlyOption": "로컬 기록만 삭제",
+  "deleteSessionStopAndPurgeOption": "실행 중지 및 원격 런타임 데이터 정리",
+  "deleteSessionPurgeRemoteWarning": "원격 백그라운드 프로세스를 중지하고 앱 전용 런타임 캐시를 정리합니다.",
+  "permissionViewDetails": "세부 정보 보기",
+  "permissionDetailsTitle": "권한 승인 세부 정보",
+  "permissionToolLabel": "요청된 도구",
+  "permissionCommandLabel": "실행할 명령",
+  "permissionCopyCommand": "명령 복사",
+  "permissionCommandCopied": "명령이 클립보드에 복사되었습니다",
+  "chatScrollToLatest": "최신으로 이동",
+  "deleteSessionNoManagedRuntimes": "이 세션에 관리되는 런타임 인스턴스가 없습니다.",
+  "deleteSessionAffectedRuntimes": "영향을 받는 런타임 인스턴스:",
+  "deleteSessionInspectingRuntimes": "원격 런타임 확인 중...",
+  "deleteSessionOfflineNotice": "서버 연결이 끊어졌습니다. 로컬 삭제만 가능합니다."
 }

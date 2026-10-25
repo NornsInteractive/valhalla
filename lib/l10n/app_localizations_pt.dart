@@ -6324,4 +6324,84 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'Dispensar aviso';
+
+  @override
+  String get terminalReconnectTab => 'Reconectar terminal';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'Fechar aba';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'Fechar esta aba desconectará a sessão. Qualquer processo em primeiro plano pode ser finalizado.';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'Este terminal está rodando no tmux. Fechar a aba apenas o desvincula da visualização; a sessão continuará em segundo plano.';
+
+  @override
+  String get terminalCloseActionTerminate => 'Finalizar e fechar';
+
+  @override
+  String get terminalCloseActionDetach => 'Desvincular e fechar';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'Executando tarefa: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'Voltar para a sessão em execução';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'O servidor está executando outra tarefa no momento. Aguarde a conclusão.';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'Excluir apenas o registro local';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'Parar execução e expurgar dados de runtime remotos';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'Isso parará o processo em segundo plano remoto e expurgará o cache de runtime do app.';
+
+  @override
+  String get permissionViewDetails => 'Ver detalhes';
+
+  @override
+  String get permissionDetailsTitle => 'Detalhes da solicitação de permissão';
+
+  @override
+  String get permissionToolLabel => 'Ferramenta solicitada';
+
+  @override
+  String get permissionCommandLabel => 'Comando a executar';
+
+  @override
+  String get permissionCopyCommand => 'Copiar comando';
+
+  @override
+  String get permissionCommandCopied =>
+      'Comando copiado para a área de transferência';
+
+  @override
+  String get chatScrollToLatest => 'Ir para o mais recente';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'Nenhuma instância de runtime gerenciada encontrada para esta sessão.';
+
+  @override
+  String get deleteSessionAffectedRuntimes => 'Instâncias de runtime afetadas:';
+
+  @override
+  String get deleteSessionInspectingRuntimes =>
+      'Inspecionando runtimes remotos...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'Servidor desconectado. Apenas exclusão local disponível.';
 }

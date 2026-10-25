@@ -6258,4 +6258,83 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get dismissRecoveryNoticeTooltip => 'सूचना हटाएं';
+
+  @override
+  String get terminalReconnectTab => 'टर्मिनल पुनः कनेक्ट करें';
+
+  @override
+  String get terminalCloseTabConfirmTitle => 'टैब बंद करें';
+
+  @override
+  String get terminalClosePlainConfirmMessage =>
+      'इस टैब को बंद करने से सत्र डिस्कनेक्ट हो जाएगा। अग्रभूमि में चल रही कोई भी प्रक्रिया समाप्त हो सकती है।';
+
+  @override
+  String get terminalCloseTmuxConfirmMessage =>
+      'यह टर्मिनल tmux में चल रहा है। टैब बंद करने से यह केवल दृश्य से अलग होगा; सत्र पृष्ठभूमि में चलता रहेगा।';
+
+  @override
+  String get terminalCloseActionTerminate => 'समाप्त करें और बंद करें';
+
+  @override
+  String get terminalCloseActionDetach => 'अलग करें और बंद करें';
+
+  @override
+  String acpRunningSessionIndicator(String agentName) {
+    return 'कार्य चल रहा है: $agentName';
+  }
+
+  @override
+  String get acpReturnToRunningSession => 'सक्रिय सत्र पर वापस जाएं';
+
+  @override
+  String get acpServerBusySendDisabled =>
+      'सर्वर वर्तमान में दूसरा कार्य निष्पादित कर रहा है। कृपया इसके पूरा होने की प्रतीक्षा करें।';
+
+  @override
+  String get deleteSessionLocalOnlyOption => 'केवल स्थानीय रिकॉर्ड हटाएं';
+
+  @override
+  String get deleteSessionStopAndPurgeOption =>
+      'रोकें और दूरस्थ रनटाइम डेटा साफ़ करें';
+
+  @override
+  String get deleteSessionPurgeRemoteWarning =>
+      'यह दूरस्थ पृष्ठभूमि प्रक्रिया को रोक देगा और ऐप के रनटाइम कैश को साफ़ कर देगा।';
+
+  @override
+  String get permissionViewDetails => 'विवरण देखें';
+
+  @override
+  String get permissionDetailsTitle => 'अनुमति अनुरोध विवरण';
+
+  @override
+  String get permissionToolLabel => 'अनुरोधित टूल';
+
+  @override
+  String get permissionCommandLabel => 'निष्पादित करने के लिए आदेश';
+
+  @override
+  String get permissionCopyCommand => 'कमांड कॉपी करें';
+
+  @override
+  String get permissionCommandCopied => 'कमांड क्लिपबोर्ड पर कॉपी किया गया';
+
+  @override
+  String get chatScrollToLatest => 'नवीनतम पर स्क्रॉल करें';
+
+  @override
+  String get deleteSessionNoManagedRuntimes =>
+      'इस सत्र के लिए कोई प्रबंधित रनटाइम उदाहरण नहीं मिला।';
+
+  @override
+  String get deleteSessionAffectedRuntimes => 'प्रभावित रनटाइम उदाहरण:';
+
+  @override
+  String get deleteSessionInspectingRuntimes =>
+      'रिमोट रनटाइम का निरीक्षण किया जा रहा है...';
+
+  @override
+  String get deleteSessionOfflineNotice =>
+      'सर्वर डिस्कनेक्ट हो गया है। केवल स्थानीय निष्कासन उपलब्ध है।';
 }
