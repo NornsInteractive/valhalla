@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "Поиск по истории чата",
+  "chatSearchHint": "Поиск сообщений и вывода инструментов...",
+  "chatSearchScopeCurrent": "Текущая сессия",
+  "chatSearchScopeAll": "Текущий сервер",
+  "chatSearchNoResults": "Совпадающих сообщений не найдено",
+  "chatSearchNoQuery": "Введите текст для поиска по истории",
+  "chatSearchResultsCount": "Найдено результатов: {count}",
+  "chatSearchReaderTitle": "Просмотр контекста сообщения",
+  "chatSearchGoToSession": "Открыть сессию",
+  "chatSearchBackToResults": "Назад к результатам",
+  "chatSearchSourceMessage": "Сообщение",
+  "chatSearchSourceTool": "Вывод инструмента",
+  "chatSearchRemoteFileDisabled": "Удаленные файлы нельзя открыть из предпросмотра поиска. Откройте исходную сессию для просмотра.",
+  "chatSearchTargetChanged": "Сессия или сервер изменились во время поиска",
+  "terminalSearch": "Найти в терминале",
+  "terminalSearchHint": "Найти...",
+  "terminalSearchPrev": "Предыдущее совпадение",
+  "terminalSearchNext": "Следующее совпадение",
+  "terminalSearchFollowLatest": "К последнему",
+  "terminalSearchCount": "{current} из {total}",
+  "terminalSearchCountOverflow": "{current} из 1000+",
+  "terminalSearchNoMatches": "Нет совпадений",
+  "chatRoleUser": "Пользователь",
+  "chatRoleAssistant": "Ассистент",
+  "chatRoleSystem": "Система",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

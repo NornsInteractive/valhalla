@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "Buscar en el historial",
+  "chatSearchHint": "Buscar mensajes y herramientas...",
+  "chatSearchScopeCurrent": "Sesión actual",
+  "chatSearchScopeAll": "Servidor actual",
+  "chatSearchNoResults": "No se encontraron mensajes coincidentes",
+  "chatSearchNoQuery": "Escriba para buscar en el historial",
+  "chatSearchResultsCount": "{count} resultados encontrados",
+  "chatSearchReaderTitle": "Vista previa del contexto",
+  "chatSearchGoToSession": "Abrir sesión original",
+  "chatSearchBackToResults": "Volver a los resultados",
+  "chatSearchSourceMessage": "Mensaje",
+  "chatSearchSourceTool": "Salida de herramienta",
+  "chatSearchRemoteFileDisabled": "No se pueden abrir archivos remotos desde la vista previa. Abra la sesión original para verlos.",
+  "chatSearchTargetChanged": "La sesión o el servidor cambiaron durante la búsqueda",
+  "terminalSearch": "Buscar en la terminal",
+  "terminalSearchHint": "Buscar...",
+  "terminalSearchPrev": "Coincidencia anterior",
+  "terminalSearchNext": "Coincidencia siguiente",
+  "terminalSearchFollowLatest": "Volver a lo último",
+  "terminalSearchCount": "{current} de {total}",
+  "terminalSearchCountOverflow": "{current} de 1000+",
+  "terminalSearchNoMatches": "Sin coincidencias",
+  "chatRoleUser": "Usuario",
+  "chatRoleAssistant": "Asistente",
+  "chatRoleSystem": "Sistema",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

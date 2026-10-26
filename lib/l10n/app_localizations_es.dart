@@ -6558,4 +6558,87 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'Descartar';
+
+  @override
+  String get chatSearchTitle => 'Buscar en el historial';
+
+  @override
+  String get chatSearchHint => 'Buscar mensajes y herramientas...';
+
+  @override
+  String get chatSearchScopeCurrent => 'Sesión actual';
+
+  @override
+  String get chatSearchScopeAll => 'Servidor actual';
+
+  @override
+  String get chatSearchNoResults => 'No se encontraron mensajes coincidentes';
+
+  @override
+  String get chatSearchNoQuery => 'Escriba para buscar en el historial';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '$count resultados encontrados';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'Vista previa del contexto';
+
+  @override
+  String get chatSearchGoToSession => 'Abrir sesión original';
+
+  @override
+  String get chatSearchBackToResults => 'Volver a los resultados';
+
+  @override
+  String get chatSearchSourceMessage => 'Mensaje';
+
+  @override
+  String get chatSearchSourceTool => 'Salida de herramienta';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'No se pueden abrir archivos remotos desde la vista previa. Abra la sesión original para verlos.';
+
+  @override
+  String get chatSearchTargetChanged =>
+      'La sesión o el servidor cambiaron durante la búsqueda';
+
+  @override
+  String get terminalSearch => 'Buscar en la terminal';
+
+  @override
+  String get terminalSearchHint => 'Buscar...';
+
+  @override
+  String get terminalSearchPrev => 'Coincidencia anterior';
+
+  @override
+  String get terminalSearchNext => 'Coincidencia siguiente';
+
+  @override
+  String get terminalSearchFollowLatest => 'Volver a lo último';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current de $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current de 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'Sin coincidencias';
+
+  @override
+  String get chatRoleUser => 'Usuario';
+
+  @override
+  String get chatRoleAssistant => 'Asistente';
+
+  @override
+  String get chatRoleSystem => 'Sistema';
 }

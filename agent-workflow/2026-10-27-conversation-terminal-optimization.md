@@ -30,3 +30,11 @@ ChatRepository.searchMessages(serverId,{sessionId,agentId,query,cursor,limit=30}
 阶段1最终门禁：CodeBuddy免费DeepSeek执行，证据stage1-gates-20261026T183917Z，生成/格式/全项目分析(零问题)/36文件458项常规测试/diff-check全部0，无失败跳过。代码阅读7项测试真实点击全部命中，收起仍严格断言12行、复制完整含LF；改正只涉及fixture滚动后布局等待，并未放宽断言。进入1.0.20+21既有脚本构建发布；阶段2/3尚未实施。
 
 阶段1已完成正式1.0.20+21发布，回执见2026-10-27-v1020-release.md；官网revision109。阶段2已接入核心查询与只读缓冲搜索，AgY实现UI、CodeBuddy补回归中，尚未交付。
+
+阶段2实现中：核心本地SQLite字面搜索/Unicode折叠/稳定游标/完整工具输出/只读窗口已接入；终端只读搜索支持软换行/CJK/Emoji、取消、最多1000命中及buffer身份验证。CodeBuddy核心三文件最终边界回归23项常规测试通过（machine回执28含隐藏加载），一万条消息本机约55ms、事件循环55次tick。UI首轮发现迟到highlights、范围行溢出、中心Sliver定位等，已交AgY修正；尚未升号、最终门禁或打包，不将局部通过算作交付。
+
+阶段2补充诊断：新回收行UI用例出现同步循环。核心静态反例明确：满环回绕后replaceWith在旧_startIndex上adopt，最后才归零_startIndex，造成替换列表顺序和IndexedItem.index错位；trimStart没有detach移除行或增加_absoluteStartIndex。主代理已在纯数据层修正两处，并给搜索锚点加非负边界。未改渲染/UI；仍需实际回归验证，不能把静态证明当作测试通过。免费CodeBuddy此时多次TLS ECONNRESET/空响应，OpenCode已核验零成本GLM模型同样启动挂起；本轮直接验证例外请求已异步发出，尚未收到回复，主代理没有代跑应用测试或打包。
+
+阶段2根因验证：CodeBuddy恢复后，仅写4项共享缓冲不变量回归，和原17项终端UI回归一并运行（stage2-buffer-final.raw/.exit=0），21项常规测试通过、done.success=true、约4.25秒。原maxLines100回收用例在核心修复前同步循环（已保留超时/中止日志），相同UI/fixture在修正环形原点和trimStart后通过，明确为共享索引不变量问题；最初容量猜测不能作为最终根因。主代理尚未自行运行应用测试，授权请求仍未收到回复；继续按原免费执行器流程。
+
+阶段2最终门禁：stage2-gates-20261026T201940Z，42文件514项常规测试、生成/格式/分析零问题/diff-check全部0，无失败跳过。准备以1.0.21+22独立发布；阶段3仅忽略目录UI草稿，不含本版源码。

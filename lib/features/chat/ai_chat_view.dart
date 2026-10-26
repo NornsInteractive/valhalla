@@ -46,6 +46,7 @@ import '../../infrastructure/sftp/sftp_client_service.dart' show SftpFileItem;
 import 'widgets/chat_run_settings_dialog.dart';
 import 'widgets/chat_run_settings_strip.dart';
 import 'widgets/chat_commands_skills_dialog.dart';
+import 'widgets/chat_history_search_dialog.dart';
 import 'widgets/image_zoom_dialog.dart';
 import 'widgets/persistent_runtime_consent_dialog.dart';
 import 'widgets/remote_workspace_browser_dialog.dart';
@@ -1530,7 +1531,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
     final isDesktop = context.isDesktop;
 
-    return Scaffold(
+    final scaffold = Scaffold(
       drawer: !isDesktop
           ? Drawer(child: _buildSessionsDrawer(isDesktop))
           : null,
@@ -1769,6 +1770,18 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         ],
       ),
     );
+
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyF, control: true): () {
+          ChatHistorySearchDialog.show(context);
+        },
+        const SingleActivator(LogicalKeyboardKey.keyF, meta: true): () {
+          ChatHistorySearchDialog.show(context);
+        },
+      },
+      child: Focus(autofocus: false, child: scaffold),
+    );
   }
 
   Widget _buildHeaderBar(AiChatState state, bool isDesktop) {
@@ -1941,7 +1954,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                               minimumSize: const Size.fromHeight(40),
                             ),
                             icon: const Icon(Icons.add, size: 18),
-                            label: Text(context.l10n.newSession),
+                            label: Text(
+                              context.l10n.newSession,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             onPressed: () {
                               notifier.createNewSession();
                               if (!isDesktop) {
@@ -1952,13 +1969,31 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                         ),
                         const SizedBox(width: 8),
                         Tooltip(
+                          message: context.l10n.chatSearchTitle,
+                          child: SizedBox(
+                            height: 40,
+                            width: 40,
+                            child: IconButton.outlined(
+                              key: const Key('chat_history_search_button'),
+                              icon: const Icon(Icons.search, size: 18),
+                              onPressed: () {
+                                if (!isDesktop) {
+                                  Navigator.pop(context);
+                                }
+                                ChatHistorySearchDialog.show(context);
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Tooltip(
                           message: context.l10n.chatRemoteSessions,
                           child: SizedBox(
                             height: 40,
-                            child: OutlinedButton.icon(
+                            width: 40,
+                            child: IconButton.outlined(
                               key: const Key('chat_remote_sessions_button'),
-                              icon: const Icon(Icons.cloud_outlined, size: 16),
-                              label: Text(context.l10n.chatRemoteSessions),
+                              icon: const Icon(Icons.cloud_outlined, size: 18),
                               onPressed: () =>
                                   _showRemoteSessionsDialog(context),
                             ),

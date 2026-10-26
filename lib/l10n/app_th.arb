@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "ค้นหาประวัติการแชท",
+  "chatSearchHint": "ค้นหาข้อความและผลลัพธ์เครื่องมือ...",
+  "chatSearchScopeCurrent": "เซสชันปัจจุบัน",
+  "chatSearchScopeAll": "เซิร์ฟเวอร์ปัจจุบัน",
+  "chatSearchNoResults": "ไม่พบข้อความที่ตรงกัน",
+  "chatSearchNoQuery": "พิมพ์เพื่อค้นหาประวัติ",
+  "chatSearchResultsCount": "พบ {count} ผลลัพธ์",
+  "chatSearchReaderTitle": "ดูตัวอย่างบริบทข้อความ",
+  "chatSearchGoToSession": "เปิดเซสชันเดิม",
+  "chatSearchBackToResults": "กลับไปที่ผลลัพธ์",
+  "chatSearchSourceMessage": "ข้อความ",
+  "chatSearchSourceTool": "ผลลัพธ์เครื่องมือ",
+  "chatSearchRemoteFileDisabled": "ไม่สามารถเปิดไฟล์ระยะไกลจากหน้าตัวอย่างการค้นหาได้ โปรดเปิดเซสชันเดิมเพื่อดู",
+  "chatSearchTargetChanged": "เซสชันหรือเซิร์ฟเวอร์เปลี่ยนไปในระหว่างการค้นหา",
+  "terminalSearch": "ค้นหาในเทอร์มินัล",
+  "terminalSearchHint": "ค้นหา...",
+  "terminalSearchPrev": "ผลการจับคู่ก่อนหน้า",
+  "terminalSearchNext": "ผลการจับคู่ถัดไป",
+  "terminalSearchFollowLatest": "กลับสู่ล่าสุด",
+  "terminalSearchCount": "{current} จาก {total}",
+  "terminalSearchCountOverflow": "{current} จาก 1000+",
+  "terminalSearchNoMatches": "ไม่มีข้อมูลที่ตรงกัน",
+  "chatRoleUser": "ผู้ใช้",
+  "chatRoleAssistant": "ผู้ช่วย",
+  "chatRoleSystem": "ระบบ",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

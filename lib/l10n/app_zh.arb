@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "搜索会话历史",
+  "chatSearchHint": "搜索消息与工具输出...",
+  "chatSearchScopeCurrent": "当前会话",
+  "chatSearchScopeAll": "当前服务器",
+  "chatSearchNoResults": "未找到匹配的消息",
+  "chatSearchNoQuery": "输入关键词搜索历史",
+  "chatSearchResultsCount": "找到 {count} 条结果",
+  "chatSearchReaderTitle": "上下文定位预览",
+  "chatSearchGoToSession": "打开原会话",
+  "chatSearchBackToResults": "返回搜索结果",
+  "chatSearchSourceMessage": "消息",
+  "chatSearchSourceTool": "工具输出",
+  "chatSearchRemoteFileDisabled": "搜索预览中无法直接打开远端文件，请打开原会话查看",
+  "chatSearchTargetChanged": "搜索期间会话或服务器发生切换",
+  "terminalSearch": "在终端中查找",
+  "terminalSearchHint": "查找...",
+  "terminalSearchPrev": "上一个",
+  "terminalSearchNext": "下一个",
+  "terminalSearchFollowLatest": "返回最新",
+  "terminalSearchCount": "第 {current}/{total} 项",
+  "terminalSearchCountOverflow": "第 {current}/1000+ 项",
+  "terminalSearchNoMatches": "无匹配",
+  "chatRoleUser": "用户",
+  "chatRoleAssistant": "助手",
+  "chatRoleSystem": "系统",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

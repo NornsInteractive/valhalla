@@ -6115,6 +6115,87 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatCloseBanner => '关闭';
+
+  @override
+  String get chatSearchTitle => '搜索会话历史';
+
+  @override
+  String get chatSearchHint => '搜索消息与工具输出...';
+
+  @override
+  String get chatSearchScopeCurrent => '当前会话';
+
+  @override
+  String get chatSearchScopeAll => '当前服务器';
+
+  @override
+  String get chatSearchNoResults => '未找到匹配的消息';
+
+  @override
+  String get chatSearchNoQuery => '输入关键词搜索历史';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '找到 $count 条结果';
+  }
+
+  @override
+  String get chatSearchReaderTitle => '上下文定位预览';
+
+  @override
+  String get chatSearchGoToSession => '打开原会话';
+
+  @override
+  String get chatSearchBackToResults => '返回搜索结果';
+
+  @override
+  String get chatSearchSourceMessage => '消息';
+
+  @override
+  String get chatSearchSourceTool => '工具输出';
+
+  @override
+  String get chatSearchRemoteFileDisabled => '搜索预览中无法直接打开远端文件，请打开原会话查看';
+
+  @override
+  String get chatSearchTargetChanged => '搜索期间会话或服务器发生切换';
+
+  @override
+  String get terminalSearch => '在终端中查找';
+
+  @override
+  String get terminalSearchHint => '查找...';
+
+  @override
+  String get terminalSearchPrev => '上一个';
+
+  @override
+  String get terminalSearchNext => '下一个';
+
+  @override
+  String get terminalSearchFollowLatest => '返回最新';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '第 $current/$total 项';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '第 $current/1000+ 项';
+  }
+
+  @override
+  String get terminalSearchNoMatches => '无匹配';
+
+  @override
+  String get chatRoleUser => '用户';
+
+  @override
+  String get chatRoleAssistant => '助手';
+
+  @override
+  String get chatRoleSystem => '系统';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -12230,4 +12311,85 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get chatCloseBanner => '關閉';
+
+  @override
+  String get chatSearchTitle => '搜尋對話歷史';
+
+  @override
+  String get chatSearchHint => '搜尋訊息與工具輸出...';
+
+  @override
+  String get chatSearchScopeCurrent => '目前對話';
+
+  @override
+  String get chatSearchScopeAll => '目前伺服器';
+
+  @override
+  String get chatSearchNoResults => '未找到相符的訊息';
+
+  @override
+  String get chatSearchNoQuery => '輸入關鍵字搜尋歷史';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '找到 $count 條結果';
+  }
+
+  @override
+  String get chatSearchReaderTitle => '上下文定位預覽';
+
+  @override
+  String get chatSearchGoToSession => '開啟原對話';
+
+  @override
+  String get chatSearchBackToResults => '返回搜尋結果';
+
+  @override
+  String get chatSearchSourceMessage => '訊息';
+
+  @override
+  String get chatSearchSourceTool => '工具輸出';
+
+  @override
+  String get chatSearchRemoteFileDisabled => '搜尋預覽中無法直接開啟遠端檔案，請開啟原對話查看';
+
+  @override
+  String get chatSearchTargetChanged => '搜尋期間對話或伺服器發生切換';
+
+  @override
+  String get terminalSearch => '在終端機中尋找';
+
+  @override
+  String get terminalSearchHint => '尋找...';
+
+  @override
+  String get terminalSearchPrev => '上一個';
+
+  @override
+  String get terminalSearchNext => '下一個';
+
+  @override
+  String get terminalSearchFollowLatest => '返回最新';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '第 $current/$total 項';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '第 $current/1000+ 項';
+  }
+
+  @override
+  String get terminalSearchNoMatches => '無相符項目';
+
+  @override
+  String get chatRoleUser => '使用者';
+
+  @override
+  String get chatRoleAssistant => '助理';
+
+  @override
+  String get chatRoleSystem => '系統';
 }

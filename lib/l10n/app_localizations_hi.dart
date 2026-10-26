@@ -6476,4 +6476,86 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'बंद करें';
+
+  @override
+  String get chatSearchTitle => 'चैट इतिहास खोजें';
+
+  @override
+  String get chatSearchHint => 'संदेश और उपकरण आउटपुट खोजें...';
+
+  @override
+  String get chatSearchScopeCurrent => 'वर्तमान सत्र';
+
+  @override
+  String get chatSearchScopeAll => 'वर्तमान सर्वर';
+
+  @override
+  String get chatSearchNoResults => 'कोई मेल खाता संदेश नहीं मिला';
+
+  @override
+  String get chatSearchNoQuery => 'इतिहास खोजने के लिए टाइप करें';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '$count परिणाम मिले';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'संदेश संदर्भ पूर्वावलोकन';
+
+  @override
+  String get chatSearchGoToSession => 'मूल सत्र खोलें';
+
+  @override
+  String get chatSearchBackToResults => 'परिणामों पर वापस जाएं';
+
+  @override
+  String get chatSearchSourceMessage => 'संदेश';
+
+  @override
+  String get chatSearchSourceTool => 'उपकरण आउटपुट';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'खोज पूर्वावलोकन से दूरस्थ फ़ाइलें नहीं खोली जा सकतीं। देखने के लिए मूल सत्र खोलें।';
+
+  @override
+  String get chatSearchTargetChanged => 'खोज के दौरान सत्र या सर्वर बदल गया';
+
+  @override
+  String get terminalSearch => 'टर्मिनल में खोजें';
+
+  @override
+  String get terminalSearchHint => 'खोजें...';
+
+  @override
+  String get terminalSearchPrev => 'पिछला मेल';
+
+  @override
+  String get terminalSearchNext => 'अगला मेल';
+
+  @override
+  String get terminalSearchFollowLatest => 'नवीनतम पर जाएं';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current / $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current / 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'कोई मेल नहीं';
+
+  @override
+  String get chatRoleUser => 'उपयोगकर्ता';
+
+  @override
+  String get chatRoleAssistant => 'सहायक';
+
+  @override
+  String get chatRoleSystem => 'सिस्टम';
 }

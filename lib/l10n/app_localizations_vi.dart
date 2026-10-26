@@ -6471,4 +6471,87 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'Đóng';
+
+  @override
+  String get chatSearchTitle => 'Tìm kiếm lịch sử trò chuyện';
+
+  @override
+  String get chatSearchHint => 'Tìm kiếm tin nhắn và đầu ra công cụ...';
+
+  @override
+  String get chatSearchScopeCurrent => 'Phiên hiện tại';
+
+  @override
+  String get chatSearchScopeAll => 'Máy chủ hiện tại';
+
+  @override
+  String get chatSearchNoResults => 'Không tìm thấy tin nhắn phù hợp';
+
+  @override
+  String get chatSearchNoQuery => 'Nhập để tìm kiếm lịch sử';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return 'Tìm thấy $count kết quả';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'Xem trước ngữ cảnh tin nhắn';
+
+  @override
+  String get chatSearchGoToSession => 'Mở phiên gốc';
+
+  @override
+  String get chatSearchBackToResults => 'Quay lại kết quả';
+
+  @override
+  String get chatSearchSourceMessage => 'Tin nhắn';
+
+  @override
+  String get chatSearchSourceTool => 'Đầu ra công cụ';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'Không thể mở tệp từ xa từ bản xem trước tìm kiếm. Mở phiên gốc để xem.';
+
+  @override
+  String get chatSearchTargetChanged =>
+      'Phiên hoặc máy chủ đã thay đổi trong khi tìm kiếm';
+
+  @override
+  String get terminalSearch => 'Tìm trong thiết bị đầu cuối';
+
+  @override
+  String get terminalSearchHint => 'Tìm...';
+
+  @override
+  String get terminalSearchPrev => 'Kết quả trước';
+
+  @override
+  String get terminalSearchNext => 'Kết quả tiếp theo';
+
+  @override
+  String get terminalSearchFollowLatest => 'Về mới nhất';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current trên $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current trên 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'Không có kết quả';
+
+  @override
+  String get chatRoleUser => 'Người dùng';
+
+  @override
+  String get chatRoleAssistant => 'Trợ lý';
+
+  @override
+  String get chatRoleSystem => 'Hệ thống';
 }

@@ -6447,4 +6447,87 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'ปิด';
+
+  @override
+  String get chatSearchTitle => 'ค้นหาประวัติการแชท';
+
+  @override
+  String get chatSearchHint => 'ค้นหาข้อความและผลลัพธ์เครื่องมือ...';
+
+  @override
+  String get chatSearchScopeCurrent => 'เซสชันปัจจุบัน';
+
+  @override
+  String get chatSearchScopeAll => 'เซิร์ฟเวอร์ปัจจุบัน';
+
+  @override
+  String get chatSearchNoResults => 'ไม่พบข้อความที่ตรงกัน';
+
+  @override
+  String get chatSearchNoQuery => 'พิมพ์เพื่อค้นหาประวัติ';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return 'พบ $count ผลลัพธ์';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'ดูตัวอย่างบริบทข้อความ';
+
+  @override
+  String get chatSearchGoToSession => 'เปิดเซสชันเดิม';
+
+  @override
+  String get chatSearchBackToResults => 'กลับไปที่ผลลัพธ์';
+
+  @override
+  String get chatSearchSourceMessage => 'ข้อความ';
+
+  @override
+  String get chatSearchSourceTool => 'ผลลัพธ์เครื่องมือ';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'ไม่สามารถเปิดไฟล์ระยะไกลจากหน้าตัวอย่างการค้นหาได้ โปรดเปิดเซสชันเดิมเพื่อดู';
+
+  @override
+  String get chatSearchTargetChanged =>
+      'เซสชันหรือเซิร์ฟเวอร์เปลี่ยนไปในระหว่างการค้นหา';
+
+  @override
+  String get terminalSearch => 'ค้นหาในเทอร์มินัล';
+
+  @override
+  String get terminalSearchHint => 'ค้นหา...';
+
+  @override
+  String get terminalSearchPrev => 'ผลการจับคู่ก่อนหน้า';
+
+  @override
+  String get terminalSearchNext => 'ผลการจับคู่ถัดไป';
+
+  @override
+  String get terminalSearchFollowLatest => 'กลับสู่ล่าสุด';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current จาก $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current จาก 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'ไม่มีข้อมูลที่ตรงกัน';
+
+  @override
+  String get chatRoleUser => 'ผู้ใช้';
+
+  @override
+  String get chatRoleAssistant => 'ผู้ช่วย';
+
+  @override
+  String get chatRoleSystem => 'ระบบ';
 }

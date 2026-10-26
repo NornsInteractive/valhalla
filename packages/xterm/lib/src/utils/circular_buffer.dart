@@ -223,9 +223,14 @@ class IndexAwareCircularBuffer<T extends IndexedItem> {
   /// This method is cheap since it does not actually modify the list, but
   /// instead just adjusts the start index and length.
   void trimStart(int count) {
+    RangeError.checkNotNegative(count, 'count');
     if (count > _length) count = _length;
+    for (var i = 0; i < count; i++) {
+      _dropChild(i);
+    }
     _startIndex += count;
     _startIndex %= _array.length;
+    _absoluteStartIndex += count;
     _length -= count;
   }
 
@@ -244,12 +249,13 @@ class IndexAwareCircularBuffer<T extends IndexedItem> {
       _dropChild(i);
     }
 
+    // Adopt at the final ring origin so row order and attached indices agree.
+    _startIndex = 0;
     final copyLength = replacement.length - copyStart;
     for (var i = 0; i < copyLength; i++) {
       _adoptChild(i, replacement[copyStart + i]);
     }
 
-    _startIndex = 0;
     _length = copyLength;
   }
 

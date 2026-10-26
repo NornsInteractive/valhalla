@@ -6476,4 +6476,87 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'Kapat';
+
+  @override
+  String get chatSearchTitle => 'Sohbet Geçmişinde Ara';
+
+  @override
+  String get chatSearchHint => 'Mesajlarda ve araç çıktılarında ara...';
+
+  @override
+  String get chatSearchScopeCurrent => 'Mevcut Oturum';
+
+  @override
+  String get chatSearchScopeAll => 'Mevcut Sunucu';
+
+  @override
+  String get chatSearchNoResults => 'Eşleşen mesaj bulunamadı';
+
+  @override
+  String get chatSearchNoQuery => 'Geçmişte aramak için yazın';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '$count sonuç bulundu';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'Mesaj Bağlamı Önizlemesi';
+
+  @override
+  String get chatSearchGoToSession => 'Orijinal Oturumu Aç';
+
+  @override
+  String get chatSearchBackToResults => 'Sonuçlara Geri Dön';
+
+  @override
+  String get chatSearchSourceMessage => 'Mesaj';
+
+  @override
+  String get chatSearchSourceTool => 'Araç Çıktısı';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'Uzak dosyalar arama önizlemesinden açılamaz. Görüntülemek için orijinal oturumu açın.';
+
+  @override
+  String get chatSearchTargetChanged =>
+      'Arama sırasında oturum veya sunucu değişti';
+
+  @override
+  String get terminalSearch => 'Terminalde Bul';
+
+  @override
+  String get terminalSearchHint => 'Bul...';
+
+  @override
+  String get terminalSearchPrev => 'Önceki Eşleşme';
+
+  @override
+  String get terminalSearchNext => 'Sonraki Eşleşme';
+
+  @override
+  String get terminalSearchFollowLatest => 'En Yeniye Dön';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current / $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current / 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'Eşleşme yok';
+
+  @override
+  String get chatRoleUser => 'Kullanıcı';
+
+  @override
+  String get chatRoleAssistant => 'Asistan';
+
+  @override
+  String get chatRoleSystem => 'Sistem';
 }

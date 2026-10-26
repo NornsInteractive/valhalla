@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "Cari Riwayat Obrolan",
+  "chatSearchHint": "Cari pesan dan output alat...",
+  "chatSearchScopeCurrent": "Sesi Saat Ini",
+  "chatSearchScopeAll": "Server Saat Ini",
+  "chatSearchNoResults": "Tidak ada pesan yang cocok",
+  "chatSearchNoQuery": "Ketik untuk mencari riwayat",
+  "chatSearchResultsCount": "{count} hasil ditemukan",
+  "chatSearchReaderTitle": "Pratinjau Konteks Pesan",
+  "chatSearchGoToSession": "Buka Sesi Asli",
+  "chatSearchBackToResults": "Kembali ke Hasil",
+  "chatSearchSourceMessage": "Pesan",
+  "chatSearchSourceTool": "Output Alat",
+  "chatSearchRemoteFileDisabled": "File jarak jauh tidak dapat dibuka dari pratinjau pencarian. Buka sesi asli untuk melihatnya.",
+  "chatSearchTargetChanged": "Sesi atau server berubah selama pencarian",
+  "terminalSearch": "Cari di Terminal",
+  "terminalSearchHint": "Cari...",
+  "terminalSearchPrev": "Kecocokan Sebelumnya",
+  "terminalSearchNext": "Kecocokan Berikutnya",
+  "terminalSearchFollowLatest": "Kembali ke Terbaru",
+  "terminalSearchCount": "{current} dari {total}",
+  "terminalSearchCountOverflow": "{current} dari 1000+",
+  "terminalSearchNoMatches": "Tidak ada kecocokan",
+  "chatRoleUser": "Pengguna",
+  "chatRoleAssistant": "Asisten",
+  "chatRoleSystem": "Sistem",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "搜尋對話歷史",
+  "chatSearchHint": "搜尋訊息與工具輸出...",
+  "chatSearchScopeCurrent": "目前對話",
+  "chatSearchScopeAll": "目前伺服器",
+  "chatSearchNoResults": "未找到相符的訊息",
+  "chatSearchNoQuery": "輸入關鍵字搜尋歷史",
+  "chatSearchResultsCount": "找到 {count} 條結果",
+  "chatSearchReaderTitle": "上下文定位預覽",
+  "chatSearchGoToSession": "開啟原對話",
+  "chatSearchBackToResults": "返回搜尋結果",
+  "chatSearchSourceMessage": "訊息",
+  "chatSearchSourceTool": "工具輸出",
+  "chatSearchRemoteFileDisabled": "搜尋預覽中無法直接開啟遠端檔案，請開啟原對話查看",
+  "chatSearchTargetChanged": "搜尋期間對話或伺服器發生切換",
+  "terminalSearch": "在終端機中尋找",
+  "terminalSearchHint": "尋找...",
+  "terminalSearchPrev": "上一個",
+  "terminalSearchNext": "下一個",
+  "terminalSearchFollowLatest": "返回最新",
+  "terminalSearchCount": "第 {current}/{total} 項",
+  "terminalSearchCountOverflow": "第 {current}/1000+ 項",
+  "terminalSearchNoMatches": "無相符項目",
+  "chatRoleUser": "使用者",
+  "chatRoleAssistant": "助理",
+  "chatRoleSystem": "系統",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

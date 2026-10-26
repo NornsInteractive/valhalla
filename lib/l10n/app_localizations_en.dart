@@ -6432,4 +6432,87 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'Dismiss';
+
+  @override
+  String get chatSearchTitle => 'Search Chat History';
+
+  @override
+  String get chatSearchHint => 'Search messages and tools...';
+
+  @override
+  String get chatSearchScopeCurrent => 'Current Session';
+
+  @override
+  String get chatSearchScopeAll => 'Current Server';
+
+  @override
+  String get chatSearchNoResults => 'No matching messages found';
+
+  @override
+  String get chatSearchNoQuery => 'Type to search history';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '$count results found';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'Message Context Preview';
+
+  @override
+  String get chatSearchGoToSession => 'Open Session';
+
+  @override
+  String get chatSearchBackToResults => 'Back to Results';
+
+  @override
+  String get chatSearchSourceMessage => 'Message';
+
+  @override
+  String get chatSearchSourceTool => 'Tool Output';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'Remote files cannot be opened from search preview. Open the original session to view.';
+
+  @override
+  String get chatSearchTargetChanged =>
+      'Session or server changed during search';
+
+  @override
+  String get terminalSearch => 'Find in Terminal';
+
+  @override
+  String get terminalSearchHint => 'Find...';
+
+  @override
+  String get terminalSearchPrev => 'Previous Match';
+
+  @override
+  String get terminalSearchNext => 'Next Match';
+
+  @override
+  String get terminalSearchFollowLatest => 'Resume Auto-scroll';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current of $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current of 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'No matches';
+
+  @override
+  String get chatRoleUser => 'User';
+
+  @override
+  String get chatRoleAssistant => 'Assistant';
+
+  @override
+  String get chatRoleSystem => 'System';
 }

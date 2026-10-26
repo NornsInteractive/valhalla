@@ -5,7 +5,7 @@
 本轮交付（2026-10-26）：[ACP 工作台与历史恢复设计](design/2026-10-26-acp-workbench.md)，
 实现与门禁状态见[本轮交接](../agent-workflow/2026-10-26-acp-workbench.md)，已随 1.0.19 发布。
 
-最新交付：[1.0.19+20 发布记录](../agent-workflow/2026-10-26-v1019-release.md)。
+最新交付：[1.0.20+21 发布记录](../agent-workflow/2026-10-27-v1020-release.md)：恢复反馈、终端检查时间与长代码阅读。
 正式签名 Android 三架构 APK/AAB、Linux x64 已发布 GitHub 及 Ygg 分发平台代理，并同步官网；
 产物哈希、Range 和实服验收边界见发布记录。后续每批修改完成后自动新增版本发布，
 入口见[可续跑发布脚本](../tool/RELEASE.md)，不启动 Actions。

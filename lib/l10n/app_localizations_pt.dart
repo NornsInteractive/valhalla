@@ -6543,4 +6543,88 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'Fechar';
+
+  @override
+  String get chatSearchTitle => 'Pesquisar histórico';
+
+  @override
+  String get chatSearchHint => 'Pesquisar mensagens e ferramentas...';
+
+  @override
+  String get chatSearchScopeCurrent => 'Sessão atual';
+
+  @override
+  String get chatSearchScopeAll => 'Servidor atual';
+
+  @override
+  String get chatSearchNoResults =>
+      'Nenhuma mensagem correspondente encontrada';
+
+  @override
+  String get chatSearchNoQuery => 'Digite para pesquisar no histórico';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '$count resultados encontrados';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'Pré-visualização do contexto';
+
+  @override
+  String get chatSearchGoToSession => 'Abrir sessão original';
+
+  @override
+  String get chatSearchBackToResults => 'Voltar aos resultados';
+
+  @override
+  String get chatSearchSourceMessage => 'Mensagem';
+
+  @override
+  String get chatSearchSourceTool => 'Saída da ferramenta';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'Arquivos remotos não podem ser abertos na pré-visualização. Abra a sessão original para visualizar.';
+
+  @override
+  String get chatSearchTargetChanged =>
+      'A sessão ou o servidor foi alterado durante a pesquisa';
+
+  @override
+  String get terminalSearch => 'Localizar no terminal';
+
+  @override
+  String get terminalSearchHint => 'Localizar...';
+
+  @override
+  String get terminalSearchPrev => 'Correspondência anterior';
+
+  @override
+  String get terminalSearchNext => 'Próxima correspondência';
+
+  @override
+  String get terminalSearchFollowLatest => 'Voltar ao mais recente';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current de $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current de 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'Sem correspondências';
+
+  @override
+  String get chatRoleUser => 'Usuário';
+
+  @override
+  String get chatRoleAssistant => 'Assistente';
+
+  @override
+  String get chatRoleSystem => 'Sistema';
 }

@@ -6547,4 +6547,87 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'Chiudi';
+
+  @override
+  String get chatSearchTitle => 'Cerca nella cronologia';
+
+  @override
+  String get chatSearchHint => 'Cerca messaggi e output strumenti...';
+
+  @override
+  String get chatSearchScopeCurrent => 'Sessione corrente';
+
+  @override
+  String get chatSearchScopeAll => 'Server corrente';
+
+  @override
+  String get chatSearchNoResults => 'Nessun messaggio corrispondente trovato';
+
+  @override
+  String get chatSearchNoQuery => 'Digita per cercare nella cronologia';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '$count risultati trovati';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'Anteprima contesto messaggio';
+
+  @override
+  String get chatSearchGoToSession => 'Apri sessione originale';
+
+  @override
+  String get chatSearchBackToResults => 'Torna ai risultati';
+
+  @override
+  String get chatSearchSourceMessage => 'Messaggio';
+
+  @override
+  String get chatSearchSourceTool => 'Output strumento';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'Impossibile aprire i file remoti dall\'anteprima di ricerca. Apri la sessione originale per visualizzarli.';
+
+  @override
+  String get chatSearchTargetChanged =>
+      'Sessione o server modificati durante la ricerca';
+
+  @override
+  String get terminalSearch => 'Trova nel terminale';
+
+  @override
+  String get terminalSearchHint => 'Trova...';
+
+  @override
+  String get terminalSearchPrev => 'Corrispondenza precedente';
+
+  @override
+  String get terminalSearchNext => 'Corrispondenza successiva';
+
+  @override
+  String get terminalSearchFollowLatest => 'Torna ai più recenti';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current di $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current di 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'Nessuna corrispondenza';
+
+  @override
+  String get chatRoleUser => 'Utente';
+
+  @override
+  String get chatRoleAssistant => 'Assistente';
+
+  @override
+  String get chatRoleSystem => 'Sistema';
 }

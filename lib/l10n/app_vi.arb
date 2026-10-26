@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "Tìm kiếm lịch sử trò chuyện",
+  "chatSearchHint": "Tìm kiếm tin nhắn và đầu ra công cụ...",
+  "chatSearchScopeCurrent": "Phiên hiện tại",
+  "chatSearchScopeAll": "Máy chủ hiện tại",
+  "chatSearchNoResults": "Không tìm thấy tin nhắn phù hợp",
+  "chatSearchNoQuery": "Nhập để tìm kiếm lịch sử",
+  "chatSearchResultsCount": "Tìm thấy {count} kết quả",
+  "chatSearchReaderTitle": "Xem trước ngữ cảnh tin nhắn",
+  "chatSearchGoToSession": "Mở phiên gốc",
+  "chatSearchBackToResults": "Quay lại kết quả",
+  "chatSearchSourceMessage": "Tin nhắn",
+  "chatSearchSourceTool": "Đầu ra công cụ",
+  "chatSearchRemoteFileDisabled": "Không thể mở tệp từ xa từ bản xem trước tìm kiếm. Mở phiên gốc để xem.",
+  "chatSearchTargetChanged": "Phiên hoặc máy chủ đã thay đổi trong khi tìm kiếm",
+  "terminalSearch": "Tìm trong thiết bị đầu cuối",
+  "terminalSearchHint": "Tìm...",
+  "terminalSearchPrev": "Kết quả trước",
+  "terminalSearchNext": "Kết quả tiếp theo",
+  "terminalSearchFollowLatest": "Về mới nhất",
+  "terminalSearchCount": "{current} trên {total}",
+  "terminalSearchCountOverflow": "{current} trên 1000+",
+  "terminalSearchNoMatches": "Không có kết quả",
+  "chatRoleUser": "Người dùng",
+  "chatRoleAssistant": "Trợ lý",
+  "chatRoleSystem": "Hệ thống",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

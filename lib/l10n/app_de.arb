@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "Chatverlauf durchsuchen",
+  "chatSearchHint": "Nachrichten und Tool-Ausgaben durchsuchen...",
+  "chatSearchScopeCurrent": "Aktuelle Sitzung",
+  "chatSearchScopeAll": "Aktueller Server",
+  "chatSearchNoResults": "Keine übereinstimmenden Nachrichten gefunden",
+  "chatSearchNoQuery": "Tippen, um Verlauf zu durchsuchen",
+  "chatSearchResultsCount": "{count} Ergebnisse gefunden",
+  "chatSearchReaderTitle": "Kontext-Vorschau der Nachricht",
+  "chatSearchGoToSession": "Original-Sitzung öffnen",
+  "chatSearchBackToResults": "Zurück zu den Ergebnissen",
+  "chatSearchSourceMessage": "Nachricht",
+  "chatSearchSourceTool": "Tool-Ausgabe",
+  "chatSearchRemoteFileDisabled": "Remotedateien können nicht aus der Suchvorschau geöffnet werden. Öffnen Sie die Originalsitzung zur Anzeige.",
+  "chatSearchTargetChanged": "Sitzung oder Server während der Suche geändert",
+  "terminalSearch": "Im Terminal suchen",
+  "terminalSearchHint": "Suchen...",
+  "terminalSearchPrev": "Vorheriger Treffer",
+  "terminalSearchNext": "Nächster Treffer",
+  "terminalSearchFollowLatest": "Zum Neuesten springen",
+  "terminalSearchCount": "{current} von {total}",
+  "terminalSearchCountOverflow": "{current} von 1000+",
+  "terminalSearchNoMatches": "Keine Treffer",
+  "chatRoleUser": "Benutzer",
+  "chatRoleAssistant": "Assistent",
+  "chatRoleSystem": "System",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

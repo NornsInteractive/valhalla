@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "चैट इतिहास खोजें",
+  "chatSearchHint": "संदेश और उपकरण आउटपुट खोजें...",
+  "chatSearchScopeCurrent": "वर्तमान सत्र",
+  "chatSearchScopeAll": "वर्तमान सर्वर",
+  "chatSearchNoResults": "कोई मेल खाता संदेश नहीं मिला",
+  "chatSearchNoQuery": "इतिहास खोजने के लिए टाइप करें",
+  "chatSearchResultsCount": "{count} परिणाम मिले",
+  "chatSearchReaderTitle": "संदेश संदर्भ पूर्वावलोकन",
+  "chatSearchGoToSession": "मूल सत्र खोलें",
+  "chatSearchBackToResults": "परिणामों पर वापस जाएं",
+  "chatSearchSourceMessage": "संदेश",
+  "chatSearchSourceTool": "उपकरण आउटपुट",
+  "chatSearchRemoteFileDisabled": "खोज पूर्वावलोकन से दूरस्थ फ़ाइलें नहीं खोली जा सकतीं। देखने के लिए मूल सत्र खोलें।",
+  "chatSearchTargetChanged": "खोज के दौरान सत्र या सर्वर बदल गया",
+  "terminalSearch": "टर्मिनल में खोजें",
+  "terminalSearchHint": "खोजें...",
+  "terminalSearchPrev": "पिछला मेल",
+  "terminalSearchNext": "अगला मेल",
+  "terminalSearchFollowLatest": "नवीनतम पर जाएं",
+  "terminalSearchCount": "{current} / {total}",
+  "terminalSearchCountOverflow": "{current} / 1000+",
+  "terminalSearchNoMatches": "कोई मेल नहीं",
+  "chatRoleUser": "उपयोगकर्ता",
+  "chatRoleAssistant": "सहायक",
+  "chatRoleSystem": "सिस्टम",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

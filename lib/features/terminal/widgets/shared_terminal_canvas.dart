@@ -10,6 +10,7 @@ import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/providers/storage_providers.dart';
 import '../../../core/providers/terminal_settings_provider.dart';
+import '../../../core/utils/terminal_buffer_search.dart';
 import '../../../core/utils/terminal_keys.dart';
 import 'terminal_accessory_bar.dart';
 
@@ -73,10 +74,10 @@ class SharedTerminalCanvas extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<SharedTerminalCanvas> createState() =>
-      _SharedTerminalCanvasState();
+      SharedTerminalCanvasState();
 }
 
-class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
+class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
     with WidgetsBindingObserver {
   static final Map<LogicalKeyboardKey, String> _specialKeys = {
     LogicalKeyboardKey.escape: 'ESC',
@@ -198,6 +199,285 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   bool _isImeOpen = false;
   late double _accessoryBarHeight;
 
+  static final Expando<String> _terminalSearchQueries = Expando<String>();
+
+  bool _isSearchOpen = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+  List<TerminalBufferMatch> _matches = [];
+  int _currentMatchIndex = -1;
+  final List<TerminalHighlight> _highlights = [];
+  TerminalHighlight? _activeHighlight;
+  int _searchEpoch = 0;
+  bool _isSearching = false;
+  Timer? _searchDebounce;
+  Timer? _bufferUpdateDebounce;
+  bool _isAppForeground = true;
+
+  bool get isSearchOpen => _isSearchOpen;
+
+  void openSearch() {
+    if (!mounted) return;
+    _searchEpoch++;
+    _searchDebounce?.cancel();
+    _bufferUpdateDebounce?.cancel();
+    _isSearching = false;
+    setState(() {
+      _isSearchOpen = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _searchFocusNode.requestFocus();
+      }
+    });
+    final saved = _terminalSearchQueries[widget.terminal];
+    if (saved != null && saved != _searchController.text) {
+      _searchController.text = saved;
+    }
+    if (_searchController.text.trim().isNotEmpty) {
+      _executeSearch(_searchController.text.trim());
+    } else {
+      _clearHighlightsAndMatches();
+    }
+  }
+
+  void closeSearch() {
+    if (!mounted) return;
+    _searchEpoch++;
+    _searchDebounce?.cancel();
+    _bufferUpdateDebounce?.cancel();
+    _isSearching = false;
+    _searchFocusNode.unfocus();
+    _clearHighlightsAndMatches();
+    _terminalSearchQueries[widget.terminal] = '';
+    setState(() {
+      _isSearching = false;
+      _isSearchOpen = false;
+    });
+  }
+
+  void toggleSearch() {
+    if (_isSearchOpen) {
+      closeSearch();
+    } else {
+      openSearch();
+    }
+  }
+
+  void _clearHighlightsAndMatches() {
+    _activeHighlight?.dispose();
+    _activeHighlight = null;
+    for (final h in _highlights) {
+      h.dispose();
+    }
+    _highlights.clear();
+    for (final m in _matches) {
+      m.dispose();
+    }
+    _matches.clear();
+    _currentMatchIndex = -1;
+  }
+
+  void _onTerminalUpdated() {
+    if (!_isSearchOpen ||
+        !_isAppForeground ||
+        _searchController.text.trim().isEmpty) {
+      return;
+    }
+    _bufferUpdateDebounce?.cancel();
+    _bufferUpdateDebounce = Timer(const Duration(milliseconds: 120), () {
+      if (!mounted || !_isSearchOpen || !_isAppForeground) return;
+      _executeSearch(_searchController.text.trim(), isBufferUpdate: true);
+    });
+  }
+
+  Future<void> _executeSearch(
+    String query, {
+    bool isBufferUpdate = false,
+  }) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      _searchEpoch++;
+      _searchDebounce?.cancel();
+      _bufferUpdateDebounce?.cancel();
+      _isSearching = false;
+      setState(() {
+        _clearHighlightsAndMatches();
+      });
+      return;
+    }
+
+    final targetTerminal = widget.terminal;
+    final targetBuffer = widget.terminal.buffer;
+    final epoch = ++_searchEpoch;
+
+    if (!isBufferUpdate) {
+      setState(() {
+        _isSearching = true;
+      });
+    }
+
+    List<TerminalBufferMatch>? matches;
+    try {
+      matches = await searchTerminalBuffer(
+        targetBuffer,
+        trimmed,
+        isCancelled: () =>
+            !mounted ||
+            epoch != _searchEpoch ||
+            !_isSearchOpen ||
+            widget.terminal != targetTerminal ||
+            widget.terminal.buffer != targetBuffer ||
+            !_isAppForeground,
+        maxMatches: 1000,
+      );
+
+      if (!mounted ||
+          epoch != _searchEpoch ||
+          !_isSearchOpen ||
+          widget.terminal != targetTerminal ||
+          widget.terminal.buffer != targetBuffer ||
+          !_isAppForeground) {
+        for (final m in matches) {
+          m.dispose();
+        }
+        if (mounted && epoch == _searchEpoch) {
+          setState(() {
+            _isSearching = false;
+          });
+        } else {
+          _isSearching = false;
+        }
+        return;
+      }
+
+      int previousLine = -1;
+      if (isBufferUpdate &&
+          _currentMatchIndex >= 0 &&
+          _currentMatchIndex < _matches.length) {
+        final currentMatch = _matches[_currentMatchIndex];
+        if (currentMatch.start.attached) {
+          previousLine = currentMatch.start.y;
+        }
+      }
+
+      _clearHighlightsAndMatches();
+      _matches = matches;
+      _isSearching = false;
+
+      final color = Colors.amber.withValues(alpha: 0.35);
+      for (final m in _matches) {
+        _highlights.add(
+          _controller.highlight(p1: m.start, p2: m.end, color: color),
+        );
+      }
+
+      if (_matches.isNotEmpty) {
+        if (isBufferUpdate && previousLine >= 0) {
+          int closestIdx = 0;
+          int minDiff = 0x7fffffff;
+          for (var i = 0; i < matches.length; i++) {
+            if (matches[i].start.attached) {
+              final diff = (matches[i].start.y - previousLine).abs();
+              if (diff < minDiff) {
+                minDiff = diff;
+                closestIdx = i;
+              }
+            }
+          }
+          _currentMatchIndex = closestIdx;
+          _activeHighlight?.dispose();
+          _activeHighlight = _controller.highlight(
+            p1: matches[closestIdx].start,
+            p2: matches[closestIdx].end,
+            color: Colors.orangeAccent.withValues(alpha: 0.8),
+          );
+        } else {
+          _currentMatchIndex = 0;
+          _scrollToMatch(0);
+        }
+      } else {
+        _currentMatchIndex = -1;
+      }
+      setState(() {});
+    } catch (_) {
+      if (matches != null && !identical(_matches, matches)) {
+        for (final m in matches) {
+          m.dispose();
+        }
+      }
+      if (!mounted || epoch != _searchEpoch) return;
+      setState(() {
+        _isSearching = false;
+        _clearHighlightsAndMatches();
+      });
+    }
+  }
+
+  void _nextMatch() {
+    if (_matches.isEmpty) return;
+    final next = (_currentMatchIndex + 1) % _matches.length;
+    _scrollToMatch(next);
+  }
+
+  void _prevMatch() {
+    if (_matches.isEmpty) return;
+    final prev = (_currentMatchIndex - 1 + _matches.length) % _matches.length;
+    _scrollToMatch(prev);
+  }
+
+  void _scrollToMatch(int index) {
+    if (index < 0 || index >= _matches.length) return;
+    final match = _matches[index];
+
+    if (!match.isCurrent(
+      widget.terminal.buffer,
+      _searchController.text.trim(),
+    )) {
+      _executeSearch(_searchController.text.trim());
+      return;
+    }
+
+    _currentMatchIndex = index;
+
+    _activeHighlight?.dispose();
+    _activeHighlight = _controller.highlight(
+      p1: match.start,
+      p2: match.end,
+      color: Colors.orangeAccent.withValues(alpha: 0.8),
+    );
+
+    final totalLines = widget.terminal.buffer.lines.length;
+    if (_scrollController.hasClients && totalLines > 0) {
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final viewport = _scrollController.position.viewportDimension;
+
+      double lineHeight;
+      try {
+        lineHeight =
+            _terminalViewKey.currentState?.renderTerminal.lineHeight ?? 0.0;
+      } catch (_) {
+        lineHeight = 0.0;
+      }
+      if (lineHeight <= 0.0) {
+        lineHeight = (maxScroll + viewport) / totalLines;
+      }
+
+      final lineOffset = match.start.y * lineHeight;
+      final targetOffset = (lineOffset - viewport / 3).clamp(0.0, maxScroll);
+      _scrollController.jumpTo(targetOffset);
+    }
+
+    setState(() {});
+  }
+
+  void _resumeAutoScroll() {
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    }
+  }
+
   double _getInitialAccessoryHeight() {
     try {
       final storage = ref.read(localStorageServiceProvider);
@@ -285,6 +565,7 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.terminal.addListener(_onTerminalUpdated);
     _accessoryBarHeight = _getInitialAccessoryHeight();
     _effectiveFocusNode.addListener(_onFocusChanged);
     if (widget.isCtrlActive == true) {
@@ -311,9 +592,18 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _isAppForeground = state == AppLifecycleState.resumed;
     if (state != AppLifecycleState.resumed) {
+      _searchEpoch++;
+      _searchDebounce?.cancel();
+      _bufferUpdateDebounce?.cancel();
+      _isSearching = false;
       _resetModifiers();
       setState(() {});
+    } else {
+      if (_isSearchOpen && _searchController.text.trim().isNotEmpty) {
+        _executeSearch(_searchController.text.trim(), isBufferUpdate: true);
+      }
     }
   }
 
@@ -333,11 +623,26 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   void didUpdateWidget(SharedTerminalCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.terminal != widget.terminal) {
+      oldWidget.terminal.removeListener(_onTerminalUpdated);
+      widget.terminal.addListener(_onTerminalUpdated);
+      _terminalSearchQueries[oldWidget.terminal] = _searchController.text;
       if (_hasSelection) {
         _controller.clearSelection();
         _hasSelection = false;
       }
+      _searchEpoch++;
+      _searchDebounce?.cancel();
+      _bufferUpdateDebounce?.cancel();
+      _clearHighlightsAndMatches();
+      _isSearching = false;
       _resetModifiers();
+      if (_isSearchOpen) {
+        final saved = _terminalSearchQueries[widget.terminal] ?? '';
+        _searchController.text = saved;
+        if (saved.trim().isNotEmpty) {
+          _executeSearch(saved.trim());
+        }
+      }
       setState(() {});
     }
     if (oldWidget.focusNode != widget.focusNode) {
@@ -360,6 +665,15 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
 
   @override
   void dispose() {
+    widget.terminal.removeListener(_onTerminalUpdated);
+    _searchEpoch++;
+    _searchDebounce?.cancel();
+    _bufferUpdateDebounce?.cancel();
+    _isSearching = false;
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _scrollController.dispose();
+    _clearHighlightsAndMatches();
     _effectiveFocusNode.removeListener(_onFocusChanged);
     _ownedFocusNode?.dispose();
     _ownedFocusNode = null;
@@ -538,6 +852,42 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   }
 
   KeyEventResult _handlePhysicalKeyEvent(FocusNode focusNode, KeyEvent event) {
+    if (event is KeyDownEvent || event is KeyRepeatEvent) {
+      final logicalKey = event.logicalKey;
+      final isApple =
+          defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.iOS;
+      final physCtrl = HardwareKeyboard.instance.isControlPressed;
+      final physShift = HardwareKeyboard.instance.isShiftPressed;
+      final physAlt = HardwareKeyboard.instance.isAltPressed;
+      final physMeta = HardwareKeyboard.instance.isMetaPressed;
+
+      if (isApple) {
+        if (logicalKey == LogicalKeyboardKey.keyF &&
+            physMeta &&
+            !physCtrl &&
+            !physShift &&
+            !physAlt) {
+          openSearch();
+          return KeyEventResult.handled;
+        }
+      } else {
+        if (logicalKey == LogicalKeyboardKey.keyF &&
+            physCtrl &&
+            physShift &&
+            !physAlt &&
+            !physMeta) {
+          openSearch();
+          return KeyEventResult.handled;
+        }
+      }
+
+      if (_isSearchOpen && logicalKey == LogicalKeyboardKey.escape) {
+        closeSearch();
+        return KeyEventResult.handled;
+      }
+    }
+
     if (!_hasActiveModifier) {
       return KeyEventResult.ignored;
     }
@@ -801,6 +1151,7 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
                       key: _terminalViewKey,
                       widget.terminal,
                       controller: _controller,
+                      scrollController: _scrollController,
                       focusNode: _effectiveFocusNode,
                       autofocus: widget.autofocus,
                       requestKeyboardOnTap: widget.requestKeyboardOnTap,
@@ -880,6 +1231,7 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
                       ),
                     ),
                   if (widget.overlay != null) widget.overlay!,
+                  if (_isSearchOpen) _buildSearchBar(context),
                 ],
               ),
             ),
@@ -890,6 +1242,149 @@ class _SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
         if (accessoryBar != null)
           Positioned(left: 0, right: 0, bottom: 0, child: accessoryBar),
       ],
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final screenWidth = media.size.width;
+    final isNarrow = screenWidth <= 480;
+    final theme = Theme.of(context);
+    final query = _searchController.text.trim();
+
+    final String countText;
+    if (query.isEmpty) {
+      countText = '';
+    } else if (_matches.isEmpty) {
+      countText = context.l10n.terminalSearchNoMatches;
+    } else if (_matches.length >= 1000) {
+      countText = context.l10n.terminalSearchCountOverflow(
+        (_currentMatchIndex + 1).toString(),
+      );
+    } else {
+      countText = context.l10n.terminalSearchCount(
+        (_currentMatchIndex + 1).toString(),
+        _matches.length.toString(),
+      );
+    }
+
+    return Positioned(
+      top: 8,
+      right: 8,
+      left: isNarrow ? 8 : null,
+      child: Material(
+        elevation: 6,
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: isNarrow ? null : 420,
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+          ),
+          child: Row(
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                child: Icon(Icons.search, size: 16),
+              ),
+              Expanded(
+                child: TextField(
+                  key: const Key('terminal_search_input'),
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  style: const TextStyle(fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.terminalSearchHint,
+                    hintStyle: const TextStyle(fontSize: 13),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 6,
+                    ),
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (val) {
+                    _searchEpoch++;
+                    _terminalSearchQueries[widget.terminal] = val;
+                    _searchDebounce?.cancel();
+                    _bufferUpdateDebounce?.cancel();
+                    if (val.trim().isEmpty) {
+                      _isSearching = false;
+                      _executeSearch('');
+                    } else {
+                      _searchDebounce = Timer(
+                        const Duration(milliseconds: 200),
+                        () => _executeSearch(val),
+                      );
+                    }
+                  },
+                  onSubmitted: (_) => _nextMatch(),
+                ),
+              ),
+              if (_isSearching)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else if (countText.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    countText,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: _matches.isEmpty
+                          ? theme.colorScheme.error
+                          : theme.colorScheme.outline,
+                    ),
+                  ),
+                ),
+              IconButton(
+                key: const Key('terminal_search_prev_button'),
+                icon: const Icon(Icons.keyboard_arrow_up, size: 18),
+                tooltip: context.l10n.terminalSearchPrev,
+                onPressed: _matches.isEmpty ? null : _prevMatch,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.all(2),
+                constraints: const BoxConstraints(),
+              ),
+              IconButton(
+                key: const Key('terminal_search_next_button'),
+                icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                tooltip: context.l10n.terminalSearchNext,
+                onPressed: _matches.isEmpty ? null : _nextMatch,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.all(2),
+                constraints: const BoxConstraints(),
+              ),
+              IconButton(
+                key: const Key('terminal_search_follow_button'),
+                icon: const Icon(Icons.vertical_align_bottom, size: 18),
+                tooltip: context.l10n.terminalSearchFollowLatest,
+                onPressed: _resumeAutoScroll,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.all(2),
+                constraints: const BoxConstraints(),
+              ),
+              IconButton(
+                key: const Key('terminal_search_close_button'),
+                icon: const Icon(Icons.close, size: 18),
+                tooltip: context.l10n.chatCloseBanner,
+                onPressed: closeSearch,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.all(2),
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

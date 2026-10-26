@@ -6211,4 +6211,86 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatCloseBanner => '닫기';
+
+  @override
+  String get chatSearchTitle => '채팅 기록 검색';
+
+  @override
+  String get chatSearchHint => '메시지 및 도구 출력 검색...';
+
+  @override
+  String get chatSearchScopeCurrent => '현재 세션';
+
+  @override
+  String get chatSearchScopeAll => '현재 서버';
+
+  @override
+  String get chatSearchNoResults => '일치하는 메시지를 찾을 수 없습니다';
+
+  @override
+  String get chatSearchNoQuery => '키워드를 입력하여 기록 검색';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '$count개의 결과 발견';
+  }
+
+  @override
+  String get chatSearchReaderTitle => '메시지 전후 컨텍스트 미리보기';
+
+  @override
+  String get chatSearchGoToSession => '원래 세션 열기';
+
+  @override
+  String get chatSearchBackToResults => '검색 결과로 돌아가기';
+
+  @override
+  String get chatSearchSourceMessage => '메시지';
+
+  @override
+  String get chatSearchSourceTool => '도구 출력';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      '검색 미리보기에서는 원격 파일을 열 수 없습니다. 보려면 원래 세션을 여세요.';
+
+  @override
+  String get chatSearchTargetChanged => '검색 중에 세션 또는 서버가 변경되었습니다';
+
+  @override
+  String get terminalSearch => '터미널에서 찾기';
+
+  @override
+  String get terminalSearchHint => '찾기...';
+
+  @override
+  String get terminalSearchPrev => '이전 항목';
+
+  @override
+  String get terminalSearchNext => '다음 항목';
+
+  @override
+  String get terminalSearchFollowLatest => '최신 위치로 이동';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current / $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current / 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => '일치 항목 없음';
+
+  @override
+  String get chatRoleUser => '사용자';
+
+  @override
+  String get chatRoleAssistant => '어시스턴트';
+
+  @override
+  String get chatRoleSystem => '시스템';
 }

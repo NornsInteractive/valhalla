@@ -22,6 +22,32 @@ class ChatToolOutputPage {
   const ChatToolOutputPage(this.text, this.nextOffset);
 }
 
+class ChatSearchHit {
+  final String sessionId, messageId, title, source, excerpt;
+  final MessageRole role;
+  final int sequence, matchOffset;
+  final DateTime createdAt;
+  final String? toolId;
+  const ChatSearchHit({
+    required this.sessionId,
+    required this.messageId,
+    required this.title,
+    required this.role,
+    required this.sequence,
+    required this.createdAt,
+    required this.matchOffset,
+    required this.source,
+    required this.excerpt,
+    this.toolId,
+  });
+}
+
+class ChatSearchPage {
+  final List<ChatSearchHit> hits;
+  final String? nextCursor;
+  const ChatSearchPage(this.hits, this.nextCursor);
+}
+
 /// Async, bounded history. The original preferences remain a migration backup.
 class ChatRepository {
   final LocalStorageService _localStorage;
@@ -195,6 +221,177 @@ class ChatRepository {
         rows.length > limit,
       );
     });
+  }
+
+  Future<ChatSearchPage> searchMessages(
+    String serverId, {
+    String? sessionId,
+    String? agentId,
+    required String query,
+    String? cursor,
+    int limit = 30,
+  }) async {
+    final term = query.trim().toLowerCase();
+    if (limit < 1 || limit > 100 || term.length > 512) {
+      throw ArgumentError('CHAT_SEARCH_INVALID_QUERY');
+    }
+    if (term.isEmpty) return const ChatSearchPage([], null);
+    List<dynamic>? after;
+    if (cursor != null) {
+      try {
+        if (cursor.length > 2048) throw const FormatException();
+        after = jsonDecode(cursor) as List;
+        if (after.length != 5 ||
+            after[0] is! num ||
+            after[1] is! String ||
+            after[2] is! int ||
+            after[3] is! int ||
+            after[4] is! String) {
+          throw const FormatException();
+        }
+      } catch (_) {
+        throw ArgumentError('CHAT_SEARCH_INVALID_CURSOR');
+      }
+    }
+    await _writes;
+    final file = await _path();
+    final ownsLegacy = _localStorage.legacyOwnershipServerId == serverId;
+    return _chatDb(file, (db) {
+      db.createFunction(
+        functionName: 'chat_fold',
+        argumentCount: const AllowedArgumentCount(1),
+        deterministic: true,
+        function: (args) => (args[0] as String? ?? '').toLowerCase(),
+      );
+      final pagination = after == null
+          ? ''
+          : '''
+        AND (stamp < ? OR (stamp = ? AND sid > ?)
+          OR (stamp = ? AND sid = ? AND seq < ?)
+          OR (stamp = ? AND sid = ? AND seq = ? AND kind > ?)
+          OR (stamp = ? AND sid = ? AND seq = ? AND kind = ? AND tool_id > ?))''';
+      final params = <Object?>[
+        serverId,
+        ownsLegacy ? 1 : 0,
+        sessionId,
+        sessionId,
+        agentId,
+        agentId,
+        agentId,
+        term,
+        if (after != null) ...[
+          after[0],
+          after[0],
+          after[1],
+          after[0],
+          after[1],
+          after[2],
+          after[0],
+          after[1],
+          after[2],
+          after[3],
+          after[0],
+          after[1],
+          after[2],
+          after[3],
+          after[4],
+        ],
+        limit + 1,
+      ];
+      final rows = db.select('''
+        WITH scoped AS (
+          SELECT s.id sid,s.title,m.id mid,m.seq,m.data payload,
+            json_extract(m.data,'\$.role') role,
+            json_extract(m.data,'\$.createdAt') created,
+            COALESCE(julianday(json_extract(m.data,'\$.createdAt')),0) stamp
+          FROM chat_messages m JOIN chat_sessions s ON s.id=m.session_id
+          WHERE (s.server_id=? OR (s.server_id IS NULL AND ?=1))
+            AND (? IS NULL OR s.id=?)
+            AND (? IS NULL OR s.agent_id=? OR EXISTS (
+              SELECT 1 FROM json_each(s.data,'\$.participantAgentIds') WHERE value=?))
+        ), contents AS (
+          SELECT sid,title,mid,seq,role,created,stamp,0 kind,'' tool_id,
+            COALESCE(json_extract(payload,'\$.content'),'') text FROM scoped
+          UNION ALL
+          SELECT c.sid,c.title,c.mid,c.seq,c.role,c.created,c.stamp,1,
+            json_extract(j.value,'\$.id'),
+            COALESCE(json_extract(t.data,'\$.output'),json_extract(j.value,'\$.output'),'')
+          FROM scoped c JOIN json_each(c.payload,'\$.toolExecutions') j
+          LEFT JOIN chat_tools t ON t.session_id=c.sid AND t.message_id=c.mid
+            AND t.tool_id=json_extract(j.value,'\$.id')
+        ), matches AS (
+          SELECT *,instr(chat_fold(text),?) pos FROM contents
+        ) SELECT sid,title,mid,seq,role,created,stamp,kind,tool_id,pos,
+            substr(text,MAX(1,pos-60),240) excerpt
+          FROM matches WHERE pos>0 $pagination
+          ORDER BY stamp DESC,sid,seq DESC,kind,tool_id LIMIT ?
+      ''', params);
+      final page = rows.take(limit).toList();
+      final last = page.lastOrNull;
+      return ChatSearchPage(
+        page
+            .map(
+              (row) => ChatSearchHit(
+                sessionId: row['sid'] as String,
+                messageId: row['mid'] as String,
+                title: row['title'] as String,
+                role: MessageRole.values.byName(row['role'] as String),
+                sequence: row['seq'] as int,
+                matchOffset: (row['pos'] as int) - 1,
+                createdAt: DateTime.parse(row['created'] as String),
+                source: row['kind'] == 0 ? 'message' : 'tool',
+                toolId: row['kind'] == 0 ? null : row['tool_id'] as String,
+                excerpt: row['excerpt'] as String,
+              ),
+            )
+            .toList(growable: false),
+        rows.length <= limit || last == null
+            ? null
+            : jsonEncode([
+                last['stamp'],
+                last['sid'],
+                last['seq'],
+                last['kind'],
+                last['tool_id'],
+              ]),
+      );
+    });
+  }
+
+  Future<ChatSession?> loadMessageWindow(
+    String sessionId,
+    String messageId, {
+    int radius = 15,
+  }) async {
+    if (radius < 0 || radius > 50) {
+      throw ArgumentError('CHAT_SEARCH_INVALID_WINDOW');
+    }
+    await _writes;
+    final file = await _path();
+    final sequence = await _chatDb(
+      file,
+      (db) =>
+          db.select(
+                'SELECT seq FROM chat_messages WHERE session_id=? AND id=?',
+                [sessionId, messageId],
+              ).firstOrNull?['seq']
+              as int?,
+    );
+    if (sequence == null) return null;
+    final session = await loadSession(
+      sessionId,
+      before: sequence + radius + 1,
+      limit: radius * 2 + 1,
+    );
+    if (session == null) return null;
+    final skip = (sequence - radius - session.messageOffset).clamp(
+      0,
+      session.messages.length,
+    );
+    return session.copyWith(
+      messages: session.messages.skip(skip).toList(growable: false),
+      messageOffset: session.messageOffset + skip,
+    );
   }
 
   Future<ChatSession?> loadSession(

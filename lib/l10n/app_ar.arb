@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "البحث في سجل المحادثات",
+  "chatSearchHint": "البحث في الرسائل ومخرجات الأدوات...",
+  "chatSearchScopeCurrent": "الجلسة الحالية",
+  "chatSearchScopeAll": "الخادم الحالي",
+  "chatSearchNoResults": "لم يتم العثور على رسائل مطابقة",
+  "chatSearchNoQuery": "اكتب للبحث في السجل",
+  "chatSearchResultsCount": "تم العثور على {count} نتيجة",
+  "chatSearchReaderTitle": "معاينة سياق الرسالة",
+  "chatSearchGoToSession": "فتح الجلسة الأصلية",
+  "chatSearchBackToResults": "العودة إلى النتائج",
+  "chatSearchSourceMessage": "رسالة",
+  "chatSearchSourceTool": "مخرجات الأداة",
+  "chatSearchRemoteFileDisabled": "لا يمكن فتح الملفات البعيدة من معاينة البحث. افتح الجلسة الأصلية للعرض.",
+  "chatSearchTargetChanged": "تغيرت الجلسة أو الخادم أثناء البحث",
+  "terminalSearch": "بحث في الطرفية",
+  "terminalSearchHint": "بحث...",
+  "terminalSearchPrev": "المطابقة السابقة",
+  "terminalSearchNext": "المطابقة التالية",
+  "terminalSearchFollowLatest": "العودة إلى الأحدث",
+  "terminalSearchCount": "{current} من {total}",
+  "terminalSearchCountOverflow": "{current} من أكثر من 1000",
+  "terminalSearchNoMatches": "لا توجد مطابقات",
+  "chatRoleUser": "المستخدم",
+  "chatRoleAssistant": "المساعد",
+  "chatRoleSystem": "النظام",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

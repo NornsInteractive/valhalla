@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "チャット履歴を検索",
+  "chatSearchHint": "メッセージとツール出力を検索...",
+  "chatSearchScopeCurrent": "現在のセッション",
+  "chatSearchScopeAll": "現在のサーバー",
+  "chatSearchNoResults": "一致するメッセージは見つかりませんでした",
+  "chatSearchNoQuery": "キーワードを入力して履歴を検索",
+  "chatSearchResultsCount": "{count} 件の結果が見つかりました",
+  "chatSearchReaderTitle": "メッセージ前後のプレビュー",
+  "chatSearchGoToSession": "元のセッションを開く",
+  "chatSearchBackToResults": "検索結果に戻る",
+  "chatSearchSourceMessage": "メッセージ",
+  "chatSearchSourceTool": "ツール出力",
+  "chatSearchRemoteFileDisabled": "検索プレビューからはリモートファイルを開けません。元のセッションを開いて表示してください。",
+  "chatSearchTargetChanged": "検索中にセッションまたはサーバーが変更されました",
+  "terminalSearch": "ターミナル内を検索",
+  "terminalSearchHint": "検索...",
+  "terminalSearchPrev": "前の一致",
+  "terminalSearchNext": "次の一致",
+  "terminalSearchFollowLatest": "最新の位置に戻る",
+  "terminalSearchCount": "{current} / {total}",
+  "terminalSearchCountOverflow": "{current} / 1000+",
+  "terminalSearchNoMatches": "一致なし",
+  "chatRoleUser": "ユーザー",
+  "chatRoleAssistant": "アシスタント",
+  "chatRoleSystem": "システム",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

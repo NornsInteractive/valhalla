@@ -6528,4 +6528,87 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'Закрыть';
+
+  @override
+  String get chatSearchTitle => 'Поиск по истории чата';
+
+  @override
+  String get chatSearchHint => 'Поиск сообщений и вывода инструментов...';
+
+  @override
+  String get chatSearchScopeCurrent => 'Текущая сессия';
+
+  @override
+  String get chatSearchScopeAll => 'Текущий сервер';
+
+  @override
+  String get chatSearchNoResults => 'Совпадающих сообщений не найдено';
+
+  @override
+  String get chatSearchNoQuery => 'Введите текст для поиска по истории';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return 'Найдено результатов: $count';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'Просмотр контекста сообщения';
+
+  @override
+  String get chatSearchGoToSession => 'Открыть сессию';
+
+  @override
+  String get chatSearchBackToResults => 'Назад к результатам';
+
+  @override
+  String get chatSearchSourceMessage => 'Сообщение';
+
+  @override
+  String get chatSearchSourceTool => 'Вывод инструмента';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'Удаленные файлы нельзя открыть из предпросмотра поиска. Откройте исходную сессию для просмотра.';
+
+  @override
+  String get chatSearchTargetChanged =>
+      'Сессия или сервер изменились во время поиска';
+
+  @override
+  String get terminalSearch => 'Найти в терминале';
+
+  @override
+  String get terminalSearchHint => 'Найти...';
+
+  @override
+  String get terminalSearchPrev => 'Предыдущее совпадение';
+
+  @override
+  String get terminalSearchNext => 'Следующее совпадение';
+
+  @override
+  String get terminalSearchFollowLatest => 'К последнему';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current из $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current из 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'Нет совпадений';
+
+  @override
+  String get chatRoleUser => 'Пользователь';
+
+  @override
+  String get chatRoleAssistant => 'Ассистент';
+
+  @override
+  String get chatRoleSystem => 'Система';
 }

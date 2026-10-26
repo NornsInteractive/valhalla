@@ -11666,6 +11666,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss'**
   String get chatCloseBanner;
+
+  /// No description provided for @chatSearchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Chat History'**
+  String get chatSearchTitle;
+
+  /// No description provided for @chatSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search messages and tools...'**
+  String get chatSearchHint;
+
+  /// No description provided for @chatSearchScopeCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Session'**
+  String get chatSearchScopeCurrent;
+
+  /// No description provided for @chatSearchScopeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Server'**
+  String get chatSearchScopeAll;
+
+  /// No description provided for @chatSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching messages found'**
+  String get chatSearchNoResults;
+
+  /// No description provided for @chatSearchNoQuery.
+  ///
+  /// In en, this message translates to:
+  /// **'Type to search history'**
+  String get chatSearchNoQuery;
+
+  /// No description provided for @chatSearchResultsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} results found'**
+  String chatSearchResultsCount(String count);
+
+  /// No description provided for @chatSearchReaderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Message Context Preview'**
+  String get chatSearchReaderTitle;
+
+  /// No description provided for @chatSearchGoToSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Session'**
+  String get chatSearchGoToSession;
+
+  /// No description provided for @chatSearchBackToResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Results'**
+  String get chatSearchBackToResults;
+
+  /// No description provided for @chatSearchSourceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get chatSearchSourceMessage;
+
+  /// No description provided for @chatSearchSourceTool.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool Output'**
+  String get chatSearchSourceTool;
+
+  /// No description provided for @chatSearchRemoteFileDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote files cannot be opened from search preview. Open the original session to view.'**
+  String get chatSearchRemoteFileDisabled;
+
+  /// No description provided for @chatSearchTargetChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Session or server changed during search'**
+  String get chatSearchTargetChanged;
+
+  /// No description provided for @terminalSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Find in Terminal'**
+  String get terminalSearch;
+
+  /// No description provided for @terminalSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Find...'**
+  String get terminalSearchHint;
+
+  /// No description provided for @terminalSearchPrev.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous Match'**
+  String get terminalSearchPrev;
+
+  /// No description provided for @terminalSearchNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Match'**
+  String get terminalSearchNext;
+
+  /// No description provided for @terminalSearchFollowLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume Auto-scroll'**
+  String get terminalSearchFollowLatest;
+
+  /// No description provided for @terminalSearchCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {total}'**
+  String terminalSearchCount(String current, String total);
+
+  /// No description provided for @terminalSearchCountOverflow.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of 1000+'**
+  String terminalSearchCountOverflow(String current);
+
+  /// No description provided for @terminalSearchNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get terminalSearchNoMatches;
+
+  /// Role label for user in chat
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get chatRoleUser;
+
+  /// Role label for assistant in chat
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get chatRoleAssistant;
+
+  /// Role label for system in chat
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get chatRoleSystem;
 }
 
 class _AppLocalizationsDelegate

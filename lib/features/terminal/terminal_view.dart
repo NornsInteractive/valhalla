@@ -37,6 +37,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
   final ScrollController _tabScrollController = ScrollController();
   final GlobalKey _tabBarScrollableKey = GlobalKey();
   final Map<String, GlobalKey> _tabKeys = {};
+  final Map<String, GlobalKey<SharedTerminalCanvasState>> _canvasKeys = {};
   bool _hadConnectedOnce = false;
 
   void _scheduleTabScroll(String? tabId) {
@@ -804,6 +805,10 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
                 Positioned.fill(
                   child: originatingTab != null
                       ? SharedTerminalCanvas(
+                          key: _canvasKeys.putIfAbsent(
+                            originatingTab.id,
+                            GlobalKey.new,
+                          ),
                           terminal: originatingTab.terminal,
                           requestKeyboardOnTap: false,
                           pinKeyboardButtonTrailing: true,
@@ -914,6 +919,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
     final notifier = ref.read(terminalProvider.notifier);
     final currentTabIds = state.tabs.map((t) => t.id).toSet();
     _tabKeys.removeWhere((id, _) => !currentTabIds.contains(id));
+    _canvasKeys.removeWhere((id, _) => !currentTabIds.contains(id));
 
     return Container(
       color: context.colorScheme.surfaceContainerLowest,
@@ -1063,6 +1069,11 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
             tooltip: MaterialLocalizations.of(context).showMenuTooltip,
             onSelected: (value) {
               switch (value) {
+                case 'search':
+                  final activeTab = state.activeTab;
+                  if (activeTab != null) {
+                    _canvasKeys[activeTab.id]?.currentState?.openSearch();
+                  }
                 case 'clear':
                   _handleClearScreen(state);
                 case 'reconnect':
@@ -1083,6 +1094,17 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
               }
             },
             itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                key: const Key('terminal_search_menu_item'),
+                value: 'search',
+                child: Row(
+                  children: [
+                    const Icon(Icons.search, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(context.l10n.terminalSearch)),
+                  ],
+                ),
+              ),
               PopupMenuItem<String>(
                 key: const Key('terminal_reconnect_menu_item'),
                 value: 'reconnect',

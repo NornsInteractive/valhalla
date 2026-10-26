@@ -2502,5 +2502,63 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "Search Chat History",
+  "chatSearchHint": "Search messages and tools...",
+  "chatSearchScopeCurrent": "Current Session",
+  "chatSearchScopeAll": "Current Server",
+  "chatSearchNoResults": "No matching messages found",
+  "chatSearchNoQuery": "Type to search history",
+  "chatSearchResultsCount": "{count} results found",
+  "chatSearchReaderTitle": "Message Context Preview",
+  "chatSearchGoToSession": "Open Session",
+  "chatSearchBackToResults": "Back to Results",
+  "chatSearchSourceMessage": "Message",
+  "chatSearchSourceTool": "Tool Output",
+  "chatSearchRemoteFileDisabled": "Remote files cannot be opened from search preview. Open the original session to view.",
+  "chatSearchTargetChanged": "Session or server changed during search",
+  "terminalSearch": "Find in Terminal",
+  "terminalSearchHint": "Find...",
+  "terminalSearchPrev": "Previous Match",
+  "terminalSearchNext": "Next Match",
+  "terminalSearchFollowLatest": "Resume Auto-scroll",
+  "terminalSearchCount": "{current} of {total}",
+  "terminalSearchCountOverflow": "{current} of 1000+",
+  "terminalSearchNoMatches": "No matches",
+  "chatRoleUser": "User",
+  "@chatRoleUser": {
+    "description": "Role label for user in chat"
+  },
+  "chatRoleAssistant": "Assistant",
+  "@chatRoleAssistant": {
+    "description": "Role label for assistant in chat"
+  },
+  "chatRoleSystem": "System",
+  "@chatRoleSystem": {
+    "description": "Role label for system in chat"
+  },
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

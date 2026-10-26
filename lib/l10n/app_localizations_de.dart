@@ -6544,4 +6544,88 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'Schließen';
+
+  @override
+  String get chatSearchTitle => 'Chatverlauf durchsuchen';
+
+  @override
+  String get chatSearchHint => 'Nachrichten und Tool-Ausgaben durchsuchen...';
+
+  @override
+  String get chatSearchScopeCurrent => 'Aktuelle Sitzung';
+
+  @override
+  String get chatSearchScopeAll => 'Aktueller Server';
+
+  @override
+  String get chatSearchNoResults =>
+      'Keine übereinstimmenden Nachrichten gefunden';
+
+  @override
+  String get chatSearchNoQuery => 'Tippen, um Verlauf zu durchsuchen';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '$count Ergebnisse gefunden';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'Kontext-Vorschau der Nachricht';
+
+  @override
+  String get chatSearchGoToSession => 'Original-Sitzung öffnen';
+
+  @override
+  String get chatSearchBackToResults => 'Zurück zu den Ergebnissen';
+
+  @override
+  String get chatSearchSourceMessage => 'Nachricht';
+
+  @override
+  String get chatSearchSourceTool => 'Tool-Ausgabe';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'Remotedateien können nicht aus der Suchvorschau geöffnet werden. Öffnen Sie die Originalsitzung zur Anzeige.';
+
+  @override
+  String get chatSearchTargetChanged =>
+      'Sitzung oder Server während der Suche geändert';
+
+  @override
+  String get terminalSearch => 'Im Terminal suchen';
+
+  @override
+  String get terminalSearchHint => 'Suchen...';
+
+  @override
+  String get terminalSearchPrev => 'Vorheriger Treffer';
+
+  @override
+  String get terminalSearchNext => 'Nächster Treffer';
+
+  @override
+  String get terminalSearchFollowLatest => 'Zum Neuesten springen';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current von $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current von 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'Keine Treffer';
+
+  @override
+  String get chatRoleUser => 'Benutzer';
+
+  @override
+  String get chatRoleAssistant => 'Assistent';
+
+  @override
+  String get chatRoleSystem => 'System';
 }

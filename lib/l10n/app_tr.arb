@@ -2502,5 +2502,54 @@
         "type": "String"
       }
     }
+  },
+  "chatSearchTitle": "Sohbet Geçmişinde Ara",
+  "chatSearchHint": "Mesajlarda ve araç çıktılarında ara...",
+  "chatSearchScopeCurrent": "Mevcut Oturum",
+  "chatSearchScopeAll": "Mevcut Sunucu",
+  "chatSearchNoResults": "Eşleşen mesaj bulunamadı",
+  "chatSearchNoQuery": "Geçmişte aramak için yazın",
+  "chatSearchResultsCount": "{count} sonuç bulundu",
+  "chatSearchReaderTitle": "Mesaj Bağlamı Önizlemesi",
+  "chatSearchGoToSession": "Orijinal Oturumu Aç",
+  "chatSearchBackToResults": "Sonuçlara Geri Dön",
+  "chatSearchSourceMessage": "Mesaj",
+  "chatSearchSourceTool": "Araç Çıktısı",
+  "chatSearchRemoteFileDisabled": "Uzak dosyalar arama önizlemesinden açılamaz. Görüntülemek için orijinal oturumu açın.",
+  "chatSearchTargetChanged": "Arama sırasında oturum veya sunucu değişti",
+  "terminalSearch": "Terminalde Bul",
+  "terminalSearchHint": "Bul...",
+  "terminalSearchPrev": "Önceki Eşleşme",
+  "terminalSearchNext": "Sonraki Eşleşme",
+  "terminalSearchFollowLatest": "En Yeniye Dön",
+  "terminalSearchCount": "{current} / {total}",
+  "terminalSearchCountOverflow": "{current} / 1000+",
+  "terminalSearchNoMatches": "Eşleşme yok",
+  "chatRoleUser": "Kullanıcı",
+  "chatRoleAssistant": "Asistan",
+  "chatRoleSystem": "Sistem",
+  "@chatSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCount": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@terminalSearchCountOverflow": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
   }
 }

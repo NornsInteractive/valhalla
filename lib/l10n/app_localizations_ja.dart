@@ -6218,4 +6218,86 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatCloseBanner => '閉じる';
+
+  @override
+  String get chatSearchTitle => 'チャット履歴を検索';
+
+  @override
+  String get chatSearchHint => 'メッセージとツール出力を検索...';
+
+  @override
+  String get chatSearchScopeCurrent => '現在のセッション';
+
+  @override
+  String get chatSearchScopeAll => '現在のサーバー';
+
+  @override
+  String get chatSearchNoResults => '一致するメッセージは見つかりませんでした';
+
+  @override
+  String get chatSearchNoQuery => 'キーワードを入力して履歴を検索';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '$count 件の結果が見つかりました';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'メッセージ前後のプレビュー';
+
+  @override
+  String get chatSearchGoToSession => '元のセッションを開く';
+
+  @override
+  String get chatSearchBackToResults => '検索結果に戻る';
+
+  @override
+  String get chatSearchSourceMessage => 'メッセージ';
+
+  @override
+  String get chatSearchSourceTool => 'ツール出力';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      '検索プレビューからはリモートファイルを開けません。元のセッションを開いて表示してください。';
+
+  @override
+  String get chatSearchTargetChanged => '検索中にセッションまたはサーバーが変更されました';
+
+  @override
+  String get terminalSearch => 'ターミナル内を検索';
+
+  @override
+  String get terminalSearchHint => '検索...';
+
+  @override
+  String get terminalSearchPrev => '前の一致';
+
+  @override
+  String get terminalSearchNext => '次の一致';
+
+  @override
+  String get terminalSearchFollowLatest => '最新の位置に戻る';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current / $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current / 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => '一致なし';
+
+  @override
+  String get chatRoleUser => 'ユーザー';
+
+  @override
+  String get chatRoleAssistant => 'アシスタント';
+
+  @override
+  String get chatRoleSystem => 'システム';
 }

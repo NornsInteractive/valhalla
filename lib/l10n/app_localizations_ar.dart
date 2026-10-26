@@ -6423,4 +6423,86 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'إغلاق';
+
+  @override
+  String get chatSearchTitle => 'البحث في سجل المحادثات';
+
+  @override
+  String get chatSearchHint => 'البحث في الرسائل ومخرجات الأدوات...';
+
+  @override
+  String get chatSearchScopeCurrent => 'الجلسة الحالية';
+
+  @override
+  String get chatSearchScopeAll => 'الخادم الحالي';
+
+  @override
+  String get chatSearchNoResults => 'لم يتم العثور على رسائل مطابقة';
+
+  @override
+  String get chatSearchNoQuery => 'اكتب للبحث في السجل';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return 'تم العثور على $count نتيجة';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'معاينة سياق الرسالة';
+
+  @override
+  String get chatSearchGoToSession => 'فتح الجلسة الأصلية';
+
+  @override
+  String get chatSearchBackToResults => 'العودة إلى النتائج';
+
+  @override
+  String get chatSearchSourceMessage => 'رسالة';
+
+  @override
+  String get chatSearchSourceTool => 'مخرجات الأداة';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'لا يمكن فتح الملفات البعيدة من معاينة البحث. افتح الجلسة الأصلية للعرض.';
+
+  @override
+  String get chatSearchTargetChanged => 'تغيرت الجلسة أو الخادم أثناء البحث';
+
+  @override
+  String get terminalSearch => 'بحث في الطرفية';
+
+  @override
+  String get terminalSearchHint => 'بحث...';
+
+  @override
+  String get terminalSearchPrev => 'المطابقة السابقة';
+
+  @override
+  String get terminalSearchNext => 'المطابقة التالية';
+
+  @override
+  String get terminalSearchFollowLatest => 'العودة إلى الأحدث';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current من $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current من أكثر من 1000';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'لا توجد مطابقات';
+
+  @override
+  String get chatRoleUser => 'المستخدم';
+
+  @override
+  String get chatRoleAssistant => 'المساعد';
+
+  @override
+  String get chatRoleSystem => 'النظام';
 }

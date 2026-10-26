@@ -1337,6 +1337,122 @@ class AiChatNotifier extends Notifier<AiChatState> {
   Future<void> _previewTail = Future.value();
   int _browseEpoch = 0;
 
+  Future<ChatSearchPage> searchMessages(
+    String query, {
+    bool allSessions = false,
+    String? cursor,
+    required String expectedTarget,
+  }) async {
+    _checkWorkspaceSelection(expectedTarget);
+    final serverId = _activeServerId;
+    final profile = state.activeAgentProfile;
+    if (serverId == null ||
+        profile == null ||
+        profile.serverId != serverId ||
+        (!allSessions && state.activeSessionId == null)) {
+      return const ChatSearchPage([], null);
+    }
+    final target = workspaceSelectionKey;
+    final share = state.shareAgentSessions;
+    final page = await ref
+        .read(chatRepositoryProvider)
+        .searchMessages(
+          serverId,
+          sessionId: allSessions ? null : state.activeSessionId,
+          agentId: state.shareAgentSessions ? null : profile.id,
+          query: query,
+          cursor: cursor,
+        );
+    if (!ref.mounted ||
+        target != workspaceSelectionKey ||
+        share != state.shareAgentSessions) {
+      throw StateError('ACP_TARGET_CHANGED');
+    }
+    return page;
+  }
+
+  Future<ChatSession?> loadSearchWindow(
+    ChatSearchHit hit, {
+    required String expectedTarget,
+  }) async {
+    _checkWorkspaceSelection(expectedTarget);
+    final target = workspaceSelectionKey;
+    final share = state.shareAgentSessions;
+    final serverId = _activeServerId;
+    final profile = state.activeAgentProfile;
+    if (hit.sessionId.isEmpty ||
+        serverId == null ||
+        profile == null ||
+        profile.serverId != serverId) {
+      return null;
+    }
+    var session = await ref
+        .read(chatRepositoryProvider)
+        .loadMessageWindow(hit.sessionId, hit.messageId);
+    if (!ref.mounted ||
+        target != workspaceSelectionKey ||
+        share != state.shareAgentSessions) {
+      throw StateError('ACP_TARGET_CHANGED');
+    }
+    if (session != null &&
+        session.serverId == null &&
+        ref.read(localStorageServiceProvider).legacyOwnershipServerId ==
+            serverId) {
+      session = session.copyWith(serverId: serverId);
+    }
+    if (session == null ||
+        session.serverId != serverId ||
+        (!state.shareAgentSessions && !session.includesAgent(profile.id))) {
+      return null;
+    }
+    return session;
+  }
+
+  Future<ChatToolOutputPage> loadSearchToolOutput(
+    ChatSearchHit hit, {
+    required String expectedTarget,
+    int? offset,
+  }) async {
+    _checkWorkspaceSelection(expectedTarget);
+    final share = state.shareAgentSessions;
+    final window = await loadSearchWindow(hit, expectedTarget: expectedTarget);
+    final tool = window?.messages
+        .where((m) => m.id == hit.messageId)
+        .firstOrNull
+        ?.toolExecutions
+        .where((t) => t.id == hit.toolId)
+        .firstOrNull;
+    if (window == null || tool == null || hit.source != 'tool') {
+      throw StateError('CHAT_SEARCH_RESULT_UNAVAILABLE');
+    }
+    final start = offset ?? (hit.matchOffset > 60 ? hit.matchOffset - 60 : 0);
+    if (start < 0) throw ArgumentError('CHAT_OUTPUT_PAGE_INVALID');
+    final ChatToolOutputPage page;
+    if (tool.hasMoreOutput) {
+      page = await ref
+          .read(chatRepositoryProvider)
+          .loadToolOutput(
+            window.id,
+            hit.messageId,
+            tool.id,
+            offset: start,
+            limit: 4096,
+          );
+    } else {
+      final runes = (tool.output ?? '').runes.toList();
+      page = ChatToolOutputPage(
+        String.fromCharCodes(runes.skip(start).take(4096)),
+        start + 4096 < runes.length ? start + 4096 : null,
+      );
+    }
+    if (!ref.mounted ||
+        expectedTarget != workspaceSelectionKey ||
+        share != state.shareAgentSessions) {
+      throw StateError('ACP_TARGET_CHANGED');
+    }
+    return page;
+  }
+
   String get workspaceSelectionKey =>
       '$_draftKey::${state.activeAgentProfile == null ? "" : _launchKey(state.activeAgentProfile!)}::${ref.read(activeServerProvider)?.connectionKey}::${state.activeSession?.workingDirectory ?? state.draftWorkingDirectory ?? "."}';
 

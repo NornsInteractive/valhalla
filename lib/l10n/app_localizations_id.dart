@@ -6484,4 +6484,87 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get chatCloseBanner => 'Tutup';
+
+  @override
+  String get chatSearchTitle => 'Cari Riwayat Obrolan';
+
+  @override
+  String get chatSearchHint => 'Cari pesan dan output alat...';
+
+  @override
+  String get chatSearchScopeCurrent => 'Sesi Saat Ini';
+
+  @override
+  String get chatSearchScopeAll => 'Server Saat Ini';
+
+  @override
+  String get chatSearchNoResults => 'Tidak ada pesan yang cocok';
+
+  @override
+  String get chatSearchNoQuery => 'Ketik untuk mencari riwayat';
+
+  @override
+  String chatSearchResultsCount(String count) {
+    return '$count hasil ditemukan';
+  }
+
+  @override
+  String get chatSearchReaderTitle => 'Pratinjau Konteks Pesan';
+
+  @override
+  String get chatSearchGoToSession => 'Buka Sesi Asli';
+
+  @override
+  String get chatSearchBackToResults => 'Kembali ke Hasil';
+
+  @override
+  String get chatSearchSourceMessage => 'Pesan';
+
+  @override
+  String get chatSearchSourceTool => 'Output Alat';
+
+  @override
+  String get chatSearchRemoteFileDisabled =>
+      'File jarak jauh tidak dapat dibuka dari pratinjau pencarian. Buka sesi asli untuk melihatnya.';
+
+  @override
+  String get chatSearchTargetChanged =>
+      'Sesi atau server berubah selama pencarian';
+
+  @override
+  String get terminalSearch => 'Cari di Terminal';
+
+  @override
+  String get terminalSearchHint => 'Cari...';
+
+  @override
+  String get terminalSearchPrev => 'Kecocokan Sebelumnya';
+
+  @override
+  String get terminalSearchNext => 'Kecocokan Berikutnya';
+
+  @override
+  String get terminalSearchFollowLatest => 'Kembali ke Terbaru';
+
+  @override
+  String terminalSearchCount(String current, String total) {
+    return '$current dari $total';
+  }
+
+  @override
+  String terminalSearchCountOverflow(String current) {
+    return '$current dari 1000+';
+  }
+
+  @override
+  String get terminalSearchNoMatches => 'Tidak ada kecocokan';
+
+  @override
+  String get chatRoleUser => 'Pengguna';
+
+  @override
+  String get chatRoleAssistant => 'Asisten';
+
+  @override
+  String get chatRoleSystem => 'Sistem';
 }
