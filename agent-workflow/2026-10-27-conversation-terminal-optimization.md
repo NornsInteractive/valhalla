@@ -38,3 +38,5 @@ ChatRepository.searchMessages(serverId,{sessionId,agentId,query,cursor,limit=30}
 阶段2根因验证：CodeBuddy恢复后，仅写4项共享缓冲不变量回归，和原17项终端UI回归一并运行（stage2-buffer-final.raw/.exit=0），21项常规测试通过、done.success=true、约4.25秒。原maxLines100回收用例在核心修复前同步循环（已保留超时/中止日志），相同UI/fixture在修正环形原点和trimStart后通过，明确为共享索引不变量问题；最初容量猜测不能作为最终根因。主代理尚未自行运行应用测试，授权请求仍未收到回复；继续按原免费执行器流程。
 
 阶段2最终门禁：stage2-gates-20261026T201940Z，42文件514项常规测试、生成/格式/分析零问题/diff-check全部0，无失败跳过。准备以1.0.21+22独立发布；阶段3仅忽略目录UI草稿，不含本版源码。
+
+阶段2已正式发布1.0.21+22，回执2026-10-27-v1021-release.md，官网revision111。阶段3核心命令偏好/草稿目录重置已接入，23项核心回归通过；AgY的UI仍在忽略镜像里准备，尚未激活或交付。
