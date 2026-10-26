@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "Die Sitzungsausführungsumgebung wurde geändert. Bitte neue Sitzung erstellen.",
   "chatLinkCopied": "Link in Zwischenablage kopiert",
   "chatFileEditorEdit": "Bearbeiten",
-  "chatFileEditorDiff": "Diff"
+  "chatFileEditorDiff": "Diff",
+  "terminalLastChecked": "Zuletzt geprüft: {time}",
+  "terminalNotChecked": "Nicht geprüft",
+  "terminalLastCheckedTitle": "Zuletzt geprüft",
+  "chatExpandCode": "Code ausklappen ({lines} Zeilen)",
+  "chatCollapseCode": "Code einklappen",
+  "chatCodeReaderTitle": "Code-Reader",
+  "chatCodeCopied": "Code in Zwischenablage kopiert",
+  "acpAgentOfflineRunning": "Offline (Aufgabe läuft im Hintergrund)",
+  "acpAgentOfflineTaskRunning": "SSH offline. Die Agent-Aufgabe im Hintergrund läuft möglicherweise noch.",
+  "chatCloseBanner": "Schließen",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "セッションの実行環境が変更されました。続行するには新しいセッションを作成してください。",
   "chatLinkCopied": "リンクをクリップボードにコピーしました",
   "chatFileEditorEdit": "編集",
-  "chatFileEditorDiff": "差分"
+  "chatFileEditorDiff": "差分",
+  "terminalLastChecked": "最終確認: {time}",
+  "terminalNotChecked": "未確認",
+  "terminalLastCheckedTitle": "最終確認",
+  "chatExpandCode": "コードを展開（{lines} 行）",
+  "chatCollapseCode": "コードを折りたたむ",
+  "chatCodeReaderTitle": "コードリーダー",
+  "chatCodeCopied": "コードをクリップボードにコピーしました",
+  "acpAgentOfflineRunning": "オフライン（バックグラウンドで実行中）",
+  "acpAgentOfflineTaskRunning": "SSH 切断中。バックグラウンドの Agent タスクは実行中の可能性があります。",
+  "chatCloseBanner": "閉じる",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

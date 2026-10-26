@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "工作階段執行環境已改變，請建立新工作階段以繼續。",
   "chatLinkCopied": "連結已複製到剪貼簿",
   "chatFileEditorEdit": "編輯",
-  "chatFileEditorDiff": "差異"
+  "chatFileEditorDiff": "差異",
+  "terminalLastChecked": "最近檢查：{time}",
+  "terminalNotChecked": "未檢查",
+  "terminalLastCheckedTitle": "最近檢查",
+  "chatExpandCode": "展開程式碼（{lines} 行）",
+  "chatCollapseCode": "收起程式碼",
+  "chatCodeReaderTitle": "程式碼閱讀器",
+  "chatCodeCopied": "程式碼已複製到剪貼簿",
+  "acpAgentOfflineRunning": "離線（後台任務執行中）",
+  "acpAgentOfflineTaskRunning": "SSH 連線離線。後台 Agent 任務可能仍在執行。",
+  "chatCloseBanner": "關閉",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

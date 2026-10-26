@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "सत्र निष्पादन परिवेश बदल गया है। जारी रखने के लिए एक नया सत्र बनाएं।",
   "chatLinkCopied": "लिंक क्लिपबोर्ड पर कॉपी किया गया",
   "chatFileEditorEdit": "संपादित करें",
-  "chatFileEditorDiff": "अंतर"
+  "chatFileEditorDiff": "अंतर",
+  "terminalLastChecked": "अंतिम जांच: {time}",
+  "terminalNotChecked": "जांच नहीं की गई",
+  "terminalLastCheckedTitle": "अंतिम जांच",
+  "chatExpandCode": "कोड विस्तृत करें ({lines} पंक्तियाँ)",
+  "chatCollapseCode": "कोड संक्षिप्त करें",
+  "chatCodeReaderTitle": "कोड रीडर",
+  "chatCodeCopied": "कोड क्लिपबोर्ड पर कॉपी किया गया",
+  "acpAgentOfflineRunning": "ऑफ़लाइन (कार्य पृष्ठभूमि में चल रहा है)",
+  "acpAgentOfflineTaskRunning": "SSH ऑफ़लाइन है। पृष्ठभूमि एजेंट कार्य अभी भी चल रहा हो सकता है।",
+  "chatCloseBanner": "बंद करें",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

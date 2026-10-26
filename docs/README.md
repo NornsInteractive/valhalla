@@ -1,5 +1,7 @@
 # Valhalla - 研发项目全生命周期文档体系
 
+当前实施：[智能会话与终端六项优化](design/2026-10-27-chat-terminal-optimization.md)，按三阶段验证和发布；下方已交付版本与正在实施的内容分开记录。
+
 本轮交付（2026-10-26）：[ACP 工作台与历史恢复设计](design/2026-10-26-acp-workbench.md)，
 实现与门禁状态见[本轮交接](../agent-workflow/2026-10-26-acp-workbench.md)，已随 1.0.19 发布。
 

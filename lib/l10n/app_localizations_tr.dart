@@ -6440,4 +6440,40 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get chatFileEditorDiff => 'Fark';
+
+  @override
+  String terminalLastChecked(String time) {
+    return 'Son kontrol: $time';
+  }
+
+  @override
+  String get terminalNotChecked => 'Kontrol edilmedi';
+
+  @override
+  String get terminalLastCheckedTitle => 'Son Kontrol';
+
+  @override
+  String chatExpandCode(String lines) {
+    return 'Kodu genişlet ($lines satır)';
+  }
+
+  @override
+  String get chatCollapseCode => 'Kodu daralt';
+
+  @override
+  String get chatCodeReaderTitle => 'Kod Okuyucu';
+
+  @override
+  String get chatCodeCopied => 'Kod panoya kopyalandı';
+
+  @override
+  String get acpAgentOfflineRunning =>
+      'Çevrimdışı (Görev arka planda çalışıyor)';
+
+  @override
+  String get acpAgentOfflineTaskRunning =>
+      'SSH çevrimdışı. Arka plan aracı görevi hâlâ çalışıyor olabilir.';
+
+  @override
+  String get chatCloseBanner => 'Kapat';
 }

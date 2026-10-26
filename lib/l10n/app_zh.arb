@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "会话执行环境已改变，请新建会话继续。",
   "chatLinkCopied": "链接已复制到剪贴板",
   "chatFileEditorEdit": "编辑",
-  "chatFileEditorDiff": "差异"
+  "chatFileEditorDiff": "差异",
+  "terminalLastChecked": "最近检查：{time}",
+  "terminalNotChecked": "未检查",
+  "terminalLastCheckedTitle": "最近检查",
+  "chatExpandCode": "展开代码（{lines} 行）",
+  "chatCollapseCode": "收起代码",
+  "chatCodeReaderTitle": "代码阅读器",
+  "chatCodeCopied": "代码已复制到剪贴板",
+  "acpAgentOfflineRunning": "离线（后台任务运行中）",
+  "acpAgentOfflineTaskRunning": "SSH 连接离线。后台 Agent 任务可能仍在运行。",
+  "chatCloseBanner": "关闭",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

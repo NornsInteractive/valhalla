@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "สภาพแวดล้อมการทำงานของเซสชันเปลี่ยนไปแล้ว โปรดสร้างเซสชันใหม่เพื่อดำเนินการต่อ",
   "chatLinkCopied": "คัดลอกลิงก์ไปยังคลิปบอร์ดแล้ว",
   "chatFileEditorEdit": "แก้ไข",
-  "chatFileEditorDiff": "ความแตกต่าง"
+  "chatFileEditorDiff": "ความแตกต่าง",
+  "terminalLastChecked": "ตรวจสอบล่าสุด: {time}",
+  "terminalNotChecked": "ยังไม่ได้ตรวจสอบ",
+  "terminalLastCheckedTitle": "ตรวจสอบล่าสุด",
+  "chatExpandCode": "ขยายโค้ด ({lines} บรรทัด)",
+  "chatCollapseCode": "ยุบโค้ด",
+  "chatCodeReaderTitle": "โปรแกรมอ่านโค้ด",
+  "chatCodeCopied": "คัดลอกโค้ดไปยังคลิปบอร์ดแล้ว",
+  "acpAgentOfflineRunning": "ออฟไลน์ (งานกำลังทำงานในพื้นหลัง)",
+  "acpAgentOfflineTaskRunning": "SSH ออฟไลน์ งานของเอเจนต์ในพื้นหลังอาจยังคงทำงานอยู่",
+  "chatCloseBanner": "ปิด",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

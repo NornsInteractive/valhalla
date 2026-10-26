@@ -21,11 +21,18 @@ import '../support/temp_chat_db.dart';
 class _FakeAiChatNotifier extends AiChatNotifier {
   final AiChatState _initialState;
   ChatRunSettings? updatedSettings;
+  String? selectedSessionId;
 
   _FakeAiChatNotifier(this._initialState);
 
   @override
   AiChatState build() => _initialState;
+
+  @override
+  Future<void> selectSession(String sessionId) async {
+    selectedSessionId = sessionId;
+    state = state.copyWith(activeSessionId: sessionId);
+  }
 
   @override
   Future<bool> prepareRunSettings({bool refresh = false}) async => true;
@@ -207,6 +214,7 @@ void main() {
         await tester.tap(find.text('Session 1'));
         await tester.pumpAndSettle();
         expect(find.byType(Drawer), findsNothing);
+        expect(aiNotifier.selectedSessionId, 's-1');
 
         // 2. Desktop viewport (>= 1024)
         tester.view.physicalSize = const Size(1280, 800);

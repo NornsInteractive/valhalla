@@ -6493,4 +6493,39 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chatFileEditorDiff => 'Различия';
+
+  @override
+  String terminalLastChecked(String time) {
+    return 'Последняя проверка: $time';
+  }
+
+  @override
+  String get terminalNotChecked => 'Не проверялось';
+
+  @override
+  String get terminalLastCheckedTitle => 'Последняя проверка';
+
+  @override
+  String chatExpandCode(String lines) {
+    return 'Развернуть код ($lines строк)';
+  }
+
+  @override
+  String get chatCollapseCode => 'Свернуть код';
+
+  @override
+  String get chatCodeReaderTitle => 'Просмотр кода';
+
+  @override
+  String get chatCodeCopied => 'Код скопирован в буфер обмена';
+
+  @override
+  String get acpAgentOfflineRunning => 'Офлайн (задача выполняется в фоне)';
+
+  @override
+  String get acpAgentOfflineTaskRunning =>
+      'SSH офлайн. Фоновая задача агента может продолжать выполняться.';
+
+  @override
+  String get chatCloseBanner => 'Закрыть';
 }

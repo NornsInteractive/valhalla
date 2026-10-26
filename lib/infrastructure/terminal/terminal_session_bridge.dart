@@ -343,7 +343,10 @@ class TerminalSessionBridge {
         if (fields.length != 6 ||
             fields[5].isEmpty ||
             RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(fields[5])) {
-          throw const SSHConnectionException('TMUX_HISTORY_INVALID_RESPONSE');
+          throw SSHConnectionException(
+            'TMUX_HISTORY_INVALID_RESPONSE',
+            _queryDetails(result),
+          );
         }
         final identity = TmuxSessionIdentity.fromJson({
           'sessionId': fields[0],
@@ -353,7 +356,10 @@ class TerminalSessionBridge {
         });
         final attached = int.tryParse(fields[2]);
         if (attached == null || attached < 0) {
-          throw const SSHConnectionException('TMUX_HISTORY_INVALID_RESPONSE');
+          throw SSHConnectionException(
+            'TMUX_HISTORY_INVALID_RESPONSE',
+            _queryDetails(result),
+          );
         }
         sessions.add(
           TmuxSessionInfo(
@@ -374,7 +380,10 @@ class TerminalSessionBridge {
         continue;
       }
       if (fields.length != 3) {
-        throw const SSHConnectionException('TMUX_HISTORY_INVALID_RESPONSE');
+        throw SSHConnectionException(
+          'TMUX_HISTORY_INVALID_RESPONSE',
+          _queryDetails(result),
+        );
       }
       final created = int.tryParse(fields[1]);
       final attached = int.tryParse(fields[2]);
@@ -383,7 +392,10 @@ class TerminalSessionBridge {
           created > 8640000000000 ||
           attached == null ||
           attached < 0) {
-        throw const SSHConnectionException('TMUX_HISTORY_INVALID_RESPONSE');
+        throw SSHConnectionException(
+          'TMUX_HISTORY_INVALID_RESPONSE',
+          _queryDetails(result),
+        );
       }
       sessions.add(
         TmuxSessionInfo(
@@ -421,7 +433,10 @@ class TerminalSessionBridge {
       if (identity == null) return true;
       final fields = result.stdout.trimRight().split('\t');
       if (fields.length != 4) {
-        throw const SSHConnectionException('TMUX_HISTORY_INVALID_RESPONSE');
+        throw SSHConnectionException(
+          'TMUX_HISTORY_INVALID_RESPONSE',
+          _queryDetails(result),
+        );
       }
       // Missing targets can exit 0 with empty session fields and valid server fields.
       if (fields[0].isEmpty &&
@@ -540,9 +555,10 @@ class TerminalSessionBridge {
   static String _queryDetails(
     ({int? exitCode, String stdout, String stderr}) result,
   ) {
-    final detail = LogSanitizer.sanitize(
-      'exit=${result.exitCode}; stderr=${result.stderr}; stdout=${result.stdout}',
-    );
+    final detail =
+        'exit=${result.exitCode}; '
+        'stderr=${jsonEncode(LogSanitizer.sanitize(result.stderr))}; '
+        'stdout=${jsonEncode(LogSanitizer.sanitize(result.stdout))}';
     return detail.length > 4096 ? detail.substring(0, 4096) : detail;
   }
 

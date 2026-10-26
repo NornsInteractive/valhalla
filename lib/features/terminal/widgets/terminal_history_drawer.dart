@@ -860,14 +860,23 @@ class _TmuxSourcesDialogState extends ConsumerState<_TmuxSourcesDialog> {
                               ],
                             ),
                           )
-                        : Text(
-                            isBuiltin
-                                ? l10n.terminalSourceBuiltin
-                                : l10n.terminalSourceCustom,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: theme.colorScheme.outline,
-                            ),
+                        : Builder(
+                            builder: (context) {
+                              final checkedAt =
+                                  terminalState.socketCheckedAt[source.id];
+                              final checkedText = checkedAt != null
+                                  ? l10n.terminalLastChecked(
+                                      _formatLastUsed(checkedAt),
+                                    )
+                                  : l10n.terminalNotChecked;
+                              return Text(
+                                '${isBuiltin ? l10n.terminalSourceBuiltin : l10n.terminalSourceCustom} • $checkedText',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: theme.colorScheme.outline,
+                                ),
+                              );
+                            },
                           ),
                     trailing: isBuiltin
                         ? null
@@ -1698,6 +1707,37 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                                 fontFamily: 'JetBrains Mono',
                               ),
                             ),
+                          ),
+                          Builder(
+                            builder: (context) {
+                              final checkedAt = terminalState
+                                  .socketCheckedAt[record.socket.id];
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: context
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  checkedAt != null
+                                      ? l10n.terminalLastChecked(
+                                          _formatLastUsed(checkedAt),
+                                        )
+                                      : l10n.terminalNotChecked,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: context.colorScheme.outline,
+                                    fontFamily: 'JetBrains Mono',
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                           if (record.isExternal)
                             Container(

@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "El entorno de ejecución de la sesión ha cambiado. Cree una nueva sesión para continuar.",
   "chatLinkCopied": "Enlace copiado al portapapeles",
   "chatFileEditorEdit": "Editar",
-  "chatFileEditorDiff": "Diferencias"
+  "chatFileEditorDiff": "Diferencias",
+  "terminalLastChecked": "Última comprobación: {time}",
+  "terminalNotChecked": "No comprobado",
+  "terminalLastCheckedTitle": "Última comprobación",
+  "chatExpandCode": "Expandir código ({lines} líneas)",
+  "chatCollapseCode": "Contraer código",
+  "chatCodeReaderTitle": "Lector de código",
+  "chatCodeCopied": "Código copiado al portapapeles",
+  "acpAgentOfflineRunning": "Desconectado (Tarea ejecutándose en segundo plano)",
+  "acpAgentOfflineTaskRunning": "SSH desconectado. Es posible que la tarea del agente en segundo plano aún se esté ejecutando.",
+  "chatCloseBanner": "Descartar",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

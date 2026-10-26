@@ -6081,6 +6081,40 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatFileEditorDiff => '差异';
+
+  @override
+  String terminalLastChecked(String time) {
+    return '最近检查：$time';
+  }
+
+  @override
+  String get terminalNotChecked => '未检查';
+
+  @override
+  String get terminalLastCheckedTitle => '最近检查';
+
+  @override
+  String chatExpandCode(String lines) {
+    return '展开代码（$lines 行）';
+  }
+
+  @override
+  String get chatCollapseCode => '收起代码';
+
+  @override
+  String get chatCodeReaderTitle => '代码阅读器';
+
+  @override
+  String get chatCodeCopied => '代码已复制到剪贴板';
+
+  @override
+  String get acpAgentOfflineRunning => '离线（后台任务运行中）';
+
+  @override
+  String get acpAgentOfflineTaskRunning => 'SSH 连接离线。后台 Agent 任务可能仍在运行。';
+
+  @override
+  String get chatCloseBanner => '关闭';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -12162,4 +12196,38 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get chatFileEditorDiff => '差異';
+
+  @override
+  String terminalLastChecked(String time) {
+    return '最近檢查：$time';
+  }
+
+  @override
+  String get terminalNotChecked => '未檢查';
+
+  @override
+  String get terminalLastCheckedTitle => '最近檢查';
+
+  @override
+  String chatExpandCode(String lines) {
+    return '展開程式碼（$lines 行）';
+  }
+
+  @override
+  String get chatCollapseCode => '收起程式碼';
+
+  @override
+  String get chatCodeReaderTitle => '程式碼閱讀器';
+
+  @override
+  String get chatCodeCopied => '程式碼已複製到剪貼簿';
+
+  @override
+  String get acpAgentOfflineRunning => '離線（後台任務執行中）';
+
+  @override
+  String get acpAgentOfflineTaskRunning => 'SSH 連線離線。後台 Agent 任務可能仍在執行。';
+
+  @override
+  String get chatCloseBanner => '關閉';
 }

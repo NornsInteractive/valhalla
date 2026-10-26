@@ -6440,4 +6440,40 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get chatFileEditorDiff => 'अंतर';
+
+  @override
+  String terminalLastChecked(String time) {
+    return 'अंतिम जांच: $time';
+  }
+
+  @override
+  String get terminalNotChecked => 'जांच नहीं की गई';
+
+  @override
+  String get terminalLastCheckedTitle => 'अंतिम जांच';
+
+  @override
+  String chatExpandCode(String lines) {
+    return 'कोड विस्तृत करें ($lines पंक्तियाँ)';
+  }
+
+  @override
+  String get chatCollapseCode => 'कोड संक्षिप्त करें';
+
+  @override
+  String get chatCodeReaderTitle => 'कोड रीडर';
+
+  @override
+  String get chatCodeCopied => 'कोड क्लिपबोर्ड पर कॉपी किया गया';
+
+  @override
+  String get acpAgentOfflineRunning =>
+      'ऑफ़लाइन (कार्य पृष्ठभूमि में चल रहा है)';
+
+  @override
+  String get acpAgentOfflineTaskRunning =>
+      'SSH ऑफ़लाइन है। पृष्ठभूमि एजेंट कार्य अभी भी चल रहा हो सकता है।';
+
+  @override
+  String get chatCloseBanner => 'बंद करें';
 }

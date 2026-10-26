@@ -182,7 +182,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
         newState == TerminalConnectionState.connected) {
       _sessionRestoredTimer?.cancel();
       _showSessionRestored = true;
-      _sessionRestoredTimer = Timer(const Duration(seconds: 2), () {
+      _sessionRestoredTimer = Timer(const Duration(seconds: 4), () {
         if (mounted) {
           setState(() => _showSessionRestored = false);
         }
@@ -556,6 +556,11 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
     final errorDetail = ref.watch(
       terminalProvider.select((s) => s.errorDetail),
     );
+    final activeTab = ref.watch(terminalProvider.select((s) => s.activeTab));
+    final canRetry =
+        activeTab != null &&
+        (activeTab.bridge.state == TerminalConnectionState.disconnected ||
+            activeTab.bridge.state == TerminalConnectionState.error);
     return Material(
       color: context.colorScheme.surface,
       elevation: 3,
@@ -617,6 +622,28 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
                     ),
                   );
                 },
+              ),
+            if (canRetry)
+              TextButton(
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: context.vDanger,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                onPressed: () {
+                  final currentServer = ref.read(activeServerProvider);
+                  if (currentServer == null) return;
+                  final expectedTarget = TerminalHistoryRecord.targetFor(
+                    currentServer,
+                  );
+                  ref
+                      .read(terminalProvider.notifier)
+                      .reconnectTab(
+                        activeTab.id,
+                        expectedTargetKey: expectedTarget,
+                      );
+                },
+                child: Text(context.l10n.stateRetry),
               ),
             IconButton(
               icon: Icon(Icons.close, size: 16, color: context.vDanger),

@@ -2020,4 +2020,80 @@ void main() {
     expect(h.state.errorCode, isNull);
     expect(h.state.errorDetail, isNull);
   });
+
+  test(
+    'refresh records socketCheckedAt for app and default including a failed probe',
+    () async {
+      final h = await _Harness.create();
+      // 仅默认 socket 的探测失败；App 专用 socket 照常返回。
+      h.client.failingSocketIds.add(TmuxSocketSource.standard.id);
+      final before = DateTime.now();
+      await h.notifier.refreshHistory();
+      await h.drain();
+      final after = DateTime.now();
+
+      // 失败探测仍要登记错误码。
+      expect(h.state.socketErrors.keys, {TmuxSocketSource.standard.id});
+      expect(
+        h.state.socketErrors[TmuxSocketSource.standard.id],
+        'TMUX_HISTORY_QUERY_FAILED',
+      );
+      // 成功与失败的来源都记录探测时间，键为 socket.id。
+      expect(h.state.socketCheckedAt.keys, {
+        TmuxSocketSource.app.id,
+        TmuxSocketSource.standard.id,
+      });
+      for (final stamp in h.state.socketCheckedAt.values) {
+        expect(stamp.isAfter(before) || stamp.isAtSameMomentAs(before), isTrue);
+        expect(stamp.isBefore(after) || stamp.isAtSameMomentAs(after), isTrue);
+      }
+    },
+  );
+
+  test('SshTerminalState.copyWith retains the socketCheckedAt map', () {
+    final stamp = DateTime.fromMillisecondsSinceEpoch(1700000000000);
+    final state = SshTerminalState(
+      tabs: const [],
+      socketCheckedAt: {TmuxSocketSource.app.id: stamp},
+    );
+    // 不传 socketCheckedAt 时复用原 map（同一引用，值无损）。
+    final next = state.copyWith();
+    expect(next.socketCheckedAt, same(state.socketCheckedAt));
+    expect(next.socketCheckedAt[TmuxSocketSource.app.id], stamp);
+    expect(next.socketErrors, isEmpty);
+
+    // 显式传入时覆盖，且不再回退到原 map。
+    final replaced = state.copyWith(socketCheckedAt: const {});
+    expect(replaced.socketCheckedAt, isEmpty);
+    expect(replaced.socketCheckedAt, isNot(same(state.socketCheckedAt)));
+  });
+
+  test(
+    'switching server does not reuse another server socketCheckedAt',
+    () async {
+      final h = await _Harness.create();
+      await h.notifier.refreshHistory();
+      await h.drain();
+      expect(h.state.socketCheckedAt.keys, contains(TmuxSocketSource.app.id));
+      final fixtureStamp = h.state.socketCheckedAt[TmuxSocketSource.app.id];
+
+      // 切到另一个服务器：新工作区的探测时间必须是空的，不能继承 fixture 的。
+      final connection =
+          h.container.read(serverConnectionProvider.notifier) as _Connection;
+      final active = h.container.read(activeServerProvider.notifier) as _Active;
+      connection.set(false, _server.id);
+      active.select(_second);
+      connection.set(true, _second.id);
+      expect(h.state.socketCheckedAt, isEmpty);
+
+      // 新服务器自己的探测会写入它自己的时间，而非 fixture 旧值。
+      await h.notifier.refreshHistory();
+      await h.drain();
+      expect(h.state.socketCheckedAt.keys, contains(TmuxSocketSource.app.id));
+      expect(
+        h.state.socketCheckedAt[TmuxSocketSource.app.id],
+        isNot(fixtureStamp),
+      );
+    },
+  );
 }

@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "Lingkungan eksekusi sesi telah berubah. Buat sesi baru untuk melanjutkan.",
   "chatLinkCopied": "Tautan disalin ke papan klip",
   "chatFileEditorEdit": "Edit",
-  "chatFileEditorDiff": "Diff"
+  "chatFileEditorDiff": "Diff",
+  "terminalLastChecked": "Terakhir diperiksa: {time}",
+  "terminalNotChecked": "Belum diperiksa",
+  "terminalLastCheckedTitle": "Pemeriksaan Terakhir",
+  "chatExpandCode": "Perluas kode ({lines} baris)",
+  "chatCollapseCode": "Ciutkan kode",
+  "chatCodeReaderTitle": "Pembaca Kode",
+  "chatCodeCopied": "Kode disalin ke papan klip",
+  "acpAgentOfflineRunning": "Offline (Tugas berjalan di latar belakang)",
+  "acpAgentOfflineTaskRunning": "SSH offline. Tugas agen latar belakang mungkin masih berjalan.",
+  "chatCloseBanner": "Tutup",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

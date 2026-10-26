@@ -11606,6 +11606,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Diff'**
   String get chatFileEditorDiff;
+
+  /// No description provided for @terminalLastChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Last checked: {time}'**
+  String terminalLastChecked(String time);
+
+  /// No description provided for @terminalNotChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked'**
+  String get terminalNotChecked;
+
+  /// No description provided for @terminalLastCheckedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Checked'**
+  String get terminalLastCheckedTitle;
+
+  /// No description provided for @chatExpandCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand code ({lines} lines)'**
+  String chatExpandCode(String lines);
+
+  /// No description provided for @chatCollapseCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse code'**
+  String get chatCollapseCode;
+
+  /// No description provided for @chatCodeReaderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Code Reader'**
+  String get chatCodeReaderTitle;
+
+  /// No description provided for @chatCodeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Code copied to clipboard'**
+  String get chatCodeCopied;
+
+  /// No description provided for @acpAgentOfflineRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline (Task running in background)'**
+  String get acpAgentOfflineRunning;
+
+  /// No description provided for @acpAgentOfflineTaskRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'SSH offline. Background agent task may still be running.'**
+  String get acpAgentOfflineTaskRunning;
+
+  /// No description provided for @chatCloseBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get chatCloseBanner;
 }
 
 class _AppLocalizationsDelegate

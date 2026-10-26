@@ -6388,4 +6388,39 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatFileEditorDiff => 'الفروق';
+
+  @override
+  String terminalLastChecked(String time) {
+    return 'آخر فحص: $time';
+  }
+
+  @override
+  String get terminalNotChecked => 'لم يتم الفحص';
+
+  @override
+  String get terminalLastCheckedTitle => 'آخر فحص';
+
+  @override
+  String chatExpandCode(String lines) {
+    return 'توسيع التعليمات البرمجية ($lines سطرًا)';
+  }
+
+  @override
+  String get chatCollapseCode => 'طي التعليمات البرمجية';
+
+  @override
+  String get chatCodeReaderTitle => 'قارئ التعليمات البرمجية';
+
+  @override
+  String get chatCodeCopied => 'تم نسخ التعليمات البرمجية إلى الحافظة';
+
+  @override
+  String get acpAgentOfflineRunning => 'غير متصل (المهمة تعمل في الخلفية)';
+
+  @override
+  String get acpAgentOfflineTaskRunning =>
+      'اتصال SSH غير متصل. قد تظل مهمة الوكيل قيد التشغيل في الخلفية.';
+
+  @override
+  String get chatCloseBanner => 'إغلاق';
 }

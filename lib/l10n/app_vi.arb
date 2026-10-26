@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "Môi trường thực thi phiên đã thay đổi. Vui lòng tạo phiên mới để tiếp tục.",
   "chatLinkCopied": "Đã sao chép liên kết vào khay nhớ tạm",
   "chatFileEditorEdit": "Chỉnh sửa",
-  "chatFileEditorDiff": "Khác biệt"
+  "chatFileEditorDiff": "Khác biệt",
+  "terminalLastChecked": "Kiểm tra lần cuối: {time}",
+  "terminalNotChecked": "Chưa kiểm tra",
+  "terminalLastCheckedTitle": "Kiểm tra lần cuối",
+  "chatExpandCode": "Mở rộng mã ({lines} dòng)",
+  "chatCollapseCode": "Thu gọn mã",
+  "chatCodeReaderTitle": "Trình đọc mã",
+  "chatCodeCopied": "Đã sao chép mã vào khay nhớ tạm",
+  "acpAgentOfflineRunning": "Ngoại tuyến (Tác vụ đang chạy ngầm)",
+  "acpAgentOfflineTaskRunning": "SSH ngoại tuyến. Tác vụ tác nhân chạy ngầm có thể vẫn đang chạy.",
+  "chatCloseBanner": "Đóng",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

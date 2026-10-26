@@ -6183,4 +6183,39 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatFileEditorDiff => '差分';
+
+  @override
+  String terminalLastChecked(String time) {
+    return '最終確認: $time';
+  }
+
+  @override
+  String get terminalNotChecked => '未確認';
+
+  @override
+  String get terminalLastCheckedTitle => '最終確認';
+
+  @override
+  String chatExpandCode(String lines) {
+    return 'コードを展開（$lines 行）';
+  }
+
+  @override
+  String get chatCollapseCode => 'コードを折りたたむ';
+
+  @override
+  String get chatCodeReaderTitle => 'コードリーダー';
+
+  @override
+  String get chatCodeCopied => 'コードをクリップボードにコピーしました';
+
+  @override
+  String get acpAgentOfflineRunning => 'オフライン（バックグラウンドで実行中）';
+
+  @override
+  String get acpAgentOfflineTaskRunning =>
+      'SSH 切断中。バックグラウンドの Agent タスクは実行中の可能性があります。';
+
+  @override
+  String get chatCloseBanner => '閉じる';
 }

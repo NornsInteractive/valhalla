@@ -6412,4 +6412,39 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get chatFileEditorDiff => 'ความแตกต่าง';
+
+  @override
+  String terminalLastChecked(String time) {
+    return 'ตรวจสอบล่าสุด: $time';
+  }
+
+  @override
+  String get terminalNotChecked => 'ยังไม่ได้ตรวจสอบ';
+
+  @override
+  String get terminalLastCheckedTitle => 'ตรวจสอบล่าสุด';
+
+  @override
+  String chatExpandCode(String lines) {
+    return 'ขยายโค้ด ($lines บรรทัด)';
+  }
+
+  @override
+  String get chatCollapseCode => 'ยุบโค้ด';
+
+  @override
+  String get chatCodeReaderTitle => 'โปรแกรมอ่านโค้ด';
+
+  @override
+  String get chatCodeCopied => 'คัดลอกโค้ดไปยังคลิปบอร์ดแล้ว';
+
+  @override
+  String get acpAgentOfflineRunning => 'ออฟไลน์ (งานกำลังทำงานในพื้นหลัง)';
+
+  @override
+  String get acpAgentOfflineTaskRunning =>
+      'SSH ออฟไลน์ งานของเอเจนต์ในพื้นหลังอาจยังคงทำงานอยู่';
+
+  @override
+  String get chatCloseBanner => 'ปิด';
 }

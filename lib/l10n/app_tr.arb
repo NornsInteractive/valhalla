@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "Oturum yürütme ortamı değişti. Devam etmek için yeni bir oturum oluşturun.",
   "chatLinkCopied": "Bağlantı panoya kopyalandı",
   "chatFileEditorEdit": "Düzenle",
-  "chatFileEditorDiff": "Fark"
+  "chatFileEditorDiff": "Fark",
+  "terminalLastChecked": "Son kontrol: {time}",
+  "terminalNotChecked": "Kontrol edilmedi",
+  "terminalLastCheckedTitle": "Son Kontrol",
+  "chatExpandCode": "Kodu genişlet ({lines} satır)",
+  "chatCollapseCode": "Kodu daralt",
+  "chatCodeReaderTitle": "Kod Okuyucu",
+  "chatCodeCopied": "Kod panoya kopyalandı",
+  "acpAgentOfflineRunning": "Çevrimdışı (Görev arka planda çalışıyor)",
+  "acpAgentOfflineTaskRunning": "SSH çevrimdışı. Arka plan aracı görevi hâlâ çalışıyor olabilir.",
+  "chatCloseBanner": "Kapat",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

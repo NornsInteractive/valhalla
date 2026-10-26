@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "تغيرت بيئة تنفيذ الجلسة. يرجى إنشاء جلسة جديدة للمتابعة.",
   "chatLinkCopied": "تم نسخ الرابط إلى الحافظة",
   "chatFileEditorEdit": "تعديل",
-  "chatFileEditorDiff": "الفروق"
+  "chatFileEditorDiff": "الفروق",
+  "terminalLastChecked": "آخر فحص: {time}",
+  "terminalNotChecked": "لم يتم الفحص",
+  "terminalLastCheckedTitle": "آخر فحص",
+  "chatExpandCode": "توسيع التعليمات البرمجية ({lines} سطرًا)",
+  "chatCollapseCode": "طي التعليمات البرمجية",
+  "chatCodeReaderTitle": "قارئ التعليمات البرمجية",
+  "chatCodeCopied": "تم نسخ التعليمات البرمجية إلى الحافظة",
+  "acpAgentOfflineRunning": "غير متصل (المهمة تعمل في الخلفية)",
+  "acpAgentOfflineTaskRunning": "اتصال SSH غير متصل. قد تظل مهمة الوكيل قيد التشغيل في الخلفية.",
+  "chatCloseBanner": "إغلاق",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

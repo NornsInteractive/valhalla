@@ -6176,4 +6176,39 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatFileEditorDiff => '비교';
+
+  @override
+  String terminalLastChecked(String time) {
+    return '마지막 확인: $time';
+  }
+
+  @override
+  String get terminalNotChecked => '확인 안 됨';
+
+  @override
+  String get terminalLastCheckedTitle => '마지막 확인';
+
+  @override
+  String chatExpandCode(String lines) {
+    return '코드 펼치기 ($lines 줄)';
+  }
+
+  @override
+  String get chatCollapseCode => '코드 접기';
+
+  @override
+  String get chatCodeReaderTitle => '코드 뷰어';
+
+  @override
+  String get chatCodeCopied => '코드가 클립보드에 복사되었습니다';
+
+  @override
+  String get acpAgentOfflineRunning => '오프라인 (백그라운드에서 작업 실행 중)';
+
+  @override
+  String get acpAgentOfflineTaskRunning =>
+      'SSH 오프라인 상태입니다. 백그라운드 에이전트 작업이 계속 실행 중일 수 있습니다.';
+
+  @override
+  String get chatCloseBanner => '닫기';
 }

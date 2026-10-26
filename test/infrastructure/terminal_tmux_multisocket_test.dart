@@ -947,5 +947,113 @@ void main() {
       expect(remaining.single.name, name);
       expect(remaining.single.identity!.key, secondIdentity.key);
     });
+    group('畸形响应的稳定错误码与脱敏回显', () {
+      test('发现响应畸形：稳定错误码 + 原始输出脱敏并 JSON 转义', () async {
+        final malformed =
+            '\$3\t1772000000\tx\t4211\t/tmp/x/shared\t'
+            'Name"With\\Quote password=s3cr3tPASS';
+        final client = _FakeSshClient()
+          ..onQuery = (command) =>
+              _FakeSshSession(stdout: utf8.encode(malformed));
+        SSHConnectionException? caught;
+        try {
+          await TerminalSessionBridge.discoverTmuxSessions(
+            client,
+            serverId: 'srv-1',
+            socket: TmuxSocketSource.standard,
+            includeExternal: true,
+          );
+        } on SSHConnectionException catch (e) {
+          caught = e;
+        }
+        expect(caught, isNotNull, reason: '畸形响应必须抛错');
+        expect(
+          caught!.message,
+          'TMUX_HISTORY_INVALID_RESPONSE',
+          reason: '错误码必须稳定，不随输出内容变化',
+        );
+        final details = caught.details as String;
+        expect(details, contains('******'), reason: '密钥必须被脱敏');
+        expect(details, isNot(contains('s3cr3tPASS')), reason: '原始口令不得明文出现');
+        expect(details, contains(r'\"'), reason: '原始双引号必须被 JSON 转义');
+        expect(details, contains(r'\\'), reason: '原始反斜杠必须被 JSON 转义');
+        expect(
+          details,
+          isNot(contains(r'Name"With\Quote')),
+          reason: '回显必须是转义后的文本，而非原始输出',
+        );
+        expect(
+          client.commands.last,
+          contains('-L default'),
+          reason: '外部 socket 的严格断言必须保留',
+        );
+        expect(client.commands.last, contains('list-sessions'));
+      });
+
+      test('身份响应畸形：稳定错误码 + 原始输出脱敏并 JSON 转义', () async {
+        final malformed = '\$3\t1772000000\ttoken=AbCdEf12345 "quote';
+        final identity = _identity(sessionId: r'$3');
+        final client = _FakeSshClient()
+          ..onQuery = (command) =>
+              _FakeSshSession(stdout: utf8.encode(malformed));
+        SSHConnectionException? caught;
+        try {
+          await TerminalSessionBridge.tmuxSessionExists(
+            client,
+            'ext',
+            tmuxPath: '/usr/bin/tmux',
+            socket: TmuxSocketSource.standard,
+            identity: identity,
+          );
+        } on SSHConnectionException catch (e) {
+          caught = e;
+        }
+        expect(caught, isNotNull, reason: '畸形身份响应必须抛错');
+        expect(
+          caught!.message,
+          'TMUX_HISTORY_INVALID_RESPONSE',
+          reason: '错误码必须稳定',
+        );
+        final details = caught.details as String;
+        expect(details, contains('******'), reason: 'token 必须被脱敏');
+        expect(
+          details,
+          isNot(contains('AbCdEf12345')),
+          reason: '原始 token 不得明文出现',
+        );
+        expect(details, contains(r'\"'), reason: '原始双引号必须被 JSON 转义');
+        expect(
+          client.commands.last,
+          contains('-L default'),
+          reason: '外部 socket 的严格断言必须保留',
+        );
+        expect(
+          client.commands.last,
+          contains("'\$3'"),
+          reason: '身份寻址的严格断言必须保留',
+        );
+      });
+
+      test('输出超过 4096 时 details 必须截断到 4096', () async {
+        final huge = '\$3\t1772000000\tx\t4211\t/tmp/x/shared\t${'A' * 5000}';
+        final client = _FakeSshClient()
+          ..onQuery = (command) => _FakeSshSession(stdout: utf8.encode(huge));
+        SSHConnectionException? caught;
+        try {
+          await TerminalSessionBridge.discoverTmuxSessions(
+            client,
+            serverId: 'srv-1',
+            socket: TmuxSocketSource.standard,
+            includeExternal: true,
+          );
+        } on SSHConnectionException catch (e) {
+          caught = e;
+        }
+        expect(caught, isNotNull);
+        final details = caught!.details as String;
+        expect(details.length, 4096, reason: 'details 不得超过 4096');
+        expect(details, startsWith('exit=0;'));
+      });
+    });
   }, skip: _tmuxInstalled ? null : '本机没有安装 tmux，跳过真实 tmux 往返');
 }

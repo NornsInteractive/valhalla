@@ -6448,4 +6448,40 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get chatFileEditorDiff => 'Diff';
+
+  @override
+  String terminalLastChecked(String time) {
+    return 'Terakhir diperiksa: $time';
+  }
+
+  @override
+  String get terminalNotChecked => 'Belum diperiksa';
+
+  @override
+  String get terminalLastCheckedTitle => 'Pemeriksaan Terakhir';
+
+  @override
+  String chatExpandCode(String lines) {
+    return 'Perluas kode ($lines baris)';
+  }
+
+  @override
+  String get chatCollapseCode => 'Ciutkan kode';
+
+  @override
+  String get chatCodeReaderTitle => 'Pembaca Kode';
+
+  @override
+  String get chatCodeCopied => 'Kode disalin ke papan klip';
+
+  @override
+  String get acpAgentOfflineRunning =>
+      'Offline (Tugas berjalan di latar belakang)';
+
+  @override
+  String get acpAgentOfflineTaskRunning =>
+      'SSH offline. Tugas agen latar belakang mungkin masih berjalan.';
+
+  @override
+  String get chatCloseBanner => 'Tutup';
 }

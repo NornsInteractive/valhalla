@@ -6436,4 +6436,39 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chatFileEditorDiff => 'Khác biệt';
+
+  @override
+  String terminalLastChecked(String time) {
+    return 'Kiểm tra lần cuối: $time';
+  }
+
+  @override
+  String get terminalNotChecked => 'Chưa kiểm tra';
+
+  @override
+  String get terminalLastCheckedTitle => 'Kiểm tra lần cuối';
+
+  @override
+  String chatExpandCode(String lines) {
+    return 'Mở rộng mã ($lines dòng)';
+  }
+
+  @override
+  String get chatCollapseCode => 'Thu gọn mã';
+
+  @override
+  String get chatCodeReaderTitle => 'Trình đọc mã';
+
+  @override
+  String get chatCodeCopied => 'Đã sao chép mã vào khay nhớ tạm';
+
+  @override
+  String get acpAgentOfflineRunning => 'Ngoại tuyến (Tác vụ đang chạy ngầm)';
+
+  @override
+  String get acpAgentOfflineTaskRunning =>
+      'SSH ngoại tuyến. Tác vụ tác nhân chạy ngầm có thể vẫn đang chạy.';
+
+  @override
+  String get chatCloseBanner => 'Đóng';
 }

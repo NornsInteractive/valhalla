@@ -2478,5 +2478,29 @@
   "chatExecutionChangedPrompt": "Среда выполнения сеанса изменилась. Создайте новый сеанс для продолжения.",
   "chatLinkCopied": "Ссылка скопирована в буфер обмена",
   "chatFileEditorEdit": "Редактировать",
-  "chatFileEditorDiff": "Различия"
+  "chatFileEditorDiff": "Различия",
+  "terminalLastChecked": "Последняя проверка: {time}",
+  "terminalNotChecked": "Не проверялось",
+  "terminalLastCheckedTitle": "Последняя проверка",
+  "chatExpandCode": "Развернуть код ({lines} строк)",
+  "chatCollapseCode": "Свернуть код",
+  "chatCodeReaderTitle": "Просмотр кода",
+  "chatCodeCopied": "Код скопирован в буфер обмена",
+  "acpAgentOfflineRunning": "Офлайн (задача выполняется в фоне)",
+  "acpAgentOfflineTaskRunning": "SSH офлайн. Фоновая задача агента может продолжать выполняться.",
+  "chatCloseBanner": "Закрыть",
+  "@terminalLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatExpandCode": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  }
 }

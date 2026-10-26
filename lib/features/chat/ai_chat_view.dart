@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design/motion.dart';
 import '../../core/design/motion_widgets.dart';
@@ -78,6 +79,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   String? _authLaunchError;
   bool _isShowingPersistentRuntimeConsentDialog = false;
   bool _showWorkbench = false;
+  final Map<String, bool> _codeBlockExpandedState = <String, bool>{};
+  final Set<String> _expandedToolIds = <String>{};
+  String? _dismissedErrorCode;
 
   @override
   void initState() {
@@ -1102,7 +1106,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     }
   }
 
-  Widget _buildErrorBanner(String errorCode) {
+  Widget _buildErrorBanner(String errorCode, {VoidCallback? onDismiss}) {
     return Consumer(
       builder: (bannerCtx, bannerRef, _) {
         final retryMeta = bannerRef.watch(
@@ -1194,6 +1198,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         return _ChatErrorBanner(
           errorCode: errorCode,
           onReloadHistory: onReload,
+          onDismiss: onDismiss,
         );
       },
     );
@@ -1201,8 +1206,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
   Widget _buildServerRunningBanner(
     BuildContext context,
-    AcpActiveRun serverRun,
-  ) {
+    AcpActiveRun serverRun, {
+    bool isSshConnected = true,
+  }) {
     return Material(
       color: Colors.transparent,
       elevation: 2,
@@ -1213,7 +1219,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           color: context.colorScheme.surfaceContainerHigh,
           border: Border(
             bottom: BorderSide(
-              color: context.colorScheme.primary.withValues(alpha: 0.2),
+              color: isSshConnected
+                  ? context.colorScheme.primary.withValues(alpha: 0.2)
+                  : context.vWarning.withValues(alpha: 0.35),
             ),
           ),
         ),
@@ -1222,15 +1230,25 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             SizedBox(
               width: 14,
               height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: context.colorScheme.primary,
-              ),
+              child: isSshConnected
+                  ? CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: context.colorScheme.primary,
+                    )
+                  : Icon(
+                      Icons.cloud_off_outlined,
+                      size: 14,
+                      color: context.vWarning,
+                    ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                context.l10n.acpRunningSessionIndicator(serverRun.agentName),
+                isSshConnected
+                    ? context.l10n.acpRunningSessionIndicator(
+                        serverRun.agentName,
+                      )
+                    : context.l10n.acpAgentOfflineTaskRunning,
                 style: context.textTheme.bodySmall?.copyWith(
                   color: context.colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
@@ -1272,6 +1290,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(activeServerProvider.select((s) => s?.id), (prev, next) {
+      if (prev != next) {
+        _dismissedErrorCode = null;
+      }
+    });
     ref.listen<AiChatState>(aiChatProvider, (previous, next) {
       final previousUnread = _unreadMessageCount;
       final prevSessionId = previous?.activeSession?.id;
@@ -1283,6 +1306,13 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       final nextAgentId = next.activeAgentProfile?.id;
       final prevServerId = previous?.activeAgentProfile?.serverId;
       final nextServerId = next.activeAgentProfile?.serverId;
+
+      if (next.lastErrorCode == null ||
+          nextSessionId != prevSessionId ||
+          nextAgentId != prevAgentId ||
+          nextServerId != prevServerId) {
+        _dismissedErrorCode = null;
+      }
       if (nextSessionId != prevSessionId ||
           nextAgentId != prevAgentId ||
           nextServerId != prevServerId) {
@@ -1530,61 +1560,88 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   },
                 ),
                 const Divider(height: 1),
-                Consumer(
-                  builder: (ctx, ref, _) {
-                    final bannerCode = ref.watch(
-                      aiChatProvider.select((s) {
-                        final code = s.lastErrorCode;
-                        if (code == null ||
-                            code == AiChatNotifier.disconnectedCode ||
-                            code == AiChatNotifier.authRequiredCode ||
-                            s.authChallenge != null ||
-                            s.authError != null) {
-                          return null;
-                        }
-                        final hasMessageError =
-                            s.activeSession?.messages.any(
-                              (m) =>
-                                  m.failureCode == code ||
-                                  (m.role == MessageRole.assistant &&
-                                      m.content.endsWith('**Error:** $code')),
-                            ) ??
-                            false;
-                        if (hasMessageError) {
-                          return null;
-                        }
-                        return code;
-                      }),
-                    );
-                    if (bannerCode == null) return const SizedBox.shrink();
-                    return _buildErrorBanner(bannerCode);
-                  },
-                ),
                 Expanded(
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
                       Positioned.fill(child: _buildMessageList()),
-                      Consumer(
-                        builder: (ctx, ref, _) {
-                          final serverRun = ref.watch(
-                            aiChatProvider.select((s) => s.serverRun),
-                          );
-                          final isViewingRun = ref.watch(
-                            aiChatProvider.select((s) => s.isViewingRun),
-                          );
-                          if (serverRun != null &&
-                              !isViewingRun &&
-                              serverRun.isBusy) {
-                            return Positioned(
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              child: _buildServerRunningBanner(ctx, serverRun),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Consumer(
+                              builder: (ctx, ref, _) {
+                                final bannerCode = ref.watch(
+                                  aiChatProvider.select((s) {
+                                    final code = s.lastErrorCode;
+                                    if (code == null ||
+                                        code ==
+                                            AiChatNotifier.disconnectedCode ||
+                                        code ==
+                                            AiChatNotifier.authRequiredCode ||
+                                        s.authChallenge != null ||
+                                        s.authError != null) {
+                                      return null;
+                                    }
+                                    final hasMessageError =
+                                        s.activeSession?.messages.any(
+                                          (m) =>
+                                              m.failureCode == code ||
+                                              (m.role ==
+                                                      MessageRole.assistant &&
+                                                  m.content.endsWith(
+                                                    '**Error:** $code',
+                                                  )),
+                                        ) ??
+                                        false;
+                                    if (hasMessageError) {
+                                      return null;
+                                    }
+                                    return code;
+                                  }),
+                                );
+                                if (bannerCode == null ||
+                                    _dismissedErrorCode == bannerCode) {
+                                  return const SizedBox.shrink();
+                                }
+                                return _buildErrorBanner(
+                                  bannerCode,
+                                  onDismiss: () => setState(
+                                    () => _dismissedErrorCode = bannerCode,
+                                  ),
+                                );
+                              },
+                            ),
+                            Consumer(
+                              builder: (ctx, ref, _) {
+                                final serverRun = ref.watch(
+                                  aiChatProvider.select((s) => s.serverRun),
+                                );
+                                final isViewingRun = ref.watch(
+                                  aiChatProvider.select((s) => s.isViewingRun),
+                                );
+                                final isSshConnected = ref.watch(
+                                  serverConnectionProvider.select(
+                                    (s) => s.isConnected,
+                                  ),
+                                );
+                                if (serverRun != null &&
+                                    !isViewingRun &&
+                                    serverRun.isBusy) {
+                                  return _buildServerRunningBanner(
+                                    ctx,
+                                    serverRun,
+                                    isSshConnected: isSshConnected,
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                       if (!_userNearBottom)
                         Positioned(
@@ -3393,10 +3450,22 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             for (final block in msg.orderedContentBlocks) ...[
               if (block.type == ChatContentBlockType.tool) ...[
                 if (toolsById[block.toolId] != null)
-                  _ToolExecutionCard(
-                    key: ValueKey('tool_${block.toolId}'),
-                    tool: toolsById[block.toolId]!,
-                    messageId: msg.id,
+                  Builder(
+                    builder: (context) {
+                      final toolKey =
+                          '${sessionId ?? ''}:${msg.id}:${block.toolId}';
+                      return _ToolExecutionCard(
+                        key: ValueKey('tool_${block.toolId}'),
+                        tool: toolsById[block.toolId]!,
+                        messageId: msg.id,
+                        isExpanded: _expandedToolIds.contains(toolKey),
+                        onToggleExpand: () => setState(() {
+                          if (!_expandedToolIds.add(toolKey)) {
+                            _expandedToolIds.remove(toolKey);
+                          }
+                        }),
+                      );
+                    },
                   ),
               ] else if (block.type == ChatContentBlockType.text) ...[
                 _buildTextBlock(context, msg, block),
@@ -3624,22 +3693,22 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         : '';
     if (text.isEmpty) return const SizedBox.shrink();
 
-    return ValhallaCard(
+    final isLiveStreaming = msg.status == ChatTurnStatus.streaming;
+    final sessionId =
+        ref.watch(aiChatProvider.select((s) => s.activeSessionId)) ?? '';
+
+    return _CachedMarkdownTextBlock(
       key: ValueKey('msg_${msg.id}_block_${block.start}'),
-      color: context.colorScheme.surface,
-      padding: const EdgeInsets.all(VSpace.md),
-      child: MarkdownBody(
-        data: text,
-        selectable: true,
-        onTapLink: (linkText, href, title) {
-          if (href != null && href.isNotEmpty) {
-            _handleChatLink(context, href);
-          }
-        },
-        styleSheet: MarkdownStyleSheet.fromTheme(
-          Theme.of(context),
-        ).copyWith(code: monoTextStyle(fontSize: 12)),
-      ),
+      text: text,
+      sessionId: sessionId,
+      messageId: msg.id,
+      blockStart: block.start,
+      isLiveStreaming: isLiveStreaming,
+      codeBlockExpandedState: _codeBlockExpandedState,
+      onCodeBlockExpansionChanged: (codeKey, expanded) {
+        _codeBlockExpandedState[codeKey] = expanded;
+      },
+      onTapLink: (href) => _handleChatLink(context, href),
     );
   }
 
@@ -7433,8 +7502,13 @@ class _MessageFailureCardState extends ConsumerState<_MessageFailureCard> {
 class _ChatErrorBanner extends StatefulWidget {
   final String errorCode;
   final VoidCallback? onReloadHistory;
+  final VoidCallback? onDismiss;
 
-  const _ChatErrorBanner({required this.errorCode, this.onReloadHistory});
+  const _ChatErrorBanner({
+    required this.errorCode,
+    this.onReloadHistory,
+    this.onDismiss,
+  });
 
   @override
   State<_ChatErrorBanner> createState() => _ChatErrorBannerState();
@@ -7549,6 +7623,21 @@ class _ChatErrorBannerState extends State<_ChatErrorBanner> {
       onPressed: () => setState(() => _expanded = !_expanded),
     );
 
+    final dismissButton = widget.onDismiss != null
+        ? IconButton(
+            icon: Icon(
+              Icons.close,
+              size: 16,
+              color: context.colorScheme.onErrorContainer,
+            ),
+            tooltip: context.l10n.chatCloseBanner,
+            visualDensity: VisualDensity.standard,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            onPressed: widget.onDismiss,
+          )
+        : null;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -7588,7 +7677,7 @@ class _ChatErrorBannerState extends State<_ChatErrorBanner> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 spacing: 4,
                 runSpacing: 4,
-                children: [?actionButton, detailsButton],
+                children: [?actionButton, detailsButton, ?dismissButton],
               ),
             ),
           ] else ...[
@@ -7611,6 +7700,7 @@ class _ChatErrorBannerState extends State<_ChatErrorBanner> {
                 ),
                 ?actionButton,
                 detailsButton,
+                ?dismissButton,
               ],
             ),
           ],
@@ -7660,6 +7750,673 @@ class _ChatErrorBannerState extends State<_ChatErrorBanner> {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _FenceMatch {
+  final String char;
+  final int length;
+  final int indent;
+  const _FenceMatch(this.char, this.length, this.indent);
+}
+
+_FenceMatch? _matchOpeningFence(String line) {
+  final stripped = line.trimLeft();
+  final indent = line.length - stripped.length;
+  if (indent >= 4 || stripped.length < 3) return null;
+  final c = stripped[0];
+  if (c != '`' && c != '~') return null;
+  int count = 0;
+  while (count < stripped.length && stripped[count] == c) {
+    count++;
+  }
+  if (count < 3) return null;
+  if (c == '`' && stripped.substring(count).contains('`')) {
+    return null;
+  }
+  return _FenceMatch(c, count, indent);
+}
+
+bool _isClosingFence(String line, _FenceMatch open) {
+  final stripped = line.trimLeft();
+  final indent = line.length - stripped.length;
+  if (indent >= 4 || stripped.length < open.length) return false;
+  if (stripped[0] != open.char) return false;
+  int count = 0;
+  while (count < stripped.length && stripped[count] == open.char) {
+    count++;
+  }
+  if (count < open.length) return false;
+  final rest = stripped.substring(count).trim();
+  return rest.isEmpty;
+}
+
+bool _hasComplexMarkdown(String text) {
+  if (text.isEmpty) return false;
+
+  // Reference link definitions: [id]: url
+  if (RegExp(
+    r'^\s{0,3}\[[^\]\n]+\]:[ \t]*\S+',
+    multiLine: true,
+  ).hasMatch(text)) {
+    return true;
+  }
+  // Reference link usage: [text][id] or [text][]
+  if (RegExp(r'\[[^\]\n]+\][ \t\n]*\[[^\]\n]*\]').hasMatch(text)) {
+    return true;
+  }
+  // Blockquotes: > quote
+  if (RegExp(r'^\s{0,3}>', multiLine: true).hasMatch(text)) {
+    return true;
+  }
+  // Lists: loose lists, nested lists, ordered or unordered lists
+  if (RegExp(
+    r'^\s{0,3}(?:[*+-]|\d+[.)])(?:\s+|$)',
+    multiLine: true,
+  ).hasMatch(text)) {
+    return true;
+  }
+  // HTML blocks or comments: e.g. <div>, <!--
+  if (RegExp(r'^\s{0,3}<[a-zA-Z!/]', multiLine: true).hasMatch(text)) {
+    return true;
+  }
+  // Tables: lines starting with pipe or table delimiter rows
+  if (RegExp(r'^\s{0,3}\|', multiLine: true).hasMatch(text) ||
+      RegExp(r'^\s{0,3}\|?\s*[-:]+[-| :]*\|', multiLine: true).hasMatch(text)) {
+    return true;
+  }
+  // Thematic breaks (horizontal rules)
+  if (RegExp(
+    r'^\s{0,3}(?:(?:-[ \t]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})$',
+    multiLine: true,
+  ).hasMatch(text)) {
+    return true;
+  }
+
+  // Indented code blocks: 4+ spaces outside fences on non-empty line
+  final lines = text.split('\n');
+  _FenceMatch? openFence;
+  for (final line in lines) {
+    final stripped = line.trimLeft();
+    final indent = line.length - stripped.length;
+    if (openFence == null) {
+      final f = _matchOpeningFence(line);
+      if (f != null) {
+        openFence = f;
+      } else if (indent >= 4 && stripped.isNotEmpty) {
+        return true;
+      }
+    } else {
+      if (_isClosingFence(line, openFence)) {
+        openFence = null;
+      }
+    }
+  }
+
+  return false;
+}
+
+List<String> _splitMarkdownSubBlocks(String text) {
+  if (text.isEmpty) return const [];
+  // For complex forms conservatively keep original whole Markdown rendering
+  if (_hasComplexMarkdown(text)) {
+    return [text];
+  }
+
+  final lines = text.split('\n');
+  final subBlocks = <String>[];
+  final currentLines = <String>[];
+  _FenceMatch? openFence;
+
+  void flushParagraph() {
+    if (currentLines.any((l) => l.trim().isNotEmpty)) {
+      final block = currentLines.join('\n').trim();
+      if (block.isNotEmpty) {
+        subBlocks.add(block);
+      }
+    }
+    currentLines.clear();
+  }
+
+  for (final line in lines) {
+    final stripped = line.trimLeft();
+    if (openFence == null) {
+      final f = _matchOpeningFence(line);
+      if (f != null) {
+        flushParagraph();
+        openFence = f;
+        currentLines.add(line);
+      } else if (stripped.isEmpty) {
+        flushParagraph();
+      } else {
+        currentLines.add(line);
+      }
+    } else {
+      currentLines.add(line);
+      if (_isClosingFence(line, openFence)) {
+        final block = currentLines.join('\n').trim();
+        if (block.isNotEmpty) {
+          subBlocks.add(block);
+        }
+        currentLines.clear();
+        openFence = null;
+      }
+    }
+  }
+
+  if (currentLines.any((l) => l.trim().isNotEmpty)) {
+    final block = currentLines.join('\n').trim();
+    if (block.isNotEmpty) {
+      subBlocks.add(block);
+    }
+  }
+
+  return subBlocks.isEmpty && text.trim().isNotEmpty ? [text] : subBlocks;
+}
+
+class _CachedMarkdownTextBlock extends StatelessWidget {
+  final String text;
+  final String sessionId;
+  final String messageId;
+  final int blockStart;
+  final bool isLiveStreaming;
+  final Map<String, bool> codeBlockExpandedState;
+  final void Function(String codeKey, bool expanded)
+  onCodeBlockExpansionChanged;
+  final void Function(String href) onTapLink;
+
+  const _CachedMarkdownTextBlock({
+    super.key,
+    required this.text,
+    required this.sessionId,
+    required this.messageId,
+    required this.blockStart,
+    required this.isLiveStreaming,
+    required this.codeBlockExpandedState,
+    required this.onCodeBlockExpansionChanged,
+    required this.onTapLink,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final subBlocks = _splitMarkdownSubBlocks(text);
+    if (subBlocks.isEmpty) return const SizedBox.shrink();
+
+    return ValhallaCard(
+      color: context.colorScheme.surface,
+      padding: const EdgeInsets.all(VSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (int i = 0; i < subBlocks.length; i++)
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: i < subBlocks.length - 1 ? 8.0 : 0.0,
+              ),
+              child: _CachedMarkdownSubBlock(
+                key: ValueKey('sub_${messageId}_${blockStart}_$i'),
+                text: subBlocks[i],
+                sessionId: sessionId,
+                messageId: messageId,
+                blockStart: blockStart,
+                subIndex: i,
+                isLiveStreaming: isLiveStreaming && (i == subBlocks.length - 1),
+                codeBlockExpandedState: codeBlockExpandedState,
+                onCodeBlockExpansionChanged: onCodeBlockExpansionChanged,
+                onTapLink: onTapLink,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CachedMarkdownSubBlock extends StatelessWidget {
+  final String text;
+  final String sessionId;
+  final String messageId;
+  final int blockStart;
+  final int subIndex;
+  final bool isLiveStreaming;
+  final Map<String, bool> codeBlockExpandedState;
+  final void Function(String codeKey, bool expanded)
+  onCodeBlockExpansionChanged;
+  final void Function(String href) onTapLink;
+
+  const _CachedMarkdownSubBlock({
+    super.key,
+    required this.text,
+    required this.sessionId,
+    required this.messageId,
+    required this.blockStart,
+    required this.subIndex,
+    required this.isLiveStreaming,
+    required this.codeBlockExpandedState,
+    required this.onCodeBlockExpansionChanged,
+    required this.onTapLink,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MarkdownBody(
+      data: text,
+      selectable: true,
+      onTapLink: (linkText, href, title) {
+        if (href != null && href.isNotEmpty) {
+          onTapLink(href);
+        }
+      },
+      styleSheet: MarkdownStyleSheet.fromTheme(
+        Theme.of(context),
+      ).copyWith(code: monoTextStyle(fontSize: 12)),
+      builders: {
+        'pre': _PreCodeBlockElementBuilder(
+          sessionId: sessionId,
+          messageId: messageId,
+          blockStart: blockStart,
+          subIndex: subIndex,
+          isLiveStreaming: isLiveStreaming,
+          codeBlockExpandedState: codeBlockExpandedState,
+          onCodeBlockExpansionChanged: onCodeBlockExpansionChanged,
+        ),
+      },
+    );
+  }
+}
+
+class _PreCodeBlockElementBuilder extends MarkdownElementBuilder {
+  final String sessionId;
+  final String messageId;
+  final int blockStart;
+  final int subIndex;
+  final bool isLiveStreaming;
+  final Map<String, bool> codeBlockExpandedState;
+  final void Function(String codeKey, bool expanded)
+  onCodeBlockExpansionChanged;
+
+  int _codeIndex = 0;
+
+  _PreCodeBlockElementBuilder({
+    required this.sessionId,
+    required this.messageId,
+    required this.blockStart,
+    required this.subIndex,
+    required this.isLiveStreaming,
+    required this.codeBlockExpandedState,
+    required this.onCodeBlockExpansionChanged,
+  });
+
+  @override
+  bool isBlockElement() => true;
+
+  @override
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    if (element.tag != 'pre') return null;
+    final code = element.textContent;
+    final index = _codeIndex++;
+    final codeKey = '$sessionId:$messageId:$blockStart:$subIndex:code_$index';
+
+    String? language;
+    if (element.children != null && element.children!.isNotEmpty) {
+      final child = element.children!.first;
+      if (child is md.Element && child.attributes['class'] != null) {
+        final cls = child.attributes['class']!;
+        language = cls.startsWith('language-')
+            ? cls.substring('language-'.length)
+            : cls;
+      }
+    }
+
+    return _HistoricalCodeBlockWidget(
+      key: ValueKey(codeKey),
+      code: code,
+      language: language,
+      codeKey: codeKey,
+      isLiveStreaming: isLiveStreaming,
+      canonicalExpanded: codeBlockExpandedState[codeKey],
+      onExpansionChanged: (expanded) =>
+          onCodeBlockExpansionChanged(codeKey, expanded),
+    );
+  }
+}
+
+int _logicalCodeLineCount(String code) {
+  if (code.isEmpty) return 0;
+  final rawLines = code.split('\n');
+  return (rawLines.isNotEmpty && rawLines.last.isEmpty)
+      ? rawLines.length - 1
+      : rawLines.length;
+}
+
+class _HistoricalCodeBlockWidget extends StatefulWidget {
+  final String code;
+  final String? language;
+  final String codeKey;
+  final bool isLiveStreaming;
+  final bool? canonicalExpanded;
+  final ValueChanged<bool>? onExpansionChanged;
+
+  const _HistoricalCodeBlockWidget({
+    super.key,
+    required this.code,
+    this.language,
+    required this.codeKey,
+    required this.isLiveStreaming,
+    required this.canonicalExpanded,
+    this.onExpansionChanged,
+  });
+
+  @override
+  State<_HistoricalCodeBlockWidget> createState() =>
+      _HistoricalCodeBlockWidgetState();
+}
+
+class _HistoricalCodeBlockWidgetState
+    extends State<_HistoricalCodeBlockWidget> {
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    final totalLines = _logicalCodeLineCount(widget.code);
+    if (widget.canonicalExpanded != null) {
+      _isExpanded = widget.canonicalExpanded!;
+    } else {
+      _isExpanded = widget.isLiveStreaming || totalLines <= 30;
+      widget.onExpansionChanged?.call(_isExpanded);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _HistoricalCodeBlockWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.canonicalExpanded != null &&
+        widget.canonicalExpanded != oldWidget.canonicalExpanded &&
+        widget.canonicalExpanded != _isExpanded) {
+      _isExpanded = widget.canonicalExpanded!;
+    }
+  }
+
+  void _toggle() {
+    setState(() => _isExpanded = !_isExpanded);
+    widget.onExpansionChanged?.call(_isExpanded);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = widget.code.split('\n');
+    final totalLines = _logicalCodeLineCount(widget.code);
+    final isLong = totalLines > 30;
+    final bool shouldFold = isLong && !_isExpanded;
+
+    final displayCode = shouldFold ? lines.take(12).join('\n') : widget.code;
+    final langLabel = (widget.language != null && widget.language!.isNotEmpty)
+        ? widget.language!.toLowerCase()
+        : null;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161618),
+        borderRadius: BorderRadius.circular(VRadius.input),
+        border: Border.all(
+          color: context.colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF202024),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(VRadius.input),
+              ),
+              border: Border(
+                bottom: BorderSide(
+                  color: context.colorScheme.outlineVariant.withValues(
+                    alpha: 0.2,
+                  ),
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                if (langLabel != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.colorScheme.primary.withValues(
+                        alpha: 0.15,
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      langLabel,
+                      style: monoTextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: context.colorScheme.primary,
+                      ),
+                    ),
+                  )
+                else
+                  Text(
+                    'Code',
+                    style: monoTextStyle(
+                      fontSize: 10,
+                      color: context.colorScheme.outline,
+                    ),
+                  ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.fullscreen_outlined, size: 14),
+                  tooltip: context.l10n.chatCodeReaderTitle,
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => _CodeReaderDialog(
+                        code: widget.code,
+                        language: langLabel,
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy_rounded, size: 14),
+                  tooltip: context.l10n.copy,
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                  ),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: widget.code));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(context.l10n.chatCodeCopied),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          // Code Content
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.all(10),
+            child: SelectableText(
+              displayCode,
+              style: monoTextStyle(
+                fontSize: 12,
+                color: const Color(0xFFE6E6E6),
+              ),
+            ),
+          ),
+          // Expand / Collapse Footer
+          if (isLong)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B1B1F),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(VRadius.input),
+                ),
+                border: Border(
+                  top: BorderSide(
+                    color: context.colorScheme.outlineVariant.withValues(
+                      alpha: 0.15,
+                    ),
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    icon: Icon(
+                      shouldFold ? Icons.expand_more : Icons.expand_less,
+                      size: 14,
+                    ),
+                    label: Text(
+                      shouldFold
+                          ? context.l10n.chatExpandCode('$totalLines')
+                          : context.l10n.chatCollapseCode,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    onPressed: _toggle,
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CodeReaderDialog extends StatelessWidget {
+  final String code;
+  final String? language;
+
+  const _CodeReaderDialog({required this.code, this.language});
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.sizeOf(context);
+
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 800,
+          maxHeight: media.height * 0.85,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.code_rounded,
+                    size: 18,
+                    color: context.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    language != null
+                        ? '${context.l10n.chatCodeReaderTitle} ($language)'
+                        : context.l10n.chatCodeReaderTitle,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${_logicalCodeLineCount(code)} lines',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.colorScheme.outline,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded, size: 16),
+                    tooltip: context.l10n.copy,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: code));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(context.l10n.chatCodeCopied),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    tooltip: context.l10n.cancel,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Code View
+            Expanded(
+              child: Container(
+                color: const Color(0xFF141416),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      code,
+                      style: monoTextStyle(
+                        fontSize: 12,
+                        color: const Color(0xFFECECEC),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -7759,11 +8516,15 @@ class _ThinkingBlockState extends State<_ThinkingBlock> {
 class _ToolExecutionCard extends ConsumerStatefulWidget {
   final ToolExecution tool;
   final String messageId;
+  final bool? isExpanded;
+  final VoidCallback? onToggleExpand;
 
   const _ToolExecutionCard({
     super.key,
     required this.tool,
     required this.messageId,
+    this.isExpanded,
+    this.onToggleExpand,
   });
 
   @override
@@ -7776,6 +8537,16 @@ class _ToolExecutionCardState extends ConsumerState<_ToolExecutionCard> {
   bool _isLoadingMore = false;
   String? _loadedOutput;
   int? _nextOffset;
+
+  bool get _effectiveExpanded => widget.isExpanded ?? _expanded;
+
+  void _handleToggleExpand() {
+    if (widget.onToggleExpand != null) {
+      widget.onToggleExpand!();
+    } else {
+      setState(() => _expanded = !_expanded);
+    }
+  }
 
   @override
   void didUpdateWidget(covariant _ToolExecutionCard oldWidget) {
@@ -7882,7 +8653,7 @@ class _ToolExecutionCardState extends ConsumerState<_ToolExecutionCard> {
         children: [
           // Header
           InkWell(
-            onTap: () => setState(() => _expanded = !_expanded),
+            onTap: _handleToggleExpand,
             borderRadius: BorderRadius.circular(VRadius.input),
             child: Row(
               children: [
@@ -7936,7 +8707,7 @@ class _ToolExecutionCardState extends ConsumerState<_ToolExecutionCard> {
                 ],
                 const SizedBox(width: 4),
                 AnimatedRotation(
-                  turns: _expanded ? 0.5 : 0,
+                  turns: _effectiveExpanded ? 0.5 : 0,
                   duration: VTiming.base,
                   curve: VCurves.emphasized,
                   child: Icon(
@@ -7977,7 +8748,7 @@ class _ToolExecutionCardState extends ConsumerState<_ToolExecutionCard> {
           ],
 
           // Collapsible Output
-          if (_expanded) ...[
+          if (_effectiveExpanded) ...[
             const SizedBox(height: 8),
             if (!hasOutput)
               Text(
@@ -9362,6 +10133,9 @@ class _WorkbenchPanelState extends ConsumerState<_WorkbenchPanel> {
         final isViewingRun = tasksRef.watch(
           aiChatProvider.select((s) => s.isViewingRun),
         );
+        final isSshConnected = tasksRef.watch(
+          serverConnectionProvider.select((s) => s.isConnected),
+        );
         final messages = tasksRef.watch(
           aiChatProvider.select((s) => s.activeSession?.messages ?? const []),
         );
@@ -9388,18 +10162,26 @@ class _WorkbenchPanelState extends ConsumerState<_WorkbenchPanel> {
                       children: [
                         Icon(
                           serverRun.isBusy
-                              ? Icons.autorenew
+                              ? (isSshConnected
+                                    ? Icons.autorenew
+                                    : Icons.cloud_off_outlined)
                               : Icons.check_circle_outline,
                           size: 16,
                           color: serverRun.isBusy
-                              ? context.colorScheme.primary
+                              ? (isSshConnected
+                                    ? context.colorScheme.primary
+                                    : context.vWarning)
                               : Colors.green,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           serverRun.isBusy
-                              ? 'Server Task Running'
-                              : 'Server Task Idle',
+                              ? (isSshConnected
+                                    ? context.l10n.acpRunningSessionIndicator(
+                                        serverRun.agentName,
+                                      )
+                                    : context.l10n.acpAgentOfflineRunning)
+                              : context.l10n.agentStatusReady,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,

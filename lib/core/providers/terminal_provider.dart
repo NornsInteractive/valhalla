@@ -90,6 +90,7 @@ class SshTerminalState {
   final List<String> hiddenRecordIds;
   final Map<String, String> socketErrors;
   final Map<String, String> socketErrorDetails;
+  final Map<String, DateTime> socketCheckedAt;
   final bool isInitialized;
   final bool isInitializing;
   final bool isHistoryLoading;
@@ -111,6 +112,7 @@ class SshTerminalState {
     this.hiddenRecordIds = const [],
     this.socketErrors = const {},
     this.socketErrorDetails = const {},
+    this.socketCheckedAt = const {},
     this.isInitialized = false,
     this.isInitializing = false,
     this.isHistoryLoading = false,
@@ -139,6 +141,7 @@ class SshTerminalState {
     List<String>? hiddenRecordIds,
     Map<String, String>? socketErrors,
     Map<String, String>? socketErrorDetails,
+    Map<String, DateTime>? socketCheckedAt,
     bool clearDefaultHistory = false,
     bool? isInitialized,
     bool? isInitializing,
@@ -167,6 +170,7 @@ class SshTerminalState {
       hiddenRecordIds: hiddenRecordIds ?? this.hiddenRecordIds,
       socketErrors: socketErrors ?? this.socketErrors,
       socketErrorDetails: socketErrorDetails ?? this.socketErrorDetails,
+      socketCheckedAt: socketCheckedAt ?? this.socketCheckedAt,
       isInitialized: isInitialized ?? this.isInitialized,
       isInitializing: isInitializing ?? this.isInitializing,
       isHistoryLoading: isHistoryLoading ?? this.isHistoryLoading,
@@ -973,6 +977,7 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     final found = <TmuxSessionInfo>[];
     final errors = <String, String>{};
     final details = <String, String>{};
+    final checkedAt = <String, DateTime>{};
     final complete = <String>{};
     try {
       // Bounded workers: a slow or inaccessible custom socket cannot flood SSH.
@@ -1003,6 +1008,7 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
               ),
             );
           }
+          checkedAt[source.id] = DateTime.now();
           if (!_isCurrent(workspace) || epoch != workspace.connectionEpoch) {
             return;
           }
@@ -1130,6 +1136,7 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
           historyStatuses: statuses,
           socketErrors: errors,
           socketErrorDetails: details,
+          socketCheckedAt: Map.unmodifiable(checkedAt),
         ),
       );
       // Display remote truth immediately; never wait on a pending rename/default disk write.

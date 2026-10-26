@@ -6507,4 +6507,40 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get chatFileEditorDiff => 'Diferenças';
+
+  @override
+  String terminalLastChecked(String time) {
+    return 'Última verificação: $time';
+  }
+
+  @override
+  String get terminalNotChecked => 'Não verificado';
+
+  @override
+  String get terminalLastCheckedTitle => 'Última verificação';
+
+  @override
+  String chatExpandCode(String lines) {
+    return 'Expandir código ($lines linhas)';
+  }
+
+  @override
+  String get chatCollapseCode => 'Recolher código';
+
+  @override
+  String get chatCodeReaderTitle => 'Leitor de código';
+
+  @override
+  String get chatCodeCopied => 'Código copiado para a área de transferência';
+
+  @override
+  String get acpAgentOfflineRunning =>
+      'Offline (Tarefa em execução em segundo plano)';
+
+  @override
+  String get acpAgentOfflineTaskRunning =>
+      'SSH offline. A tarefa do agente em segundo plano ainda pode estar em execução.';
+
+  @override
+  String get chatCloseBanner => 'Fechar';
 }
