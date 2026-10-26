@@ -238,7 +238,7 @@ void main() {
         find.byKey(const Key('terminalTmuxSessionRestored')),
         findsOneWidget,
       );
-      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(seconds: 4));
       expect(
         find.byKey(const Key('terminalTmuxSessionRestored')),
         findsNothing,

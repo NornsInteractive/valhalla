@@ -138,7 +138,7 @@ void main() {
     );
 
     testWidgets(
-      'shows terminalTmuxSessionRestored on reconnect and hides after 2 seconds',
+      'shows terminalTmuxSessionRestored on reconnect and hides after 4 seconds',
       (tester) async {
         final bridge = _FakeBridge(
           initialMode: TerminalSessionMode.tmux,
@@ -167,15 +167,15 @@ void main() {
         expect(find.text(l10n.terminalTmuxSessionRestored), findsOneWidget);
         expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
 
-        // Wait 1 second - still visible
-        await tester.pump(const Duration(seconds: 1));
+        // Wait 3.9 seconds - still visible just before the 4 second deadline
+        await tester.pump(const Duration(milliseconds: 3900));
         expect(
           find.byKey(const Key('terminalTmuxSessionRestored')),
           findsOneWidget,
         );
 
-        // Wait another 1.1 seconds - auto hides
-        await tester.pump(const Duration(milliseconds: 1100));
+        // Wait another 0.2 seconds - auto hides past the deadline
+        await tester.pump(const Duration(milliseconds: 200));
         expect(
           find.byKey(const Key('terminalTmuxSessionRestored')),
           findsNothing,
