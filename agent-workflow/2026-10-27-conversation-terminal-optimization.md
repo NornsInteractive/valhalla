@@ -28,3 +28,5 @@ ChatRepository.searchMessages(serverId,{sessionId,agentId,query,cursor,limit=30}
 阶段1 UI由原AgY完成：新增Markdown安全分块（复杂语法整体回退）、有状态代码预览/完整复制/阅读器、独立工具展开键、可关闭状态浮层与来源检查时间。首轮分析的文案getter和fixture覆盖告警已修正；首次UI回归暴露代码末尾LF计数与fixture取值/异步选择问题，已分别由AgY与CodeBuddy修正，正在重跑最终门禁。当前尚未升号或发布，后两阶段仍只有忽略目录中的核心草案，不能计为已交付。
 
 阶段1最终门禁：CodeBuddy免费DeepSeek执行，证据stage1-gates-20261026T183917Z，生成/格式/全项目分析(零问题)/36文件458项常规测试/diff-check全部0，无失败跳过。代码阅读7项测试真实点击全部命中，收起仍严格断言12行、复制完整含LF；改正只涉及fixture滚动后布局等待，并未放宽断言。进入1.0.20+21既有脚本构建发布；阶段2/3尚未实施。
+
+阶段1已完成正式1.0.20+21发布，回执见2026-10-27-v1020-release.md；官网revision109。阶段2已接入核心查询与只读缓冲搜索，AgY实现UI、CodeBuddy补回归中，尚未交付。

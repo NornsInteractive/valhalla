@@ -102,3 +102,5 @@ docs/
 6. **架构边界清晰解耦**：
    `UI (Material 3) -> State (Riverpod) -> Service/Repository -> Infrastructure (dartssh2 / acpd / xterm / drift)`
    禁止 Widget 越级直连底层网络通道。
+
+- [1.0.20 阶段一发布回执](../agent-workflow/2026-10-27-v1020-release.md)：恢复反馈与长代码阅读；后续搜索和快捷操作阶段仍在实现。
