@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 import '../../core/design/tokens.dart';
@@ -552,6 +553,9 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
 
   Widget _buildErrorBanner(BuildContext context, String code) {
     final message = _localizeErrorCode(context, code);
+    final errorDetail = ref.watch(
+      terminalProvider.select((s) => s.errorDetail),
+    );
     return Material(
       color: context.colorScheme.surface,
       elevation: 3,
@@ -570,15 +574,50 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
             Icon(Icons.error_outline, color: context.vDanger, size: 16),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  color: context.vDanger,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    message,
+                    style: TextStyle(
+                      color: context.vDanger,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (errorDetail != null && errorDetail.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      errorDetail,
+                      style: TextStyle(
+                        color: context.vDanger.withValues(alpha: 0.8),
+                        fontSize: 11,
+                        fontFamily: 'JetBrains Mono',
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
               ),
             ),
+            if (errorDetail != null && errorDetail.isNotEmpty)
+              IconButton(
+                icon: Icon(Icons.copy, size: 14, color: context.vDanger),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                tooltip: context.l10n.chatCopyError,
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: errorDetail));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(context.l10n.updateErrorCopied),
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                },
+              ),
             IconButton(
               icon: Icon(Icons.close, size: 16, color: context.vDanger),
               padding: EdgeInsets.zero,

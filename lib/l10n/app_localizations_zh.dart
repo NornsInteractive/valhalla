@@ -5985,6 +5985,102 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get deleteSessionOfflineNotice => '服务器未连接，仅可执行本地删除。';
+
+  @override
+  String get chatWorkbench => '工作台';
+
+  @override
+  String get chatWorkbenchFiles => '文件';
+
+  @override
+  String get chatWorkbenchTasks => '任务与工具';
+
+  @override
+  String get chatWorkbenchContext => '上下文';
+
+  @override
+  String get chatWorkspaceProjects => '项目工作区';
+
+  @override
+  String get chatWorkspaceEditAlias => '编辑项目别名';
+
+  @override
+  String get chatWorkspaceAliasLabel => '项目别名';
+
+  @override
+  String get chatWorkspaceFavorite => '收藏项目';
+
+  @override
+  String get chatWorkspaceUnfavorite => '取消收藏项目';
+
+  @override
+  String get chatLoopbackConfirmTitle => '打开远端本地回环链接';
+
+  @override
+  String get chatLoopbackConfirmMessage => '该链接指向远端本地回环地址。是否要在浏览器中打开？';
+
+  @override
+  String get chatConfirmSaveFile => '确认保存';
+
+  @override
+  String get chatConfirmSaveFileMessage => '确认保存对该文件的修改？';
+
+  @override
+  String get chatFileReadOnly => '只读';
+
+  @override
+  String get chatCopyError => '复制错误详情';
+
+  @override
+  String get chatFileOutsideWorkspace => '文件位于工作区目录之外。是否仍要打开？';
+
+  @override
+  String get chatUnsavedChangesTitle => '未保存的更改';
+
+  @override
+  String get chatUnsavedChangesMessage => '您有未保存的更改。确定放弃吗？';
+
+  @override
+  String get chatDiscard => '放弃';
+
+  @override
+  String get chatNoChangesToSave => '没有需要保存的更改';
+
+  @override
+  String get chatFileSaved => '文件保存成功';
+
+  @override
+  String get chatLoadingFile => '正在加载文件...';
+
+  @override
+  String get chatEditorUnavailable => '容器编辑器不可用（需要 python3）。';
+
+  @override
+  String get chatFileNotEditable => '二进制或过大文件无法编辑。';
+
+  @override
+  String get chatFailedToOpenLink => '无法打开链接';
+
+  @override
+  String get chatNoActiveTasks => '暂无活动任务或工具执行';
+
+  @override
+  String get chatNoFilesInDirectory => '当前目录下无文件';
+
+  @override
+  String get chatViewCurrentRun => '查看当前运行';
+
+  @override
+  String get chatExecutionChangedPrompt => '会话执行环境已改变，请新建会话继续。';
+
+  @override
+  String get chatLinkCopied => '链接已复制到剪贴板';
+
+  @override
+  String get chatFileEditorEdit => '编辑';
+
+  @override
+  String get chatFileEditorDiff => '差异';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -11970,4 +12066,100 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get deleteSessionOfflineNotice => '伺服器未連線，僅可執行本機刪除。';
+
+  @override
+  String get chatWorkbench => '工作台';
+
+  @override
+  String get chatWorkbenchFiles => '檔案';
+
+  @override
+  String get chatWorkbenchTasks => '任務與工具';
+
+  @override
+  String get chatWorkbenchContext => '上下文';
+
+  @override
+  String get chatWorkspaceProjects => '專案工作區';
+
+  @override
+  String get chatWorkspaceEditAlias => '編輯專案別名';
+
+  @override
+  String get chatWorkspaceAliasLabel => '專案別名';
+
+  @override
+  String get chatWorkspaceFavorite => '收藏專案';
+
+  @override
+  String get chatWorkspaceUnfavorite => '取消收藏專案';
+
+  @override
+  String get chatLoopbackConfirmTitle => '開啟遠端本地回環連結';
+
+  @override
+  String get chatLoopbackConfirmMessage => '此連結指向遠端本地回環位址。是否要在瀏覽器中開啟？';
+
+  @override
+  String get chatConfirmSaveFile => '確認儲存';
+
+  @override
+  String get chatConfirmSaveFileMessage => '確認儲存對該檔案的修改？';
+
+  @override
+  String get chatFileReadOnly => '唯讀';
+
+  @override
+  String get chatCopyError => '複製錯誤詳情';
+
+  @override
+  String get chatFileOutsideWorkspace => '檔案位於工作區目錄之外。是否仍要開啟？';
+
+  @override
+  String get chatUnsavedChangesTitle => '未儲存的變更';
+
+  @override
+  String get chatUnsavedChangesMessage => '您有未儲存的變更。確定放棄嗎？';
+
+  @override
+  String get chatDiscard => '放棄';
+
+  @override
+  String get chatNoChangesToSave => '沒有需要儲存的變更';
+
+  @override
+  String get chatFileSaved => '檔案儲存成功';
+
+  @override
+  String get chatLoadingFile => '正在載入檔案...';
+
+  @override
+  String get chatEditorUnavailable => '容器編輯器不可用（需要 python3）。';
+
+  @override
+  String get chatFileNotEditable => '二進位或過大檔案無法編輯。';
+
+  @override
+  String get chatFailedToOpenLink => '無法開啟連結';
+
+  @override
+  String get chatNoActiveTasks => '暫無活動任務或工具執行';
+
+  @override
+  String get chatNoFilesInDirectory => '目前目錄下無檔案';
+
+  @override
+  String get chatViewCurrentRun => '檢視目前執行';
+
+  @override
+  String get chatExecutionChangedPrompt => '工作階段執行環境已改變，請建立新工作階段以繼續。';
+
+  @override
+  String get chatLinkCopied => '連結已複製到剪貼簿';
+
+  @override
+  String get chatFileEditorEdit => '編輯';
+
+  @override
+  String get chatFileEditorDiff => '差異';
 }

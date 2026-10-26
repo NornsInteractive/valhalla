@@ -6085,4 +6085,102 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deleteSessionOfflineNotice => 'サーバーが未接続です。ローカル削除のみ利用可能です。';
+
+  @override
+  String get chatWorkbench => 'ワークベンチ';
+
+  @override
+  String get chatWorkbenchFiles => 'ファイル';
+
+  @override
+  String get chatWorkbenchTasks => 'タスクとツール';
+
+  @override
+  String get chatWorkbenchContext => 'コンテキスト';
+
+  @override
+  String get chatWorkspaceProjects => 'プロジェクト';
+
+  @override
+  String get chatWorkspaceEditAlias => 'プロジェクト別名を編集';
+
+  @override
+  String get chatWorkspaceAliasLabel => 'プロジェクト別名';
+
+  @override
+  String get chatWorkspaceFavorite => 'プロジェクトをお気に入りに追加';
+
+  @override
+  String get chatWorkspaceUnfavorite => 'プロジェクトのお気に入りを解除';
+
+  @override
+  String get chatLoopbackConfirmTitle => 'リモートローカルループバックURLを開く';
+
+  @override
+  String get chatLoopbackConfirmMessage =>
+      'このリンクはリモートのlocalhostを指しています。ブラウザで開きますか？';
+
+  @override
+  String get chatConfirmSaveFile => '保存を確認';
+
+  @override
+  String get chatConfirmSaveFileMessage => 'このファイルへの変更を保存しますか？';
+
+  @override
+  String get chatFileReadOnly => '読み取り専用';
+
+  @override
+  String get chatCopyError => 'エラー詳細をコピー';
+
+  @override
+  String get chatFileOutsideWorkspace => 'ファイルがワークスペース外にあります。開きますか？';
+
+  @override
+  String get chatUnsavedChangesTitle => '未保存の変更';
+
+  @override
+  String get chatUnsavedChangesMessage => '未保存の変更があります。破棄しますか？';
+
+  @override
+  String get chatDiscard => '破棄';
+
+  @override
+  String get chatNoChangesToSave => '保存する変更はありません';
+
+  @override
+  String get chatFileSaved => 'ファイルを保存しました';
+
+  @override
+  String get chatLoadingFile => 'ファイルを読み込み中...';
+
+  @override
+  String get chatEditorUnavailable => 'コンテナエディタを利用できません（python3 が必要です）。';
+
+  @override
+  String get chatFileNotEditable => 'バイナリまたは大きなファイルは編集できません。';
+
+  @override
+  String get chatFailedToOpenLink => 'リンクを開けませんでした';
+
+  @override
+  String get chatNoActiveTasks => 'アクティブなタスクやツールの実行はありません';
+
+  @override
+  String get chatNoFilesInDirectory => 'ディレクトリ内にファイルはありません';
+
+  @override
+  String get chatViewCurrentRun => '現在の実行を表示';
+
+  @override
+  String get chatExecutionChangedPrompt =>
+      'セッションの実行環境が変更されました。続行するには新しいセッションを作成してください。';
+
+  @override
+  String get chatLinkCopied => 'リンクをクリップボードにコピーしました';
+
+  @override
+  String get chatFileEditorEdit => '編集';
+
+  @override
+  String get chatFileEditorDiff => '差分';
 }

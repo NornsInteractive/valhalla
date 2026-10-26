@@ -461,16 +461,16 @@ void main() {
         reason: 'Last message bottom should be below viewport top',
       );
 
-      final opacityFinder = find.ancestor(
+      final hiddenOpacity = find.ancestor(
         of: lastMsgFinder,
-        matching: find.byType(Opacity),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is Opacity && widget.opacity == 0,
+        ),
       );
-      expect(opacityFinder, findsOneWidget);
-      final opacityWidget = tester.widget<Opacity>(opacityFinder);
       expect(
-        opacityWidget.opacity,
-        1.0,
-        reason: 'Message list should be fully opaque after clamp',
+        hiddenOpacity,
+        findsNothing,
+        reason: 'Message list visibility must not depend on opacity gating',
       );
     });
 

@@ -8,7 +8,25 @@ import '../../core/utils/shell_quote.dart';
 import '../../core/utils/file_preview.dart';
 import '../../core/services/app_diagnostics.dart';
 import '../cli/agent_execution_target.dart';
+import 'acp_workspace_editor_script.dart';
+import '../../data/models/chat_workspace.dart';
 import '../sftp/sftp_client_service.dart';
+
+class AcpTextSnapshot {
+  final String path, targetPath, content, revision, executionKey;
+  final SftpTextSnapshot? hostSnapshot;
+  final Object owner;
+  bool get canSave => revision.isNotEmpty;
+  const AcpTextSnapshot({
+    required this.path,
+    required this.targetPath,
+    required this.content,
+    required this.revision,
+    required this.executionKey,
+    this.hostSnapshot,
+    required this.owner,
+  });
+}
 
 /// The selected agent's filesystem, never the host filesystem for containers.
 class AcpWorkspaceFiles {
@@ -17,6 +35,7 @@ class AcpWorkspaceFiles {
   final Set<SSHSession> _commands = {};
   SftpClient? _sftp;
   bool _closed = false;
+  SftpClientService? _editor;
   AcpWorkspaceFiles(this.client, this.profile);
   static String normalize(String path) {
     if (!path.startsWith('/') ||
@@ -45,14 +64,21 @@ class AcpWorkspaceFiles {
     String command,
     int limit, {
     bool directoryListing = false,
+    Uint8List? input,
   }) async {
     if (_closed) throw StateError('ACP_FILE_READ_CANCELLED');
-    final session = await client.execute(agentTargetCommand(profile, command));
+    final session = await client.execute(
+      agentCodexTargetCommand(profile, command),
+    );
     if (_closed) {
       session.close();
       throw StateError('ACP_FILE_READ_CANCELLED');
     }
     _commands.add(session);
+    if (input != null) {
+      session.stdin.add(input);
+      unawaited(session.stdin.close());
+    }
     final errors = BytesBuilder(copy: false);
     final stderr = session.stderr.listen((chunk) {
       final remaining = 8192 - errors.length;
@@ -71,6 +97,11 @@ class AcpWorkspaceFiles {
       })().timeout(const Duration(seconds: 20));
       if (_closed) throw StateError('ACP_FILE_READ_CANCELLED');
       if (session.exitCode != 0) {
+        if (input != null) {
+          final body = utf8.decode(builder.toBytes(), allowMalformed: true);
+          final match = RegExp(r'ACP_FILE_[A-Z_]+').firstMatch(body);
+          throw StateError(match?.group(0) ?? 'ACP_FILE_EDITOR_UNAVAILABLE');
+        }
         if (directoryListing) {
           final message = utf8.decode(errors.toBytes(), allowMalformed: true);
           if (message.contains('Permission denied')) {
@@ -264,8 +295,97 @@ class AcpWorkspaceFiles {
     }
   }
 
+  Future<Map<String, dynamic>> _editContainer(
+    Map<String, dynamic> request,
+  ) async {
+    final result = await _run(
+      'python3 -c ${cliShellQuote("import base64;exec(base64.b64decode('${base64Encode(utf8.encode(acpWorkspaceEditorScript))}'))")}',
+      8 * 1024 * 1024,
+      input: Uint8List.fromList(utf8.encode(jsonEncode(request))),
+    );
+    return Map<String, dynamic>.from(jsonDecode(utf8.decode(result)) as Map);
+  }
+
+  Future<AcpTextSnapshot> readTextSnapshot(String path) async {
+    path = normalize(path);
+    if (_closed) throw StateError('ACP_FILE_READ_CANCELLED');
+    if (profile.executionTarget != 'docker') {
+      final editor = _editor ??= SftpClientService(client);
+      final original = await editor.readTextSnapshot(path);
+      if (_closed) throw StateError('ACP_FILE_READ_CANCELLED');
+      if (original.content.contains('\u0000')) {
+        throw StateError('ACP_FILE_NOT_EDITABLE');
+      }
+      return AcpTextSnapshot(
+        path: path,
+        targetPath: original.targetPath,
+        content: original.content,
+        revision: original.digest,
+        executionKey: chatExecutionKey(profile),
+        hostSnapshot: original,
+        owner: this,
+      );
+    }
+    try {
+      final value = await _editContainer({'operation': 'read', 'path': path});
+      return AcpTextSnapshot(
+        path: path,
+        targetPath: value['targetPath'] as String,
+        content: value['content'] as String,
+        revision: value['revision'] as String,
+        executionKey: chatExecutionKey(profile),
+        owner: this,
+      );
+    } on StateError catch (error) {
+      if (error.message != 'ACP_FILE_EDITOR_UNAVAILABLE') rethrow;
+      final content = utf8.decode(await read(path, 1024 * 1024));
+      if (content.contains('\u0000')) throw StateError('ACP_FILE_NOT_EDITABLE');
+      return AcpTextSnapshot(
+        path: path,
+        targetPath: path,
+        content: content,
+        revision: '',
+        executionKey: chatExecutionKey(profile),
+        owner: this,
+      );
+    }
+  }
+
+  Future<void> saveTextSnapshot(
+    AcpTextSnapshot original,
+    String content,
+  ) async {
+    if (_closed) throw StateError('ACP_FILE_READ_CANCELLED');
+    if (!original.canSave) throw StateError('ACP_FILE_EDITOR_UNAVAILABLE');
+    if (!identical(original.owner, this) ||
+        original.executionKey != chatExecutionKey(profile)) {
+      throw StateError('ACP_TARGET_CHANGED');
+    }
+    if (utf8.encode(content).length > 1024 * 1024 ||
+        content.contains('\u0000')) {
+      throw StateError('ACP_FILE_NOT_EDITABLE');
+    }
+    if (profile.executionTarget != 'docker') {
+      final snapshot = original.hostSnapshot;
+      if (snapshot == null) throw StateError('ACP_TARGET_CHANGED');
+      await (_editor ??= SftpClientService(
+        client,
+      )).saveTextSnapshot(snapshot, content);
+    } else {
+      await _editContainer({
+        'operation': 'save',
+        'path': original.path,
+        'targetPath': original.targetPath,
+        'revision': original.revision,
+        'content': content,
+      });
+    }
+  }
+
   void close() {
     _closed = true;
+    _editor?.dispose();
+    _editor = null;
     for (final session in _commands) {
       session.close();
     }

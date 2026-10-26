@@ -104,12 +104,20 @@ void main() {
   }
 
   Future<void> settle(ProviderContainer target) async {
-    await pumpEventQueue();
     final deadline = DateTime.now().add(const Duration(seconds: 5));
-    while (target.read(aiChatProvider).isLoadingSessions ||
-        target.read(aiChatProvider).isLoadingMessages) {
+    while (true) {
       if (DateTime.now().isAfter(deadline)) {
         fail('history loading never settled');
+      }
+      if (!target.read(aiChatProvider).isLoadingSessions &&
+          !target.read(aiChatProvider).isLoadingMessages) {
+        await pumpEventQueue();
+        await Future.delayed(const Duration(milliseconds: 20));
+        if (!target.read(aiChatProvider).isLoadingSessions &&
+            !target.read(aiChatProvider).isLoadingMessages) {
+          break;
+        }
+        continue;
       }
       await pumpEventQueue();
     }
@@ -304,6 +312,7 @@ void main() {
     test('agent 未声明 status 命令时抛错', () async {
       final container = await makeContainer();
       final notifier = container.read(aiChatProvider.notifier);
+      await settle(container);
       await notifier.sendMessage('hello');
       await settle(container);
       expect(container.read(aiChatProvider).commands, isEmpty);
@@ -344,6 +353,7 @@ void main() {
         },
       );
       final notifier = container.read(aiChatProvider.notifier);
+      await settle(container);
       await notifier.sendMessage('hello');
       await settle(container);
       expect(
@@ -565,6 +575,7 @@ void main() {
         profiles: [profile(), second],
       );
       final notifier = container.read(aiChatProvider.notifier);
+      await settle(container);
       await notifier.sendMessage('first');
       await settle(container);
       final sessionId = container.read(aiChatProvider).activeSessionId!;
@@ -588,8 +599,14 @@ void main() {
 
     test('远端会话 id 也写入偏好存储，切换服务器不串号', () async {
       final container = await makeContainer();
+      await settle(container);
       await container.read(aiChatProvider.notifier).sendMessage('hello');
       await settle(container);
+      for (var i = 0; i < 50; i++) {
+        if (storage.getAcpSessionId('srv-1', agentId) != null) break;
+        await pumpEventQueue();
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
 
       expect(storage.getAcpSessionId('srv-1', agentId), remoteId);
       expect(storage.getAcpSessionId('srv-2', agentId), isNull);
@@ -633,7 +650,8 @@ class _FakeSshManager extends SSHClientManager {
   final Map<String, SSHClient> _clients = <String, SSHClient>{};
 
   @override
-  SSHClient? getClient(String serverId) => _clients.putIfAbsent(serverId, () => _FakeSshClient());
+  SSHClient? getClient(String serverId) =>
+      _clients.putIfAbsent(serverId, () => _FakeSshClient());
 }
 
 class _FakeSshClient implements SSHClient {

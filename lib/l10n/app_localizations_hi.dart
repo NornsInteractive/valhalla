@@ -6337,4 +6337,107 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get deleteSessionOfflineNotice =>
       'सर्वर डिस्कनेक्ट हो गया है। केवल स्थानीय निष्कासन उपलब्ध है।';
+
+  @override
+  String get chatWorkbench => 'कार्यक्षेत्र';
+
+  @override
+  String get chatWorkbenchFiles => 'फ़ाइलें';
+
+  @override
+  String get chatWorkbenchTasks => 'कार्य और उपकरण';
+
+  @override
+  String get chatWorkbenchContext => 'संदर्भ';
+
+  @override
+  String get chatWorkspaceProjects => 'परियोजनाएं';
+
+  @override
+  String get chatWorkspaceEditAlias => 'परियोजना उपनाम संपादित करें';
+
+  @override
+  String get chatWorkspaceAliasLabel => 'परियोजना उपनाम';
+
+  @override
+  String get chatWorkspaceFavorite => 'पसंदीदा परियोजना';
+
+  @override
+  String get chatWorkspaceUnfavorite => 'पसंदीदा परियोजना हटाएं';
+
+  @override
+  String get chatLoopbackConfirmTitle => 'रिमोट लूपबैक URL खोलें';
+
+  @override
+  String get chatLoopbackConfirmMessage =>
+      'यह लिंक रिमोट लोकलहोस्ट की ओर इशारा करता है। क्या आप इसे अपने ब्राउज़र में खोलना चाहते हैं?';
+
+  @override
+  String get chatConfirmSaveFile => 'सहेजने की पुष्टि करें';
+
+  @override
+  String get chatConfirmSaveFileMessage =>
+      'क्या इस फ़ाइल में परिवर्तन सहेजना चाहते हैं?';
+
+  @override
+  String get chatFileReadOnly => 'केवल पढ़ने के लिए';
+
+  @override
+  String get chatCopyError => 'त्रुटि कॉपी करें';
+
+  @override
+  String get chatFileOutsideWorkspace =>
+      'फ़ाइल कार्यक्षेत्र निर्देशिका से बाहर है। क्या आप इसे खोलना चाहते हैं?';
+
+  @override
+  String get chatUnsavedChangesTitle => 'अनसहेजे गए परिवर्तन';
+
+  @override
+  String get chatUnsavedChangesMessage =>
+      'आपके पास अनसहेजे गए परिवर्तन हैं। क्या आप उन्हें छोड़ना चाहते हैं?';
+
+  @override
+  String get chatDiscard => 'छोड़ें';
+
+  @override
+  String get chatNoChangesToSave => 'सहेजने के लिए कोई परिवर्तन नहीं';
+
+  @override
+  String get chatFileSaved => 'फ़ाइल सफलतापूर्वक सहेजी गई';
+
+  @override
+  String get chatLoadingFile => 'फ़ाइल लोड हो रही है...';
+
+  @override
+  String get chatEditorUnavailable =>
+      'कंटेनर संपादक अनुपलब्ध है (python3 आवश्यक है)।';
+
+  @override
+  String get chatFileNotEditable =>
+      'बाइनरी या बड़ी फ़ाइलों को संपादित नहीं किया जा सकता।';
+
+  @override
+  String get chatFailedToOpenLink => 'लिंक खोलने में विफल';
+
+  @override
+  String get chatNoActiveTasks => 'कोई सक्रिय कार्य या उपकरण निष्पादन नहीं';
+
+  @override
+  String get chatNoFilesInDirectory => 'निर्देशिका में कोई फ़ाइल नहीं है';
+
+  @override
+  String get chatViewCurrentRun => 'वर्तमान निष्पादन देखें';
+
+  @override
+  String get chatExecutionChangedPrompt =>
+      'सत्र निष्पादन परिवेश बदल गया है। जारी रखने के लिए एक नया सत्र बनाएं।';
+
+  @override
+  String get chatLinkCopied => 'लिंक क्लिपबोर्ड पर कॉपी किया गया';
+
+  @override
+  String get chatFileEditorEdit => 'संपादित करें';
+
+  @override
+  String get chatFileEditorDiff => 'अंतर';
 }

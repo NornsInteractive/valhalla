@@ -11414,6 +11414,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Server disconnected. Only local deletion is available.'**
   String get deleteSessionOfflineNotice;
+
+  /// No description provided for @chatWorkbench.
+  ///
+  /// In en, this message translates to:
+  /// **'Workbench'**
+  String get chatWorkbench;
+
+  /// No description provided for @chatWorkbenchFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get chatWorkbenchFiles;
+
+  /// No description provided for @chatWorkbenchTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks & Tools'**
+  String get chatWorkbenchTasks;
+
+  /// No description provided for @chatWorkbenchContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Context'**
+  String get chatWorkbenchContext;
+
+  /// No description provided for @chatWorkspaceProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get chatWorkspaceProjects;
+
+  /// No description provided for @chatWorkspaceEditAlias.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Project Alias'**
+  String get chatWorkspaceEditAlias;
+
+  /// No description provided for @chatWorkspaceAliasLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Project Alias'**
+  String get chatWorkspaceAliasLabel;
+
+  /// No description provided for @chatWorkspaceFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite Project'**
+  String get chatWorkspaceFavorite;
+
+  /// No description provided for @chatWorkspaceUnfavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfavorite Project'**
+  String get chatWorkspaceUnfavorite;
+
+  /// No description provided for @chatLoopbackConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Remote Loopback URL'**
+  String get chatLoopbackConfirmTitle;
+
+  /// No description provided for @chatLoopbackConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This link points to remote localhost. Do you want to open it in your browser?'**
+  String get chatLoopbackConfirmMessage;
+
+  /// No description provided for @chatConfirmSaveFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Save'**
+  String get chatConfirmSaveFile;
+
+  /// No description provided for @chatConfirmSaveFileMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes to this file?'**
+  String get chatConfirmSaveFileMessage;
+
+  /// No description provided for @chatFileReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read Only'**
+  String get chatFileReadOnly;
+
+  /// No description provided for @chatCopyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Error'**
+  String get chatCopyError;
+
+  /// No description provided for @chatFileOutsideWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'File is outside workspace directory. Do you want to open it?'**
+  String get chatFileOutsideWorkspace;
+
+  /// No description provided for @chatUnsavedChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved Changes'**
+  String get chatUnsavedChangesTitle;
+
+  /// No description provided for @chatUnsavedChangesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes. Discard them?'**
+  String get chatUnsavedChangesMessage;
+
+  /// No description provided for @chatDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get chatDiscard;
+
+  /// No description provided for @chatNoChangesToSave.
+  ///
+  /// In en, this message translates to:
+  /// **'No changes to save'**
+  String get chatNoChangesToSave;
+
+  /// No description provided for @chatFileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'File saved successfully'**
+  String get chatFileSaved;
+
+  /// No description provided for @chatLoadingFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading file...'**
+  String get chatLoadingFile;
+
+  /// No description provided for @chatEditorUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Container editor is unavailable (python3 required).'**
+  String get chatEditorUnavailable;
+
+  /// No description provided for @chatFileNotEditable.
+  ///
+  /// In en, this message translates to:
+  /// **'Binary or large file cannot be edited.'**
+  String get chatFileNotEditable;
+
+  /// No description provided for @chatFailedToOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to open link'**
+  String get chatFailedToOpenLink;
+
+  /// No description provided for @chatNoActiveTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No active tasks or tool executions'**
+  String get chatNoActiveTasks;
+
+  /// No description provided for @chatNoFilesInDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'No files in directory'**
+  String get chatNoFilesInDirectory;
+
+  /// No description provided for @chatViewCurrentRun.
+  ///
+  /// In en, this message translates to:
+  /// **'View Current Run'**
+  String get chatViewCurrentRun;
+
+  /// No description provided for @chatExecutionChangedPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Session execution environment has changed. Create a new session to continue.'**
+  String get chatExecutionChangedPrompt;
+
+  /// No description provided for @chatLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied to clipboard'**
+  String get chatLinkCopied;
+
+  /// No description provided for @chatFileEditorEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get chatFileEditorEdit;
+
+  /// No description provided for @chatFileEditorDiff.
+  ///
+  /// In en, this message translates to:
+  /// **'Diff'**
+  String get chatFileEditorDiff;
 }
 
 class _AppLocalizationsDelegate

@@ -6333,4 +6333,107 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get deleteSessionOfflineNotice =>
       'Máy chủ bị ngắt kết nối. Chỉ có thể xóa cục bộ.';
+
+  @override
+  String get chatWorkbench => 'Bàn làm việc';
+
+  @override
+  String get chatWorkbenchFiles => 'Tệp';
+
+  @override
+  String get chatWorkbenchTasks => 'Tác vụ & Công cụ';
+
+  @override
+  String get chatWorkbenchContext => 'Ngữ cảnh';
+
+  @override
+  String get chatWorkspaceProjects => 'Dự án';
+
+  @override
+  String get chatWorkspaceEditAlias => 'Chỉnh sửa biệt danh dự án';
+
+  @override
+  String get chatWorkspaceAliasLabel => 'Biệt danh dự án';
+
+  @override
+  String get chatWorkspaceFavorite => 'Dự án yêu thích';
+
+  @override
+  String get chatWorkspaceUnfavorite => 'Bỏ yêu thích dự án';
+
+  @override
+  String get chatLoopbackConfirmTitle => 'Mở URL loopback từ xa';
+
+  @override
+  String get chatLoopbackConfirmMessage =>
+      'Liên kết này trỏ đến localhost từ xa. Bạn có muốn mở nó trong trình duyệt không?';
+
+  @override
+  String get chatConfirmSaveFile => 'Xác nhận lưu';
+
+  @override
+  String get chatConfirmSaveFileMessage => 'Lưu các thay đổi vào tệp này?';
+
+  @override
+  String get chatFileReadOnly => 'Chỉ đọc';
+
+  @override
+  String get chatCopyError => 'Sao chép lỗi';
+
+  @override
+  String get chatFileOutsideWorkspace =>
+      'Tệp nằm ngoài thư mục không gian làm việc. Bạn có muốn mở không?';
+
+  @override
+  String get chatUnsavedChangesTitle => 'Thay đổi chưa lưu';
+
+  @override
+  String get chatUnsavedChangesMessage =>
+      'Bạn có thay đổi chưa lưu. Bạn có muốn hủy bỏ không?';
+
+  @override
+  String get chatDiscard => 'Hủy bỏ';
+
+  @override
+  String get chatNoChangesToSave => 'Không có thay đổi nào để lưu';
+
+  @override
+  String get chatFileSaved => 'Đã lưu tệp thành công';
+
+  @override
+  String get chatLoadingFile => 'Đang tải tệp...';
+
+  @override
+  String get chatEditorUnavailable =>
+      'Trình chỉnh sửa vùng chứa không khả dụng (yêu cầu python3).';
+
+  @override
+  String get chatFileNotEditable =>
+      'Không thể chỉnh sửa tệp nhị phân hoặc tệp quá lớn.';
+
+  @override
+  String get chatFailedToOpenLink => 'Không thể mở liên kết';
+
+  @override
+  String get chatNoActiveTasks =>
+      'Không có tác vụ hoặc lần thực thi công cụ nào đang hoạt động';
+
+  @override
+  String get chatNoFilesInDirectory => 'Không có tệp nào trong thư mục';
+
+  @override
+  String get chatViewCurrentRun => 'Xem lần chạy hiện tại';
+
+  @override
+  String get chatExecutionChangedPrompt =>
+      'Môi trường thực thi phiên đã thay đổi. Vui lòng tạo phiên mới để tiếp tục.';
+
+  @override
+  String get chatLinkCopied => 'Đã sao chép liên kết vào khay nhớ tạm';
+
+  @override
+  String get chatFileEditorEdit => 'Chỉnh sửa';
+
+  @override
+  String get chatFileEditorDiff => 'Khác biệt';
 }

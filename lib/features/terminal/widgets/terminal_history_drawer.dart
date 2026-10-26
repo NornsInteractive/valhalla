@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design/tokens.dart';
@@ -817,12 +818,46 @@ class _TmuxSourcesDialogState extends ConsumerState<_TmuxSourcesDialog> {
                     subtitle: error != null
                         ? Padding(
                             padding: const EdgeInsets.only(top: 2),
-                            child: Text(
-                              error,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: context.vDanger,
-                              ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    terminalState.socketErrorDetails[source
+                                            .id] ??
+                                        error,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: context.vDanger,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.copy, size: 12),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 20,
+                                    minHeight: 20,
+                                  ),
+                                  tooltip: l10n.chatCopyError,
+                                  onPressed: () {
+                                    final text =
+                                        terminalState.socketErrorDetails[source
+                                            .id] ??
+                                        error;
+                                    Clipboard.setData(
+                                      ClipboardData(text: text),
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(l10n.updateErrorCopied),
+                                        duration: const Duration(seconds: 1),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           )
                         : Text(

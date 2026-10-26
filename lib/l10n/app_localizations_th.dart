@@ -6308,4 +6308,108 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get deleteSessionOfflineNotice =>
       'ตัดการเชื่อมต่อกับเซิร์ฟเวอร์แล้ว ใช้งานได้เฉพาะการลบในเครื่องเท่านั้น';
+
+  @override
+  String get chatWorkbench => 'โต๊ะทำงาน';
+
+  @override
+  String get chatWorkbenchFiles => 'ไฟล์';
+
+  @override
+  String get chatWorkbenchTasks => 'งานและเครื่องมือ';
+
+  @override
+  String get chatWorkbenchContext => 'บริบท';
+
+  @override
+  String get chatWorkspaceProjects => 'โครงการ';
+
+  @override
+  String get chatWorkspaceEditAlias => 'แก้ไขชื่อเล่นโครงการ';
+
+  @override
+  String get chatWorkspaceAliasLabel => 'ชื่อเล่นโครงการ';
+
+  @override
+  String get chatWorkspaceFavorite => 'โครงการโปรด';
+
+  @override
+  String get chatWorkspaceUnfavorite => 'ยกเลิกโครงการโปรด';
+
+  @override
+  String get chatLoopbackConfirmTitle => 'เปิด URL ลูปแบ็กระยะไกล';
+
+  @override
+  String get chatLoopbackConfirmMessage =>
+      'ลิงก์นี้ชี้ไปที่ localhost ระยะไกล คุณต้องการเปิดในเบราว์เซอร์หรือไม่?';
+
+  @override
+  String get chatConfirmSaveFile => 'ยืนยันการบันทึก';
+
+  @override
+  String get chatConfirmSaveFileMessage =>
+      'บันทึกการเปลี่ยนแปลงในไฟล์นี้หรือไม่?';
+
+  @override
+  String get chatFileReadOnly => 'อ่านอย่างเดียว';
+
+  @override
+  String get chatCopyError => 'คัดลอกข้อผิดพลาด';
+
+  @override
+  String get chatFileOutsideWorkspace =>
+      'ไฟล์อยู่นอกโฟลเดอร์พื้นที่ทำงาน คุณต้องการเปิดหรือไม่?';
+
+  @override
+  String get chatUnsavedChangesTitle => 'การเปลี่ยนแปลงที่ยังไม่ได้บันทึก';
+
+  @override
+  String get chatUnsavedChangesMessage =>
+      'คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก ต้องการยกเลิกหรือไม่?';
+
+  @override
+  String get chatDiscard => 'ละทิ้ง';
+
+  @override
+  String get chatNoChangesToSave => 'ไม่มีการเปลี่ยนแปลงที่จะบันทึก';
+
+  @override
+  String get chatFileSaved => 'บันทึกไฟล์เรียบร้อยแล้ว';
+
+  @override
+  String get chatLoadingFile => 'กำลังโหลดไฟล์...';
+
+  @override
+  String get chatEditorUnavailable =>
+      'โปรแกรมแก้ไขคอนเทนเนอร์ไม่พร้อมใช้งาน (ต้องใช้ python3)';
+
+  @override
+  String get chatFileNotEditable =>
+      'ไม่สามารถแก้ไขไฟล์ไบนารีหรือไฟล์ขนาดใหญ่ได้';
+
+  @override
+  String get chatFailedToOpenLink => 'เปิดลิงก์ไม่สำเร็จ';
+
+  @override
+  String get chatNoActiveTasks =>
+      'ไม่มีงานหรือการเรียกใช้เครื่องมือที่กำลังทำงาน';
+
+  @override
+  String get chatNoFilesInDirectory => 'ไม่มีไฟล์ในไดเรกทอรีนี้';
+
+  @override
+  String get chatViewCurrentRun => 'ดูการทำงานปัจจุบัน';
+
+  @override
+  String get chatExecutionChangedPrompt =>
+      'สภาพแวดล้อมการทำงานของเซสชันเปลี่ยนไปแล้ว โปรดสร้างเซสชันใหม่เพื่อดำเนินการต่อ';
+
+  @override
+  String get chatLinkCopied => 'คัดลอกลิงก์ไปยังคลิปบอร์ดแล้ว';
+
+  @override
+  String get chatFileEditorEdit => 'แก้ไข';
+
+  @override
+  String get chatFileEditorDiff => 'ความแตกต่าง';
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,6 +36,12 @@ import '../../infrastructure/acp/acp_oauth_request.dart';
 import '../../infrastructure/acp/acp_runtime_service.dart'
     show AcpRuntimeStatus;
 import '../../infrastructure/cli/agent_execution_target.dart';
+import 'package:path/path.dart' as p;
+import '../../core/utils/chat_link_target.dart';
+import '../../data/models/chat_workspace.dart';
+import '../../infrastructure/acp/acp_workspace_files.dart'
+    show AcpTextSnapshot, AcpWorkspaceFiles;
+import '../../infrastructure/sftp/sftp_client_service.dart' show SftpFileItem;
 import 'widgets/chat_run_settings_dialog.dart';
 import 'widgets/chat_run_settings_strip.dart';
 import 'widgets/chat_commands_skills_dialog.dart';
@@ -70,6 +77,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   AcpOAuthRequest? _lastAutoLaunchedAuthRequest;
   String? _authLaunchError;
   bool _isShowingPersistentRuntimeConsentDialog = false;
+  bool _showWorkbench = false;
 
   @override
   void initState() {
@@ -172,6 +180,10 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             maxPasses: maxPasses - 1,
           );
         });
+      } else if (!_hasClampedToBottom) {
+        setState(() {
+          _hasClampedToBottom = true;
+        });
       }
       return;
     }
@@ -201,6 +213,10 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             expectedServerKey: expectedServerKey,
             maxPasses: maxPasses - 1,
           );
+        });
+      } else if (!_hasClampedToBottom) {
+        setState(() {
+          _hasClampedToBottom = true;
         });
       }
       return;
@@ -1676,6 +1692,23 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ],
             ),
           ),
+          if (isDesktop && _showWorkbench) ...[
+            const VerticalDivider(width: 1),
+            SizedBox(
+              width: 320,
+              child: _WorkbenchPanel(
+                isDesktop: true,
+                onClose: () => setState(() => _showWorkbench = false),
+                onOpenFile: (ctx, path, {expectedTarget, line}) =>
+                    _openRemoteFilePreview(
+                      ctx,
+                      path,
+                      expectedTarget: expectedTarget,
+                      line: line,
+                    ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1767,6 +1800,24 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             tooltip: context.l10n.chatAccountAndQuotaTitle,
             onPressed: () => _showAccountAndQuotaDialog(context),
           ),
+          IconButton(
+            key: const Key('chat_workbench_toggle_button'),
+            icon: Icon(
+              _showWorkbench
+                  ? Icons.vertical_split
+                  : Icons.vertical_split_outlined,
+              size: 18,
+              color: _showWorkbench ? context.colorScheme.primary : null,
+            ),
+            tooltip: context.l10n.chatWorkbench,
+            onPressed: () {
+              if (isDesktop) {
+                setState(() => _showWorkbench = !_showWorkbench);
+              } else {
+                _showWorkbenchBottomSheet(context);
+              }
+            },
+          ),
         ],
       ),
     );
@@ -1788,6 +1839,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               sessions: s.sessions
                   .map((e) => _SessionEntryMeta(e.id, e.title))
                   .toList(growable: false),
+              fullSessions: s.sessions,
             ),
           ),
         );
@@ -2063,201 +2115,246 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   ),
                 ),
                 Expanded(
-                  child: ListView.builder(
-                    itemCount:
-                        projection.sessions.length +
-                        (projection.hasMoreSessions ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == projection.sessions.length) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 16,
-                          ),
-                          child: Center(
-                            child: projection.isLoadingSessions
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : TextButton.icon(
-                                    key: const Key(
-                                      'chat_load_more_sessions_button',
-                                    ),
-                                    icon: const Icon(
-                                      Icons.expand_more,
-                                      size: 16,
-                                    ),
-                                    label: Text(
-                                      context.l10n.chatLoadMoreSessions,
-                                    ),
-                                    onPressed: () =>
-                                        notifier.loadMoreSessions(),
-                                  ),
-                          ),
-                        );
-                      }
-                      final session = projection.sessions[index];
-                      final isSelected =
-                          session.id == projection.activeSessionId;
-                      final isFixedDefault =
-                          preference.mode == ChatLaunchMode.fixed &&
-                          preference.sessionId == session.id;
+                  child: _sessionSearchController.text.isNotEmpty
+                      ? ListView.builder(
+                          itemCount:
+                              projection.sessions.length +
+                              (projection.hasMoreSessions ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == projection.sessions.length) {
+                              return _buildLoadMoreSessionsTile(
+                                projection,
+                                notifier,
+                              );
+                            }
+                            final session = projection.sessions[index];
+                            return _buildSessionTile(
+                              sessionId: session.id,
+                              sessionTitle: session.title,
+                              projection: projection,
+                              preference: preference,
+                              notifier: notifier,
+                              isDesktop: isDesktop,
+                            );
+                          },
+                        )
+                      : Builder(
+                          builder: (context) {
+                            final allSessions = projection.fullSessions;
+                            final workspaces = ChatWorkspace.group(allSessions);
+                            final groupedIds = workspaces
+                                .expand((w) => w.sessions.map((s) => s.id))
+                                .toSet();
+                            final ungroupedSessions = allSessions
+                                .where((s) => !groupedIds.contains(s.id))
+                                .toList();
+                            final storage = drawerRef.read(
+                              localStorageServiceProvider,
+                            );
 
-                      return ListTile(
-                        selected: isSelected,
-                        selectedTileColor: context.colorScheme.primaryContainer
-                            .withValues(alpha: 0.2),
-                        leading: Icon(
-                          Icons.chat_bubble_outline,
-                          size: 18,
-                          color: isSelected
-                              ? context.colorScheme.primary
-                              : null,
-                        ),
-                        title: Text(
-                          session.title,
-                          style: context.textTheme.bodyMedium?.copyWith(
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isFixedDefault)
-                              Tooltip(
-                                message: context.l10n.isDefaultSession,
-                                child: Icon(
-                                  Icons.push_pin,
-                                  key: Key(
-                                    'default_session_badge_${session.id}',
-                                  ),
-                                  size: 16,
-                                  color: context.colorScheme.primary,
-                                ),
-                              ),
-                            PopupMenuButton<String>(
-                              key: Key('session_more_menu_${session.id}'),
-                              icon: const Icon(Icons.more_vert, size: 18),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 24,
-                                minHeight: 24,
-                              ),
-                              onSelected: (val) {
-                                switch (val) {
-                                  case 'set_default':
-                                    notifier.setLaunchPreference(
-                                      ChatLaunchPreference(
-                                        mode: ChatLaunchMode.fixed,
-                                        sessionId: session.id,
-                                      ),
+                            final sortedWorkspaces =
+                                List<ChatWorkspace>.from(workspaces)
+                                  ..sort((a, b) {
+                                    final prefA = storage
+                                        .getChatWorkspacePreference(a.key);
+                                    final prefB = storage
+                                        .getChatWorkspacePreference(b.key);
+                                    final favA =
+                                        (prefA['favorite'] as bool?) ?? false;
+                                    final favB =
+                                        (prefB['favorite'] as bool?) ?? false;
+                                    if (favA != favB) return favA ? -1 : 1;
+                                    final nameA =
+                                        (prefA['alias'] as String?)?.trim() ??
+                                        a.directory;
+                                    final nameB =
+                                        (prefB['alias'] as String?)?.trim() ??
+                                        b.directory;
+                                    return nameA.toLowerCase().compareTo(
+                                      nameB.toLowerCase(),
                                     );
-                                    break;
-                                  case 'rename':
-                                    _showRenameSessionDialog(
-                                      context,
-                                      session.id,
-                                      session.title,
-                                    );
-                                    break;
-                                  case 'export':
-                                    _exportSession(
-                                      context,
-                                      session.id,
-                                      session.title,
-                                    );
-                                    break;
-                                  case 'delete':
-                                    _confirmAndDeleteSession(
-                                      context,
-                                      session.id,
-                                      session.title,
-                                    );
-                                    break;
-                                }
-                              },
-                              itemBuilder: (ctx) => [
-                                if (preference.mode == ChatLaunchMode.fixed)
-                                  PopupMenuItem<String>(
-                                    key: Key(
-                                      'set_default_session_${session.id}',
-                                    ),
-                                    value: 'set_default',
-                                    child: Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.push_pin_outlined,
-                                          size: 16,
+                                  });
+
+                            return ListView(
+                              children: [
+                                for (final workspace in sortedWorkspaces) ...[
+                                  Builder(
+                                    builder: (ctx) {
+                                      final pref = storage
+                                          .getChatWorkspacePreference(
+                                            workspace.key,
+                                          );
+                                      final alias = (pref['alias'] as String?)
+                                          ?.trim();
+                                      final isFavorite =
+                                          (pref['favorite'] as bool?) ?? false;
+                                      final execLabel =
+                                          _formatWorkspaceExecution(
+                                            workspace.executionKey,
+                                          );
+                                      final dirName =
+                                          (workspace.directory == '.' ||
+                                              workspace.directory.isEmpty)
+                                          ? context.l10n.chatWorkspaceProjects
+                                          : p.posix.basename(
+                                              workspace.directory,
+                                            );
+                                      final displayName =
+                                          (alias != null && alias.isNotEmpty)
+                                          ? alias
+                                          : '$dirName ($execLabel)';
+                                      final containsActive = workspace.sessions
+                                          .any(
+                                            (s) =>
+                                                s.id ==
+                                                projection.activeSessionId,
+                                          );
+
+                                      return ExpansionTile(
+                                        key: PageStorageKey<String>(
+                                          'workspace_${workspace.key}',
                                         ),
-                                        const SizedBox(width: 8),
-                                        Text(context.l10n.setAsDefaultSession),
-                                      ],
+                                        initiallyExpanded:
+                                            containsActive ||
+                                            workspaces.length == 1,
+                                        leading: Icon(
+                                          Icons.folder_outlined,
+                                          size: 18,
+                                          color: containsActive
+                                              ? context.colorScheme.primary
+                                              : null,
+                                        ),
+                                        title: Text(
+                                          displayName,
+                                          style: context.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                fontWeight: containsActive
+                                                    ? FontWeight.w600
+                                                    : FontWeight.w500,
+                                              ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        subtitle: Text(
+                                          '${workspace.directory} • $execLabel',
+                                          style: context.textTheme.bodySmall
+                                              ?.copyWith(
+                                                color:
+                                                    context.colorScheme.outline,
+                                                fontSize: 10,
+                                              ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: Icon(
+                                                isFavorite
+                                                    ? Icons.star
+                                                    : Icons.star_border,
+                                                size: 18,
+                                                color: isFavorite
+                                                    ? Colors.amber
+                                                    : context
+                                                          .colorScheme
+                                                          .outline,
+                                              ),
+                                              tooltip: isFavorite
+                                                  ? context
+                                                        .l10n
+                                                        .chatWorkspaceUnfavorite
+                                                  : context
+                                                        .l10n
+                                                        .chatWorkspaceFavorite,
+                                              onPressed: () async {
+                                                await storage
+                                                    .setChatWorkspacePreference(
+                                                      workspace.key,
+                                                      alias: alias,
+                                                      favorite: !isFavorite,
+                                                    );
+                                                setState(() {});
+                                              },
+                                            ),
+                                            PopupMenuButton<String>(
+                                              icon: const Icon(
+                                                Icons.more_vert,
+                                                size: 16,
+                                              ),
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints(
+                                                minWidth: 24,
+                                                minHeight: 24,
+                                              ),
+                                              onSelected: (val) {
+                                                if (val == 'edit_alias') {
+                                                  _showEditWorkspaceAliasDialog(
+                                                    context,
+                                                    workspace.key,
+                                                    alias,
+                                                  );
+                                                }
+                                              },
+                                              itemBuilder: (ctx) => [
+                                                PopupMenuItem(
+                                                  value: 'edit_alias',
+                                                  child: Text(
+                                                    context
+                                                        .l10n
+                                                        .chatWorkspaceEditAlias,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        children: workspace.sessions.map((
+                                          session,
+                                        ) {
+                                          return _buildSessionTile(
+                                            sessionId: session.id,
+                                            sessionTitle: session.title,
+                                            projection: projection,
+                                            preference: preference,
+                                            notifier: notifier,
+                                            isDesktop: isDesktop,
+                                          );
+                                        }).toList(),
+                                      );
+                                    },
+                                  ),
+                                ],
+                                if (ungroupedSessions.isNotEmpty) ...[
+                                  ExpansionTile(
+                                    initiallyExpanded: true,
+                                    leading: const Icon(
+                                      Icons.folder_open,
+                                      size: 18,
                                     ),
+                                    title: Text(
+                                      context.l10n.chatWorkspaceProjects,
+                                    ),
+                                    children: ungroupedSessions.map((session) {
+                                      return _buildSessionTile(
+                                        sessionId: session.id,
+                                        sessionTitle: session.title,
+                                        projection: projection,
+                                        preference: preference,
+                                        notifier: notifier,
+                                        isDesktop: isDesktop,
+                                      );
+                                    }).toList(),
                                   ),
-                                PopupMenuItem<String>(
-                                  key: Key('rename_session_${session.id}'),
-                                  value: 'rename',
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.edit_outlined, size: 16),
-                                      const SizedBox(width: 8),
-                                      Text(context.l10n.rename),
-                                    ],
+                                ],
+                                if (projection.hasMoreSessions)
+                                  _buildLoadMoreSessionsTile(
+                                    projection,
+                                    notifier,
                                   ),
-                                ),
-                                PopupMenuItem<String>(
-                                  key: Key('export_session_${session.id}'),
-                                  value: 'export',
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.download_outlined,
-                                        size: 16,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(context.l10n.chatExportSession),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<String>(
-                                  key: Key('delete_session_${session.id}'),
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.delete_outline,
-                                        size: 16,
-                                        color: ctx.vDanger,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        context.l10n.delete,
-                                        style: TextStyle(color: ctx.vDanger),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ],
-                            ),
-                          ],
+                            );
+                          },
                         ),
-                        onTap: () {
-                          notifier.selectSession(session.id);
-                          if (!isDesktop) {
-                            Navigator.pop(context);
-                          }
-                        },
-                      );
-                    },
-                  ),
                 ),
               ],
             ),
@@ -2265,6 +2362,232 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         );
       },
     );
+  }
+
+  String _formatWorkspaceExecution(String executionKey) {
+    if (executionKey.startsWith('legacy:')) {
+      final legacyAgent = executionKey.substring(7);
+      return legacyAgent.isNotEmpty && legacyAgent != 'unknown'
+          ? 'Legacy ($legacyAgent)'
+          : 'Legacy';
+    }
+    try {
+      final decoded = jsonDecode(executionKey);
+      if (decoded is List && decoded.isNotEmpty) {
+        final target = decoded[0].toString();
+        if (target == 'docker') {
+          final ref = decoded.length > 2 ? decoded[2]?.toString() : null;
+          final user = decoded.length > 3 ? decoded[3]?.toString() : null;
+          final parts = [
+            'Docker',
+            if (ref != null && ref.isNotEmpty) ref,
+            if (user != null && user.isNotEmpty) user,
+          ];
+          return parts.join(' : ');
+        } else if (target == 'host') {
+          return 'Host';
+        }
+        return target;
+      }
+    } catch (_) {}
+    return executionKey;
+  }
+
+  Widget _buildLoadMoreSessionsTile(
+    _SessionsDrawerProjection projection,
+    AiChatNotifier notifier,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Center(
+        child: projection.isLoadingSessions
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : TextButton.icon(
+                key: const Key('chat_load_more_sessions_button'),
+                icon: const Icon(Icons.expand_more, size: 16),
+                label: Text(context.l10n.chatLoadMoreSessions),
+                onPressed: () => notifier.loadMoreSessions(),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildSessionTile({
+    required String sessionId,
+    required String sessionTitle,
+    required _SessionsDrawerProjection projection,
+    required ChatLaunchPreference preference,
+    required AiChatNotifier notifier,
+    required bool isDesktop,
+  }) {
+    final isSelected = sessionId == projection.activeSessionId;
+    final isFixedDefault =
+        preference.mode == ChatLaunchMode.fixed &&
+        preference.sessionId == sessionId;
+
+    return ListTile(
+      selected: isSelected,
+      selectedTileColor: context.colorScheme.primaryContainer.withValues(
+        alpha: 0.2,
+      ),
+      leading: Icon(
+        Icons.chat_bubble_outline,
+        size: 18,
+        color: isSelected ? context.colorScheme.primary : null,
+      ),
+      title: Text(
+        sessionTitle,
+        style: context.textTheme.bodyMedium?.copyWith(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isFixedDefault)
+            Tooltip(
+              message: context.l10n.isDefaultSession,
+              child: Icon(
+                Icons.push_pin,
+                key: Key('default_session_badge_$sessionId'),
+                size: 16,
+                color: context.colorScheme.primary,
+              ),
+            ),
+          PopupMenuButton<String>(
+            key: Key('session_more_menu_$sessionId'),
+            icon: const Icon(Icons.more_vert, size: 18),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+            onSelected: (val) {
+              switch (val) {
+                case 'set_default':
+                  notifier.setLaunchPreference(
+                    ChatLaunchPreference(
+                      mode: ChatLaunchMode.fixed,
+                      sessionId: sessionId,
+                    ),
+                  );
+                  break;
+                case 'rename':
+                  _showRenameSessionDialog(context, sessionId, sessionTitle);
+                  break;
+                case 'export':
+                  _exportSession(context, sessionId, sessionTitle);
+                  break;
+                case 'delete':
+                  _confirmAndDeleteSession(context, sessionId, sessionTitle);
+                  break;
+              }
+            },
+            itemBuilder: (ctx) => [
+              if (preference.mode == ChatLaunchMode.fixed)
+                PopupMenuItem<String>(
+                  key: Key('set_default_session_$sessionId'),
+                  value: 'set_default',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.push_pin_outlined, size: 16),
+                      const SizedBox(width: 8),
+                      Text(context.l10n.setAsDefaultSession),
+                    ],
+                  ),
+                ),
+              PopupMenuItem<String>(
+                key: Key('rename_session_$sessionId'),
+                value: 'rename',
+                child: Row(
+                  children: [
+                    const Icon(Icons.edit_outlined, size: 16),
+                    const SizedBox(width: 8),
+                    Text(context.l10n.rename),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                key: Key('export_session_$sessionId'),
+                value: 'export',
+                child: Row(
+                  children: [
+                    const Icon(Icons.download_outlined, size: 16),
+                    const SizedBox(width: 8),
+                    Text(context.l10n.chatExportSession),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                key: Key('delete_session_$sessionId'),
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, size: 16, color: ctx.vDanger),
+                    const SizedBox(width: 8),
+                    Text(
+                      context.l10n.delete,
+                      style: TextStyle(color: ctx.vDanger),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      onTap: () {
+        notifier.selectSession(sessionId);
+        if (!isDesktop) {
+          Navigator.pop(context);
+        }
+      },
+    );
+  }
+
+  Future<void> _showEditWorkspaceAliasDialog(
+    BuildContext context,
+    String workspaceKey,
+    String? currentAlias,
+  ) async {
+    final controller = TextEditingController(text: currentAlias ?? '');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.l10n.chatWorkspaceEditAlias),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: context.l10n.chatWorkspaceAliasLabel,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.l10n.confirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      final storage = ref.read(localStorageServiceProvider);
+      final pref = storage.getChatWorkspacePreference(workspaceKey);
+      final isFavorite = (pref['favorite'] as bool?) ?? false;
+      await storage.setChatWorkspacePreference(
+        workspaceKey,
+        alias: controller.text.trim().isEmpty ? null : controller.text.trim(),
+        favorite: isFavorite,
+      );
+      setState(() {});
+    }
   }
 
   String _resolveLoadOlderMessagesLabel(BuildContext context) {
@@ -2290,6 +2613,100 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         );
 
         if (frame.messageCount == 0) {
+          if (frame.isLoadingMessages) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    context.l10n.cliLoadingOlderMessages,
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: context.colorScheme.outline,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final hasError =
+              frame.recoveryStatus == SessionRecoveryStatus.failed ||
+              listRef.watch(
+                aiChatProvider.select(
+                  (s) =>
+                      s.lastErrorCode != null ||
+                      s.persistentRuntimeSetupError != null,
+                ),
+              );
+          if (hasError) {
+            final rawError = listRef.watch(
+              aiChatProvider.select(
+                (s) => s.lastErrorCode ?? s.persistentRuntimeSetupError ?? '',
+              ),
+            );
+            final isExecChanged = rawError.contains(
+              'CHAT_SESSION_EXECUTION_CHANGED',
+            );
+            final errorDetail = LogSanitizer.sanitize(rawError);
+            final displayText = isExecChanged
+                ? context.l10n.chatExecutionChangedPrompt
+                : (errorDetail.isNotEmpty
+                      ? errorDetail
+                      : context.l10n.chatStatusFailed);
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isExecChanged ? Icons.info_outline : Icons.error_outline,
+                      size: 48,
+                      color: isExecChanged
+                          ? context.colorScheme.primary
+                          : context.colorScheme.error,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      displayText,
+                      textAlign: TextAlign.center,
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: isExecChanged
+                            ? context.colorScheme.onSurface
+                            : context.colorScheme.error,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (isExecChanged)
+                      FilledButton.icon(
+                        icon: const Icon(Icons.add, size: 16),
+                        label: Text(context.l10n.newSession),
+                        onPressed: () {
+                          listRef
+                              .read(aiChatProvider.notifier)
+                              .createNewSession();
+                        },
+                      )
+                    else
+                      FilledButton.tonalIcon(
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: Text(context.l10n.stateRetry),
+                        onPressed: () {
+                          listRef.read(aiChatProvider.notifier).retryHistory();
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }
+
           final registry = listRef.watch(agentRegistryProvider);
           final hasUnreadyAgents = registry.agents.any(
             (a) =>
@@ -2537,10 +2954,17 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           },
         );
 
-        return Opacity(
-          opacity: _hasClampedToBottom ? 1.0 : 0.0,
-          child: listView,
-        );
+        if (!_hasClampedToBottom) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_hasClampedToBottom) {
+              setState(() {
+                _hasClampedToBottom = true;
+              });
+            }
+          });
+        }
+
+        return listView;
       },
     );
   }
@@ -2755,12 +3179,22 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            SelectableText(
-              msg.content,
-              style: TextStyle(
-                color: context.colorScheme.onPrimaryContainer,
-                fontSize: 14,
-              ),
+            MarkdownBody(
+              data: msg.content,
+              selectable: true,
+              onTapLink: (linkText, href, title) {
+                if (href != null && href.isNotEmpty) {
+                  _handleChatLink(context, href);
+                }
+              },
+              styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
+                  .copyWith(
+                    p: TextStyle(
+                      color: context.colorScheme.onPrimaryContainer,
+                      fontSize: 14,
+                    ),
+                    code: monoTextStyle(fontSize: 12),
+                  ),
             ),
             if (msg.attachments.isNotEmpty)
               _buildMessageAttachments(msg.attachments),
@@ -3197,10 +3631,388 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       child: MarkdownBody(
         data: text,
         selectable: true,
+        onTapLink: (linkText, href, title) {
+          if (href != null && href.isNotEmpty) {
+            _handleChatLink(context, href);
+          }
+        },
         styleSheet: MarkdownStyleSheet.fromTheme(
           Theme.of(context),
         ).copyWith(code: monoTextStyle(fontSize: 12)),
       ),
+    );
+  }
+
+  Future<void> _handleChatLink(BuildContext context, String rawUrl) async {
+    final chatState = ref.read(aiChatProvider);
+    final workingDir =
+        chatState.activeSession?.workingDirectory ??
+        chatState.draftWorkingDirectory ??
+        '/';
+    final target = ChatLinkTarget.parse(rawUrl, workingDirectory: workingDir);
+
+    switch (target.kind) {
+      case ChatLinkKind.web:
+        final uri = target.uri;
+        if (uri == null) return;
+        if (target.isRemoteLoopback) {
+          final capturedTarget = ref
+              .read(aiChatProvider.notifier)
+              .workspaceSelectionKey;
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(context.l10n.chatLoopbackConfirmTitle),
+              content: Text(
+                '${context.l10n.chatLoopbackConfirmMessage}\n\n$rawUrl',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(context.l10n.cancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(context.l10n.confirm),
+                ),
+              ],
+            ),
+          );
+          if (confirmed != true || !context.mounted) return;
+          try {
+            final localUri = await ref
+                .read(aiChatProvider.notifier)
+                .openWorkspaceWebPreview(uri, expectedTarget: capturedTarget);
+            final launched = await launchUrl(
+              localUri,
+              mode: LaunchMode.externalApplication,
+            );
+            if (!launched) {
+              await Clipboard.setData(ClipboardData(text: rawUrl));
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '${context.l10n.chatFailedToOpenLink}: $rawUrl',
+                  ),
+                ),
+              );
+            }
+          } catch (e) {
+            final msg = e.toString();
+            if (msg.contains('ACP_TARGET_CHANGED')) return;
+            final isExecChanged = msg.contains(
+              'CHAT_SESSION_EXECUTION_CHANGED',
+            );
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  isExecChanged
+                      ? context.l10n.chatExecutionChangedPrompt
+                      : '$e',
+                ),
+                backgroundColor: context.colorScheme.error,
+              ),
+            );
+          }
+        } else {
+          try {
+            final launched = await launchUrl(
+              uri,
+              mode: LaunchMode.externalApplication,
+            );
+            if (!launched) {
+              await Clipboard.setData(ClipboardData(text: rawUrl));
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '${context.l10n.chatFailedToOpenLink}: $rawUrl',
+                  ),
+                ),
+              );
+            }
+          } catch (_) {
+            await Clipboard.setData(ClipboardData(text: rawUrl));
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${context.l10n.chatFailedToOpenLink}: $rawUrl'),
+              ),
+            );
+          }
+        }
+        break;
+
+      case ChatLinkKind.mail:
+        final uri = target.uri;
+        if (uri == null) return;
+        try {
+          final launched = await launchUrl(uri);
+          if (!launched) {
+            await Clipboard.setData(ClipboardData(text: rawUrl));
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${context.l10n.chatFailedToOpenLink}: $rawUrl'),
+              ),
+            );
+          }
+        } catch (_) {
+          await Clipboard.setData(ClipboardData(text: rawUrl));
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${context.l10n.chatFailedToOpenLink}: $rawUrl'),
+            ),
+          );
+        }
+        break;
+
+      case ChatLinkKind.remoteFile:
+        final filePath = target.path;
+        if (filePath == null) return;
+        final capturedTarget = ref
+            .read(aiChatProvider.notifier)
+            .workspaceSelectionKey;
+        if (target.outsideWorkspace) {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(context.l10n.confirm),
+              content: Text(
+                '${context.l10n.chatFileOutsideWorkspace}\n\n$filePath',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(context.l10n.cancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(context.l10n.confirm),
+                ),
+              ],
+            ),
+          );
+          if (confirmed != true || !context.mounted) return;
+        }
+        final mime = AcpWorkspaceFiles.mimeType(filePath);
+        if (mime?.startsWith('image/') ?? false) {
+          try {
+            final bytes = await ref
+                .read(aiChatProvider.notifier)
+                .readWorkspaceImage(filePath, expectedTarget: capturedTarget);
+            if (!context.mounted) return;
+            ImageZoomDialog.show(
+              context,
+              title: p.basename(filePath),
+              bytes: bytes,
+            );
+          } catch (e) {
+            final msg = e.toString();
+            if (msg.contains('ACP_TARGET_CHANGED')) return;
+            final isExecChanged = msg.contains(
+              'CHAT_SESSION_EXECUTION_CHANGED',
+            );
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  isExecChanged ? context.l10n.chatExecutionChangedPrompt : msg,
+                ),
+                backgroundColor: context.colorScheme.error,
+              ),
+            );
+          }
+          return;
+        }
+        if (!context.mounted) return;
+        _openRemoteFilePreview(
+          context,
+          filePath,
+          expectedTarget: capturedTarget,
+          line: target.line,
+        );
+        break;
+
+      case ChatLinkKind.anchor:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Anchor: ${target.path ?? rawUrl}'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+        break;
+
+      case ChatLinkKind.unsupported:
+        await Clipboard.setData(ClipboardData(text: rawUrl));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.l10n.chatLinkCopied),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        }
+        break;
+    }
+  }
+
+  Future<void> _openRemoteFilePreview(
+    BuildContext context,
+    String path, {
+    String? expectedTarget,
+    int? line,
+    bool outsideWorkspace = false,
+  }) async {
+    final capturedTarget =
+        expectedTarget ??
+        ref.read(aiChatProvider.notifier).workspaceSelectionKey;
+    if (outsideWorkspace) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(context.l10n.confirm),
+          content: Text('${context.l10n.chatFileOutsideWorkspace}\n\n$path'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(context.l10n.confirm),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !context.mounted) return;
+    }
+
+    BuildContext? loadingCtx;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        loadingCtx = dialogContext;
+        return Center(
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(context.l10n.chatLoadingFile),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      final snapshot = await ref
+          .read(aiChatProvider.notifier)
+          .readWorkspaceText(path, expectedTarget: capturedTarget);
+      if (loadingCtx != null && loadingCtx!.mounted) {
+        Navigator.of(loadingCtx!).pop();
+      }
+      if (!context.mounted) return;
+      _showAcpFileEditor(
+        context,
+        snapshot,
+        line: line,
+        workspaceTarget: capturedTarget,
+      );
+    } catch (e) {
+      if (loadingCtx != null && loadingCtx!.mounted) {
+        Navigator.of(loadingCtx!).pop();
+      }
+      if (!context.mounted) return;
+      final msg = e.toString();
+      if (msg.contains('ACP_TARGET_CHANGED')) return;
+
+      final isExecChanged = msg.contains('CHAT_SESSION_EXECUTION_CHANGED');
+      final isBinaryOrTooLarge = msg.contains('ACP_FILE_NOT_EDITABLE');
+      final isNoEditor = msg.contains('ACP_FILE_EDITOR_UNAVAILABLE');
+      final desc = isExecChanged
+          ? context.l10n.chatExecutionChangedPrompt
+          : (isBinaryOrTooLarge
+                ? context.l10n.chatFileNotEditable
+                : (isNoEditor ? context.l10n.chatEditorUnavailable : msg));
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(context.l10n.chatStatusFailed),
+          content: Text(desc),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(context.l10n.confirm),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _showAcpFileEditor(
+    BuildContext context,
+    AcpTextSnapshot snapshot, {
+    int? line,
+    bool isReadOnly = false,
+    String? workspaceTarget,
+  }) {
+    final target =
+        workspaceTarget ??
+        ref.read(aiChatProvider.notifier).workspaceSelectionKey;
+    showDialog(
+      context: context,
+      useSafeArea: false,
+      builder: (_) => _AcpFileEditorDialog(
+        snapshot: snapshot,
+        initialLine: line,
+        isReadOnly: isReadOnly || !snapshot.canSave,
+        workspaceTarget: target,
+      ),
+    );
+  }
+
+  void _showWorkbenchBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (sheetCtx, sheetScrollController) {
+            return _WorkbenchPanel(
+              isDesktop: false,
+              scrollController: sheetScrollController,
+              onClose: () => Navigator.pop(sheetCtx),
+              onOpenFile: (fileCtx, path, {expectedTarget, line}) =>
+                  _openRemoteFilePreview(
+                    fileCtx,
+                    path,
+                    expectedTarget: expectedTarget,
+                    line: line,
+                  ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -6059,6 +6871,7 @@ class _SessionsDrawerProjection {
   final bool hasMoreSessions;
   final bool isLoadingSessions;
   final List<_SessionEntryMeta> sessions;
+  final List<ChatSession> fullSessions;
 
   const _SessionsDrawerProjection({
     required this.activeSessionId,
@@ -6069,7 +6882,40 @@ class _SessionsDrawerProjection {
     required this.hasMoreSessions,
     required this.isLoadingSessions,
     required this.sessions,
+    this.fullSessions = const [],
   });
+
+  static bool _fullSessionsEqual(List<ChatSession> a, List<ChatSession> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      final sA = a[i];
+      final sB = b[i];
+      if (sA.id != sB.id ||
+          sA.title != sB.title ||
+          sA.serverId != sB.serverId ||
+          sA.executionKey != sB.executionKey ||
+          sA.workingDirectory != sB.workingDirectory) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static int _fullSessionsHash(List<ChatSession> list) {
+    var hash = 1;
+    for (final s in list) {
+      hash = Object.hash(
+        hash,
+        s.id,
+        s.title,
+        s.serverId,
+        s.executionKey,
+        s.workingDirectory,
+      );
+    }
+    return hash;
+  }
 
   @override
   bool operator ==(Object other) {
@@ -6085,7 +6931,8 @@ class _SessionsDrawerProjection {
         isGenerating == other.isGenerating &&
         hasMoreSessions == other.hasMoreSessions &&
         isLoadingSessions == other.isLoadingSessions &&
-        listEquals(sessions, other.sessions);
+        listEquals(sessions, other.sessions) &&
+        _fullSessionsEqual(fullSessions, other.fullSessions);
   }
 
   @override
@@ -6098,6 +6945,7 @@ class _SessionsDrawerProjection {
     hasMoreSessions,
     isLoadingSessions,
     Object.hashAll(sessions),
+    _fullSessionsHash(fullSessions),
   );
 }
 
@@ -6603,6 +7451,8 @@ class _ChatErrorBannerState extends State<_ChatErrorBanner> {
     final String kindTitle;
     if (widget.errorCode.startsWith('CHAT_SESSION_IDENTITY_MISMATCH')) {
       kindTitle = l10n.chatSessionIdentityMismatch;
+    } else if (widget.errorCode.contains('CHAT_SESSION_EXECUTION_CHANGED')) {
+      kindTitle = l10n.chatExecutionChangedPrompt;
     } else if (widget.errorCode == AiChatNotifier.notReadyCode ||
         widget.errorCode.startsWith('AGENT_NOT_READY')) {
       kindTitle = l10n.agentNotReadyError;
@@ -6624,7 +7474,27 @@ class _ChatErrorBannerState extends State<_ChatErrorBanner> {
     final isNarrow = MediaQuery.sizeOf(context).width < 360 || textScale > 1.3;
 
     Widget? actionButton;
-    if (widget.errorCode == AiChatNotifier.notReadyCode ||
+    if (widget.errorCode.contains('CHAT_SESSION_EXECUTION_CHANGED')) {
+      actionButton = Consumer(
+        builder: (ctx, ref, _) => TextButton(
+          style: TextButton.styleFrom(
+            visualDensity: VisualDensity.standard,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            minimumSize: const Size(44, 44),
+          ),
+          onPressed: () {
+            ref.read(aiChatProvider.notifier).createNewSession();
+          },
+          child: Text(
+            l10n.newSession,
+            style: context.textTheme.labelMedium?.copyWith(
+              color: context.colorScheme.onErrorContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    } else if (widget.errorCode == AiChatNotifier.notReadyCode ||
         widget.errorCode.startsWith('AGENT_NOT_READY')) {
       actionButton = TextButton(
         style: TextButton.styleFrom(
@@ -7474,4 +8344,1439 @@ class _RemoteSessionsDialogState extends ConsumerState<_RemoteSessionsDialog> {
       },
     );
   }
+}
+
+class _AcpFileEditorDialog extends ConsumerStatefulWidget {
+  final AcpTextSnapshot snapshot;
+  final int? initialLine;
+  final bool isReadOnly;
+  final String workspaceTarget;
+
+  const _AcpFileEditorDialog({
+    required this.snapshot,
+    this.initialLine,
+    this.isReadOnly = false,
+    required this.workspaceTarget,
+  });
+
+  @override
+  ConsumerState<_AcpFileEditorDialog> createState() =>
+      _AcpFileEditorDialogState();
+}
+
+class _AcpFileEditorDialogState extends ConsumerState<_AcpFileEditorDialog> {
+  late TextEditingController _controller;
+  late ScrollController _scrollController;
+  late AcpTextSnapshot _snapshot;
+  bool _isSaving = false;
+  String? _errorMessage;
+  bool _showDiff = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _snapshot = widget.snapshot;
+    _controller = TextEditingController(text: _snapshot.content);
+    _scrollController = ScrollController();
+    if (widget.initialLine != null && widget.initialLine! > 1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          final lineOffset = (widget.initialLine! - 1) * 20.0;
+          if (lineOffset < _scrollController.position.maxScrollExtent) {
+            _scrollController.jumpTo(lineOffset);
+          }
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSave() async {
+    final newContent = _controller.text;
+    if (newContent == _snapshot.content) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.chatNoChangesToSave)));
+      return;
+    }
+
+    if (!_showDiff) {
+      setState(() => _showDiff = true);
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+    }
+
+    final String targetInfo = (_snapshot.targetPath != _snapshot.path)
+        ? '${_snapshot.path} -> ${_snapshot.targetPath}'
+        : _snapshot.path;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final media = MediaQuery.sizeOf(ctx);
+        final diffWidth = math.max(220.0, math.min(media.width - 128.0, 560.0));
+        final diffHeight = math.max(
+          140.0,
+          math.min(media.height * 0.35, 280.0),
+        );
+        return AlertDialog(
+          scrollable: true,
+          title: Text(context.l10n.chatConfirmSaveFile),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(context.l10n.chatConfirmSaveFileMessage),
+              const SizedBox(height: 6),
+              Text(
+                targetInfo,
+                style: monoTextStyle(
+                  fontSize: 12,
+                ).copyWith(color: context.colorScheme.outline),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: diffWidth,
+                height: diffHeight,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: context.colorScheme.outlineVariant,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    color: context.colorScheme.surfaceContainerLowest,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: _buildDiffView(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(context.l10n.confirm),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await ref
+          .read(aiChatProvider.notifier)
+          .saveWorkspaceText(_snapshot, newContent);
+      final updated = await ref
+          .read(aiChatProvider.notifier)
+          .readWorkspaceText(
+            _snapshot.path,
+            expectedTarget: widget.workspaceTarget,
+          );
+      if (!mounted) return;
+      setState(() {
+        _snapshot = updated;
+        _isSaving = false;
+        _errorMessage = null;
+        _showDiff = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.chatFileSaved),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e.toString();
+      final isExecChanged = msg.contains('CHAT_SESSION_EXECUTION_CHANGED');
+      setState(() {
+        _isSaving = false;
+        _errorMessage = isExecChanged
+            ? context.l10n.chatExecutionChangedPrompt
+            : msg;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fileName = p.basename(_snapshot.path);
+    final hasModifications = _controller.text != _snapshot.content;
+    final isEffectiveReadOnly = widget.isReadOnly || !_snapshot.canSave;
+
+    return PopScope(
+      canPop: !hasModifications,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final leave = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(context.l10n.chatUnsavedChangesTitle),
+            content: Text(context.l10n.chatUnsavedChangesMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(context.l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(context.l10n.chatDiscard),
+              ),
+            ],
+          ),
+        );
+        if (leave == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Dialog.fullscreen(
+        child: Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.maybePop(context),
+            ),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fileName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  _snapshot.path,
+                  style: context.textTheme.bodySmall?.copyWith(
+                    color: context.colorScheme.outline,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+            actions: [
+              if (isEffectiveReadOnly)
+                Chip(
+                  label: Text(context.l10n.chatFileReadOnly),
+                  visualDensity: VisualDensity.compact,
+                )
+              else ...[
+                if (hasModifications)
+                  TextButton.icon(
+                    icon: Icon(
+                      _showDiff ? Icons.edit : Icons.difference_outlined,
+                      size: 16,
+                    ),
+                    label: Text(
+                      _showDiff
+                          ? context.l10n.chatFileEditorEdit
+                          : context.l10n.chatFileEditorDiff,
+                    ),
+                    onPressed: () => setState(() => _showDiff = !_showDiff),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: FilledButton.icon(
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.save, size: 16),
+                    label: Text(context.l10n.save),
+                    onPressed: (_isSaving || !hasModifications)
+                        ? null
+                        : _handleSave,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          body: Column(
+            children: [
+              if (_errorMessage != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  color: context.colorScheme.errorContainer,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning,
+                        color: context.colorScheme.error,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: context.colorScheme.onErrorContainer,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 16),
+                        onPressed: () => setState(() => _errorMessage = null),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: _showDiff
+                    ? _buildDiffView()
+                    : Container(
+                        color: context.colorScheme.surfaceContainerLowest,
+                        child: TextField(
+                          controller: _controller,
+                          scrollController: _scrollController,
+                          readOnly: isEffectiveReadOnly,
+                          maxLines: null,
+                          expands: true,
+                          keyboardType: TextInputType.multiline,
+                          style: monoTextStyle(fontSize: 13),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.all(16),
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDiffView({ScrollController? controller}) {
+    final origLines = _snapshot.content.isEmpty
+        ? const <String>[]
+        : _snapshot.content.split('\n');
+    final newLines = _controller.text.isEmpty
+        ? const <String>[]
+        : _controller.text.split('\n');
+    final maxLen = origLines.length > newLines.length
+        ? origLines.length
+        : newLines.length;
+
+    Widget buildRow({
+      required String lineNum,
+      required String sign,
+      required String line,
+      Color? bgColor,
+      Color? textColor,
+    }) {
+      return Container(
+        color: bgColor,
+        padding: const EdgeInsets.symmetric(vertical: 1),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 36,
+              child: Text(
+                lineNum,
+                style: TextStyle(
+                  color: context.colorScheme.outline,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 14,
+              child: Text(
+                sign,
+                style: monoTextStyle(fontSize: 12).copyWith(
+                  color: textColor ?? context.colorScheme.outline,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                line,
+                style: monoTextStyle(fontSize: 12).copyWith(color: textColor),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      controller: controller,
+      primary: false,
+      padding: const EdgeInsets.all(12),
+      itemCount: maxLen,
+      itemBuilder: (context, idx) {
+        final orig = idx < origLines.length ? origLines[idx] : null;
+        final repl = idx < newLines.length ? newLines[idx] : null;
+        final lineNum = '${idx + 1}';
+
+        if (orig == repl) {
+          return buildRow(lineNum: lineNum, sign: ' ', line: orig ?? '');
+        }
+
+        final List<Widget> children = [];
+        if (orig != null) {
+          children.add(
+            buildRow(
+              lineNum: lineNum,
+              sign: '-',
+              line: orig,
+              bgColor: Colors.red.withValues(alpha: 0.12),
+              textColor: Colors.red[800],
+            ),
+          );
+        }
+        if (repl != null) {
+          children.add(
+            buildRow(
+              lineNum: lineNum,
+              sign: '+',
+              line: repl,
+              bgColor: Colors.green.withValues(alpha: 0.12),
+              textColor: Colors.green[800],
+            ),
+          );
+        }
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        );
+      },
+    );
+  }
+}
+
+class _WorkbenchPanel extends ConsumerStatefulWidget {
+  final bool isDesktop;
+  final ScrollController? scrollController;
+  final VoidCallback? onClose;
+  final Future<void> Function(
+    BuildContext context,
+    String path, {
+    String? expectedTarget,
+    int? line,
+  })
+  onOpenFile;
+
+  const _WorkbenchPanel({
+    required this.isDesktop,
+    this.scrollController,
+    this.onClose,
+    required this.onOpenFile,
+  });
+
+  @override
+  ConsumerState<_WorkbenchPanel> createState() => _WorkbenchPanelState();
+}
+
+class _WorkbenchPanelState extends ConsumerState<_WorkbenchPanel> {
+  int _tabIndex = 0;
+  String? _trackedActiveTarget;
+  String? _cachedWorkspaceKey;
+  String? _currentBrowsePath;
+  List<SftpFileItem>? _cachedFiles;
+  bool _isLoadingFiles = false;
+  String? _filesError;
+  int _filesRequestVersion = 0;
+
+  Future<void> _refreshFiles({bool forceResolve = false}) async {
+    final capturedTarget = ref
+        .read(aiChatProvider.notifier)
+        .workspaceSelectionKey;
+    final currentVersion = ++_filesRequestVersion;
+
+    setState(() {
+      _isLoadingFiles = true;
+      _filesError = null;
+    });
+
+    try {
+      String targetPath;
+      if (_currentBrowsePath == null ||
+          _currentBrowsePath == '.' ||
+          forceResolve ||
+          _cachedWorkspaceKey != capturedTarget) {
+        targetPath = await ref
+            .read(aiChatProvider.notifier)
+            .resolveWorkspaceDirectory();
+      } else {
+        targetPath = _currentBrowsePath!;
+      }
+
+      final items = await ref
+          .read(aiChatProvider.notifier)
+          .listWorkspaceFiles(targetPath);
+
+      if (!mounted || _filesRequestVersion != currentVersion) return;
+      final latestTarget = ref
+          .read(aiChatProvider.notifier)
+          .workspaceSelectionKey;
+      if (latestTarget != capturedTarget) return;
+
+      setState(() {
+        _cachedWorkspaceKey = capturedTarget;
+        _cachedFiles = items;
+        _currentBrowsePath = targetPath;
+        _isLoadingFiles = false;
+      });
+    } catch (e) {
+      if (!mounted || _filesRequestVersion != currentVersion) return;
+      final latestTarget = ref
+          .read(aiChatProvider.notifier)
+          .workspaceSelectionKey;
+      if (latestTarget != capturedTarget) return;
+
+      final msg = e.toString();
+      final isExecChanged = msg.contains('CHAT_SESSION_EXECUTION_CHANGED');
+      setState(() {
+        _isLoadingFiles = false;
+        _filesError = isExecChanged
+            ? context.l10n.chatExecutionChangedPrompt
+            : msg;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<bool>(serverConnectionProvider.select((c) => c.isConnected), (
+      prev,
+      next,
+    ) {
+      if (prev == false && next == true && mounted) {
+        _refreshFiles(forceResolve: false);
+      }
+    });
+    ref.watch(activeServerProvider.select((s) => s?.connectionKey));
+    ref.watch(
+      aiChatProvider.select((s) {
+        final profile = s.activeAgentProfile;
+        return (
+          sessionId: s.activeSessionId,
+          agentId: profile?.id,
+          executionKey: profile != null ? chatExecutionKey(profile) : null,
+          cliCommand: profile?.cliCommand,
+          acpCommand: profile?.acpCommand,
+          directory:
+              s.activeSession?.workingDirectory ?? s.draftWorkingDirectory,
+        );
+      }),
+    );
+    final currentTarget = ref
+        .read(aiChatProvider.notifier)
+        .workspaceSelectionKey;
+
+    if (_trackedActiveTarget != null && _trackedActiveTarget != currentTarget) {
+      _filesRequestVersion++;
+      _trackedActiveTarget = currentTarget;
+      _cachedWorkspaceKey = null;
+      _cachedFiles = null;
+      _currentBrowsePath = null;
+      _filesError = null;
+      _isLoadingFiles = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _refreshFiles(forceResolve: true);
+      });
+    } else if (_trackedActiveTarget == null) {
+      _trackedActiveTarget = currentTarget;
+      if (_cachedFiles == null && !_isLoadingFiles && _filesError == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _refreshFiles(forceResolve: true);
+        });
+      }
+    }
+
+    return Material(
+      color: context.colorScheme.surfaceContainerLowest,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: context.colorScheme.outlineVariant.withValues(
+                      alpha: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.view_quilt_outlined,
+                    size: 18,
+                    color: context.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    context.l10n.chatWorkbench,
+                    style: context.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_tabIndex == 0)
+                    IconButton(
+                      icon: _isLoadingFiles
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.refresh, size: 16),
+                      tooltip: context.l10n.refresh,
+                      onPressed: _isLoadingFiles
+                          ? null
+                          : () => _refreshFiles(forceResolve: false),
+                    ),
+                  if (widget.onClose != null)
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 16),
+                      onPressed: widget.onClose,
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: SegmentedButton<int>(
+                segments: [
+                  ButtonSegment<int>(
+                    value: 0,
+                    icon: const Icon(Icons.folder_outlined, size: 14),
+                    label: Text(
+                      context.l10n.chatWorkbenchFiles,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                  ButtonSegment<int>(
+                    value: 1,
+                    icon: const Icon(Icons.task_alt_outlined, size: 14),
+                    label: Text(
+                      context.l10n.chatWorkbenchTasks,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                  ButtonSegment<int>(
+                    value: 2,
+                    icon: const Icon(Icons.info_outline, size: 14),
+                    label: Text(
+                      context.l10n.chatWorkbenchContext,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                ],
+                selected: {_tabIndex},
+                onSelectionChanged: (val) {
+                  setState(() => _tabIndex = val.first);
+                  if (val.first == 0 &&
+                      _cachedFiles == null &&
+                      !_isLoadingFiles) {
+                    _refreshFiles(forceResolve: true);
+                  }
+                },
+                style: const ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: switch (_tabIndex) {
+                0 => _buildFilesTab(widget.scrollController),
+                1 => _buildTasksTab(widget.scrollController),
+                2 => _buildContextTab(widget.scrollController),
+                _ => const SizedBox.shrink(),
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilesTab(ScrollController? controller) {
+    final currentPath = _currentBrowsePath ?? '/';
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          color: context.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.3,
+          ),
+          child: Row(
+            children: [
+              if (_currentBrowsePath != null && _currentBrowsePath != '/')
+                IconButton(
+                  icon: const Icon(Icons.arrow_upward, size: 16),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                  ),
+                  onPressed: () {
+                    final parent = p.posix.dirname(currentPath);
+                    setState(() => _currentBrowsePath = parent);
+                    _refreshFiles();
+                  },
+                ),
+              Expanded(
+                child: Text(
+                  currentPath,
+                  style: monoTextStyle(
+                    fontSize: 11,
+                    color: context.colorScheme.outline,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.open_in_browser, size: 16),
+                tooltip: 'Browse',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                onPressed: () async {
+                  final captured = ref
+                      .read(aiChatProvider.notifier)
+                      .workspaceSelectionKey;
+                  final picked = await RemoteWorkspaceBrowserDialog.show(
+                    context,
+                    initialPath: currentPath,
+                    mode: RemoteBrowserMode.directory,
+                  );
+                  if (picked is String && mounted) {
+                    final latest = ref
+                        .read(aiChatProvider.notifier)
+                        .workspaceSelectionKey;
+                    if (latest != captured) return;
+                    setState(() => _currentBrowsePath = picked);
+                    _refreshFiles();
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        if (_isLoadingFiles && _cachedFiles != null)
+          const LinearProgressIndicator(minHeight: 2),
+        Expanded(
+          child: (_cachedFiles == null && _isLoadingFiles)
+              ? const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : (_filesError != null &&
+                    (_cachedFiles == null || _cachedFiles!.isEmpty))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _filesError!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: context.colorScheme.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () => _refreshFiles(forceResolve: true),
+                          child: Text(context.l10n.stateRetry),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : (_cachedFiles == null || _cachedFiles!.isEmpty)
+              ? Center(
+                  child: Text(
+                    context.l10n.chatNoFilesInDirectory,
+                    style: TextStyle(
+                      color: context.colorScheme.outline,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+              : Column(
+                  children: [
+                    if (_filesError != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        color: context.colorScheme.errorContainer,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.warning,
+                              size: 14,
+                              color: context.colorScheme.error,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _filesError!,
+                                style: TextStyle(
+                                  color: context.colorScheme.onErrorContainer,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Expanded(
+                      child: ListView.builder(
+                        controller: controller,
+                        itemCount: _cachedFiles!.length,
+                        itemBuilder: (ctx, index) {
+                          final item = _cachedFiles![index];
+                          final isDir = item.isDirectory;
+                          return ListTile(
+                            dense: true,
+                            visualDensity: VisualDensity.compact,
+                            leading: Icon(
+                              isDir
+                                  ? Icons.folder
+                                  : Icons.insert_drive_file_outlined,
+                              size: 18,
+                              color: isDir ? Colors.amber[700] : null,
+                            ),
+                            title: Text(
+                              item.name,
+                              style: const TextStyle(fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (!isDir) ...[
+                                  Text(
+                                    _formatFileBytes(item.sizeBytes),
+                                    style: TextStyle(
+                                      color: context.colorScheme.outline,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.attachment,
+                                      size: 14,
+                                    ),
+                                    tooltip: context.l10n.chatAttachTooltip,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 24,
+                                      minHeight: 24,
+                                    ),
+                                    onPressed: () async {
+                                      final currentTarget = ref
+                                          .read(aiChatProvider.notifier)
+                                          .workspaceSelectionKey;
+                                      if (_cachedWorkspaceKey == null ||
+                                          _cachedWorkspaceKey !=
+                                              currentTarget) {
+                                        return;
+                                      }
+                                      try {
+                                        await ref
+                                            .read(aiChatProvider.notifier)
+                                            .attachRemoteFile(item.path);
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '${context.l10n.chatAttachTooltip}: ${item.name}',
+                                              ),
+                                              duration: const Duration(
+                                                seconds: 1,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        if (!mounted) return;
+                                        final msg = e.toString();
+                                        if (msg.contains(
+                                          'ACP_TARGET_CHANGED',
+                                        )) {
+                                          return;
+                                        }
+                                        final isUnsupported = msg.contains(
+                                          'ACP_ATTACHMENT_UNSUPPORTED',
+                                        );
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              isUnsupported
+                                                  ? context
+                                                        .l10n
+                                                        .chatAttachFailed
+                                                  : msg,
+                                            ),
+                                            backgroundColor:
+                                                context.colorScheme.error,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ] else
+                                  const Icon(Icons.chevron_right, size: 16),
+                              ],
+                            ),
+                            onTap: () async {
+                              final currentTarget = ref
+                                  .read(aiChatProvider.notifier)
+                                  .workspaceSelectionKey;
+                              if (_cachedWorkspaceKey == null ||
+                                  _cachedWorkspaceKey != currentTarget) {
+                                return;
+                              }
+                              final rowTarget = _cachedWorkspaceKey!;
+                              if (isDir) {
+                                setState(() {
+                                  _currentBrowsePath = item.path;
+                                });
+                                _refreshFiles();
+                              } else {
+                                final mime = AcpWorkspaceFiles.mimeType(
+                                  item.name,
+                                );
+                                if (mime?.startsWith('image/') ?? false) {
+                                  try {
+                                    final bytes = await ref
+                                        .read(aiChatProvider.notifier)
+                                        .readWorkspaceImage(
+                                          item.path,
+                                          expectedTarget: rowTarget,
+                                        );
+                                    if (mounted) {
+                                      ImageZoomDialog.show(
+                                        context,
+                                        title: item.name,
+                                        bytes: bytes,
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (!mounted) return;
+                                    final msg = e.toString();
+                                    if (msg.contains('ACP_TARGET_CHANGED')) {
+                                      return;
+                                    }
+                                    final isExecChanged = msg.contains(
+                                      'CHAT_SESSION_EXECUTION_CHANGED',
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          isExecChanged
+                                              ? context
+                                                    .l10n
+                                                    .chatExecutionChangedPrompt
+                                              : msg,
+                                        ),
+                                        backgroundColor:
+                                            context.colorScheme.error,
+                                      ),
+                                    );
+                                  }
+                                  return;
+                                }
+                                widget.onOpenFile(
+                                  context,
+                                  item.path,
+                                  expectedTarget: rowTarget,
+                                );
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTasksTab(ScrollController? controller) {
+    return Consumer(
+      builder: (ctx, tasksRef, _) {
+        final serverRun = tasksRef.watch(
+          aiChatProvider.select((s) => s.serverRun),
+        );
+        final isViewingRun = tasksRef.watch(
+          aiChatProvider.select((s) => s.isViewingRun),
+        );
+        final messages = tasksRef.watch(
+          aiChatProvider.select((s) => s.activeSession?.messages ?? const []),
+        );
+        ChatMessage? lastAssistant;
+        for (int i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].role == MessageRole.assistant) {
+            lastAssistant = messages[i];
+            break;
+          }
+        }
+
+        return ListView(
+          controller: controller,
+          padding: const EdgeInsets.all(12),
+          children: [
+            if (serverRun != null) ...[
+              ValhallaCard(
+                color: context.colorScheme.surface,
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          serverRun.isBusy
+                              ? Icons.autorenew
+                              : Icons.check_circle_outline,
+                          size: 16,
+                          color: serverRun.isBusy
+                              ? context.colorScheme.primary
+                              : Colors.green,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          serverRun.isBusy
+                              ? 'Server Task Running'
+                              : 'Server Task Idle',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Agent: ${serverRun.agentId}',
+                      style: TextStyle(
+                        color: context.colorScheme.outline,
+                        fontSize: 11,
+                      ),
+                    ),
+                    Text(
+                      'Session: ${serverRun.sessionId}',
+                      style: TextStyle(
+                        color: context.colorScheme.outline,
+                        fontSize: 11,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (serverRun.isBusy && !isViewingRun) ...[
+                      const SizedBox(height: 8),
+                      FilledButton.tonalIcon(
+                        icon: const Icon(Icons.visibility, size: 14),
+                        label: Text(
+                          context.l10n.chatViewCurrentRun,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        onPressed: () => tasksRef
+                            .read(aiChatProvider.notifier)
+                            .returnToRunningSession(),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (lastAssistant != null &&
+                lastAssistant.planSteps.isNotEmpty) ...[
+              Text('Plan Steps', style: context.textTheme.labelMedium),
+              const SizedBox(height: 6),
+              ValhallaCard(
+                color: context.colorScheme.surface,
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final step in lastAssistant.planSteps)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              step.status == PlanStepStatus.completed
+                                  ? Icons.check_box
+                                  : (step.status == PlanStepStatus.inProgress
+                                        ? Icons.pending_outlined
+                                        : Icons.check_box_outline_blank),
+                              size: 16,
+                              color: step.status == PlanStepStatus.completed
+                                  ? Colors.green
+                                  : (step.status == PlanStepStatus.inProgress
+                                        ? context.colorScheme.primary
+                                        : context.colorScheme.outline),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                step.title,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  decoration:
+                                      step.status == PlanStepStatus.completed
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (lastAssistant != null &&
+                lastAssistant.toolExecutions.isNotEmpty) ...[
+              Text('Tool Executions', style: context.textTheme.labelMedium),
+              const SizedBox(height: 6),
+              for (final tool in lastAssistant.toolExecutions) ...[
+                ValhallaCard(
+                  color: context.colorScheme.surface,
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.build_outlined,
+                            size: 14,
+                            color: context.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            tool.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            tool.status.name,
+                            style: TextStyle(
+                              color: context.colorScheme.outline,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (tool.command.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          tool.command,
+                          style: monoTextStyle(fontSize: 11),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+              ],
+            ],
+            if (serverRun == null &&
+                (lastAssistant == null ||
+                    (lastAssistant.planSteps.isEmpty &&
+                        lastAssistant.toolExecutions.isEmpty)))
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    context.l10n.chatNoActiveTasks,
+                    style: TextStyle(
+                      color: context.colorScheme.outline,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildContextTab(ScrollController? controller) {
+    return Consumer(
+      builder: (ctx, contextRef, _) {
+        final profile = contextRef.watch(
+          aiChatProvider.select((s) => s.activeAgentProfile),
+        );
+        final workingDir = contextRef.watch(
+          aiChatProvider.select(
+            (s) =>
+                s.activeSession?.workingDirectory ??
+                s.draftWorkingDirectory ??
+                'Default',
+          ),
+        );
+        final model = contextRef.watch(
+          aiChatProvider.select((s) => s.runSettings.modelId),
+        );
+        final supportsImages = contextRef.watch(
+          aiChatProvider.select((s) => s.supportsImages),
+        );
+        final supportsFiles = contextRef.watch(
+          aiChatProvider.select((s) => s.supportsTextAttachments),
+        );
+        final server = contextRef.watch(activeServerProvider);
+        final isConnected = contextRef.watch(
+          serverConnectionProvider.select((c) => c.isConnected),
+        );
+
+        return ListView(
+          controller: controller,
+          padding: const EdgeInsets.all(12),
+          children: [
+            ValhallaCard(
+              color: context.colorScheme.surface,
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.dns_outlined,
+                        size: 16,
+                        color: isConnected
+                            ? Colors.green
+                            : context.colorScheme.error,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        server?.name ?? 'Server',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isConnected
+                              ? Colors.green.withValues(alpha: 0.15)
+                              : context.colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          isConnected ? 'Connected' : 'Disconnected',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isConnected
+                                ? Colors.green[800]
+                                : context.colorScheme.onErrorContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (server != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Host: ${server.host}:${server.port}',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    Text(
+                      'User: ${server.username}',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            ValhallaCard(
+              color: context.colorScheme.surface,
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        profile?.executionTarget == 'docker'
+                            ? Icons.directions_boat_outlined
+                            : Icons.terminal_outlined,
+                        size: 16,
+                        color: context.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        profile?.executionTarget == 'docker'
+                            ? 'Docker Container'
+                            : 'Host Environment',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (profile?.executionTarget == 'docker') ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Container: ${profile?.containerReference ?? profile?.containerBinding ?? "unspecified"}',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    if (profile?.containerUser != null)
+                      Text(
+                        'Container User: ${profile!.containerUser}',
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                  ],
+                  const SizedBox(height: 6),
+                  Text(
+                    'Working Directory: $workingDir',
+                    style: monoTextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            if (profile != null)
+              ValhallaCard(
+                color: context.colorScheme.surface,
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.smart_toy_outlined,
+                          size: 16,
+                          color: context.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          profile.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'CLI: ${profile.cliCommand}',
+                      style: monoTextStyle(fontSize: 11),
+                    ),
+                    if (model != null && model.isNotEmpty)
+                      Text(
+                        'Model: $model',
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: [
+                        if (supportsImages)
+                          Chip(
+                            label: const Text(
+                              'Images',
+                              style: TextStyle(fontSize: 10),
+                            ),
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                          ),
+                        if (supportsFiles)
+                          Chip(
+                            label: const Text(
+                              'Files',
+                              style: TextStyle(fontSize: 10),
+                            ),
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+String _formatFileBytes(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
 }

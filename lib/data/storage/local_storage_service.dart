@@ -17,6 +17,33 @@ import '../models/terminal_accessory_layout.dart';
 
 /// 本地持久化服务 (SharedPreferences 快速存取)
 class LocalStorageService {
+  Map<String, dynamic> getChatWorkspacePreference(String key) {
+    final raw = _prefs.getString('valhalla_chat_workspace_v1::$key');
+    if (raw == null) return const {};
+    try {
+      return Map<String, dynamic>.from(jsonDecode(raw) as Map);
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  Future<void> setChatWorkspacePreference(
+    String key, {
+    String? alias,
+    bool favorite = false,
+  }) async {
+    final name = alias?.trim();
+    if (name != null && name.length > 120) {
+      throw ArgumentError('CHAT_WORKSPACE_ALIAS_TOO_LONG');
+    }
+    if (!await _prefs.setString(
+      'valhalla_chat_workspace_v1::$key',
+      jsonEncode({'alias': name, 'favorite': favorite}),
+    )) {
+      throw const StorageException('CHAT_WORKSPACE_SAVE_FAILED');
+    }
+  }
+
   Future<bool> claimLegacyTerminalTarget(
     String serverId,
     String targetKey,

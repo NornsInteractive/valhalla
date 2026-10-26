@@ -6345,4 +6345,107 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get deleteSessionOfflineNotice =>
       'Server terputus. Hanya penghapusan lokal yang tersedia.';
+
+  @override
+  String get chatWorkbench => 'Meja kerja';
+
+  @override
+  String get chatWorkbenchFiles => 'Berkas';
+
+  @override
+  String get chatWorkbenchTasks => 'Tugas & Alat';
+
+  @override
+  String get chatWorkbenchContext => 'Konteks';
+
+  @override
+  String get chatWorkspaceProjects => 'Proyek';
+
+  @override
+  String get chatWorkspaceEditAlias => 'Ubah Alias Proyek';
+
+  @override
+  String get chatWorkspaceAliasLabel => 'Alias Proyek';
+
+  @override
+  String get chatWorkspaceFavorite => 'Favoritkan Proyek';
+
+  @override
+  String get chatWorkspaceUnfavorite => 'Hapus Favorit Proyek';
+
+  @override
+  String get chatLoopbackConfirmTitle => 'Buka URL Loopback Jarak Jauh';
+
+  @override
+  String get chatLoopbackConfirmMessage =>
+      'Tautan ini mengarah ke localhost jarak jauh. Apakah Anda ingin membukanya di browser Anda?';
+
+  @override
+  String get chatConfirmSaveFile => 'Konfirmasi Simpan';
+
+  @override
+  String get chatConfirmSaveFileMessage => 'Simpan perubahan pada berkas ini?';
+
+  @override
+  String get chatFileReadOnly => 'Hanya Baca';
+
+  @override
+  String get chatCopyError => 'Salin Kesalahan';
+
+  @override
+  String get chatFileOutsideWorkspace =>
+      'Berkas berada di luar direktori ruang kerja. Apakah Anda ingin membukanya?';
+
+  @override
+  String get chatUnsavedChangesTitle => 'Perubahan Belum Disimpan';
+
+  @override
+  String get chatUnsavedChangesMessage =>
+      'Ada perubahan yang belum disimpan. Buang perubahan?';
+
+  @override
+  String get chatDiscard => 'Buang';
+
+  @override
+  String get chatNoChangesToSave => 'Tidak ada perubahan untuk disimpan';
+
+  @override
+  String get chatFileSaved => 'Berkas berhasil disimpan';
+
+  @override
+  String get chatLoadingFile => 'Memuat berkas...';
+
+  @override
+  String get chatEditorUnavailable =>
+      'Editor kontainer tidak tersedia (memerlukan python3).';
+
+  @override
+  String get chatFileNotEditable =>
+      'Berkas biner atau besar tidak dapat diedit.';
+
+  @override
+  String get chatFailedToOpenLink => 'Gagal membuka tautan';
+
+  @override
+  String get chatNoActiveTasks =>
+      'Tidak ada tugas atau eksekusi alat yang aktif';
+
+  @override
+  String get chatNoFilesInDirectory => 'Tidak ada berkas di dalam direktori';
+
+  @override
+  String get chatViewCurrentRun => 'Lihat Eksekusi Saat Ini';
+
+  @override
+  String get chatExecutionChangedPrompt =>
+      'Lingkungan eksekusi sesi telah berubah. Buat sesi baru untuk melanjutkan.';
+
+  @override
+  String get chatLinkCopied => 'Tautan disalin ke papan klip';
+
+  @override
+  String get chatFileEditorEdit => 'Edit';
+
+  @override
+  String get chatFileEditorDiff => 'Diff';
 }

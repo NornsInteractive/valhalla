@@ -492,6 +492,7 @@ class ChatMessage {
 }
 
 class AgentChatContext {
+  final String? executionKey;
   final String? remoteSessionId;
   final int syncedMessageCount;
   final String? persistentRuntimeKey;
@@ -499,6 +500,7 @@ class AgentChatContext {
   final int runtimeGeneration;
   final bool runtimeRestartPending;
   const AgentChatContext({
+    this.executionKey,
     this.remoteSessionId,
     this.syncedMessageCount = 0,
     this.persistentRuntimeKey,
@@ -507,6 +509,7 @@ class AgentChatContext {
     this.runtimeRestartPending = false,
   });
   AgentChatContext copyWith({
+    String? executionKey,
     String? remoteSessionId,
     int? syncedMessageCount,
     String? persistentRuntimeKey,
@@ -515,6 +518,7 @@ class AgentChatContext {
     bool? runtimeRestartPending,
     bool clearPersistentRuntime = false,
   }) => AgentChatContext(
+    executionKey: executionKey ?? this.executionKey,
     remoteSessionId: remoteSessionId ?? this.remoteSessionId,
     syncedMessageCount: syncedMessageCount ?? this.syncedMessageCount,
     persistentRuntimeKey: clearPersistentRuntime
@@ -527,6 +531,7 @@ class AgentChatContext {
     runtimeRestartPending: runtimeRestartPending ?? this.runtimeRestartPending,
   );
   Map<String, dynamic> toJson() => {
+    if (executionKey != null) 'executionKey': executionKey,
     'remoteSessionId': remoteSessionId,
     'syncedMessageCount': syncedMessageCount,
     'persistentRuntimeKey': persistentRuntimeKey,
@@ -536,6 +541,7 @@ class AgentChatContext {
   };
   factory AgentChatContext.fromJson(Map<String, dynamic> json) =>
       AgentChatContext(
+        executionKey: json['executionKey'] as String?,
         remoteSessionId: json['remoteSessionId'] as String?,
         syncedMessageCount: (json['syncedMessageCount'] as num?)?.toInt() ?? 0,
         persistentRuntimeKey: json['persistentRuntimeKey'] as String?,
@@ -546,6 +552,7 @@ class AgentChatContext {
 }
 
 class ChatSession {
+  final String? executionKey;
   final bool historyImportIncomplete;
   final int messageOffset;
   final int totalMessageCount;
@@ -557,6 +564,7 @@ class ChatSession {
   AgentChatContext contextFor(String id) =>
       agentContexts[id] ??
       AgentChatContext(
+        executionKey: agentId == id ? executionKey : null,
         remoteSessionId: agentId == id ? remoteSessionId : null,
         syncedMessageCount: agentId == id && remoteSessionId != null
             ? messageOffset + messages.length
@@ -579,6 +587,7 @@ class ChatSession {
   final List<ChatMessage> messages;
 
   const ChatSession({
+    this.executionKey,
     this.historyImportIncomplete = false,
     this.messageOffset = 0,
     this.totalMessageCount = 0,
@@ -598,6 +607,7 @@ class ChatSession {
   });
 
   ChatSession copyWith({
+    String? executionKey,
     bool? historyImportIncomplete,
     int? messageOffset,
     int? totalMessageCount,
@@ -616,6 +626,7 @@ class ChatSession {
     List<ChatMessage>? messages,
   }) {
     return ChatSession(
+      executionKey: executionKey ?? this.executionKey,
       historyImportIncomplete:
           historyImportIncomplete ?? this.historyImportIncomplete,
       messageOffset: messageOffset ?? this.messageOffset,
@@ -638,6 +649,7 @@ class ChatSession {
 
   Map<String, dynamic> toJson() => {
     'historyImportIncomplete': historyImportIncomplete,
+    if (executionKey != null) 'executionKey': executionKey,
     'messageOffset': messageOffset,
     'totalMessageCount': totalMessageCount,
     'agentRunSettings': agentRunSettings.map(
@@ -665,6 +677,7 @@ class ChatSession {
         ? null
         : kLegacyAgentTypeToId[rawAgentType.toLowerCase()];
     return ChatSession(
+      executionKey: json['executionKey'] as String?,
       historyImportIncomplete:
           json['historyImportIncomplete'] as bool? ?? false,
       messageOffset: (json['messageOffset'] as num?)?.toInt() ?? 0,

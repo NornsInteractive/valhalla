@@ -6078,4 +6078,102 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get deleteSessionOfflineNotice => '서버 연결이 끊어졌습니다. 로컬 삭제만 가능합니다.';
+
+  @override
+  String get chatWorkbench => '워크벤치';
+
+  @override
+  String get chatWorkbenchFiles => '파일';
+
+  @override
+  String get chatWorkbenchTasks => '작업 및 도구';
+
+  @override
+  String get chatWorkbenchContext => '컨텍스트';
+
+  @override
+  String get chatWorkspaceProjects => '프로젝트';
+
+  @override
+  String get chatWorkspaceEditAlias => '프로젝트 별칭 편집';
+
+  @override
+  String get chatWorkspaceAliasLabel => '프로젝트 별칭';
+
+  @override
+  String get chatWorkspaceFavorite => '프로젝트 즐겨찾기';
+
+  @override
+  String get chatWorkspaceUnfavorite => '프로젝트 즐겨찾기 해제';
+
+  @override
+  String get chatLoopbackConfirmTitle => '원격 루프백 URL 열기';
+
+  @override
+  String get chatLoopbackConfirmMessage =>
+      '이 링크는 원격 localhost를 가리킵니다. 브라우저에서 여시겠습니까?';
+
+  @override
+  String get chatConfirmSaveFile => '저장 확인';
+
+  @override
+  String get chatConfirmSaveFileMessage => '이 파일의 변경 사항을 저장하시겠습니까?';
+
+  @override
+  String get chatFileReadOnly => '읽기 전용';
+
+  @override
+  String get chatCopyError => '오류 복사';
+
+  @override
+  String get chatFileOutsideWorkspace => '파일이 작업 영역 외부에 있습니다. 여시겠습니까?';
+
+  @override
+  String get chatUnsavedChangesTitle => '저장되지 않은 변경 사항';
+
+  @override
+  String get chatUnsavedChangesMessage => '저장되지 않은 변경 사항이 있습니다. 삭제하시겠습니까?';
+
+  @override
+  String get chatDiscard => '버리기';
+
+  @override
+  String get chatNoChangesToSave => '저장할 변경 사항 없음';
+
+  @override
+  String get chatFileSaved => '파일이 성공적으로 저장되었습니다';
+
+  @override
+  String get chatLoadingFile => '파일을 불러오는 중...';
+
+  @override
+  String get chatEditorUnavailable => '컨테이너 편집기를 사용할 수 없습니다(python3 필요).';
+
+  @override
+  String get chatFileNotEditable => '바이너리 또는 대용량 파일은 편집할 수 없습니다.';
+
+  @override
+  String get chatFailedToOpenLink => '링크를 열지 못했습니다';
+
+  @override
+  String get chatNoActiveTasks => '활성 작업 또는 도구 실행 없음';
+
+  @override
+  String get chatNoFilesInDirectory => '디렉터리에 파일이 없습니다';
+
+  @override
+  String get chatViewCurrentRun => '현재 실행 보기';
+
+  @override
+  String get chatExecutionChangedPrompt =>
+      '세션 실행 환경이 변경되었습니다. 계속하려면 새 세션을 생성하세요.';
+
+  @override
+  String get chatLinkCopied => '링크가 클립보드에 복사되었습니다';
+
+  @override
+  String get chatFileEditorEdit => '편집';
+
+  @override
+  String get chatFileEditorDiff => '비교';
 }

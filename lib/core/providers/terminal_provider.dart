@@ -11,6 +11,7 @@ import '../../data/models/server_profile.dart';
 import '../../data/models/terminal_history.dart';
 import '../security/agent_command_validator.dart';
 import '../services/app_diagnostics.dart';
+import '../logging/sanitizer.dart';
 import '../utils/tmux_session_planner.dart';
 import '../../infrastructure/mosh/mosh_bridge_adapter.dart';
 import '../../infrastructure/mosh/mosh_providers.dart';
@@ -88,10 +89,12 @@ class SshTerminalState {
   final List<TmuxSocketSource> socketSources;
   final List<String> hiddenRecordIds;
   final Map<String, String> socketErrors;
+  final Map<String, String> socketErrorDetails;
   final bool isInitialized;
   final bool isInitializing;
   final bool isHistoryLoading;
   final String? errorCode;
+  final String? errorDetail;
   final String? noticeCode;
 
   SshTerminalState({
@@ -107,10 +110,12 @@ class SshTerminalState {
     this.socketSources = const [],
     this.hiddenRecordIds = const [],
     this.socketErrors = const {},
+    this.socketErrorDetails = const {},
     this.isInitialized = false,
     this.isInitializing = false,
     this.isHistoryLoading = false,
     this.errorCode,
+    this.errorDetail,
     this.noticeCode,
   });
 
@@ -133,11 +138,13 @@ class SshTerminalState {
     List<TmuxSocketSource>? socketSources,
     List<String>? hiddenRecordIds,
     Map<String, String>? socketErrors,
+    Map<String, String>? socketErrorDetails,
     bool clearDefaultHistory = false,
     bool? isInitialized,
     bool? isInitializing,
     bool? isHistoryLoading,
     String? errorCode,
+    String? errorDetail,
     bool clearError = false,
     String? noticeCode,
     bool clearNotice = false,
@@ -159,10 +166,14 @@ class SshTerminalState {
       socketSources: socketSources ?? this.socketSources,
       hiddenRecordIds: hiddenRecordIds ?? this.hiddenRecordIds,
       socketErrors: socketErrors ?? this.socketErrors,
+      socketErrorDetails: socketErrorDetails ?? this.socketErrorDetails,
       isInitialized: isInitialized ?? this.isInitialized,
       isInitializing: isInitializing ?? this.isInitializing,
       isHistoryLoading: isHistoryLoading ?? this.isHistoryLoading,
       errorCode: clearError ? null : (errorCode ?? this.errorCode),
+      errorDetail: clearError
+          ? null
+          : (errorDetail ?? (errorCode != null ? null : this.errorDetail)),
       noticeCode: clearNotice ? null : (noticeCode ?? this.noticeCode),
     );
   }
@@ -497,16 +508,32 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     Object error,
     StackTrace stack,
   ) {
-    unawaited(
-      AppDiagnostics.instance.record('terminal.operation', error, stack),
-    );
+    unawaited(AppDiagnostics.instance.record('terminal.$code', error, stack));
     if (_valid(workspace)) {
-      _publish(workspace, workspace.value.copyWith(errorCode: code));
+      final detail = LogSanitizer.sanitize(error.toString());
+      _publish(
+        workspace,
+        workspace.value.copyWith(
+          errorCode: code,
+          errorDetail: detail.length > 4096
+              ? detail.substring(0, 4096)
+              : detail,
+        ),
+      );
     }
   }
 
-  void clearNotice() =>
+  void clearNotice() {
+    final workspace = _current;
+    if (workspace == null) {
       state = state.copyWith(clearNotice: true, clearError: true);
+    } else {
+      _publish(
+        workspace,
+        workspace.value.copyWith(clearNotice: true, clearError: true),
+      );
+    }
+  }
 
   Future<void> _saveHistory(
     _TerminalWorkspace workspace,
@@ -945,6 +972,7 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     _publish(workspace, workspace.value.copyWith(isHistoryLoading: true));
     final found = <TmuxSessionInfo>[];
     final errors = <String, String>{};
+    final details = <String, String>{};
     final complete = <String>{};
     try {
       // Bounded workers: a slow or inaccessible custom socket cannot flood SSH.
@@ -961,8 +989,19 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
             );
             found.addAll(sessions);
             complete.add(source.id);
-          } catch (_) {
+          } catch (error, stack) {
             errors[source.id] = 'TMUX_HISTORY_QUERY_FAILED';
+            final detail = LogSanitizer.sanitize(error.toString());
+            details[source.id] = detail.length > 4096
+                ? detail.substring(0, 4096)
+                : detail;
+            unawaited(
+              AppDiagnostics.instance.record(
+                'terminal.tmux.discovery',
+                error,
+                stack,
+              ),
+            );
           }
           if (!_isCurrent(workspace) || epoch != workspace.connectionEpoch) {
             return;
@@ -1090,6 +1129,7 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
           history: List.unmodifiable(records),
           historyStatuses: statuses,
           socketErrors: errors,
+          socketErrorDetails: details,
         ),
       );
       // Display remote truth immediately; never wait on a pending rename/default disk write.
@@ -1142,9 +1182,17 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
         record.serverId != workspace.server.id) {
       return;
     }
-    if (record.identity == null) {
+    final interaction = workspace.interactionEpoch;
+    if (record.identity == null ||
+        workspace.value.historyStatuses[record.id] == null ||
+        workspace.value.historyStatuses[record.id] ==
+            TerminalHistoryStatus.unavailable ||
+        workspace.value.historyStatuses[record.id] ==
+            TerminalHistoryStatus.unknown) {
       await refreshHistory();
-      if (!_isCurrent(workspace)) return;
+      if (!_isCurrent(workspace) || interaction != workspace.interactionEpoch) {
+        return;
+      }
       record =
           workspace.value.history.where((r) => r.id == record.id).firstOrNull ??
           record;
@@ -1161,7 +1209,9 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
           TmuxSocketSource.standard.id,
           ...workspace.value.socketSources.map((s) => s.id),
         ].contains(record.socket.id)) {
-      throw StateError('TERMINAL_HISTORY_UNVERIFIED');
+      throw StateError(
+        'TERMINAL_HISTORY_UNVERIFIED: ${workspace.value.socketErrorDetails[record.socket.id] ?? record.socket.id}',
+      );
     }
     final openIndex = workspace.value.tabs.indexWhere(
       (tab) => tab.id == record.id,
@@ -1177,13 +1227,19 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     final client = _clientFor(workspace);
     if (client == null) throw StateError('SSH_DISCONNECTED');
     final epoch = workspace.connectionEpoch;
-    final exists = await TerminalSessionBridge.tmuxSessionExists(
-      client,
-      record.remoteSessionName,
-      socket: record.socket,
-      identity: record.identity,
-    );
+    final bool exists;
+    try {
+      exists = await TerminalSessionBridge.tmuxSessionExists(
+        client,
+        record.remoteSessionName,
+        socket: record.socket,
+        identity: record.identity,
+      );
+    } catch (error) {
+      throw StateError('TERMINAL_RESTORE_VERIFY: $error');
+    }
     if (!_isCurrent(workspace) ||
+        interaction != workspace.interactionEpoch ||
         epoch != workspace.connectionEpoch ||
         !identical(client, _clientFor(workspace))) {
       return;
@@ -1216,16 +1272,25 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     workspace.startupApplied = true;
     _appendTab(workspace, tab);
     await _startTab(workspace, tab);
-    if (!_isCurrent(workspace)) return;
+    if (!_isCurrent(workspace) || interaction != workspace.interactionEpoch) {
+      return;
+    }
     if (tab.bridge.remoteSessionMissing) {
       // The process can exit between the read-only existence check and attach.
       _removeTab(workspace, tab.id);
       await _handleMissing(workspace, record, isStartup: isStartup);
     } else if (tab.bridge.state != TerminalConnectionState.connected) {
-      _publish(
+      // Keep this exact failed tab retryable; never allocate a replacement shell.
+      _report(
         workspace,
-        workspace.value.copyWith(errorCode: 'TERMINAL_RESTORE_FAILED'),
+        'TERMINAL_RESTORE_FAILED',
+        StateError(
+          'TERMINAL_RESTORE_ATTACH: ${tab.bridge.lastError ?? "PTY closed"}',
+        ),
+        StackTrace.current,
       );
+    } else {
+      _publish(workspace, workspace.value.copyWith(clearError: true));
     }
   }
 
@@ -1278,9 +1343,13 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     if (tab.bridge.remoteSessionMissing) {
       await _handleMissing(workspace, record, isStartup: false);
     } else if (tab.bridge.state != TerminalConnectionState.connected) {
-      _publish(
+      _report(
         workspace,
-        workspace.value.copyWith(errorCode: 'TERMINAL_RESTORE_FAILED'),
+        'TERMINAL_RESTORE_FAILED',
+        StateError(
+          'TERMINAL_RESTORE_ATTACH: ${tab.bridge.lastError ?? "PTY closed"}',
+        ),
+        StackTrace.current,
       );
     } else {
       _publish(workspace, workspace.value.copyWith(clearError: true));

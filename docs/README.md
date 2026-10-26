@@ -1,9 +1,12 @@
 # Valhalla - 研发项目全生命周期文档体系
 
-最新交付（2026-10-21）：[1.0.15+16 发布记录](../agent-workflow/2026-10-21-v1015-release.md)。
-[SSH快捷栏局部动效](../agent-workflow/2026-10-19-terminal-accessory-motion.md)已正式打包；Android三架构APK/AAB、Linux x64
-已发布GitHub及分发平台代理，四整包SHA256和八项Range通过。构建门禁460项相关回归、27项清单测试通过，分析零问题。
-后续每批修改完成后自动新增版本发布，入口见[可续跑发布脚本](../tool/RELEASE.md)；不启动Actions，本批未ADB安装。
+当前实施（2026-10-26）：[ACP 工作台与历史恢复设计](design/2026-10-26-acp-workbench.md)，
+实现与门禁状态见[本轮交接](../agent-workflow/2026-10-26-acp-workbench.md)。未通过最终门禁的内容不代表已发布。
+
+最新交付：[1.0.18+19 发布记录](../agent-workflow/2026-10-26-v1018-release.md)。
+正式签名 Android 三架构 APK/AAB、Linux x64 已发布 GitHub 及 Ygg 分发平台代理，并同步官网；
+产物哈希、Range 和实服验收边界见发布记录。后续每批修改完成后自动新增版本发布，
+入口见[可续跑发布脚本](../tool/RELEASE.md)，不启动 Actions。
 
 前次交付（2026-10-19）：[1.0.13+14 发布记录](../agent-workflow/2026-10-19-v1013-release.md)。
 正式签名Android三架构APK／AAB及Linux x64已本地构建并公开GitHub；分发平台四包已公开，

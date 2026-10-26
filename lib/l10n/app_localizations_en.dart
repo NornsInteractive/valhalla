@@ -6296,4 +6296,105 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteSessionOfflineNotice =>
       'Server disconnected. Only local deletion is available.';
+
+  @override
+  String get chatWorkbench => 'Workbench';
+
+  @override
+  String get chatWorkbenchFiles => 'Files';
+
+  @override
+  String get chatWorkbenchTasks => 'Tasks & Tools';
+
+  @override
+  String get chatWorkbenchContext => 'Context';
+
+  @override
+  String get chatWorkspaceProjects => 'Projects';
+
+  @override
+  String get chatWorkspaceEditAlias => 'Edit Project Alias';
+
+  @override
+  String get chatWorkspaceAliasLabel => 'Project Alias';
+
+  @override
+  String get chatWorkspaceFavorite => 'Favorite Project';
+
+  @override
+  String get chatWorkspaceUnfavorite => 'Unfavorite Project';
+
+  @override
+  String get chatLoopbackConfirmTitle => 'Open Remote Loopback URL';
+
+  @override
+  String get chatLoopbackConfirmMessage =>
+      'This link points to remote localhost. Do you want to open it in your browser?';
+
+  @override
+  String get chatConfirmSaveFile => 'Confirm Save';
+
+  @override
+  String get chatConfirmSaveFileMessage => 'Save changes to this file?';
+
+  @override
+  String get chatFileReadOnly => 'Read Only';
+
+  @override
+  String get chatCopyError => 'Copy Error';
+
+  @override
+  String get chatFileOutsideWorkspace =>
+      'File is outside workspace directory. Do you want to open it?';
+
+  @override
+  String get chatUnsavedChangesTitle => 'Unsaved Changes';
+
+  @override
+  String get chatUnsavedChangesMessage =>
+      'You have unsaved changes. Discard them?';
+
+  @override
+  String get chatDiscard => 'Discard';
+
+  @override
+  String get chatNoChangesToSave => 'No changes to save';
+
+  @override
+  String get chatFileSaved => 'File saved successfully';
+
+  @override
+  String get chatLoadingFile => 'Loading file...';
+
+  @override
+  String get chatEditorUnavailable =>
+      'Container editor is unavailable (python3 required).';
+
+  @override
+  String get chatFileNotEditable => 'Binary or large file cannot be edited.';
+
+  @override
+  String get chatFailedToOpenLink => 'Failed to open link';
+
+  @override
+  String get chatNoActiveTasks => 'No active tasks or tool executions';
+
+  @override
+  String get chatNoFilesInDirectory => 'No files in directory';
+
+  @override
+  String get chatViewCurrentRun => 'View Current Run';
+
+  @override
+  String get chatExecutionChangedPrompt =>
+      'Session execution environment has changed. Create a new session to continue.';
+
+  @override
+  String get chatLinkCopied => 'Link copied to clipboard';
+
+  @override
+  String get chatFileEditorEdit => 'Edit';
+
+  @override
+  String get chatFileEditorDiff => 'Diff';
 }

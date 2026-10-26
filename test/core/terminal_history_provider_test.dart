@@ -1982,4 +1982,42 @@ void main() {
       expect(h.state.tabs.single.terminal, same(kept.terminal));
     },
   );
+
+  test('SshTerminalState.copyWith drops stale detail for a new error code', () {
+    final state = SshTerminalState(
+      tabs: const [],
+      errorCode: 'OLD_CODE',
+      errorDetail: 'old detail',
+    );
+    final next = state.copyWith(errorCode: 'NEW_CODE');
+    expect(next.errorCode, 'NEW_CODE');
+    expect(next.errorDetail, isNull);
+  });
+
+  test('clearNotice clears cached terminal error detail', () async {
+    final first = await _Harness.create();
+    await first.notifier.addNewTab();
+    await first.drain();
+    final record = first.state.history.single;
+    await first.notifier.setDefaultHistory(record.id);
+    first.container.dispose();
+
+    final h = await _Harness.create(
+      storage: first.storage,
+      client: first.client,
+    );
+    h.client.failAttach = true;
+    await h.notifier.ensureInitialized();
+    expect(h.state.errorCode, 'TERMINAL_RESTORE_FAILED');
+    expect(h.state.errorDetail, isNotNull);
+
+    h.notifier.clearNotice();
+    expect(h.state.errorCode, isNull);
+    expect(h.state.errorDetail, isNull);
+
+    await h.notifier.refreshHistory();
+    await h.drain();
+    expect(h.state.errorCode, isNull);
+    expect(h.state.errorDetail, isNull);
+  });
 }

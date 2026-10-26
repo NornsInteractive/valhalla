@@ -125,6 +125,7 @@ Future<ProviderContainer> _container({
     overrides: [
       localStorageServiceProvider.overrideWithValue(LocalStorageService(prefs)),
       tempChatRepositoryOverride(),
+      activeServerProvider.overrideWith(_StubActiveServer.new),
       agentRegistryProvider.overrideWith(() => _FakeRegistry(profiles)),
       serverConnectionProvider.overrideWith(
         () => _StaticConnection(connected: connected),
@@ -146,6 +147,9 @@ Future<ProviderContainer> _container({
 /// delivered on a microtask, so the listener may not have run by the time the
 /// returned future completes.
 Future<void> _sendAndSettle(ProviderContainer container, String text) async {
+  // build 会把首轮历史刷新排在 microtask 上。如果先发消息再等落盘，
+  // 发送会与 SQLite 引导抢跑，出现「消息发出去了但会话没存下」的假失败。
+  await _awaitHistoryLoad(container);
   await container.read(aiChatProvider.notifier).sendMessage(text);
   await pumpEventQueue();
 }
@@ -320,7 +324,7 @@ void main() {
       final notifier = container.read(aiChatProvider.notifier);
       await _sendAndSettle(container, 'first');
       final localId = container.read(aiChatProvider).activeSessionId;
-      notifier.switchAgent('builtin-claude-code');
+      await notifier.switchAgent('builtin-claude-code');
       expect(container.read(aiChatProvider).sessions, isEmpty);
       await _awaitHistoryLoad(container);
       expect(await _storedSessions(container), hasLength(1));
@@ -340,7 +344,7 @@ void main() {
         session.contextFor('builtin-claude-code').remoteSessionId,
         'remote-1',
       );
-      notifier.switchAgent('builtin-codex');
+      await notifier.switchAgent('builtin-codex');
       await _awaitHistoryLoad(container);
       await _sendAndSettle(container, 'third');
       expect(pairs[2].loadRequests, ['remote-0']);
@@ -547,7 +551,9 @@ void main() {
         container.read(aiChatProvider).activeAgentProfile?.id,
         'builtin-claude-code',
       );
-      container.read(aiChatProvider.notifier).switchAgent('builtin-codex');
+      await container
+          .read(aiChatProvider.notifier)
+          .switchAgent('builtin-codex');
       expect(
         container.read(aiChatProvider).activeAgentProfile?.id,
         'builtin-codex',
@@ -563,7 +569,7 @@ void main() {
     final container = await _container(profiles: [_profile('builtin-codex')]);
     addTearDown(container.dispose);
 
-    container.read(aiChatProvider.notifier).switchAgent('builtin-codex');
+    await container.read(aiChatProvider.notifier).switchAgent('builtin-codex');
     expect(
       container.read(aiChatProvider).activeAgentProfile?.id,
       'builtin-codex',
@@ -576,7 +582,9 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    container.read(aiChatProvider.notifier).switchAgent('builtin-claude-code');
+    await container
+        .read(aiChatProvider.notifier)
+        .switchAgent('builtin-claude-code');
     // Still codex: the un-ready agent must not become active.
     expect(
       container.read(aiChatProvider).activeAgentProfile?.id,
@@ -591,6 +599,7 @@ void main() {
     addTearDown(container.dispose);
 
     final notifier = container.read(aiChatProvider.notifier);
+    await _awaitHistoryLoad(container);
     await notifier.sendMessage('diagnose the host');
 
     final state = container.read(aiChatProvider);
@@ -628,6 +637,9 @@ void main() {
           LocalStorageService(prefs),
         ),
         tempChatRepositoryOverride(),
+        // Production scopes agents to the selected server, so the fixture must
+        // reflect the selected srv-1 the profiles belong to.
+        activeServerProvider.overrideWith(_StubActiveServer.new),
         agentRegistryProvider.overrideWith(() => registry),
         serverConnectionProvider.overrideWith(
           () => _StaticConnection(connected: false),
@@ -643,16 +655,58 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    // Nothing ready yet: no active agent, chat unusable.
-    expect(container.read(aiChatProvider).activeAgentProfile, isNull);
+    // Nothing ready yet: no ready agents, but the configured agent is still
+    // selected so its cached (offline) history is available.
+    final before = container.read(aiChatProvider);
+    expect(before.readyAgents, isEmpty);
+    expect(before.activeAgentProfile?.id, 'builtin-codex');
 
     // Simulate a successful install marking the agent ready.
     registry.markReady('builtin-codex');
 
-    expect(
-      container.read(aiChatProvider).activeAgentProfile?.id,
-      'builtin-codex',
+    final after = container.read(aiChatProvider);
+    expect(after.readyAgents.map((a) => a.id), ['builtin-codex']);
+    // Same profile stays selected once it becomes ready.
+    expect(after.activeAgentProfile?.id, 'builtin-codex');
+  });
+
+  test('registry agent is not activated without a selected server', () async {
+    // Regression: production refuses cross-server agents and only activates a
+    // registry agent for the *selected* server. With no active server there is
+    // nothing to scope to, so even a ready agent must not be activated.
+    final registry = _MutableRegistry([_profile('builtin-codex')]);
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer(
+      overrides: [
+        localStorageServiceProvider.overrideWithValue(
+          LocalStorageService(prefs),
+        ),
+        tempChatRepositoryOverride(),
+        agentRegistryProvider.overrideWith(() => registry),
+        serverConnectionProvider.overrideWith(
+          () => _StaticConnection(connected: false),
+        ),
+        acpTransportFactoryProvider.overrideWithValue((
+          _,
+          _, {
+          String? initialModelId,
+        }) {
+          throw StateError('transport must not be created in this test');
+        }),
+      ],
     );
+    addTearDown(container.dispose);
+
+    // No server selected: the registry agent must not surface at all.
+    expect(container.read(aiChatProvider).activeAgentProfile, isNull);
+
+    // Even after the agent becomes ready, without a selected server it stays
+    // unactivated.
+    registry.markReady('builtin-codex');
+    final state = container.read(aiChatProvider);
+    expect(state.readyAgents, isEmpty);
+    expect(state.activeAgentProfile, isNull);
   });
 
   test(
@@ -693,7 +747,7 @@ void main() {
       registry.markReady('builtin-codex');
       registry.markReady('builtin-claude-code');
 
-      container
+      await container
           .read(aiChatProvider.notifier)
           .switchAgent('builtin-claude-code');
       expect(
@@ -1235,7 +1289,7 @@ void main() {
       registry.markReady('builtin-claude-code');
       await pumpEventQueue();
 
-      notifier.switchAgent('builtin-claude-code');
+      await notifier.switchAgent('builtin-claude-code');
       await _awaitHistoryLoad(container);
       expect(
         container.read(aiChatProvider).activeAgentProfile?.id,
@@ -1561,6 +1615,8 @@ void main() {
 
     /// 开启一次被 held 的生成，让权限请求可以中途送达。
     Future<void> startHeldTurn(ProviderContainer container) async {
+      // 先等首轮历史引导落地，否则 sendMessage 会和 build 排的刷新抢跑。
+      await _awaitHistoryLoad(container);
       heldTurn = container
           .read(aiChatProvider.notifier)
           .sendMessage('run the risky command');
@@ -2361,7 +2417,8 @@ class _FakeSshManager extends SSHClientManager {
   final Map<String, SSHClient> _clients = <String, SSHClient>{};
 
   @override
-  SSHClient? getClient(String serverId) => _clients.putIfAbsent(serverId, () => _FakeSshClient());
+  SSHClient? getClient(String serverId) =>
+      _clients.putIfAbsent(serverId, () => _FakeSshClient());
 }
 
 class _FakeSshClient implements SSHClient {

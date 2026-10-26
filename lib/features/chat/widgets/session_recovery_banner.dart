@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/session_recovery_status.dart';
 
-/// 统一展示 ACP / CLI 会话恢复状态的轻量占位。
-///
-/// 状态提示已收拢至 shell 顶部的全局 [ConnectionStatusBanner]，
-/// 避免在会话中重复堆叠横幅。
-class SessionRecoveryBanner extends ConsumerWidget {
+/// 旧的会话恢复横幅入口（已收拢到顶栏，本组件保留为兼容占位）。
+class SessionRecoveryBanner extends StatelessWidget {
   const SessionRecoveryBanner({
     super.key,
     required this.status,
@@ -18,7 +14,7 @@ class SessionRecoveryBanner extends ConsumerWidget {
   final VoidCallback onRetry;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return const SizedBox.shrink();
   }
 }

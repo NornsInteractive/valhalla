@@ -6407,4 +6407,108 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get deleteSessionOfflineNotice =>
       'Server disconnesso. È disponibile solo l\'eliminazione locale.';
+
+  @override
+  String get chatWorkbench => 'Banco di lavoro';
+
+  @override
+  String get chatWorkbenchFiles => 'File';
+
+  @override
+  String get chatWorkbenchTasks => 'Attività e strumenti';
+
+  @override
+  String get chatWorkbenchContext => 'Contesto';
+
+  @override
+  String get chatWorkspaceProjects => 'Progetti';
+
+  @override
+  String get chatWorkspaceEditAlias => 'Modifica alias progetto';
+
+  @override
+  String get chatWorkspaceAliasLabel => 'Alias progetto';
+
+  @override
+  String get chatWorkspaceFavorite => 'Progetto preferito';
+
+  @override
+  String get chatWorkspaceUnfavorite => 'Rimuovi progetto dai preferiti';
+
+  @override
+  String get chatLoopbackConfirmTitle => 'Apri URL loopback remoto';
+
+  @override
+  String get chatLoopbackConfirmMessage =>
+      'Questo collegamento punta a localhost remoto. Vuoi aprirlo nel tuo browser?';
+
+  @override
+  String get chatConfirmSaveFile => 'Conferma salvataggio';
+
+  @override
+  String get chatConfirmSaveFileMessage =>
+      'Salvare le modifiche a questo file?';
+
+  @override
+  String get chatFileReadOnly => 'Sola lettura';
+
+  @override
+  String get chatCopyError => 'Copia errore';
+
+  @override
+  String get chatFileOutsideWorkspace =>
+      'Il file si trova fuori dalla directory dello spazio di lavoro. Vuoi aprirlo?';
+
+  @override
+  String get chatUnsavedChangesTitle => 'Modifiche non salvate';
+
+  @override
+  String get chatUnsavedChangesMessage =>
+      'Ci sono modifiche non salvate. Vuoi scartarle?';
+
+  @override
+  String get chatDiscard => 'Scarta';
+
+  @override
+  String get chatNoChangesToSave => 'Nessuna modifica da salvare';
+
+  @override
+  String get chatFileSaved => 'File salvato con successo';
+
+  @override
+  String get chatLoadingFile => 'Caricamento file...';
+
+  @override
+  String get chatEditorUnavailable =>
+      'Editor del container non disponibile (richiede python3).';
+
+  @override
+  String get chatFileNotEditable =>
+      'I file binari o di grandi dimensioni non possono essere modificati.';
+
+  @override
+  String get chatFailedToOpenLink => 'Impossibile aprire il link';
+
+  @override
+  String get chatNoActiveTasks =>
+      'Nessuna attività o esecuzione di strumenti attiva';
+
+  @override
+  String get chatNoFilesInDirectory => 'Nessun file nella directory';
+
+  @override
+  String get chatViewCurrentRun => 'Visualizza esecuzione corrente';
+
+  @override
+  String get chatExecutionChangedPrompt =>
+      'L\'ambiente di esecuzione della sessione è cambiato. Crea una nuova sessione per continuare.';
+
+  @override
+  String get chatLinkCopied => 'Link copiato negli appunti';
+
+  @override
+  String get chatFileEditorEdit => 'Modifica';
+
+  @override
+  String get chatFileEditorDiff => 'Diff';
 }

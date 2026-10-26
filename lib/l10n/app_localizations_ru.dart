@@ -6390,4 +6390,107 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get deleteSessionOfflineNotice =>
       'Сервер отключен. Доступно только локальное удаление.';
+
+  @override
+  String get chatWorkbench => 'Верстак';
+
+  @override
+  String get chatWorkbenchFiles => 'Файлы';
+
+  @override
+  String get chatWorkbenchTasks => 'Задачи и инструменты';
+
+  @override
+  String get chatWorkbenchContext => 'Контекст';
+
+  @override
+  String get chatWorkspaceProjects => 'Проекты';
+
+  @override
+  String get chatWorkspaceEditAlias => 'Изменить псевдоним проекта';
+
+  @override
+  String get chatWorkspaceAliasLabel => 'Псевдоним проекта';
+
+  @override
+  String get chatWorkspaceFavorite => 'В избранное';
+
+  @override
+  String get chatWorkspaceUnfavorite => 'Удалить из избранного';
+
+  @override
+  String get chatLoopbackConfirmTitle => 'Открыть локальный URL-адрес петли';
+
+  @override
+  String get chatLoopbackConfirmMessage =>
+      'Эта ссылка указывает на удаленный localhost. Открыть в браузере?';
+
+  @override
+  String get chatConfirmSaveFile => 'Подтвердить сохранение';
+
+  @override
+  String get chatConfirmSaveFileMessage => 'Сохранить изменения в этом файле?';
+
+  @override
+  String get chatFileReadOnly => 'Только чтение';
+
+  @override
+  String get chatCopyError => 'Скопировать ошибку';
+
+  @override
+  String get chatFileOutsideWorkspace =>
+      'Файл находится за пределами рабочей области. Открыть его?';
+
+  @override
+  String get chatUnsavedChangesTitle => 'Несохранённые изменения';
+
+  @override
+  String get chatUnsavedChangesMessage =>
+      'Есть несохранённые изменения. Отменить их?';
+
+  @override
+  String get chatDiscard => 'Отменить';
+
+  @override
+  String get chatNoChangesToSave => 'Нет изменений для сохранения';
+
+  @override
+  String get chatFileSaved => 'Файл успешно сохранён';
+
+  @override
+  String get chatLoadingFile => 'Загрузка файла...';
+
+  @override
+  String get chatEditorUnavailable =>
+      'Редактор контейнера недоступен (требуется python3).';
+
+  @override
+  String get chatFileNotEditable =>
+      'Двоичные или слишком большие файлы нельзя редактировать.';
+
+  @override
+  String get chatFailedToOpenLink => 'Не удалось открыть ссылку';
+
+  @override
+  String get chatNoActiveTasks =>
+      'Нет активных задач или запусков инструментов';
+
+  @override
+  String get chatNoFilesInDirectory => 'В каталоге нет файлов';
+
+  @override
+  String get chatViewCurrentRun => 'Просмотреть текущий запуск';
+
+  @override
+  String get chatExecutionChangedPrompt =>
+      'Среда выполнения сеанса изменилась. Создайте новый сеанс для продолжения.';
+
+  @override
+  String get chatLinkCopied => 'Ссылка скопирована в буфер обмена';
+
+  @override
+  String get chatFileEditorEdit => 'Редактировать';
+
+  @override
+  String get chatFileEditorDiff => 'Различия';
 }

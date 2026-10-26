@@ -153,6 +153,7 @@ void main() {
   /// 去改已经断开、已经 dispose 的旧对不会有任何效果。
   bool futurePairsFailSession = false;
   bool futurePairsWithoutReplay = false;
+  bool futurePairsHoldPrompt = false;
 
   // 与 provider 的 _launchKey 一致：
   // executionTarget|binding|reference|user|acpCommand|cliCommand
@@ -227,41 +228,113 @@ void main() {
 
   /// 真实的传输丢失：一轮正在 streaming 的 turn 被断线打断。
   ///
-  /// `sendMessage` 在它第一个 `await` 之前就把 streaming 消息写进了 state，
-  /// 所以这里不必等远端回话就能断线。断线让 `_requestEpoch` 前进，
-  /// `sendMessage` 随后在保存处提前返回，不会为这轮建起第二条传输。
+  /// 现在 `sendMessage` 会先 await `_adoptFinishedRun`，streaming 状态与远端
+  /// prompt 都是在那之后才出现。因此必须先把 prompt 真正挂住（held fake
+  /// prompt），等到远端收到 prompt 且 state.isGenerating 为 true，再断线。
   Future<void> loseTurn(ProviderContainer container) async {
-    final sending = container
-        .read(aiChatProvider.notifier)
-        .sendMessage('in flight');
-    connection.setConnected(false);
-    await sending;
-    await settle(container);
-    expect(
-      container.read(aiChatProvider).activeSession!.messages.last.status,
-      ChatTurnStatus.unknown,
-      reason: '传输丢失必须记成 unknown，而不是用户取消的 interrupted',
-    );
-    expect(
-      container.read(aiChatProvider).recoveryStatus,
-      SessionRecoveryStatus.reconnecting,
-      reason: '有 unknown turn 就必须进入重连，等待恢复',
-    );
+    futurePairsHoldPrompt = true;
+    for (final pair in pairs) {
+      pair.holdPrompt = true;
+    }
+    try {
+      final sending = container
+          .read(aiChatProvider.notifier)
+          .sendMessage('in flight');
+      final pair = await awaitPromptPair();
+      await pair.promptReceived.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => fail('远端没有收到 prompt'),
+      );
+      final generatingDeadline = DateTime.now().add(
+        const Duration(seconds: 10),
+      );
+      while (!container.read(aiChatProvider).isGenerating) {
+        if (DateTime.now().isAfter(generatingDeadline)) {
+          fail('sendMessage 没有进入生成状态');
+        }
+        await pumpEventQueue();
+      }
+      connection.setConnected(false);
+      await sending.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          for (final p in pairs) {
+            p.finishHeldPrompt();
+          }
+          return null;
+        },
+      );
+      futurePairsHoldPrompt = false;
+      await settle(container);
+      expect(
+        container.read(aiChatProvider).activeSession!.messages.last.status,
+        ChatTurnStatus.unknown,
+        reason: '传输丢失必须记成 unknown，而不是用户取消的 interrupted',
+      );
+      expect(
+        container.read(aiChatProvider).recoveryStatus,
+        SessionRecoveryStatus.reconnecting,
+        reason: '有 unknown turn 就必须进入重连，等待恢复',
+      );
+    } finally {
+      futurePairsHoldPrompt = false;
+      for (final pair in pairs) {
+        if (pair.holdPrompt) {
+          pair.finishHeldPrompt();
+        }
+      }
+    }
   }
 
   /// 用户主动取消一轮 turn：只有 cancel 才允许把 streaming 记成 interrupted。
   Future<void> cancelTurn(ProviderContainer container) async {
-    final sending = container
-        .read(aiChatProvider.notifier)
-        .sendMessage('cancelled turn');
-    await container.read(aiChatProvider.notifier).stopGeneration();
-    await sending;
-    await settle(container);
-    expect(
-      container.read(aiChatProvider).activeSession!.messages.last.status,
-      ChatTurnStatus.interrupted,
-      reason: '用户取消是 interrupted，不是传输丢失的 unknown',
-    );
+    futurePairsHoldPrompt = true;
+    for (final pair in pairs) {
+      pair.holdPrompt = true;
+    }
+    try {
+      final sending = container
+          .read(aiChatProvider.notifier)
+          .sendMessage('cancelled turn');
+      final pair = await awaitPromptPair();
+      await pair.promptReceived.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => fail('远端没有收到 prompt'),
+      );
+      final generatingDeadline = DateTime.now().add(
+        const Duration(seconds: 10),
+      );
+      while (!container.read(aiChatProvider).isGenerating) {
+        if (DateTime.now().isAfter(generatingDeadline)) {
+          fail('sendMessage 没有进入生成状态');
+        }
+        await pumpEventQueue();
+      }
+      await container.read(aiChatProvider.notifier).stopGeneration();
+      await sending.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          for (final p in pairs) {
+            p.finishHeldPrompt();
+          }
+          return null;
+        },
+      );
+      futurePairsHoldPrompt = false;
+      await settle(container);
+      expect(
+        container.read(aiChatProvider).activeSession!.messages.last.status,
+        ChatTurnStatus.interrupted,
+        reason: '用户取消是 interrupted，不是传输丢失的 unknown',
+      );
+    } finally {
+      futurePairsHoldPrompt = false;
+      for (final pair in pairs) {
+        if (pair.holdPrompt) {
+          pair.finishHeldPrompt();
+        }
+      }
+    }
   }
 
   /// 等恢复走到终态：idle / incomplete / failed 都不是 syncing 或 reconnecting。
@@ -311,6 +384,7 @@ void main() {
     connection = _ToggleConnection();
     futurePairsFailSession = false;
     futurePairsWithoutReplay = false;
+    futurePairsHoldPrompt = false;
     registry = _MutableRegistry([
       _profile(_agentId),
       _profile('builtin-claude-code'),
@@ -337,7 +411,7 @@ void main() {
                   }
                 : capabilities
             ..loadReplayUpdates = replay
-            ..holdPrompt = holdPrompt
+            ..holdPrompt = holdPrompt || futurePairsHoldPrompt
             ..failSessionLoad = futurePairsFailSession
             ..failSessionResume = futurePairsFailSession
             ..failSessionNew = futurePairsFailSession;
@@ -401,6 +475,7 @@ void main() {
 
       // 真实的传输丢失：留下一条无法被历史回放证明完成的 turn。
       await loseTurn(container);
+      final baselinePrompts = promptCount();
       // 恢复会走新的传输连接：必须让**之后**新建的对失败。
       futurePairsFailSession = true;
 
@@ -425,7 +500,7 @@ void main() {
         ['old question', 'old answer', 'in flight', ''],
         reason: '失败不得抹掉本地已经记下的丢失 turn',
       );
-      expect(promptCount(), 0, reason: '恢复失败也不得自动发起 prompt');
+      expect(promptCount() - baselinePrompts, 0, reason: '恢复失败也不得自动发起 prompt');
     });
 
     test('重连中禁止发送，但不影响本地阅读与草稿', () async {
@@ -497,6 +572,7 @@ void main() {
       final beforeId = container.read(aiChatProvider).activeSessionId;
       await cancelTurn(container);
       final baselineLoads = loadRequestCount();
+      final baselinePrompts = promptCount();
 
       // 连接抖一下再回来：前台事件本身不许重放被取消的 turn。
       connection.setConnected(false);
@@ -513,7 +589,7 @@ void main() {
         reason: '被取消的 turn 不是待恢复状态',
       );
       expect(loadRequestCount(), baselineLoads, reason: '前台事件不得重放被取消的 turn');
-      expect(promptCount(), 0, reason: '被取消的 turn 不得被自动重发');
+      expect(promptCount() - baselinePrompts, 0, reason: '被取消的 turn 不得被自动重发');
 
       // 用户显式要求恢复时，才允许同步一次历史。
       await notifier.recoverConnection();
@@ -524,7 +600,7 @@ void main() {
         reason: '显式恢复是有意的远端操作，允许一次回放',
       );
       expect(container.read(aiChatProvider).activeSessionId, beforeId);
-      expect(promptCount(), 0, reason: '显式恢复也不得发起 prompt');
+      expect(promptCount() - baselinePrompts, 0, reason: '显式恢复也不得发起 prompt');
     });
 
     test('recoverConnection 是单飞的：连接回来只同步一次', () async {
@@ -593,6 +669,7 @@ void main() {
       final baselineLoads = loadRequestCount();
       final baselineResumes = resumeRequestCount();
       final baselineNews = newSessionCount();
+      final baselinePrompts = promptCount();
 
       connection.setConnected(true);
       // 恢复已经被连接监听器发起；这里 await 的是同一个 future。
@@ -626,7 +703,7 @@ void main() {
         reason: '回放之后复用同一个已加载的适配器：不再 resume，也不再回放',
       );
       expect(newSessionCount() - baselineNews, 0, reason: '恢复不得新建替代会话');
-      expect(promptCount(), 0, reason: '恢复不得自动发起 prompt');
+      expect(promptCount() - baselinePrompts, 0, reason: '恢复不得自动发起 prompt');
       expect(after.acpSessionRestored, isTrue, reason: '必须复用原远端会话，而不是新建一个');
     });
 
@@ -647,6 +724,7 @@ void main() {
       final baselineLoads = loadRequestCount();
       final baselineResumes = resumeRequestCount();
       final baselineNews = newSessionCount();
+      final baselinePrompts = promptCount();
 
       connection.setConnected(true);
       final status = await awaitRecoverySettled(container);
@@ -675,7 +753,7 @@ void main() {
         reason: '没有 resume 能力就不得硬试 resume',
       );
       expect(newSessionCount() - baselineNews, 0, reason: '不得用新会话顶替');
-      expect(promptCount(), 0, reason: '不得自动发起 prompt');
+      expect(promptCount() - baselinePrompts, 0, reason: '不得自动发起 prompt');
     });
   });
 

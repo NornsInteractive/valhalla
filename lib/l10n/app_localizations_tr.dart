@@ -6338,4 +6338,106 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get deleteSessionOfflineNotice =>
       'Sunucu bağlantısı kesildi. Yalnızca yerel silme kullanılabilir.';
+
+  @override
+  String get chatWorkbench => 'Çalışma Tezgahı';
+
+  @override
+  String get chatWorkbenchFiles => 'Dosyalar';
+
+  @override
+  String get chatWorkbenchTasks => 'Görevler ve Araçlar';
+
+  @override
+  String get chatWorkbenchContext => 'Bağlam';
+
+  @override
+  String get chatWorkspaceProjects => 'Projeler';
+
+  @override
+  String get chatWorkspaceEditAlias => 'Proje Takma Adını Düzenle';
+
+  @override
+  String get chatWorkspaceAliasLabel => 'Proje Takma Adı';
+
+  @override
+  String get chatWorkspaceFavorite => 'Projeyi Favorile';
+
+  @override
+  String get chatWorkspaceUnfavorite => 'Proje Favorisini Kaldır';
+
+  @override
+  String get chatLoopbackConfirmTitle => 'Uzak Geri Döngü URL\'sini Aç';
+
+  @override
+  String get chatLoopbackConfirmMessage =>
+      'Bu bağlantı uzak localhost\'a işaret ediyor. Tarayıcınızda açmak istiyor musunuz?';
+
+  @override
+  String get chatConfirmSaveFile => 'Kaydetmeyi Onayla';
+
+  @override
+  String get chatConfirmSaveFileMessage =>
+      'Bu dosyadaki değişiklikler kaydedilsin mi?';
+
+  @override
+  String get chatFileReadOnly => 'Salt Okunur';
+
+  @override
+  String get chatCopyError => 'Hatayı Kopyala';
+
+  @override
+  String get chatFileOutsideWorkspace =>
+      'Dosya çalışma alanı dizini dışında. Yine de açmak istiyor musunuz?';
+
+  @override
+  String get chatUnsavedChangesTitle => 'Kaydedilmemiş Değişiklikler';
+
+  @override
+  String get chatUnsavedChangesMessage =>
+      'Kaydedilmemiş değişiklikleriniz var. Değişiklikleri silmek istiyor musunuz?';
+
+  @override
+  String get chatDiscard => 'Vazgeç';
+
+  @override
+  String get chatNoChangesToSave => 'Kaydedilecek değişiklik yok';
+
+  @override
+  String get chatFileSaved => 'Dosya başarıyla kaydedildi';
+
+  @override
+  String get chatLoadingFile => 'Dosya yükleniyor...';
+
+  @override
+  String get chatEditorUnavailable =>
+      'Kapsayıcı düzenleyicisi kullanılamıyor (python3 gereklidir).';
+
+  @override
+  String get chatFileNotEditable => 'İkili veya büyük dosyalar düzenlenemez.';
+
+  @override
+  String get chatFailedToOpenLink => 'Bağlantı açılamadı';
+
+  @override
+  String get chatNoActiveTasks => 'Etkin görev veya araç çalıştırması yok';
+
+  @override
+  String get chatNoFilesInDirectory => 'Dizinde dosya yok';
+
+  @override
+  String get chatViewCurrentRun => 'Geçerli Çalıştırmayı Görüntüle';
+
+  @override
+  String get chatExecutionChangedPrompt =>
+      'Oturum yürütme ortamı değişti. Devam etmek için yeni bir oturum oluşturun.';
+
+  @override
+  String get chatLinkCopied => 'Bağlantı panoya kopyalandı';
+
+  @override
+  String get chatFileEditorEdit => 'Düzenle';
+
+  @override
+  String get chatFileEditorDiff => 'Fark';
 }

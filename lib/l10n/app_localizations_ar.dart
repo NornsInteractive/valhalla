@@ -6287,4 +6287,105 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get deleteSessionOfflineNotice =>
       'الخادم غير متصل. الحذف المحلي فقط هو المتاح.';
+
+  @override
+  String get chatWorkbench => 'مساحة العمل';
+
+  @override
+  String get chatWorkbenchFiles => 'الملفات';
+
+  @override
+  String get chatWorkbenchTasks => 'المهام والأدوات';
+
+  @override
+  String get chatWorkbenchContext => 'السياق';
+
+  @override
+  String get chatWorkspaceProjects => 'المشاريع';
+
+  @override
+  String get chatWorkspaceEditAlias => 'تعديل اسم المشروع المستعار';
+
+  @override
+  String get chatWorkspaceAliasLabel => 'اسم المشروع المستعار';
+
+  @override
+  String get chatWorkspaceFavorite => 'تفضيل المشروع';
+
+  @override
+  String get chatWorkspaceUnfavorite => 'إلغاء تفضيل المشروع';
+
+  @override
+  String get chatLoopbackConfirmTitle => 'فتح عنوان الاسترجاع البعيد';
+
+  @override
+  String get chatLoopbackConfirmMessage =>
+      'يشير هذا الرابط إلى المضيف المحلي البعيد. هل تريد فتحه في متصفحك؟';
+
+  @override
+  String get chatConfirmSaveFile => 'تأكيد الحفظ';
+
+  @override
+  String get chatConfirmSaveFileMessage => 'حفظ التغييرات في هذا الملف؟';
+
+  @override
+  String get chatFileReadOnly => 'للقراءة فقط';
+
+  @override
+  String get chatCopyError => 'نسخ الخطأ';
+
+  @override
+  String get chatFileOutsideWorkspace =>
+      'الملف خارج دليل مساحة العمل. هل تريد فتحه؟';
+
+  @override
+  String get chatUnsavedChangesTitle => 'تغييرات غير محفوظة';
+
+  @override
+  String get chatUnsavedChangesMessage =>
+      'لديك تغييرات غير محفوظة. هل تريد تجاهلها؟';
+
+  @override
+  String get chatDiscard => 'تجاهل';
+
+  @override
+  String get chatNoChangesToSave => 'لا توجد تغييرات لحفظها';
+
+  @override
+  String get chatFileSaved => 'تم حفظ الملف بنجاح';
+
+  @override
+  String get chatLoadingFile => 'جارٍ تحميل الملف...';
+
+  @override
+  String get chatEditorUnavailable => 'محرر الحاوية غير متوفر (يتطلب python3).';
+
+  @override
+  String get chatFileNotEditable =>
+      'لا يمكن تعديل الملفات الثنائية أو الكبيرة جدًا.';
+
+  @override
+  String get chatFailedToOpenLink => 'فشل فتح الرابط';
+
+  @override
+  String get chatNoActiveTasks => 'لا توجد مهام نشطة أو عمليات تنفيذ للأدوات';
+
+  @override
+  String get chatNoFilesInDirectory => 'لا توجد ملفات في هذا الدليل';
+
+  @override
+  String get chatViewCurrentRun => 'عرض التشغيل الحالي';
+
+  @override
+  String get chatExecutionChangedPrompt =>
+      'تغيرت بيئة تنفيذ الجلسة. يرجى إنشاء جلسة جديدة للمتابعة.';
+
+  @override
+  String get chatLinkCopied => 'تم نسخ الرابط إلى الحافظة';
+
+  @override
+  String get chatFileEditorEdit => 'تعديل';
+
+  @override
+  String get chatFileEditorDiff => 'الفروق';
 }

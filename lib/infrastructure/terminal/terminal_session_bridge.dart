@@ -8,6 +8,7 @@ import 'package:xterm/xterm.dart';
 import '../../core/utils/tmux_install_planner.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/services/app_diagnostics.dart';
+import '../../core/logging/sanitizer.dart';
 import '../../core/utils/tmux_session_planner.dart';
 import '../../core/security/agent_command_validator.dart';
 import '../../core/utils/shell_quote.dart';
@@ -332,7 +333,7 @@ class TerminalSessionBridge {
       }
       throw SSHConnectionException(
         'TMUX_HISTORY_QUERY_FAILED',
-        result.exitCode,
+        _queryDetails(result),
       );
     }
     final sessions = <TmuxSessionInfo>[];
@@ -456,7 +457,10 @@ class TerminalSessionBridge {
                 "session not found: ${identity.sessionId}")) {
       return false;
     }
-    throw SSHConnectionException('TMUX_SESSION_CHECK_FAILED', result.exitCode);
+    throw SSHConnectionException(
+      'TMUX_SESSION_CHECK_FAILED',
+      _queryDetails(result),
+    );
   }
 
   static bool _isMissingTmuxServer(String error) {
@@ -522,12 +526,24 @@ class TerminalSessionBridge {
     );
     final path = result.stdout.trim();
     if (result.exitCode == 1 && path.isEmpty) {
-      throw const SSHConnectionException('TMUX_UNAVAILABLE');
+      throw SSHConnectionException('TMUX_UNAVAILABLE', _queryDetails(result));
     }
     if (result.exitCode != 0 || !TmuxSessionPlanner.isTmuxAvailable(path)) {
-      throw const SSHConnectionException('TMUX_DETECTION_FAILED');
+      throw SSHConnectionException(
+        'TMUX_DETECTION_FAILED',
+        _queryDetails(result),
+      );
     }
     return path;
+  }
+
+  static String _queryDetails(
+    ({int? exitCode, String stdout, String stderr}) result,
+  ) {
+    final detail = LogSanitizer.sanitize(
+      'exit=${result.exitCode}; stderr=${result.stderr}; stdout=${result.stdout}',
+    );
+    return detail.length > 4096 ? detail.substring(0, 4096) : detail;
   }
 
   static Future<({int? exitCode, String stdout, String stderr})> _runTmuxQuery(
