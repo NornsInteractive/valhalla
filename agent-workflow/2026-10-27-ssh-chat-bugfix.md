@@ -20,7 +20,7 @@
 
 每批新增patch/build，本次若基线未改变为1.0.23+24；本地Android3APK/AAB+Linuxx64，GH/Ygg代理/官网及文档同步，无Actions/Windows/Apple。当前ADB10.0.2.15:5555 offline，已请求恢复；修复与模拟继续，未安装或发布。
 
-## 实施证据（未交付）
+## 实施过程证据（保留历史状态）
 
 原AgY已将改动写入live绝对路径（先前误用旧镜像已停止并纠正，未以镜像改动作为新包）。补充修复运行设置保存后误pop后续页，以及禁用星标点击穿透到ListTile导致误选命令；实际二次点击测试必须保留，不能用只检查onPressed==null代替。
 
@@ -43,3 +43,5 @@ CodeBuddy免费deepseek-v4.1-flash执行ADB验收，根代理不执行测试或�
 早期自动化错误（标题空格、坐标、将editing日志误判为output）已修正后重跑，失败回执不计通过；最终严格断言只解析output字节且无or True。中文Gboard原生输入未验证（当前设备英文键盘），相关预编辑widget回归通过。正式MAIN只读页面验收仍在进行，完成前不公开发布。
 
 CodeBuddy正式MAIN只读验收完成：冷启动、菜单导航、已存服务器配置、HOME返回仪表盘缓存与输入法状态、安装版本和哈希通过，本次进程无FATAL/ANR。报告build/ssh-chat-bugfix/device/main-smoke/report.json，截图同目录。当前选中SFTP-Perf-Fixture无可用Agent且没有缓存会话，因此真实ACP历史、运行设置/命令弹窗不可达，明确未验证；不创建Agent或发送真实消息补齐。当前仪表盘服务器错误为已有离线缓存状态，未执行连接或修改。原生输入探针通过与此限制分别记录。
+
+本批已交付1.0.23+24：GitHub/Ygg代理整包及Range/官网公开回读全部通过，最终渠道、产物及验收边界见[发布记录](2026-10-27-v1023-release.md)。前述未安装/未发布为当时过程状态，以最终回执为准。

@@ -1,11 +1,12 @@
 # Valhalla - 研发项目全生命周期文档体系
 
-当前实施：[智能会话与终端六项优化](design/2026-10-27-chat-terminal-optimization.md)，按三阶段验证和发布；下方已交付版本与正在实施的内容分开记录。
+已完成：[智能会话与终端六项优化](design/2026-10-27-chat-terminal-optimization.md)三阶段交付；本轮补充终端与智能会话交互缺陷修复，详见下方最新发布记录。
 
 本轮交付（2026-10-26）：[ACP 工作台与历史恢复设计](design/2026-10-26-acp-workbench.md)，
 实现与门禁状态见[本轮交接](../agent-workflow/2026-10-26-acp-workbench.md)，已随 1.0.19 发布。
 
-最新交付：[1.0.22+23 发布记录](../agent-workflow/2026-10-27-v1022-release.md)：六项优化三阶段全部交付，涵盖恢复反馈、长内容阅读、本地全文/终端搜索、上下文与命令偏好、终端操作保护；GitHub、Ygg代理下载与官网已同步。
+最新交付：[1.0.23+24 发布记录](../agent-workflow/2026-10-27-v1023-release.md)：修复断线输入与异步粘贴、运行设置来源隔离、技能移除、收藏重复点击和弹窗路由；免费OpenCode完成回归与构建，CodeBuddy完成18项原生输入和正式包只读ADB验收。GitHub、Ygg代理下载与官网已同步；真实Agent及生产tmux验收边界见记录。
+前一交付：[1.0.22+23](../agent-workflow/2026-10-27-v1022-release.md)已完成六项优化的三个阶段。
 正式签名 Android 三架构 APK/AAB、Linux x64 已发布 GitHub 及 Ygg 分发平台代理，并同步官网；
 产物哈希、Range 和实服验收边界见发布记录。后续每批修改完成后自动新增版本发布，
 入口见[可续跑发布脚本](../tool/RELEASE.md)，不启动 Actions。
