@@ -13,6 +13,9 @@ import '../support/fixed_terminal_settings.dart';
 import '../support/seeded_terminal_notifier.dart';
 
 class _Bridge extends TerminalSessionBridge {
+  @override
+  TerminalConnectionState get state => stateListenable.value;
+
   _Bridge() : super(terminal: Terminal(), serverName: 'test');
 
   bool disposed = false;
@@ -42,6 +45,7 @@ class _GeometryBridge extends _Bridge {
 
 TerminalTab _tab(String id) {
   final bridge = _Bridge();
+  bridge.stateListenable.value = TerminalConnectionState.connected;
   return TerminalTab(
     id: id,
     title: id,

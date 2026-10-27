@@ -680,6 +680,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final bridge = _Bridge();
+      bridge.stateListenable.value = TerminalConnectionState.connected;
       final notifier = _Notifier(
         SshTerminalState(
           tabs: [

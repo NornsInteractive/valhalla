@@ -31,3 +31,5 @@
 用户已启动设备，已发现在线入口127.0.0.1:14251（x86_64模拟器，Gboard，桌面launcher）；10.0.2.15离线不可用。预检设备版本1.0.16/native4017，正式证书一致，允许保留数据覆盖升级。预检仅包信息/签名和状态读取，尚未安装新包或实机验收。
 
 最终源码门禁stage3-gates-20261027T072230Z：64文件854项常规测试、9项脚本测试、generate/format/analyze零问题/diff-check全部0，零失败跳过。旧两组模型/回滚测试在初始化完成前调用接口；fixture显式启动provider并等待本地历史初始化后通过，全部RPC/回滚断言保留。星标真实二次点击已恢复并通过，禁用点击穿透属产品缺陷，已修复，不接受仅onPressed==null作为替代。准备1.0.23+24 build-only，装机未通过前不推送或发布。
+
+1.0.23首次build-only停在扩展终端集合6项失败，尚未产出/冻结正式main包。失败来源为旧测试Bridge的state getter与stateListenable不一致、键盘用例使用断开连接状态；OpenCode只修正3个fixture，59项全部通过，未修改产品保护或断言。保留prebuild-terminal-failure.raw和原source f94d6b6回执，提交测试修正后在同批恢复构建，不额外升号。

@@ -28,6 +28,9 @@ class _FakeBridge extends TerminalSessionBridge {
   TerminalSessionMode get mode => _testMode;
 
   @override
+  TerminalConnectionState get state => stateListenable.value;
+
+  @override
   bool get awaitingTmuxDecision => _testAwaiting;
 
   void setTestMode(TerminalSessionMode m) {
