@@ -49,6 +49,7 @@ class SharedTerminalCanvas extends ConsumerStatefulWidget {
   final bool requestKeyboardOnTap;
   final bool pinKeyboardButtonTrailing;
   final bool inputEnabled;
+  final int inputEpoch;
 
   const SharedTerminalCanvas({
     super.key,
@@ -72,6 +73,7 @@ class SharedTerminalCanvas extends ConsumerStatefulWidget {
     this.requestKeyboardOnTap = true,
     this.pinKeyboardButtonTrailing = false,
     this.inputEnabled = true,
+    this.inputEpoch = 0,
   });
 
   @override
@@ -177,6 +179,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   };
 
   int _terminalEpoch = 0;
+  int _inputGeneration = 0;
   final Map<String, int> _modifierDownEpoch = {
     'CTRL': 0,
     'ALT': 0,
@@ -503,6 +506,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   }
 
   void requestKeyboard() {
+    if (!widget.inputEnabled) return;
     _isImeOpen = true;
     _terminalViewKey.currentState?.requestKeyboard();
     if (mounted) setState(() {});
@@ -515,6 +519,10 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   }
 
   void _toggleKeyboard() {
+    if (!widget.inputEnabled) {
+      closeKeyboard();
+      return;
+    }
     final currentState = _terminalViewKey.currentState;
     if (currentState == null) return;
 
@@ -597,6 +605,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _isAppForeground = state == AppLifecycleState.resumed;
     if (state != AppLifecycleState.resumed) {
+      _inputGeneration++;
       _searchEpoch++;
       _searchDebounce?.cancel();
       _bufferUpdateDebounce?.cancel();
@@ -625,9 +634,16 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   @override
   void didUpdateWidget(SharedTerminalCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.inputEnabled && !widget.inputEnabled) {
+    if ((oldWidget.inputEnabled && !widget.inputEnabled) ||
+        oldWidget.inputEpoch != widget.inputEpoch) {
+      closeKeyboard();
       _resetModifiers();
       setState(() {});
+    }
+    if (oldWidget.terminal != widget.terminal ||
+        oldWidget.inputEpoch != widget.inputEpoch ||
+        (oldWidget.inputEnabled && !widget.inputEnabled)) {
+      _inputGeneration++;
     }
     if (oldWidget.terminal != widget.terminal) {
       oldWidget.terminal.removeListener(_onTerminalUpdated);
@@ -672,6 +688,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
 
   @override
   void dispose() {
+    _inputGeneration++;
     widget.terminal.removeListener(_onTerminalUpdated);
     _searchEpoch++;
     _searchDebounce?.cancel();
@@ -816,6 +833,10 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   }
 
   bool _handleTextInput(String text) {
+    if (!widget.inputEnabled) {
+      return true;
+    }
+
     if (!_hasActiveModifier) {
       return false;
     }
@@ -895,6 +916,23 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
         closeSearch();
         return KeyEventResult.handled;
       }
+    }
+
+    if (!widget.inputEnabled) {
+      final isApple =
+          defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.iOS;
+      if (event is KeyDownEvent &&
+          ((isApple &&
+                  HardwareKeyboard.instance.isMetaPressed &&
+                  event.logicalKey == LogicalKeyboardKey.keyC) ||
+              (!isApple &&
+                  HardwareKeyboard.instance.isControlPressed &&
+                  HardwareKeyboard.instance.isShiftPressed &&
+                  event.logicalKey == LogicalKeyboardKey.keyC))) {
+        unawaited(_copySelection());
+      }
+      return KeyEventResult.handled;
     }
 
     if (!_hasActiveModifier) {
@@ -991,19 +1029,29 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
 
   Future<void> _handlePasteText([String? incomingText]) async {
     if (!widget.inputEnabled) return;
-    // 在任何异步等待前固化原始目标终端与回调
+    // 在任何异步等待前固化原始目标终端、generation 与回调
+    final targetGeneration = _inputGeneration;
     final targetTerminal = widget.terminal;
     final targetOnPasteText = widget.onPasteText;
 
     final text =
         incomingText ?? (await Clipboard.getData(Clipboard.kTextPlain))?.text;
+    if (!mounted ||
+        _inputGeneration != targetGeneration ||
+        widget.terminal != targetTerminal ||
+        !widget.inputEnabled) {
+      return;
+    }
     if (text == null || text.isEmpty) return;
-    if (!mounted || widget.terminal != targetTerminal) return;
 
     final isMultiLine = text.contains('\n') || text.contains('\r');
     if (isMultiLine) {
       final confirmed = await _showConfirmPasteDialog(text);
-      if (confirmed != true || !mounted || widget.terminal != targetTerminal) {
+      if (confirmed != true ||
+          !mounted ||
+          _inputGeneration != targetGeneration ||
+          widget.terminal != targetTerminal ||
+          !widget.inputEnabled) {
         return;
       }
     }
@@ -1170,6 +1218,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
                       scrollController: _scrollController,
                       focusNode: _effectiveFocusNode,
                       autofocus: widget.autofocus,
+                      readOnly: !widget.inputEnabled,
                       requestKeyboardOnTap: widget.requestKeyboardOnTap,
                       onPasteText: _handlePasteText,
                       onTextInput: _handleTextInput,

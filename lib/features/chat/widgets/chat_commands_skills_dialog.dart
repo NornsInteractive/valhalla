@@ -93,6 +93,7 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
   bool _hasRetriedSuccessfully = false;
 
   late Set<String> _favorites;
+  final Set<String> _pendingFavorites = <String>{};
   late List<String> _recent;
   _CommandFilter _filter = _CommandFilter.all;
 
@@ -112,7 +113,15 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
       _commands = widget.commands;
     }
     if (widget.favorites != oldWidget.favorites) {
-      _favorites = widget.favorites.toSet();
+      final newFavs = widget.favorites.toSet();
+      for (final id in _pendingFavorites) {
+        if (_favorites.contains(id)) {
+          newFavs.add(id);
+        } else {
+          newFavs.remove(id);
+        }
+      }
+      _favorites = newFavs;
     }
     if (widget.recent != oldWidget.recent) {
       _recent = widget.recent.toList();
@@ -166,9 +175,11 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
   }
 
   Future<void> _handleToggleFavorite(String id) async {
+    if (_pendingFavorites.contains(id)) return;
     final isFav = _favorites.contains(id);
     final nextFav = !isFav;
     setState(() {
+      _pendingFavorites.add(id);
       if (nextFav) {
         _favorites.add(id);
       } else {
@@ -195,6 +206,18 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
             behavior: SnackBarBehavior.floating,
           ),
         );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _pendingFavorites.remove(id);
+          });
+        }
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _pendingFavorites.remove(id);
+        });
       }
     }
   }
@@ -694,6 +717,7 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
         }
         final item = list[index - matchingClientActions.length];
         final isFav = _favorites.contains(item.id);
+        final isPending = _pendingFavorites.contains(item.id);
 
         return ListTile(
           dense: true,
@@ -783,19 +807,26 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
                     color: theme.colorScheme.outline.withValues(alpha: 0.7),
                   ),
                 ),
-          trailing: IconButton(
-            icon: Icon(
-              isFav ? Icons.star : Icons.star_border,
-              size: 18,
-              color: isFav ? Colors.amber : theme.colorScheme.outline,
+          trailing: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
+            onTap: isPending ? () {} : null,
+            child: IconButton(
+              icon: Icon(
+                isFav ? Icons.star : Icons.star_border,
+                size: 18,
+                color: isFav ? Colors.amber : theme.colorScheme.outline,
+              ),
+              tooltip: isFav
+                  ? context.l10n.chatCommandFavoriteRemove
+                  : context.l10n.chatCommandFavoriteAdd,
+              onPressed: isPending
+                  ? null
+                  : () => _handleToggleFavorite(item.id),
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.all(4),
+              constraints: const BoxConstraints(),
             ),
-            tooltip: isFav
-                ? context.l10n.chatCommandFavoriteRemove
-                : context.l10n.chatCommandFavoriteAdd,
-            onPressed: () => _handleToggleFavorite(item.id),
-            visualDensity: VisualDensity.compact,
-            padding: const EdgeInsets.all(4),
-            constraints: const BoxConstraints(),
           ),
           onTap: item.isAvailable
               ? () => Navigator.pop(context, item.command)

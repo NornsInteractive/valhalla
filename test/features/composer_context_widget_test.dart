@@ -117,6 +117,121 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 500));
     });
+
+    testWidgets(
+      'removing a skill keeps newlines and indentation and shifts the cursor',
+      (tester) async {
+        final notifier = _ContextNotifier(
+          _draftState(
+            commands: const [
+              AcpSlashCommand(r'$review', 'Review the diff', 'skill'),
+            ],
+          ),
+        );
+        await _pumpChat(tester, notifier);
+
+        const before = 'first\n  \$review next\nlast';
+        const after = 'first\n  next\nlast';
+        await tester.enterText(find.byKey(_promptKey), before);
+        await tester.pumpAndSettle();
+
+        final editable = tester.widget<EditableText>(
+          find.descendant(
+            of: find.byKey(_promptKey),
+            matching: find.byType(EditableText),
+          ),
+        );
+        final tokenEnd = before.indexOf(r'$review') + r'$review'.length;
+        editable.controller.selection = TextSelection.collapsed(
+          offset: tokenEnd,
+        );
+        await tester.pump();
+
+        expect(
+          find.byKey(const Key(r'chat_skill_chip_$review')),
+          findsOneWidget,
+        );
+        await tester.tap(find.byKey(const Key(r'chat_remove_skill_$review')));
+        await tester.pumpAndSettle();
+
+        final field = tester.widget<TextField>(find.byKey(_promptKey));
+        expect(
+          field.controller?.text,
+          after,
+          reason: '删除 skill 只能去掉 token 本身，不能吃掉换行或缩进',
+        );
+        expect(
+          field.controller?.selection.baseOffset,
+          after.indexOf('next'),
+          reason: '光标必须按删除的长度左移，而不是停在旧绝对偏移',
+        );
+        expect(notifier.draftTexts.last, after);
+        expect(notifier.state.draftText, after);
+
+        await tester.pump(const Duration(milliseconds: 500));
+      },
+    );
+    testWidgets(
+      'removing a skill at the end of an indented line keeps indentation and newlines',
+      (tester) async {
+        final notifier = _ContextNotifier(
+          _draftState(
+            commands: const [
+              AcpSlashCommand(r'$review', 'Review the diff', 'skill'),
+            ],
+          ),
+        );
+        await _pumpChat(tester, notifier);
+
+        Future<void> removeAtLineEnd(String before, String after) async {
+          await tester.enterText(find.byKey(_promptKey), before);
+          await tester.pumpAndSettle();
+
+          final editable = tester.widget<EditableText>(
+            find.descendant(
+              of: find.byKey(_promptKey),
+              matching: find.byType(EditableText),
+            ),
+          );
+          final tokenStart = before.indexOf(r'$review');
+          editable.controller.selection = TextSelection.collapsed(
+            offset: tokenStart + r'$review'.length,
+          );
+          await tester.pump();
+
+          expect(
+            find.byKey(const Key(r'chat_skill_chip_$review')),
+            findsOneWidget,
+          );
+          await tester.tap(find.byKey(const Key(r'chat_remove_skill_$review')));
+          await tester.pumpAndSettle();
+
+          final field = tester.widget<TextField>(find.byKey(_promptKey));
+          expect(
+            field.controller?.text,
+            after,
+            reason: '行尾删除只能去掉 token，不能吃掉前面的缩进或换行',
+          );
+          expect(
+            field.controller?.selection.baseOffset,
+            tokenStart,
+            reason: '光标必须停在删除区间起点，也就是原缩进末尾',
+          );
+          expect(notifier.draftTexts.last, after);
+          expect(notifier.state.draftText, after);
+        }
+
+        // token 独占行尾：保留缩进与后面的换行。
+        await removeAtLineEnd('first\n\t  \$review\nlast', 'first\n\t  \nlast');
+        // token 后最多再吃掉一个横向空格，但换行必须保留。
+        await removeAtLineEnd(
+          'alpha\n    \$review \nomega',
+          'alpha\n    \nomega',
+        );
+
+        await tester.pump(const Duration(milliseconds: 500));
+      },
+    );
   });
 
   group('draft working directory', () {

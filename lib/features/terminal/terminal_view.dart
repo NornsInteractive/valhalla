@@ -820,6 +820,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
                           inputEnabled:
                               originatingTab.bridge.state ==
                               TerminalConnectionState.connected,
+                          inputEpoch: _savedCommandEpoch,
                           requestKeyboardOnTap: false,
                           pinKeyboardButtonTrailing: true,
                           onKey:

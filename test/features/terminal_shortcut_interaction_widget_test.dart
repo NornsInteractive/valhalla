@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -60,6 +61,9 @@ Widget _canvasWithInput(
   required ValueListenable<bool> inputEnabled,
   required void Function(String key, {bool isCtrl, bool isAlt, bool isShift})
   onKey,
+  ValueListenable<int>? inputEpoch,
+  void Function(String text)? onPasteText,
+  TerminalController? controller,
 }) => ProviderScope(
   overrides: fixedTerminalSettingsOverrides(),
   child: MaterialApp(
@@ -74,11 +78,17 @@ Widget _canvasWithInput(
           height: 600,
           child: ValueListenableBuilder<bool>(
             valueListenable: inputEnabled,
-            builder: (context, enabled, _) => SharedTerminalCanvas(
-              terminal: terminal,
-              inputEnabled: enabled,
-              onKey: onKey,
-              requestKeyboardOnTap: false,
+            builder: (context, enabled, _) => ValueListenableBuilder<int>(
+              valueListenable: inputEpoch ?? const _ZeroEpoch(),
+              builder: (context, epoch, _) => SharedTerminalCanvas(
+                terminal: terminal,
+                inputEnabled: enabled,
+                inputEpoch: epoch,
+                onKey: onKey,
+                onPasteText: onPasteText,
+                controller: controller,
+                requestKeyboardOnTap: false,
+              ),
             ),
           ),
         ),
@@ -89,6 +99,55 @@ Widget _canvasWithInput(
 
 bool Function(String) _inputHook(WidgetTester tester) =>
     tester.widget<TerminalView>(find.byType(TerminalView)).onTextInput!;
+
+class _ZeroEpoch implements ValueListenable<int> {
+  const _ZeroEpoch();
+
+  @override
+  int get value => 0;
+
+  @override
+  void addListener(VoidCallback listener) {}
+
+  @override
+  void removeListener(VoidCallback listener) {}
+}
+
+Future<void> _commitIme(WidgetTester tester, String text) async {
+  tester.testTextInput.updateEditingValue(
+    TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    ),
+  );
+  await tester.pump();
+}
+
+Future<void> _focusTerminal(WidgetTester tester) async {
+  tester
+      .state<SharedTerminalCanvasState>(find.byType(SharedTerminalCanvas))
+      .requestKeyboard();
+  await tester.pump();
+  await tester.pump();
+  expect(tester.testTextInput.hasAnyClients, isTrue);
+}
+
+/// 离线时终端是 readOnly，不应建立 IME 连接；但物理键与本地复制仍需要
+/// 焦点。直接聚焦 FocusNode，避免把「离线」误设成「输入法已打开」。
+Future<void> _focusTerminalWithoutIme(WidgetTester tester) async {
+  final focusNode = tester
+      .widget<TerminalView>(find.byType(TerminalView))
+      .focusNode;
+  expect(focusNode, isNotNull);
+  focusNode!.requestFocus();
+  await tester.pump();
+  await tester.pump();
+  expect(
+    tester.testTextInput.hasAnyClients,
+    isFalse,
+    reason: 'offline terminal must stay readOnly and not attach the IME',
+  );
+}
 
 TerminalViewState _terminalState(WidgetTester tester) =>
     tester.state<TerminalViewState>(find.byType(TerminalView));
@@ -567,6 +626,54 @@ void main() {
   );
 
   testWidgets(
+    'changing inputEpoch clears an armed modifier while input stays enabled',
+    (tester) async {
+      final terminal = Terminal(maxLines: 100);
+      final written = <String>[];
+      final keys = <String>[];
+      terminal.onOutput = written.add;
+      final enabled = ValueNotifier(true);
+      final epoch = ValueNotifier(0);
+      addTearDown(enabled.dispose);
+      addTearDown(epoch.dispose);
+      await tester.pumpWidget(
+        _canvasWithInput(
+          terminal,
+          inputEnabled: enabled,
+          inputEpoch: epoch,
+          onKey: (key, {isCtrl = false, isAlt = false, isShift = false}) =>
+              keys.add(key),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _tapKey(tester, 'CTRL');
+      var bar = tester.widget<TerminalAccessoryBar>(
+        find.byType(TerminalAccessoryBar),
+      );
+      expect(bar.ctrlState, ModifierLockState.oneShot);
+
+      // 同一个连接窗口内的代际变化（例如重连事件）也必须丢弃武装状态，
+      // 不能因为 inputEnabled 一直为 true 就保留下来。
+      epoch.value = 1;
+      await tester.pumpAndSettle();
+
+      bar = tester.widget<TerminalAccessoryBar>(
+        find.byType(TerminalAccessoryBar),
+      );
+      expect(
+        bar.ctrlState,
+        ModifierLockState.inactive,
+        reason: 'inputEpoch 变化必须清掉已武装的修饰键',
+      );
+      expect(_inputHook(tester)('a'), isFalse, reason: '代际变化后的下一个字母必须是普通输入');
+      expect(keys, isEmpty);
+      expect(written, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'offline buffer search still works with input disabled and never touches the PTY',
     (tester) async {
       final terminal = Terminal(maxLines: 600);
@@ -617,4 +724,348 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  group('input disabled emits zero terminal bytes', () {
+    testWidgets('ordinary IME ASCII, CJK, enter and delete are consumed', (
+      tester,
+    ) async {
+      final terminal = Terminal(maxLines: 100);
+      final written = <String>[];
+      final keys = <String>[];
+      terminal.onOutput = written.add;
+      final enabled = ValueNotifier(false);
+      addTearDown(enabled.dispose);
+      await tester.pumpWidget(
+        _canvasWithInput(
+          terminal,
+          inputEnabled: enabled,
+          onKey: (key, {isCtrl = false, isAlt = false, isShift = false}) =>
+              keys.add(key),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _focusTerminalWithoutIme(tester);
+
+      final hook = _inputHook(tester);
+      for (final text in ['a', '中文', '\r', '\n', '\b']) {
+        expect(
+          hook(text),
+          isTrue,
+          reason:
+              'disabled input must consume IME text "$text" instead of '
+              'letting TerminalView fall back to textInput/keyInput',
+        );
+      }
+      await _commitIme(tester, 'a');
+      await _commitIme(tester, '中文');
+      await _commitIme(tester, 'x\r');
+
+      expect(
+        written,
+        isEmpty,
+        reason: 'disabled canvas must not write PTY bytes',
+      );
+      expect(keys, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('physical enter, delete, arrows and backspace are consumed', (
+      tester,
+    ) async {
+      final terminal = Terminal(maxLines: 100);
+      final written = <String>[];
+      final keys = <String>[];
+      terminal.onOutput = written.add;
+      final enabled = ValueNotifier(false);
+      addTearDown(enabled.dispose);
+      await tester.pumpWidget(
+        _canvasWithInput(
+          terminal,
+          inputEnabled: enabled,
+          onKey: (key, {isCtrl = false, isAlt = false, isShift = false}) =>
+              keys.add(key),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _focusTerminalWithoutIme(tester);
+
+      for (final key in [
+        LogicalKeyboardKey.enter,
+        LogicalKeyboardKey.delete,
+        LogicalKeyboardKey.backspace,
+        LogicalKeyboardKey.arrowUp,
+        LogicalKeyboardKey.arrowDown,
+        LogicalKeyboardKey.tab,
+      ]) {
+        await tester.sendKeyEvent(key);
+        await tester.pump();
+      }
+
+      expect(written, isEmpty, reason: 'physical keys must not reach the PTY');
+      expect(keys, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('pending paste is abandoned when inputEpoch changes', (
+      tester,
+    ) async {
+      final terminal = Terminal(maxLines: 100);
+      final written = <String>[];
+      final pasted = <String>[];
+      terminal.onOutput = written.add;
+      var clipboardReads = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'Clipboard.getData') {
+              clipboardReads++;
+              return {'text': 'first\nsecond'};
+            }
+            return null;
+          });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+      final enabled = ValueNotifier(true);
+      final epoch = ValueNotifier(0);
+      addTearDown(enabled.dispose);
+      addTearDown(epoch.dispose);
+      await tester.pumpWidget(
+        _canvasWithInput(
+          terminal,
+          inputEnabled: enabled,
+          inputEpoch: epoch,
+          onKey: (_, {isCtrl = false, isAlt = false, isShift = false}) {},
+          onPasteText: pasted.add,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.content_paste));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('terminal_confirm_paste_button')),
+        findsOneWidget,
+      );
+      expect(clipboardReads, 1);
+
+      epoch.value = 1;
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('terminal_confirm_paste_button')));
+      await tester.pumpAndSettle();
+
+      expect(
+        pasted,
+        isEmpty,
+        reason: 'a new input epoch must abort the pending paste',
+      );
+      expect(written, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('pending paste is abandoned across disable and re-enable', (
+      tester,
+    ) async {
+      final terminal = Terminal(maxLines: 100);
+      final written = <String>[];
+      final pasted = <String>[];
+      terminal.onOutput = written.add;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'Clipboard.getData') {
+              return {'text': 'first\nsecond'};
+            }
+            return null;
+          });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+      final enabled = ValueNotifier(true);
+      addTearDown(enabled.dispose);
+      await tester.pumpWidget(
+        _canvasWithInput(
+          terminal,
+          inputEnabled: enabled,
+          onKey: (_, {isCtrl = false, isAlt = false, isShift = false}) {},
+          onPasteText: pasted.add,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.content_paste));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('terminal_confirm_paste_button')),
+        findsOneWidget,
+      );
+
+      enabled.value = false;
+      await tester.pumpAndSettle();
+      enabled.value = true;
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('terminal_confirm_paste_button')));
+      await tester.pumpAndSettle();
+
+      expect(
+        pasted,
+        isEmpty,
+        reason: 're-enabling must not revive a stale paste',
+      );
+      expect(written, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('local copy shortcut still works while input is disabled', (
+      tester,
+    ) async {
+      final terminal = Terminal(maxLines: 100)..write('Hello World');
+      final written = <String>[];
+      final keys = <String>[];
+      terminal.onOutput = written.add;
+      final controller = TerminalController();
+      String? copied;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'Clipboard.setData') {
+              copied = (call.arguments as Map)['text'] as String?;
+            }
+            return null;
+          });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+      final enabled = ValueNotifier(false);
+      addTearDown(enabled.dispose);
+      await tester.pumpWidget(
+        _canvasWithInput(
+          terminal,
+          inputEnabled: enabled,
+          onKey: (key, {isCtrl = false, isAlt = false, isShift = false}) =>
+              keys.add(key),
+          controller: controller,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _focusTerminalWithoutIme(tester);
+
+      controller.setSelection(
+        terminal.buffer.createAnchor(0, 0),
+        terminal.buffer.createAnchor(5, 0),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+
+      expect(copied, 'Hello', reason: 'local copy must survive disabled input');
+      expect(written, isEmpty, reason: 'copy must never write to the PTY');
+      expect(keys, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'CJK preedit is not replayed and the IME stays closed across reconnect',
+      (tester) async {
+        final terminal = Terminal(maxLines: 100);
+        final written = <String>[];
+        terminal.onOutput = written.add;
+        final enabled = ValueNotifier(true);
+        final epoch = ValueNotifier(0);
+        addTearDown(enabled.dispose);
+        addTearDown(epoch.dispose);
+        await tester.pumpWidget(
+          _canvasWithInput(
+            terminal,
+            inputEnabled: enabled,
+            inputEpoch: epoch,
+            onKey: (_, {isCtrl = false, isAlt = false, isShift = false}) {},
+          ),
+        );
+        await tester.pumpAndSettle();
+        await _focusTerminal(tester);
+
+        // 组合中的拼音只是 preedit，绝不能写进 PTY。
+        tester.testTextInput.updateEditingValue(
+          const TextEditingValue(
+            text: 'zhong',
+            selection: TextSelection.collapsed(offset: 5),
+            composing: TextRange(start: 0, end: 5),
+          ),
+        );
+        await tester.pump();
+        expect(written, isEmpty, reason: 'preedit must not reach the PTY');
+
+        // 连接断开：输入必须关闭，旧 preedit 不能留在输入法里。
+        enabled.value = false;
+        await tester.pumpAndSettle();
+        expect(
+          _terminalState(tester).hasInputConnection,
+          isFalse,
+          reason: 'disabling input must close the IME input connection',
+        );
+        expect(tester.testTextInput.hasAnyClients, isFalse);
+
+        // 重连：不能自动弹键盘，也不能把旧 preedit 重放成文本。
+        epoch.value = 1;
+        enabled.value = true;
+        await tester.pumpAndSettle();
+        expect(
+          tester.testTextInput.hasAnyClients,
+          isFalse,
+          reason: 'reconnect must not auto-open the IME',
+        );
+        expect(_terminalState(tester).hasInputConnection, isFalse);
+        expect(
+          written,
+          isEmpty,
+          reason: 'old composing text must not be replayed',
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('offline keyboard button does not open the IME', (
+      tester,
+    ) async {
+      final terminal = Terminal(maxLines: 100);
+      final written = <String>[];
+      final keys = <String>[];
+      terminal.onOutput = written.add;
+      final enabled = ValueNotifier(false);
+      addTearDown(enabled.dispose);
+      await tester.pumpWidget(
+        _canvasWithInput(
+          terminal,
+          inputEnabled: enabled,
+          onKey: (key, {isCtrl = false, isAlt = false, isShift = false}) =>
+              keys.add(key),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final button = find.byKey(
+        const Key('terminal_accessory_keyboard_button'),
+      );
+      expect(button, findsOneWidget);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.testTextInput.hasAnyClients,
+        isFalse,
+        reason: 'offline keyboard button must not open the IME',
+      );
+      expect(_terminalState(tester).hasInputConnection, isFalse);
+      expect(written, isEmpty);
+      expect(keys, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

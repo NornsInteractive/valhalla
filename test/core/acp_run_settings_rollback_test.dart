@@ -429,7 +429,13 @@ Future<(ProviderContainer, AiChatNotifier, LocalStorageService)> _container({
     }
     _pairs.clear();
   });
-  return (container, container.read(aiChatProvider.notifier), storage);
+  // The notifier loads local history / hydrates selection on build via a
+  // startup microtask. Let that settle before a test drives the container,
+  // otherwise sendMessage sees isLoadingSessions and a changing _requestEpoch
+  // cancels the request, leaving no session/transport.
+  final notifier = container.read(aiChatProvider.notifier);
+  await _settle(container);
+  return (container, notifier, storage);
 }
 
 /// 建立一个已有远端会话的容器，并把目录刷新准备好。

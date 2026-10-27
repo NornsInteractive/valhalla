@@ -400,6 +400,88 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
     });
+
+    testWidgets(
+      'rapid clicks while a favorite save is pending stay single and roll back on failure',
+      (tester) async {
+        var calls = 0;
+        final gate = Completer<void>();
+        await _pumpDialog(
+          tester,
+          commands: _commands,
+          onToggleFavorite: (id, favorite) async {
+            calls++;
+            await gate.future;
+            throw StateError('CHAT_COMMAND_PREFERENCES_SAVE_FAILED');
+          },
+        );
+
+        await tester.tap(
+          find.descendant(
+            of: _tileFor('status'),
+            matching: find.byTooltip('Add to favorites'),
+          ),
+        );
+        await tester.pump();
+        expect(calls, 1);
+        expect(
+          find.descendant(
+            of: _tileFor('status'),
+            matching: find.byTooltip('Remove from favorites'),
+          ),
+          findsOneWidget,
+          reason: '第一次点击可以先做乐观显示',
+        );
+
+        // 第一次保存还挂起时星标必须已禁用。
+        final pendingStar = find.descendant(
+          of: _tileFor('status'),
+          matching: find.byType(IconButton),
+        );
+        expect(pendingStar, findsOneWidget);
+        expect(
+          tester.widget<IconButton>(pendingStar).onPressed,
+          isNull,
+          reason: 'pending 期间星标必须禁用，第二次点击无法再发起保存',
+        );
+
+        // 真实点第二下禁用态星标：trailing 的 GestureDetector 必须吞掉这次
+        // 点击，既不能再发起保存，也不能穿透到 ListTile.onTap 关闭面板。
+        await tester.tap(pendingStar);
+        await tester.pump();
+        expect(
+          find.byKey(_dialogKey),
+          findsOneWidget,
+          reason: 'pending 星标的第二次点击不能穿透到 ListTile 关闭面板',
+        );
+        expect(_tileFor('status'), findsOneWidget);
+        expect(calls, 1, reason: 'pending 期间必须挡住第二次收藏写入，避免竞态回滚');
+
+        gate.complete();
+        await tester.pumpAndSettle();
+
+        expect(calls, 1);
+        expect(
+          find.descendant(
+            of: _tileFor('status'),
+            matching: find.byTooltip('Add to favorites'),
+          ),
+          findsOneWidget,
+          reason: '保存失败后必须回到未收藏状态',
+        );
+        expect(
+          find.descendant(
+            of: _tileFor('status'),
+            matching: find.byTooltip('Remove from favorites'),
+          ),
+          findsNothing,
+        );
+        expect(find.text('Failed to save command preferences'), findsOneWidget);
+
+        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpAndSettle();
+      },
+    );
   });
 
   group('recent selection and stale targets', () {

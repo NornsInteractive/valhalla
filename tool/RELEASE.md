@@ -17,6 +17,8 @@ python3 tool/release.py --notes-file agent-workflow/next-release-notes.md \
 →公开默认渠道→四包平台代理整包SHA256和八项Range验证→历史版本及标签/Actions核对。
 UI仍只交给AgY，不由发布脚本修改UI。
 
+需要装机验收后再公开时，在首次命令附加 `--build-only`。它仍递增版本、提交显式文件、完成本地构建与冻结，但不推送或创建任何外部发布；验收完成后用同一目录 `--resume` 继续，无需再升号。设备离线时保持此状态，不能把未安装当作通过。
+
 失败后查看打印的日志，在同一源码干净工作区续跑：
 
 ```bash

@@ -316,6 +316,7 @@ def main():
     parser.add_argument('--notes-file', type=Path)
     parser.add_argument('--files', nargs='+', help='Explicit current-batch source files to commit; never git add .')
     parser.add_argument('--resume', type=Path, help='Existing release evidence directory')
+    parser.add_argument('--build-only', action='store_true', help='Build and freeze locally; publish later with --resume')
     args = parser.parse_args()
     os.chdir(ROOT)
     lock_path = ROOT / 'build/local-packages/release.lock'
@@ -354,6 +355,9 @@ def main():
         release.validate_source()
         if not release.state.get('built'):
             release.build_packages()
+        if args.build_only:
+            print(f'Local build complete; no publication performed. Resume after acceptance: {work}', flush=True)
+            return
         release.github()
         release.distribution()
         release.verify()

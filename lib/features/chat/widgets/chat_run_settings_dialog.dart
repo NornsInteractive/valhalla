@@ -444,10 +444,17 @@ class _ChatRunSettingsDialogState extends State<ChatRunSettingsDialog> {
       permissionPolicy: _selectedPolicy,
     );
 
+    final nav = Navigator.of(context);
+    final route = ModalRoute.of(context);
+
     try {
       await widget.onSave(settings);
-      if (mounted) {
-        Navigator.pop(context);
+      if (mounted && route?.isActive == true) {
+        if (route!.isCurrent) {
+          nav.pop();
+        } else {
+          nav.removeRoute(route);
+        }
       }
     } catch (error) {
       if (mounted) {

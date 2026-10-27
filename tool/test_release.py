@@ -1,6 +1,9 @@
+import sys
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
-from release import Release, next_version, normalize, virtual_placeholder
+from release import Release, main, next_version, normalize, virtual_placeholder
 
 
 class ReleaseTests(unittest.TestCase):
@@ -39,6 +42,46 @@ class ReleaseTests(unittest.TestCase):
         self.assertTrue(virtual_placeholder(empty))
         self.assertFalse(virtual_placeholder({**empty, 'id': 'pkg_real'}))
         self.assertFalse(virtual_placeholder({**empty, 'file_sha256': 'not-empty'}))
+
+
+class BuildOnlyTests(unittest.TestCase):
+    def _invoke(self, flags, built):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            resume = root / 'resume'
+            resume.mkdir()
+            with patch('release.ROOT', root), \
+                 patch('release.os.chdir') as chdir, \
+                 patch('release.Release') as release_class, \
+                 patch.object(sys, 'argv', ['release.py', '--resume', str(resume), *flags]):
+                instance = release_class.return_value
+                instance.state = {'built': built}
+                main()
+            chdir.assert_called_once_with(root)
+            release_class.assert_called_once_with(resume)
+            instance.validate_source.assert_called_once_with()
+            return instance
+
+    def test_build_only_builds_unbuilt_and_never_publishes(self):
+        instance = self._invoke(['--build-only'], built=False)
+        instance.build_packages.assert_called_once_with()
+        instance.github.assert_not_called()
+        instance.distribution.assert_not_called()
+        instance.verify.assert_not_called()
+
+    def test_build_only_skips_rebuild_when_already_built(self):
+        instance = self._invoke(['--build-only'], built=True)
+        instance.build_packages.assert_not_called()
+        instance.github.assert_not_called()
+        instance.distribution.assert_not_called()
+        instance.verify.assert_not_called()
+
+    def test_resume_without_flag_publishes_without_rebuild(self):
+        instance = self._invoke([], built=True)
+        instance.build_packages.assert_not_called()
+        instance.github.assert_called_once_with()
+        instance.distribution.assert_called_once_with()
+        instance.verify.assert_called_once_with()
 
 
 if __name__ == '__main__':

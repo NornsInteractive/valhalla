@@ -2873,7 +2873,25 @@ class AiChatNotifier extends Notifier<AiChatState> {
   }
 
   Future<bool> prepareRunSettings({bool refresh = false}) async {
-    await _adoptFinishedRun();
+    final originWorkspace = workspaceSelectionKey;
+    final originEpoch = _requestEpoch;
+    bool currentOrigin() =>
+        ref.mounted &&
+        originEpoch == _requestEpoch &&
+        originWorkspace == workspaceSelectionKey;
+    try {
+      await _adoptFinishedRun();
+    } catch (error) {
+      if (currentOrigin()) {
+        state = state.copyWith(
+          settingsStale: true,
+          lastErrorCode:
+              'CHAT_SAVE_FAILED: ${LogSanitizer.sanitize(error.toString())}',
+        );
+      }
+      return false;
+    }
+    if (!currentOrigin()) return false;
     if (state.isGenerating ||
         state.isAuthenticating ||
         state.isLoadingSettings ||
@@ -4200,10 +4218,22 @@ class AiChatNotifier extends Notifier<AiChatState> {
   }
 
   Future<void> updateRunSettings(ChatRunSettings settings) async {
+    final originWorkspace = workspaceSelectionKey;
+    final originEpoch = _requestEpoch;
+    bool currentOrigin() =>
+        ref.mounted &&
+        originEpoch == _requestEpoch &&
+        originWorkspace == workspaceSelectionKey;
     if (state.isServerBusy && !state.isViewingRun) {
       throw StateError('ACP_RUNTIME_SERVER_BUSY');
     }
-    await _adoptFinishedRun();
+    try {
+      await _adoptFinishedRun();
+    } catch (_) {
+      if (currentOrigin()) rethrow;
+      return;
+    }
+    if (!currentOrigin()) return;
     if (settings.customModel && !_validCustomModel(settings.modelId)) {
       throw StateError('ACP_CUSTOM_MODEL_INVALID');
     }

@@ -35,6 +35,8 @@ class _ProbeState extends State<_Probe> {
   final terminal = Terminal();
   Timer? timer;
   String? lastEditingState;
+  bool _inputEnabled = true;
+  int _inputEpoch = 0;
 
   @override
   void initState() {
@@ -73,9 +75,35 @@ class _ProbeState extends State<_Probe> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Local IME probe — no SSH')),
+    appBar: AppBar(
+      title: const Text('Local IME probe — no SSH'),
+      actions: [
+        TextButton(
+          style: const ButtonStyle(visualDensity: VisualDensity.compact),
+          onPressed: () {
+            setState(() {
+              _inputEnabled = !_inputEnabled;
+            });
+            debugPrint('IME_PROBE enabled=$_inputEnabled epoch=$_inputEpoch');
+          },
+          child: Text(_inputEnabled ? 'Disconnect' : 'Reconnect'),
+        ),
+        TextButton(
+          style: const ButtonStyle(visualDensity: VisualDensity.compact),
+          onPressed: () {
+            setState(() {
+              _inputEpoch++;
+            });
+            debugPrint('IME_PROBE enabled=$_inputEnabled epoch=$_inputEpoch');
+          },
+          child: const Text('New epoch'),
+        ),
+      ],
+    ),
     body: SharedTerminalCanvas(
       terminal: terminal,
+      inputEnabled: _inputEnabled,
+      inputEpoch: _inputEpoch,
       requestKeyboardOnTap: false,
       pinKeyboardButtonTrailing: true,
       onKey: (key, {isCtrl = false, isAlt = false, isShift = false}) {

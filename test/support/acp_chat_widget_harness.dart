@@ -261,6 +261,7 @@ Future<void> pumpAcpHarness(
   Locale locale = const Locale('en'),
   TextScaler textScaler = TextScaler.noScaling,
   List<Override> extraOverrides = const [],
+  List<NavigatorObserver> navigatorObservers = const [],
 }) async {
   SharedPreferences.setMockInitialValues({});
   final storage = await LocalStorageService.init();
@@ -283,6 +284,7 @@ Future<void> pumpAcpHarness(
         brightness: Brightness.dark,
         seedColor: AppAccentColor.cyberEmerald.color,
       ),
+      navigatorObservers: navigatorObservers,
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

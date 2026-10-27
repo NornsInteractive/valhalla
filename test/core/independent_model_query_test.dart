@@ -83,6 +83,18 @@ void main() {
     reasoningLevels: [for (final id in reasoning) ChatSettingOption(id, id)],
   );
 
+  Future<void> settle(ProviderContainer target) async {
+    await pumpEventQueue();
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    while (target.read(aiChatProvider).isLoadingSessions ||
+        target.read(aiChatProvider).isLoadingMessages) {
+      if (DateTime.now().isAfter(deadline)) {
+        fail('history loading never settled');
+      }
+      await pumpEventQueue();
+    }
+  }
+
   Future<ProviderContainer> makeContainer({
     List<AgentProfile>? profiles,
     _CatalogQuery? query,
@@ -143,19 +155,12 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+    // The notifier loads local history asynchronously on build. Let that
+    // settle before a test drives the container, otherwise sendMessage sees
+    // isLoadingSessions and returns without creating the session.
+    container.read(aiChatProvider);
+    await settle(container);
     return container;
-  }
-
-  Future<void> settle(ProviderContainer target) async {
-    await pumpEventQueue();
-    final deadline = DateTime.now().add(const Duration(seconds: 5));
-    while (target.read(aiChatProvider).isLoadingSessions ||
-        target.read(aiChatProvider).isLoadingMessages) {
-      if (DateTime.now().isAfter(deadline)) {
-        fail('history loading never settled');
-      }
-      await pumpEventQueue();
-    }
   }
 
   /// Every request method the client sent to the agent, in order.

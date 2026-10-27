@@ -128,7 +128,7 @@ Future<void> acceptAuthorize(WidgetTester tester) async {
 }
 
 class _ComposerChatNotifier extends FakeAcpChatNotifier {
-  _ComposerChatNotifier(super.initialState);
+  _ComposerChatNotifier(super.initialState, {super.refreshResult});
 
   int prepareComposerCatalogCalls = 0;
   Completer<bool>? prepareRunSettingsGate;
@@ -136,6 +136,17 @@ class _ComposerChatNotifier extends FakeAcpChatNotifier {
   /// 非 null 时 [prepareComposerCatalog] 挂起在它上面，用于构造
   /// 「面板已关闭、目录查询还没返回」的迟到回调。
   Completer<bool>? composerCatalogGate;
+
+  /// 非 null 时 [updateRunSettings] 挂起在它上面，用于构造保存期间的切换。
+  Completer<void>? updateSettingsGate;
+  int updateSettingsCalls = 0;
+
+  @override
+  Future<void> updateRunSettings(ChatRunSettings settings) async {
+    updateSettingsCalls++;
+    final gate = updateSettingsGate;
+    if (gate != null) await gate.future;
+  }
 
   @override
   Future<bool> prepareComposerCatalog() async {
@@ -160,6 +171,34 @@ class _ComposerChatNotifier extends FakeAcpChatNotifier {
 
   void applyTargetAgent(AgentProfile profile) {
     state = state.copyWith(activeAgentProfile: profile);
+  }
+
+  void setLastError(String? code) {
+    state = state.copyWith(lastErrorCode: code);
+  }
+}
+
+class _RecordingNavigatorObserver extends NavigatorObserver {
+  final List<Route<dynamic>> pushed = [];
+  final List<Route<dynamic>> popped = [];
+  final List<Route<dynamic>> removed = [];
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushed.add(route);
+    super.didPush(route, previousRoute);
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    popped.add(route);
+    super.didPop(route, previousRoute);
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    removed.add(route);
+    super.didRemove(route, previousRoute);
   }
 }
 
@@ -941,6 +980,86 @@ void main() {
       expect(notifier.sendMessageCalls, 0);
       expect(notifier.draftTexts, isEmpty);
     });
+
+    testWidgets('目标切换且新页压顶时只移除原命令面板，关闭新页不复活', (tester) async {
+      final observer = _RecordingNavigatorObserver();
+      final notifier = _ComposerChatNotifier(
+        AiChatState(
+          activeAgentProfile: harnessAgent,
+          readyAgents: [harnessAgent],
+          commands: _panelCommands,
+        ),
+      );
+
+      await pumpAcpHarness(
+        tester,
+        child: const AiChatView(),
+        notifier: notifier,
+        navigatorObservers: [observer],
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('chat_commands_menu_button')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('chat_commands_skills_dialog')),
+        findsOneWidget,
+      );
+
+      final dialogRoute = observer.pushed.last;
+
+      // 面板之上再压一页，随后目标失效：只能移除被遮住的原面板。
+      final navigator = Navigator.of(
+        tester.element(find.byKey(const Key('chat_commands_skills_dialog'))),
+      );
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(
+              body: Center(child: Text('next page', key: Key('next_page'))),
+            ),
+          ),
+        ),
+      );
+      // 只推进一帧：新页已经压住原面板，但转场尚未结束，Consumer 订阅仍然
+      // 存活。Riverpod 3 会在路由被不透明新页完全遮住后暂停订阅，若在这里
+      // pumpAndSettle 再切目标，回调根本不会执行，测不到真正的竞态。
+      await tester.pump();
+      expect(find.byKey(const Key('next_page')), findsOneWidget);
+      final nextRoute = observer.pushed.last;
+      expect(nextRoute.isCurrent, isTrue, reason: '转场进行中新页必须已是当前路由，原面板已被遮住');
+
+      // 转场未结束、新页已压顶时切换目标：移除原面板的回调必须在这时触发。
+      notifier.applyTargetAgent(otherAgent);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('next_page')),
+        findsOneWidget,
+        reason: '目标切换不能 pop 掉用户后来打开的新页',
+      );
+      expect(
+        observer.popped.where((route) => route == nextRoute),
+        isEmpty,
+        reason: '新页路由不能被当成原命令面板 pop',
+      );
+      expect(
+        observer.removed.where((route) => route == dialogRoute),
+        hasLength(1),
+        reason: '原命令面板路由必须被移除且只移除一次',
+      );
+      expect(dialogRoute.isActive, isFalse, reason: '原命令面板路由必须已从导航栈中移除');
+
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('next_page')), findsNothing);
+      expect(
+        find.byKey(const Key('chat_commands_skills_dialog')),
+        findsNothing,
+        reason: '关闭新页后原命令面板不得重新露出',
+      );
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('目标切换守卫', () {
@@ -998,6 +1117,122 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('chat_run_settings_dialog')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('旧目标的设置加载失败不得在新目标弹错误提示', (tester) async {
+      final notifier = _ComposerChatNotifier(
+        AiChatState(
+          activeAgentProfile: harnessAgent,
+          readyAgents: [harnessAgent],
+        ),
+        refreshResult: false,
+      );
+      notifier.prepareRunSettingsGate = Completer<bool>();
+
+      await pumpAcpHarness(
+        tester,
+        child: const AiChatView(),
+        notifier: notifier,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('chat_run_settings_button')));
+      await tester.pump();
+      expect(notifier.prepareRunSettingsCalls, 1);
+
+      // 加载还挂起时切到另一个 Agent，失败结果只属于旧目标。
+      notifier.applyTargetAgent(otherAgent);
+      notifier.setLastError('ACP_TARGET_CHANGED');
+      await tester.pump();
+
+      notifier.prepareRunSettingsGate!.complete(false);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsNothing, reason: '旧目标的加载失败不能在新目标上弹错误');
+      expect(find.byKey(const Key('chat_run_settings_dialog')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('保存期间切换目标且压入新页时只处理原弹窗路由，不 pop 新页', (tester) async {
+      final observer = _RecordingNavigatorObserver();
+      final notifier = _ComposerChatNotifier(
+        AiChatState(
+          activeAgentProfile: harnessAgent,
+          readyAgents: [harnessAgent],
+          capabilities: _fullCapabilities,
+        ),
+      );
+      notifier.updateSettingsGate = Completer<void>();
+
+      await pumpAcpHarness(
+        tester,
+        child: const AiChatView(),
+        notifier: notifier,
+        navigatorObservers: [observer],
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('chat_run_settings_button')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('chat_run_settings_dialog')), findsOneWidget);
+      final dialogRoute = observer.pushed.last;
+
+      await tester.tap(find.byKey(const Key('chat_run_settings_save_button')));
+      await tester.pump();
+      expect(notifier.updateSettingsCalls, 1);
+
+      // 保存挂起期间切换目标，并在弹窗之上压入新页。
+      notifier.applyTargetAgent(otherAgent);
+      await tester.pump();
+      final navigator = Navigator.of(
+        tester.element(find.byKey(const Key('chat_run_settings_dialog'))),
+      );
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(
+              body: Center(child: Text('next page', key: Key('next_page'))),
+            ),
+          ),
+        ),
+      );
+      // 保存按钮的转圈不会停，pumpAndSettle 会永远等下去，按固定帧推进。
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byKey(const Key('next_page')), findsOneWidget);
+      final nextRoute = observer.pushed.last;
+
+      notifier.updateSettingsGate!.complete();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(
+        find.byKey(const Key('next_page')),
+        findsOneWidget,
+        reason: '迟到的保存结果绝不能 pop 掉用户后来打开的新页面',
+      );
+      expect(
+        observer.popped.where((route) => route == nextRoute),
+        isEmpty,
+        reason: '新页路由不能被当成原弹窗路由 pop',
+      );
+      expect(
+        observer.popped.where((route) => route == dialogRoute).length,
+        lessThanOrEqualTo(1),
+        reason: '原弹窗最多只能被 pop 一次',
+      );
+
+      // 关掉上面的新页后，原设置弹窗必须已经被移除，不能从栈里重新露出。
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('next_page')), findsNothing);
+      expect(
+        find.byKey(const Key('chat_run_settings_dialog')),
+        findsNothing,
+        reason: '原设置弹窗必须已从路由栈移除，关闭新页后不得复活',
+      );
       expect(tester.takeException(), isNull);
     });
   });

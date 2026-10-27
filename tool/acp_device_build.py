@@ -9,7 +9,7 @@ import subprocess
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--target', choices=['probe', 'app'], required=True)
+    parser.add_argument('--target', choices=['probe', 'terminal', 'app'], required=True)
     parser.add_argument('--version', required=True)
     parser.add_argument('--code', type=int, required=True)
     args = parser.parse_args()
@@ -33,7 +33,9 @@ def main():
         if not target.exists():
             target.symlink_to(Path('/home/dev/.gradle') / name, target_is_directory=True)
     env['GRADLE_USER_HOME'] = str(gradle)
-    target = 'tool/acp_runtime_device_probe.dart' if args.target == 'probe' else 'lib/main.dart'
+    target = {'probe': 'tool/acp_runtime_device_probe.dart',
+              'terminal': 'tool/terminal_ime_probe.dart',
+              'app': 'lib/main.dart'}[args.target]
     command = ['flutter', 'build', 'apk', '--release', '--target-platform', 'android-x64',
                '--target', target, '--build-name', args.version, '--build-number', str(args.code)]
     log = evidence / f'{args.target}-build.log'

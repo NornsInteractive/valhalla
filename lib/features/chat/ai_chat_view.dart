@@ -4686,6 +4686,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         state.isApplyingSettings) {
       return;
     }
+    final currentWorkspaceKey = ref
+        .read(aiChatProvider.notifier)
+        .workspaceSelectionKey;
     final currentServerId = ref.read(activeServerProvider)?.id;
     final currentAgentId = state.activeAgentProfile?.id;
     const effectiveRefresh = true;
@@ -4694,6 +4697,18 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         .read(aiChatProvider.notifier)
         .prepareRunSettings(refresh: effectiveRefresh);
     if (!mounted) return;
+
+    final freshWorkspaceKey = ref
+        .read(aiChatProvider.notifier)
+        .workspaceSelectionKey;
+    final freshServerId = ref.read(activeServerProvider)?.id;
+    final freshAgentId = ref.read(aiChatProvider).activeAgentProfile?.id;
+    if (freshWorkspaceKey != currentWorkspaceKey ||
+        freshServerId != currentServerId ||
+        freshAgentId != currentAgentId) {
+      return;
+    }
+
     if (!ok) {
       final freshState = ref.read(aiChatProvider);
       final code = freshState.lastErrorCode ?? AiChatNotifier.notReadyCode;
@@ -4705,13 +4720,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     }
 
     final freshState = ref.read(aiChatProvider);
-    final freshServerId = ref.read(activeServerProvider)?.id;
-    if (freshServerId != currentServerId ||
-        freshState.activeAgentProfile?.id != currentAgentId) {
-      return;
-    }
-
-    final dialogServerId = freshServerId;
+    final dialogWorkspaceKey = currentWorkspaceKey;
+    final dialogServerId = currentServerId;
     final dialogAgentId = currentAgentId;
     final profile = freshState.activeAgentProfile;
     final activeServer = ref.read(activeServerProvider);
@@ -4735,16 +4745,23 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       agentUserName: agentUserName,
       onRefresh: () async {
         if (!mounted) return null;
+        final curWorkspaceKey = ref
+            .read(aiChatProvider.notifier)
+            .workspaceSelectionKey;
         final curServerId = ref.read(activeServerProvider)?.id;
         final curAgentId = ref.read(aiChatProvider).activeAgentProfile?.id;
-        if (curServerId != dialogServerId || curAgentId != dialogAgentId) {
+        if (curWorkspaceKey != dialogWorkspaceKey ||
+            curServerId != dialogServerId ||
+            curAgentId != dialogAgentId) {
           return null;
         }
         final refreshOk = await ref
             .read(aiChatProvider.notifier)
             .prepareRunSettings(refresh: true);
         if (!refreshOk || !mounted) return null;
-        if (ref.read(activeServerProvider)?.id != dialogServerId ||
+        if (ref.read(aiChatProvider.notifier).workspaceSelectionKey !=
+                dialogWorkspaceKey ||
+            ref.read(activeServerProvider)?.id != dialogServerId ||
             ref.read(aiChatProvider).activeAgentProfile?.id != dialogAgentId) {
           return null;
         }
@@ -4754,9 +4771,14 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         if (!mounted) {
           return const ChatRunSettingsMetadata(settingsStale: true);
         }
+        final curWorkspaceKey = ref
+            .read(aiChatProvider.notifier)
+            .workspaceSelectionKey;
         final curServerId = ref.read(activeServerProvider)?.id;
         final curAgentId = ref.read(aiChatProvider).activeAgentProfile?.id;
-        if (curServerId != dialogServerId || curAgentId != dialogAgentId) {
+        if (curWorkspaceKey != dialogWorkspaceKey ||
+            curServerId != dialogServerId ||
+            curAgentId != dialogAgentId) {
           return const ChatRunSettingsMetadata(settingsStale: true);
         }
         final state = ref.read(aiChatProvider);
@@ -4769,9 +4791,14 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       },
       onSave: (settings) async {
         if (!mounted) return;
+        final curWorkspaceKey = ref
+            .read(aiChatProvider.notifier)
+            .workspaceSelectionKey;
         final curServerId = ref.read(activeServerProvider)?.id;
         final curAgentId = ref.read(aiChatProvider).activeAgentProfile?.id;
-        if (curServerId != dialogServerId || curAgentId != dialogAgentId) {
+        if (curWorkspaceKey != dialogWorkspaceKey ||
+            curServerId != dialogServerId ||
+            curAgentId != dialogAgentId) {
           return;
         }
         await ref.read(aiChatProvider.notifier).updateRunSettings(settings);
@@ -4809,89 +4836,104 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       return;
     }
 
+    var closeScheduled = false;
     final cmd = await showDialog<AcpSlashCommand?>(
       context: context,
-      builder: (ctx) => Consumer(
-        builder: (ctx, ref, _) {
-          final server = ref.watch(activeServerProvider);
-          final chatState = ref.watch(aiChatProvider);
-          final currentNotifier = ref.read(aiChatProvider.notifier);
-          final activeScopeKey = currentNotifier.commandPreferenceKey;
-          final activeWorkspaceKey = currentNotifier.workspaceSelectionKey;
+      builder: (ctx) {
+        final originalRoute = ModalRoute.of(ctx);
+        return Consumer(
+          builder: (ctx, ref, _) {
+            final server = ref.watch(activeServerProvider);
+            final chatState = ref.watch(aiChatProvider);
+            final currentNotifier = ref.read(aiChatProvider.notifier);
+            final activeScopeKey = currentNotifier.commandPreferenceKey;
+            final activeWorkspaceKey = currentNotifier.workspaceSelectionKey;
 
-          if (server?.id != dialogServerId ||
-              chatState.activeAgentProfile?.id != dialogAgentId ||
-              activeScopeKey != dialogScopeKey ||
-              activeWorkspaceKey != dialogWorkspaceKey) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (ctx.mounted) Navigator.of(ctx).pop();
-            });
-            return const SizedBox.shrink();
-          }
-
-          final isDraft = chatState.activeSession == null;
-          final rawWorkingDir = chatState.draftWorkingDirectory;
-          final prefs = currentNotifier.commandPreferences;
-
-          return ChatCommandsSkillsDialog(
-            commands: chatState.commands,
-            favorites: prefs.favorites,
-            recent: prefs.recent,
-            onToggleFavorite: (id, favorite) async {
-              if (dialogScopeKey == null) return;
-              await currentNotifier.setCommandFavorite(
-                id,
-                favorite,
-                expectedScopeKey: dialogScopeKey,
-              );
-            },
-            errorMessage:
-                chatState.lastErrorCode != null &&
-                    chatState.lastErrorCode!.startsWith(
-                      'AGENT_COMPOSER_QUERY_FAILED',
-                    )
-                ? chatState.lastErrorCode
-                : null,
-            onOpenSettings: () {
-              if (!mounted) return;
-              if (ref.read(activeServerProvider)?.id == dialogServerId &&
-                  ref.read(aiChatProvider).activeAgentProfile?.id ==
-                      dialogAgentId) {
-                _openRunSettings(refresh: true);
-              }
-            },
-            onPickWorkingDirectory: isDraft
-                ? () {
-                    if (!mounted) return;
-                    if (ref.read(activeServerProvider)?.id == dialogServerId &&
-                        ref.read(aiChatProvider).activeAgentProfile?.id ==
-                            dialogAgentId) {
-                      _showDraftWorkingDirDialog(context, rawWorkingDir);
+            if (server?.id != dialogServerId ||
+                chatState.activeAgentProfile?.id != dialogAgentId ||
+                activeScopeKey != dialogScopeKey ||
+                activeWorkspaceKey != dialogWorkspaceKey) {
+              if (!closeScheduled) {
+                closeScheduled = true;
+                final nav = Navigator.of(ctx);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (ctx.mounted && originalRoute?.isActive == true) {
+                    if (originalRoute!.isCurrent) {
+                      nav.pop();
+                    } else {
+                      nav.removeRoute(originalRoute);
                     }
                   }
-                : null,
-            onRetry: () async {
-              if (!mounted || !ctx.mounted) return null;
-              if (ref.read(activeServerProvider)?.id != dialogServerId ||
-                  ref.read(aiChatProvider).activeAgentProfile?.id !=
-                      dialogAgentId) {
-                return null;
+                });
               }
-              final ok = await ref
-                  .read(aiChatProvider.notifier)
-                  .prepareComposerCatalog();
-              if (!mounted || !ctx.mounted) return null;
-              if (ref.read(activeServerProvider)?.id != dialogServerId ||
-                  ref.read(aiChatProvider).activeAgentProfile?.id !=
-                      dialogAgentId) {
-                return null;
-              }
-              if (!ok) return null;
-              return ref.read(aiChatProvider).commands;
-            },
-          );
-        },
-      ),
+              return const SizedBox.shrink();
+            }
+
+            final isDraft = chatState.activeSession == null;
+            final rawWorkingDir = chatState.draftWorkingDirectory;
+            final prefs = currentNotifier.commandPreferences;
+
+            return ChatCommandsSkillsDialog(
+              commands: chatState.commands,
+              favorites: prefs.favorites,
+              recent: prefs.recent,
+              onToggleFavorite: (id, favorite) async {
+                if (dialogScopeKey == null) return;
+                await currentNotifier.setCommandFavorite(
+                  id,
+                  favorite,
+                  expectedScopeKey: dialogScopeKey,
+                );
+              },
+              errorMessage:
+                  chatState.lastErrorCode != null &&
+                      chatState.lastErrorCode!.startsWith(
+                        'AGENT_COMPOSER_QUERY_FAILED',
+                      )
+                  ? chatState.lastErrorCode
+                  : null,
+              onOpenSettings: () {
+                if (!mounted) return;
+                if (ref.read(activeServerProvider)?.id == dialogServerId &&
+                    ref.read(aiChatProvider).activeAgentProfile?.id ==
+                        dialogAgentId) {
+                  _openRunSettings(refresh: true);
+                }
+              },
+              onPickWorkingDirectory: isDraft
+                  ? () {
+                      if (!mounted) return;
+                      if (ref.read(activeServerProvider)?.id ==
+                              dialogServerId &&
+                          ref.read(aiChatProvider).activeAgentProfile?.id ==
+                              dialogAgentId) {
+                        _showDraftWorkingDirDialog(context, rawWorkingDir);
+                      }
+                    }
+                  : null,
+              onRetry: () async {
+                if (!mounted || !ctx.mounted) return null;
+                if (ref.read(activeServerProvider)?.id != dialogServerId ||
+                    ref.read(aiChatProvider).activeAgentProfile?.id !=
+                        dialogAgentId) {
+                  return null;
+                }
+                final ok = await ref
+                    .read(aiChatProvider.notifier)
+                    .prepareComposerCatalog();
+                if (!mounted || !ctx.mounted) return null;
+                if (ref.read(activeServerProvider)?.id != dialogServerId ||
+                    ref.read(aiChatProvider).activeAgentProfile?.id !=
+                        dialogAgentId) {
+                  return null;
+                }
+                if (!ok) return null;
+                return ref.read(aiChatProvider).commands;
+              },
+            );
+          },
+        );
+      },
     );
     if (cmd != null && mounted) {
       final afterServerId = ref.read(activeServerProvider)?.id;
@@ -4954,27 +4996,59 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
   void _removeSkillToken(String token) {
     final current = _promptController.text;
-    String newText;
-    final beforePattern = RegExp(r'\s+' + RegExp.escape(token) + r'(?=\s|$)');
-    final afterPattern = RegExp(
-      r'(?:^|(?<=\s))' + RegExp.escape(token) + r'\s+',
-    );
-    final exactPattern = RegExp(
-      r'(?:^|(?<=\s))' + RegExp.escape(token) + r'(?=\s|$)',
-    );
-    if (beforePattern.hasMatch(current)) {
-      newText = current.replaceFirst(beforePattern, '');
-    } else if (afterPattern.hasMatch(current)) {
-      newText = current.replaceFirst(afterPattern, '');
-    } else {
-      newText = current.replaceFirst(exactPattern, '');
+    final pattern = RegExp(r'(?<!\S)' + RegExp.escape(token) + r'(?!\S)');
+    final match = pattern.firstMatch(current);
+    if (match == null) return;
+
+    var delStart = match.start;
+    var delEnd = match.end;
+
+    if (delEnd < current.length &&
+        (current[delEnd] == ' ' || current[delEnd] == '\t')) {
+      delEnd++;
     }
-    final oldOffset = _promptController.selection.baseOffset;
+
+    final delLength = delEnd - delStart;
+    final newText = current.replaceRange(delStart, delEnd, '');
+
+    int adjustOffset(int offset) {
+      if (offset < 0) return offset;
+      if (offset <= delStart) return offset;
+      if (offset <= delEnd) return delStart;
+      return offset - delLength;
+    }
+
+    final selection = _promptController.selection;
+    final newSelection = selection.isValid
+        ? TextSelection(
+            baseOffset: adjustOffset(
+              selection.baseOffset,
+            ).clamp(0, newText.length),
+            extentOffset: adjustOffset(
+              selection.extentOffset,
+            ).clamp(0, newText.length),
+            affinity: selection.affinity,
+            isDirectional: selection.isDirectional,
+          )
+        : TextSelection.collapsed(offset: newText.length);
+
+    TextRange newComposing = TextRange.empty;
+    final composing = _promptController.value.composing;
+    if (composing.isValid && !composing.isCollapsed) {
+      if (composing.end <= delStart) {
+        newComposing = composing;
+      } else if (composing.start >= delEnd) {
+        newComposing = TextRange(
+          start: composing.start - delLength,
+          end: composing.end - delLength,
+        );
+      }
+    }
+
     _promptController.value = TextEditingValue(
       text: newText,
-      selection: TextSelection.collapsed(
-        offset: oldOffset.clamp(0, newText.length),
-      ),
+      selection: newSelection,
+      composing: newComposing,
     );
     ref.read(aiChatProvider.notifier).updateDraftText(newText);
   }
