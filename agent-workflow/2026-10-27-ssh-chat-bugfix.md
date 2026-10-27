@@ -33,3 +33,13 @@
 最终源码门禁stage3-gates-20261027T072230Z：64文件854项常规测试、9项脚本测试、generate/format/analyze零问题/diff-check全部0，零失败跳过。旧两组模型/回滚测试在初始化完成前调用接口；fixture显式启动provider并等待本地历史初始化后通过，全部RPC/回滚断言保留。星标真实二次点击已恢复并通过，禁用点击穿透属产品缺陷，已修复，不接受仅onPressed==null作为替代。准备1.0.23+24 build-only，装机未通过前不推送或发布。
 
 1.0.23首次build-only停在扩展终端集合6项失败，尚未产出/冻结正式main包。失败来源为旧测试Bridge的state getter与stateListenable不一致、键盘用例使用断开连接状态；OpenCode只修正3个fixture，59项全部通过，未修改产品保护或断言。保留prebuild-terminal-failure.raw和原source f94d6b6回执，提交测试修正后在同批恢复构建，不额外升号。
+
+## 正式构建与原生输入验收（2026-10-27）
+
+最终构建源码1ca02e5073d41733335bcb6827da52b6c419f195；OpenCode完成正式Android三架构APK/AAB与Linux x64，17个产物冻结，扩展发布集合608项通过。版本1.0.23+24，x86_64 split原生versionCode4024。
+
+CodeBuddy免费deepseek-v4.1-flash执行ADB验收，根代理不执行测试或设备命令。复用本地无SSH探针，18/18通过：触摸输出不弹键盘、显式开键盘、Gboard Ctrl+A输出[1]、普通c空格[99,32]、Shift+Tab[27,91,90]、连接代际清状态、离线拒绝输入、重连不自动弹键盘、HOME返回同进程无自动输入法。报告build/ssh-chat-bugfix/device/native-probe-report.json。验收后已保留数据恢复冻结正式MAIN 1.0.23/native4024，安装APK SHA256=d4f80a7133a7f3bbcf54debe1c076c95a56b3879bdeb6d5317283414789a849f，与发布产物一致。探针不进入发布。
+
+早期自动化错误（标题空格、坐标、将editing日志误判为output）已修正后重跑，失败回执不计通过；最终严格断言只解析output字节且无or True。中文Gboard原生输入未验证（当前设备英文键盘），相关预编辑widget回归通过。正式MAIN只读页面验收仍在进行，完成前不公开发布。
+
+CodeBuddy正式MAIN只读验收完成：冷启动、菜单导航、已存服务器配置、HOME返回仪表盘缓存与输入法状态、安装版本和哈希通过，本次进程无FATAL/ANR。报告build/ssh-chat-bugfix/device/main-smoke/report.json，截图同目录。当前选中SFTP-Perf-Fixture无可用Agent且没有缓存会话，因此真实ACP历史、运行设置/命令弹窗不可达，明确未验证；不创建Agent或发送真实消息补齐。当前仪表盘服务器错误为已有离线缓存状态，未执行连接或修改。原生输入探针通过与此限制分别记录。

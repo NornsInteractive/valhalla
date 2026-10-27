@@ -8,4 +8,6 @@
 
 验证：64文件854项常规回归、9项发布脚本测试通过，无失败或跳过；语言生成、格式、全项目分析零问题及差异检查通过（stage3-gates-20261027T072230Z）。原设置回归的初始化fixture已修正，RPC、回滚和路由断言均保留；真实二次点击不能以检查按钮为空代替。
 
-正式签名Android三架构APK/AAB与Linux x64先本地冻结，ADB新包与本地无SSH探针验收后再同批发布。实际装机和渠道结果以发布回执为准。不构建Windows/Apple，不启动Actions，不发送真实Agent消息或创建/终止生产tmux。用户旧TMUX_HISTORY_INVALID_RESPONSE尚需实服原始响应定位，不宣称已解决。
+OpenCode完成正式签名Android三架构APK/AAB与Linux x64本地冻结，扩展终端集合608项通过。CodeBuddy在Gboard设备完成18项本地无SSH原生探针验收（Ctrl+A、Shift+Tab、离线输入保护、代际清理及后台返回），已保留数据恢复正式MAIN，安装哈希与冻结包一致。正式MAIN页面与渠道结果以发布回执为准。不构建Windows/Apple，不启动Actions，不发送真实Agent消息或创建/终止生产tmux。用户旧TMUX_HISTORY_INVALID_RESPONSE尚需实服原始响应定位，不宣称已解决。
+
+CodeBuddy正式MAIN冷启动、菜单、服务器配置保留、后台返回缓存与无意外输入法检查通过，无本次FATAL/ANR。当前测试服务器无可用Agent，真实ACP历史与设置/命令弹窗、中文Gboard原生输入未验证；模拟回归与本地探针不替代实服验收。
