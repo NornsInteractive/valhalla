@@ -6558,4 +6558,53 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'सिस्टम';
+
+  @override
+  String get chatCommandFilterAll => 'सभी';
+
+  @override
+  String get chatCommandFilterFavorites => 'पसंदीदा';
+
+  @override
+  String get chatCommandFilterRecent => 'हाल ही के';
+
+  @override
+  String get chatCommandFavoriteAdd => 'पसंदीदा में जोड़ें';
+
+  @override
+  String get chatCommandFavoriteRemove => 'पसंदीदा से हटाएं';
+
+  @override
+  String get chatCommandUnavailable => 'वर्तमान एजेंट में उपलब्ध नहीं';
+
+  @override
+  String get chatCommandPreferencesSaveFailed =>
+      'कमांड प्राथमिकताएं सहेजने में विफल';
+
+  @override
+  String get chatResetDraftWorkingDir =>
+      'कार्य निर्देशिका को डिफ़ॉल्ट पर रीसेट करें';
+
+  @override
+  String get terminalClearAllModifiers => 'सभी संशोधक कुंजियाँ साफ़ करें';
+
+  @override
+  String get terminalSavedCommandsTitle => 'सहेजे गए कमांड';
+
+  @override
+  String get terminalSavedCommandsRun => 'कमांड चलाएँ';
+
+  @override
+  String get terminalSavedCommandsEmpty => 'कोई सहेजा गया कमांड नहीं है';
+
+  @override
+  String get terminalSavedCommandsPreview => 'कमांड पूर्वावलोकन';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'इस कमांड में कई पंक्तियाँ हैं। क्या आप निश्चित रूप से इसे चलाना चाहते हैं?';
+
+  @override
+  String get terminalModifierHelp =>
+      'एकल उपयोग के लिए संशोधक टैप करें; लॉक करने के लिए देर तक दबाएँ। दोहराने के लिए कुंजियों को दबाकर रखें।';
 }

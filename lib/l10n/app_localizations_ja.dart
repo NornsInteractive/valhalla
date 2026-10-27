@@ -6300,4 +6300,50 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'システム';
+
+  @override
+  String get chatCommandFilterAll => 'すべて';
+
+  @override
+  String get chatCommandFilterFavorites => 'お気に入り';
+
+  @override
+  String get chatCommandFilterRecent => '最近';
+
+  @override
+  String get chatCommandFavoriteAdd => 'お気に入りに追加';
+
+  @override
+  String get chatCommandFavoriteRemove => 'お気に入りから削除';
+
+  @override
+  String get chatCommandUnavailable => '現在のAgentでは利用できません';
+
+  @override
+  String get chatCommandPreferencesSaveFailed => 'コマンド設定の保存に失敗しました';
+
+  @override
+  String get chatResetDraftWorkingDir => '作業ディレクトリをデフォルトにリセット';
+
+  @override
+  String get terminalClearAllModifiers => 'すべての修飾キーをクリア';
+
+  @override
+  String get terminalSavedCommandsTitle => '保存されたコマンド';
+
+  @override
+  String get terminalSavedCommandsRun => 'コマンドを実行';
+
+  @override
+  String get terminalSavedCommandsEmpty => '保存されたコマンドはありません';
+
+  @override
+  String get terminalSavedCommandsPreview => 'コマンドプレビュー';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'このコマンドには複数行が含まれています。実行しますか？';
+
+  @override
+  String get terminalModifierHelp => '修飾キーをタップで1回有効、長押しでロック。キーを長押しでリピート入力。';
 }

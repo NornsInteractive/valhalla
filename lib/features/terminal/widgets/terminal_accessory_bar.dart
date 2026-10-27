@@ -976,6 +976,7 @@ class TerminalAccessoryBar extends ConsumerStatefulWidget {
   final void Function(String modifier)? onModifierUp;
   final void Function(String modifier)? onModifierCancel;
   final VoidCallback onPaste;
+  final VoidCallback? onClearModifiers;
   final VoidCallback? onToggleKeyboard;
   final ModifierLockState? ctrlState;
   final ModifierLockState? altState;
@@ -989,6 +990,7 @@ class TerminalAccessoryBar extends ConsumerStatefulWidget {
   final bool isFnHeld;
   final bool pinKeyboardButtonTrailing;
   final bool? isKeyboardActive;
+  final bool inputEnabled;
   final ValueChanged<double>? onHeightChanged;
 
   static double calculateBaseHeight(int rows) {
@@ -1011,6 +1013,7 @@ class TerminalAccessoryBar extends ConsumerStatefulWidget {
     this.onModifierUp,
     this.onModifierCancel,
     required this.onPaste,
+    this.onClearModifiers,
     this.onToggleKeyboard,
     this.ctrlState,
     this.altState,
@@ -1024,6 +1027,7 @@ class TerminalAccessoryBar extends ConsumerStatefulWidget {
     this.isFnHeld = false,
     this.pinKeyboardButtonTrailing = false,
     this.isKeyboardActive,
+    this.inputEnabled = true,
     this.onHeightChanged,
   });
 
@@ -1141,6 +1145,7 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
 
   bool _canRepeat() {
     return mounted &&
+        widget.inputEnabled &&
         _appLifecycleState == AppLifecycleState.resumed &&
         TickerMode.of(context);
   }
@@ -1390,6 +1395,10 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
       setState(() {
         _isExpanded = !_isExpanded;
       });
+      return;
+    }
+
+    if (!widget.inputEnabled) {
       return;
     }
 
@@ -2716,16 +2725,18 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
                   : (modKey == 'SHIFT'
                         ? widget.shiftState
                         : (modKey == 'FN' ? widget.fnState : null))),
-        onTap: () => _press(o),
-        onLongPress: modKey == 'CTRL'
-            ? widget.onLockCtrl
-            : (modKey == 'ALT'
-                  ? widget.onLockAlt
-                  : (modKey == 'SHIFT'
-                        ? widget.onLockShift
-                        : (modKey == 'FN' ? widget.onLockFn : null))),
-        onModifierDown: widget.onModifierDown,
-        onModifierUp: widget.onModifierUp,
+        onTap: widget.inputEnabled ? () => _press(o) : null,
+        onLongPress: widget.inputEnabled
+            ? (modKey == 'CTRL'
+                  ? widget.onLockCtrl
+                  : (modKey == 'ALT'
+                        ? widget.onLockAlt
+                        : (modKey == 'SHIFT'
+                              ? widget.onLockShift
+                              : (modKey == 'FN' ? widget.onLockFn : null))))
+            : null,
+        onModifierDown: widget.inputEnabled ? widget.onModifierDown : null,
+        onModifierUp: widget.inputEnabled ? widget.onModifierUp : null,
         onModifierCancel: widget.onModifierCancel,
         isHeld: isHeld,
         isActive: isAct,
@@ -3101,35 +3112,80 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
             ),
             const SizedBox(height: 6),
           ],
-          Row(
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            alignment: WrapAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  side: BorderSide(color: scheme.primary),
+                ),
+                onPressed: () {
+                  final boardWidth = MediaQuery.of(context).size.width - 8;
+                  final minW = _computeMinCellWidth(
+                    context,
+                    _masterLayout.items,
+                  );
+                  _enterEditMode(_calculateColumns(boardWidth, minW));
+                },
+                icon: Icon(Icons.tune, size: 14, color: scheme.primary),
+                label: Text(
+                  context.l10n.terminalGridEditLayout,
+                  softWrap: true,
+                  style: TextStyle(fontSize: 12, color: scheme.primary),
+                ),
+              ),
+              if (widget.onClearModifiers != null)
+                OutlinedButton.icon(
+                  key: const Key('terminal_clear_modifiers_button'),
                   style: OutlinedButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 4,
                     ),
-                    side: BorderSide(color: scheme.primary),
+                    side: BorderSide(color: scheme.outlineVariant),
                   ),
                   onPressed: () {
-                    final boardWidth = MediaQuery.of(context).size.width - 8;
-                    final minW = _computeMinCellWidth(
-                      context,
-                      _masterLayout.items,
-                    );
-                    _enterEditMode(_calculateColumns(boardWidth, minW));
+                    widget.onClearModifiers?.call();
+                    setState(() {});
                   },
-                  icon: Icon(Icons.tune, size: 14, color: scheme.primary),
+                  icon: Icon(
+                    Icons.clear_all,
+                    size: 14,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   label: Text(
-                    context.l10n.terminalGridEditLayout,
+                    context.l10n.terminalClearAllModifiers,
                     softWrap: true,
-                    style: TextStyle(fontSize: 12, color: scheme.primary),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              Tooltip(
+                key: const Key('terminal_accessory_help_button'),
+                message: context.l10n.terminalModifierHelp,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                  child: Icon(
+                    Icons.help_outline,
+                    size: 16,
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => setState(() => _isExpanded = false),
@@ -3346,12 +3402,16 @@ class _TerminalAccessoryBarState extends ConsumerState<TerminalAccessoryBar>
       child: _ModifierKeyButton(
         label: modifier,
         state: state,
-        onTap: () {
-          if (upper == 'FN') widget.onToggleFn?.call();
-        },
-        onLongPress: upper == 'FN' ? widget.onLockFn : null,
-        onModifierDown: widget.onModifierDown,
-        onModifierUp: widget.onModifierUp,
+        onTap: widget.inputEnabled
+            ? () {
+                if (upper == 'FN') widget.onToggleFn?.call();
+              }
+            : null,
+        onLongPress: widget.inputEnabled && upper == 'FN'
+            ? widget.onLockFn
+            : null,
+        onModifierDown: widget.inputEnabled ? widget.onModifierDown : null,
+        onModifierUp: widget.inputEnabled ? widget.onModifierUp : null,
         onModifierCancel: widget.onModifierCancel,
         isHeld: isHeld,
         isActive: isAct,

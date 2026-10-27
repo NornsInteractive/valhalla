@@ -11816,6 +11816,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System'**
   String get chatRoleSystem;
+
+  /// chatCommandFilterAll
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get chatCommandFilterAll;
+
+  /// chatCommandFilterFavorites
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get chatCommandFilterFavorites;
+
+  /// chatCommandFilterRecent
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get chatCommandFilterRecent;
+
+  /// chatCommandFavoriteAdd
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favorites'**
+  String get chatCommandFavoriteAdd;
+
+  /// chatCommandFavoriteRemove
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favorites'**
+  String get chatCommandFavoriteRemove;
+
+  /// chatCommandUnavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable in current agent'**
+  String get chatCommandUnavailable;
+
+  /// chatCommandPreferencesSaveFailed
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save command preferences'**
+  String get chatCommandPreferencesSaveFailed;
+
+  /// Tooltip for resetting draft working directory to default
+  ///
+  /// In en, this message translates to:
+  /// **'Reset working directory to default'**
+  String get chatResetDraftWorkingDir;
+
+  /// Button to clear all active modifier keys
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all modifiers'**
+  String get terminalClearAllModifiers;
+
+  /// Title for saved / quick commands dialog in terminal
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Commands'**
+  String get terminalSavedCommandsTitle;
+
+  /// Button label to run selected command in terminal
+  ///
+  /// In en, this message translates to:
+  /// **'Run Command'**
+  String get terminalSavedCommandsRun;
+
+  /// Empty state label for saved commands
+  ///
+  /// In en, this message translates to:
+  /// **'No saved commands'**
+  String get terminalSavedCommandsEmpty;
+
+  /// Label for command preview container
+  ///
+  /// In en, this message translates to:
+  /// **'Command Preview'**
+  String get terminalSavedCommandsPreview;
+
+  /// Warning message when running a multiline command
+  ///
+  /// In en, this message translates to:
+  /// **'This command contains multiple lines. Are you sure you want to run it?'**
+  String get terminalSavedCommandsMultilineWarning;
+
+  /// Help text explaining modifier states and hold to repeat key behavior
+  ///
+  /// In en, this message translates to:
+  /// **'Tap modifier for single-use; long-press to lock. Hold keys to repeat.'**
+  String get terminalModifierHelp;
 }
 
 class _AppLocalizationsDelegate

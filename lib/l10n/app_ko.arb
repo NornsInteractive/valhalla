@@ -2528,6 +2528,13 @@
   "chatRoleUser": "사용자",
   "chatRoleAssistant": "어시스턴트",
   "chatRoleSystem": "시스템",
+  "chatCommandFilterAll": "전체",
+  "chatCommandFilterFavorites": "즐겨찾기",
+  "chatCommandFilterRecent": "최근",
+  "chatCommandFavoriteAdd": "즐겨찾기에 추가",
+  "chatCommandFavoriteRemove": "즐겨찾기에서 제거",
+  "chatCommandUnavailable": "현재 Agent에서 지원하지 않음",
+  "chatCommandPreferencesSaveFailed": "명령어 설정 저장 실패",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "작업 디렉터리를 기본값으로 재설정",
+  "terminalClearAllModifiers": "모든 수정자 키 지우기",
+  "terminalSavedCommandsTitle": "저장된 명령",
+  "terminalSavedCommandsRun": "명령 실행",
+  "terminalSavedCommandsEmpty": "저장된 명령이 없습니다",
+  "terminalSavedCommandsPreview": "명령 미리보기",
+  "terminalSavedCommandsMultilineWarning": "이 명령에는 여러 줄이 포함되어 있습니다. 실행하시겠습니까?",
+  "terminalModifierHelp": "수정자 키를 탭하면 1회 적용, 길게 누르면 고정됩니다. 키를 길게 누르면 반복 입력됩니다."
 }

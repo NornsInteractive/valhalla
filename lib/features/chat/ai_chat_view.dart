@@ -4780,12 +4780,16 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   }
 
   Future<void> _openCommandsAndSkills(BuildContext context) async {
+    final notifier = ref.read(aiChatProvider.notifier);
     final dialogServerId = ref.read(activeServerProvider)?.id;
     final dialogAgentId = ref.read(aiChatProvider).activeAgentProfile?.id;
+    final dialogScopeKey = notifier.commandPreferenceKey;
+    final dialogWorkspaceKey = notifier.workspaceSelectionKey;
+
     if (_isLoadingComposerCommands) return;
     setState(() => _isLoadingComposerCommands = true);
     try {
-      await ref.read(aiChatProvider.notifier).prepareComposerCatalog();
+      await notifier.prepareComposerCatalog();
     } catch (_) {
       // Catalog error handled in state/empty view
     } finally {
@@ -4796,8 +4800,12 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     // mounted/server/agent checks
     final currentServerId = ref.read(activeServerProvider)?.id;
     final currentState = ref.read(aiChatProvider);
+    final currentScopeKey = notifier.commandPreferenceKey;
+    final currentWorkspaceKey = notifier.workspaceSelectionKey;
     if (dialogServerId != currentServerId ||
-        dialogAgentId != currentState.activeAgentProfile?.id) {
+        dialogAgentId != currentState.activeAgentProfile?.id ||
+        dialogScopeKey != currentScopeKey ||
+        dialogWorkspaceKey != currentWorkspaceKey) {
       return;
     }
 
@@ -4807,8 +4815,14 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         builder: (ctx, ref, _) {
           final server = ref.watch(activeServerProvider);
           final chatState = ref.watch(aiChatProvider);
+          final currentNotifier = ref.read(aiChatProvider.notifier);
+          final activeScopeKey = currentNotifier.commandPreferenceKey;
+          final activeWorkspaceKey = currentNotifier.workspaceSelectionKey;
+
           if (server?.id != dialogServerId ||
-              chatState.activeAgentProfile?.id != dialogAgentId) {
+              chatState.activeAgentProfile?.id != dialogAgentId ||
+              activeScopeKey != dialogScopeKey ||
+              activeWorkspaceKey != dialogWorkspaceKey) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (ctx.mounted) Navigator.of(ctx).pop();
             });
@@ -4817,9 +4831,20 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
           final isDraft = chatState.activeSession == null;
           final rawWorkingDir = chatState.draftWorkingDirectory;
+          final prefs = currentNotifier.commandPreferences;
 
           return ChatCommandsSkillsDialog(
             commands: chatState.commands,
+            favorites: prefs.favorites,
+            recent: prefs.recent,
+            onToggleFavorite: (id, favorite) async {
+              if (dialogScopeKey == null) return;
+              await currentNotifier.setCommandFavorite(
+                id,
+                favorite,
+                expectedScopeKey: dialogScopeKey,
+              );
+            },
             errorMessage:
                 chatState.lastErrorCode != null &&
                     chatState.lastErrorCode!.startsWith(
@@ -4871,9 +4896,44 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     if (cmd != null && mounted) {
       final afterServerId = ref.read(activeServerProvider)?.id;
       final afterAgentId = ref.read(aiChatProvider).activeAgentProfile?.id;
-      if (afterServerId != dialogServerId || afterAgentId != dialogAgentId) {
+      final afterScopeKey = notifier.commandPreferenceKey;
+      final afterWorkspaceKey = notifier.workspaceSelectionKey;
+      if (afterServerId != dialogServerId ||
+          afterAgentId != dialogAgentId ||
+          afterScopeKey != dialogScopeKey ||
+          afterWorkspaceKey != dialogWorkspaceKey) {
         return;
       }
+
+      final id = cmd.isSkill ? 'skill:${cmd.name}' : 'command:${cmd.name}';
+      if (dialogScopeKey != null) {
+        try {
+          await notifier.recordCommandUse(id, expectedScopeKey: dialogScopeKey);
+        } on StateError {
+          return;
+        } catch (_) {
+          if (mounted && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(context.l10n.chatCommandPreferencesSaveFailed),
+              ),
+            );
+          }
+        }
+      }
+
+      if (!mounted) return;
+      final postAwaitServerId = ref.read(activeServerProvider)?.id;
+      final postAwaitAgentId = ref.read(aiChatProvider).activeAgentProfile?.id;
+      final postAwaitScopeKey = notifier.commandPreferenceKey;
+      final postAwaitWorkspaceKey = notifier.workspaceSelectionKey;
+      if (postAwaitServerId != dialogServerId ||
+          postAwaitAgentId != dialogAgentId ||
+          postAwaitScopeKey != dialogScopeKey ||
+          postAwaitWorkspaceKey != dialogWorkspaceKey) {
+        return;
+      }
+
       final text = _promptController.text;
       final selection = _promptController.selection;
       final insertion = cmd.insertion;
@@ -4890,6 +4950,33 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       _promptController.selection = TextSelection.collapsed(offset: newOffset);
       ref.read(aiChatProvider.notifier).updateDraftText(newText);
     }
+  }
+
+  void _removeSkillToken(String token) {
+    final current = _promptController.text;
+    String newText;
+    final beforePattern = RegExp(r'\s+' + RegExp.escape(token) + r'(?=\s|$)');
+    final afterPattern = RegExp(
+      r'(?:^|(?<=\s))' + RegExp.escape(token) + r'\s+',
+    );
+    final exactPattern = RegExp(
+      r'(?:^|(?<=\s))' + RegExp.escape(token) + r'(?=\s|$)',
+    );
+    if (beforePattern.hasMatch(current)) {
+      newText = current.replaceFirst(beforePattern, '');
+    } else if (afterPattern.hasMatch(current)) {
+      newText = current.replaceFirst(afterPattern, '');
+    } else {
+      newText = current.replaceFirst(exactPattern, '');
+    }
+    final oldOffset = _promptController.selection.baseOffset;
+    _promptController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(
+        offset: oldOffset.clamp(0, newText.length),
+      ),
+    );
+    ref.read(aiChatProvider.notifier).updateDraftText(newText);
   }
 
   void _showAccountAndQuotaDialog(BuildContext context) {
@@ -6369,6 +6456,25 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                           ),
                         ),
                       ),
+                      if (isDraft && state.draftWorkingDirectory != null) ...[
+                        const SizedBox(width: 4),
+                        IconButton(
+                          key: const Key('chat_clear_draft_working_dir_button'),
+                          tooltip: context.l10n.chatResetDraftWorkingDir,
+                          icon: const Icon(Icons.close, size: 14),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 24,
+                            minHeight: 24,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: (isBusy || !isConnected || isRecovering)
+                              ? null
+                              : () => ref
+                                    .read(aiChatProvider.notifier)
+                                    .clearDraftWorkingDirectory(),
+                        ),
+                      ],
                       const SizedBox(width: 6),
                       IconButton(
                         key: const Key('chat_commands_menu_button'),
@@ -6701,6 +6807,99 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 ],
               ),
             ],
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _promptController,
+              builder: (ctx, value, _) {
+                final tokens = value.text
+                    .split(RegExp(r'\s+'))
+                    .where((t) => t.isNotEmpty)
+                    .toSet();
+                final referencedSkills = state.commands
+                    .where((c) => c.isSkill && tokens.contains(c.name))
+                    .toList();
+                if (referencedSkills.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        for (final skill in referencedSkills)
+                          Container(
+                            key: Key('chat_skill_chip_${skill.name}'),
+                            padding: const EdgeInsets.only(
+                              left: 8,
+                              top: 2,
+                              bottom: 2,
+                              right: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: context.colorScheme.primaryContainer
+                                  .withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(VRadius.pill),
+                              border: Border.all(
+                                color: context.colorScheme.primary.withValues(
+                                  alpha: 0.3,
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.auto_awesome,
+                                  size: 12,
+                                  color: context.colorScheme.primary,
+                                ),
+                                const SizedBox(width: 4),
+                                Tooltip(
+                                  message: skill.description.isNotEmpty
+                                      ? '${skill.name}: ${skill.description}'
+                                      : skill.name,
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 160,
+                                    ),
+                                    child: Text(
+                                      skill.name,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                        color: context
+                                            .colorScheme
+                                            .onPrimaryContainer,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 2),
+                                GestureDetector(
+                                  key: Key('chat_remove_skill_${skill.name}'),
+                                  onTap: isBusy
+                                      ? null
+                                      : () => _removeSkillToken(skill.name),
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 14,
+                                    color: context
+                                        .colorScheme
+                                        .onPrimaryContainer
+                                        .withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 6),
             Row(
               children: [

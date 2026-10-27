@@ -2534,6 +2534,34 @@
     "description": "Role label for assistant in chat"
   },
   "chatRoleSystem": "System",
+  "chatCommandFilterAll": "All",
+  "@chatCommandFilterAll": {
+    "description": "chatCommandFilterAll"
+  },
+  "chatCommandFilterFavorites": "Favorites",
+  "@chatCommandFilterFavorites": {
+    "description": "chatCommandFilterFavorites"
+  },
+  "chatCommandFilterRecent": "Recent",
+  "@chatCommandFilterRecent": {
+    "description": "chatCommandFilterRecent"
+  },
+  "chatCommandFavoriteAdd": "Add to favorites",
+  "@chatCommandFavoriteAdd": {
+    "description": "chatCommandFavoriteAdd"
+  },
+  "chatCommandFavoriteRemove": "Remove from favorites",
+  "@chatCommandFavoriteRemove": {
+    "description": "chatCommandFavoriteRemove"
+  },
+  "chatCommandUnavailable": "Unavailable in current agent",
+  "@chatCommandUnavailable": {
+    "description": "chatCommandUnavailable"
+  },
+  "chatCommandPreferencesSaveFailed": "Failed to save command preferences",
+  "@chatCommandPreferencesSaveFailed": {
+    "description": "chatCommandPreferencesSaveFailed"
+  },
   "@chatRoleSystem": {
     "description": "Role label for system in chat"
   },
@@ -2560,5 +2588,37 @@
         "type": "String"
       }
     }
+  },
+  "chatResetDraftWorkingDir": "Reset working directory to default",
+  "@chatResetDraftWorkingDir": {
+    "description": "Tooltip for resetting draft working directory to default"
+  },
+  "terminalClearAllModifiers": "Clear all modifiers",
+  "@terminalClearAllModifiers": {
+    "description": "Button to clear all active modifier keys"
+  },
+  "terminalSavedCommandsTitle": "Saved Commands",
+  "@terminalSavedCommandsTitle": {
+    "description": "Title for saved / quick commands dialog in terminal"
+  },
+  "terminalSavedCommandsRun": "Run Command",
+  "@terminalSavedCommandsRun": {
+    "description": "Button label to run selected command in terminal"
+  },
+  "terminalSavedCommandsEmpty": "No saved commands",
+  "@terminalSavedCommandsEmpty": {
+    "description": "Empty state label for saved commands"
+  },
+  "terminalSavedCommandsPreview": "Command Preview",
+  "@terminalSavedCommandsPreview": {
+    "description": "Label for command preview container"
+  },
+  "terminalSavedCommandsMultilineWarning": "This command contains multiple lines. Are you sure you want to run it?",
+  "@terminalSavedCommandsMultilineWarning": {
+    "description": "Warning message when running a multiline command"
+  },
+  "terminalModifierHelp": "Tap modifier for single-use; long-press to lock. Hold keys to repeat.",
+  "@terminalModifierHelp": {
+    "description": "Help text explaining modifier states and hold to repeat key behavior"
   }
 }

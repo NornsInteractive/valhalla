@@ -2528,6 +2528,13 @@
   "chatRoleUser": "Người dùng",
   "chatRoleAssistant": "Trợ lý",
   "chatRoleSystem": "Hệ thống",
+  "chatCommandFilterAll": "Tất cả",
+  "chatCommandFilterFavorites": "Yêu thích",
+  "chatCommandFilterRecent": "Gần đây",
+  "chatCommandFavoriteAdd": "Thêm vào yêu thích",
+  "chatCommandFavoriteRemove": "Xóa khỏi yêu thích",
+  "chatCommandUnavailable": "Không được cung cấp bởi Agent hiện tại",
+  "chatCommandPreferencesSaveFailed": "Không thể lưu tùy chọn lệnh",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "Đặt lại thư mục làm việc về mặc định",
+  "terminalClearAllModifiers": "Xóa tất cả các phím bổ trợ",
+  "terminalSavedCommandsTitle": "Lệnh đã lưu",
+  "terminalSavedCommandsRun": "Chạy lệnh",
+  "terminalSavedCommandsEmpty": "Không có lệnh đã lưu",
+  "terminalSavedCommandsPreview": "Xem trước lệnh",
+  "terminalSavedCommandsMultilineWarning": "Lệnh này chứa nhiều dòng. Bạn có chắc chắn muốn chạy không?",
+  "terminalModifierHelp": "Chạm phím bổ trợ để dùng một lần; nhấn giữ để khóa. Giữ phím để lặp lại."
 }

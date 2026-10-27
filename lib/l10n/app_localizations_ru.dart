@@ -6611,4 +6611,53 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'Система';
+
+  @override
+  String get chatCommandFilterAll => 'Все';
+
+  @override
+  String get chatCommandFilterFavorites => 'Избранное';
+
+  @override
+  String get chatCommandFilterRecent => 'Недавние';
+
+  @override
+  String get chatCommandFavoriteAdd => 'Добавить в избранное';
+
+  @override
+  String get chatCommandFavoriteRemove => 'Удалить из избранного';
+
+  @override
+  String get chatCommandUnavailable => 'Не поддерживается текущим агентом';
+
+  @override
+  String get chatCommandPreferencesSaveFailed =>
+      'Не удалось сохранить настройки команд';
+
+  @override
+  String get chatResetDraftWorkingDir =>
+      'Сбросить рабочий каталог на стандартный';
+
+  @override
+  String get terminalClearAllModifiers => 'Сбросить все клавиши-модификаторы';
+
+  @override
+  String get terminalSavedCommandsTitle => 'Сохранённые команды';
+
+  @override
+  String get terminalSavedCommandsRun => 'Выполнить команду';
+
+  @override
+  String get terminalSavedCommandsEmpty => 'Нет сохранённых команд';
+
+  @override
+  String get terminalSavedCommandsPreview => 'Предпросмотр команды';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'Эта команда содержит несколько строк. Вы уверены, что хотите выполнить её?';
+
+  @override
+  String get terminalModifierHelp =>
+      'Нажмите модификатор для однократного ввода; долгое нажатие фиксирует. Удерживайте клавишу для повтора.';
 }

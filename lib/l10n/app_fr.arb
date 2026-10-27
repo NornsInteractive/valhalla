@@ -2528,6 +2528,13 @@
   "chatRoleUser": "Utilisateur",
   "chatRoleAssistant": "Assistant",
   "chatRoleSystem": "Système",
+  "chatCommandFilterAll": "Tout",
+  "chatCommandFilterFavorites": "Favoris",
+  "chatCommandFilterRecent": "Récents",
+  "chatCommandFavoriteAdd": "Ajouter aux favoris",
+  "chatCommandFavoriteRemove": "Supprimer des favoris",
+  "chatCommandUnavailable": "Non fourni par l'agent actuel",
+  "chatCommandPreferencesSaveFailed": "Échec de l'enregistrement des préférences de commande",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "Rétablir le répertoire de travail par défaut",
+  "terminalClearAllModifiers": "Effacer toutes les touches modificatrices",
+  "terminalSavedCommandsTitle": "Commandes enregistrées",
+  "terminalSavedCommandsRun": "Exécuter la commande",
+  "terminalSavedCommandsEmpty": "Aucune commande enregistrée",
+  "terminalSavedCommandsPreview": "Aperçu de la commande",
+  "terminalSavedCommandsMultilineWarning": "Cette commande contient plusieurs lignes. Êtes-vous sûr de vouloir l'exécuter ?",
+  "terminalModifierHelp": "Appuyez sur un modificateur pour un usage unique ; appui long pour verrouiller. Maintenez les touches pour répéter."
 }

@@ -12,8 +12,10 @@ import '../../infrastructure/mosh/mosh_bridge_adapter.dart';
 import '../../infrastructure/mosh/mosh_session_service.dart';
 import '../../infrastructure/terminal/terminal_session_bridge.dart';
 import '../../l10n/app_localizations.dart';
+import '../../widgets/danger_confirm_dialog.dart';
 import 'widgets/shared_terminal_canvas.dart';
 import 'widgets/terminal_history_drawer.dart';
+import 'widgets/terminal_saved_commands_dialog.dart';
 
 class SshTerminalView extends ConsumerStatefulWidget {
   final bool active;
@@ -39,6 +41,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
   final Map<String, GlobalKey> _tabKeys = {};
   final Map<String, GlobalKey<SharedTerminalCanvasState>> _canvasKeys = {};
   bool _hadConnectedOnce = false;
+  int _savedCommandEpoch = 0;
 
   void _scheduleTabScroll(String? tabId) {
     if (tabId == null) return;
@@ -159,6 +162,7 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
   void _syncBridgeListener(TerminalSessionBridge? bridge) {
     if (identical(_lastListenedBridge, bridge)) return;
 
+    _savedCommandEpoch++;
     _sessionRestoredTimer?.cancel();
     _showSessionRestored = false;
     _lastListenedBridge?.stateListenable.removeListener(_onBridgeStateChanged);
@@ -173,6 +177,9 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
     final bridge = _lastListenedBridge;
     if (bridge == null) return;
     final newState = bridge.stateListenable.value;
+    if (newState != TerminalConnectionState.connected) {
+      _savedCommandEpoch++;
+    }
     final isRestoredOrReconnect =
         bridge.sessionIntent == TerminalSessionIntent.restoreExisting ||
         _hadConnectedOnce;
@@ -810,6 +817,9 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
                             GlobalKey.new,
                           ),
                           terminal: originatingTab.terminal,
+                          inputEnabled:
+                              originatingTab.bridge.state ==
+                              TerminalConnectionState.connected,
                           requestKeyboardOnTap: false,
                           pinKeyboardButtonTrailing: true,
                           onKey:
@@ -1074,6 +1084,8 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
                   if (activeTab != null) {
                     _canvasKeys[activeTab.id]?.currentState?.openSearch();
                   }
+                case 'saved_commands':
+                  _handleSavedCommands(context, state);
                 case 'clear':
                   _handleClearScreen(state);
                 case 'reconnect':
@@ -1102,6 +1114,19 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
                     const Icon(Icons.search, size: 18),
                     const SizedBox(width: 8),
                     Expanded(child: Text(context.l10n.terminalSearch)),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                key: const Key('terminal_saved_commands_menu_item'),
+                value: 'saved_commands',
+                child: Row(
+                  children: [
+                    const Icon(Icons.playlist_play, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(context.l10n.terminalSavedCommandsTitle),
+                    ),
                   ],
                 ),
               ),
@@ -1155,6 +1180,66 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
         ],
       ),
     );
+  }
+
+  Future<void> _handleSavedCommands(
+    BuildContext context,
+    SshTerminalState state,
+  ) async {
+    final server = ref.read(activeServerProvider);
+    final activeTab = state.activeTab;
+    if (server == null || activeTab == null) return;
+
+    // Snapshot target environment for TOCTOU verification
+    final snapshotServerKey = server.connectionKey;
+    final snapshotTabId = activeTab.id;
+    final snapshotBridge = activeTab.bridge;
+    final snapshotEpoch = _savedCommandEpoch;
+
+    final result = await TerminalSavedCommandsDialog.show(context);
+    if (result == null || result.command.trim().isEmpty) return;
+
+    if (!mounted || !context.mounted) return;
+
+    // First TOCTOU check right after selection dialog returns
+    final currentServer1 = ref.read(activeServerProvider);
+    final currentTab1 = ref.read(terminalProvider).activeTab;
+    if (_savedCommandEpoch != snapshotEpoch ||
+        currentServer1?.connectionKey != snapshotServerKey ||
+        currentTab1?.id != snapshotTabId ||
+        !identical(currentTab1?.bridge, snapshotBridge) ||
+        currentTab1?.bridge.state != TerminalConnectionState.connected) {
+      return;
+    }
+
+    // Multiline and dangerous command check
+    final hasNewline =
+        result.command.contains('\n') || result.command.contains('\r');
+    final forceShow = result.isDangerous || hasNewline;
+    final confirmed = await DangerConfirmDialog.show(
+      context,
+      command: result.command,
+      forceShow: forceShow,
+      description: hasNewline
+          ? context.l10n.terminalSavedCommandsMultilineWarning
+          : null,
+    );
+    if (!confirmed) return;
+
+    if (!mounted) return;
+
+    // Second TOCTOU check after confirmation dialog returns
+    final currentServer2 = ref.read(activeServerProvider);
+    final currentTab2 = ref.read(terminalProvider).activeTab;
+    if (_savedCommandEpoch != snapshotEpoch ||
+        currentServer2?.connectionKey != snapshotServerKey ||
+        currentTab2?.id != snapshotTabId ||
+        !identical(currentTab2?.bridge, snapshotBridge) ||
+        currentTab2?.bridge.state != TerminalConnectionState.connected) {
+      return;
+    }
+
+    ref.read(terminalProvider.notifier).sendCommand(result.command);
   }
 
   void _showTabOptions(BuildContext context, int index, TerminalTab tab) {

@@ -6657,4 +6657,54 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'Système';
+
+  @override
+  String get chatCommandFilterAll => 'Tout';
+
+  @override
+  String get chatCommandFilterFavorites => 'Favoris';
+
+  @override
+  String get chatCommandFilterRecent => 'Récents';
+
+  @override
+  String get chatCommandFavoriteAdd => 'Ajouter aux favoris';
+
+  @override
+  String get chatCommandFavoriteRemove => 'Supprimer des favoris';
+
+  @override
+  String get chatCommandUnavailable => 'Non fourni par l\'agent actuel';
+
+  @override
+  String get chatCommandPreferencesSaveFailed =>
+      'Échec de l\'enregistrement des préférences de commande';
+
+  @override
+  String get chatResetDraftWorkingDir =>
+      'Rétablir le répertoire de travail par défaut';
+
+  @override
+  String get terminalClearAllModifiers =>
+      'Effacer toutes les touches modificatrices';
+
+  @override
+  String get terminalSavedCommandsTitle => 'Commandes enregistrées';
+
+  @override
+  String get terminalSavedCommandsRun => 'Exécuter la commande';
+
+  @override
+  String get terminalSavedCommandsEmpty => 'Aucune commande enregistrée';
+
+  @override
+  String get terminalSavedCommandsPreview => 'Aperçu de la commande';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'Cette commande contient plusieurs lignes. Êtes-vous sûr de vouloir l\'exécuter ?';
+
+  @override
+  String get terminalModifierHelp =>
+      'Appuyez sur un modificateur pour un usage unique ; appui long pour verrouiller. Maintenez les touches pour répéter.';
 }

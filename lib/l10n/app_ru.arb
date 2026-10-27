@@ -2528,6 +2528,13 @@
   "chatRoleUser": "Пользователь",
   "chatRoleAssistant": "Ассистент",
   "chatRoleSystem": "Система",
+  "chatCommandFilterAll": "Все",
+  "chatCommandFilterFavorites": "Избранное",
+  "chatCommandFilterRecent": "Недавние",
+  "chatCommandFavoriteAdd": "Добавить в избранное",
+  "chatCommandFavoriteRemove": "Удалить из избранного",
+  "chatCommandUnavailable": "Не поддерживается текущим агентом",
+  "chatCommandPreferencesSaveFailed": "Не удалось сохранить настройки команд",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "Сбросить рабочий каталог на стандартный",
+  "terminalClearAllModifiers": "Сбросить все клавиши-модификаторы",
+  "terminalSavedCommandsTitle": "Сохранённые команды",
+  "terminalSavedCommandsRun": "Выполнить команду",
+  "terminalSavedCommandsEmpty": "Нет сохранённых команд",
+  "terminalSavedCommandsPreview": "Предпросмотр команды",
+  "terminalSavedCommandsMultilineWarning": "Эта команда содержит несколько строк. Вы уверены, что хотите выполнить её?",
+  "terminalModifierHelp": "Нажмите модификатор для однократного ввода; долгое нажатие фиксирует. Удерживайте клавишу для повтора."
 }

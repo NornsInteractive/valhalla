@@ -2528,6 +2528,13 @@
   "chatRoleUser": "使用者",
   "chatRoleAssistant": "助理",
   "chatRoleSystem": "系統",
+  "chatCommandFilterAll": "全部",
+  "chatCommandFilterFavorites": "我的最愛",
+  "chatCommandFilterRecent": "最近使用",
+  "chatCommandFavoriteAdd": "加入我的最愛",
+  "chatCommandFavoriteRemove": "從我的最愛移除",
+  "chatCommandUnavailable": "目前Agent未提供",
+  "chatCommandPreferencesSaveFailed": "儲存指令偏好失敗",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "重設工作目錄為預設",
+  "terminalClearAllModifiers": "清除所有修飾鍵",
+  "terminalSavedCommandsTitle": "常用指令",
+  "terminalSavedCommandsRun": "執行指令",
+  "terminalSavedCommandsEmpty": "暫無常用指令",
+  "terminalSavedCommandsPreview": "指令預覽",
+  "terminalSavedCommandsMultilineWarning": "此指令包含多行，確定要在終端機執行嗎？",
+  "terminalModifierHelp": "點按修飾鍵單次生效，長按鎖定；普通鍵長按可重複輸入"
 }

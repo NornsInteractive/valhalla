@@ -6559,4 +6559,52 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'Sistem';
+
+  @override
+  String get chatCommandFilterAll => 'Tümü';
+
+  @override
+  String get chatCommandFilterFavorites => 'Favoriler';
+
+  @override
+  String get chatCommandFilterRecent => 'Son Kullanılanlar';
+
+  @override
+  String get chatCommandFavoriteAdd => 'Favorilere ekle';
+
+  @override
+  String get chatCommandFavoriteRemove => 'Favorilerden kaldır';
+
+  @override
+  String get chatCommandUnavailable => 'Mevcut ajan tarafından sağlanmıyor';
+
+  @override
+  String get chatCommandPreferencesSaveFailed =>
+      'Komut tercihleri kaydedilemedi';
+
+  @override
+  String get chatResetDraftWorkingDir => 'Çalışma dizinini varsayılana sıfırla';
+
+  @override
+  String get terminalClearAllModifiers => 'Tüm niteleyici tuşları temizle';
+
+  @override
+  String get terminalSavedCommandsTitle => 'Kayıtlı Komutlar';
+
+  @override
+  String get terminalSavedCommandsRun => 'Komutu Çalıştır';
+
+  @override
+  String get terminalSavedCommandsEmpty => 'Kayıtlı komut yok';
+
+  @override
+  String get terminalSavedCommandsPreview => 'Komut Önizleme';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'Bu komut birden fazla satır içeriyor. Çalıştırmak istediğinizden emin misiniz?';
+
+  @override
+  String get terminalModifierHelp =>
+      'Niteleyiciyi tek seferlik dokunun; kilitlemek için uzun basın. Tekrarlamak için tuşları basılı tutun.';
 }

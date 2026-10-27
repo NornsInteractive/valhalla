@@ -2528,6 +2528,13 @@
   "chatRoleUser": "ผู้ใช้",
   "chatRoleAssistant": "ผู้ช่วย",
   "chatRoleSystem": "ระบบ",
+  "chatCommandFilterAll": "ทั้งหมด",
+  "chatCommandFilterFavorites": "รายการโปรด",
+  "chatCommandFilterRecent": "ล่าสุด",
+  "chatCommandFavoriteAdd": "เพิ่มในรายการโปรด",
+  "chatCommandFavoriteRemove": "ลบออกจากรายการโปรด",
+  "chatCommandUnavailable": "ไม่มีให้บริการในเอเจนต์ปัจจุบัน",
+  "chatCommandPreferencesSaveFailed": "บันทึกการตั้งค่าคำสั่งไม่สำเร็จ",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "รีเซ็ตไดเรกทอรีทำงานเป็นค่าเริ่มต้น",
+  "terminalClearAllModifiers": "ล้างปุ่มปรับแต่งทั้งหมด",
+  "terminalSavedCommandsTitle": "คำสั่งที่บันทึกไว้",
+  "terminalSavedCommandsRun": "เรียกใช้คำสั่ง",
+  "terminalSavedCommandsEmpty": "ไม่มีคำสั่งที่บันทึกไว้",
+  "terminalSavedCommandsPreview": "ดูตัวอย่างคำสั่ง",
+  "terminalSavedCommandsMultilineWarning": "คำสั่งนี้มีหลายบรรทัด คุณแน่ใจหรือไม่ว่าต้องการเรียกใช้?",
+  "terminalModifierHelp": "แตะปุ่มปรับแต่งเพื่อใช้ครั้งเดียว กดค้างเพื่อล็อก กดคีย์ค้างไว้เพื่อพิมพ์ซ้ำ"
 }

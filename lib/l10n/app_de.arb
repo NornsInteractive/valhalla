@@ -2528,6 +2528,13 @@
   "chatRoleUser": "Benutzer",
   "chatRoleAssistant": "Assistent",
   "chatRoleSystem": "System",
+  "chatCommandFilterAll": "Alle",
+  "chatCommandFilterFavorites": "Favoriten",
+  "chatCommandFilterRecent": "Zuletzt",
+  "chatCommandFavoriteAdd": "Zu Favoriten hinzufügen",
+  "chatCommandFavoriteRemove": "Aus Favoriten entfernen",
+  "chatCommandUnavailable": "Vom aktuellen Agent nicht bereitgestellt",
+  "chatCommandPreferencesSaveFailed": "Befehlseinstellungen konnten nicht gespeichert werden",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "Arbeitsverzeichnis auf Standard zurücksetzen",
+  "terminalClearAllModifiers": "Alle Modifikatortasten löschen",
+  "terminalSavedCommandsTitle": "Gespeicherte Befehle",
+  "terminalSavedCommandsRun": "Befehl ausführen",
+  "terminalSavedCommandsEmpty": "Keine gespeicherten Befehle",
+  "terminalSavedCommandsPreview": "Befehlsvorschau",
+  "terminalSavedCommandsMultilineWarning": "Dieser Befehl enthält mehrere Zeilen. Möchten Sie ihn wirklich ausführen?",
+  "terminalModifierHelp": "Modifikator für Einmalnutzung antippen; gedrückt halten zum Sperren. Tasten zum Wiederholen halten."
 }

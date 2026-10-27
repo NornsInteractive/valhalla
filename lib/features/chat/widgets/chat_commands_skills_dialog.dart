@@ -3,6 +3,28 @@ import '../../../core/design/tokens.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../infrastructure/acp/acp_client_adapter.dart';
 
+enum _CommandFilter { all, favorites, recent }
+
+class _CommandListItem {
+  final String id;
+  final String name;
+  final String? hint;
+  final String description;
+  final bool isSkill;
+  final bool isAvailable;
+  final AcpSlashCommand? command;
+
+  const _CommandListItem({
+    required this.id,
+    required this.name,
+    this.hint,
+    required this.description,
+    required this.isSkill,
+    required this.isAvailable,
+    this.command,
+  });
+}
+
 class ChatCommandsSkillsDialog extends StatefulWidget {
   final List<AcpSlashCommand> commands;
   final VoidCallback? onOpenSettings;
@@ -10,6 +32,9 @@ class ChatCommandsSkillsDialog extends StatefulWidget {
   final Future<List<AcpSlashCommand>?> Function()? onRetry;
   final bool isLoading;
   final String? errorMessage;
+  final Set<String> favorites;
+  final List<String> recent;
+  final Future<void> Function(String id, bool favorite)? onToggleFavorite;
 
   const ChatCommandsSkillsDialog({
     super.key,
@@ -19,6 +44,9 @@ class ChatCommandsSkillsDialog extends StatefulWidget {
     this.onRetry,
     this.isLoading = false,
     this.errorMessage,
+    this.favorites = const <String>{},
+    this.recent = const <String>[],
+    this.onToggleFavorite,
   });
 
   static Future<AcpSlashCommand?> show(
@@ -29,6 +57,9 @@ class ChatCommandsSkillsDialog extends StatefulWidget {
     Future<List<AcpSlashCommand>?> Function()? onRetry,
     bool isLoading = false,
     String? errorMessage,
+    Set<String> favorites = const <String>{},
+    List<String> recent = const <String>[],
+    Future<void> Function(String id, bool favorite)? onToggleFavorite,
   }) {
     return showDialog<AcpSlashCommand?>(
       context: context,
@@ -39,6 +70,9 @@ class ChatCommandsSkillsDialog extends StatefulWidget {
         onRetry: onRetry,
         isLoading: isLoading,
         errorMessage: errorMessage,
+        favorites: favorites,
+        recent: recent,
+        onToggleFavorite: onToggleFavorite,
       ),
     );
   }
@@ -58,11 +92,17 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
   String? _retryError;
   bool _hasRetriedSuccessfully = false;
 
+  late Set<String> _favorites;
+  late List<String> _recent;
+  _CommandFilter _filter = _CommandFilter.all;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _commands = widget.commands;
+    _favorites = widget.favorites.toSet();
+    _recent = widget.recent.toList();
   }
 
   @override
@@ -70,6 +110,12 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
     super.didUpdateWidget(oldWidget);
     if (widget.commands != oldWidget.commands) {
       _commands = widget.commands;
+    }
+    if (widget.favorites != oldWidget.favorites) {
+      _favorites = widget.favorites.toSet();
+    }
+    if (widget.recent != oldWidget.recent) {
+      _recent = widget.recent.toList();
     }
     if (widget.errorMessage != oldWidget.errorMessage) {
       _hasRetriedSuccessfully = false;
@@ -119,36 +165,160 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
     }
   }
 
+  Future<void> _handleToggleFavorite(String id) async {
+    final isFav = _favorites.contains(id);
+    final nextFav = !isFav;
+    setState(() {
+      if (nextFav) {
+        _favorites.add(id);
+      } else {
+        _favorites.remove(id);
+      }
+    });
+
+    if (widget.onToggleFavorite != null) {
+      try {
+        await widget.onToggleFavorite!(id, nextFav);
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          if (isFav) {
+            _favorites.add(id);
+          } else {
+            _favorites.remove(id);
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.chatCommandPreferencesSaveFailed),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  List<_CommandListItem> _getItemsForTab({required bool isSkillTab}) {
+    final prefix = isSkillTab ? 'skill:' : 'command:';
+    final availableForTab = _commands
+        .where((c) => c.isSkill == isSkillTab)
+        .toList();
+    final Map<String, AcpSlashCommand> availableById = {
+      for (final c in availableForTab)
+        (c.isSkill ? 'skill:${c.name}' : 'command:${c.name}'): c,
+    };
+
+    List<_CommandListItem> result;
+    switch (_filter) {
+      case _CommandFilter.all:
+        result = availableForTab.map((c) {
+          final id = c.isSkill ? 'skill:${c.name}' : 'command:${c.name}';
+          return _CommandListItem(
+            id: id,
+            name: c.name,
+            hint: c.hint,
+            description: c.description,
+            isSkill: c.isSkill,
+            isAvailable: true,
+            command: c,
+          );
+        }).toList();
+        break;
+
+      case _CommandFilter.favorites:
+        final matchingFavs = _favorites
+            .where((id) => id.startsWith(prefix))
+            .toList();
+        result = matchingFavs.map((id) {
+          final rawName = id.substring(prefix.length);
+          final available = availableById[id];
+          if (available != null) {
+            return _CommandListItem(
+              id: id,
+              name: available.name,
+              hint: available.hint,
+              description: available.description,
+              isSkill: available.isSkill,
+              isAvailable: true,
+              command: available,
+            );
+          } else {
+            return _CommandListItem(
+              id: id,
+              name: rawName,
+              description: '',
+              isSkill: isSkillTab,
+              isAvailable: false,
+              command: null,
+            );
+          }
+        }).toList();
+        break;
+
+      case _CommandFilter.recent:
+        final matchingRecent = _recent
+            .where((id) => id.startsWith(prefix))
+            .take(10)
+            .toList();
+        result = matchingRecent.map((id) {
+          final rawName = id.substring(prefix.length);
+          final available = availableById[id];
+          if (available != null) {
+            return _CommandListItem(
+              id: id,
+              name: available.name,
+              hint: available.hint,
+              description: available.description,
+              isSkill: available.isSkill,
+              isAvailable: true,
+              command: available,
+            );
+          } else {
+            return _CommandListItem(
+              id: id,
+              name: rawName,
+              description: '',
+              isSkill: isSkillTab,
+              isAvailable: false,
+              command: null,
+            );
+          }
+        }).toList();
+        break;
+    }
+
+    final query = _searchQuery.toLowerCase();
+    if (query.isNotEmpty) {
+      result = result.where((it) {
+        return it.name.toLowerCase().contains(query) ||
+            it.description.toLowerCase().contains(query) ||
+            (it.hint != null && it.hint!.toLowerCase().contains(query));
+      }).toList();
+    }
+
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final all = _commands;
-    final query = _searchQuery.toLowerCase();
+    final commandItems = _getItemsForTab(isSkillTab: false);
+    final skillItems = _getItemsForTab(isSkillTab: true);
 
-    final filtered = query.isEmpty
-        ? all
-        : all
-              .where(
-                (c) =>
-                    c.name.toLowerCase().contains(query) ||
-                    c.description.toLowerCase().contains(query) ||
-                    (c.hint != null && c.hint!.toLowerCase().contains(query)),
-              )
-              .toList();
-
-    final commands = filtered.where((c) => !c.isSkill).toList();
-    final skills = filtered.where((c) => c.isSkill).toList();
+    final favCount = _favorites.length;
+    final recentCount = _recent.take(10).length;
 
     return Dialog(
       key: const Key('chat_commands_skills_dialog'),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480, maxHeight: 520),
+        constraints: const BoxConstraints(maxWidth: 480, maxHeight: 540),
         child: Column(
           children: [
             // Search header
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
+              padding: const EdgeInsets.fromLTRB(16, 12, 12, 4),
               child: Row(
                 children: [
                   Expanded(
@@ -183,6 +353,56 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
               ),
             ),
 
+            // Filter bar: All / Favorites / Recent
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SegmentedButton<_CommandFilter>(
+                  segments: [
+                    ButtonSegment(
+                      value: _CommandFilter.all,
+                      label: Text(
+                        context.l10n.chatCommandFilterAll,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      icon: const Icon(Icons.list, size: 14),
+                    ),
+                    ButtonSegment(
+                      value: _CommandFilter.favorites,
+                      label: Text(
+                        favCount > 0
+                            ? '${context.l10n.chatCommandFilterFavorites} ($favCount)'
+                            : context.l10n.chatCommandFilterFavorites,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      icon: const Icon(Icons.star, size: 14),
+                    ),
+                    ButtonSegment(
+                      value: _CommandFilter.recent,
+                      label: Text(
+                        recentCount > 0
+                            ? '${context.l10n.chatCommandFilterRecent} ($recentCount)'
+                            : context.l10n.chatCommandFilterRecent,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      icon: const Icon(Icons.history, size: 14),
+                    ),
+                  ],
+                  selected: {_filter},
+                  onSelectionChanged: (set) {
+                    setState(() => _filter = set.first);
+                  },
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 2),
+
             // Tab bar: Commands vs Skills
             TabBar(
               controller: _tabController,
@@ -196,7 +416,7 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          '${context.l10n.chatCommandsTab} (${commands.length})',
+                          '${context.l10n.chatCommandsTab} (${commandItems.length})',
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -211,7 +431,7 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          '${context.l10n.chatSkillsTab} (${skills.length})',
+                          '${context.l10n.chatSkillsTab} (${skillItems.length})',
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -227,8 +447,8 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildCommandList(commands, theme, isSkillTab: false),
-                  _buildCommandList(skills, theme, isSkillTab: true),
+                  _buildCommandList(commandItems, theme, isSkillTab: false),
+                  _buildCommandList(skillItems, theme, isSkillTab: true),
                 ],
               ),
             ),
@@ -239,7 +459,7 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
   }
 
   Widget _buildCommandList(
-    List<AcpSlashCommand> list,
+    List<_CommandListItem> list,
     ThemeData theme, {
     required bool isSkillTab,
   }) {
@@ -249,7 +469,7 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
 
     final query = _searchQuery.toLowerCase();
     final clientActions = <_ClientActionItem>[];
-    if (!isSkillTab) {
+    if (!isSkillTab && _filter == _CommandFilter.all) {
       if (widget.onOpenSettings != null) {
         clientActions.add(
           _ClientActionItem(
@@ -285,11 +505,19 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
     final hasErrorBanner = effectiveError != null && effectiveError.isNotEmpty;
 
     if (list.isEmpty && matchingClientActions.isEmpty) {
-      final emptyText = _searchQuery.isNotEmpty
-          ? context.l10n.stateEmpty
-          : (isSkillTab
-                ? context.l10n.chatSkillsEmpty
-                : context.l10n.chatCommandsFirstTurnNote);
+      String emptyText;
+      if (_searchQuery.isNotEmpty) {
+        emptyText = context.l10n.stateEmpty;
+      } else if (_filter == _CommandFilter.favorites) {
+        emptyText = context.l10n.stateEmpty;
+      } else if (_filter == _CommandFilter.recent) {
+        emptyText = context.l10n.stateEmpty;
+      } else {
+        emptyText = isSkillTab
+            ? context.l10n.chatSkillsEmpty
+            : context.l10n.chatCommandsFirstTurnNote;
+      }
+
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -433,7 +661,9 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
       );
     }
 
-    final hasDraftPreview = !isSkillTab && list.any((c) => c.isDraftPreview);
+    final hasDraftPreview =
+        !isSkillTab &&
+        list.any((c) => c.command != null && c.command!.isDraftPreview);
     final totalCount = matchingClientActions.length + list.length;
     final listView = ListView.separated(
       itemCount: totalCount,
@@ -462,28 +692,35 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
             onTap: action.onTap,
           );
         }
-        final cmd = list[index - matchingClientActions.length];
+        final item = list[index - matchingClientActions.length];
+        final isFav = _favorites.contains(item.id);
+
         return ListTile(
           dense: true,
+          enabled: item.isAvailable,
           leading: Icon(
-            cmd.isSkill ? Icons.auto_awesome : Icons.terminal,
+            item.isSkill ? Icons.auto_awesome : Icons.terminal,
             size: 18,
-            color: theme.colorScheme.primary,
+            color: item.isAvailable
+                ? theme.colorScheme.primary
+                : theme.colorScheme.outline.withValues(alpha: 0.5),
           ),
           title: Row(
             children: [
               Flexible(
                 child: Text(
-                  cmd.name,
+                  item.name,
                   style: monoTextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
+                    color: item.isAvailable
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.outline,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (cmd.hint != null && cmd.hint!.isNotEmpty) ...[
+              if (item.hint != null && item.hint!.isNotEmpty) ...[
                 const SizedBox(width: 6),
                 Flexible(
                   child: Container(
@@ -496,7 +733,7 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      cmd.hint!,
+                      item.hint!,
                       style: TextStyle(
                         fontSize: 10,
                         color: theme.colorScheme.outline,
@@ -506,17 +743,63 @@ class _ChatCommandsSkillsDialogState extends State<ChatCommandsSkillsDialog>
                   ),
                 ),
               ],
+              if (!item.isAvailable) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.errorContainer.withValues(
+                      alpha: 0.4,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    context.l10n.chatCommandUnavailable,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-          subtitle: cmd.description.isNotEmpty
-              ? Text(
-                  cmd.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11),
-                )
+          subtitle: item.isAvailable
+              ? (item.description.isNotEmpty
+                    ? Text(
+                        item.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11),
+                      )
+                    : null)
+              : Text(
+                  context.l10n.chatCommandUnavailable,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: theme.colorScheme.outline.withValues(alpha: 0.7),
+                  ),
+                ),
+          trailing: IconButton(
+            icon: Icon(
+              isFav ? Icons.star : Icons.star_border,
+              size: 18,
+              color: isFav ? Colors.amber : theme.colorScheme.outline,
+            ),
+            tooltip: isFav
+                ? context.l10n.chatCommandFavoriteRemove
+                : context.l10n.chatCommandFavoriteAdd,
+            onPressed: () => _handleToggleFavorite(item.id),
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(),
+          ),
+          onTap: item.isAvailable
+              ? () => Navigator.pop(context, item.command)
               : null,
-          onTap: () => Navigator.pop(context, cmd),
         );
       },
     );

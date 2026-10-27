@@ -2528,6 +2528,13 @@
   "chatRoleUser": "Pengguna",
   "chatRoleAssistant": "Asisten",
   "chatRoleSystem": "Sistem",
+  "chatCommandFilterAll": "Semua",
+  "chatCommandFilterFavorites": "Favorit",
+  "chatCommandFilterRecent": "Terbaru",
+  "chatCommandFavoriteAdd": "Tambah ke favorit",
+  "chatCommandFavoriteRemove": "Hapus dari favorit",
+  "chatCommandUnavailable": "Tidak disediakan oleh agen saat ini",
+  "chatCommandPreferencesSaveFailed": "Gagal menyimpan preferensi perintah",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "Atur ulang direktori kerja ke default",
+  "terminalClearAllModifiers": "Hapus semua tombol pengubah",
+  "terminalSavedCommandsTitle": "Perintah tersimpan",
+  "terminalSavedCommandsRun": "Jalankan perintah",
+  "terminalSavedCommandsEmpty": "Tidak ada perintah tersimpan",
+  "terminalSavedCommandsPreview": "Pratinjau perintah",
+  "terminalSavedCommandsMultilineWarning": "Perintah ini berisi beberapa baris. Apakah Anda yakin ingin menjalankannya?",
+  "terminalModifierHelp": "Ketuk pengubah untuk satu kali pakai; tekan lama untuk mengunci. Tahan tombol untuk mengulang."
 }

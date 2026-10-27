@@ -48,6 +48,7 @@ class SharedTerminalCanvas extends ConsumerStatefulWidget {
   final bool autofocus;
   final bool requestKeyboardOnTap;
   final bool pinKeyboardButtonTrailing;
+  final bool inputEnabled;
 
   const SharedTerminalCanvas({
     super.key,
@@ -70,6 +71,7 @@ class SharedTerminalCanvas extends ConsumerStatefulWidget {
     this.autofocus = false,
     this.requestKeyboardOnTap = true,
     this.pinKeyboardButtonTrailing = false,
+    this.inputEnabled = true,
   });
 
   @override
@@ -226,8 +228,9 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
     setState(() {
       _isSearchOpen = true;
     });
+    final targetTerminal = widget.terminal;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
+      if (mounted && _isSearchOpen && widget.terminal == targetTerminal) {
         _searchFocusNode.requestFocus();
       }
     });
@@ -622,6 +625,10 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   @override
   void didUpdateWidget(SharedTerminalCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.inputEnabled && !widget.inputEnabled) {
+      _resetModifiers();
+      setState(() {});
+    }
     if (oldWidget.terminal != widget.terminal) {
       oldWidget.terminal.removeListener(_onTerminalUpdated);
       widget.terminal.addListener(_onTerminalUpdated);
@@ -678,9 +685,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
     _ownedFocusNode?.dispose();
     _ownedFocusNode = null;
     WidgetsBinding.instance.removeObserver(this);
-    for (final timer in _modifierTimers.values) {
-      timer?.cancel();
-    }
+    _resetModifiers();
     _controller.removeListener(_onControllerChanged);
     if (_ownsController) {
       _controller.dispose();
@@ -698,6 +703,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   }
 
   void _handleModifierDown(String modifier) {
+    if (!widget.inputEnabled) return;
     _modifierTimers[modifier]?.cancel();
     _modifierHeld[modifier] = true;
     _modifierChordUsed[modifier] = false;
@@ -739,6 +745,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   }
 
   void _toggleModifier(String modifier) {
+    if (!widget.inputEnabled) return;
     _modifierTimers[modifier]?.cancel();
     setState(() {
       _modifierStates[modifier] =
@@ -749,6 +756,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   }
 
   void _lockModifier(String modifier) {
+    if (!widget.inputEnabled) return;
     _modifierTimers[modifier]?.cancel();
     HapticFeedback.heavyImpact();
     setState(() {
@@ -762,6 +770,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
     bool isAlt = false,
     bool isShift = false,
   }) {
+    if (!widget.inputEnabled) return;
     final effectiveFn =
         _modifierHeld['FN']! ||
         _modifierStates['FN']! != ModifierLockState.inactive;
@@ -981,6 +990,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   }
 
   Future<void> _handlePasteText([String? incomingText]) async {
+    if (!widget.inputEnabled) return;
     // 在任何异步等待前固化原始目标终端与回调
     final targetTerminal = widget.terminal;
     final targetOnPasteText = widget.onPasteText;
@@ -1082,6 +1092,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
   }
 
   void _handleText(String text, {bool appendEnter = false}) {
+    if (!widget.inputEnabled) return;
     if (text.isNotEmpty) {
       if (widget.onPasteText != null) {
         widget.onPasteText!(text);
@@ -1104,6 +1115,7 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
         ? TerminalAccessoryBar(
             onKey: _handleKey,
             onText: _handleText,
+            inputEnabled: widget.inputEnabled,
             onToggleCtrl: () => _toggleModifier('CTRL'),
             onLockCtrl: () => _lockModifier('CTRL'),
             onToggleAlt: () => _toggleModifier('ALT'),
@@ -1116,6 +1128,10 @@ class SharedTerminalCanvasState extends ConsumerState<SharedTerminalCanvas>
             onModifierUp: _handleModifierUp,
             onModifierCancel: _handleModifierCancel,
             onPaste: () => _handlePasteText(),
+            onClearModifiers: () {
+              _resetModifiers();
+              setState(() {});
+            },
             onToggleKeyboard: _toggleKeyboard,
             isKeyboardActive: _isImeOpen,
             onHeightChanged: _onAccessoryHeightChanged,

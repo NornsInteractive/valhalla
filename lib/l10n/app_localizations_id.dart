@@ -6567,4 +6567,53 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'Sistem';
+
+  @override
+  String get chatCommandFilterAll => 'Semua';
+
+  @override
+  String get chatCommandFilterFavorites => 'Favorit';
+
+  @override
+  String get chatCommandFilterRecent => 'Terbaru';
+
+  @override
+  String get chatCommandFavoriteAdd => 'Tambah ke favorit';
+
+  @override
+  String get chatCommandFavoriteRemove => 'Hapus dari favorit';
+
+  @override
+  String get chatCommandUnavailable => 'Tidak disediakan oleh agen saat ini';
+
+  @override
+  String get chatCommandPreferencesSaveFailed =>
+      'Gagal menyimpan preferensi perintah';
+
+  @override
+  String get chatResetDraftWorkingDir =>
+      'Atur ulang direktori kerja ke default';
+
+  @override
+  String get terminalClearAllModifiers => 'Hapus semua tombol pengubah';
+
+  @override
+  String get terminalSavedCommandsTitle => 'Perintah tersimpan';
+
+  @override
+  String get terminalSavedCommandsRun => 'Jalankan perintah';
+
+  @override
+  String get terminalSavedCommandsEmpty => 'Tidak ada perintah tersimpan';
+
+  @override
+  String get terminalSavedCommandsPreview => 'Pratinjau perintah';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'Perintah ini berisi beberapa baris. Apakah Anda yakin ingin menjalankannya?';
+
+  @override
+  String get terminalModifierHelp =>
+      'Ketuk pengubah untuk satu kali pakai; tekan lama untuk mengunci. Tahan tombol untuk mengulang.';
 }

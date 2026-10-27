@@ -2528,6 +2528,13 @@
   "chatRoleUser": "उपयोगकर्ता",
   "chatRoleAssistant": "सहायक",
   "chatRoleSystem": "सिस्टम",
+  "chatCommandFilterAll": "सभी",
+  "chatCommandFilterFavorites": "पसंदीदा",
+  "chatCommandFilterRecent": "हाल ही के",
+  "chatCommandFavoriteAdd": "पसंदीदा में जोड़ें",
+  "chatCommandFavoriteRemove": "पसंदीदा से हटाएं",
+  "chatCommandUnavailable": "वर्तमान एजेंट में उपलब्ध नहीं",
+  "chatCommandPreferencesSaveFailed": "कमांड प्राथमिकताएं सहेजने में विफल",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "कार्य निर्देशिका को डिफ़ॉल्ट पर रीसेट करें",
+  "terminalClearAllModifiers": "सभी संशोधक कुंजियाँ साफ़ करें",
+  "terminalSavedCommandsTitle": "सहेजे गए कमांड",
+  "terminalSavedCommandsRun": "कमांड चलाएँ",
+  "terminalSavedCommandsEmpty": "कोई सहेजा गया कमांड नहीं है",
+  "terminalSavedCommandsPreview": "कमांड पूर्वावलोकन",
+  "terminalSavedCommandsMultilineWarning": "इस कमांड में कई पंक्तियाँ हैं। क्या आप निश्चित रूप से इसे चलाना चाहते हैं?",
+  "terminalModifierHelp": "एकल उपयोग के लिए संशोधक टैप करें; लॉक करने के लिए देर तक दबाएँ। दोहराने के लिए कुंजियों को दबाकर रखें।"
 }

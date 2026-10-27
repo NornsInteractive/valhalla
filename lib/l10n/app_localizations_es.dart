@@ -6641,4 +6641,53 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'Sistema';
+
+  @override
+  String get chatCommandFilterAll => 'Todos';
+
+  @override
+  String get chatCommandFilterFavorites => 'Favoritos';
+
+  @override
+  String get chatCommandFilterRecent => 'Recientes';
+
+  @override
+  String get chatCommandFavoriteAdd => 'Agregar a favoritos';
+
+  @override
+  String get chatCommandFavoriteRemove => 'Quitar de favoritos';
+
+  @override
+  String get chatCommandUnavailable => 'No proporcionado por el agente actual';
+
+  @override
+  String get chatCommandPreferencesSaveFailed =>
+      'Error al guardar preferencias de comandos';
+
+  @override
+  String get chatResetDraftWorkingDir =>
+      'Restablecer directorio de trabajo al predeterminado';
+
+  @override
+  String get terminalClearAllModifiers => 'Borrar todos los modificadores';
+
+  @override
+  String get terminalSavedCommandsTitle => 'Comandos guardados';
+
+  @override
+  String get terminalSavedCommandsRun => 'Ejecutar comando';
+
+  @override
+  String get terminalSavedCommandsEmpty => 'No hay comandos guardados';
+
+  @override
+  String get terminalSavedCommandsPreview => 'Vista previa del comando';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'Este comando contiene varias líneas. ¿Estás seguro de que quieres ejecutarlo?';
+
+  @override
+  String get terminalModifierHelp =>
+      'Toca el modificador para un solo uso; mantén presionado para bloquear. Mantén teclas para repetir.';
 }

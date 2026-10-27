@@ -1337,6 +1337,50 @@ class AiChatNotifier extends Notifier<AiChatState> {
   Future<void> _previewTail = Future.value();
   int _browseEpoch = 0;
 
+  String? get commandPreferenceKey {
+    final profile = state.activeAgentProfile;
+    final serverId = _activeServerId;
+    if (profile == null || serverId == null || profile.serverId != serverId) {
+      return null;
+    }
+    return jsonEncode([serverId, profile.id, chatExecutionKey(profile)]);
+  }
+
+  ({Set<String> favorites, List<String> recent}) get commandPreferences {
+    final key = commandPreferenceKey;
+    if (key == null) {
+      return (favorites: const <String>{}, recent: const <String>[]);
+    }
+    return ref
+        .read(localStorageServiceProvider)
+        .getComposerCommandPreferences(key);
+  }
+
+  Future<void> setCommandFavorite(
+    String id,
+    bool favorite, {
+    required String expectedScopeKey,
+  }) async {
+    if (expectedScopeKey != commandPreferenceKey) {
+      throw StateError('ACP_TARGET_CHANGED');
+    }
+    await ref
+        .read(localStorageServiceProvider)
+        .setComposerCommandFavorite(expectedScopeKey, id, favorite);
+  }
+
+  Future<void> recordCommandUse(
+    String id, {
+    required String expectedScopeKey,
+  }) async {
+    if (expectedScopeKey != commandPreferenceKey) {
+      throw StateError('ACP_TARGET_CHANGED');
+    }
+    await ref
+        .read(localStorageServiceProvider)
+        .recordComposerCommandUse(expectedScopeKey, id);
+  }
+
   Future<ChatSearchPage> searchMessages(
     String query, {
     bool allSessions = false,
@@ -4846,6 +4890,20 @@ class AiChatNotifier extends Notifier<AiChatState> {
       acpSessionRestartDetected: false,
     );
     _restoreDraft();
+  }
+
+  void clearDraftWorkingDirectory() {
+    if (state.isGenerating ||
+        state.isAuthenticating ||
+        state.isLoadingSettings ||
+        state.isApplyingSettings ||
+        state.activeSession != null) {
+      return;
+    }
+    _resetAdapter();
+    _draftWorkingDirectory = null;
+    state = state.copyWith(clearDraftWorkingDirectory: true);
+    _rememberDraft();
   }
 
   void setDraftWorkingDirectory(String path) {

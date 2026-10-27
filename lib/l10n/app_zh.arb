@@ -2528,6 +2528,13 @@
   "chatRoleUser": "用户",
   "chatRoleAssistant": "助手",
   "chatRoleSystem": "系统",
+  "chatCommandFilterAll": "全部",
+  "chatCommandFilterFavorites": "收藏",
+  "chatCommandFilterRecent": "最近",
+  "chatCommandFavoriteAdd": "添加收藏",
+  "chatCommandFavoriteRemove": "取消收藏",
+  "chatCommandUnavailable": "当前Agent未提供",
+  "chatCommandPreferencesSaveFailed": "保存命令偏好失败",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "重置工作目录为默认",
+  "terminalClearAllModifiers": "清除所有修饰键",
+  "terminalSavedCommandsTitle": "常用命令",
+  "terminalSavedCommandsRun": "运行命令",
+  "terminalSavedCommandsEmpty": "暂无常用命令",
+  "terminalSavedCommandsPreview": "命令预览",
+  "terminalSavedCommandsMultilineWarning": "此命令包含多行，确定要在终端执行吗？",
+  "terminalModifierHelp": "点按修饰键单次生效，长按锁定；普通键长按可重复输入"
 }

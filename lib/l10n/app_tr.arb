@@ -2528,6 +2528,13 @@
   "chatRoleUser": "Kullanıcı",
   "chatRoleAssistant": "Asistan",
   "chatRoleSystem": "Sistem",
+  "chatCommandFilterAll": "Tümü",
+  "chatCommandFilterFavorites": "Favoriler",
+  "chatCommandFilterRecent": "Son Kullanılanlar",
+  "chatCommandFavoriteAdd": "Favorilere ekle",
+  "chatCommandFavoriteRemove": "Favorilerden kaldır",
+  "chatCommandUnavailable": "Mevcut ajan tarafından sağlanmıyor",
+  "chatCommandPreferencesSaveFailed": "Komut tercihleri kaydedilemedi",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "Çalışma dizinini varsayılana sıfırla",
+  "terminalClearAllModifiers": "Tüm niteleyici tuşları temizle",
+  "terminalSavedCommandsTitle": "Kayıtlı Komutlar",
+  "terminalSavedCommandsRun": "Komutu Çalıştır",
+  "terminalSavedCommandsEmpty": "Kayıtlı komut yok",
+  "terminalSavedCommandsPreview": "Komut Önizleme",
+  "terminalSavedCommandsMultilineWarning": "Bu komut birden fazla satır içeriyor. Çalıştırmak istediğinizden emin misiniz?",
+  "terminalModifierHelp": "Niteleyiciyi tek seferlik dokunun; kilitlemek için uzun basın. Tekrarlamak için tuşları basılı tutun."
 }

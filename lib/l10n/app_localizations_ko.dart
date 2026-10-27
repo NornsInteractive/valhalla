@@ -6293,4 +6293,51 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatRoleSystem => '시스템';
+
+  @override
+  String get chatCommandFilterAll => '전체';
+
+  @override
+  String get chatCommandFilterFavorites => '즐겨찾기';
+
+  @override
+  String get chatCommandFilterRecent => '최근';
+
+  @override
+  String get chatCommandFavoriteAdd => '즐겨찾기에 추가';
+
+  @override
+  String get chatCommandFavoriteRemove => '즐겨찾기에서 제거';
+
+  @override
+  String get chatCommandUnavailable => '현재 Agent에서 지원하지 않음';
+
+  @override
+  String get chatCommandPreferencesSaveFailed => '명령어 설정 저장 실패';
+
+  @override
+  String get chatResetDraftWorkingDir => '작업 디렉터리를 기본값으로 재설정';
+
+  @override
+  String get terminalClearAllModifiers => '모든 수정자 키 지우기';
+
+  @override
+  String get terminalSavedCommandsTitle => '저장된 명령';
+
+  @override
+  String get terminalSavedCommandsRun => '명령 실행';
+
+  @override
+  String get terminalSavedCommandsEmpty => '저장된 명령이 없습니다';
+
+  @override
+  String get terminalSavedCommandsPreview => '명령 미리보기';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      '이 명령에는 여러 줄이 포함되어 있습니다. 실행하시겠습니까?';
+
+  @override
+  String get terminalModifierHelp =>
+      '수정자 키를 탭하면 1회 적용, 길게 누르면 고정됩니다. 키를 길게 누르면 반복 입력됩니다.';
 }

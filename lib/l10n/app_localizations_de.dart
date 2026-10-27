@@ -6628,4 +6628,54 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'System';
+
+  @override
+  String get chatCommandFilterAll => 'Alle';
+
+  @override
+  String get chatCommandFilterFavorites => 'Favoriten';
+
+  @override
+  String get chatCommandFilterRecent => 'Zuletzt';
+
+  @override
+  String get chatCommandFavoriteAdd => 'Zu Favoriten hinzufügen';
+
+  @override
+  String get chatCommandFavoriteRemove => 'Aus Favoriten entfernen';
+
+  @override
+  String get chatCommandUnavailable =>
+      'Vom aktuellen Agent nicht bereitgestellt';
+
+  @override
+  String get chatCommandPreferencesSaveFailed =>
+      'Befehlseinstellungen konnten nicht gespeichert werden';
+
+  @override
+  String get chatResetDraftWorkingDir =>
+      'Arbeitsverzeichnis auf Standard zurücksetzen';
+
+  @override
+  String get terminalClearAllModifiers => 'Alle Modifikatortasten löschen';
+
+  @override
+  String get terminalSavedCommandsTitle => 'Gespeicherte Befehle';
+
+  @override
+  String get terminalSavedCommandsRun => 'Befehl ausführen';
+
+  @override
+  String get terminalSavedCommandsEmpty => 'Keine gespeicherten Befehle';
+
+  @override
+  String get terminalSavedCommandsPreview => 'Befehlsvorschau';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'Dieser Befehl enthält mehrere Zeilen. Möchten Sie ihn wirklich ausführen?';
+
+  @override
+  String get terminalModifierHelp =>
+      'Modifikator für Einmalnutzung antippen; gedrückt halten zum Sperren. Tasten zum Wiederholen halten.';
 }

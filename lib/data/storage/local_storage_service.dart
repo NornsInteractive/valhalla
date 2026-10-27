@@ -17,6 +17,72 @@ import '../models/terminal_accessory_layout.dart';
 
 /// 本地持久化服务 (SharedPreferences 快速存取)
 class LocalStorageService {
+  ({Set<String> favorites, List<String> recent}) getComposerCommandPreferences(
+    String scopeKey,
+  ) {
+    try {
+      final value =
+          jsonDecode(
+                _prefs.getString('valhalla_composer_v1::$scopeKey') ?? '{}',
+              )
+              as Map<String, dynamic>;
+      return (
+        favorites: Set.unmodifiable(
+          (value['favorites'] as List? ?? []).whereType<String>(),
+        ),
+        recent: List.unmodifiable(
+          (value['recent'] as List? ?? []).whereType<String>().take(10),
+        ),
+      );
+    } catch (_) {
+      return (favorites: const <String>{}, recent: const <String>[]);
+    }
+  }
+
+  Future<void> setComposerCommandFavorite(
+    String scopeKey,
+    String id,
+    bool favorite,
+  ) async {
+    _validateComposerCommandId(id);
+    final current = getComposerCommandPreferences(scopeKey);
+    final favorites = current.favorites.toSet();
+    if (favorite) {
+      favorites.add(id);
+    } else {
+      favorites.remove(id);
+    }
+    if (!await _prefs.setString(
+      'valhalla_composer_v1::$scopeKey',
+      jsonEncode({'favorites': favorites.toList(), 'recent': current.recent}),
+    )) {
+      throw const StorageException('CHAT_COMMAND_PREFERENCES_SAVE_FAILED');
+    }
+  }
+
+  Future<void> recordComposerCommandUse(String scopeKey, String id) async {
+    _validateComposerCommandId(id);
+    final current = getComposerCommandPreferences(scopeKey);
+    final recent = [
+      id,
+      ...current.recent.where((entry) => entry != id),
+    ].take(10).toList();
+    if (!await _prefs.setString(
+      'valhalla_composer_v1::$scopeKey',
+      jsonEncode({'favorites': current.favorites.toList(), 'recent': recent}),
+    )) {
+      throw const StorageException('CHAT_COMMAND_PREFERENCES_SAVE_FAILED');
+    }
+  }
+
+  void _validateComposerCommandId(String id) {
+    if (id.isEmpty ||
+        id.length > 1024 ||
+        RegExp(r'[\x00-\x1f\x7f]').hasMatch(id)) {
+      throw ArgumentError('CHAT_COMMAND_INVALID_ID');
+    }
+  }
+
   Map<String, dynamic> getChatWorkspacePreference(String key) {
     final raw = _prefs.getString('valhalla_chat_workspace_v1::$key');
     if (raw == null) return const {};

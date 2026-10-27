@@ -6515,4 +6515,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'System';
+
+  @override
+  String get chatCommandFilterAll => 'All';
+
+  @override
+  String get chatCommandFilterFavorites => 'Favorites';
+
+  @override
+  String get chatCommandFilterRecent => 'Recent';
+
+  @override
+  String get chatCommandFavoriteAdd => 'Add to favorites';
+
+  @override
+  String get chatCommandFavoriteRemove => 'Remove from favorites';
+
+  @override
+  String get chatCommandUnavailable => 'Unavailable in current agent';
+
+  @override
+  String get chatCommandPreferencesSaveFailed =>
+      'Failed to save command preferences';
+
+  @override
+  String get chatResetDraftWorkingDir => 'Reset working directory to default';
+
+  @override
+  String get terminalClearAllModifiers => 'Clear all modifiers';
+
+  @override
+  String get terminalSavedCommandsTitle => 'Saved Commands';
+
+  @override
+  String get terminalSavedCommandsRun => 'Run Command';
+
+  @override
+  String get terminalSavedCommandsEmpty => 'No saved commands';
+
+  @override
+  String get terminalSavedCommandsPreview => 'Command Preview';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'This command contains multiple lines. Are you sure you want to run it?';
+
+  @override
+  String get terminalModifierHelp =>
+      'Tap modifier for single-use; long-press to lock. Hold keys to repeat.';
 }

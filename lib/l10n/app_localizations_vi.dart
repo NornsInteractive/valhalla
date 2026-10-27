@@ -6554,4 +6554,51 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'Hệ thống';
+
+  @override
+  String get chatCommandFilterAll => 'Tất cả';
+
+  @override
+  String get chatCommandFilterFavorites => 'Yêu thích';
+
+  @override
+  String get chatCommandFilterRecent => 'Gần đây';
+
+  @override
+  String get chatCommandFavoriteAdd => 'Thêm vào yêu thích';
+
+  @override
+  String get chatCommandFavoriteRemove => 'Xóa khỏi yêu thích';
+
+  @override
+  String get chatCommandUnavailable => 'Không được cung cấp bởi Agent hiện tại';
+
+  @override
+  String get chatCommandPreferencesSaveFailed => 'Không thể lưu tùy chọn lệnh';
+
+  @override
+  String get chatResetDraftWorkingDir => 'Đặt lại thư mục làm việc về mặc định';
+
+  @override
+  String get terminalClearAllModifiers => 'Xóa tất cả các phím bổ trợ';
+
+  @override
+  String get terminalSavedCommandsTitle => 'Lệnh đã lưu';
+
+  @override
+  String get terminalSavedCommandsRun => 'Chạy lệnh';
+
+  @override
+  String get terminalSavedCommandsEmpty => 'Không có lệnh đã lưu';
+
+  @override
+  String get terminalSavedCommandsPreview => 'Xem trước lệnh';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'Lệnh này chứa nhiều dòng. Bạn có chắc chắn muốn chạy không?';
+
+  @override
+  String get terminalModifierHelp =>
+      'Chạm phím bổ trợ để dùng một lần; nhấn giữ để khóa. Giữ phím để lặp lại.';
 }

@@ -2528,6 +2528,13 @@
   "chatRoleUser": "Usuário",
   "chatRoleAssistant": "Assistente",
   "chatRoleSystem": "Sistema",
+  "chatCommandFilterAll": "Todos",
+  "chatCommandFilterFavorites": "Favoritos",
+  "chatCommandFilterRecent": "Recentes",
+  "chatCommandFavoriteAdd": "Adicionar aos favoritos",
+  "chatCommandFavoriteRemove": "Remover dos favoritos",
+  "chatCommandUnavailable": "Não fornecido pelo agente atual",
+  "chatCommandPreferencesSaveFailed": "Falha ao salvar preferências de comandos",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "Redefinir diretório de trabalho para o padrão",
+  "terminalClearAllModifiers": "Limpar todas as teclas modificadoras",
+  "terminalSavedCommandsTitle": "Comandos salvos",
+  "terminalSavedCommandsRun": "Executar comando",
+  "terminalSavedCommandsEmpty": "Nenhum comando salvo",
+  "terminalSavedCommandsPreview": "Visualização do comando",
+  "terminalSavedCommandsMultilineWarning": "Este comando contém várias linhas. Tem certeza de que deseja executá-lo?",
+  "terminalModifierHelp": "Toque no modificador para uso único; pressione e segure para travar. Segure as teclas para repetir."
 }

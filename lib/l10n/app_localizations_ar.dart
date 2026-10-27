@@ -6505,4 +6505,51 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'النظام';
+
+  @override
+  String get chatCommandFilterAll => 'الكل';
+
+  @override
+  String get chatCommandFilterFavorites => 'المفضلة';
+
+  @override
+  String get chatCommandFilterRecent => 'الأخيرة';
+
+  @override
+  String get chatCommandFavoriteAdd => 'إضافة إلى المفضلة';
+
+  @override
+  String get chatCommandFavoriteRemove => 'إزالة من المفضلة';
+
+  @override
+  String get chatCommandUnavailable => 'غير متوفر في الوكيل الحالي';
+
+  @override
+  String get chatCommandPreferencesSaveFailed => 'فشل حفظ تفضيلات الأوامر';
+
+  @override
+  String get chatResetDraftWorkingDir => 'إعادة تعيين دليل العمل إلى الافتراضي';
+
+  @override
+  String get terminalClearAllModifiers => 'مسح جميع مفاتيح التعديل';
+
+  @override
+  String get terminalSavedCommandsTitle => 'الأوامر المحفوظة';
+
+  @override
+  String get terminalSavedCommandsRun => 'تشغيل الأمر';
+
+  @override
+  String get terminalSavedCommandsEmpty => 'لا توجد أوامر محفوظة';
+
+  @override
+  String get terminalSavedCommandsPreview => 'معاينة الأمر';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'يحتوي هذا الأمر على أسطر متعددة. هل أنت متأكد أنك تريد تشغيله؟';
+
+  @override
+  String get terminalModifierHelp =>
+      'اضغط على مفتاح التعديل للاستخدام لمرة واحدة؛ اضغط مطولاً للقفل. استمر في الضغط لتكرار الإدخال.';
 }

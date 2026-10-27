@@ -2528,6 +2528,13 @@
   "chatRoleUser": "ユーザー",
   "chatRoleAssistant": "アシスタント",
   "chatRoleSystem": "システム",
+  "chatCommandFilterAll": "すべて",
+  "chatCommandFilterFavorites": "お気に入り",
+  "chatCommandFilterRecent": "最近",
+  "chatCommandFavoriteAdd": "お気に入りに追加",
+  "chatCommandFavoriteRemove": "お気に入りから削除",
+  "chatCommandUnavailable": "現在のAgentでは利用できません",
+  "chatCommandPreferencesSaveFailed": "コマンド設定の保存に失敗しました",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "作業ディレクトリをデフォルトにリセット",
+  "terminalClearAllModifiers": "すべての修飾キーをクリア",
+  "terminalSavedCommandsTitle": "保存されたコマンド",
+  "terminalSavedCommandsRun": "コマンドを実行",
+  "terminalSavedCommandsEmpty": "保存されたコマンドはありません",
+  "terminalSavedCommandsPreview": "コマンドプレビュー",
+  "terminalSavedCommandsMultilineWarning": "このコマンドには複数行が含まれています。実行しますか？",
+  "terminalModifierHelp": "修飾キーをタップで1回有効、長押しでロック。キーを長押しでリピート入力。"
 }

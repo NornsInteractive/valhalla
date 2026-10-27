@@ -2528,6 +2528,13 @@
   "chatRoleUser": "المستخدم",
   "chatRoleAssistant": "المساعد",
   "chatRoleSystem": "النظام",
+  "chatCommandFilterAll": "الكل",
+  "chatCommandFilterFavorites": "المفضلة",
+  "chatCommandFilterRecent": "الأخيرة",
+  "chatCommandFavoriteAdd": "إضافة إلى المفضلة",
+  "chatCommandFavoriteRemove": "إزالة من المفضلة",
+  "chatCommandUnavailable": "غير متوفر في الوكيل الحالي",
+  "chatCommandPreferencesSaveFailed": "فشل حفظ تفضيلات الأوامر",
   "@chatSearchResultsCount": {
     "placeholders": {
       "count": {
@@ -2551,5 +2558,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatResetDraftWorkingDir": "إعادة تعيين دليل العمل إلى الافتراضي",
+  "terminalClearAllModifiers": "مسح جميع مفاتيح التعديل",
+  "terminalSavedCommandsTitle": "الأوامر المحفوظة",
+  "terminalSavedCommandsRun": "تشغيل الأمر",
+  "terminalSavedCommandsEmpty": "لا توجد أوامر محفوظة",
+  "terminalSavedCommandsPreview": "معاينة الأمر",
+  "terminalSavedCommandsMultilineWarning": "يحتوي هذا الأمر على أسطر متعددة. هل أنت متأكد أنك تريد تشغيله؟",
+  "terminalModifierHelp": "اضغط على مفتاح التعديل للاستخدام لمرة واحدة؛ اضغط مطولاً للقفل. استمر في الضغط لتكرار الإدخال."
 }

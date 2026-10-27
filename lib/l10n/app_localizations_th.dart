@@ -6530,4 +6530,52 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get chatRoleSystem => 'ระบบ';
+
+  @override
+  String get chatCommandFilterAll => 'ทั้งหมด';
+
+  @override
+  String get chatCommandFilterFavorites => 'รายการโปรด';
+
+  @override
+  String get chatCommandFilterRecent => 'ล่าสุด';
+
+  @override
+  String get chatCommandFavoriteAdd => 'เพิ่มในรายการโปรด';
+
+  @override
+  String get chatCommandFavoriteRemove => 'ลบออกจากรายการโปรด';
+
+  @override
+  String get chatCommandUnavailable => 'ไม่มีให้บริการในเอเจนต์ปัจจุบัน';
+
+  @override
+  String get chatCommandPreferencesSaveFailed =>
+      'บันทึกการตั้งค่าคำสั่งไม่สำเร็จ';
+
+  @override
+  String get chatResetDraftWorkingDir => 'รีเซ็ตไดเรกทอรีทำงานเป็นค่าเริ่มต้น';
+
+  @override
+  String get terminalClearAllModifiers => 'ล้างปุ่มปรับแต่งทั้งหมด';
+
+  @override
+  String get terminalSavedCommandsTitle => 'คำสั่งที่บันทึกไว้';
+
+  @override
+  String get terminalSavedCommandsRun => 'เรียกใช้คำสั่ง';
+
+  @override
+  String get terminalSavedCommandsEmpty => 'ไม่มีคำสั่งที่บันทึกไว้';
+
+  @override
+  String get terminalSavedCommandsPreview => 'ดูตัวอย่างคำสั่ง';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning =>
+      'คำสั่งนี้มีหลายบรรทัด คุณแน่ใจหรือไม่ว่าต้องการเรียกใช้?';
+
+  @override
+  String get terminalModifierHelp =>
+      'แตะปุ่มปรับแต่งเพื่อใช้ครั้งเดียว กดค้างเพื่อล็อก กดคีย์ค้างไว้เพื่อพิมพ์ซ้ำ';
 }

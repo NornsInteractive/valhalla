@@ -6196,6 +6196,51 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatRoleSystem => '系统';
+
+  @override
+  String get chatCommandFilterAll => '全部';
+
+  @override
+  String get chatCommandFilterFavorites => '收藏';
+
+  @override
+  String get chatCommandFilterRecent => '最近';
+
+  @override
+  String get chatCommandFavoriteAdd => '添加收藏';
+
+  @override
+  String get chatCommandFavoriteRemove => '取消收藏';
+
+  @override
+  String get chatCommandUnavailable => '当前Agent未提供';
+
+  @override
+  String get chatCommandPreferencesSaveFailed => '保存命令偏好失败';
+
+  @override
+  String get chatResetDraftWorkingDir => '重置工作目录为默认';
+
+  @override
+  String get terminalClearAllModifiers => '清除所有修饰键';
+
+  @override
+  String get terminalSavedCommandsTitle => '常用命令';
+
+  @override
+  String get terminalSavedCommandsRun => '运行命令';
+
+  @override
+  String get terminalSavedCommandsEmpty => '暂无常用命令';
+
+  @override
+  String get terminalSavedCommandsPreview => '命令预览';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning => '此命令包含多行，确定要在终端执行吗？';
+
+  @override
+  String get terminalModifierHelp => '点按修饰键单次生效，长按锁定；普通键长按可重复输入';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -12392,4 +12437,49 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get chatRoleSystem => '系統';
+
+  @override
+  String get chatCommandFilterAll => '全部';
+
+  @override
+  String get chatCommandFilterFavorites => '我的最愛';
+
+  @override
+  String get chatCommandFilterRecent => '最近使用';
+
+  @override
+  String get chatCommandFavoriteAdd => '加入我的最愛';
+
+  @override
+  String get chatCommandFavoriteRemove => '從我的最愛移除';
+
+  @override
+  String get chatCommandUnavailable => '目前Agent未提供';
+
+  @override
+  String get chatCommandPreferencesSaveFailed => '儲存指令偏好失敗';
+
+  @override
+  String get chatResetDraftWorkingDir => '重設工作目錄為預設';
+
+  @override
+  String get terminalClearAllModifiers => '清除所有修飾鍵';
+
+  @override
+  String get terminalSavedCommandsTitle => '常用指令';
+
+  @override
+  String get terminalSavedCommandsRun => '執行指令';
+
+  @override
+  String get terminalSavedCommandsEmpty => '暫無常用指令';
+
+  @override
+  String get terminalSavedCommandsPreview => '指令預覽';
+
+  @override
+  String get terminalSavedCommandsMultilineWarning => '此指令包含多行，確定要在終端機執行嗎？';
+
+  @override
+  String get terminalModifierHelp => '點按修飾鍵單次生效，長按鎖定；普通鍵長按可重複輸入';
 }
