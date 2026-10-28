@@ -6601,4 +6601,262 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'Chạm phím bổ trợ để dùng một lần; nhấn giữ để khóa. Giữ phím để lặp lại.';
+
+  @override
+  String get serverWorkspaceTitle => 'Không gian làm việc máy chủ';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'Đồng bộ hóa trạng thái đa thiết bị và bản nháp thiết bị';
+
+  @override
+  String get serverWorkspaceOriginServer => 'Máy chủ đang hoạt động';
+
+  @override
+  String get serverWorkspaceOriginUser => 'Người dùng từ xa';
+
+  @override
+  String get serverWorkspaceNoActiveServer =>
+      'Chưa chọn hoặc chưa kết nối máy chủ đang hoạt động';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'Chỉ cục bộ';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'Đang phát hiện...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'Có thể bật';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'Đang đồng bộ...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'Đã đồng bộ';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'Ngoại tuyến';
+
+  @override
+  String get serverWorkspacePhaseError => 'Lỗi đồng bộ';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'Đồng bộ lần cuối: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'Chưa từng đồng bộ';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count thay đổi đang chờ';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges => 'Tất cả thay đổi đã đồng bộ';
+
+  @override
+  String get serverWorkspaceEnable => 'Bật không gian làm việc máy chủ';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle =>
+      'Bật không gian làm việc máy chủ';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'Bật tính năng này sẽ di chuyển cấu hình cục bộ lên máy chủ. Dữ liệu cục bộ của bạn sẽ được giữ nguyên.';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => 'Xem trước di chuyển';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'Bật và đồng bộ';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate =>
+      'Không có dữ liệu cục bộ cần di chuyển';
+
+  @override
+  String get serverWorkspaceSyncNow => 'Đồng bộ ngay';
+
+  @override
+  String get serverWorkspaceDisable => 'Tắt đồng bộ hóa';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle =>
+      'Tắt không gian làm việc máy chủ';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'Tắt tính năng sẽ dừng đồng bộ trên thiết bị này. Dữ liệu trên máy chủ và cục bộ đều được bảo toàn, không bị xóa.';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'Tắt';
+
+  @override
+  String get serverWorkspacePreferenceSource =>
+      'Dùng làm nguồn tùy chọn ưu tiên';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'Đồng bộ cài đặt ứng dụng từ máy chủ này';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'Xung đột đồng bộ ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'Giữ bản cục bộ';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'Giữ bản máy chủ';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => 'Bản nháp từ thiết bị khác';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'Khôi phục bản nháp';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle =>
+      'Khôi phục bản nháp thiết bị';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'Khôi phục bản nháp này sẽ thay thế văn bản đang nhập trong ô trò chuyện. Bản nháp hiện tại của bạn sẽ được lưu vào danh sách bản nháp từ xa.';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'Khôi phục';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts =>
+      'Không có bản nháp từ thiết bị khác';
+
+  @override
+  String get serverWorkspaceClearCache => 'Xóa bộ nhớ đệm đồng bộ cục bộ';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle =>
+      'Xóa bộ nhớ đệm đồng bộ cục bộ';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'Thao tác này chỉ xóa bộ nhớ đệm và trạng thái đồng bộ trên máy này. Dữ liệu từ xa và cấu hình SSH sẽ không bao giờ bị xóa.';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'Xóa bộ nhớ đệm';
+
+  @override
+  String get serverWorkspaceCacheCleared => 'Đã xóa bộ nhớ đệm đồng bộ cục bộ';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed =>
+      'Khởi tạo môi trường không gian làm việc trên máy chủ thất bại';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'Yêu cầu Python 3.9+ trên máy chủ';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'Đường dẫn không an toàn hoặc quyền truy cập không hợp lệ';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'Phát hiện xung đột dữ liệu trong khi đồng bộ';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'Quyền kiểm soát phiên đang do thiết bị khác nắm giữ';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'Phản hồi từ máy chủ vượt quá giới hạn kích thước';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'Lỗi không gian làm việc ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'Đang kiểm soát';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'Thiết bị này hiện đang kiểm soát phiên';
+
+  @override
+  String get chatWorkspaceReadOnly => 'Chỉ đọc';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'Chỉ đọc ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'Lấy quyền kiểm soát';
+
+  @override
+  String get chatWorkspaceTakeover => 'Tiếp quản';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle =>
+      'Tiếp quản quyền kiểm soát phiên';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'Tiếp quản quyền kiểm soát cho phép thiết bị này gửi tin nhắn và thao tác trên phiên hiện tại. Agent đang chạy sẽ không bị dừng và phiên sẽ không bị chuyển đổi.';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'Xác nhận tiếp quản';
+
+  @override
+  String get chatWorkspaceControlFailed =>
+      'Không thể lấy quyền kiểm soát không gian làm việc';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'Thành phần môi trường thực thi cũ vẫn đang chạy. Vui lòng đợi hoàn tất hoặc dừng trên thiết bị gốc trước khi nâng cấp.';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled =>
+      'Không gian làm việc máy chủ chưa được bật';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'Không thể xóa bộ nhớ đệm khi còn thay đổi đang chờ. Vui lòng đồng bộ trước.';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'Bản nháp tệp';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'Bản nháp trò chuyện';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle =>
+      'Khôi phục bản nháp tệp';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'Khôi phục bản nháp tệp này sẽ tải vào bản nháp trình chỉnh sửa cục bộ. Bản nháp hiện tại của bạn sẽ được lưu trong danh sách bản nháp từ xa.';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'Không gian làm việc máy chủ & Đồng bộ trạng thái';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'Môi trường thực thi riêng của người dùng giữ nguyên đầu ra khi đóng ứng dụng; thông tin đăng nhập và khóa SSH chỉ lưu cục bộ, không bao giờ đồng bộ.';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'Đang di chuyển dữ liệu cũ trong nền. Cấu hình đã đồng bộ trong khi dữ liệu lịch sử tiếp tục hoàn tất trong nền.';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'Tải thêm bản nháp';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'Đang tải bản nháp...';
 }

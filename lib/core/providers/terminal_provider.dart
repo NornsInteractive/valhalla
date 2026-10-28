@@ -9,6 +9,7 @@ import 'package:xterm/xterm.dart';
 
 import '../../data/models/server_profile.dart';
 import '../../data/models/terminal_history.dart';
+import '../../data/workspace/workspace_gateway.dart';
 import '../security/agent_command_validator.dart';
 import '../services/app_diagnostics.dart';
 import '../logging/sanitizer.dart';
@@ -286,6 +287,7 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
 
   final Map<String, _TerminalWorkspace> _workspaces = {};
   _TerminalWorkspace? _current;
+  StreamSubscription<WorkspaceChange>? _workspaceChanges;
   static const _uuid = Uuid();
 
   @override
@@ -296,6 +298,17 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
 
   @override
   SshTerminalState build() {
+    unawaited(_workspaceChanges?.cancel());
+    _workspaceChanges = ref
+        .read(localStorageServiceProvider)
+        .workspaceGateway
+        ?.changes
+        .listen((change) {
+          if (!ref.mounted) return;
+          if (!change.records.any(_isTerminalMetadataRecord)) return;
+          unawaited(_applyWorkspaceMetadata(change.serverId));
+        });
+
     ref.listen(activeServerProvider, (_, next) => _activate(next));
     ref.listen(serverListProvider, (_, next) {
       final ids = next.map((server) => server.id).toSet();
@@ -330,6 +343,7 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       }
     });
     ref.onDispose(() {
+      unawaited(_workspaceChanges?.cancel());
       _historyTimer?.cancel();
       for (final workspace in _workspaces.values) {
         _disposeWorkspace(workspace);
@@ -339,6 +353,79 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     final server = ref.read(activeServerProvider);
     _current = server == null ? null : _workspaceFor(server);
     return _current?.value ?? SshTerminalState(tabs: const []);
+  }
+
+  /// Workspace metadata keys that can change terminal history. Older clients
+  /// still sync the default/socket keys separately from the v2 snapshot.
+  static const _terminalMetadataPrefixes = [
+    'valhalla_terminal_history_',
+    'valhalla_terminal_default_',
+    'valhalla_terminal_sockets_',
+  ];
+
+  static bool _isTerminalMetadataRecord(Map<String, dynamic> record) {
+    final id = record['id'];
+    return record['kind'] == 'config' &&
+        id is String &&
+        _terminalMetadataPrefixes.any(id.startsWith);
+  }
+
+  /// Replace device metadata from the local mirror after a workspace sync.
+  ///
+  /// Tabs and their bridges are never touched here: this is a metadata-only
+  /// refresh and must not open, restore or kill a remote session.
+  Future<void> _applyWorkspaceMetadata(String serverId) async {
+    final workspaces = _workspaces.values
+        .where((workspace) => workspace.server.id == serverId)
+        .toList();
+    for (final workspace in workspaces) {
+      // A local rename/close may still be queued; never read a stale mirror.
+      await workspace.saveTail;
+      if (!_valid(workspace)) continue;
+      try {
+        final snapshot = ref
+            .read(localStorageServiceProvider)
+            .getTerminalHistory(workspace.server.id, workspace.targetKey);
+        final previous = {
+          for (final record in workspace.value.history) record.id: record,
+        };
+        final statuses = <String, TerminalHistoryStatus>{};
+        for (final record in snapshot.records) {
+          final old = previous[record.id];
+          // Only a real, unchanged tmux identity keeps its live status.
+          final sameIdentity =
+              old?.identity != null &&
+              record.identity != null &&
+              old!.identity!.key == record.identity!.key;
+          statuses[record.id] = sameIdentity
+              ? workspace.value.historyStatuses[record.id] ??
+                    TerminalHistoryStatus.unknown
+              : TerminalHistoryStatus.unknown;
+        }
+        workspace.forgottenSessionNames = snapshot.forgottenSessionNames
+            .toSet();
+        workspace.historyReadable = true;
+        _publish(
+          workspace,
+          workspace.value.copyWith(
+            history: snapshot.records,
+            historyStatuses: statuses,
+            defaultHistoryId: snapshot.defaultRecordId,
+            clearDefaultHistory: snapshot.defaultRecordId == null,
+            socketSources: snapshot.socketSources,
+            hiddenRecordIds: snapshot.hiddenRecordIds,
+          ),
+        );
+      } catch (error, stack) {
+        unawaited(
+          AppDiagnostics.instance.record(
+            'terminal.workspace.import',
+            error,
+            stack,
+          ),
+        );
+      }
+    }
   }
 
   _TerminalWorkspace _workspaceFor(ServerProfile server) {

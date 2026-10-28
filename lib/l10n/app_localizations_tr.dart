@@ -6607,4 +6607,259 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'Niteleyiciyi tek seferlik dokunun; kilitlemek için uzun basın. Tekrarlamak için tuşları basılı tutun.';
+
+  @override
+  String get serverWorkspaceTitle => 'Sunucu Çalışma Alanı';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'Çoklu cihaz durum senkronizasyonu ve cihaz taslakları';
+
+  @override
+  String get serverWorkspaceOriginServer => 'Etkin Sunucu';
+
+  @override
+  String get serverWorkspaceOriginUser => 'Uzak Kullanıcı';
+
+  @override
+  String get serverWorkspaceNoActiveServer =>
+      'Seçili veya bağlı etkin sunucu yok';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'Yalnızca Yerel';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'Keşfediliyor...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'Etkinleştirilebilir';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'Senkronize ediliyor...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'Senkronize';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'Çevrimdışı';
+
+  @override
+  String get serverWorkspacePhaseError => 'Senkronizasyon Hatası';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'Son senkronizasyon: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'Hiç senkronize edilmedi';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count değişiklik bekleniyor';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges =>
+      'Tüm değişiklikler senkronize edildi';
+
+  @override
+  String get serverWorkspaceEnable => 'Sunucu Çalışma Alanını Etkinleştir';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle =>
+      'Sunucu Çalışma Alanını Etkinleştir';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'Etkinleştirildiğinde yerel yapılandırmalar sunucuya taşınacaktır. Yerel verileriniz korunacaktır.';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => 'Geçiş Önizlemesi';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'Etkinleştir ve Senkronize Et';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate => 'Geçirilecek yerel veri yok';
+
+  @override
+  String get serverWorkspaceSyncNow => 'Şimdi Senkronize Et';
+
+  @override
+  String get serverWorkspaceDisable => 'Senkronizasyonu Devre Dışı Bırak';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle =>
+      'Sunucu Çalışma Alanını Devre Dışı Bırak';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'Devre dışı bırakıldığında bu cihazdaki senkronizasyon durur. Yerel ve uzak veriler korunur ve silinmez.';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'Devre Dışı Bırak';
+
+  @override
+  String get serverWorkspacePreferenceSource => 'Tercih Kaynağı Olarak Kullan';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'Uygulama düzeyindeki ayarları bu sunucudan senkronize et';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'Senkronizasyon Çakışmaları ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'Yereli Koru';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'Sunucuyu Koru';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => 'Diğer Cihaz Taslakları';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'Taslağı Geri Yükle';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle => 'Taslağı Geri Yükle';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'Bu taslağın geri yüklenmesi geçerli sohbet giriş taslağının yerini alacaktır. Mevcut taslağınız uzak taslak listesinde saklanacaktır.';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'Geri Yükle';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts => 'Diğer cihazlardan taslak yok';
+
+  @override
+  String get serverWorkspaceClearCache =>
+      'Yerel Senkronizasyon Önbelleğini Temizle';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle =>
+      'Yerel Senkronizasyon Önbelleğini Temizle';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'Bu işlem yalnızca yerel senkronizasyon önbelleğini ve durumunu temizler. Uzak veriler ve SSH yapılandırmaları asla silinmez.';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'Önbelleği Temizle';
+
+  @override
+  String get serverWorkspaceCacheCleared =>
+      'Yerel senkronizasyon önbelleği temizlendi';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed =>
+      'Sunucuda çalışma alanı ortamı başlatılamadı';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'Sunucuda Python 3.9+ gereklidir';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'Sunucu çalışma alanı yolu güvensiz veya izinler geçersiz';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'Senkronizasyon sırasında veri çakışması tespit edildi';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'Oturum denetimi başka bir cihaz tarafından tutuluyor';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'Sunucu yanıtı boyut sınırını aştı';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'Çalışma alanı hatası ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'Kontrol Altında';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'Bu cihaz şu anda oturumu kontrol ediyor';
+
+  @override
+  String get chatWorkspaceReadOnly => 'Salt Okunur';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'Salt Okunur ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'Kontrolü Al';
+
+  @override
+  String get chatWorkspaceTakeover => 'Devral';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => 'Oturum Kontrolünü Devral';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'Kontrolü devralmak bu cihazın mesaj göndermesine ve oturumu yönetmesine olanak tanır. Çalışan ajan sonlandırılmaz ve oturum değiştirilmez.';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'Devral';
+
+  @override
+  String get chatWorkspaceControlFailed => 'Çalışma alanı kontrolü alınamadı';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'Daha eski bir çalışma zamanı bileşeni çalışıyor. Lütfen yükseltmeden önce orijinal cihazda tamamlayın veya durdurun.';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled =>
+      'Sunucu çalışma alanı etkin değil';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'Bekleyen değişiklikler varken önbellek temizlenemez. Lütfen önce senkronize edin.';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'Dosya Taslağı';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'Sohbet Taslağı';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle =>
+      'Dosya Taslağını Geri Yükle';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'Bu dosya taslağını geri yüklemek yerel düzenleyici taslaklarına yükleyecektir. Mevcut taslağınız uzak taslak listesinde saklanacaktır.';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'Sunucu Çalışma Alanı ve Durum Senkronizasyonu';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'Kullanıcıya ait çalışma ortamı uygulama kapandığında çıktıyı korur; SSH kimlik bilgileri ve anahtarlar yerel kalır ve asla senkronize edilmez.';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'Eski verilerin arka planda taşınması devam ediyor. Yapılandırma senkronize edildi, geçmiş veriler arka planda tamamlanacak.';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'Daha fazla taslak yükle';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'Taslaklar yükleniyor...';
 }

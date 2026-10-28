@@ -6707,4 +6707,265 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'Appuyez sur un modificateur pour un usage unique ; appui long pour verrouiller. Maintenez les touches pour répéter.';
+
+  @override
+  String get serverWorkspaceTitle => 'Espace de travail du serveur';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'Synchronisation d\'état multi-appareils et brouillons d\'appareils';
+
+  @override
+  String get serverWorkspaceOriginServer => 'Serveur actif';
+
+  @override
+  String get serverWorkspaceOriginUser => 'Utilisateur distant';
+
+  @override
+  String get serverWorkspaceNoActiveServer =>
+      'Aucun serveur actif sélectionné ou connecté';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'Local uniquement';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'Détection en cours...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'Prêt à être activé';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'Synchronisation...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'Synchronisé';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'Hors ligne';
+
+  @override
+  String get serverWorkspacePhaseError => 'Erreur de synchronisation';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'Dernière synchronisation : $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'Jamais synchronisé';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count modifications en attente';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges =>
+      'Toutes les modifications sont synchronisées';
+
+  @override
+  String get serverWorkspaceEnable => 'Activer l\'espace de travail du serveur';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle =>
+      'Activer l\'espace de travail du serveur';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'L\'activation migrera les configurations locales vers le serveur. Vos configurations locales seront conservées.';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => 'Aperçu de migration';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'Activer et synchroniser';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate => 'Aucune donnée locale à migrer';
+
+  @override
+  String get serverWorkspaceSyncNow => 'Synchroniser maintenant';
+
+  @override
+  String get serverWorkspaceDisable => 'Désactiver la synchronisation';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle =>
+      'Désactiver l\'espace de travail du serveur';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'La désactivation arrêtera la synchronisation sur cet appareil. Les données locales et distantes seront conservées et non supprimées.';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'Désactiver';
+
+  @override
+  String get serverWorkspacePreferenceSource =>
+      'Utiliser comme source de préférences';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'Synchroniser les paramètres globaux de l\'application depuis ce serveur';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'Conflits de synchronisation ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'Garder la version locale';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'Garder la version serveur';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle =>
+      'Brouillons d\'autres appareils';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'Restaurer le brouillon';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle =>
+      'Restaurer le brouillon';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'La restauration de ce brouillon remplacera le brouillon de saisie actuel. Votre brouillon actuel sera conservé dans les brouillons distants.';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'Restaurer';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts =>
+      'Aucun brouillon d\'autres appareils';
+
+  @override
+  String get serverWorkspaceClearCache =>
+      'Vider le cache de synchronisation locale';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle =>
+      'Vider le cache de synchronisation locale';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'Cette action videra uniquement le cache et l\'état de synchronisation local. Les données distantes et configurations SSH ne seront jamais supprimées.';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'Vider le cache';
+
+  @override
+  String get serverWorkspaceCacheCleared =>
+      'Cache de synchronisation local vidé';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed =>
+      'L\'initialisation de l\'espace de travail sur le serveur a échoué';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'Python 3.9+ est requis sur le serveur';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'Le chemin de l\'espace de travail est non sécurisé ou les permissions sont invalides';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'Conflit de données détecté lors de la synchronisation';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'Le contrôle de la session est détenu par un autre appareil';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'La réponse du serveur a dépassé la limite de taille';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'Erreur d\'espace de travail ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'Sous contrôle';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'Cet appareil contrôle actuellement la session';
+
+  @override
+  String get chatWorkspaceReadOnly => 'Lecture seule';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'Lecture seule ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'Prendre le contrôle';
+
+  @override
+  String get chatWorkspaceTakeover => 'Prendre le relais';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle =>
+      'Prendre le contrôle de la session';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'Prendre le contrôle permet à cet appareil d\'envoyer des messages et d\'utiliser la session active. L\'agent en cours d\'exécution ne sera pas interrompu et la session ne sera pas modifiée.';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'Confirmer';
+
+  @override
+  String get chatWorkspaceControlFailed =>
+      'Échec de la prise de contrôle de l\'espace de travail';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'Un composant d\'exécution plus ancien est en cours d\'exécution. Veuillez le terminer sur l\'appareil d\'origine avant la mise à niveau.';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled =>
+      'L\'espace de travail du serveur n\'est pas activé';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'Impossible de vider le cache avec des modifications en attente. Veuillez d\'abord synchroniser.';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'Brouillon de fichier';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'Brouillon de chat';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle =>
+      'Restaurer le brouillon de fichier';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'La restauration de ce brouillon de fichier le chargera dans les brouillons de l\'éditeur local. Votre brouillon actuel sera conservé dans les brouillons distants.';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'Espace de travail serveur et synchronisation';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'L\'environnement propre à l\'utilisateur conserve la sortie après fermeture ; les identifiants et clés SSH restent locaux et ne sont jamais synchronisés.';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'Migration des anciennes données en arrière-plan en cours. La configuration est synchronisée tandis que l\'historique se termine en arrière-plan.';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'Charger plus de brouillons';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'Chargement des brouillons...';
 }

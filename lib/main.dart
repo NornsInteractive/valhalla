@@ -17,6 +17,7 @@ import 'core/providers/sftp_provider.dart';
 import 'core/providers/storage_providers.dart';
 import 'core/providers/nas_metadata_provider.dart';
 import 'core/providers/app_update_provider.dart';
+import 'core/providers/remote_workspace_provider.dart';
 import 'core/services/keep_alive_service.dart';
 import 'core/services/app_diagnostics.dart';
 import 'core/logging/sanitizer.dart';
@@ -331,6 +332,7 @@ class _LifecycleHostState extends ConsumerState<_LifecycleHost>
   @override
   Widget build(BuildContext context) {
     ref.watch(appUpdateProvider);
+    ref.watch(remoteWorkspaceProvider);
     return widget.child;
   }
 }

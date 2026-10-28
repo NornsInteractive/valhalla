@@ -6578,4 +6578,257 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'แตะปุ่มปรับแต่งเพื่อใช้ครั้งเดียว กดค้างเพื่อล็อก กดคีย์ค้างไว้เพื่อพิมพ์ซ้ำ';
+
+  @override
+  String get serverWorkspaceTitle => 'พื้นที่ทำงานของเซิร์ฟเวอร์';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'การซิงค์สถานะข้ามอุปกรณ์และแบบร่างของอุปกรณ์';
+
+  @override
+  String get serverWorkspaceOriginServer => 'เซิร์ฟเวอร์ที่ใช้งานอยู่';
+
+  @override
+  String get serverWorkspaceOriginUser => 'ผู้ใช้ระยะไกล';
+
+  @override
+  String get serverWorkspaceNoActiveServer =>
+      'ไม่ได้เลือกหรือเชื่อมต่อเซิร์ฟเวอร์ที่ใช้งานอยู่';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'เฉพาะในเครื่อง';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'กำลังตรวจหา...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'พร้อมเปิดใช้งาน';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'กำลังซิงค์...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'ซิงค์แล้ว';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'ออฟไลน์';
+
+  @override
+  String get serverWorkspacePhaseError => 'ข้อผิดพลาดในการซิงค์';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'ซิงค์ล่าสุด: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'ไม่เคยซิงค์';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return 'มี $count รายการรอการเปลี่ยนแปลง';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges =>
+      'ซิงค์การเปลี่ยนแปลงทั้งหมดแล้ว';
+
+  @override
+  String get serverWorkspaceEnable => 'เปิดใช้งานพื้นที่ทำงานของเซิร์ฟเวอร์';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle =>
+      'เปิดใช้งานพื้นที่ทำงานของเซิร์ฟเวอร์';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'การเปิดใช้งานจะย้ายการกำหนดค่าในเครื่องไปยังเซิร์ฟเวอร์ การกำหนดค่าในเครื่องของคุณจะได้รับการเก็บรักษาไว้';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => 'ตัวอย่างการย้ายข้อมูล';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'เปิดใช้งานและซิงค์';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate => 'ไม่มีข้อมูลในเครื่องที่จะย้าย';
+
+  @override
+  String get serverWorkspaceSyncNow => 'ซิงค์ทันที';
+
+  @override
+  String get serverWorkspaceDisable => 'ปิดใช้งานการซิงค์';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle =>
+      'ปิดใช้งานพื้นที่ทำงานของเซิร์ฟเวอร์';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'การปิดใช้งานจะหยุดการซิงค์บนอุปกรณ์นี้ ข้อมูลในเครื่องและระยะไกลจะถูกเก็บไว้และไม่ถูกลบ';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'ปิดใช้งาน';
+
+  @override
+  String get serverWorkspacePreferenceSource => 'ใช้เป็นแหล่งการตั้งค่าหลัก';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'ซิงค์การตั้งค่าระดับแอปพลิเคชันจากเซิร์ฟเวอร์นี้';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'ข้อขัดแย้งในการซิงค์ ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'เก็บในเครื่อง';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'เก็บเซิร์ฟเวอร์';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => 'แบบร่างจากอุปกรณ์อื่น';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'กู้คืนแบบร่าง';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle => 'กู้คืนแบบร่างอุปกรณ์';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'การกู้คืนแบบร่างนี้จะแทนที่ข้อความร่างในแชทปัจจุบันของคุณ แบบร่างปัจจุบันของคุณจะถูกบันทึกไว้ในรายการแบบร่างระยะไกล';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'กู้คืน';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts => 'ไม่มีแบบร่างจากอุปกรณ์อื่น';
+
+  @override
+  String get serverWorkspaceClearCache => 'ล้างแคชการซิงค์ในเครื่อง';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle =>
+      'ล้างแคชการซิงค์ในเครื่อง';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'การดำเนินการนี้จะล้างเฉพาะแคชการซิงค์และสถานะในเครื่องเท่านั้น จะไม่ลบข้อมูลระยะไกลหรือการเชื่อมต่อ SSH โดยเด็ดขาด';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'ล้างแคช';
+
+  @override
+  String get serverWorkspaceCacheCleared => 'ล้างแคชการซิงค์ในเครื่องแล้ว';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed =>
+      'การเตรียมสภาพแวดล้อมพื้นที่ทำงานบนเซิร์ฟเวอร์ล้มเหลว';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'เซิร์ฟเวอร์ต้องการ Python 3.9 ขึ้นไป';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'เส้นทางพื้นที่ทำงานของเซิร์ฟเวอร์ไม่ปลอดภัยหรือสิทธิ์ไม่ถูกต้อง';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'ตรวจพบข้อขัดแย้งของข้อมูลระหว่างการซิงค์';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'การควบคุมเซสชันถูกครอบครองโดยอุปกรณ์อื่น';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'การตอบกลับของเซิร์ฟเวอร์เกินขีดจำกัดขนาด';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'ข้อผิดพลาดพื้นที่ทำงาน ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'ควบคุมอยู่';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'อุปกรณ์นี้กำลังควบคุมเซสชันอยู่ในขณะนี้';
+
+  @override
+  String get chatWorkspaceReadOnly => 'อ่านอย่างเดียว';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'อ่านอย่างเดียว ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'รับการควบคุม';
+
+  @override
+  String get chatWorkspaceTakeover => 'เข้าควบคุมแทน';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => 'เข้าควบคุมเซสชันแทน';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'การเข้าควบคุมแทนจะช่วยให้อุปกรณ์นี้สามารถส่งข้อความและจัดการเซสชันได้ โดยจะไม่หยุดการทำงานของ Agent และจะไม่เปลี่ยนเซสชัน';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'ยืนยันการเข้าควบคุม';
+
+  @override
+  String get chatWorkspaceControlFailed =>
+      'ไม่สามารถรับการควบคุมพื้นที่ทำงานได้';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'คอมโพเนนต์รันไทม์เวอร์ชันเก่ายังทำงานอยู่ โปรดรอให้เสร็จสิ้นหรือหยุดทำงานบนอุปกรณ์เดิมก่อนอัปเกรด';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled =>
+      'พื้นที่ทำงานของเซิร์ฟเวอร์ยังไม่ได้เปิดใช้งาน';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'ไม่สามารถล้างแคชได้เนื่องจากมีรายการรอการเปลี่ยนแปลง โปรดซิงค์ก่อน';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'แบบร่างไฟล์';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'แบบร่างแชท';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle => 'กู้คืนแบบร่างไฟล์';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'การกู้คืนแบบร่างไฟล์นี้จะโหลดลงในแบบร่างของตัวแก้ไขในเครื่อง แบบร่างปัจจุบันของคุณจะยังคงบันทึกไว้ในรายการระยะไกล';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'พื้นที่ทำงานเซิร์ฟเวอร์และการซิงค์สถานะ';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'สภาพแวดล้อมของผู้ใช้จะคงข้อมูลผลลัพธ์ไว้แม้ปิดแอป โดยข้อมูลรับรอง SSH และคีย์จะถูกเก็บไว้ในเครื่องเท่านั้นและไม่มีการซิงค์';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'กำลังย้ายข้อมูลเดิมในพื้นหลัง การกำหนดค่าได้รับการซิงค์แล้วขณะที่ข้อมูลประวัติกำลังดำเนินการให้เสร็จสิ้นในพื้นหลัง';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'โหลดร่างเพิ่มเติม';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'กำลังโหลดร่าง...';
 }

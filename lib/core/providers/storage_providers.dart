@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/storage/local_storage_service.dart';
@@ -35,7 +36,9 @@ final commandRepositoryProvider = Provider<CommandRepository>((ref) {
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {
   final local = ref.watch(localStorageServiceProvider);
-  return ChatRepository(local);
+  final repository = ChatRepository(local);
+  ref.onDispose(() => unawaited(repository.dispose()));
+  return repository;
 });
 
 final agentRepositoryProvider = Provider<AgentRepository>((ref) {

@@ -6616,4 +6616,261 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'Ketuk pengubah untuk satu kali pakai; tekan lama untuk mengunci. Tahan tombol untuk mengulang.';
+
+  @override
+  String get serverWorkspaceTitle => 'Ruang Kerja Server';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'Sinkronisasi status multi-perangkat dan draf perangkat';
+
+  @override
+  String get serverWorkspaceOriginServer => 'Server Aktif';
+
+  @override
+  String get serverWorkspaceOriginUser => 'Pengguna Jarak Jauh';
+
+  @override
+  String get serverWorkspaceNoActiveServer =>
+      'Tidak ada server aktif yang dipilih atau terhubung';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'Hanya Lokal';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'Mendeteksi...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'Tersedia untuk Diaktifkan';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'Menyinkronkan...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'Tersinkronisasi';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'Offline';
+
+  @override
+  String get serverWorkspacePhaseError => 'Kesalahan Sinkronisasi';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'Terakhir disinkronkan: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'Belum pernah disinkronkan';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count perubahan tertunda';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges => 'Semua perubahan disinkronkan';
+
+  @override
+  String get serverWorkspaceEnable => 'Aktifkan Ruang Kerja Server';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle => 'Aktifkan Ruang Kerja Server';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'Mengaktifkan akan memigrasikan konfigurasi lokal ke server. Konfigurasi lokal Anda akan tetap disimpan.';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => 'Pratinjau Migrasi';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'Aktifkan & Sinkronkan';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate =>
+      'Tidak ada data lokal untuk dimigrasikan';
+
+  @override
+  String get serverWorkspaceSyncNow => 'Sinkronkan Sekarang';
+
+  @override
+  String get serverWorkspaceDisable => 'Nonaktifkan Sinkronisasi';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle =>
+      'Nonaktifkan Ruang Kerja Server';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'Menonaktifkan akan menghentikan sinkronisasi pada perangkat ini. Data lokal dan jarak jauh tetap aman dan tidak dihapus.';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'Nonaktifkan';
+
+  @override
+  String get serverWorkspacePreferenceSource =>
+      'Gunakan sebagai Sumber Preferensi';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'Sinkronkan pengaturan tingkat aplikasi dari server ini';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'Konflik Sinkronisasi ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'Simpan Lokal';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'Simpan Server';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => 'Draf Perangkat Lain';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'Pulihkan Draf';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle =>
+      'Pulihkan Draf Perangkat';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'Memulihkan draf ini akan menggantikan input chat saat ini. Draf Anda saat ini akan disimpan dalam daftar draf jarak jauh.';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'Pulihkan';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts =>
+      'Tidak ada draf dari perangkat lain';
+
+  @override
+  String get serverWorkspaceClearCache => 'Hapus Cache Sinkronisasi Lokal';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle =>
+      'Hapus Cache Sinkronisasi Lokal';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'Ini hanya akan menghapus cache sinkronisasi dan status lokal. Data jarak jauh dan konfigurasi SSH tidak akan pernah dihapus.';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'Hapus Cache';
+
+  @override
+  String get serverWorkspaceCacheCleared =>
+      'Cache sinkronisasi lokal berhasil dihapus';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed =>
+      'Inisialisasi ruang kerja di server gagal';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'Python 3.9+ diperlukan di server';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'Jalur ruang kerja server tidak aman atau izin tidak valid';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'Konflik data terdeteksi saat sinkronisasi';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'Kontrol sesi sedang dipegang oleh perangkat lain';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'Respons server melebihi batas ukuran';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'Kesalahan ruang kerja ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'Dalam Kendali';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'Perangkat ini saat ini mengendalikan sesi';
+
+  @override
+  String get chatWorkspaceReadOnly => 'Hanya-Baca';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'Hanya-Baca ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'Ambil Kendali';
+
+  @override
+  String get chatWorkspaceTakeover => 'Ambil Alih';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => 'Ambil Alih Kendali Sesi';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'Mengambil alih kendali memungkinkan perangkat ini mengirim pesan dan mengoperasikan sesi. Agen yang sedang berjalan tidak akan dihentikan dan sesi tidak akan berganti.';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'Ambil Alih';
+
+  @override
+  String get chatWorkspaceControlFailed =>
+      'Gagal memperoleh kendali ruang kerja';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'Komponen runtime lama sedang berjalan. Harap selesaikan atau hentikan di perangkat asal sebelum meningkatkan.';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled =>
+      'Ruang kerja server belum diaktifkan';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'Tidak dapat menghapus cache saat ada perubahan tertunda. Harap sinkronkan terlebih dahulu.';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'Draf Berkas';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'Draf Obrolan';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle =>
+      'Pulihkan Draf Berkas';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'Memulihkan draf berkas ini akan memuatnya ke draf editor lokal. Draf Anda saat ini akan tetap tersimpan di draf jarak jauh.';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'Ruang Kerja Server & Sinkronisasi Status';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'Runtime milik pengguna mempertahankan output saat aplikasi ditutup; kredensial dan kunci SSH tetap di perangkat dan tidak pernah disinkronkan.';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'Migrasi data lama sedang berlangsung di latar belakang. Konfigurasi telah disinkronkan dan data riwayat akan diselesaikan di latar belakang.';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'Muat lebih banyak draf';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'Memuat draf...';
 }

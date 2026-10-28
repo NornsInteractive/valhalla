@@ -15,6 +15,8 @@ class AcpRuntimeStatus {
   final bool alive;
   final bool childAlive;
   final int protocolVersion;
+  final int workspaceProtocol;
+  final String? workspaceSessionId;
   final String? remoteSessionId;
   final String? turnId;
   const AcpRuntimeStatus({
@@ -23,6 +25,8 @@ class AcpRuntimeStatus {
     this.alive = false,
     this.childAlive = false,
     this.protocolVersion = 1,
+    this.workspaceProtocol = 0,
+    this.workspaceSessionId,
     this.remoteSessionId,
     this.turnId,
   });
@@ -46,6 +50,8 @@ class AcpRuntimeStatus {
         alive: value['alive'] == true,
         childAlive: value['childAlive'] == true,
         protocolVersion: (value['protocolVersion'] as num?)?.toInt() ?? 1,
+        workspaceProtocol: (value['workspaceProtocol'] as num?)?.toInt() ?? 0,
+        workspaceSessionId: value['workspaceSessionId'] as String?,
         remoteSessionId: value['sessionId'] as String?,
         turnId: value['turnId'] as String?,
       );
@@ -182,6 +188,32 @@ print(json.dumps({'script':str(p),'python':sys.executable,'version':2}))
     required String runtimeKey,
     required String action,
     bool stopRunning = false,
+  }) => _manage(
+    ssh,
+    runtimeKey: runtimeKey,
+    action: action,
+    stopRunning: stopRunning,
+  );
+  static Future<void> manageShared(
+    SSHClient ssh, {
+    required String runtimeKey,
+    required String action,
+    required Map<String, dynamic> workspace,
+    bool stopRunning = false,
+  }) => _manage(
+    ssh,
+    runtimeKey: runtimeKey,
+    action: action,
+    stopRunning: stopRunning,
+    workspace: workspace,
+  );
+
+  static Future<void> _manage(
+    SSHClient ssh, {
+    required String runtimeKey,
+    required String action,
+    bool stopRunning = false,
+    Map<String, dynamic>? workspace,
   }) async {
     if (!const {'retire', 'purge'}.contains(action)) {
       throw ArgumentError('ACP_RUNTIME_COMMAND_INVALID');
@@ -191,6 +223,7 @@ print(json.dumps({'script':str(p),'python':sys.executable,'version':2}))
       await install(ssh),
       'manage',
       _argument({
+        ...?workspace,
         'key': runtimeKey,
         'action': action,
         'stopRunning': stopRunning,
@@ -205,6 +238,47 @@ print(json.dumps({'script':str(p),'python':sys.executable,'version':2}))
     required int afterSequence,
     String? remoteSessionId,
     String? initialModelId,
+  }) => _open(
+    ssh,
+    profile,
+    runtimeKey: runtimeKey,
+    afterSequence: afterSequence,
+    remoteSessionId: remoteSessionId,
+    initialModelId: initialModelId,
+  );
+
+  static Future<AcpSshTransport> openShared(
+    SSHClient ssh,
+    AgentProfile profile, {
+    required String runtimeKey,
+    required int afterSequence,
+    required Map<String, dynamic> workspace,
+    String? remoteSessionId,
+    String? initialModelId,
+    String? workingDirectory,
+    String? title,
+  }) => _open(
+    ssh,
+    profile,
+    runtimeKey: runtimeKey,
+    afterSequence: afterSequence,
+    remoteSessionId: remoteSessionId,
+    initialModelId: initialModelId,
+    workspace: workspace,
+    workingDirectory: workingDirectory,
+    title: title,
+  );
+
+  static Future<AcpSshTransport> _open(
+    SSHClient ssh,
+    AgentProfile profile, {
+    required String runtimeKey,
+    required int afterSequence,
+    String? remoteSessionId,
+    String? initialModelId,
+    Map<String, dynamic>? workspace,
+    String? workingDirectory,
+    String? title,
   }) async {
     final installed = await install(ssh);
     final status = AcpRuntimeStatus.fromJson(
@@ -218,6 +292,20 @@ print(json.dumps({'script':str(p),'python':sys.executable,'version':2}))
             as Map,
       ),
     );
+    if (workspace != null &&
+        workspace['controlToken'] == null &&
+        !status.alive) {
+      throw StateError('WORKSPACE_RUNTIME_NOT_RUNNING');
+    }
+    // A read-only observer may attach to a live legacy runtime: it receives the
+    // raw stream and the transport refuses every write.  Only a writer needs
+    // workspaceProtocol 1, and upgrading it must wait for an idle runtime.
+    if (workspace != null &&
+        workspace['controlToken'] != null &&
+        status.alive &&
+        status.workspaceProtocol < 1) {
+      throw StateError('WORKSPACE_RUNTIME_UPGRADE_REQUIRED');
+    }
     if (status.canRecover) throw AcpRuntimeUnavailableException(status);
     if (!status.alive && status.isBusy) {
       throw StateError('ACP_RUNTIME_UNFINISHED_PROCESS_EXITED');
@@ -225,10 +313,17 @@ print(json.dumps({'script':str(p),'python':sys.executable,'version':2}))
     final config = base64Encode(
       utf8.encode(
         jsonEncode({
+          ...?workspace,
+          'agentId': profile.id,
           'key': runtimeKey,
-          'serverScope': identity(profile.serverId),
+          'serverScope': identity(
+            workspace?['workspaceId'] as String? ?? profile.serverId,
+          ),
           'afterSeq': afterSequence,
           'sessionId': remoteSessionId,
+          'chatSessionId': workspace?['workspaceSessionId'],
+          'workingDirectory': workingDirectory,
+          'title': title,
           'targetIdentity': identity(
             jsonEncode([
               profile.acpCommand,
@@ -253,6 +348,7 @@ print(json.dumps({'script':str(p),'python':sys.executable,'version':2}))
     );
     final transport = AcpSshTransport(
       session,
+      workspaceReadOnly: workspace != null && workspace['controlToken'] == null,
       runtimeKey: runtimeKey,
       afterSequence: afterSequence,
     );

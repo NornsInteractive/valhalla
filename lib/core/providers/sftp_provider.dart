@@ -22,6 +22,8 @@ import 'infrastructure_providers.dart';
 import 'storage_providers.dart';
 import 'file_bookmarks_provider.dart';
 import '../../data/models/server_profile.dart';
+import '../../data/workspace/workspace_file_drafts.dart';
+import '../../data/workspace/workspace_gateway.dart';
 
 final downloadPlatformServiceProvider = Provider<DownloadPlatformService>(
   (ref) => DownloadPlatformService(),
@@ -529,6 +531,15 @@ class SftpNotifier extends Notifier<SftpState> {
   int _editorEpoch = 0;
   ServerProfile? _boundServer;
 
+  /// Origin captured when the editor opens. Remote draft work must keep using
+  /// this server even if the active connection changes while an await is in
+  /// flight.
+  ServerProfile? _editorServer;
+  String? _editorPath;
+  WorkspaceGateway? _draftGateway;
+  WorkspaceFileDrafts? _fileDrafts;
+  Future<void> _remoteDraftStaged = Future<void>.value();
+
   bool _currentSource(int epoch) => ref.mounted && epoch == _sourceEpoch;
 
   late SftpOperations _service;
@@ -539,6 +550,33 @@ class SftpNotifier extends Notifier<SftpState> {
   String? _failedDraftKey;
   String? _editorDraftKey;
   bool _editorDraftConflict = false;
+
+  /// Resolves the workspace helper from the currently attached gateway.
+  ///
+  /// The gateway is attached after startup, so this cannot be built once in
+  /// [build]. When no workspace gateway exists the editor stays local-only.
+  WorkspaceFileDrafts? _draftHelper() {
+    final gateway = ref.read(localStorageServiceProvider).workspaceGateway;
+    if (gateway == null) {
+      _fileDrafts?.dispose();
+      _fileDrafts = null;
+      _draftGateway = null;
+      return null;
+    }
+    if (_fileDrafts == null || !identical(gateway, _draftGateway)) {
+      _fileDrafts?.dispose();
+      _fileDrafts = WorkspaceFileDrafts(
+        gateway: gateway,
+        secureStorage: ref.read(secureStorageServiceProvider),
+        onDiagnostic: (scope, error, stack) {
+          unawaited(AppDiagnostics.instance.record(scope, error, stack));
+        },
+      );
+      _draftGateway = gateway;
+    }
+    return _fileDrafts;
+  }
+
   int get editorToken => _editorEpoch;
   String? get editorOriginalContent => _editorSnapshot?.content;
 
@@ -625,6 +663,9 @@ class SftpNotifier extends Notifier<SftpState> {
       }
     }
     _boundServer = activeServer;
+    // Re-arm the workspace draft helper after a rebuild: the previous helper's
+    // gateway-tick subscription was cancelled by the rebuild's onDispose.
+    _draftHelper();
     if (!sameTarget) {
       _editorEpoch++;
       _editorSnapshot = null;
@@ -681,6 +722,11 @@ class SftpNotifier extends Notifier<SftpState> {
       final pending = _pendingEditorDraft;
       _pendingEditorDraft = null;
       if (pending != null) unawaited(pending());
+      _fileDrafts?.dispose();
+      _fileDrafts = null;
+      _draftGateway = null;
+      _editorServer = null;
+      _editorPath = null;
       for (final handle in _handles.values) {
         unawaited(
           handle.abort().catchError((Object error, StackTrace stack) {
@@ -2154,15 +2200,24 @@ class SftpNotifier extends Notifier<SftpState> {
   Future<void> openFileForEditing(SftpFileItem item) async {
     final sourceEpoch = _sourceEpoch;
     final editorEpoch = ++_editorEpoch;
+    // Capture the origin before any await: a later server switch must never
+    // redirect this editor or its draft to another connection.
+    final server = _boundServer;
     _editorSnapshot = null;
     _editorDraftKey = null;
     _editorDraftConflict = false;
+    _editorServer = server;
+    _editorPath = item.path;
     state = state.copyWith(clearEditor: true, isLoading: false);
     if (item.linkTargetErrorCode != null) {
+      _editorServer = null;
+      _editorPath = null;
       state = state.copyWith(errorMessage: item.linkTargetErrorCode);
       return;
     }
     if (item.sizeBytes > SftpClientService.maxPreviewBytes) {
+      _editorServer = null;
+      _editorPath = null;
       state = state.copyWith(
         errorMessage: previewTooLargeCode,
         isLoading: false,
@@ -2170,6 +2225,8 @@ class SftpNotifier extends Notifier<SftpState> {
       return;
     }
     if (!canPreview(item)) {
+      _editorServer = null;
+      _editorPath = null;
       state = state.copyWith(errorMessage: previewUnsupportedCode);
       return;
     }
@@ -2182,7 +2239,6 @@ class SftpNotifier extends Notifier<SftpState> {
       final content =
           snapshot?.content ?? await service.readFileContent(item.path);
       if (!_currentSource(sourceEpoch) || editorEpoch != _editorEpoch) return;
-      final server = _boundServer;
       Map<String, dynamic>? draft;
       final draftKey = server == null ? null : _fileDraftKey(server, item.path);
       if (draftKey != null) {
@@ -2194,6 +2250,34 @@ class SftpNotifier extends Notifier<SftpState> {
           unawaited(
             AppDiagnostics.instance.record('sftp.draft.restore', error, stack),
           );
+        }
+      }
+      // Lazy own-device hydration: only this device's remote draft is ever
+      // considered. Foreign drafts require an explicit user restore.
+      if (draft == null && server != null) {
+        final helper = _draftHelper();
+        if (helper != null) {
+          try {
+            final own = await helper.findOwnDraft(server, item.path);
+            if (!_currentSource(sourceEpoch) || editorEpoch != _editorEpoch) {
+              return;
+            }
+            if (own != null) {
+              final restored = await helper.restore(server, own);
+              if (!_currentSource(sourceEpoch) || editorEpoch != _editorEpoch) {
+                return;
+              }
+              draft = {'content': restored.content, 'digest': restored.digest};
+            }
+          } catch (error, stack) {
+            unawaited(
+              AppDiagnostics.instance.record(
+                'sftp.draft.remote.restore',
+                error,
+                stack,
+              ),
+            );
+          }
         }
       }
       if (!_currentSource(sourceEpoch) || editorEpoch != _editorEpoch) return;
@@ -2209,6 +2293,8 @@ class SftpNotifier extends Notifier<SftpState> {
       );
     } catch (e) {
       if (!_currentSource(sourceEpoch) || editorEpoch != _editorEpoch) return;
+      _editorServer = null;
+      _editorPath = null;
       state = state.copyWith(
         isLoading: false,
         errorMessage: e is SFTPException && e.message == previewTooLargeCode
@@ -2226,6 +2312,8 @@ class SftpNotifier extends Notifier<SftpState> {
     if (pending != null) unawaited(pending());
     _editorEpoch++;
     _editorSnapshot = null;
+    _editorServer = null;
+    _editorPath = null;
     state = state.copyWith(
       clearEditor: true,
       clearError: true,
@@ -2247,6 +2335,9 @@ class SftpNotifier extends Notifier<SftpState> {
     }
     final editorEpoch = _editorEpoch;
     final storage = ref.read(secureStorageServiceProvider);
+    final server = _editorServer;
+    final path = _editorPath;
+    final helper = _draftHelper();
     _editorDraftTimer?.cancel();
     _pendingEditorDraft = () =>
         _editorDraftWrites = _editorDraftWrites.then((_) async {
@@ -2261,6 +2352,43 @@ class SftpNotifier extends Notifier<SftpState> {
                 key == _editorDraftKey &&
                 state.errorMessage == 'SFTP_DRAFT_SAVE_FAILED') {
               state = state.copyWith(clearError: true);
+            }
+            // The encrypted local save is authoritative. Remote staging is
+            // durable but never blocks the editor; a failed upload stays in
+            // the bounded outbox and is retried on the gateway tick.
+            if (server != null && path != null && helper != null) {
+              final staged = helper.stageSave(
+                server: server,
+                path: path,
+                content: content,
+                digest: original.digest,
+              );
+              _remoteDraftStaged = _remoteDraftStaged
+                  .then((_) => staged)
+                  .catchError((Object error, StackTrace stack) {
+                    unawaited(
+                      AppDiagnostics.instance.record(
+                        'sftp.draft.remote.intent',
+                        error,
+                        stack,
+                      ),
+                    );
+                  });
+              unawaited(
+                staged.then((_) => helper.flushPending(server.id)).catchError((
+                  Object error,
+                  StackTrace stack,
+                ) {
+                  unawaited(
+                    AppDiagnostics.instance.record(
+                      'sftp.draft.remote',
+                      error,
+                      stack,
+                    ),
+                  );
+                  return false;
+                }),
+              );
             }
           } catch (error, stack) {
             _failedDraftKey = key;
@@ -2296,6 +2424,8 @@ class SftpNotifier extends Notifier<SftpState> {
     _pendingEditorDraft = null;
     if (pending != null) await pending();
     await _editorDraftWrites;
+    // Wait only for the durable intent, never for the remote upload.
+    await _remoteDraftStaged;
     if (!ref.mounted || editorToken != _editorEpoch) {
       throw const SFTPException('SFTP_EDITOR_EXPIRED');
     }
@@ -2311,6 +2441,9 @@ class SftpNotifier extends Notifier<SftpState> {
     final token = editorToken ?? _editorEpoch;
     final key = draftKey ?? _editorDraftKey;
     final storage = ref.read(secureStorageServiceProvider);
+    final server = _editorServer;
+    final path = _editorPath;
+    final helper = _draftHelper();
     if (key == _editorDraftKey) {
       _editorDraftTimer?.cancel();
       _pendingEditorDraft = null;
@@ -2328,6 +2461,46 @@ class SftpNotifier extends Notifier<SftpState> {
       );
     });
     await deletion;
+    // Remote deletion is staged after every earlier save intent, so a pending
+    // write can never resurrect a draft the user just discarded. The network
+    // drain stays off the local path.
+    if (server != null && path != null && helper != null) {
+      try {
+        final staged = helper.stageDelete(server: server, path: path);
+        _remoteDraftStaged = _remoteDraftStaged.then((_) => staged).catchError((
+          Object error,
+          StackTrace stack,
+        ) {
+          unawaited(
+            AppDiagnostics.instance.record(
+              'sftp.draft.remote.intent',
+              error,
+              stack,
+            ),
+          );
+        });
+        await staged;
+        unawaited(
+          helper.flushPending(server.id).catchError((
+            Object error,
+            StackTrace stack,
+          ) {
+            unawaited(
+              AppDiagnostics.instance.record('sftp.draft.remote', error, stack),
+            );
+            return false;
+          }),
+        );
+      } catch (error, stack) {
+        unawaited(
+          AppDiagnostics.instance.record(
+            'sftp.draft.remote.intent',
+            error,
+            stack,
+          ),
+        );
+      }
+    }
     if (token == _editorEpoch && key == _editorDraftKey) {
       _editorDraftConflict = false;
     }

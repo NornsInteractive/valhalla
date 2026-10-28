@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "Keine gespeicherten Befehle",
   "terminalSavedCommandsPreview": "Befehlsvorschau",
   "terminalSavedCommandsMultilineWarning": "Dieser Befehl enthält mehrere Zeilen. Möchten Sie ihn wirklich ausführen?",
-  "terminalModifierHelp": "Modifikator für Einmalnutzung antippen; gedrückt halten zum Sperren. Tasten zum Wiederholen halten."
+  "terminalModifierHelp": "Modifikator für Einmalnutzung antippen; gedrückt halten zum Sperren. Tasten zum Wiederholen halten.",
+  "serverWorkspaceTitle": "Server-Arbeitsbereich",
+  "serverWorkspaceSubtitle": "Geräteübergreifende Zustandssynchronisierung und Geräteentwürfe",
+  "serverWorkspaceOriginServer": "Aktiver Server",
+  "serverWorkspaceOriginUser": "Remote-Benutzer",
+  "serverWorkspaceNoActiveServer": "Kein aktiver Server ausgewählt oder verbunden",
+  "serverWorkspacePhaseLocal": "Nur lokal",
+  "serverWorkspacePhaseDiscovering": "Erkennen...",
+  "serverWorkspacePhaseAvailable": "Aktivierbar",
+  "serverWorkspacePhaseSyncing": "Synchronisieren...",
+  "serverWorkspacePhaseReady": "Synchronisiert",
+  "serverWorkspacePhaseOffline": "Offline",
+  "serverWorkspacePhaseError": "Synchronisierungsfehler",
+  "serverWorkspaceLastSynced": "Zuletzt synchronisiert: {time}",
+  "serverWorkspaceNeverSynced": "Nie synchronisiert",
+  "serverWorkspacePendingChanges": "{count} ausstehende Änderungen",
+  "serverWorkspaceNoPendingChanges": "Alle Änderungen synchronisiert",
+  "serverWorkspaceEnable": "Server-Arbeitsbereich aktivieren",
+  "serverWorkspaceEnableDialogTitle": "Server-Arbeitsbereich aktivieren",
+  "serverWorkspaceEnableDialogMessage": "Durch die Aktivierung werden lokale Konfigurationen auf den Server migriert. Ihre lokalen Konfigurationen bleiben erhalten.",
+  "serverWorkspaceMigrationPreviewTitle": "Migrationsvorschau",
+  "serverWorkspaceEnableConfirm": "Aktivieren & Synchronisieren",
+  "serverWorkspaceNoDataToMigrate": "Keine lokalen Daten zum Migrieren",
+  "serverWorkspaceSyncNow": "Jetzt synchronisieren",
+  "serverWorkspaceDisable": "Synchronisierung deaktivieren",
+  "serverWorkspaceDisableDialogTitle": "Server-Arbeitsbereich deaktivieren",
+  "serverWorkspaceDisableDialogMessage": "Das Deaktivieren stoppt die Synchronisierung auf diesem Gerät. Lokale und entfernte Daten bleiben erhalten und werden nicht gelöscht.",
+  "serverWorkspaceDisableConfirm": "Deaktivieren",
+  "serverWorkspacePreferenceSource": "Als Einstellungsquelle verwenden",
+  "serverWorkspacePreferenceSourceDesc": "Einstellungen auf Anwendungsebene von diesem Server synchronisieren",
+  "serverWorkspaceConflictsTitle": "Synchronisierungskonflikte ({count})",
+  "serverWorkspaceConflictKeepLocal": "Lokal behalten",
+  "serverWorkspaceConflictKeepServer": "Server behalten",
+  "serverWorkspaceDeviceDraftsTitle": "Entwürfe anderer Geräte",
+  "serverWorkspaceRestoreDraft": "Entwurf wiederherstellen",
+  "serverWorkspaceRestoreDraftConfirmTitle": "Entwurf wiederherstellen",
+  "serverWorkspaceRestoreDraftConfirmMessage": "Das Wiederherstellen ersetzt den aktuellen Chat-Eingabeentwurf. Ihr aktueller Entwurf wird in den Remote-Entwürfen gesichert.",
+  "serverWorkspaceRestoreDraftConfirm": "Wiederherstellen",
+  "serverWorkspaceNoDeviceDrafts": "Keine Entwürfe von anderen Geräten",
+  "serverWorkspaceClearCache": "Lokalen Synchronisierungs-Cache leeren",
+  "serverWorkspaceClearCacheConfirmTitle": "Lokalen Synchronisierungs-Cache leeren",
+  "serverWorkspaceClearCacheConfirmMessage": "Dies löscht nur den lokalen Synchronisierungs-Cache und Status. Remote-Daten und SSH-Konfigurationen werden niemals gelöscht.",
+  "serverWorkspaceClearCacheConfirm": "Cache leeren",
+  "serverWorkspaceCacheCleared": "Lokaler Synchronisierungs-Cache geleert",
+  "serverWorkspaceErrorSetupFailed": "Initialisierung des Server-Arbeitsbereichs fehlgeschlagen",
+  "serverWorkspaceErrorPythonRequired": "Python 3.9+ wird auf dem Server benötigt",
+  "serverWorkspaceErrorPathUnsafe": "Pfad des Server-Arbeitsbereichs ist unsicher oder hat ungültige Berechtigungen",
+  "serverWorkspaceErrorConflict": "Datenkonflikt während der Synchronisierung erkannt",
+  "serverWorkspaceErrorControlHeld": "Sitzungssteuerung wird von einem anderen Gerät gehalten",
+  "serverWorkspaceErrorResponseTooLarge": "Serverantwort überschreitet Größenbegrenzung",
+  "serverWorkspaceErrorGeneric": "Arbeitsbereichsfehler ({code})",
+  "chatWorkspaceControlActive": "Unter Kontrolle",
+  "chatWorkspaceControlActiveTooltip": "Dieses Gerät steuert derzeit die Sitzung",
+  "chatWorkspaceReadOnly": "Schreibgeschützt",
+  "chatWorkspaceReadOnlyDevice": "Schreibgeschützt ({device})",
+  "chatWorkspaceAcquireControl": "Steuerung übernehmen",
+  "chatWorkspaceTakeover": "Übernehmen",
+  "chatWorkspaceTakeoverDialogTitle": "Sitzungssteuerung übernehmen",
+  "chatWorkspaceTakeoverDialogMessage": "Die Übernahme der Steuerung ermöglicht diesem Gerät, Nachrichten zu senden und die aktuelle Sitzung zu bedienen. Der laufende Agent wird nicht beendet und die Sitzung wird nicht gewechselt.",
+  "chatWorkspaceTakeoverConfirm": "Übernehmen",
+  "chatWorkspaceControlFailed": "Übernahme der Arbeitsbereichssteuerung fehlgeschlagen",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "Eine ältere Laufzeitkomponente wird ausgeführt. Bitte beenden Sie diese vor dem Upgrade auf dem Originalgerät.",
+  "serverWorkspaceErrorNotEnabled": "Server-Arbeitsbereich ist nicht aktiviert",
+  "serverWorkspaceErrorPendingChanges": "Cache kann bei ausstehenden Änderungen nicht geleert werden. Bitte zuerst synchronisieren.",
+  "serverWorkspaceDraftTypeFile": "Dateientwurf",
+  "serverWorkspaceDraftTypeChat": "Chat-Entwurf",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "Dateientwurf wiederherstellen",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "Das Wiederherstellen lädt den Entwurf in die lokalen Editor-Entwürfe. Ihr aktueller Entwurf wird in den Remote-Entwürfen gesichert.",
+  "persistentRuntimeFeatureWorkspaceTitle": "Server-Arbeitsbereich & Zustandssynchronisierung",
+  "persistentRuntimeFeatureWorkspaceDesc": "Die benutzerdefinierte Laufzeit behält die Ausgabe bei geschlossenem App-Status; SSH-Zugangsdaten und Schlüssel verbleiben lokal und werden nie synchronisiert.",
+  "serverWorkspaceMigrationPendingHint": "Migration von Altdaten läuft im Hintergrund. Die Konfiguration ist synchronisiert, ältere Daten werden im Hintergrund fertiggestellt.",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "Weitere Entwürfe laden",
+  "serverWorkspaceLoadingDrafts": "Entwürfe werden geladen..."
 }

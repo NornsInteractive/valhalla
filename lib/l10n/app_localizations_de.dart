@@ -6678,4 +6678,264 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'Modifikator für Einmalnutzung antippen; gedrückt halten zum Sperren. Tasten zum Wiederholen halten.';
+
+  @override
+  String get serverWorkspaceTitle => 'Server-Arbeitsbereich';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'Geräteübergreifende Zustandssynchronisierung und Geräteentwürfe';
+
+  @override
+  String get serverWorkspaceOriginServer => 'Aktiver Server';
+
+  @override
+  String get serverWorkspaceOriginUser => 'Remote-Benutzer';
+
+  @override
+  String get serverWorkspaceNoActiveServer =>
+      'Kein aktiver Server ausgewählt oder verbunden';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'Nur lokal';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'Erkennen...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'Aktivierbar';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'Synchronisieren...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'Synchronisiert';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'Offline';
+
+  @override
+  String get serverWorkspacePhaseError => 'Synchronisierungsfehler';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'Zuletzt synchronisiert: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'Nie synchronisiert';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count ausstehende Änderungen';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges =>
+      'Alle Änderungen synchronisiert';
+
+  @override
+  String get serverWorkspaceEnable => 'Server-Arbeitsbereich aktivieren';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle =>
+      'Server-Arbeitsbereich aktivieren';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'Durch die Aktivierung werden lokale Konfigurationen auf den Server migriert. Ihre lokalen Konfigurationen bleiben erhalten.';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => 'Migrationsvorschau';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'Aktivieren & Synchronisieren';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate =>
+      'Keine lokalen Daten zum Migrieren';
+
+  @override
+  String get serverWorkspaceSyncNow => 'Jetzt synchronisieren';
+
+  @override
+  String get serverWorkspaceDisable => 'Synchronisierung deaktivieren';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle =>
+      'Server-Arbeitsbereich deaktivieren';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'Das Deaktivieren stoppt die Synchronisierung auf diesem Gerät. Lokale und entfernte Daten bleiben erhalten und werden nicht gelöscht.';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'Deaktivieren';
+
+  @override
+  String get serverWorkspacePreferenceSource =>
+      'Als Einstellungsquelle verwenden';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'Einstellungen auf Anwendungsebene von diesem Server synchronisieren';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'Synchronisierungskonflikte ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'Lokal behalten';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'Server behalten';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => 'Entwürfe anderer Geräte';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'Entwurf wiederherstellen';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle =>
+      'Entwurf wiederherstellen';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'Das Wiederherstellen ersetzt den aktuellen Chat-Eingabeentwurf. Ihr aktueller Entwurf wird in den Remote-Entwürfen gesichert.';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'Wiederherstellen';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts =>
+      'Keine Entwürfe von anderen Geräten';
+
+  @override
+  String get serverWorkspaceClearCache =>
+      'Lokalen Synchronisierungs-Cache leeren';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle =>
+      'Lokalen Synchronisierungs-Cache leeren';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'Dies löscht nur den lokalen Synchronisierungs-Cache und Status. Remote-Daten und SSH-Konfigurationen werden niemals gelöscht.';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'Cache leeren';
+
+  @override
+  String get serverWorkspaceCacheCleared =>
+      'Lokaler Synchronisierungs-Cache geleert';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed =>
+      'Initialisierung des Server-Arbeitsbereichs fehlgeschlagen';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'Python 3.9+ wird auf dem Server benötigt';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'Pfad des Server-Arbeitsbereichs ist unsicher oder hat ungültige Berechtigungen';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'Datenkonflikt während der Synchronisierung erkannt';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'Sitzungssteuerung wird von einem anderen Gerät gehalten';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'Serverantwort überschreitet Größenbegrenzung';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'Arbeitsbereichsfehler ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'Unter Kontrolle';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'Dieses Gerät steuert derzeit die Sitzung';
+
+  @override
+  String get chatWorkspaceReadOnly => 'Schreibgeschützt';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'Schreibgeschützt ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'Steuerung übernehmen';
+
+  @override
+  String get chatWorkspaceTakeover => 'Übernehmen';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => 'Sitzungssteuerung übernehmen';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'Die Übernahme der Steuerung ermöglicht diesem Gerät, Nachrichten zu senden und die aktuelle Sitzung zu bedienen. Der laufende Agent wird nicht beendet und die Sitzung wird nicht gewechselt.';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'Übernehmen';
+
+  @override
+  String get chatWorkspaceControlFailed =>
+      'Übernahme der Arbeitsbereichssteuerung fehlgeschlagen';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'Eine ältere Laufzeitkomponente wird ausgeführt. Bitte beenden Sie diese vor dem Upgrade auf dem Originalgerät.';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled =>
+      'Server-Arbeitsbereich ist nicht aktiviert';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'Cache kann bei ausstehenden Änderungen nicht geleert werden. Bitte zuerst synchronisieren.';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'Dateientwurf';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'Chat-Entwurf';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle =>
+      'Dateientwurf wiederherstellen';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'Das Wiederherstellen lädt den Entwurf in die lokalen Editor-Entwürfe. Ihr aktueller Entwurf wird in den Remote-Entwürfen gesichert.';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'Server-Arbeitsbereich & Zustandssynchronisierung';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'Die benutzerdefinierte Laufzeit behält die Ausgabe bei geschlossenem App-Status; SSH-Zugangsdaten und Schlüssel verbleiben lokal und werden nie synchronisiert.';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'Migration von Altdaten läuft im Hintergrund. Die Konfiguration ist synchronisiert, ältere Daten werden im Hintergrund fertiggestellt.';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'Weitere Entwürfe laden';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'Entwürfe werden geladen...';
 }

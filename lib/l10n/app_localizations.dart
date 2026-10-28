@@ -11906,6 +11906,438 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap modifier for single-use; long-press to lock. Hold keys to repeat.'**
   String get terminalModifierHelp;
+
+  /// Title for server workspace setting and dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Server Workspace'**
+  String get serverWorkspaceTitle;
+
+  /// Subtitle describing server workspace multi-device synchronization
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-device state synchronization and device drafts'**
+  String get serverWorkspaceSubtitle;
+
+  /// Label for active server origin in workspace dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Active Server'**
+  String get serverWorkspaceOriginServer;
+
+  /// Label for remote user in workspace dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Remote User'**
+  String get serverWorkspaceOriginUser;
+
+  /// Notice when no active server is connected
+  ///
+  /// In en, this message translates to:
+  /// **'No active server selected or connected'**
+  String get serverWorkspaceNoActiveServer;
+
+  /// Status badge when workspace is local only
+  ///
+  /// In en, this message translates to:
+  /// **'Local Only'**
+  String get serverWorkspacePhaseLocal;
+
+  /// Status badge while detecting remote workspace
+  ///
+  /// In en, this message translates to:
+  /// **'Discovering...'**
+  String get serverWorkspacePhaseDiscovering;
+
+  /// Status badge when server workspace is available to enable
+  ///
+  /// In en, this message translates to:
+  /// **'Available to Enable'**
+  String get serverWorkspacePhaseAvailable;
+
+  /// Status badge while syncing with server workspace
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing...'**
+  String get serverWorkspacePhaseSyncing;
+
+  /// Status badge when workspace is synced and ready
+  ///
+  /// In en, this message translates to:
+  /// **'In Sync'**
+  String get serverWorkspacePhaseReady;
+
+  /// Status badge when server workspace is offline
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get serverWorkspacePhaseOffline;
+
+  /// Status badge when workspace encountered a sync error
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Error'**
+  String get serverWorkspacePhaseError;
+
+  /// Timestamp of last successful workspace synchronization
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced: {time}'**
+  String serverWorkspaceLastSynced(String time);
+
+  /// Notice when workspace has never synced
+  ///
+  /// In en, this message translates to:
+  /// **'Never synced'**
+  String get serverWorkspaceNeverSynced;
+
+  /// Number of pending local changes waiting to sync
+  ///
+  /// In en, this message translates to:
+  /// **'{count} changes pending'**
+  String serverWorkspacePendingChanges(int count);
+
+  /// Label indicating all changes are synced
+  ///
+  /// In en, this message translates to:
+  /// **'All changes synced'**
+  String get serverWorkspaceNoPendingChanges;
+
+  /// Button to enable server workspace
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Server Workspace'**
+  String get serverWorkspaceEnable;
+
+  /// Title of server workspace enable confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Server Workspace'**
+  String get serverWorkspaceEnableDialogTitle;
+
+  /// Explanation of server workspace enablement and data preservation
+  ///
+  /// In en, this message translates to:
+  /// **'Enabling will migrate local configurations to the server. Your local configurations will be preserved.'**
+  String get serverWorkspaceEnableDialogMessage;
+
+  /// Header for migration preview item counts
+  ///
+  /// In en, this message translates to:
+  /// **'Migration Preview'**
+  String get serverWorkspaceMigrationPreviewTitle;
+
+  /// Confirmation button to enable server workspace
+  ///
+  /// In en, this message translates to:
+  /// **'Enable & Sync'**
+  String get serverWorkspaceEnableConfirm;
+
+  /// Notice when there is no local data to migrate
+  ///
+  /// In en, this message translates to:
+  /// **'No local data to migrate'**
+  String get serverWorkspaceNoDataToMigrate;
+
+  /// Button to immediately synchronize workspace
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Now'**
+  String get serverWorkspaceSyncNow;
+
+  /// Button to disable server workspace
+  ///
+  /// In en, this message translates to:
+  /// **'Disable Sync'**
+  String get serverWorkspaceDisable;
+
+  /// Title of server workspace disable confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Disable Server Workspace'**
+  String get serverWorkspaceDisableDialogTitle;
+
+  /// Explanation that disabling stops sync but preserves all data
+  ///
+  /// In en, this message translates to:
+  /// **'Disabling sync will stop synchronization on this device. Remote and local data will be preserved and not deleted.'**
+  String get serverWorkspaceDisableDialogMessage;
+
+  /// Confirmation button to disable workspace sync
+  ///
+  /// In en, this message translates to:
+  /// **'Disable'**
+  String get serverWorkspaceDisableConfirm;
+
+  /// Switch label to use this server as preference source
+  ///
+  /// In en, this message translates to:
+  /// **'Use as Preference Source'**
+  String get serverWorkspacePreferenceSource;
+
+  /// Description of preference source behavior
+  ///
+  /// In en, this message translates to:
+  /// **'Sync application-level settings from this server'**
+  String get serverWorkspacePreferenceSourceDesc;
+
+  /// Section header for sync conflicts
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Conflicts ({count})'**
+  String serverWorkspaceConflictsTitle(int count);
+
+  /// Button to resolve conflict by keeping local version
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Local'**
+  String get serverWorkspaceConflictKeepLocal;
+
+  /// Button to resolve conflict by keeping server version
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Server'**
+  String get serverWorkspaceConflictKeepServer;
+
+  /// Section title for drafts from other devices
+  ///
+  /// In en, this message translates to:
+  /// **'Other Device Drafts'**
+  String get serverWorkspaceDeviceDraftsTitle;
+
+  /// Button to restore a draft from another device
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Draft'**
+  String get serverWorkspaceRestoreDraft;
+
+  /// Title of draft restore confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Draft'**
+  String get serverWorkspaceRestoreDraftConfirmTitle;
+
+  /// Notice that restoring replaces input draft while preserving current draft in list
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring this draft will replace the current chat input draft. Your current draft will be preserved in remote drafts.'**
+  String get serverWorkspaceRestoreDraftConfirmMessage;
+
+  /// Confirmation button to restore draft
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get serverWorkspaceRestoreDraftConfirm;
+
+  /// Empty state label for other device drafts
+  ///
+  /// In en, this message translates to:
+  /// **'No drafts from other devices'**
+  String get serverWorkspaceNoDeviceDrafts;
+
+  /// Button to clear local sync cache
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Local Sync Cache'**
+  String get serverWorkspaceClearCache;
+
+  /// Title of clear local sync cache confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Local Sync Cache'**
+  String get serverWorkspaceClearCacheConfirmTitle;
+
+  /// Notice that only local cache is cleared and remote data/SSH are never deleted
+  ///
+  /// In en, this message translates to:
+  /// **'This will clear only the local workspace sync cache and state. Remote workspace data and SSH configurations will never be deleted.'**
+  String get serverWorkspaceClearCacheConfirmMessage;
+
+  /// Confirmation button to clear local sync cache
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Cache'**
+  String get serverWorkspaceClearCacheConfirm;
+
+  /// Snackbar notice when local sync cache has been cleared
+  ///
+  /// In en, this message translates to:
+  /// **'Local sync cache cleared'**
+  String get serverWorkspaceCacheCleared;
+
+  /// Error message when remote workspace store installation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace initialization failed on server'**
+  String get serverWorkspaceErrorSetupFailed;
+
+  /// Error message when remote python is missing or older than 3.9
+  ///
+  /// In en, this message translates to:
+  /// **'Python 3.9+ is required on server'**
+  String get serverWorkspaceErrorPythonRequired;
+
+  /// Error message when workspace path has unsafe permissions or symlink
+  ///
+  /// In en, this message translates to:
+  /// **'Server workspace path is unsafe or permissions invalid'**
+  String get serverWorkspaceErrorPathUnsafe;
+
+  /// Error message when atomic commit encounters conflict
+  ///
+  /// In en, this message translates to:
+  /// **'Data conflict detected during sync'**
+  String get serverWorkspaceErrorConflict;
+
+  /// Error message when session lease is held by another device
+  ///
+  /// In en, this message translates to:
+  /// **'Session control is held by another device'**
+  String get serverWorkspaceErrorControlHeld;
+
+  /// Error message when remote response exceeds maximum allowed size
+  ///
+  /// In en, this message translates to:
+  /// **'Server response exceeded size limit'**
+  String get serverWorkspaceErrorResponseTooLarge;
+
+  /// Fallback error message with stable error code
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace error ({code})'**
+  String serverWorkspaceErrorGeneric(String code);
+
+  /// Badge label indicating this device currently has session control
+  ///
+  /// In en, this message translates to:
+  /// **'In Control'**
+  String get chatWorkspaceControlActive;
+
+  /// Tooltip for active session control badge
+  ///
+  /// In en, this message translates to:
+  /// **'This device currently controls the session'**
+  String get chatWorkspaceControlActiveTooltip;
+
+  /// Badge label when session is in read-only mode
+  ///
+  /// In en, this message translates to:
+  /// **'Read-Only'**
+  String get chatWorkspaceReadOnly;
+
+  /// Badge label showing which short device ID holds control
+  ///
+  /// In en, this message translates to:
+  /// **'Read-Only ({device})'**
+  String chatWorkspaceReadOnlyDevice(String device);
+
+  /// Action button to acquire session control
+  ///
+  /// In en, this message translates to:
+  /// **'Acquire Control'**
+  String get chatWorkspaceAcquireControl;
+
+  /// Action button to take over session control from another device
+  ///
+  /// In en, this message translates to:
+  /// **'Take Over'**
+  String get chatWorkspaceTakeover;
+
+  /// Title of session control takeover confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Take Over Session Control'**
+  String get chatWorkspaceTakeoverDialogTitle;
+
+  /// Explanation of takeover behavior without terminating agent or switching session
+  ///
+  /// In en, this message translates to:
+  /// **'Taking over control allows this device to send messages and operate the current session. The running agent will not be terminated and the session will not be switched.'**
+  String get chatWorkspaceTakeoverDialogMessage;
+
+  /// Confirm button label for session takeover
+  ///
+  /// In en, this message translates to:
+  /// **'Take Over'**
+  String get chatWorkspaceTakeoverConfirm;
+
+  /// Error message when acquiring workspace control fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to acquire workspace control'**
+  String get chatWorkspaceControlFailed;
+
+  /// Error message when an older runtime component requires finish before upgrade
+  ///
+  /// In en, this message translates to:
+  /// **'An older runtime component is running. Please finish or stop it on the original device before upgrading.'**
+  String get serverWorkspaceErrorRuntimeUpgradeRequired;
+
+  /// Error message when server workspace is not enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Server workspace is not enabled'**
+  String get serverWorkspaceErrorNotEnabled;
+
+  /// Error message when attempting to clear cache while changes are pending
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot clear cache with pending changes. Please sync first.'**
+  String get serverWorkspaceErrorPendingChanges;
+
+  /// Badge or label for a file draft in workspace device drafts
+  ///
+  /// In en, this message translates to:
+  /// **'File Draft'**
+  String get serverWorkspaceDraftTypeFile;
+
+  /// Badge or label for a chat draft in workspace device drafts
+  ///
+  /// In en, this message translates to:
+  /// **'Chat Draft'**
+  String get serverWorkspaceDraftTypeChat;
+
+  /// Title of file draft restore confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Restore File Draft'**
+  String get serverWorkspaceRestoreFileDraftConfirmTitle;
+
+  /// Message for restoring file draft to local editor drafts
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring this file draft will save it to local editor drafts. Your current draft will be preserved in remote drafts.'**
+  String get serverWorkspaceRestoreFileDraftConfirmMessage;
+
+  /// Title for workspace state sync feature in persistent runtime consent dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Server Workspace & State Sync'**
+  String get persistentRuntimeFeatureWorkspaceTitle;
+
+  /// Description explaining user-owned runtime retains output while credentials are kept locally
+  ///
+  /// In en, this message translates to:
+  /// **'User-owned runtime preserves output when the app is closed; SSH credentials and keys are stored locally and never synced.'**
+  String get persistentRuntimeFeatureWorkspaceDesc;
+
+  /// Hint shown in workspace status when legacy migration is still completing in background
+  ///
+  /// In en, this message translates to:
+  /// **'Legacy data migration in progress in background. Configuration is synced while historical data completes.'**
+  String get serverWorkspaceMigrationPendingHint;
+
+  /// Button to load more drafts from other devices in server workspace
+  ///
+  /// In en, this message translates to:
+  /// **'Load More Drafts'**
+  String get serverWorkspaceLoadMoreDrafts;
+
+  /// Loading state label when fetching additional device drafts
+  ///
+  /// In en, this message translates to:
+  /// **'Loading drafts...'**
+  String get serverWorkspaceLoadingDrafts;
 }
 
 class _AppLocalizationsDelegate

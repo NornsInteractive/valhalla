@@ -6677,4 +6677,263 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'Toque no modificador para uso único; pressione e segure para travar. Segure as teclas para repetir.';
+
+  @override
+  String get serverWorkspaceTitle => 'Espaço de trabalho do servidor';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'Sincronização de estado multidispositivo e rascunhos de dispositivos';
+
+  @override
+  String get serverWorkspaceOriginServer => 'Servidor ativo';
+
+  @override
+  String get serverWorkspaceOriginUser => 'Usuário remoto';
+
+  @override
+  String get serverWorkspaceNoActiveServer =>
+      'Nenhum servidor ativo selecionado ou conectado';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'Apenas local';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'Detectando...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'Disponível para ativar';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'Sincronizando...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'Sincronizado';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'Offline';
+
+  @override
+  String get serverWorkspacePhaseError => 'Erro de sincronização';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'Última sincronização: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'Nunca sincronizado';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count alterações pendentes';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges =>
+      'Todas as alterações sincronizadas';
+
+  @override
+  String get serverWorkspaceEnable => 'Ativar espaço de trabalho do servidor';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle =>
+      'Ativar espaço de trabalho do servidor';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'A ativação migrará as configurações locais para o servidor. Suas configurações locais serão preservadas.';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle =>
+      'Pré-visualização da migração';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'Ativar e sincronizar';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate => 'Sem dados locais para migrar';
+
+  @override
+  String get serverWorkspaceSyncNow => 'Sincronizar agora';
+
+  @override
+  String get serverWorkspaceDisable => 'Desativar sincronização';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle =>
+      'Desativar espaço de trabalho do servidor';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'Desativar interromperá a sincronização neste dispositivo. Os dados locais e remotos serão preservados e não excluídos.';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'Desativar';
+
+  @override
+  String get serverWorkspacePreferenceSource =>
+      'Usar como fonte de preferências';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'Sincronizar configurações do aplicativo a partir deste servidor';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'Conflitos de sincronização ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'Manter local';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'Manter servidor';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle =>
+      'Rascunhos de outros dispositivos';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'Restaurar rascunho';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle => 'Restaurar rascunho';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'Restaurar este rascunho substituirá a entrada atual do chat. Seu rascunho atual será preservado nos rascunhos remotos.';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'Restaurar';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts =>
+      'Nenhum rascunho de outros dispositivos';
+
+  @override
+  String get serverWorkspaceClearCache => 'Limpar cache de sincronização local';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle =>
+      'Limpar cache de sincronização local';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'Isso limpará apenas o cache e estado de sincronização local. Dados remotos e configurações SSH nunca serão excluídos.';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'Limpar cache';
+
+  @override
+  String get serverWorkspaceCacheCleared =>
+      'Cache de sincronização local limpo';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed =>
+      'Falha ao inicializar o espaço de trabalho no servidor';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'Python 3.9+ é necessário no servidor';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'Caminho do espaço de trabalho inseguro ou permissões inválidas';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'Conflito de dados detectado durante a sincronização';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'O controle da sessão está retido por outro dispositivo';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'A resposta do servidor excedeu o limite de tamanho';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'Erro do espaço de trabalho ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'No controle';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'Este dispositivo controla a sessão atualmente';
+
+  @override
+  String get chatWorkspaceReadOnly => 'Somente leitura';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'Somente leitura ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'Obter controle';
+
+  @override
+  String get chatWorkspaceTakeover => 'Assumir controle';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => 'Assumir controle da sessão';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'Assumir o controle permite que este dispositivo envie mensagens e opere a sessão. O agente em execução não será encerrado e a sessão não será trocada.';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'Assumir';
+
+  @override
+  String get chatWorkspaceControlFailed =>
+      'Falha ao obter controle do espaço de trabalho';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'Um componente de tempo de execução anterior está em execução. Conclua-o no dispositivo original antes de atualizar.';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled =>
+      'O espaço de trabalho do servidor não está ativado';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'Não é possível limpar o cache com alterações pendentes. Sincronize primeiro.';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'Rascunho de arquivo';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'Rascunho de chat';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle =>
+      'Restaurar rascunho de arquivo';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'Restaurar este rascunho de arquivo o carregará nos rascunhos do editor local. Seu rascunho atual será preservado nos remotos.';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'Espaço de trabalho do servidor e sincronização';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'O ambiente do usuário preserva a saída ao fechar o app; credenciais e chaves SSH ficam locais e nunca são sincronizadas.';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'Migração de dados legados em segundo plano em andamento. A configuração foi sincronizada enquanto os dados históricos são concluídos em segundo plano.';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'Carregar mais rascunhos';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'Carregando rascunhos...';
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+import '../../data/workspace/workspace_gateway.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/quick_command.dart';
 import '../../infrastructure/ssh/ssh_client_manager.dart';
@@ -54,9 +56,30 @@ class CommandsState {
 }
 
 class CommandsNotifier extends Notifier<CommandsState> {
+  StreamSubscription<WorkspaceChange>? _workspaceChanges;
   @override
   CommandsState build() {
     final repo = ref.watch(commandRepositoryProvider);
+    unawaited(_workspaceChanges?.cancel());
+    _workspaceChanges = ref
+        .read(localStorageServiceProvider)
+        .workspaceGateway
+        ?.changes
+        .listen((change) {
+          if (!ref.mounted ||
+              change.serverId != ref.read(activeServerProvider)?.id) {
+            return;
+          }
+          if (change.records.any((record) {
+            final id = record['id'];
+            return record['kind'] == 'config' &&
+                id is String &&
+                id.startsWith('command/');
+          })) {
+            state = state.copyWith(allCommands: repo.getAllCommands());
+          }
+        });
+    ref.onDispose(() => unawaited(_workspaceChanges?.cancel()));
     return CommandsState(allCommands: repo.getAllCommands());
   }
 

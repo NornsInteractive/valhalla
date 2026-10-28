@@ -6563,4 +6563,254 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'Tap modifier for single-use; long-press to lock. Hold keys to repeat.';
+
+  @override
+  String get serverWorkspaceTitle => 'Server Workspace';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'Multi-device state synchronization and device drafts';
+
+  @override
+  String get serverWorkspaceOriginServer => 'Active Server';
+
+  @override
+  String get serverWorkspaceOriginUser => 'Remote User';
+
+  @override
+  String get serverWorkspaceNoActiveServer =>
+      'No active server selected or connected';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'Local Only';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'Discovering...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'Available to Enable';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'Syncing...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'In Sync';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'Offline';
+
+  @override
+  String get serverWorkspacePhaseError => 'Sync Error';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'Last synced: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'Never synced';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count changes pending';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges => 'All changes synced';
+
+  @override
+  String get serverWorkspaceEnable => 'Enable Server Workspace';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle => 'Enable Server Workspace';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'Enabling will migrate local configurations to the server. Your local configurations will be preserved.';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => 'Migration Preview';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'Enable & Sync';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate => 'No local data to migrate';
+
+  @override
+  String get serverWorkspaceSyncNow => 'Sync Now';
+
+  @override
+  String get serverWorkspaceDisable => 'Disable Sync';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle => 'Disable Server Workspace';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'Disabling sync will stop synchronization on this device. Remote and local data will be preserved and not deleted.';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'Disable';
+
+  @override
+  String get serverWorkspacePreferenceSource => 'Use as Preference Source';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'Sync application-level settings from this server';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'Sync Conflicts ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'Keep Local';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'Keep Server';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => 'Other Device Drafts';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'Restore Draft';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle => 'Restore Draft';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'Restoring this draft will replace the current chat input draft. Your current draft will be preserved in remote drafts.';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'Restore';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts => 'No drafts from other devices';
+
+  @override
+  String get serverWorkspaceClearCache => 'Clear Local Sync Cache';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle => 'Clear Local Sync Cache';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'This will clear only the local workspace sync cache and state. Remote workspace data and SSH configurations will never be deleted.';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'Clear Cache';
+
+  @override
+  String get serverWorkspaceCacheCleared => 'Local sync cache cleared';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed =>
+      'Workspace initialization failed on server';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'Python 3.9+ is required on server';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'Server workspace path is unsafe or permissions invalid';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'Data conflict detected during sync';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'Session control is held by another device';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'Server response exceeded size limit';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'Workspace error ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'In Control';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'This device currently controls the session';
+
+  @override
+  String get chatWorkspaceReadOnly => 'Read-Only';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'Read-Only ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'Acquire Control';
+
+  @override
+  String get chatWorkspaceTakeover => 'Take Over';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => 'Take Over Session Control';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'Taking over control allows this device to send messages and operate the current session. The running agent will not be terminated and the session will not be switched.';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'Take Over';
+
+  @override
+  String get chatWorkspaceControlFailed =>
+      'Failed to acquire workspace control';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'An older runtime component is running. Please finish or stop it on the original device before upgrading.';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled =>
+      'Server workspace is not enabled';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'Cannot clear cache with pending changes. Please sync first.';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'File Draft';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'Chat Draft';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle =>
+      'Restore File Draft';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'Restoring this file draft will save it to local editor drafts. Your current draft will be preserved in remote drafts.';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'Server Workspace & State Sync';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'User-owned runtime preserves output when the app is closed; SSH credentials and keys are stored locally and never synced.';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'Legacy data migration in progress in background. Configuration is synced while historical data completes.';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'Load More Drafts';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'Loading drafts...';
 }

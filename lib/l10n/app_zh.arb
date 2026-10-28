@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "暂无常用命令",
   "terminalSavedCommandsPreview": "命令预览",
   "terminalSavedCommandsMultilineWarning": "此命令包含多行，确定要在终端执行吗？",
-  "terminalModifierHelp": "点按修饰键单次生效，长按锁定；普通键长按可重复输入"
+  "terminalModifierHelp": "点按修饰键单次生效，长按锁定；普通键长按可重复输入",
+  "serverWorkspaceTitle": "服务端工作区",
+  "serverWorkspaceSubtitle": "跨设备状态同步与设备草稿",
+  "serverWorkspaceOriginServer": "所属服务器",
+  "serverWorkspaceOriginUser": "远程用户",
+  "serverWorkspaceNoActiveServer": "未选择或未连接活动服务器",
+  "serverWorkspacePhaseLocal": "仅本地",
+  "serverWorkspacePhaseDiscovering": "探测中...",
+  "serverWorkspacePhaseAvailable": "可启用",
+  "serverWorkspacePhaseSyncing": "同步中...",
+  "serverWorkspacePhaseReady": "已同步",
+  "serverWorkspacePhaseOffline": "离线",
+  "serverWorkspacePhaseError": "同步异常",
+  "serverWorkspaceLastSynced": "上次同步：{time}",
+  "serverWorkspaceNeverSynced": "从未同步",
+  "serverWorkspacePendingChanges": "{count} 项待推送",
+  "serverWorkspaceNoPendingChanges": "已全部同步",
+  "serverWorkspaceEnable": "启用服务端工作区",
+  "serverWorkspaceEnableDialogTitle": "启用服务端工作区",
+  "serverWorkspaceEnableDialogMessage": "启用后将把本地配置迁移至服务端工作区。本地数据将予以保留，绝不清空。",
+  "serverWorkspaceMigrationPreviewTitle": "迁移项预览",
+  "serverWorkspaceEnableConfirm": "确认并启用",
+  "serverWorkspaceNoDataToMigrate": "无本地数据需要迁移",
+  "serverWorkspaceSyncNow": "立即同步",
+  "serverWorkspaceDisable": "停用同步",
+  "serverWorkspaceDisableDialogTitle": "停用服务端工作区",
+  "serverWorkspaceDisableDialogMessage": "停用同步仅停止此设备同步，本地与远端数据均完整保留，不会被删除。",
+  "serverWorkspaceDisableConfirm": "确认停用",
+  "serverWorkspacePreferenceSource": "设为应用级偏好来源",
+  "serverWorkspacePreferenceSourceDesc": "从此服务器同步应用全局偏好",
+  "serverWorkspaceConflictsTitle": "同步冲突 ({count})",
+  "serverWorkspaceConflictKeepLocal": "保留本地",
+  "serverWorkspaceConflictKeepServer": "保留远端",
+  "serverWorkspaceDeviceDraftsTitle": "其他设备草稿",
+  "serverWorkspaceRestoreDraft": "恢复草稿",
+  "serverWorkspaceRestoreDraftConfirmTitle": "恢复设备草稿",
+  "serverWorkspaceRestoreDraftConfirmMessage": "恢复此草稿将载入到当前聊天输入框，你当前的草稿将自动备份至远端草稿列表。",
+  "serverWorkspaceRestoreDraftConfirm": "恢复",
+  "serverWorkspaceNoDeviceDrafts": "暂无其他设备草稿",
+  "serverWorkspaceClearCache": "清理本地同步缓存",
+  "serverWorkspaceClearCacheConfirmTitle": "清理本地同步缓存",
+  "serverWorkspaceClearCacheConfirmMessage": "此操作仅清理本机的同步缓存和元数据状态。绝不会删除远端数据或 SSH 连接配置。",
+  "serverWorkspaceClearCacheConfirm": "清理缓存",
+  "serverWorkspaceCacheCleared": "本地同步缓存已清理",
+  "serverWorkspaceErrorSetupFailed": "服务端工作区环境初始化失败",
+  "serverWorkspaceErrorPythonRequired": "服务端需要 Python 3.9 或更高版本",
+  "serverWorkspaceErrorPathUnsafe": "服务端工作区目录不安全或权限异常",
+  "serverWorkspaceErrorConflict": "同步过程中检测到数据冲突",
+  "serverWorkspaceErrorControlHeld": "会话控制权被另一台设备占用",
+  "serverWorkspaceErrorResponseTooLarge": "服务端响应超出大小限制",
+  "serverWorkspaceErrorGeneric": "工作区异常 ({code})",
+  "chatWorkspaceControlActive": "已取得控制权",
+  "chatWorkspaceControlActiveTooltip": "当前设备持有会话控制权",
+  "chatWorkspaceReadOnly": "只读模式",
+  "chatWorkspaceReadOnlyDevice": "只读 ({device})",
+  "chatWorkspaceAcquireControl": "取得控制权",
+  "chatWorkspaceTakeover": "接管",
+  "chatWorkspaceTakeoverDialogTitle": "接管会话控制权",
+  "chatWorkspaceTakeoverDialogMessage": "接管后此设备将获得对当前会话的控制权，可以发送消息和执行操作。此操作不会终止正在运行的 Agent，也不会切换会话。",
+  "chatWorkspaceTakeoverConfirm": "确认接管",
+  "chatWorkspaceControlFailed": "获取工作区控制权失败",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "旧版本运行组件仍在运行，请等待其执行结束或在原设备终止后再升级。",
+  "serverWorkspaceErrorNotEnabled": "服务端工作区未启用",
+  "serverWorkspaceErrorPendingChanges": "存在待推送变更，无法清理缓存，请先同步。",
+  "serverWorkspaceDraftTypeFile": "文件草稿",
+  "serverWorkspaceDraftTypeChat": "对话草稿",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "恢复文件草稿",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "恢复此文件草稿将载入到本地编辑器草稿中。你当前的草稿将自动备份至远端草稿列表。",
+  "persistentRuntimeFeatureWorkspaceTitle": "服务端工作区与状态同步",
+  "persistentRuntimeFeatureWorkspaceDesc": "用户专属运行环境在应用关闭后仍保留运行输出与任务状态；SSH 凭据与敏感密钥仅保存在本机，绝不同步。",
+  "serverWorkspaceMigrationPendingHint": "后台正在迁移历史数据。配置已同步，旧版本数据将在后台继续完成。",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "加载更多草稿",
+  "serverWorkspaceLoadingDrafts": "正在加载草稿..."
 }

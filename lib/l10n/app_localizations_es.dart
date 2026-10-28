@@ -6690,4 +6690,265 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'Toca el modificador para un solo uso; mantén presionado para bloquear. Mantén teclas para repetir.';
+
+  @override
+  String get serverWorkspaceTitle => 'Espacio de trabajo del servidor';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'Sincronización de estado multidispositivo y borradores de dispositivos';
+
+  @override
+  String get serverWorkspaceOriginServer => 'Servidor activo';
+
+  @override
+  String get serverWorkspaceOriginUser => 'Usuario remoto';
+
+  @override
+  String get serverWorkspaceNoActiveServer =>
+      'No hay ningún servidor activo seleccionado o conectado';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'Solo local';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'Detectando...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'Disponible para activar';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'Sincronizando...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'Sincronizado';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'Desconectado';
+
+  @override
+  String get serverWorkspacePhaseError => 'Error de sincronización';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'Última sincronización: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'Nunca sincronizado';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count cambios pendientes';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges =>
+      'Todos los cambios sincronizados';
+
+  @override
+  String get serverWorkspaceEnable => 'Activar espacio de trabajo del servidor';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle =>
+      'Activar espacio de trabajo del servidor';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'La activación migrará las configuraciones locales al servidor. Sus configuraciones locales se conservarán.';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle =>
+      'Vista previa de migración';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'Activar y sincronizar';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate =>
+      'No hay datos locales para migrar';
+
+  @override
+  String get serverWorkspaceSyncNow => 'Sincronizar ahora';
+
+  @override
+  String get serverWorkspaceDisable => 'Desactivar sincronización';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle =>
+      'Desactivar espacio de trabajo del servidor';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'Desactivar detendrá la sincronización en este dispositivo. Los datos locales y remotos se conservarán y no se eliminarán.';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'Desactivar';
+
+  @override
+  String get serverWorkspacePreferenceSource =>
+      'Usar como fuente de preferencias';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'Sincronizar ajustes a nivel de aplicación desde este servidor';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'Conflictos de sincronización ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'Conservar local';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'Conservar servidor';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle =>
+      'Borradores de otros dispositivos';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'Restaurar borrador';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle => 'Restaurar borrador';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'Restaurar este borrador reemplazará el borrador actual en el chat. Su borrador actual se conservará en los borradores remotos.';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'Restaurar';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts =>
+      'No hay borradores de otros dispositivos';
+
+  @override
+  String get serverWorkspaceClearCache =>
+      'Borrar caché de sincronización local';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle =>
+      'Borrar caché de sincronización local';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'Esto solo borrará la caché y el estado de sincronización local. Los datos remotos y configuraciones SSH nunca se eliminarán.';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'Borrar caché';
+
+  @override
+  String get serverWorkspaceCacheCleared =>
+      'Caché de sincronización local borrada';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed =>
+      'Fallo en la inicialización del espacio de trabajo en el servidor';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'Se requiere Python 3.9+ en el servidor';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'La ruta del espacio de trabajo es insegura o tiene permisos no válidos';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'Conflicto de datos detectado durante la sincronización';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'El control de la sesión está ocupado por otro dispositivo';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'La respuesta del servidor excedió el límite de tamaño';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'Error del espacio de trabajo ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'Bajo control';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'Este dispositivo controla actualmente la sesión';
+
+  @override
+  String get chatWorkspaceReadOnly => 'Solo lectura';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'Solo lectura ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'Tomar control';
+
+  @override
+  String get chatWorkspaceTakeover => 'Asumir control';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => 'Asumir control de la sesión';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'Asumir el control permite a este dispositivo enviar mensajes y operar la sesión actual. El agente en ejecución no se detendrá ni se cambiará de sesión.';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'Asumir control';
+
+  @override
+  String get chatWorkspaceControlFailed =>
+      'Error al obtener el control del espacio de trabajo';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'Se está ejecutando un componente antiguo del entorno de ejecución. Finalícelo en el dispositivo original antes de actualizar.';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled =>
+      'El espacio de trabajo del servidor no está activado';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'No se puede borrar la caché con cambios pendientes. Sincronice primero.';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'Borrador de archivo';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'Borrador de chat';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle =>
+      'Restaurar borrador de archivo';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'Restaurar este borrador de archivo lo cargará en los borradores locales del editor. Su borrador actual se conservará en los borradores remotos.';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'Espacio de trabajo del servidor y sincronización';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'El entorno de ejecución propio conserva las salidas al cerrar la aplicación; las credenciales SSH y claves se guardan localmente y nunca se sincronizan.';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'Migración de datos anteriores en segundo plano en curso. La configuración está sincronizada mientras los datos históricos se completan en segundo plano.';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'Cargar más borradores';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'Cargando borradores...';
 }

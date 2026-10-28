@@ -90,6 +90,83 @@ class NasSourcesNotifier extends Notifier<NasSourcesState> {
     return next;
   }
 
+  Future<void> refreshFromWorkspace() => _mutate(() async {
+    final storage = ref.read(localStorageServiceProvider);
+    final sources = storage.getNasSources();
+    final old = {for (final source in state.sources) source.id: source};
+    final prefs = storage.workspacePreferences.raw;
+    final refreshed = <NasSource>[];
+    for (final source in sources) {
+      final previous = old[source.id];
+      // Remote metadata can move a source's connection/auth target under the
+      // same id. Before hydrating state with the new target, remember the prior
+      // local target fingerprint (local-only, excluded from sync). This makes
+      // credentialsFor refuse to hand the saved secret to the new target until
+      // the user explicitly re-saves credentials for it. The codec performs the
+      // same binding at storage-write time; this guards any refresh path that
+      // reaches here without the codec having run.
+      if (previous != null &&
+          previous.type != NasSourceType.sftp &&
+          nasCredentialTarget(previous) != nasCredentialTarget(source)) {
+        final binding = nasCredentialBindingKey(source.id);
+        if (!prefs.containsKey(binding) &&
+            !await prefs.setString(binding, nasCredentialTarget(previous))) {
+          throw StateError('NAS_SOURCE_SAVE_INCOMPLETE');
+        }
+      }
+      refreshed.add(
+        previous != null &&
+                _diagnosticKey(previous) == _diagnosticKey(source) &&
+                previous.name == source.name
+            ? previous
+            : source,
+      );
+    }
+    final keys = refreshed.map(_diagnosticKey).toSet();
+    state = NasSourcesState(
+      sources: refreshed,
+      selectedId: refreshed.any((source) => source.id == state.selectedId)
+          ? state.selectedId
+          : refreshed.firstOrNull?.id,
+      diagnostics: Map.fromEntries(
+        state.diagnostics.entries.where((e) => keys.contains(e.key)),
+      ),
+    );
+  });
+
+  Future<NasCredentials> credentialsFor(NasSource source) async {
+    if (source.type == NasSourceType.sftp) return const NasCredentials();
+    if (_incompleteSaves.contains(source.id)) {
+      throw StateError('NAS_SOURCE_SAVE_INCOMPLETE');
+    }
+    final prefs = ref
+        .read(localStorageServiceProvider)
+        .workspacePreferences
+        .raw;
+    final key = nasCredentialBindingKey(source.id);
+    final target = nasCredentialTarget(source);
+    final binding = prefs.getString(key);
+    if (binding != null && binding != target) {
+      throw StateError('NAS_AUTH_REQUIRED');
+    }
+    if (binding == null && !await prefs.setString(key, target)) {
+      throw StateError('NAS_SOURCE_SAVE_INCOMPLETE');
+    }
+    final credentials = await ref
+        .read(secureStorageServiceProvider)
+        .getNasCredentials(source.id);
+    if (!ref.mounted ||
+        _incompleteSaves.contains(source.id) ||
+        prefs.getString(key) != target ||
+        !state.sources.any(
+          (saved) =>
+              saved.id == source.id && nasCredentialTarget(saved) == target,
+        )) {
+      throw StateError('NAS_SOURCE_CHANGED');
+    }
+    return credentials;
+  }
+
   @override
   NasSourcesState build() {
     final storage = ref.watch(localStorageServiceProvider);
@@ -184,9 +261,28 @@ class NasSourcesNotifier extends Notifier<NasSourcesState> {
     credentials = await _credentials(source, credentials, keepEmptySecrets);
     if (probe) await this.probe(source, credentials);
     if (source.type != NasSourceType.sftp) {
+      final prefs = ref
+          .read(localStorageServiceProvider)
+          .workspacePreferences
+          .raw;
+      // Fail closed across a crash between the two independent local stores.
+      if (!await prefs.setString(
+        nasCredentialBindingKey(source.id),
+        'pending',
+      )) {
+        throw StateError('NAS_SOURCE_SAVE_INCOMPLETE');
+      }
+      _incompleteSaves.add(source.id);
       await ref
           .read(secureStorageServiceProvider)
           .saveNasCredentials(source.id, credentials);
+      if (!await prefs.setString(
+        nasCredentialBindingKey(source.id),
+        nasCredentialTarget(source),
+      )) {
+        _incompleteSaves.add(source.id);
+        throw StateError('NAS_SOURCE_SAVE_INCOMPLETE');
+      }
       _credentialGenerations[source.id] =
           (_credentialGenerations[source.id] ?? 0) + 1;
       _incompleteSaves.add(source.id);
@@ -220,6 +316,16 @@ class NasSourcesNotifier extends Notifier<NasSourcesState> {
   ) async {
     final saved = state.sources.where((s) => s.id == source.id).firstOrNull;
     final generation = _credentialGenerations[source.id];
+    final binding = ref
+        .read(localStorageServiceProvider)
+        .workspacePreferences
+        .raw
+        .getString(nasCredentialBindingKey(source.id));
+    if ((credentials.password.isNotEmpty || credentials.token.isNotEmpty) &&
+        (_incompleteSaves.contains(source.id) ||
+            binding != null && binding != nasCredentialTarget(source))) {
+      return credentials;
+    }
     if (keepEmptySecrets &&
         source.type != NasSourceType.sftp &&
         saved != null &&
@@ -227,9 +333,7 @@ class NasSourcesNotifier extends Notifier<NasSourcesState> {
       if (_incompleteSaves.contains(source.id)) {
         throw StateError('NAS_SOURCE_SAVE_INCOMPLETE');
       }
-      final old = await ref
-          .read(secureStorageServiceProvider)
-          .getNasCredentials(source.id);
+      final old = await credentialsFor(source);
       if (!ref.mounted) throw StateError('NAS_SOURCE_CHANGED');
       final current = state.sources.where((s) => s.id == source.id).firstOrNull;
       if (!identical(current, saved) ||
@@ -273,9 +377,7 @@ class NasSourcesNotifier extends Notifier<NasSourcesState> {
     if (!current()) throw StateError('NAS_SOURCE_CHANGED');
     final credentials = source.type == NasSourceType.sftp
         ? const NasCredentials()
-        : await ref
-              .read(secureStorageServiceProvider)
-              .getNasCredentials(source.id);
+        : await credentialsFor(source);
     if (!current()) throw StateError('NAS_SOURCE_CHANGED');
     return openBrowser(source, credentials, isCurrent: current);
   }
@@ -292,9 +394,7 @@ class NasSourcesNotifier extends Notifier<NasSourcesState> {
         !_sameCredentialTarget(source, saved)) {
       return '';
     }
-    final credentials = await ref
-        .read(secureStorageServiceProvider)
-        .getNasCredentials(source.id);
+    final credentials = await credentialsFor(source);
     if (!ref.mounted) throw StateError('NAS_SOURCE_CHANGED');
     final current = state.sources.where((s) => s.id == source.id).firstOrNull;
     if (!identical(current, saved) ||
@@ -439,9 +539,7 @@ class NasSourcesNotifier extends Notifier<NasSourcesState> {
     }
     final credentials = source.type == NasSourceType.sftp
         ? const NasCredentials()
-        : await ref
-              .read(secureStorageServiceProvider)
-              .getNasCredentials(source.id);
+        : await credentialsFor(source);
     if (!unchanged() || target != sshTarget()) {
       throw StateError('NAS_SOURCE_CHANGED');
     }
@@ -634,7 +732,7 @@ final nasSourceAdapterProvider = FutureProvider.family<NasSourceAdapter, String>
     });
     final credentials = source.type == NasSourceType.sftp
         ? const NasCredentials()
-        : await ref.read(secureStorageServiceProvider).getNasCredentials(id);
+        : await ref.read(nasSourcesProvider.notifier).credentialsFor(source);
     try {
       adapter = _createAdapter(
         await _forwardSource(source, tunnel),

@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../data/models/nas_media.dart';
 import '../../data/models/nas_source.dart';
 import '../../data/repositories/nas_index_repository.dart';
+import '../../data/workspace/workspace_nas_sync.dart';
 import '../services/nas_download_service.dart';
 import '../services/nas_audio_handler.dart';
 import '../services/nas_image_cache_service.dart';
@@ -29,6 +30,32 @@ final nasIndexRepositoryProvider = FutureProvider<NasIndexRepository>((
     path.join(directory.path, 'valhalla_nas.sqlite3'),
   );
   await repository.initialize();
+  final storage = ref.read(localStorageServiceProvider);
+  final sync = WorkspaceNasSync(
+    gateway: () => storage.workspaceGateway,
+    ownerFor: (sourceId) {
+      final raw = storage.workspacePreferences.raw.getString(
+        'valhalla_workspace_ownership_v1',
+      );
+      if (raw == null) return null;
+      return (jsonDecode(raw) as Map)['nas_source/$sourceId'] as String?;
+    },
+    sourceFor: (sourceId) {
+      if (!ref.mounted) return null;
+      return ref
+          .read(nasSourcesProvider)
+          .sources
+          .where((source) => source.id == sourceId)
+          .firstOrNull;
+    },
+    repository: repository,
+  );
+  repository.remoteSink = sync;
+  repository.remoteIndex = sync;
+  ref.onDispose(() {
+    if (identical(repository.remoteSink, sync)) repository.remoteSink = null;
+    if (identical(repository.remoteIndex, sync)) repository.remoteIndex = null;
+  });
   return repository;
 });
 
@@ -343,6 +370,7 @@ class NasNotifier extends Notifier<NasState> {
   final Map<String, String> _sourceCategories = {};
   final Map<String, NasSource> _browseSources = {};
   final Set<String> _batchSources = {};
+  final Set<String> _migrating = {};
   final Expando<NasSource> _batchOrigins = Expando<NasSource>();
   Future<NasIndexRepository> get _repository =>
       ref.read(nasIndexRepositoryProvider.future);
@@ -536,6 +564,23 @@ class NasNotifier extends Notifier<NasState> {
         .map((item) => item.path),
   );
 
+  /// Uploads at most a couple of index batches per activation. Startup never
+  /// blocks on a whole library, and a large migration completes over refreshes.
+  Future<void> _migrateWorkspace(String id) async {
+    if (!_migrating.add(id)) return;
+    try {
+      final repository = await _repository;
+      final remote = repository.remoteIndex;
+      if (remote is! WorkspaceNasSync || !remote.isAvailable(id)) return;
+      await remote.pullChanges(id, maxPages: 2);
+      await remote.migrateSource(id, maxBatches: 2);
+    } catch (_) {
+      // Migration is best effort; local browsing stays fully functional.
+    } finally {
+      _migrating.remove(id);
+    }
+  }
+
   Future<void> refreshPlayback() async {
     final id = state.serverId;
     if (id == null) return;
@@ -553,6 +598,7 @@ class NasNotifier extends Notifier<NasState> {
   Future<void> refresh({bool preservePosition = true}) async {
     final id = state.serverId;
     if (id == null) return;
+    unawaited(_migrateWorkspace(id));
     final epoch = ++_epoch;
     final retainedGallery =
         preservePosition &&

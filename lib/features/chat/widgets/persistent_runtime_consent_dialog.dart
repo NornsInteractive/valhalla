@@ -51,6 +51,9 @@ class _PersistentRuntimeConsentDialogState
   }
 
   String _resolveSetupError(BuildContext context, String rawError) {
+    if (rawError.contains('WORKSPACE_RUNTIME_UPGRADE_REQUIRED')) {
+      return context.l10n.serverWorkspaceErrorRuntimeUpgradeRequired;
+    }
     if (rawError.contains('ACP_RUNTIME_PYTHON_REQUIRED')) {
       return context.l10n.persistentRuntimeFeaturePythonDesc;
     }
@@ -171,6 +174,12 @@ class _PersistentRuntimeConsentDialogState
                   icon: Icons.cloud_done_outlined,
                   title: l10n.persistentRuntimeFeatureDetachedTitle,
                   description: l10n.persistentRuntimeFeatureDetachedDesc,
+                ),
+                const SizedBox(height: VSpace.md),
+                _FeatureRow(
+                  icon: Icons.cloud_sync_outlined,
+                  title: l10n.persistentRuntimeFeatureWorkspaceTitle,
+                  description: l10n.persistentRuntimeFeatureWorkspaceDesc,
                 ),
                 if (setupError != null && setupError.isNotEmpty) ...[
                   const SizedBox(height: VSpace.lg),

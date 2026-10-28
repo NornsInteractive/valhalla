@@ -6346,4 +6346,240 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get terminalModifierHelp => '修飾キーをタップで1回有効、長押しでロック。キーを長押しでリピート入力。';
+
+  @override
+  String get serverWorkspaceTitle => 'サーバーワークスペース';
+
+  @override
+  String get serverWorkspaceSubtitle => 'マルチデバイスの状態同期とデバイス下書き';
+
+  @override
+  String get serverWorkspaceOriginServer => '対象サーバー';
+
+  @override
+  String get serverWorkspaceOriginUser => 'リモートユーザー';
+
+  @override
+  String get serverWorkspaceNoActiveServer => 'アクティブなサーバーが選択または接続されていません';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'ローカルのみ';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => '検出中...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => '有効化可能';
+
+  @override
+  String get serverWorkspacePhaseSyncing => '同期中...';
+
+  @override
+  String get serverWorkspacePhaseReady => '同期済み';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'オフライン';
+
+  @override
+  String get serverWorkspacePhaseError => '同期エラー';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return '最終同期：$time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => '未同期';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count 件の保留中の変更';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges => 'すべて同期済み';
+
+  @override
+  String get serverWorkspaceEnable => 'サーバーワークスペースを有効化';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle => 'サーバーワークスペースを有効化';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      '有効にすると、ローカル設定がサーバーに移行されます。ローカルの設定は保持され、削除されません。';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => '移行プレビュー';
+
+  @override
+  String get serverWorkspaceEnableConfirm => '有効化して同期';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate => '移行するローカルデータがありません';
+
+  @override
+  String get serverWorkspaceSyncNow => '今すぐ同期';
+
+  @override
+  String get serverWorkspaceDisable => '同期を無効化';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle => 'サーバーワークスペースを無効化';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      '無効にすると、このデバイスでの同期が停止します。リモートおよびローカルのデータは保持され、削除されません。';
+
+  @override
+  String get serverWorkspaceDisableConfirm => '無効化';
+
+  @override
+  String get serverWorkspacePreferenceSource => '設定の優先ソースとして使用';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc => 'このサーバーからアプリ全般の設定を同期します';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return '同期の競合 ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'ローカルを維持';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'サーバーを維持';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => '他デバイスの下書き';
+
+  @override
+  String get serverWorkspaceRestoreDraft => '下書きを復元';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle => 'デバイス下書きを復元';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'この下書きを復元すると、現在のチャット入力下書きが置き換わります。現在の下書きはリモート下書きリストに保存されます。';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => '復元';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts => '他のデバイスの下書きはありません';
+
+  @override
+  String get serverWorkspaceClearCache => 'ローカル同期キャッシュを消去';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle => 'ローカル同期キャッシュを消去';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'この操作はローカルの同期キャッシュと状態のみを消去します。リモートデータやSSH設定は削除されません。';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'キャッシュを消去';
+
+  @override
+  String get serverWorkspaceCacheCleared => 'ローカル同期キャッシュを消去しました';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed => 'サーバー上のワークスペース初期化に失敗しました';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired => 'サーバー上に Python 3.9 以上が必要です';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe => 'ワークスペースのパスが安全でないか、権限が無効です';
+
+  @override
+  String get serverWorkspaceErrorConflict => '同期中にデータ競合が検出されました';
+
+  @override
+  String get serverWorkspaceErrorControlHeld => 'セッションの制御権が別のデバイスに保持されています';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge => 'サーバー応答がサイズ上限を超えました';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'ワークスペースエラー ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => '制御中';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip => '現在このデバイスがセッションを制御しています';
+
+  @override
+  String get chatWorkspaceReadOnly => '読み取り専用';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return '読み取り専用 ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => '制御権を取得';
+
+  @override
+  String get chatWorkspaceTakeover => '引き継ぐ';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => 'セッション制御権の引き継ぎ';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      '制御権を引き継ぐと、このデバイスからメッセージの送信や操作が可能になります。実行中のエージェントが終了したり、セッションが切り替わることはありません。';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => '引き継ぐ';
+
+  @override
+  String get chatWorkspaceControlFailed => 'ワークスペース制御権の取得に失敗しました';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      '以前のランタイムコンポーネントが実行中です。元のデバイスで完了または終了させてからアップグレードしてください。';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled => 'サーバーワークスペースが有効化されていません';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      '保留中の変更があるためキャッシュを消去できません。先に同期してください。';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'ファイル下書き';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'チャット下書き';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle => 'ファイル下書きを復元';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'このファイル下書きを復元するとローカルエディタの下書きに読み込まれます。現在の下書きはリモートリストに保持されます。';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle => 'サーバーワークスペースと状態同期';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'アプリ終了後もユーザー専用のランタイムが出力を保持します。SSH認証情報や鍵は端末内に保存され同期されません。';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'バックグラウンドでレガシーデータを移行中です。設定は同期済みで、履歴データはバックグラウンドで継続して完了します。';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'さらに下書きを読み込む';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => '下書きを読み込み中...';
 }

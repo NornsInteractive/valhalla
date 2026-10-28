@@ -14,6 +14,7 @@ class AcpSshTransport implements LineTransport {
   final SSHSession session;
   final StreamController<TransportFrame> _incoming =
       StreamController<TransportFrame>(sync: true);
+  final bool workspaceReadOnly;
   final String? runtimeKey;
   bool get isPersistent => runtimeKey != null;
   int lastSequence = 0;
@@ -64,7 +65,12 @@ class AcpSshTransport implements LineTransport {
     }
   }
 
-  AcpSshTransport(this.session, {this.runtimeKey, int afterSequence = 0}) {
+  AcpSshTransport(
+    this.session, {
+    this.runtimeKey,
+    this.workspaceReadOnly = false,
+    int afterSequence = 0,
+  }) {
     lastSequence = afterSequence;
     if (!isPersistent) _attached.complete();
     _stderrSubscription =
@@ -191,6 +197,7 @@ class AcpSshTransport implements LineTransport {
   @override
   void send(TransportFrame frame) {
     if (_closed || _detaching) return;
+    if (workspaceReadOnly) throw StateError('WORKSPACE_CONTROL_REQUIRED');
     final line = isPersistent
         ? '${jsonEncode({'frame': jsonDecode(frame.toLine()), 'turnId': outgoingTurnId})}\n'
         : frame.toLine();

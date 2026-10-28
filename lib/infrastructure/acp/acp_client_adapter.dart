@@ -562,6 +562,15 @@ class ACPClientAdapter {
       _receiveAccount,
     );
 
+    if (ssh is AcpSshTransport && ssh.workspaceReadOnly) {
+      _sessionId = resumeSessionId ?? ssh.runtimeSessionId;
+      if (_sessionId == null) throw StateError('WORKSPACE_SESSION_NOT_READY');
+      _initialized = true;
+      _authenticated = true;
+      _restoredExistingSession = true;
+      return; // Observe durable events without initialize/load/resume writes.
+    }
+
     if (!_initialized) {
       final elapsed = Stopwatch()..start();
       var outcome = 'failed';

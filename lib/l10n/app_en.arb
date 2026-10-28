@@ -2620,5 +2620,318 @@
   "terminalModifierHelp": "Tap modifier for single-use; long-press to lock. Hold keys to repeat.",
   "@terminalModifierHelp": {
     "description": "Help text explaining modifier states and hold to repeat key behavior"
+  },
+  "serverWorkspaceTitle": "Server Workspace",
+  "@serverWorkspaceTitle": {
+    "description": "Title for server workspace setting and dialog"
+  },
+  "serverWorkspaceSubtitle": "Multi-device state synchronization and device drafts",
+  "@serverWorkspaceSubtitle": {
+    "description": "Subtitle describing server workspace multi-device synchronization"
+  },
+  "serverWorkspaceOriginServer": "Active Server",
+  "@serverWorkspaceOriginServer": {
+    "description": "Label for active server origin in workspace dialog"
+  },
+  "serverWorkspaceOriginUser": "Remote User",
+  "@serverWorkspaceOriginUser": {
+    "description": "Label for remote user in workspace dialog"
+  },
+  "serverWorkspaceNoActiveServer": "No active server selected or connected",
+  "@serverWorkspaceNoActiveServer": {
+    "description": "Notice when no active server is connected"
+  },
+  "serverWorkspacePhaseLocal": "Local Only",
+  "@serverWorkspacePhaseLocal": {
+    "description": "Status badge when workspace is local only"
+  },
+  "serverWorkspacePhaseDiscovering": "Discovering...",
+  "@serverWorkspacePhaseDiscovering": {
+    "description": "Status badge while detecting remote workspace"
+  },
+  "serverWorkspacePhaseAvailable": "Available to Enable",
+  "@serverWorkspacePhaseAvailable": {
+    "description": "Status badge when server workspace is available to enable"
+  },
+  "serverWorkspacePhaseSyncing": "Syncing...",
+  "@serverWorkspacePhaseSyncing": {
+    "description": "Status badge while syncing with server workspace"
+  },
+  "serverWorkspacePhaseReady": "In Sync",
+  "@serverWorkspacePhaseReady": {
+    "description": "Status badge when workspace is synced and ready"
+  },
+  "serverWorkspacePhaseOffline": "Offline",
+  "@serverWorkspacePhaseOffline": {
+    "description": "Status badge when server workspace is offline"
+  },
+  "serverWorkspacePhaseError": "Sync Error",
+  "@serverWorkspacePhaseError": {
+    "description": "Status badge when workspace encountered a sync error"
+  },
+  "serverWorkspaceLastSynced": "Last synced: {time}",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceNeverSynced": "Never synced",
+  "@serverWorkspaceNeverSynced": {
+    "description": "Notice when workspace has never synced"
+  },
+  "serverWorkspacePendingChanges": "{count} changes pending",
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "serverWorkspaceNoPendingChanges": "All changes synced",
+  "@serverWorkspaceNoPendingChanges": {
+    "description": "Label indicating all changes are synced"
+  },
+  "serverWorkspaceEnable": "Enable Server Workspace",
+  "@serverWorkspaceEnable": {
+    "description": "Button to enable server workspace"
+  },
+  "serverWorkspaceEnableDialogTitle": "Enable Server Workspace",
+  "@serverWorkspaceEnableDialogTitle": {
+    "description": "Title of server workspace enable confirmation dialog"
+  },
+  "serverWorkspaceEnableDialogMessage": "Enabling will migrate local configurations to the server. Your local configurations will be preserved.",
+  "@serverWorkspaceEnableDialogMessage": {
+    "description": "Explanation of server workspace enablement and data preservation"
+  },
+  "serverWorkspaceMigrationPreviewTitle": "Migration Preview",
+  "@serverWorkspaceMigrationPreviewTitle": {
+    "description": "Header for migration preview item counts"
+  },
+  "serverWorkspaceEnableConfirm": "Enable & Sync",
+  "@serverWorkspaceEnableConfirm": {
+    "description": "Confirmation button to enable server workspace"
+  },
+  "serverWorkspaceNoDataToMigrate": "No local data to migrate",
+  "@serverWorkspaceNoDataToMigrate": {
+    "description": "Notice when there is no local data to migrate"
+  },
+  "serverWorkspaceSyncNow": "Sync Now",
+  "@serverWorkspaceSyncNow": {
+    "description": "Button to immediately synchronize workspace"
+  },
+  "serverWorkspaceDisable": "Disable Sync",
+  "@serverWorkspaceDisable": {
+    "description": "Button to disable server workspace"
+  },
+  "serverWorkspaceDisableDialogTitle": "Disable Server Workspace",
+  "@serverWorkspaceDisableDialogTitle": {
+    "description": "Title of server workspace disable confirmation dialog"
+  },
+  "serverWorkspaceDisableDialogMessage": "Disabling sync will stop synchronization on this device. Remote and local data will be preserved and not deleted.",
+  "@serverWorkspaceDisableDialogMessage": {
+    "description": "Explanation that disabling stops sync but preserves all data"
+  },
+  "serverWorkspaceDisableConfirm": "Disable",
+  "@serverWorkspaceDisableConfirm": {
+    "description": "Confirmation button to disable workspace sync"
+  },
+  "serverWorkspacePreferenceSource": "Use as Preference Source",
+  "@serverWorkspacePreferenceSource": {
+    "description": "Switch label to use this server as preference source"
+  },
+  "serverWorkspacePreferenceSourceDesc": "Sync application-level settings from this server",
+  "@serverWorkspacePreferenceSourceDesc": {
+    "description": "Description of preference source behavior"
+  },
+  "serverWorkspaceConflictsTitle": "Sync Conflicts ({count})",
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Section header for sync conflicts",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "serverWorkspaceConflictKeepLocal": "Keep Local",
+  "@serverWorkspaceConflictKeepLocal": {
+    "description": "Button to resolve conflict by keeping local version"
+  },
+  "serverWorkspaceConflictKeepServer": "Keep Server",
+  "@serverWorkspaceConflictKeepServer": {
+    "description": "Button to resolve conflict by keeping server version"
+  },
+  "serverWorkspaceDeviceDraftsTitle": "Other Device Drafts",
+  "@serverWorkspaceDeviceDraftsTitle": {
+    "description": "Section title for drafts from other devices"
+  },
+  "serverWorkspaceRestoreDraft": "Restore Draft",
+  "@serverWorkspaceRestoreDraft": {
+    "description": "Button to restore a draft from another device"
+  },
+  "serverWorkspaceRestoreDraftConfirmTitle": "Restore Draft",
+  "@serverWorkspaceRestoreDraftConfirmTitle": {
+    "description": "Title of draft restore confirmation dialog"
+  },
+  "serverWorkspaceRestoreDraftConfirmMessage": "Restoring this draft will replace the current chat input draft. Your current draft will be preserved in remote drafts.",
+  "@serverWorkspaceRestoreDraftConfirmMessage": {
+    "description": "Notice that restoring replaces input draft while preserving current draft in list"
+  },
+  "serverWorkspaceRestoreDraftConfirm": "Restore",
+  "@serverWorkspaceRestoreDraftConfirm": {
+    "description": "Confirmation button to restore draft"
+  },
+  "serverWorkspaceNoDeviceDrafts": "No drafts from other devices",
+  "@serverWorkspaceNoDeviceDrafts": {
+    "description": "Empty state label for other device drafts"
+  },
+  "serverWorkspaceClearCache": "Clear Local Sync Cache",
+  "@serverWorkspaceClearCache": {
+    "description": "Button to clear local sync cache"
+  },
+  "serverWorkspaceClearCacheConfirmTitle": "Clear Local Sync Cache",
+  "@serverWorkspaceClearCacheConfirmTitle": {
+    "description": "Title of clear local sync cache confirmation dialog"
+  },
+  "serverWorkspaceClearCacheConfirmMessage": "This will clear only the local workspace sync cache and state. Remote workspace data and SSH configurations will never be deleted.",
+  "@serverWorkspaceClearCacheConfirmMessage": {
+    "description": "Notice that only local cache is cleared and remote data/SSH are never deleted"
+  },
+  "serverWorkspaceClearCacheConfirm": "Clear Cache",
+  "@serverWorkspaceClearCacheConfirm": {
+    "description": "Confirmation button to clear local sync cache"
+  },
+  "serverWorkspaceCacheCleared": "Local sync cache cleared",
+  "@serverWorkspaceCacheCleared": {
+    "description": "Snackbar notice when local sync cache has been cleared"
+  },
+  "serverWorkspaceErrorSetupFailed": "Workspace initialization failed on server",
+  "@serverWorkspaceErrorSetupFailed": {
+    "description": "Error message when remote workspace store installation fails"
+  },
+  "serverWorkspaceErrorPythonRequired": "Python 3.9+ is required on server",
+  "@serverWorkspaceErrorPythonRequired": {
+    "description": "Error message when remote python is missing or older than 3.9"
+  },
+  "serverWorkspaceErrorPathUnsafe": "Server workspace path is unsafe or permissions invalid",
+  "@serverWorkspaceErrorPathUnsafe": {
+    "description": "Error message when workspace path has unsafe permissions or symlink"
+  },
+  "serverWorkspaceErrorConflict": "Data conflict detected during sync",
+  "@serverWorkspaceErrorConflict": {
+    "description": "Error message when atomic commit encounters conflict"
+  },
+  "serverWorkspaceErrorControlHeld": "Session control is held by another device",
+  "@serverWorkspaceErrorControlHeld": {
+    "description": "Error message when session lease is held by another device"
+  },
+  "serverWorkspaceErrorResponseTooLarge": "Server response exceeded size limit",
+  "@serverWorkspaceErrorResponseTooLarge": {
+    "description": "Error message when remote response exceeds maximum allowed size"
+  },
+  "serverWorkspaceErrorGeneric": "Workspace error ({code})",
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "chatWorkspaceControlActive": "In Control",
+  "@chatWorkspaceControlActive": {
+    "description": "Badge label indicating this device currently has session control"
+  },
+  "chatWorkspaceControlActiveTooltip": "This device currently controls the session",
+  "@chatWorkspaceControlActiveTooltip": {
+    "description": "Tooltip for active session control badge"
+  },
+  "chatWorkspaceReadOnly": "Read-Only",
+  "@chatWorkspaceReadOnly": {
+    "description": "Badge label when session is in read-only mode"
+  },
+  "chatWorkspaceReadOnlyDevice": "Read-Only ({device})",
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "chatWorkspaceAcquireControl": "Acquire Control",
+  "@chatWorkspaceAcquireControl": {
+    "description": "Action button to acquire session control"
+  },
+  "chatWorkspaceTakeover": "Take Over",
+  "@chatWorkspaceTakeover": {
+    "description": "Action button to take over session control from another device"
+  },
+  "chatWorkspaceTakeoverDialogTitle": "Take Over Session Control",
+  "@chatWorkspaceTakeoverDialogTitle": {
+    "description": "Title of session control takeover confirmation dialog"
+  },
+  "chatWorkspaceTakeoverDialogMessage": "Taking over control allows this device to send messages and operate the current session. The running agent will not be terminated and the session will not be switched.",
+  "@chatWorkspaceTakeoverDialogMessage": {
+    "description": "Explanation of takeover behavior without terminating agent or switching session"
+  },
+  "chatWorkspaceTakeoverConfirm": "Take Over",
+  "@chatWorkspaceTakeoverConfirm": {
+    "description": "Confirm button label for session takeover"
+  },
+  "chatWorkspaceControlFailed": "Failed to acquire workspace control",
+  "@chatWorkspaceControlFailed": {
+    "description": "Error message when acquiring workspace control fails"
+  },
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "An older runtime component is running. Please finish or stop it on the original device before upgrading.",
+  "@serverWorkspaceErrorRuntimeUpgradeRequired": {
+    "description": "Error message when an older runtime component requires finish before upgrade"
+  },
+  "serverWorkspaceErrorNotEnabled": "Server workspace is not enabled",
+  "@serverWorkspaceErrorNotEnabled": {
+    "description": "Error message when server workspace is not enabled"
+  },
+  "serverWorkspaceErrorPendingChanges": "Cannot clear cache with pending changes. Please sync first.",
+  "@serverWorkspaceErrorPendingChanges": {
+    "description": "Error message when attempting to clear cache while changes are pending"
+  },
+  "serverWorkspaceDraftTypeFile": "File Draft",
+  "@serverWorkspaceDraftTypeFile": {
+    "description": "Badge or label for a file draft in workspace device drafts"
+  },
+  "serverWorkspaceDraftTypeChat": "Chat Draft",
+  "@serverWorkspaceDraftTypeChat": {
+    "description": "Badge or label for a chat draft in workspace device drafts"
+  },
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "Restore File Draft",
+  "@serverWorkspaceRestoreFileDraftConfirmTitle": {
+    "description": "Title of file draft restore confirmation dialog"
+  },
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "Restoring this file draft will save it to local editor drafts. Your current draft will be preserved in remote drafts.",
+  "@serverWorkspaceRestoreFileDraftConfirmMessage": {
+    "description": "Message for restoring file draft to local editor drafts"
+  },
+  "persistentRuntimeFeatureWorkspaceTitle": "Server Workspace & State Sync",
+  "@persistentRuntimeFeatureWorkspaceTitle": {
+    "description": "Title for workspace state sync feature in persistent runtime consent dialog"
+  },
+  "persistentRuntimeFeatureWorkspaceDesc": "User-owned runtime preserves output when the app is closed; SSH credentials and keys are stored locally and never synced.",
+  "@persistentRuntimeFeatureWorkspaceDesc": {
+    "description": "Description explaining user-owned runtime retains output while credentials are kept locally"
+  },
+  "serverWorkspaceMigrationPendingHint": "Legacy data migration in progress in background. Configuration is synced while historical data completes.",
+  "@serverWorkspaceMigrationPendingHint": {
+    "description": "Hint shown in workspace status when legacy migration is still completing in background"
+  },
+  "serverWorkspaceLoadMoreDrafts": "Load More Drafts",
+  "serverWorkspaceLoadingDrafts": "Loading drafts...",
+  "@serverWorkspaceLoadMoreDrafts": {
+    "description": "Button to load more drafts from other devices in server workspace"
+  },
+  "@serverWorkspaceLoadingDrafts": {
+    "description": "Loading state label when fetching additional device drafts"
   }
 }

@@ -6552,4 +6552,254 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'اضغط على مفتاح التعديل للاستخدام لمرة واحدة؛ اضغط مطولاً للقفل. استمر في الضغط لتكرار الإدخال.';
+
+  @override
+  String get serverWorkspaceTitle => 'مساحة عمل الخادم';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'مزامنة الحالة متعددة الأجهزة ومسودات الأجهزة';
+
+  @override
+  String get serverWorkspaceOriginServer => 'الخادم النشط';
+
+  @override
+  String get serverWorkspaceOriginUser => 'المستخدم البعيد';
+
+  @override
+  String get serverWorkspaceNoActiveServer => 'لم يتم تحديد أو اتصال خادم نشط';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'محلي فقط';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'جارٍ الاكتشاف...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'متاح للتمكين';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'جارٍ المزامنة...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'متزامن';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'غير متصل';
+
+  @override
+  String get serverWorkspacePhaseError => 'خطأ في المزامنة';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'آخر مزامنة: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'لم تتم المزامنة من قبل';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count من التغييرات المعلقة';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges => 'تمت مزامنة جميع التغييرات';
+
+  @override
+  String get serverWorkspaceEnable => 'تمكين مساحة عمل الخادم';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle => 'تمكين مساحة عمل الخادم';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'سيؤدي التمكين إلى نقل الإعدادات المحلية إلى الخادم. سيتم الحفاظ على إعداداتك المحلية بالكامل.';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => 'معاينة النقل';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'تأكيد وتمكين';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate => 'لا توجد بيانات محلية للنقل';
+
+  @override
+  String get serverWorkspaceSyncNow => 'مزامنة الآن';
+
+  @override
+  String get serverWorkspaceDisable => 'تعطيل المزامنة';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle => 'تعطيل مساحة عمل الخادم';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'سيؤدي التعطيل إلى إيقاف المزامنة على هذا الجهاز. سيتم الاحتفاظ بالبيانات المحلية والبعيدة ولن يتم حذفها.';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'تعطيل';
+
+  @override
+  String get serverWorkspacePreferenceSource => 'استخدام كمصدر التفضيلات';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'مزامنة إعدادات التطبيق العامة من هذا الخادم';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'تعارضات المزامنة ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'الاحتفاظ بالمحلي';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'الاحتفاظ بالخادم';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => 'مسودات الأجهزة الأخرى';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'استعادة المسودة';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle => 'استعادة مسودة الجهاز';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'ستؤدي استعادة هذه المسودة إلى استبدال مدخلات الدردشة الحالية. سيتم حفظ مسودتك الحالية في قائمة المسودات البعيدة.';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'استعادة';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts => 'لا توجد مسودات من أجهزة أخرى';
+
+  @override
+  String get serverWorkspaceClearCache =>
+      'مسح ذاكرة التخزين المؤقت للمزامنة المحلية';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle =>
+      'مسح ذاكرة التخزين المؤقت للمزامنة المحلية';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'سيؤدي هذا الإجراء إلى مسح ذاكرة التخزين المؤقت وحالة المزامنة المحلية فقط. لن يتم مطلقاً حذف بيانات الخادم أو اتصالات SSH.';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'مسح الذاكرة المؤقتة';
+
+  @override
+  String get serverWorkspaceCacheCleared =>
+      'تم مسح ذاكرة التخزين المؤقت للمزامنة المحلية';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed => 'فشل تهيئة مساحة عمل الخادم';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'يتطلب الخادم إصدار Python 3.9 أو أحدث';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'مسار مساحة عمل الخادم غير آمن أو أذوناته غير صحيحة';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'تم اكتشاف تعارض في البيانات أثناء المزامنة';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'التحكم في الجلسة مشغول بواسطة جهاز آخر';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'تجاوزت استجابة الخادم الحد الأقصى المسموح به';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'خطأ في مساحة العمل ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'تحت السيطرة';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'يتحكم هذا الجهاز حالياً في الجلسة';
+
+  @override
+  String get chatWorkspaceReadOnly => 'للقراءة فقط';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'للقراءة فقط ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'اكتساب التحكم';
+
+  @override
+  String get chatWorkspaceTakeover => 'استلام التحكم';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => 'استلام التحكم في الجلسة';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'يتيح استلام التحكم لهذا الجهاز إرسال الرسائل وتشغيل الجلسة الحالية. لن يتم إنهاء الوكيل المشغل ولن يتم تبديل الجلسة.';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'تأكيد الاستلام';
+
+  @override
+  String get chatWorkspaceControlFailed =>
+      'فشل الحصول على التحكم في مساحة العمل';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'يوجد مكون وقت تشغيل قديم يعمل حالياً. يرجى إنهاؤه على الجهاز الأصلي قبل الترقية.';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled => 'مساحة عمل الخادم غير ممكّنة';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'لا يمكن مسح الذاكرة المؤقتة مع وجود تغييرات معلقة. يرجى المزامنة أولاً.';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'مسودة ملف';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'مسودة دردشة';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle =>
+      'استعادة مسودة الملف';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'ستؤدي استعادة مسودة الملف هذه إلى تحميلها في مسودات المحرر المحلي. سيتم حفظ مسودتك الحالية في المسودات البعيدة.';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'مساحة عمل الخادم ومزامنة الحالة';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'تحتفظ بيئة التشغيل الخاصة بالمستخدم بالمخرجات عند إغلاق التطبيق؛ تظل بيانات اعتماد ومفاتيح SSH محلية ولا تتم مزامنتها مطلقاً.';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'يجري ترحيل البيانات السابقة في الخلفية. تمت مزامنة الإعدادات بينما يكتمل ترحيل السجل في الخلفية.';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'تحميل المزيد من المسودات';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'جارٍ تحميل المسودات...';
 }

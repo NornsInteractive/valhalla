@@ -6607,4 +6607,261 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'एकल उपयोग के लिए संशोधक टैप करें; लॉक करने के लिए देर तक दबाएँ। दोहराने के लिए कुंजियों को दबाकर रखें।';
+
+  @override
+  String get serverWorkspaceTitle => 'सर्वर कार्यक्षेत्र';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'मल्टी-डिवाइस स्थिति सिंक्रनाइज़ेशन और डिवाइस ड्राफ्ट';
+
+  @override
+  String get serverWorkspaceOriginServer => 'सक्रिय सर्वर';
+
+  @override
+  String get serverWorkspaceOriginUser => 'दूरस्थ उपयोगकर्ता';
+
+  @override
+  String get serverWorkspaceNoActiveServer =>
+      'कोई सक्रिय सर्वर चयनित या कनेक्ट नहीं है';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'केवल स्थानीय';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'खोज जारी है...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'सक्षम करने के लिए उपलब्ध';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'सिंक हो रहा है...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'सिंक हो गया';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'ऑफ़लाइन';
+
+  @override
+  String get serverWorkspacePhaseError => 'सिंक त्रुटि';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'पिछला सिंक: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'कभी सिंक नहीं किया गया';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count परिवर्तन लंबित हैं';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges => 'सभी परिवर्तन सिंक हो गए हैं';
+
+  @override
+  String get serverWorkspaceEnable => 'सर्वर कार्यक्षेत्र सक्षम करें';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle =>
+      'सर्वर कार्यक्षेत्र सक्षम करें';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'सक्षम करने से स्थानीय कॉन्फ़िगरेशन सर्वर पर माइग्रेट हो जाएगा। आपका स्थानीय डेटा सुरक्षित रहेगा।';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => 'माइग्रेशन पूर्वावलोकन';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'सक्षम करें और सिंक करें';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate =>
+      'माइग्रेट करने के लिए कोई स्थानीय डेटा नहीं है';
+
+  @override
+  String get serverWorkspaceSyncNow => 'अभी सिंक करें';
+
+  @override
+  String get serverWorkspaceDisable => 'सिंक अक्षम करें';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle =>
+      'सर्वर कार्यक्षेत्र अक्षम करें';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'अक्षम करने से इस डिवाइस पर सिंक बंद हो जाएगा। रिमोट और स्थानीय डेटा सुरक्षित रहेगा और हटाया नहीं जाएगा।';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'अक्षम करें';
+
+  @override
+  String get serverWorkspacePreferenceSource =>
+      'वरीयता स्रोत के रूप में उपयोग करें';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'इस सर्वर से एप्लिकेशन-स्तरीय सेटिंग्स सिंक करें';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'सिंक टकराव ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'स्थानीय रखें';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'सर्वर रखें';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => 'अन्य डिवाइस ड्राफ्ट';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'ड्राफ्ट पुनर्स्थापित करें';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle =>
+      'ड्राफ्ट पुनर्स्थापित करें';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'इस ड्राफ्ट को पुनर्स्थापित करने से वर्तमान चैट इनपुट बदल जाएगा। आपका वर्तमान ड्राफ्ट रिमोट सूची में सुरक्षित रहेगा।';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'पुनर्स्थापित करें';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts => 'अन्य डिवाइस से कोई ड्राफ्ट नहीं';
+
+  @override
+  String get serverWorkspaceClearCache => 'स्थानीय सिंक कैश साफ़ करें';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle =>
+      'स्थानीय सिंक कैश साफ़ करें';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'यह केवल स्थानीय सिंक कैश और स्थिति को साफ़ करेगा। रिमोट डेटा और SSH कॉन्फ़िगरेशन कभी नहीं हटाए जाएंगे।';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'कैश साफ़ करें';
+
+  @override
+  String get serverWorkspaceCacheCleared => 'स्थानीय सिंक कैश साफ़ कर दिया गया';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed =>
+      'सर्वर पर कार्यक्षेत्र प्रारंभ करने में विफल';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'सर्वर पर Python 3.9+ आवश्यक है';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'सर्वर कार्यक्षेत्र पथ असुरक्षित है या अनुमतियाँ अमान्य हैं';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'सिंक के दौरान डेटा टकराव का पता चला';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'सत्र नियंत्रण किसी अन्य डिवाइस के पास है';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'सर्वर प्रतिक्रिया आकार सीमा से अधिक हो गई';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'कार्यक्षेत्र त्रुटि ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'नियंत्रण में';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'वर्तमान में यह डिवाइस सत्र को नियंत्रित कर रहा है';
+
+  @override
+  String get chatWorkspaceReadOnly => 'केवल पढ़ने योग्य';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'केवल पढ़ने योग्य ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'नियंत्रण प्राप्त करें';
+
+  @override
+  String get chatWorkspaceTakeover => 'अधिग्रहण करें';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle =>
+      'सत्र नियंत्रण का अधिग्रहण करें';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'नियंत्रण लेने से यह डिवाइस संदेश भेज सकता है और सत्र संचालित कर सकता है। चल रहा एजेंट समाप्त नहीं होगा और सत्र नहीं बदलेगा।';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'पुष्टि करें';
+
+  @override
+  String get chatWorkspaceControlFailed =>
+      'कार्यक्षेत्र नियंत्रण प्राप्त करने में विफल';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'एक पुराना रनटाइम घटक चल रहा है। कृपया अपग्रेड करने से पहले इसे मूल डिवाइस पर समाप्त करें।';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled =>
+      'सर्वर कार्यक्षेत्र सक्षम नहीं है';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'लंबित परिवर्तनों के साथ कैश साफ़ नहीं किया जा सकता। कृपया पहले सिंक करें।';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'फ़ाइल ड्राफ्ट';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'चैट ड्राफ्ट';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle =>
+      'फ़ाइल ड्राफ्ट पुनर्स्थापित करें';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'इस फ़ाइल ड्राफ्ट को पुनर्स्थापित करने से यह स्थानीय संपादक ड्राफ्ट में लोड हो जाएगा। आपका वर्तमान ड्राफ्ट रिमोट सूची में सुरक्षित रहेगा।';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'सर्वर कार्यक्षेत्र और स्थिति सिंक';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'ऐप बंद होने पर भी उपयोगकर्ता का रनटाइम आउटपुट सुरक्षित रखता है; SSH क्रेडेंशियल और कुंजियाँ स्थानीय रहती हैं और कभी सिंक नहीं होती हैं।';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'पृष्ठभूमि में लीगेसी डेटा माइग्रेशन जारी है। कॉन्फ़िगरेशन सिंक हो चुका है और ऐतिहासिक डेटा पृष्ठभूमि में पूरा हो रहा है।';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'और ड्राफ़्ट लोड करें';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'ड्राफ़्ट लोड हो रहे हैं...';
 }

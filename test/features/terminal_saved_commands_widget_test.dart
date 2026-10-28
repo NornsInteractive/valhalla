@@ -9,6 +9,7 @@ import 'package:valhalla/core/providers/terminal_settings_provider.dart';
 import 'package:valhalla/data/models/quick_command.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
+import 'package:valhalla/data/workspace/workspace_gateway.dart';
 import 'package:valhalla/features/terminal/terminal_view.dart';
 import 'package:valhalla/features/terminal/widgets/terminal_saved_commands_dialog.dart';
 import 'package:valhalla/infrastructure/terminal/terminal_session_bridge.dart';
@@ -92,6 +93,10 @@ class _FakeCommands extends CommandsNotifier {
 }
 
 class _Storage implements LocalStorageService {
+  /// Local-only fixture: no remote workspace is attached.
+  @override
+  WorkspaceGateway? workspaceGateway;
+
   @override
   TerminalHistorySnapshot getTerminalHistory(
     String serverId,

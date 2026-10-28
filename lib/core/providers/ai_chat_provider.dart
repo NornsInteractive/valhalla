@@ -1,3 +1,7 @@
+import '../../data/workspace/workspace_session_control.dart';
+import '../../data/workspace/workspace_gateway.dart';
+import '../../infrastructure/workspace/remote_workspace_client.dart'
+    show WorkspaceException;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -18,6 +22,7 @@ import '../../data/models/chat_run_settings.dart';
 import '../../data/models/chat_launch_preference.dart';
 import '../../data/models/native_cli_session.dart';
 import '../../data/repositories/chat_repository.dart';
+import '../../data/workspace/workspace_chat_sync.dart';
 import '../../infrastructure/acp/acp_client_adapter.dart';
 import '../../infrastructure/acp/acp_ssh_transport.dart';
 import '../../infrastructure/acp/acp_runtime_service.dart';
@@ -59,6 +64,24 @@ typedef AcpTransportFactory =
 final persistentAcpRuntimeEnabledProvider = Provider<bool>((ref) => false);
 final persistentAcpRuntimeOpenerProvider = Provider(
   (ref) => AcpRuntimeService.open,
+);
+typedef SharedAcpRuntimeOpener =
+    Future<Transport> Function(
+      SSHClient ssh,
+      AgentProfile profile, {
+      required String runtimeKey,
+      required int afterSequence,
+      required Map<String, dynamic> workspace,
+      String? remoteSessionId,
+      String? initialModelId,
+      String? workingDirectory,
+      String? title,
+    });
+final sharedAcpRuntimeOpenerProvider = Provider<SharedAcpRuntimeOpener>(
+  (ref) => AcpRuntimeService.openShared,
+);
+final sharedAcpRuntimeManagerProvider = Provider(
+  (ref) => AcpRuntimeService.manageShared,
 );
 final persistentAcpRuntimeInstallerProvider = Provider(
   (ref) => AcpRuntimeService.install,
@@ -196,6 +219,8 @@ class AcpActiveRun {
 }
 
 class AiChatState {
+  final String? workspaceControlOwnerDeviceId;
+  final bool workspaceHasControl, workspaceControlBusy;
   final bool persistentRuntimeSetupRequired;
   final String? persistentRuntimeSetupError;
   final bool isSettingUpPersistentRuntime;
@@ -274,6 +299,9 @@ class AiChatState {
   final bool acpSessionRestartDetected;
 
   const AiChatState({
+    this.workspaceControlOwnerDeviceId,
+    this.workspaceHasControl = true,
+    this.workspaceControlBusy = false,
     this.persistentRuntimeSetupRequired = false,
     this.persistentRuntimeSetupError,
     this.isSettingUpPersistentRuntime = false,
@@ -343,6 +371,10 @@ class AiChatState {
   }
 
   AiChatState copyWith({
+    String? workspaceControlOwnerDeviceId,
+    bool clearWorkspaceControlOwner = false,
+    bool? workspaceHasControl,
+    bool? workspaceControlBusy,
     bool? persistentRuntimeSetupRequired,
     String? persistentRuntimeSetupError,
     bool clearPersistentRuntimeSetupError = false,
@@ -406,6 +438,11 @@ class AiChatState {
     bool? acpSessionRestartDetected,
   }) {
     return AiChatState(
+      workspaceControlOwnerDeviceId: clearWorkspaceControlOwner
+          ? null
+          : workspaceControlOwnerDeviceId ?? this.workspaceControlOwnerDeviceId,
+      workspaceHasControl: workspaceHasControl ?? this.workspaceHasControl,
+      workspaceControlBusy: workspaceControlBusy ?? this.workspaceControlBusy,
       persistentRuntimeSetupRequired:
           persistentRuntimeSetupRequired ?? this.persistentRuntimeSetupRequired,
       persistentRuntimeSetupError: clearPersistentRuntimeSetupError
@@ -601,7 +638,6 @@ class AiChatNotifier extends Notifier<AiChatState> {
     _acpSub = null;
     _currentAdapter = null;
     _currentAdapterLaunchKey = null;
-    final repo = ref.read(chatRepositoryProvider);
     late final AcpBackgroundRun run;
     run = AcpBackgroundRun(
       serverTargetKey: target,
@@ -614,7 +650,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
           snapshot.messages.last.runtimeTurnId ??
           snapshot.messages.last.id,
       attachments: ref.read(acpAttachmentStoreProvider),
-      save: repo.saveSession,
+      save: _saveRuntimeCheckpoint,
       permissions: pending,
       onChanged: () => _backgroundChanged(run),
     );
@@ -705,9 +741,10 @@ class AiChatNotifier extends Notifier<AiChatState> {
       return;
     }
     try {
-      final transport = await ref.read(persistentAcpRuntimeOpenerProvider)(
+      final transport = await _openRuntimeTransport(
         client,
         run.profile,
+        sessionId: run.session.id,
         runtimeKey: key,
         afterSequence: context.runtimeCursor,
         remoteSessionId: context.remoteSessionId,
@@ -773,14 +810,44 @@ class AiChatNotifier extends Notifier<AiChatState> {
       return;
     }
     final target = _serverTargetKey;
-    final runs = await ref.read(acpServerRunsProvider)(client, serverId);
+    final runs = await ref.read(acpServerRunsProvider)(
+      client,
+      _sharedWorkspaceFor(serverId)
+          ? (_workspaceIdFor(serverId) ?? serverId)
+          : serverId,
+    );
     if (!ref.mounted || target != _serverTargetKey) {
       throw StateError('ACP_TARGET_CHANGED');
     }
     for (final remote in runs.where((run) => run.isBusy)) {
-      final session = await ref
-          .read(chatRepositoryProvider)
-          .findRuntimeSession(serverId, remote.runtimeKey);
+      final repo = ref.read(chatRepositoryProvider);
+      var session = await repo.findRuntimeSession(serverId, remote.runtimeKey);
+      // New device / pre-checkpoint discovery: consult the shared runtime
+      // catalog instead of failing on a missing local mapping. The catalog
+      // carries bounded bootstrap metadata so we can hydrate the exact session
+      // or reconstruct a stable read-only view without inventing a runtime.
+      if (session == null && _sharedWorkspaceFor(serverId)) {
+        final info = (await repo.workspaceRuntimeCatalog(
+          serverId,
+          runtimeKey: remote.runtimeKey,
+        )).where((entry) => entry.runtimeKey == remote.runtimeKey).firstOrNull;
+        if (info != null && info.agentId != null) {
+          final profile = state.readyAgents
+              .where((candidate) => candidate.id == info.agentId)
+              .firstOrNull;
+          if (profile != null) {
+            final hydrated = await _hydrateDiscoveredRuntime(
+              serverId,
+              info,
+              profile,
+              remote,
+            );
+            if (hydrated != null) {
+              session = hydrated;
+            }
+          }
+        }
+      }
       if (!ref.mounted || target != _serverTargetKey) {
         throw StateError('ACP_TARGET_CHANGED');
       }
@@ -796,12 +863,15 @@ class AiChatNotifier extends Notifier<AiChatState> {
       if (session == null || profile == null || target == null) {
         throw StateError('ACP_RUNTIME_SERVER_BUSY');
       }
-      final transport = await ref.read(persistentAcpRuntimeOpenerProvider)(
+      final transport = await _openRuntimeTransport(
         client,
         profile,
+        sessionId: session.id,
         runtimeKey: remote.runtimeKey,
         afterSequence: session.contextFor(profile.id).runtimeCursor,
         remoteSessionId: session.contextFor(profile.id).remoteSessionId,
+        workingDirectory: session.workingDirectory,
+        title: session.title,
       );
       if (!ref.mounted || target != _serverTargetKey) {
         await transport.close();
@@ -823,7 +893,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
             session.agentRunSettings[profile.id]?.permissionPolicy ??
             OperationPermissionPolicy.askEveryTime,
         attachments: ref.read(acpAttachmentStoreProvider),
-        save: ref.read(chatRepositoryProvider).saveSession,
+        save: _saveRuntimeCheckpoint,
         turnId:
             remote.turnId ??
             session.messages.lastOrNull?.runtimeTurnId ??
@@ -838,6 +908,78 @@ class AiChatNotifier extends Notifier<AiChatState> {
       await run.checkpoint();
       return;
     }
+  }
+
+  /// Reconstructs the chat session behind a discovered shared runtime when the
+  /// local checkpoint is missing.
+  ///
+  /// If the registry advertises a chat-session id and the owning device has
+  /// already committed it, the exact session is hydrated from the workspace
+  /// store. Otherwise a stable, read-only local view is built purely from the
+  /// portable bootstrap metadata. Under no circumstance is a new remote runtime
+  /// created just to satisfy a cold cache.
+  Future<ChatSession?> _hydrateDiscoveredRuntime(
+    String serverId,
+    WorkspaceRuntimeInfo info,
+    AgentProfile profile,
+    AcpRuntimeStatus remote,
+  ) async {
+    final repo = ref.read(chatRepositoryProvider);
+    if (info.sessionId != null && info.sessionId!.isNotEmpty) {
+      final hydrated = await repo.hydrateRemoteSession(
+        serverId,
+        info.sessionId!,
+      );
+      if (hydrated != null) {
+        return _withRuntimeKey(hydrated, profile.id, remote.runtimeKey);
+      }
+      final local = await repo.findRemoteSession(
+        serverId,
+        profile.id,
+        info.sessionId!,
+      );
+      if (local != null) {
+        return _withRuntimeKey(local, profile.id, remote.runtimeKey);
+      }
+    }
+    final reconstructed = ChatSession(
+      id: info.sessionId?.isNotEmpty == true
+          ? info.sessionId!
+          : 'runtime/${remote.runtimeKey}',
+      serverId: serverId,
+      agentId: profile.id,
+      title: info.title ?? profile.name,
+      workingDirectory: info.workingDirectory ?? '/root',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      agentContexts: {
+        profile.id: AgentChatContext(
+          remoteSessionId: info.acpRemoteSessionId,
+          persistentRuntimeKey: remote.runtimeKey,
+          runtimeCursor: 0,
+          runtimeGeneration: 0,
+        ),
+      },
+    );
+    await repo.persistLocalRuntimeSession(reconstructed);
+    return reconstructed;
+  }
+
+  ChatSession _withRuntimeKey(
+    ChatSession session,
+    String agentId,
+    String runtimeKey,
+  ) {
+    final context = session.agentContexts[agentId];
+    if (context?.persistentRuntimeKey == runtimeKey) return session;
+    return session.copyWith(
+      agentContexts: {
+        ...session.agentContexts,
+        agentId: (context ?? const AgentChatContext()).copyWith(
+          persistentRuntimeKey: runtimeKey,
+        ),
+      },
+    );
   }
 
   final List<ACPEvent> _recoveredRuntimeEvents = [];
@@ -864,8 +1006,18 @@ class AiChatNotifier extends Notifier<AiChatState> {
     if (snapshot == null || _currentAdapter?.isPersistent != true) {
       return;
     }
-    await ref.read(chatRepositoryProvider).saveSession(snapshot);
+    await _saveRuntimeCheckpoint(snapshot);
   })().whenComplete(() => _runtimeSaving = null);
+
+  Future<void> _saveRuntimeCheckpoint(ChatSession snapshot) {
+    final repo = ref.read(chatRepositoryProvider);
+    final serverId = snapshot.serverId;
+    if (_sharedWorkspaceFor(serverId) &&
+        _controlFor(serverId!, snapshot.id)?.hasControl != true) {
+      return repo.persistLocalRuntimeSession(snapshot);
+    }
+    return repo.saveSession(snapshot);
+  }
 
   Future<ChatSession?> _captureRuntimeSnapshot() async {
     while (ref.mounted) {
@@ -1243,7 +1395,12 @@ class AiChatNotifier extends Notifier<AiChatState> {
     final server = ref.read(activeServerProvider);
     return server == null
         ? null
-        : AcpRuntimeService.identity(server.connectionKey.toString());
+        : AcpRuntimeService.identity(
+            _sharedWorkspaceFor(server.id)
+                ? (_workspaceIdFor(server.id) ??
+                      server.connectionKey.toString())
+                : server.connectionKey.toString(),
+          );
   }
 
   Future<bool> approvePersistentRuntime() async {
@@ -2293,6 +2450,220 @@ class AiChatNotifier extends Notifier<AiChatState> {
   /// 当前活跃的 SSH 服务器 id，用于按服务器隔离会话 id。
   String? get _activeServerId => ref.read(activeServerProvider)?.id;
 
+  final Map<String, WorkspaceSessionControl> _workspaceControls = {};
+  StreamSubscription<WorkspaceChange>? _workspaceChanges;
+  WorkspaceGateway? get _workspaceGateway =>
+      ref.read(localStorageServiceProvider).workspaceGateway;
+  bool _sharedWorkspaceFor(String? serverId) =>
+      serverId != null && _workspaceGateway?.isEnabled(serverId) == true;
+  bool get _sharedWorkspace => _sharedWorkspaceFor(_activeServerId);
+
+  /// Workspace ids are per server.  Never substitute the active server's id
+  /// for a background run that belongs to a different server.
+  String? _workspaceIdFor(String? serverId) {
+    if (serverId == null) return null;
+    final raw = ref
+        .read(localStorageServiceProvider)
+        .workspacePreferences
+        .raw
+        .getString('valhalla_workspace_binding_v1::$serverId');
+    if (raw == null) return null;
+    try {
+      final value = jsonDecode(raw);
+      if (value is Map && value['workspaceId'] is String) {
+        return value['workspaceId'] as String;
+      }
+    } on FormatException {
+      return null;
+    }
+    return null;
+  }
+
+  WorkspaceSessionControl? _controlFor(String serverId, String? sessionId) {
+    final gateway = _workspaceGateway;
+    if (gateway == null || sessionId == null || !gateway.isEnabled(serverId)) {
+      return null;
+    }
+    final key = '$serverId::$sessionId';
+    return _workspaceControls.putIfAbsent(
+      key,
+      () => WorkspaceSessionControl(
+        gateway: gateway,
+        serverId: serverId,
+        sessionId: sessionId,
+        isForeground: () => ref.mounted && ref.read(appVisibilityProvider),
+        onChanged: () {
+          if (!ref.mounted ||
+              _activeServerId != serverId ||
+              state.activeSessionId != sessionId) {
+            return;
+          }
+          final c = _workspaceControls[key];
+          if (c == null) return;
+          state = state.copyWith(
+            workspaceControlOwnerDeviceId: c.ownerDeviceId,
+            clearWorkspaceControlOwner: c.ownerDeviceId == null,
+            workspaceHasControl: c.hasControl,
+            workspaceControlBusy: c.busy,
+          );
+        },
+      ),
+    );
+  }
+
+  WorkspaceSessionControl? _controlForCurrent({String? sessionId}) {
+    final serverId = _activeServerId;
+    if (serverId == null) return null;
+    return _controlFor(serverId, sessionId ?? state.activeSessionId);
+  }
+
+  String _workspaceError(Object error) {
+    final raw = error is WorkspaceException ? error.code : error.toString();
+    return LogSanitizer.sanitize(raw);
+  }
+
+  /// Acquires control for the requested intrinsic server/session.  Expected
+  /// lease failures are converted into state, never thrown into send/stop.
+  Future<bool> acquireWorkspaceControl({
+    bool takeover = false,
+    String? serverId,
+    String? sessionId,
+  }) async {
+    final targetServer = serverId ?? _activeServerId;
+    if (!_sharedWorkspaceFor(targetServer)) return true;
+    final targetSession = sessionId ?? state.activeSessionId;
+    final control = _controlFor(targetServer!, targetSession);
+    if (control == null) return true;
+    final visible =
+        targetServer == _activeServerId &&
+        targetSession == state.activeSessionId;
+    final origin = workspaceSelectionKey, epoch = _requestEpoch;
+    bool ok;
+    try {
+      ok = await control.acquire(takeover: takeover);
+    } catch (error) {
+      if (ref.mounted &&
+          visible &&
+          origin == workspaceSelectionKey &&
+          epoch == _requestEpoch) {
+        state = state.copyWith(lastErrorCode: _workspaceError(error));
+      }
+      return false;
+    }
+    if (!ref.mounted) return false;
+    if (visible && (origin != workspaceSelectionKey || epoch != _requestEpoch)) {
+      return false;
+    }
+    if (ok) {
+      if (visible) {
+        final adapter = _currentAdapter;
+        if (adapter != null &&
+            (adapter.transport is AcpSshTransport &&
+                    (adapter.transport as AcpSshTransport).workspaceReadOnly ||
+                !adapter.isPersistent)) {
+          adapter.dispose();
+          _currentAdapter = null;
+          _currentAdapterLaunchKey = null;
+        }
+      }
+    } else if (visible) {
+      state = state.copyWith(lastErrorCode: 'WORKSPACE_CONTROL_REQUIRED');
+    }
+    return ok;
+  }
+
+  Future<bool> _ensureControl(WorkspaceSessionControl control) async {
+    if (control.hasControl) return true;
+    try {
+      return await control.acquire();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _updateWorkspaceControlView() {
+    final c = _controlForCurrent();
+    state = state.copyWith(
+      workspaceHasControl:
+          !_sharedWorkspace ||
+          state.activeSessionId == null ||
+          c?.hasControl == true,
+      workspaceControlOwnerDeviceId: c?.ownerDeviceId,
+      clearWorkspaceControlOwner: c?.ownerDeviceId == null,
+      workspaceControlBusy: c?.busy ?? false,
+    );
+  }
+
+  Future<Transport> _openRuntimeTransport(
+    SSHClient client,
+    AgentProfile profile, {
+    required String sessionId,
+    required String runtimeKey,
+    required int afterSequence,
+    String? remoteSessionId,
+    String? initialModelId,
+    String? workingDirectory,
+    String? title,
+  }) {
+    final serverId = profile.serverId;
+    if (_sharedWorkspaceFor(serverId)) {
+      final c = _controlFor(serverId, sessionId);
+      return ref.read(sharedAcpRuntimeOpenerProvider)(
+        client,
+        profile,
+        runtimeKey: runtimeKey,
+        afterSequence: afterSequence,
+        remoteSessionId: remoteSessionId,
+        initialModelId: initialModelId,
+        workingDirectory: workingDirectory,
+        title: title,
+        workspace: {
+          ...?c?.context,
+          'workspaceId': _workspaceIdFor(serverId),
+          'workspaceSessionId': sessionId,
+          'workspaceDeviceId': _workspaceGateway!.deviceId,
+        },
+      );
+    }
+    return ref.read(persistentAcpRuntimeOpenerProvider)(
+      client,
+      profile,
+      runtimeKey: runtimeKey,
+      afterSequence: afterSequence,
+      remoteSessionId: remoteSessionId,
+      initialModelId: initialModelId,
+    );
+  }
+
+  Future<void> _manageRuntime(
+    SSHClient client,
+    String serverId,
+    String sessionId, {
+    required String runtimeKey,
+    required String action,
+    bool stopRunning = false,
+  }) async {
+    if (_sharedWorkspaceFor(serverId)) {
+      final c = _controlFor(serverId, sessionId);
+      if (c == null || !await _ensureControl(c)) {
+        throw StateError('WORKSPACE_CONTROL_REQUIRED');
+      }
+      return ref.read(sharedAcpRuntimeManagerProvider)(
+        client,
+        runtimeKey: runtimeKey,
+        action: action,
+        stopRunning: stopRunning,
+        workspace: {...c.context, 'workspaceId': _workspaceIdFor(serverId)},
+      );
+    }
+    return ref.read(acpRuntimeManagerProvider)(
+      client,
+      runtimeKey: runtimeKey,
+      action: action,
+      stopRunning: stopRunning,
+    );
+  }
+
   Future<Transport> _openDurableTransport(
     SSHClient client,
     AgentProfile profile,
@@ -2320,8 +2691,10 @@ class AiChatNotifier extends Notifier<AiChatState> {
         state.activeAgentProfile?.id == profile.id;
     Future<void> rotate() async {
       if (resumeId == null) throw StateError('ACP_SESSION_RESTART_REQUIRED');
-      await ref.read(acpRuntimeManagerProvider)(
+      await _manageRuntime(
         client,
+        profile.serverId,
+        session.id,
         runtimeKey: key,
         action: 'retire',
       );
@@ -2360,19 +2733,46 @@ class AiChatNotifier extends Notifier<AiChatState> {
       resumeId ??= status.remoteSessionId;
       await rotate();
     }
-    Future<Transport> open() => ref.read(persistentAcpRuntimeOpenerProvider)(
+    final shared = _sharedWorkspaceFor(profile.serverId);
+    Future<Transport> open() => _openRuntimeTransport(
       client,
       profile,
+      sessionId: session.id,
       runtimeKey: key,
       afterSequence: context.runtimeCursor,
       remoteSessionId: context.remoteSessionId,
       initialModelId: initialModelId,
+      workingDirectory: session.workingDirectory,
+      title: session.title,
     );
     try {
       return await open();
     } on AcpRuntimeUnavailableException catch (error) {
-      if (!error.status.canRecover || !current()) rethrow;
+      if (!shared && (!error.status.canRecover || !current())) rethrow;
+      if (shared &&
+          (!current() ||
+              _controlFor(profile.serverId, session.id)?.hasControl != true)) {
+        rethrow;
+      }
       resumeId ??= error.status.remoteSessionId;
+      await rotate();
+      return open();
+    } on StateError catch (error) {
+      if (error.message != 'WORKSPACE_RUNTIME_UPGRADE_REQUIRED' ||
+          !shared ||
+          _controlFor(profile.serverId, session.id)?.hasControl != true ||
+          !current()) {
+        rethrow;
+      }
+      final status = await ref.read(acpRuntimeInspectorProvider)(
+        client,
+        runtimeKey: key,
+      );
+      if (!current()) throw StateError('ACP_TARGET_CHANGED');
+      // A busy legacy runtime must keep running.  Upgrade only an idle runtime
+      // that this device explicitly controls, preserving resume id/generation.
+      if (status.isBusy) throw StateError('WORKSPACE_RUNTIME_UPGRADE_REQUIRED');
+      resumeId ??= status.remoteSessionId;
       await rotate();
       return open();
     }
@@ -2394,6 +2794,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
         localSession != null &&
         identity != null;
     if (durable &&
+        !_sharedWorkspaceFor(profile.serverId) &&
         !ref
             .read(localStorageServiceProvider)
             .getPersistentAcpConsent(identity)) {
@@ -2500,9 +2901,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
       );
       _updateSessionInState(updated);
       unawaited(
-        ref.read(chatRepositoryProvider).saveSession(updated).catchError((
-          Object error,
-        ) {
+        _saveRuntimeCheckpoint(updated).catchError((Object error) {
           if (ref.mounted &&
               _activeServerId == serverId &&
               state.activeSessionId == updated.id) {
@@ -3098,7 +3497,25 @@ class AiChatNotifier extends Notifier<AiChatState> {
 
   @override
   AiChatState build() {
+    unawaited(_workspaceChanges?.cancel());
+    _workspaceChanges = null;
+    for (final control in _workspaceControls.values) {
+      control.dispose();
+    }
+    _workspaceControls.clear();
+    _workspaceChanges = _workspaceGateway?.changes.listen((change) {
+      if (!ref.mounted || change.serverId != _activeServerId) return;
+      _updateWorkspaceControlView();
+      // Empty sync ticks (every 10s) must not reset the drawer selection.
+      if (change.records.isEmpty) return;
+      if (!state.isLoadingSessions) unawaited(_refreshWorkspaceMetadata());
+    });
     ref.onDispose(() {
+      unawaited(_workspaceChanges?.cancel());
+      for (final c in _workspaceControls.values) {
+        c.dispose();
+      }
+      _workspaceControls.clear();
       for (final run in _backgroundRuns.values) {
         if (run.isBusy) run.state = 'reconnecting';
         unawaited(
@@ -3436,6 +3853,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
                     .getChatRunDefault(serverId, selectedAgentId),
     );
     _restoreDraft();
+    _updateWorkspaceControlView();
     await _loadSelectedMessages();
     final run = _backgroundRuns[_serverTargetKey];
     if (run != null) _backgroundChanged(run);
@@ -3476,6 +3894,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
       clearActiveSession: !state.shareAgentSessions,
     );
     _restoreDraft();
+    _updateWorkspaceControlView();
     await _refreshVisibleSessions();
     final run = _backgroundRuns[_serverTargetKey];
     if (run != null) _backgroundChanged(run);
@@ -3600,6 +4019,80 @@ class AiChatNotifier extends Notifier<AiChatState> {
           lastErrorCode: 'CHAT_HISTORY_LOAD_FAILED: $error',
         );
       }
+    }
+  }
+
+  /// Bounded, silent metadata refresh used by workspace change notifications.
+  /// It never changes the selected session, reloads messages, or restores a
+  /// draft, so the drawer position, scroll, and composer survive sync ticks.
+  Future<void> _refreshWorkspaceMetadata() async {
+    final serverId = _activeServerId;
+    final agentId = state.activeAgentProfile?.id;
+    if (serverId == null ||
+        agentId == null ||
+        _isPreparingPrompt ||
+        state.isLoadingSessions ||
+        state.isLoadingMessages) {
+      return;
+    }
+    final epoch = _historyEpoch;
+    try {
+      final limit = state.sessions.isEmpty
+          ? 30
+          : (state.sessions.length + 10).clamp(30, 100);
+      final page = await ref
+          .read(chatRepositoryProvider)
+          .listSessions(
+            serverId,
+            agentId: state.shareAgentSessions ? null : agentId,
+            query: _historyQuery,
+            limit: limit,
+          );
+      if (!ref.mounted ||
+          epoch != _historyEpoch ||
+          serverId != _activeServerId ||
+          agentId != state.activeAgentProfile?.id ||
+          state.isLoadingSessions ||
+          state.isLoadingMessages) {
+        return;
+      }
+      final incoming = {
+        for (final session in page.sessions) session.id: session,
+      };
+      var changed = false;
+      final merged = state.sessions.map((existing) {
+        final fresh = incoming[existing.id];
+        if (fresh == null) return existing;
+        if (fresh.title == existing.title &&
+            fresh.updatedAt == existing.updatedAt &&
+            fresh.totalMessageCount == existing.totalMessageCount) {
+          return existing;
+        }
+        changed = true;
+        return existing.copyWith(
+          title: fresh.title,
+          updatedAt: fresh.updatedAt,
+          totalMessageCount: fresh.totalMessageCount,
+        );
+      }).toList();
+      if (!changed) return;
+      // Keep the active session's messages/draft context while refreshing the
+      // metadata that the session list displays.
+      final active = state.activeSession;
+      if (active != null) {
+        final index = merged.indexWhere((session) => session.id == active.id);
+        if (index >= 0) {
+          final fresh = merged[index];
+          merged[index] = active.copyWith(
+            title: fresh.title,
+            updatedAt: fresh.updatedAt,
+            totalMessageCount: fresh.totalMessageCount,
+          );
+        }
+      }
+      state = state.copyWith(sessions: merged);
+    } catch (_) {
+      // A background metadata refresh is best effort; the next sync retries.
     }
   }
 
@@ -3766,6 +4259,16 @@ class AiChatNotifier extends Notifier<AiChatState> {
         );
         final imported = local;
         if (!recoverExisting) await repo.saveSession(imported);
+        // Importing history issues initialize + load/resume, so it is a write
+        // operation.  A device without the lease must not spawn a private
+        // process behind the controlling device's back.
+        if (_sharedWorkspaceFor(remote.serverId) &&
+            !await acquireWorkspaceControl(
+              serverId: remote.serverId,
+              sessionId: imported.id,
+            )) {
+          throw StateError('WORKSPACE_CONTROL_REQUIRED');
+        }
         final transport = await ref.read(acpTransportFactoryProvider)(
           profile,
           client,
@@ -4234,6 +4737,8 @@ class AiChatNotifier extends Notifier<AiChatState> {
       return;
     }
     if (!currentOrigin()) return;
+    if (_sharedWorkspace && !await acquireWorkspaceControl()) return;
+    if (!currentOrigin()) return;
     if (settings.customModel && !_validCustomModel(settings.modelId)) {
       throw StateError('ACP_CUSTOM_MODEL_INVALID');
     }
@@ -4452,6 +4957,14 @@ class AiChatNotifier extends Notifier<AiChatState> {
   }
 
   Future<void> _stopGeneration({bool cancelRemote = true}) async {
+    if (cancelRemote &&
+        _sharedWorkspace &&
+        !await acquireWorkspaceControl(
+          serverId: _activeServerId,
+          sessionId: state.activeSessionId,
+        )) {
+      return;
+    }
     final key = _serverTargetKey;
     final background = _backgroundRuns[key];
     if (background != null &&
@@ -5123,8 +5636,10 @@ class AiChatNotifier extends Notifier<AiChatState> {
         if (!ref.mounted || target != _serverTargetKey) {
           throw StateError('ACP_TARGET_CHANGED');
         }
-        await ref.read(acpRuntimeManagerProvider)(
+        await _manageRuntime(
           client,
+          serverId!,
+          session.id,
           runtimeKey: key,
           action: 'purge',
           stopRunning: true,
@@ -5235,6 +5750,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
 
     final consentIdentity = _persistentConsentIdentity;
     if (ref.read(persistentAcpRuntimeEnabledProvider) &&
+        !_sharedWorkspaceFor(profile.serverId) &&
         consentIdentity != null &&
         !ref
             .read(localStorageServiceProvider)
@@ -5324,6 +5840,20 @@ class AiChatNotifier extends Notifier<AiChatState> {
         (!state.shareAgentSessions && !session.includesAgent(profile.id))) {
       state = state.copyWith(lastErrorCode: 'CHAT_SESSION_IDENTITY_MISMATCH');
       return;
+    }
+
+    if (_sharedWorkspaceFor(profile.serverId)) {
+      if (!await acquireWorkspaceControl(
+        serverId: profile.serverId,
+        sessionId: session.id,
+      )) {
+        return;
+      }
+      if (!ref.mounted ||
+          requestEpoch != _requestEpoch ||
+          state.activeSessionId != session.id) {
+        return;
+      }
     }
 
     // Authentication failed before the turn started: retry the pending message
@@ -6175,6 +6705,10 @@ class AiChatNotifier extends Notifier<AiChatState> {
   }
 
   void respondPermission(Object? selection) {
+    if (_sharedWorkspace && _controlForCurrent()?.hasControl != true) {
+      state = state.copyWith(lastErrorCode: 'WORKSPACE_CONTROL_REQUIRED');
+      return;
+    }
     final options =
         state.pendingPermission?.options ?? const <ChatPermissionOption>[];
     final String? id = selection is bool

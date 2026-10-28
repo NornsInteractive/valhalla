@@ -22,6 +22,7 @@ import 'widgets/clear_credentials_dialog.dart';
 import 'widgets/configuration_migration_dialog.dart';
 import 'widgets/default_agent_dialog.dart';
 import 'widgets/remote_file_toolbar_dialog.dart';
+import 'widgets/remote_workspace_dialog.dart';
 import 'widgets/trusted_hosts_dialog.dart';
 import '../../core/providers/terminal_provider.dart';
 import '../terminal/widgets/terminal_history_drawer.dart';
@@ -393,6 +394,12 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
             );
           },
         ),
+      ),
+      _SettingsSearchItem(
+        title: l10n.serverWorkspaceTitle,
+        subtitle: l10n.serverWorkspaceSubtitle,
+        icon: Icons.cloud_sync_outlined,
+        onTap: () => RemoteWorkspaceDialog.show(context),
       ),
       _SettingsSearchItem(
         title: l10n.configMigrationTitle,
@@ -791,25 +798,42 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                 Icons.sync_alt,
               ),
               Card(
-                child: ListTile(
-                  key: const Key('settings_configuration_migration_tile'),
-                  leading: const Icon(Icons.sync_alt),
-                  title: Text(context.l10n.configMigrationTitle),
-                  subtitle: Text(
-                    context.l10n.configMigrationSubtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showDetailSheet(
-                    context,
-                    title: context.l10n.configMigrationTitle,
-                    builder: (sheetContext, sheetRef) =>
-                        _buildConfigurationMigrationCard(
-                          sheetContext,
-                          sheetRef,
-                        ),
-                  ),
+                child: Column(
+                  children: [
+                    ListTile(
+                      key: const Key('settings_server_workspace_tile'),
+                      leading: const Icon(Icons.cloud_sync_outlined),
+                      title: Text(context.l10n.serverWorkspaceTitle),
+                      subtitle: Text(
+                        context.l10n.serverWorkspaceSubtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => RemoteWorkspaceDialog.show(context),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      key: const Key('settings_configuration_migration_tile'),
+                      leading: const Icon(Icons.sync_alt),
+                      title: Text(context.l10n.configMigrationTitle),
+                      subtitle: Text(
+                        context.l10n.configMigrationSubtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showDetailSheet(
+                        context,
+                        title: context.l10n.configMigrationTitle,
+                        builder: (sheetContext, sheetRef) =>
+                            _buildConfigurationMigrationCard(
+                              sheetContext,
+                              sheetRef,
+                            ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

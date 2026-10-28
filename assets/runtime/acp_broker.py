@@ -2,6 +2,7 @@
 import base64
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 import pathlib
@@ -163,6 +164,13 @@ def manage_runtime(command):
     for path in folder.iterdir():
         if path.is_symlink() or path.is_dir() or path.stat().st_uid != os.getuid():
             raise ValueError("ACP_RUNTIME_PATH_UNSAFE")
+    # Management retire/purge is a mutating operation when the runtime belongs
+    # to a workspace.  Read-only inspect above is always allowed; a stale
+    # device cannot stop another device's Agent.  Legacy runtimes are unchanged.
+    config = runtime_config(folder)
+    if not workspace_control_allowed(config, workspace_control_context(command),
+                                     renew=True):
+        raise ValueError("WORKSPACE_CONTROL_LOST")
     status = inspect_runtime(key)
     if status["state"] in ("running", "waiting_permission") and not command.get("stopRunning", False):
         raise ValueError("ACP_RUNTIME_TURN_IN_PROGRESS")
@@ -170,7 +178,14 @@ def manage_runtime(command):
         with socket.socket(socket.AF_UNIX) as client:
             client.settimeout(10)
             client.connect(str(folder.parent / (key[:24] + ".sock")))
-            client.sendall(encode({"action": "retire", "stopRunning": command.get("stopRunning", False)}))
+            context = workspace_control_context(command)
+            client.sendall(encode({
+                "action": "retire",
+                "stopRunning": command.get("stopRunning", False),
+                "deviceId": context["deviceId"],
+                "controlToken": context["token"],
+                "controlGeneration": context["generation"],
+            }))
             result = json.loads(client.makefile("rb").readline(MAX_LINE + 1))
             if result.get("error"):
                 raise ValueError(result["error"])
@@ -247,6 +262,101 @@ def directory(key):
     return target
 
 
+
+def workspace_module():
+    try:
+        path = pathlib.Path.home() / ".local/share/valhalla/workspace-v1/store.py"
+        if not path.is_file() or path.is_symlink():
+            return None
+        if path.stat().st_uid != os.getuid():
+            return None
+        spec = importlib.util.spec_from_file_location("valhalla_workspace_store", path)
+        if spec is None or spec.loader is None:
+            return None
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+    except Exception:
+        return None
+
+
+def workspace_enabled(config):
+    return isinstance(config.get("workspaceSessionId"), str) and bool(config.get("workspaceSessionId"))
+
+
+def workspace_control_context(source):
+    """Extract lease credentials from an attach hello or manage command."""
+    if not isinstance(source, dict):
+        return {"deviceId": None, "token": None, "generation": None}
+    token = source.get("controlToken")
+    generation = source.get("controlGeneration")
+    if token is None:
+        token = source.get("token")
+    if generation is None:
+        generation = source.get("generation")
+    return {
+        "deviceId": source.get("workspaceDeviceId") or source.get("deviceId"),
+        "token": token,
+        "generation": generation,
+    }
+
+
+def workspace_control_allowed(config, control, renew=False):
+    """Fail-closed lease check for code paths that run outside a Broker.
+
+    Read-only inspection never calls this; management writes and mutating
+    frames do.  A lost lease only refuses the write, it never signals the Agent.
+    """
+    if not workspace_enabled(config):
+        return True
+    session_id = config.get("workspaceSessionId")
+    if not isinstance(session_id, str) or not session_id:
+        return False
+    device_id = control.get("deviceId") if isinstance(control, dict) else None
+    token = control.get("token") if isinstance(control, dict) else None
+    generation = control.get("generation") if isinstance(control, dict) else None
+    if not isinstance(device_id, str) or not device_id:
+        return False
+    if not isinstance(token, str) or not token:
+        return False
+    if isinstance(generation, bool) or not isinstance(generation, int):
+        return False
+    module = workspace_module()
+    if module is None:
+        return False
+    try:
+        return bool(module.check_control(session_id, device_id, token,
+                                         generation, renew=renew))
+    except Exception:
+        return False
+
+
+def runtime_config(folder):
+    path = folder / "config.json"
+    if path.is_symlink():
+        raise ValueError("ACP_RUNTIME_PATH_UNSAFE")
+    try:
+        return json.loads(path.read_text())
+    except FileNotFoundError:
+        return {}
+    except (OSError, ValueError):
+        raise ValueError("ACP_RUNTIME_PATH_UNSAFE")
+
+
+def is_mutating_frame(frame):
+    if not isinstance(frame, dict):
+        return False
+    method = frame.get("method")
+    if method in ("session/prompt", "session/cancel", "session/set_mode",
+                  "session/set_config_option", "session/new", "session/load",
+                  "session/resume"):
+        return True
+    if "id" in frame and "method" not in frame:
+        return True
+    return False
+
+
+
 class Broker:
     def __init__(self, folder):
         self.folder = folder
@@ -259,6 +369,10 @@ class Broker:
         self.db.execute("CREATE TABLE IF NOT EXISTS events(seq INTEGER PRIMARY KEY, payload TEXT NOT NULL)")
         self.db.execute("CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)")
         self.config = json.loads((folder / "config.json").read_text())
+        # Register with the workspace store before the child produces any output,
+        # so a freshly launched runtime is discoverable even if the launching
+        # app exits before the chat_session metadata record is committed.
+        self._register_runtime()
         self.waiters = {}
         self.requests = {}
         self.pending_permissions = {}
@@ -267,6 +381,12 @@ class Broker:
         self.child = None
         self.stopping = threading.Event()
         self.scope_file = None
+        self.control_lock = threading.Lock()
+        self.control = {
+            "deviceId": self.config.get("workspaceDeviceId") or self.config.get("deviceId"),
+            "token": self.config.get("controlToken"),
+            "generation": self.config.get("controlGeneration"),
+        }
         self.set_meta("state", "ready")
         self.set_meta("pid", os.getpid())
         self.socket_path = str(folder.parent / (folder.name[:24] + ".sock"))
@@ -290,6 +410,57 @@ class Broker:
         self.agent_reader.start()
         threading.Thread(target=self.drain_stderr, daemon=True).start()
 
+    def update_control(self, hello):
+        """Remember the newest authenticated writer; readers never set a token."""
+        if not isinstance(hello, dict):
+            return
+        token = hello.get("controlToken")
+        generation = hello.get("controlGeneration")
+        device_id = hello.get("deviceId") or hello.get("workspaceDeviceId")
+        if not isinstance(token, str) or not token:
+            return
+        if isinstance(generation, bool) or not isinstance(generation, int):
+            return
+        with self.control_lock:
+            self.control = {
+                "deviceId": device_id or self.config.get("workspaceDeviceId"),
+                "token": token,
+                "generation": generation,
+            }
+
+    def control_snapshot(self):
+        with self.control_lock:
+            return dict(self.control)
+
+    def fence(self, control=None):
+        """Verify the current lease immediately before a mutation.
+
+        The store performs the check and the heartbeat renewal in one
+        ``BEGIN IMMEDIATE`` transaction, so a lease cannot expire between the
+        validity check and the renewal.  Agents are never stopped when control
+        is lost; only the stale writer's request is refused.
+        """
+        if not workspace_enabled(self.config):
+            return True
+        session_id = self.config.get("workspaceSessionId")
+        if not isinstance(session_id, str) or not session_id:
+            return False
+        context = control if control is not None else self.control_snapshot()
+        device_id = context.get("deviceId")
+        token = context.get("token")
+        generation = context.get("generation")
+        if not isinstance(device_id, str) or not device_id:
+            return False
+        if not isinstance(token, str) or not token:
+            return False
+        if isinstance(generation, bool) or not isinstance(generation, int):
+            return False
+        module = workspace_module()
+        if module is None:
+            return False
+        return bool(module.check_control(session_id, device_id, token,
+                                         generation, renew=True))
+
     def get_meta(self, key, default=None):
         row = self.db.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
         return json.loads(row[0]) if row else default
@@ -297,18 +468,84 @@ class Broker:
     def set_meta(self, key, value):
         self.db.execute("INSERT OR REPLACE INTO meta VALUES(?,?)", (key, json.dumps(value)))
 
+    def _runtime_bootstrap(self):
+        """Bounded, portable metadata a new device needs to discover/join.
+
+        Only non-secret fields are included. Tokens, control credentials, argv
+        and target identity are deliberately excluded.
+        """
+        meta = {
+            "agentId": self.config.get("agentId"),
+            "runtimeKey": self.folder.name,
+            "workingDirectory": self.config.get("workingDirectory"),
+            "title": self.config.get("title"),
+        }
+        sid = self.get_meta("sessionId") or self.config.get("sessionId")
+        if sid:
+            meta["remoteSessionId"] = sid
+        cid = self.config.get("chatSessionId")
+        if cid:
+            meta["chatSessionId"] = cid
+        return {k: v for k, v in meta.items() if v is not None}
+
+    def _register_runtime(self):
+        """Idempotent registration with the workspace store.
+
+        Called once at broker start (before the first agent output) and again on
+        every event, so a runtime is discoverable even if the app exits before
+        the chat_session metadata record is committed. Credentials are never
+        written into the registry.
+        """
+        if not workspace_enabled(self.config):
+            return
+        try:
+            mod = workspace_module()
+            if mod is None:
+                return
+            sid = self.config.get("workspaceSessionId")
+            mod.register_runtime(self.folder.name, session_id=sid,
+                                device_id=self.config.get("workspaceDeviceId") or
+                                self.config.get("deviceId"),
+                                agent_id=self.config.get("agentId"),
+                                scope=self.config.get("serverScope"),
+                                meta=self._runtime_bootstrap())
+        except Exception:
+            pass
+
     def event(self, payload):
         payload = {**payload, "turnId": self.get_meta("turnId")}
         cursor = self.db.execute("INSERT INTO events(payload) VALUES(?)", (json.dumps(payload),))
-        return cursor.lastrowid
+        seq = cursor.lastrowid
+        try:
+            mod = workspace_module()
+            if mod is not None and workspace_enabled(self.config):
+                sid = self.config.get("workspaceSessionId")
+                mod.append_runtime_event(self.folder.name, {"seq": seq, "payload": payload})
+                mod.register_runtime(self.folder.name, session_id=sid,
+                                    device_id=self.config.get("workspaceDeviceId"),
+                                    agent_id=self.config.get("agentId"),
+                                    scope=self.config.get("serverScope"),
+                                    meta=self._runtime_bootstrap())
+        except Exception:
+            pass
+        return seq
 
     def snapshot(self):
-        return {"type": "status", "runtimeKey": self.folder.name,
+        status = {"type": "status", "runtimeKey": self.folder.name,
             "protocolVersion": VERSION, "alive": True,
             "childAlive": self.child is not None and self.child.poll() is None,
             "state": self.get_meta("state"), "turnId": self.get_meta("turnId"),
             "sessionId": self.get_meta("sessionId"),
             "seq": self.db.execute("SELECT COALESCE(MAX(seq),0) FROM events").fetchone()[0]}
+        # Legacy (no workspace) runtimes report protocol 0 and never leak a
+        # session id.  Workspace-enabled runtimes add the lease session so a
+        # new device can join read-only without guessing.
+        if workspace_enabled(self.config):
+            status["workspaceProtocol"] = 1
+            status["workspaceSessionId"] = self.config.get("workspaceSessionId")
+        else:
+            status["workspaceProtocol"] = 0
+        return status
 
     def claim_scope(self, turn_id):
         scope = self.config.get("serverScope")
@@ -544,6 +781,13 @@ class Broker:
         try:
             hello = json.loads(reader.readline(MAX_LINE + 1))
             if hello.get("action") in ("inspect", "retire"):
+                # Inspect stays read-only.  Retire/purge is a management write
+                # and must present a live lease when the runtime is workspace
+                # enabled; otherwise an old device could stop the Agent.
+                if hello["action"] == "retire" and not workspace_control_allowed(
+                        self.config, workspace_control_context(hello), renew=True):
+                    connection.sendall(encode({"error": "WORKSPACE_CONTROL_LOST"}))
+                    return
                 with self.lock:
                     status = self.snapshot()
                     if hello["action"] == "retire":
@@ -568,6 +812,13 @@ class Broker:
             cursor = hello.get("afterSeq", 0)
             if not isinstance(cursor, int) or cursor < 0:
                 raise ValueError("ACP_RUNTIME_CURSOR_INVALID")
+            self.update_control(hello)
+            control = {
+                "deviceId": hello.get("deviceId") or hello.get("workspaceDeviceId")
+                or self.config.get("workspaceDeviceId"),
+                "token": hello.get("controlToken"),
+                "generation": hello.get("controlGeneration"),
+            }
             def writer():
                 nonlocal cursor
                 caught_up = False
@@ -630,7 +881,23 @@ class Broker:
                 if len(line) > MAX_LINE:
                     break
                 try:
-                    self.rpc(json.loads(line), responses)
+                    command = json.loads(line)
+                    if isinstance(command, dict) and command.get("type") == "control_heartbeat":
+                        # Client-driven heartbeat: only an attached/foreground
+                        # device renews its own lease.  The server never renews
+                        # on behalf of a disconnected device.
+                        allowed = (not workspace_enabled(self.config)) or self.fence(
+                            workspace_control_context(command))
+                        responses.put({"type": "control_heartbeat",
+                                       "allowed": bool(allowed)})
+                        continue
+                    frame = command.get("frame") if isinstance(command, dict) else None
+                    if (isinstance(frame, dict) and is_mutating_frame(frame)
+                            and workspace_enabled(self.config)):
+                        if not self.fence(control):
+                            responses.put({"type": "runtime_error", "error": "WORKSPACE_CONTROL_LOST"})
+                            continue
+                    self.rpc(command, responses)
                 except Exception as error:
                     responses.put({"type": "runtime_error", "error": str(error) if isinstance(error, ValueError) else "ACP_RUNTIME_REQUEST_FAILED"})
         except (OSError, ValueError):
@@ -704,7 +971,11 @@ def attach(config):
                 time.sleep(.05)
         else:
             raise ValueError("ACP_RUNTIME_START_FAILED")
-    client.sendall(encode({"afterSeq": config.get("afterSeq", 0)}))
+    hello = {"afterSeq": config.get("afterSeq", 0)}
+    for key in ("deviceId", "workspaceDeviceId", "controlToken", "controlGeneration"):
+        if key in config:
+            hello[key] = config[key]
+    client.sendall(encode(hello))
     def incoming():
         try:
             for line in sys.stdin.buffer:

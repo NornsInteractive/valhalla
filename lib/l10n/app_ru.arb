@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "Нет сохранённых команд",
   "terminalSavedCommandsPreview": "Предпросмотр команды",
   "terminalSavedCommandsMultilineWarning": "Эта команда содержит несколько строк. Вы уверены, что хотите выполнить её?",
-  "terminalModifierHelp": "Нажмите модификатор для однократного ввода; долгое нажатие фиксирует. Удерживайте клавишу для повтора."
+  "terminalModifierHelp": "Нажмите модификатор для однократного ввода; долгое нажатие фиксирует. Удерживайте клавишу для повтора.",
+  "serverWorkspaceTitle": "Серверное рабочее пространство",
+  "serverWorkspaceSubtitle": "Синхронизация состояния между устройствами и черновики",
+  "serverWorkspaceOriginServer": "Активный сервер",
+  "serverWorkspaceOriginUser": "Удаленный пользователь",
+  "serverWorkspaceNoActiveServer": "Активный сервер не выбран или не подключен",
+  "serverWorkspacePhaseLocal": "Только локально",
+  "serverWorkspacePhaseDiscovering": "Обнаружение...",
+  "serverWorkspacePhaseAvailable": "Доступно для включения",
+  "serverWorkspacePhaseSyncing": "Синхронизация...",
+  "serverWorkspacePhaseReady": "Синхронизировано",
+  "serverWorkspacePhaseOffline": "Не в сети",
+  "serverWorkspacePhaseError": "Ошибка синхронизации",
+  "serverWorkspaceLastSynced": "Последняя синхронизация: {time}",
+  "serverWorkspaceNeverSynced": "Никогда не синхронизировалось",
+  "serverWorkspacePendingChanges": "{count} изменений ожидает отправки",
+  "serverWorkspaceNoPendingChanges": "Все изменения синхронизированы",
+  "serverWorkspaceEnable": "Включить серверное рабочее пространство",
+  "serverWorkspaceEnableDialogTitle": "Включить серверное рабочее пространство",
+  "serverWorkspaceEnableDialogMessage": "Включение перенесет локальные конфигурации на сервер. Локальные данные будут сохранены.",
+  "serverWorkspaceMigrationPreviewTitle": "Предварительный просмотр миграции",
+  "serverWorkspaceEnableConfirm": "Включить и синхронизировать",
+  "serverWorkspaceNoDataToMigrate": "Нет локальных данных для миграции",
+  "serverWorkspaceSyncNow": "Синхронизировать сейчас",
+  "serverWorkspaceDisable": "Отключить синхронизацию",
+  "serverWorkspaceDisableDialogTitle": "Отключить серверное рабочее пространство",
+  "serverWorkspaceDisableDialogMessage": "Отключение остановит синхронизацию на этом устройстве. Данные на сервере и локально останутся без изменений.",
+  "serverWorkspaceDisableConfirm": "Отключить",
+  "serverWorkspacePreferenceSource": "Использовать как источник настроек",
+  "serverWorkspacePreferenceSourceDesc": "Синхронизировать общие настройки приложения с этого сервера",
+  "serverWorkspaceConflictsTitle": "Конфликты синхронизации ({count})",
+  "serverWorkspaceConflictKeepLocal": "Оставить локальные",
+  "serverWorkspaceConflictKeepServer": "Оставить серверные",
+  "serverWorkspaceDeviceDraftsTitle": "Черновики с других устройств",
+  "serverWorkspaceRestoreDraft": "Восстановить черновик",
+  "serverWorkspaceRestoreDraftConfirmTitle": "Восстановить черновик",
+  "serverWorkspaceRestoreDraftConfirmMessage": "Восстановление черновика заменит текущий текст в поле ввода. Ваш текущий черновик сохранится в списке удаленных черновиков.",
+  "serverWorkspaceRestoreDraftConfirm": "Восстановить",
+  "serverWorkspaceNoDeviceDrafts": "Нет черновиков с других устройств",
+  "serverWorkspaceClearCache": "Очистить локальный кэш синхронизации",
+  "serverWorkspaceClearCacheConfirmTitle": "Очистить локальный кэш синхронизации",
+  "serverWorkspaceClearCacheConfirmMessage": "Будут очищены только локальный кэш и метаданные синхронизации. Удаленные данные и настройки SSH никогда не будут удалены.",
+  "serverWorkspaceClearCacheConfirm": "Очистить кэш",
+  "serverWorkspaceCacheCleared": "Локальный кэш синхронизации очищен",
+  "serverWorkspaceErrorSetupFailed": "Не удалось инициализировать рабочее пространство на сервере",
+  "serverWorkspaceErrorPythonRequired": "На сервере требуется Python 3.9+",
+  "serverWorkspaceErrorPathUnsafe": "Путь рабочего пространства небезопасен или права доступа некорректны",
+  "serverWorkspaceErrorConflict": "Обнаружен конфликт данных при синхронизации",
+  "serverWorkspaceErrorControlHeld": "Управление сессией удерживается другим устройством",
+  "serverWorkspaceErrorResponseTooLarge": "Ответ сервера превысил допустимый размер",
+  "serverWorkspaceErrorGeneric": "Ошибка рабочего пространства ({code})",
+  "chatWorkspaceControlActive": "Управление активно",
+  "chatWorkspaceControlActiveTooltip": "Это устройство в данный момент управляет сессией",
+  "chatWorkspaceReadOnly": "Только чтение",
+  "chatWorkspaceReadOnlyDevice": "Только чтение ({device})",
+  "chatWorkspaceAcquireControl": "Получить управление",
+  "chatWorkspaceTakeover": "Перехватить",
+  "chatWorkspaceTakeoverDialogTitle": "Перехват управления сессией",
+  "chatWorkspaceTakeoverDialogMessage": "Перехват управления позволит этому устройству отправлять сообщения и управлять сессией. Работающий агент не будет остановлен, а сессия не переключится.",
+  "chatWorkspaceTakeoverConfirm": "Перехватить",
+  "chatWorkspaceControlFailed": "Не удалось получить управление рабочим пространством",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "Работает устаревший компонент среды выполнения. Завершите его на исходном устройстве перед обновлением.",
+  "serverWorkspaceErrorNotEnabled": "Серверное рабочее пространство не включено",
+  "serverWorkspaceErrorPendingChanges": "Нельзя очистить кэш при наличии ожидающих изменений. Сначала выполните синхронизацию.",
+  "serverWorkspaceDraftTypeFile": "Черновик файла",
+  "serverWorkspaceDraftTypeChat": "Черновик чата",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "Восстановить черновик файла",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "Восстановление черновика файла загрузит его в локальные черновики редактора. Текущий черновик сохранится в удаленном списке.",
+  "persistentRuntimeFeatureWorkspaceTitle": "Серверное рабочее пространство и синхронизация",
+  "persistentRuntimeFeatureWorkspaceDesc": "Пользовательская среда сохраняет вывод после закрытия приложения; учетные данные SSH и ключи хранятся локально и никогда не синхронизируются.",
+  "serverWorkspaceMigrationPendingHint": "Выполняется фоновый перенос устаревших данных. Конфигурация синхронизирована, обработка истории продолжается в фоне.",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "Загрузить больше черновиков",
+  "serverWorkspaceLoadingDrafts": "Загрузка черновиков..."
 }

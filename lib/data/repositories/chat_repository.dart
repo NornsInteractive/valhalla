@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
@@ -8,12 +9,22 @@ import 'package:sqlite3/open.dart';
 import 'package:sqlite3/sqlite3.dart';
 import '../models/chat_session.dart';
 import '../storage/local_storage_service.dart';
+import '../workspace/workspace_chat_attachments.dart';
+import '../workspace/workspace_chat_sync.dart';
+import '../workspace/workspace_gateway.dart';
+import '../../infrastructure/acp/acp_attachment_store.dart';
 
 class ChatSessionPage {
   final List<ChatSession> sessions;
   final bool hasMore;
+  final String? cursor;
   final String? warning;
-  const ChatSessionPage(this.sessions, this.hasMore, {this.warning});
+  const ChatSessionPage(
+    this.sessions,
+    this.hasMore, {
+    this.cursor,
+    this.warning,
+  });
 }
 
 class ChatToolOutputPage {
@@ -48,13 +59,144 @@ class ChatSearchPage {
   const ChatSearchPage(this.hits, this.nextCursor);
 }
 
+class _DeletedChatSession {
+  final String? serverId;
+  final String remoteId;
+  final List<({int sequence, String messageId})> messages;
+  final List<({int sequence, String messageId, String toolId})> tools;
+  const _DeletedChatSession(
+    this.serverId,
+    this.remoteId,
+    this.messages,
+    this.tools,
+  );
+}
+
+class _MigrationCursor {
+  final String? sessionId;
+  final int sequence;
+  const _MigrationCursor(this.sessionId, this.sequence);
+}
+
 /// Async, bounded history. The original preferences remain a migration backup.
 class ChatRepository {
   final LocalStorageService _localStorage;
   final String? databasePath;
+  final AcpAttachmentStore? _attachmentStore;
+  final WorkspaceChatSync? _workspaceOverride;
+  WorkspaceChatSync? _workspace;
   Future<String>? _ready;
   Future<void> _writes = Future.value();
-  ChatRepository(this._localStorage, {this.databasePath});
+  final StreamController<WorkspaceChatChange> _remoteChanges =
+      StreamController<WorkspaceChatChange>.broadcast();
+  final StreamController<Object> _workspaceErrors =
+      StreamController<Object>.broadcast();
+  StreamSubscription<WorkspaceChange>? _changeSubscription;
+  Object? _lastWorkspaceError;
+
+  ChatRepository(
+    this._localStorage, {
+    this.databasePath,
+    AcpAttachmentStore? attachmentStore,
+    WorkspaceChatSync? workspaceSync,
+  }) : _attachmentStore = attachmentStore,
+       _workspaceOverride = workspaceSync;
+
+  Future<void> dispose() async {
+    await _changeSubscription?.cancel();
+    _changeSubscription = null;
+    await _writes;
+    await Future.wait([_remoteChanges.close(), _workspaceErrors.close()]);
+  }
+
+  /// Null when no workspace gateway is attached or it is disabled.
+  WorkspaceChatSync? get workspaceSync => _workspaceOrNull();
+
+  /// Errors from deferred remote writes/migrations. Local history is kept.
+  Stream<Object> get workspaceErrors => _workspaceErrors.stream;
+  Object? get lastWorkspaceError => _lastWorkspaceError;
+
+  /// Hot-refresh signal for the AI notifier. It never resets the open session.
+  Stream<WorkspaceChatChange> get remoteChanges {
+    _ensureWorkspaceSubscribed();
+    return _remoteChanges.stream;
+  }
+
+  WorkspaceChatSync? _workspaceOrNull() {
+    final existing = _workspace ?? _workspaceOverride;
+    if (existing != null) {
+      _ensureWorkspaceSubscribed();
+      return existing;
+    }
+    final gateway = _localStorage.workspaceGateway;
+    if (gateway == null) return null;
+    final created = WorkspaceChatSync(
+      gateway: gateway,
+      attachments: WorkspaceChatAttachments(
+        gateway: gateway,
+        store: _attachmentStore,
+      ),
+    );
+    _workspace = created;
+    _ensureWorkspaceSubscribed();
+    return created;
+  }
+
+  void _ensureWorkspaceSubscribed() {
+    if (_changeSubscription != null) return;
+    final gateway =
+        _workspaceOverride?.gateway ?? _localStorage.workspaceGateway;
+    if (gateway == null) return;
+    _changeSubscription = gateway.changes.listen(
+      (change) => unawaited(
+        _handleWorkspaceChange(change).catchError(_reportWorkspaceError),
+      ),
+      onError: _reportWorkspaceError,
+    );
+  }
+
+  void _reportWorkspaceError(Object error) {
+    _lastWorkspaceError = error;
+    if (!_workspaceErrors.isClosed) _workspaceErrors.add(error);
+  }
+
+  Future<void> _handleWorkspaceChange(WorkspaceChange change) async {
+    final workspace = _workspaceOrNull();
+    if (workspace == null || !workspace.enabled(change.serverId)) return;
+    final records = change.records
+        .map(WorkspaceChatRecord.parse)
+        .whereType<WorkspaceChatRecord>()
+        .where(
+          (record) =>
+              record.kind == 'chat_session' ||
+              record.kind == 'chat_message' ||
+              record.kind == 'chat_tool',
+        )
+        .toList(growable: false);
+    if (records.isEmpty) return;
+    try {
+      await _applyRemoteRecords(change.serverId, records);
+    } catch (error) {
+      _reportWorkspaceError(error);
+    }
+    final sessionIds = <String>{};
+    for (final record in records) {
+      if (record.kind == 'chat_session') {
+        sessionIds.add(record.id);
+      } else if (record.kind == 'chat_message') {
+        final parsed = WorkspaceChatSync.parseMessageId(record.id);
+        if (parsed != null) sessionIds.add(parsed.sessionId);
+      } else {
+        final parsed = WorkspaceChatSync.parseToolId(record.id);
+        if (parsed != null) sessionIds.add(parsed.sessionId);
+      }
+    }
+    if (!_remoteChanges.isClosed) {
+      _remoteChanges.add(
+        WorkspaceChatChange(change.serverId, records, sessionIds),
+      );
+    }
+  }
 
   Future<String> _initialize() async {
     final file =
@@ -78,6 +220,20 @@ class ChatRepository {
       );
       db.execute(
         'CREATE TABLE IF NOT EXISTS chat_tools (session_id TEXT NOT NULL, message_id TEXT NOT NULL, tool_id TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY(session_id,message_id,tool_id), FOREIGN KEY(session_id,message_id) REFERENCES chat_messages(session_id,id) ON DELETE CASCADE)',
+      );
+      // Workspace bookkeeping only. The chat tables remain the local cache and
+      // are never cleared by a sync reset.
+      db.execute(
+        'CREATE TABLE IF NOT EXISTS chat_workspace_map (server_id TEXT NOT NULL, kind TEXT NOT NULL, remote_id TEXT NOT NULL, local_id TEXT NOT NULL, PRIMARY KEY(server_id,kind,remote_id))',
+      );
+      db.execute(
+        'CREATE TABLE IF NOT EXISTS chat_workspace_seen (server_id TEXT NOT NULL, kind TEXT NOT NULL, id TEXT NOT NULL, version INTEGER NOT NULL, PRIMARY KEY(server_id,kind,id))',
+      );
+      db.execute(
+        'CREATE TABLE IF NOT EXISTS chat_workspace_meta (server_id TEXT PRIMARY KEY, data TEXT NOT NULL)',
+      );
+      db.execute(
+        'CREATE TABLE IF NOT EXISTS chat_workspace_migration (server_id TEXT PRIMARY KEY, data TEXT NOT NULL)',
       );
       db.execute(
         'CREATE INDEX IF NOT EXISTS chat_sessions_server ON chat_sessions(server_id,updated DESC,id)',
@@ -153,6 +309,16 @@ class ChatRepository {
     int limit = 30,
   }) async {
     _localStorage.claimLegacyOwnership(serverId);
+    final workspace = _workspaceOrNull();
+    if (workspace != null && workspace.enabled(serverId)) {
+      await _refreshRemoteSessions(
+        serverId,
+        offset: offset,
+        limit: limit,
+        agentId: agentId,
+        query: query,
+      );
+    }
     final ownsLegacy = _localStorage.legacyOwnershipServerId == serverId;
     await _writes;
     String file;
@@ -221,6 +387,397 @@ class ChatRepository {
         rows.length > limit,
       );
     });
+  }
+
+  /// One bounded remote metadata refresh. Never pages the whole store.
+  Future<void> _refreshRemoteSessions(
+    String serverId, {
+    int offset = 0,
+    int limit = 30,
+    String? agentId,
+    String query = '',
+  }) async {
+    final workspace = _workspaceOrNull();
+    if (workspace == null || !workspace.enabled(serverId)) return;
+    try {
+      final target = offset + limit + 1;
+      String? cursor;
+      while (true) {
+        final page = await workspace.fetchSessionCatalog(
+          serverId,
+          limit: kWorkspaceChatPageLimit,
+          cursor: cursor,
+          agentId: agentId,
+          query: query,
+        );
+        if (page.records.isNotEmpty) {
+          await _applyRemoteRecords(serverId, page.records);
+        }
+        if (!page.hasMore || page.nextCursor == null) break;
+        final localCount = await _countMatchingSessions(
+          serverId,
+          agentId: agentId,
+          query: query,
+        );
+        if (localCount >= target) break;
+        cursor = page.nextCursor;
+      }
+    } catch (error) {
+      _reportWorkspaceError(error);
+    }
+  }
+
+  Future<int> _countMatchingSessions(
+    String serverId, {
+    String? agentId,
+    String query = '',
+  }) async {
+    try {
+      final file = await _path();
+      return _chatDb(file, (db) {
+        final ownsLegacy = _localStorage.legacyOwnershipServerId == serverId;
+        final rows = db.select(
+          '''SELECT COUNT(*) AS n FROM chat_sessions
+             WHERE (server_id=? OR (server_id IS NULL AND ?=1))
+             AND (? IS NULL OR agent_id=? OR EXISTS(SELECT 1 FROM json_each(chat_sessions.data,'\$.participantAgentIds') WHERE value=?))
+             AND (?='' OR instr(lower(title),lower(?))>0)''',
+          [
+            serverId,
+            ownsLegacy ? 1 : 0,
+            agentId,
+            agentId,
+            agentId,
+            query,
+            query,
+          ],
+        );
+        return rows.single['n'] as int;
+      });
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<void> _syncRemoteSession(
+    String id, {
+    int? before,
+    int limit = 50,
+  }) async {
+    final workspace = _workspaceOrNull();
+    if (workspace == null) return;
+    await _writes;
+    String? serverId;
+    try {
+      serverId = await _chatDb(
+        await _path(),
+        (db) =>
+            db.select('SELECT server_id FROM chat_sessions WHERE id=?', [
+                  id,
+                ]).firstOrNull?['server_id']
+                as String?,
+      );
+    } catch (error) {
+      _reportWorkspaceError(error);
+      return;
+    }
+    if (serverId == null || !workspace.enabled(serverId)) return;
+    try {
+      final metadata = await workspace.fetchSession(serverId, id);
+      if (metadata == null) return;
+      await _applyRemoteRecords(serverId, [metadata]);
+      final remoteId = metadata.id;
+      final page = before == null
+          ? await workspace.fetchMessageTail(serverId, remoteId, limit: limit)
+          : await workspace.fetchMessagesBefore(
+              serverId,
+              remoteId,
+              before,
+              limit: limit,
+            );
+      if (page.unsupported || page.records.isEmpty) return;
+      final enriched = <WorkspaceChatRecord>[];
+      for (final record in page.records) {
+        final parsed = WorkspaceChatSync.parseMessageId(record.id);
+        if (parsed == null) continue;
+        enriched.add(record);
+        final tools = await workspace.fetchTools(
+          serverId,
+          remoteId,
+          parsed.sequence,
+          parsed.messageId,
+        );
+        enriched.addAll(tools);
+      }
+      await _applyRemoteRecords(serverId, enriched);
+    } catch (error) {
+      _reportWorkspaceError(error);
+    }
+  }
+
+  Future<void> _applyRemoteRecords(
+    String serverId,
+    List<WorkspaceChatRecord> records,
+  ) => _write((db) {
+    db.execute('BEGIN IMMEDIATE');
+    try {
+      for (final record in records) {
+        final seen = db.select(
+          'SELECT version FROM chat_workspace_seen WHERE server_id=? AND kind=? AND id=?',
+          [serverId, record.kind, record.id],
+        ).firstOrNull;
+        if (seen != null &&
+            record.version != null &&
+            (seen['version'] as int) >= record.version!) {
+          continue;
+        }
+        switch (record.kind) {
+          case 'chat_session':
+            _applyRemoteSession(db, serverId, record);
+          case 'chat_message':
+            _applyRemoteMessage(db, serverId, record);
+          case 'chat_tool':
+            _applyRemoteTool(db, serverId, record);
+        }
+        if (record.version != null) {
+          db.execute(
+            'INSERT OR REPLACE INTO chat_workspace_seen(server_id,kind,id,version) VALUES(?,?,?,?)',
+            [serverId, record.kind, record.id, record.version],
+          );
+        }
+      }
+      db.execute('COMMIT');
+    } catch (_) {
+      db.execute('ROLLBACK');
+      rethrow;
+    }
+  });
+
+  static String? _localSessionId(
+    Database db,
+    String serverId,
+    String remoteId, {
+    required bool create,
+  }) {
+    final mapped = db.select(
+      'SELECT local_id FROM chat_workspace_map WHERE server_id=? AND kind=? AND remote_id=?',
+      [serverId, 'chat_session', remoteId],
+    ).firstOrNull;
+    if (mapped != null) return mapped['local_id'] as String;
+    final existing = db.select(
+      'SELECT id,server_id FROM chat_sessions WHERE id=?',
+      [remoteId],
+    ).firstOrNull;
+    var localId = remoteId;
+    if (existing != null &&
+        existing['server_id'] != null &&
+        existing['server_id'] != serverId) {
+      // A local id from another server must not be stolen by this workspace.
+      localId = '$remoteId::$serverId';
+    }
+    if (create) {
+      db.execute(
+        'INSERT OR REPLACE INTO chat_workspace_map(server_id,kind,remote_id,local_id) VALUES(?,?,?,?)',
+        [serverId, 'chat_session', remoteId, localId],
+      );
+    }
+    return localId;
+  }
+
+  static String _remoteSessionId(Database db, String serverId, String localId) {
+    final mapped = db.select(
+      'SELECT remote_id FROM chat_workspace_map WHERE server_id=? AND kind=? AND local_id=?',
+      [serverId, 'chat_session', localId],
+    ).firstOrNull;
+    if (mapped != null) return mapped['remote_id'] as String;
+    db.execute(
+      'INSERT OR REPLACE INTO chat_workspace_map(server_id,kind,remote_id,local_id) VALUES(?,?,?,?)',
+      [serverId, 'chat_session', localId, localId],
+    );
+    return localId;
+  }
+
+  static void _applyRemoteSession(
+    Database db,
+    String serverId,
+    WorkspaceChatRecord record,
+  ) {
+    final localId = _localSessionId(
+      db,
+      serverId,
+      record.id,
+      create: !record.deleted,
+    );
+    if (record.deleted) {
+      if (localId != null) {
+        db.execute('DELETE FROM chat_sessions WHERE id=?', [localId]);
+      }
+      db.execute(
+        'DELETE FROM chat_workspace_map WHERE server_id=? AND kind=? AND remote_id=?',
+        [serverId, 'chat_session', record.id],
+      );
+      return;
+    }
+    final value = record.value;
+    if (value == null || localId == null) return;
+    var incoming = WorkspaceChatSync.decodeSession(record, serverId);
+    final existing = db.select('SELECT data FROM chat_sessions WHERE id=?', [
+      localId,
+    ]).firstOrNull;
+    if (existing != null) {
+      final local = ChatSession.fromJson(
+        jsonDecode(existing['data'] as String) as Map<String, dynamic>,
+      );
+      // A local rename/checkpoint that has not reached the server yet must not
+      // be replaced by older remote metadata.
+      if (local.updatedAt.isAfter(incoming.updatedAt)) {
+        incoming = incoming.copyWith(
+          title: local.title,
+          updatedAt: local.updatedAt,
+        );
+      }
+      final contexts = <String, AgentChatContext>{...local.agentContexts};
+      for (final entry in incoming.agentContexts.entries) {
+        final remote = entry.value;
+        final current = contexts[entry.key];
+        contexts[entry.key] = current == null
+            ? remote
+            : remote.copyWith(
+                persistentRuntimeKey:
+                    remote.persistentRuntimeKey ?? current.persistentRuntimeKey,
+                runtimeCursor: remote.runtimeCursor != 0
+                    ? remote.runtimeCursor
+                    : current.runtimeCursor,
+                runtimeGeneration: remote.runtimeGeneration != 0
+                    ? remote.runtimeGeneration
+                    : current.runtimeGeneration,
+                runtimeRestartPending:
+                    remote.runtimeRestartPending ||
+                    current.runtimeRestartPending,
+              );
+      }
+      incoming = incoming.copyWith(
+        id: localId,
+        agentContexts: contexts,
+        participantAgentIds: {
+          ...local.participantAgentIds,
+          ...incoming.participantAgentIds,
+        }.toList(growable: false),
+      );
+    } else {
+      incoming = incoming.copyWith(id: localId);
+    }
+    _saveChat(db, incoming, preserveTitle: false);
+  }
+
+  static void _applyRemoteMessage(
+    Database db,
+    String serverId,
+    WorkspaceChatRecord record,
+  ) {
+    final parsed = WorkspaceChatSync.parseMessageId(record.id);
+    if (parsed == null) return;
+    final localSessionId = _localSessionId(
+      db,
+      serverId,
+      parsed.sessionId,
+      create: false,
+    );
+    if (localSessionId == null) return;
+    final metadata = db.select('SELECT data FROM chat_sessions WHERE id=?', [
+      localSessionId,
+    ]).firstOrNull;
+    if (metadata == null) return;
+    if (record.deleted) {
+      db.execute('DELETE FROM chat_messages WHERE session_id=? AND id=?', [
+        localSessionId,
+        parsed.messageId,
+      ]);
+      return;
+    }
+    final value = record.value;
+    if (value == null) return;
+    var message = WorkspaceChatSync.decodeMessage(record);
+    final tools = db.select(
+      'SELECT data FROM chat_tools WHERE session_id=? AND message_id=?',
+      [localSessionId, parsed.messageId],
+    );
+    if (tools.isNotEmpty) {
+      message = WorkspaceChatSync.mergeTools(message, [
+        for (final row in tools)
+          WorkspaceChatRecord(
+            kind: 'chat_tool',
+            id: '',
+            value: jsonDecode(row['data'] as String) as Map<String, dynamic>,
+          ),
+      ]);
+    }
+    final existing = db.select(
+      'SELECT id,data FROM chat_messages WHERE session_id=? AND seq=?',
+      [localSessionId, parsed.sequence],
+    ).firstOrNull;
+    if (existing != null) {
+      if (existing['id'] != parsed.messageId) return;
+      final previous = ChatMessage.fromJson(
+        jsonDecode(existing['data'] as String) as Map<String, dynamic>,
+      );
+      if (previous.content.length > message.content.length) return;
+      message = message.copyWith(
+        contentBlocks: message.contentBlocks.isEmpty
+            ? previous.contentBlocks
+            : message.contentBlocks,
+        toolExecutions: {
+          for (final tool in previous.toolExecutions) tool.id: tool,
+          for (final tool in message.toolExecutions) tool.id: tool,
+        }.values.toList(growable: false),
+        // Remote attachment refs are content hashes; a local id for the same
+        // bytes must not be kept as a second attachment.
+        attachments: message.attachments.isEmpty
+            ? previous.attachments
+            : message.attachments,
+      );
+    }
+    final session = ChatSession.fromJson(
+      jsonDecode(metadata['data'] as String) as Map<String, dynamic>,
+    );
+    _saveChat(
+      db,
+      session.copyWith(messages: [message], messageOffset: parsed.sequence),
+      preserveTitle: true,
+    );
+  }
+
+  static void _applyRemoteTool(
+    Database db,
+    String serverId,
+    WorkspaceChatRecord record,
+  ) {
+    final parsed = WorkspaceChatSync.parseToolId(record.id);
+    if (parsed == null) return;
+    final localSessionId = _localSessionId(
+      db,
+      serverId,
+      parsed.sessionId,
+      create: false,
+    );
+    if (localSessionId == null) return;
+    final exists = db.select(
+      'SELECT 1 FROM chat_messages WHERE session_id=? AND id=?',
+      [localSessionId, parsed.messageId],
+    ).isNotEmpty;
+    if (!exists) return;
+    if (record.deleted) {
+      db.execute(
+        'DELETE FROM chat_tools WHERE session_id=? AND message_id=? AND tool_id=?',
+        [localSessionId, parsed.messageId, parsed.toolId],
+      );
+      return;
+    }
+    final value = record.value;
+    if (value == null) return;
+    db.execute(
+      'INSERT OR REPLACE INTO chat_tools(session_id,message_id,tool_id,data) VALUES(?,?,?,?)',
+      [localSessionId, parsed.messageId, parsed.toolId, jsonEncode(value)],
+    );
   }
 
   Future<ChatSearchPage> searchMessages(
@@ -399,6 +956,7 @@ class ChatRepository {
     int? before,
     int limit = 50,
   }) async {
+    await _syncRemoteSession(id, before: before, limit: limit);
     await _writes;
     String file;
     try {
@@ -450,137 +1008,181 @@ class ChatRepository {
     });
   }
 
-  Future<void> saveSession(ChatSession session) => _write((db) {
-    db.execute('BEGIN IMMEDIATE');
+  Future<void> saveSession(ChatSession session) async {
+    await _write((db) {
+      db.execute('BEGIN IMMEDIATE');
+      try {
+        _saveChat(db, session);
+        db.execute('COMMIT');
+      } catch (_) {
+        db.execute('ROLLBACK');
+        rethrow;
+      }
+    });
+    await _stageSession(session);
+  }
+
+  Future<void> _stageSession(ChatSession session) async {
+    final serverId = session.serverId;
+    if (serverId == null) return;
+    final workspace = _workspaceOrNull();
+    if (workspace == null || !workspace.enabled(serverId)) return;
     try {
-      _saveChat(db, session);
-      db.execute('COMMIT');
-    } catch (_) {
-      db.execute('ROLLBACK');
-      rethrow;
+      final snapshot = await _write((db) {
+        final remoteId = _remoteSessionId(db, serverId, session.id);
+        final count =
+            db.select(
+                  'SELECT COALESCE(MAX(seq)+1,0) AS n FROM chat_messages WHERE session_id=?',
+                  [session.id],
+                ).single['n']
+                as int;
+        return (remoteId, count);
+      });
+      final remoteId = snapshot.$1;
+      final total = snapshot.$2;
+      final metadata = session.copyWith(
+        totalMessageCount: total > session.totalMessageCount
+            ? total
+            : session.totalMessageCount,
+      );
+      final records = await workspace.encodeSaveRecords(
+        serverId,
+        metadata,
+        remoteSessionId: remoteId,
+      );
+      await workspace.stage(serverId, records);
+    } catch (error) {
+      // The local write already succeeded; surface the deferred remote failure
+      // instead of deleting local history or pretending it synced.
+      _reportWorkspaceError(error);
     }
-  });
+  }
 
   /// Merge one bounded replay batch without deleting local history or changing
   /// local IDs (scroll anchors). Ambiguous replay fails closed, never duplicates.
-  Future<void> mergeReplayBatch(ChatSession session, String agentId) => _write((
-    db,
-  ) {
-    db.execute('BEGIN IMMEDIATE');
-    try {
-      final metadata = db.select('SELECT data FROM chat_sessions WHERE id=?', [
-        session.id,
-      ]).firstOrNull;
-      if (metadata == null) throw StateError('CHAT_SESSION_NOT_FOUND');
-      final stored = ChatSession.fromJson(
-        jsonDecode(metadata['data'] as String) as Map<String, dynamic>,
-      );
-      if (stored.serverId != session.serverId ||
-          !stored.includesAgent(agentId)) {
-        throw StateError('CHAT_SESSION_IDENTITY_MISMATCH');
-      }
-      // Shared sessions may interleave agents: ordinal fallback is unsafe there.
-      final shared =
-          stored.agentId != agentId ||
-          stored.participantAgentIds.any((id) => id != agentId) ||
-          stored.agentContexts.keys.any((id) => id != agentId);
-      var count =
-          db.select(
-                'SELECT COALESCE(MAX(seq)+1,0) AS n FROM chat_messages WHERE session_id=?',
-                [session.id],
-              ).single['n']
-              as int;
-      for (var i = 0; i < session.messages.length; i++) {
-        final incoming = session.messages[i];
-        if (incoming.agentId != null && incoming.agentId != agentId) {
+  Future<void> mergeReplayBatch(ChatSession session, String agentId) async {
+    await _write((db) {
+      db.execute('BEGIN IMMEDIATE');
+      try {
+        final metadata = db.select(
+          'SELECT data FROM chat_sessions WHERE id=?',
+          [session.id],
+        ).firstOrNull;
+        if (metadata == null) throw StateError('CHAT_SESSION_NOT_FOUND');
+        final stored = ChatSession.fromJson(
+          jsonDecode(metadata['data'] as String) as Map<String, dynamic>,
+        );
+        if (stored.serverId != session.serverId ||
+            !stored.includesAgent(agentId)) {
           throw StateError('CHAT_SESSION_IDENTITY_MISMATCH');
         }
-        var row = incoming.remoteMessageId == null
-            ? null
-            : db.select(
-                "SELECT seq,data FROM chat_messages WHERE session_id=? AND json_extract(data,'\$.agentId')=? AND json_extract(data,'\$.remoteMessageId')=?",
-                [session.id, agentId, incoming.remoteMessageId],
-              ).firstOrNull;
-        final ordinal = session.messageOffset + i;
-        if (row == null && !shared && ordinal < count) {
-          row = db.select(
-            'SELECT seq,data FROM chat_messages WHERE session_id=? AND seq=?',
-            [session.id, ordinal],
-          ).firstOrNull;
-        }
-        var message = incoming;
-        final int seq;
-        if (row != null) {
-          final previous = ChatMessage.fromJson(
-            jsonDecode(row['data'] as String) as Map<String, dynamic>,
-          );
-          final sameId =
-              incoming.remoteMessageId != null &&
-              incoming.remoteMessageId == previous.remoteMessageId;
-          if (previous.role != incoming.role ||
-              (previous.agentId != null && previous.agentId != agentId) ||
-              (!sameId &&
-                  ((previous.remoteMessageId != null &&
-                          incoming.remoteMessageId != null) ||
-                      !incoming.content.startsWith(previous.content) ||
-                      (previous.content.isEmpty &&
-                          previous.attachments.isNotEmpty)))) {
-            throw StateError('ACP_HISTORY_REPLAY_AMBIGUOUS');
+        // Shared sessions may interleave agents: ordinal fallback is unsafe there.
+        final shared =
+            stored.agentId != agentId ||
+            stored.participantAgentIds.any((id) => id != agentId) ||
+            stored.agentContexts.keys.any((id) => id != agentId);
+        var count =
+            db.select(
+                  'SELECT COALESCE(MAX(seq)+1,0) AS n FROM chat_messages WHERE session_id=?',
+                  [session.id],
+                ).single['n']
+                as int;
+        for (var i = 0; i < session.messages.length; i++) {
+          final incoming = session.messages[i];
+          if (incoming.agentId != null && incoming.agentId != agentId) {
+            throw StateError('CHAT_SESSION_IDENTITY_MISMATCH');
           }
-          seq = row['seq'] as int;
-          // A shorter snapshot must not erase already received output.
-          if (previous.content.length > incoming.content.length) {
-            throw StateError('ACP_HISTORY_REPLAY_AMBIGUOUS');
-          } else {
-            message = incoming.copyWith(
-              id: previous.id,
-              // A history snapshot proves received content, not that a lost
-              // running turn finished. Only a live terminal event can prove it.
-              status: incoming.failureCode != null
-                  ? incoming.status
-                  : previous.failureCode != null
-                  ? previous.status
-                  : previous.status == ChatTurnStatus.unknown ||
-                        previous.status == ChatTurnStatus.streaming
-                  ? ChatTurnStatus.unknown
-                  : incoming.status,
-              failureCode: incoming.failureCode ?? previous.failureCode,
-              createdAt: previous.createdAt,
-              thinking: incoming.thinking ?? previous.thinking,
-              contentBlocks:
-                  incoming.contentBlocks.isEmpty &&
-                      previous.content == incoming.content
-                  ? previous.contentBlocks
-                  : incoming.contentBlocks,
-              planSteps: incoming.planSteps.isEmpty
-                  ? previous.planSteps
-                  : incoming.planSteps,
-              toolExecutions: {
-                for (final tool in previous.toolExecutions) tool.id: tool,
-                for (final tool in incoming.toolExecutions) tool.id: tool,
-              }.values.toList(),
-              attachments: {
-                for (final attachment in previous.attachments)
-                  attachment.id: attachment,
-                for (final attachment in incoming.attachments)
-                  attachment.id: attachment,
-              }.values.toList(),
+          var row = incoming.remoteMessageId == null
+              ? null
+              : db.select(
+                  "SELECT seq,data FROM chat_messages WHERE session_id=? AND json_extract(data,'\$.agentId')=? AND json_extract(data,'\$.remoteMessageId')=?",
+                  [session.id, agentId, incoming.remoteMessageId],
+                ).firstOrNull;
+          final ordinal = session.messageOffset + i;
+          if (row == null && !shared && ordinal < count) {
+            row = db.select(
+              'SELECT seq,data FROM chat_messages WHERE session_id=? AND seq=?',
+              [session.id, ordinal],
+            ).firstOrNull;
+          }
+          var message = incoming;
+          final int seq;
+          if (row != null) {
+            final previous = ChatMessage.fromJson(
+              jsonDecode(row['data'] as String) as Map<String, dynamic>,
             );
+            final sameId =
+                incoming.remoteMessageId != null &&
+                incoming.remoteMessageId == previous.remoteMessageId;
+            if (previous.role != incoming.role ||
+                (previous.agentId != null && previous.agentId != agentId) ||
+                (!sameId &&
+                    ((previous.remoteMessageId != null &&
+                            incoming.remoteMessageId != null) ||
+                        !incoming.content.startsWith(previous.content) ||
+                        (previous.content.isEmpty &&
+                            previous.attachments.isNotEmpty)))) {
+              throw StateError('ACP_HISTORY_REPLAY_AMBIGUOUS');
+            }
+            seq = row['seq'] as int;
+            // A shorter snapshot must not erase already received output.
+            if (previous.content.length > incoming.content.length) {
+              throw StateError('ACP_HISTORY_REPLAY_AMBIGUOUS');
+            } else {
+              message = incoming.copyWith(
+                id: previous.id,
+                // A history snapshot proves received content, not that a lost
+                // running turn finished. Only a live terminal event can prove it.
+                status: incoming.failureCode != null
+                    ? incoming.status
+                    : previous.failureCode != null
+                    ? previous.status
+                    : previous.status == ChatTurnStatus.unknown ||
+                          previous.status == ChatTurnStatus.streaming
+                    ? ChatTurnStatus.unknown
+                    : incoming.status,
+                failureCode: incoming.failureCode ?? previous.failureCode,
+                createdAt: previous.createdAt,
+                thinking: incoming.thinking ?? previous.thinking,
+                contentBlocks:
+                    incoming.contentBlocks.isEmpty &&
+                        previous.content == incoming.content
+                    ? previous.contentBlocks
+                    : incoming.contentBlocks,
+                planSteps: incoming.planSteps.isEmpty
+                    ? previous.planSteps
+                    : incoming.planSteps,
+                toolExecutions: {
+                  for (final tool in previous.toolExecutions) tool.id: tool,
+                  for (final tool in incoming.toolExecutions) tool.id: tool,
+                }.values.toList(),
+                attachments: {
+                  for (final attachment in previous.attachments)
+                    attachment.id: attachment,
+                  for (final attachment in incoming.attachments)
+                    attachment.id: attachment,
+                }.values.toList(),
+              );
+            }
+          } else {
+            if (shared || ordinal != count) {
+              throw StateError('ACP_HISTORY_REPLAY_AMBIGUOUS');
+            }
+            seq = count++;
           }
-        } else {
-          if (shared || ordinal != count) {
-            throw StateError('ACP_HISTORY_REPLAY_AMBIGUOUS');
-          }
-          seq = count++;
+          _saveChat(
+            db,
+            stored.copyWith(messages: [message], messageOffset: seq),
+          );
         }
-        _saveChat(db, stored.copyWith(messages: [message], messageOffset: seq));
+        db.execute('COMMIT');
+      } catch (_) {
+        db.execute('ROLLBACK');
+        rethrow;
       }
-      db.execute('COMMIT');
-    } catch (_) {
-      db.execute('ROLLBACK');
-      rethrow;
-    }
-  });
+    });
+    await _stageSession(session);
+  }
 
   Future<List<ChatSession>> _legacySessions() {
     final raw = _localStorage.rawChatSessions;
@@ -597,21 +1199,345 @@ class ChatRepository {
     );
   }
 
-  Future<void> deleteSession(String id) => _write((db) {
-    db.execute('DELETE FROM chat_sessions WHERE id=?', [id]);
-  });
+  Future<void> deleteSession(String id) async {
+    final deleted = await _write<_DeletedChatSession?>((db) {
+      final row = db.select('SELECT server_id FROM chat_sessions WHERE id=?', [
+        id,
+      ]).firstOrNull;
+      if (row == null) return null;
+      final serverId = row['server_id'] as String?;
+      final remoteId = serverId == null
+          ? id
+          : _remoteSessionId(db, serverId, id);
+      final messages = db
+          .select('SELECT seq,id FROM chat_messages WHERE session_id=?', [id])
+          .map(
+            (row) =>
+                (sequence: row['seq'] as int, messageId: row['id'] as String),
+          )
+          .toList(growable: false);
+      final tools = db
+          .select(
+            'SELECT m.seq AS seq,m.id AS message_id,t.tool_id AS tool_id '
+            'FROM chat_tools t JOIN chat_messages m '
+            'ON m.session_id=t.session_id AND m.id=t.message_id '
+            'WHERE t.session_id=?',
+            [id],
+          )
+          .map(
+            (row) => (
+              sequence: row['seq'] as int,
+              messageId: row['message_id'] as String,
+              toolId: row['tool_id'] as String,
+            ),
+          )
+          .toList(growable: false);
+      db.execute('DELETE FROM chat_sessions WHERE id=?', [id]);
+      if (serverId != null) {
+        db.execute(
+          'DELETE FROM chat_workspace_map WHERE server_id=? AND kind=? AND local_id=?',
+          [serverId, 'chat_session', id],
+        );
+      }
+      return _DeletedChatSession(serverId, remoteId, messages, tools);
+    });
+    final serverId = deleted?.serverId;
+    if (deleted == null || serverId == null) return;
+    final workspace = _workspaceOrNull();
+    if (workspace == null || !workspace.enabled(serverId)) return;
+    final records = <Map<String, dynamic>>[
+      WorkspaceChatSync.record(
+        'chat_session',
+        deleted.remoteId,
+        const {},
+        deleted: true,
+      ),
+      for (final message in deleted.messages)
+        WorkspaceChatSync.record(
+          'chat_message',
+          WorkspaceChatSync.messageRecordId(
+            deleted.remoteId,
+            message.sequence,
+            message.messageId,
+          ),
+          const {},
+          deleted: true,
+        ),
+      for (final tool in deleted.tools)
+        WorkspaceChatSync.record(
+          'chat_tool',
+          WorkspaceChatSync.toolRecordId(
+            deleted.remoteId,
+            tool.sequence,
+            tool.messageId,
+            tool.toolId,
+          ),
+          const {},
+          deleted: true,
+        ),
+    ];
+    try {
+      await workspace.stage(serverId, records);
+    } catch (error) {
+      _reportWorkspaceError(error);
+    }
+  }
 
-  Future<void> renameSession(String id, String title) => _write((db) {
-    final rows = db.select('SELECT data FROM chat_sessions WHERE id=?', [id]);
-    if (rows.isEmpty) return;
-    final data =
-        jsonDecode(rows.single['data'] as String) as Map<String, dynamic>;
-    data['title'] = title;
-    db.execute('UPDATE chat_sessions SET title=?,data=? WHERE id=?', [
-      title,
-      jsonEncode(data),
-      id,
-    ]);
+  Future<void> renameSession(String id, String title) async {
+    final session = await _write<ChatSession?>((db) {
+      final rows = db.select('SELECT data FROM chat_sessions WHERE id=?', [id]);
+      if (rows.isEmpty) return null;
+      final data =
+          jsonDecode(rows.single['data'] as String) as Map<String, dynamic>;
+      final now = DateTime.now();
+      data['title'] = title;
+      data['updatedAt'] = now.toIso8601String();
+      db.execute(
+        'UPDATE chat_sessions SET title=?,updated=?,data=? WHERE id=?',
+        [title, now.toIso8601String(), jsonEncode(data), id],
+      );
+      return ChatSession.fromJson(
+        data,
+      ).copyWith(messages: const [], messageOffset: 0);
+    });
+    if (session != null) await _stageSession(session);
+  }
+
+  /// Explicit, resumable upload of this device's existing local history.
+  ///
+  /// Never called at startup. Each call uploads at most [messageBudget] messages
+  /// from at most [sessionBudget] sessions and persists a cursor in SQLite, so
+  /// an interrupted migration resumes exactly where it stopped.
+  Future<WorkspaceChatMigration> migrateWorkspace(
+    String serverId, {
+    int messageBudget = 200,
+    int sessionBudget = 10,
+  }) async {
+    final workspace = _workspaceOrNull();
+    if (workspace == null || !workspace.enabled(serverId)) {
+      throw const WorkspaceChatSyncException('WORKSPACE_CHAT_DISABLED');
+    }
+    if (messageBudget < 1 || messageBudget > 500) {
+      throw ArgumentError('CHAT_MIGRATION_BUDGET_INVALID');
+    }
+    if (sessionBudget < 1 || sessionBudget > 100) {
+      throw ArgumentError('CHAT_MIGRATION_BUDGET_INVALID');
+    }
+    var cursor = await _write((db) => _readMigrationCursor(db, serverId));
+    var uploadedSessions = 0;
+    var uploadedMessages = 0;
+    var uploadedTools = 0;
+    var sessionsVisited = 0;
+    String? lastSessionId;
+    var done = false;
+    while (sessionsVisited < sessionBudget) {
+      final next = await _write<(String, Map<String, dynamic>, int, int)?>((
+        db,
+      ) {
+        final query = cursor.sessionId == null
+            ? db.select(
+                'SELECT id,data FROM chat_sessions WHERE server_id=? ORDER BY id LIMIT 1',
+                [serverId],
+              )
+            : db.select(
+                'SELECT id,data FROM chat_sessions WHERE server_id=? AND id>=? ORDER BY id LIMIT 1',
+                [serverId, cursor.sessionId],
+              );
+        if (query.isEmpty) return null;
+        final id = query.single['id'] as String;
+        final metadata =
+            jsonDecode(query.single['data'] as String) as Map<String, dynamic>;
+        final count =
+            db.select(
+                  'SELECT COALESCE(MAX(seq)+1,0) AS n FROM chat_messages WHERE session_id=?',
+                  [id],
+                ).single['n']
+                as int;
+        final sequence = id == cursor.sessionId ? cursor.sequence : 0;
+        if (sequence >= count && id == cursor.sessionId) {
+          // This session is complete; advance to the next id.
+          final after = db.select(
+            'SELECT id,data FROM chat_sessions WHERE server_id=? AND id>? ORDER BY id LIMIT 1',
+            [serverId, id],
+          );
+          if (after.isEmpty) return null;
+          final nextId = after.single['id'] as String;
+          return (
+            nextId,
+            jsonDecode(after.single['data'] as String) as Map<String, dynamic>,
+            db.select(
+                  'SELECT COALESCE(MAX(seq)+1,0) AS n FROM chat_messages WHERE session_id=?',
+                  [nextId],
+                ).single['n']
+                as int,
+            0,
+          );
+        }
+        return (id, metadata, count, sequence);
+      });
+      if (next == null) {
+        done = true;
+        break;
+      }
+      final (sessionId, metadata, count, sequence) = next;
+      lastSessionId = sessionId;
+      final messages = await _write((db) {
+        final rows = db.select(
+          'SELECT seq,data FROM chat_messages WHERE session_id=? AND seq>=? ORDER BY seq LIMIT ?',
+          [sessionId, sequence, messageBudget],
+        );
+        return rows
+            .map(
+              (row) => ChatMessage.fromJson(
+                _expandChatMessage(db, sessionId, row['data'] as String),
+              ),
+            )
+            .toList(growable: false);
+      });
+      final session = ChatSession.fromJson(metadata).copyWith(
+        messages: messages,
+        messageOffset: sequence,
+        totalMessageCount: count,
+      );
+      final remoteId = await _write(
+        (db) => _remoteSessionId(db, serverId, sessionId),
+      );
+      final records = await workspace.encodeSaveRecords(
+        serverId,
+        session,
+        remoteSessionId: remoteId,
+      );
+      await workspace.stage(serverId, records);
+      uploadedSessions += sequence == 0 ? 1 : 0;
+      uploadedMessages += messages.length;
+      uploadedTools += messages.fold<int>(
+        0,
+        (total, message) => total + message.toolExecutions.length,
+      );
+      sessionsVisited += sequence == 0 ? 1 : 0;
+      final nextSequence = sequence + messages.length;
+      cursor = _MigrationCursor(sessionId, nextSequence);
+      await _write((db) => _writeMigrationCursor(db, serverId, cursor));
+      if (nextSequence >= count) {
+        sessionsVisited = sessionsVisited == 0 ? 1 : sessionsVisited;
+        // The next loop iteration advances past this completed session.
+        cursor = _MigrationCursor(sessionId, count);
+      }
+      // One bounded batch per call; the persisted cursor resumes exactly here.
+      if (messages.length >= messageBudget) break;
+    }
+    return WorkspaceChatMigration(
+      serverId: serverId,
+      done: done,
+      sessionId: lastSessionId,
+      uploadedSessions: uploadedSessions,
+      uploadedMessages: uploadedMessages,
+      uploadedTools: uploadedTools,
+    );
+  }
+
+  static _MigrationCursor _readMigrationCursor(Database db, String serverId) {
+    final row = db.select(
+      'SELECT data FROM chat_workspace_migration WHERE server_id=?',
+      [serverId],
+    ).firstOrNull;
+    if (row == null) return const _MigrationCursor(null, 0);
+    final data = jsonDecode(row['data'] as String) as Map<String, dynamic>;
+    return _MigrationCursor(
+      data['sessionId'] as String?,
+      (data['sequence'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  static void _writeMigrationCursor(
+    Database db,
+    String serverId,
+    _MigrationCursor cursor,
+  ) {
+    db.execute(
+      'INSERT OR REPLACE INTO chat_workspace_migration(server_id,data) VALUES(?,?)',
+      [
+        serverId,
+        jsonEncode({
+          'sessionId': cursor.sessionId,
+          'sequence': cursor.sequence,
+        }),
+      ],
+    );
+  }
+
+  /// Uploads one attachment (local file -> content hash) through `blob_put`.
+  Future<ChatAttachment> uploadWorkspaceAttachment(
+    String serverId,
+    ChatAttachment attachment,
+  ) async {
+    final workspace = _workspaceOrNull();
+    if (workspace == null || !workspace.enabled(serverId)) {
+      throw const WorkspaceChatSyncException('WORKSPACE_CHAT_DISABLED');
+    }
+    return workspace.attachments.prepareOutgoing(serverId, attachment);
+  }
+
+  /// Downloads and materialises a remote attachment on demand.
+  Future<ChatAttachment> hydrateWorkspaceAttachment(
+    String serverId,
+    ChatAttachment attachment,
+  ) async {
+    final workspace = _workspaceOrNull();
+    if (workspace == null || !workspace.enabled(serverId)) {
+      throw const WorkspaceChatSyncException('WORKSPACE_CHAT_DISABLED');
+    }
+    return workspace.attachments.hydrate(serverId, attachment);
+  }
+
+  Future<List<WorkspaceRuntimeInfo>> workspaceRuntimeCatalog(
+    String serverId, {
+    String? runtimeKey,
+  }) async {
+    final workspace = _workspaceOrNull();
+    if (workspace == null || !workspace.enabled(serverId)) return const [];
+    return workspace.fetchRuntimeCatalog(serverId, runtimeKey: runtimeKey);
+  }
+
+  /// Runtime identities hydrated from the local cache, for the root controller.
+  Future<Map<String, WorkspaceRuntimeBinding>> workspaceRuntimeBindings(
+    String serverId,
+  ) async {
+    await _writes;
+    final file = await _path();
+    return _chatDb(file, (db) {
+      final bindings = <String, WorkspaceRuntimeBinding>{};
+      for (final row in db.select(
+        'SELECT id,agent_id,data FROM chat_sessions WHERE server_id=?',
+        [serverId],
+      )) {
+        final session = ChatSession.fromJson(
+          jsonDecode(row['data'] as String) as Map<String, dynamic>,
+        );
+        for (final entry in session.agentContexts.entries) {
+          final key = entry.value.persistentRuntimeKey;
+          if (key == null || key.isEmpty) continue;
+          bindings[key] = WorkspaceRuntimeBinding(
+            sessionId: row['id'] as String,
+            agentId: entry.key,
+            context: entry.value,
+          );
+        }
+      }
+      return bindings;
+    });
+  }
+
+  /// Clears workspace bookkeeping only. Local chat history and SSH config stay.
+  Future<void> clearWorkspaceCache(String serverId) => _write((db) {
+    for (final table in [
+      'chat_workspace_map',
+      'chat_workspace_seen',
+      'chat_workspace_meta',
+      'chat_workspace_migration',
+    ]) {
+      db.execute('DELETE FROM $table WHERE server_id=?', [serverId]);
+    }
   });
 
   Future<ChatSession?> findRemoteSession(
@@ -650,6 +1576,40 @@ class ChatRepository {
     );
     return id == null ? null : loadSession(id);
   }
+
+  /// Hydrates the exact chat session behind a shared runtime from the workspace
+  /// store, using only the registry's `sessionId` (no local checkpoint needed).
+  ///
+  /// Returns `null` when the owning device has not yet committed the
+  /// `chat_session` metadata record, in which case the caller should fall back
+  /// to a bounded local reconstruction from bootstrap metadata.
+  Future<ChatSession?> hydrateRemoteSession(
+    String serverId,
+    String remoteChatSessionId,
+  ) async {
+    final workspace = _workspaceOrNull();
+    if (workspace == null || !workspace.enabled(serverId)) return null;
+    try {
+      final record = await workspace.fetchSession(
+        serverId,
+        remoteChatSessionId,
+      );
+      if (record == null) return null;
+      await _applyRemoteRecords(serverId, [record]);
+      return loadSession(remoteChatSessionId);
+    } on Object {
+      // A transient workspace read must not masquerade as a missing session.
+      return null;
+    }
+  }
+
+  /// Persists a chat session to the local SQLite store only, without staging
+  /// any remote write. Used by read-only observers that have discovered a
+  /// shared runtime they do not control: merely viewing must not mutate the
+  /// authoritative server copy.
+  Future<void> persistLocalRuntimeSession(ChatSession session) => _write((db) {
+    _saveChat(db, session, preserveTitle: false);
+  });
 
   Future<void> markRuntimesForRestart(String serverId, Set<String> agentIds) =>
       _write((db) {
@@ -791,7 +1751,7 @@ Map<String, dynamic> _expandChatMessage(
   return data;
 }
 
-void _saveChat(Database db, ChatSession session) {
+void _saveChat(Database db, ChatSession session, {bool preserveTitle = true}) {
   final existing = db.select(
     'SELECT server_id,agent_id,title FROM chat_sessions WHERE id=?',
     [session.id],
@@ -808,7 +1768,9 @@ void _saveChat(Database db, ChatSession session) {
       .toJson();
   // Renaming owns title changes; an older queued streaming checkpoint must not
   // overwrite a title which the user has just edited.
-  final title = existing?['title'] as String? ?? session.title;
+  final title = preserveTitle
+      ? (existing?['title'] as String?) ?? session.title
+      : session.title;
   metadata['title'] = title;
   db.execute(
     '''INSERT INTO chat_sessions(id,server_id,agent_id,title,updated,data) VALUES(?,?,?,?,?,?)

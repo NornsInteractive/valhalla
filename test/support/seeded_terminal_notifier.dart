@@ -4,6 +4,7 @@ import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/core/providers/terminal_provider.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
+import 'package:valhalla/data/workspace/workspace_gateway.dart';
 
 const terminalFixtureServer = ServerProfile(
   id: 'terminal-fixture',
@@ -26,6 +27,9 @@ class SeededTerminalNotifier extends TerminalNotifier {
 }
 
 class _Storage implements LocalStorageService {
+  @override
+  WorkspaceGateway? workspaceGateway;
+
   @override
   TerminalHistorySnapshot getTerminalHistory(
     String serverId,

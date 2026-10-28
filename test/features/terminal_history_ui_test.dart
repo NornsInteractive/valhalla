@@ -8,6 +8,7 @@ import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/core/providers/terminal_provider.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
+import 'package:valhalla/data/workspace/workspace_gateway.dart';
 import 'package:valhalla/features/terminal/terminal_view.dart';
 import 'package:valhalla/features/terminal/widgets/terminal_history_drawer.dart';
 import 'package:valhalla/infrastructure/terminal/terminal_session_bridge.dart';
@@ -18,6 +19,11 @@ import '../support/fixed_terminal_settings.dart';
 import '../support/seeded_terminal_notifier.dart';
 
 class _Storage implements LocalStorageService {
+  /// Local-only fixture: no workspace sync is configured, so the gateway must
+  /// stay null. The terminal provider reads this during build.
+  @override
+  WorkspaceGateway? workspaceGateway;
+
   @override
   TerminalHistorySnapshot getTerminalHistory(
     String serverId,

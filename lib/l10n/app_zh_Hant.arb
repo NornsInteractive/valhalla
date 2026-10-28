@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "暫無常用指令",
   "terminalSavedCommandsPreview": "指令預覽",
   "terminalSavedCommandsMultilineWarning": "此指令包含多行，確定要在終端機執行嗎？",
-  "terminalModifierHelp": "點按修飾鍵單次生效，長按鎖定；普通鍵長按可重複輸入"
+  "terminalModifierHelp": "點按修飾鍵單次生效，長按鎖定；普通鍵長按可重複輸入",
+  "serverWorkspaceTitle": "伺服端工作區",
+  "serverWorkspaceSubtitle": "跨裝置狀態同步與裝置草稿",
+  "serverWorkspaceOriginServer": "所屬伺服器",
+  "serverWorkspaceOriginUser": "遠端使用者",
+  "serverWorkspaceNoActiveServer": "未選取或未連線活動伺服器",
+  "serverWorkspacePhaseLocal": "僅本機",
+  "serverWorkspacePhaseDiscovering": "探測中...",
+  "serverWorkspacePhaseAvailable": "可啟用",
+  "serverWorkspacePhaseSyncing": "同步中...",
+  "serverWorkspacePhaseReady": "已同步",
+  "serverWorkspacePhaseOffline": "離線",
+  "serverWorkspacePhaseError": "同步異常",
+  "serverWorkspaceLastSynced": "上次同步：{time}",
+  "serverWorkspaceNeverSynced": "從未同步",
+  "serverWorkspacePendingChanges": "{count} 項待推送",
+  "serverWorkspaceNoPendingChanges": "已全部同步",
+  "serverWorkspaceEnable": "啟用伺服端工作區",
+  "serverWorkspaceEnableDialogTitle": "啟用伺服端工作區",
+  "serverWorkspaceEnableDialogMessage": "啟用後將把本機設定移轉至伺服端工作區。本機資料將予以保留，絕不清空。",
+  "serverWorkspaceMigrationPreviewTitle": "移轉項預覽",
+  "serverWorkspaceEnableConfirm": "確認並啟用",
+  "serverWorkspaceNoDataToMigrate": "無本機資料需要移轉",
+  "serverWorkspaceSyncNow": "立即同步",
+  "serverWorkspaceDisable": "停用同步",
+  "serverWorkspaceDisableDialogTitle": "停用伺服端工作區",
+  "serverWorkspaceDisableDialogMessage": "停用同步僅停止此裝置同步，本機與遠端資料均完整保留，不會被刪除。",
+  "serverWorkspaceDisableConfirm": "確認停用",
+  "serverWorkspacePreferenceSource": "設為應用程式級偏好來源",
+  "serverWorkspacePreferenceSourceDesc": "從此伺服器同步應用程式全域偏好",
+  "serverWorkspaceConflictsTitle": "同步衝突 ({count})",
+  "serverWorkspaceConflictKeepLocal": "保留本機",
+  "serverWorkspaceConflictKeepServer": "保留遠端",
+  "serverWorkspaceDeviceDraftsTitle": "其他裝置草稿",
+  "serverWorkspaceRestoreDraft": "還原草稿",
+  "serverWorkspaceRestoreDraftConfirmTitle": "還原裝置草稿",
+  "serverWorkspaceRestoreDraftConfirmMessage": "還原此草稿將載入到目前聊天輸入框，你目前的草稿將自動備份至遠端草稿清單。",
+  "serverWorkspaceRestoreDraftConfirm": "還原",
+  "serverWorkspaceNoDeviceDrafts": "暫無其他裝置草稿",
+  "serverWorkspaceClearCache": "清除本機同步快取",
+  "serverWorkspaceClearCacheConfirmTitle": "清除本機同步快取",
+  "serverWorkspaceClearCacheConfirmMessage": "此操作僅清除本機的同步快取和中繼資料狀態。絕不會刪除遠端資料或 SSH 連線設定。",
+  "serverWorkspaceClearCacheConfirm": "清除快取",
+  "serverWorkspaceCacheCleared": "本機同步快取已清除",
+  "serverWorkspaceErrorSetupFailed": "伺服端工作區環境初始化失敗",
+  "serverWorkspaceErrorPythonRequired": "伺服端需要 Python 3.9 或更高版本",
+  "serverWorkspaceErrorPathUnsafe": "伺服端工作區目錄不安全或權限異常",
+  "serverWorkspaceErrorConflict": "同步過程中偵測到資料衝突",
+  "serverWorkspaceErrorControlHeld": "工作階段控制權被另一台裝置佔用",
+  "serverWorkspaceErrorResponseTooLarge": "伺服端回應超出大小限制",
+  "serverWorkspaceErrorGeneric": "工作區異常 ({code})",
+  "chatWorkspaceControlActive": "已取得控制權",
+  "chatWorkspaceControlActiveTooltip": "目前裝置持有工作階段控制權",
+  "chatWorkspaceReadOnly": "唯讀模式",
+  "chatWorkspaceReadOnlyDevice": "唯讀 ({device})",
+  "chatWorkspaceAcquireControl": "取得控制權",
+  "chatWorkspaceTakeover": "接管",
+  "chatWorkspaceTakeoverDialogTitle": "接管工作階段控制權",
+  "chatWorkspaceTakeoverDialogMessage": "接管後此裝置將獲得對目前工作階段的控制權，可以傳送訊息和執行操作。此操作不會終止正在執行的 Agent，也不會切換工作階段。",
+  "chatWorkspaceTakeoverConfirm": "確認接管",
+  "chatWorkspaceControlFailed": "取得工作區控制權失敗",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "舊版本執行元件仍在執行，請等待其執行結束或在原裝置終止後再升級。",
+  "serverWorkspaceErrorNotEnabled": "伺服端工作區未啟用",
+  "serverWorkspaceErrorPendingChanges": "存在待推送變更，無法清除快取，請先同步。",
+  "serverWorkspaceDraftTypeFile": "檔案草稿",
+  "serverWorkspaceDraftTypeChat": "對話草稿",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "還原檔案草稿",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "還原此檔案草稿將載入到本機編輯器草稿中。你目前的草稿將自動備份至遠端草稿清單。",
+  "persistentRuntimeFeatureWorkspaceTitle": "伺服端工作區與狀態同步",
+  "persistentRuntimeFeatureWorkspaceDesc": "使用者專屬執行環境在應用程式關閉後仍保留執行輸出與任務狀態；SSH 憑據與敏感金鑰僅儲存在本機，絕不同步。",
+  "serverWorkspaceMigrationPendingHint": "後台正在遷移歷史資料。配置已同步，舊版本資料將在後台繼續完成。",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "載入更多草稿",
+  "serverWorkspaceLoadingDrafts": "正在載入草稿..."
 }

@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "ไม่มีคำสั่งที่บันทึกไว้",
   "terminalSavedCommandsPreview": "ดูตัวอย่างคำสั่ง",
   "terminalSavedCommandsMultilineWarning": "คำสั่งนี้มีหลายบรรทัด คุณแน่ใจหรือไม่ว่าต้องการเรียกใช้?",
-  "terminalModifierHelp": "แตะปุ่มปรับแต่งเพื่อใช้ครั้งเดียว กดค้างเพื่อล็อก กดคีย์ค้างไว้เพื่อพิมพ์ซ้ำ"
+  "terminalModifierHelp": "แตะปุ่มปรับแต่งเพื่อใช้ครั้งเดียว กดค้างเพื่อล็อก กดคีย์ค้างไว้เพื่อพิมพ์ซ้ำ",
+  "serverWorkspaceTitle": "พื้นที่ทำงานของเซิร์ฟเวอร์",
+  "serverWorkspaceSubtitle": "การซิงค์สถานะข้ามอุปกรณ์และแบบร่างของอุปกรณ์",
+  "serverWorkspaceOriginServer": "เซิร์ฟเวอร์ที่ใช้งานอยู่",
+  "serverWorkspaceOriginUser": "ผู้ใช้ระยะไกล",
+  "serverWorkspaceNoActiveServer": "ไม่ได้เลือกหรือเชื่อมต่อเซิร์ฟเวอร์ที่ใช้งานอยู่",
+  "serverWorkspacePhaseLocal": "เฉพาะในเครื่อง",
+  "serverWorkspacePhaseDiscovering": "กำลังตรวจหา...",
+  "serverWorkspacePhaseAvailable": "พร้อมเปิดใช้งาน",
+  "serverWorkspacePhaseSyncing": "กำลังซิงค์...",
+  "serverWorkspacePhaseReady": "ซิงค์แล้ว",
+  "serverWorkspacePhaseOffline": "ออฟไลน์",
+  "serverWorkspacePhaseError": "ข้อผิดพลาดในการซิงค์",
+  "serverWorkspaceLastSynced": "ซิงค์ล่าสุด: {time}",
+  "serverWorkspaceNeverSynced": "ไม่เคยซิงค์",
+  "serverWorkspacePendingChanges": "มี {count} รายการรอการเปลี่ยนแปลง",
+  "serverWorkspaceNoPendingChanges": "ซิงค์การเปลี่ยนแปลงทั้งหมดแล้ว",
+  "serverWorkspaceEnable": "เปิดใช้งานพื้นที่ทำงานของเซิร์ฟเวอร์",
+  "serverWorkspaceEnableDialogTitle": "เปิดใช้งานพื้นที่ทำงานของเซิร์ฟเวอร์",
+  "serverWorkspaceEnableDialogMessage": "การเปิดใช้งานจะย้ายการกำหนดค่าในเครื่องไปยังเซิร์ฟเวอร์ การกำหนดค่าในเครื่องของคุณจะได้รับการเก็บรักษาไว้",
+  "serverWorkspaceMigrationPreviewTitle": "ตัวอย่างการย้ายข้อมูล",
+  "serverWorkspaceEnableConfirm": "เปิดใช้งานและซิงค์",
+  "serverWorkspaceNoDataToMigrate": "ไม่มีข้อมูลในเครื่องที่จะย้าย",
+  "serverWorkspaceSyncNow": "ซิงค์ทันที",
+  "serverWorkspaceDisable": "ปิดใช้งานการซิงค์",
+  "serverWorkspaceDisableDialogTitle": "ปิดใช้งานพื้นที่ทำงานของเซิร์ฟเวอร์",
+  "serverWorkspaceDisableDialogMessage": "การปิดใช้งานจะหยุดการซิงค์บนอุปกรณ์นี้ ข้อมูลในเครื่องและระยะไกลจะถูกเก็บไว้และไม่ถูกลบ",
+  "serverWorkspaceDisableConfirm": "ปิดใช้งาน",
+  "serverWorkspacePreferenceSource": "ใช้เป็นแหล่งการตั้งค่าหลัก",
+  "serverWorkspacePreferenceSourceDesc": "ซิงค์การตั้งค่าระดับแอปพลิเคชันจากเซิร์ฟเวอร์นี้",
+  "serverWorkspaceConflictsTitle": "ข้อขัดแย้งในการซิงค์ ({count})",
+  "serverWorkspaceConflictKeepLocal": "เก็บในเครื่อง",
+  "serverWorkspaceConflictKeepServer": "เก็บเซิร์ฟเวอร์",
+  "serverWorkspaceDeviceDraftsTitle": "แบบร่างจากอุปกรณ์อื่น",
+  "serverWorkspaceRestoreDraft": "กู้คืนแบบร่าง",
+  "serverWorkspaceRestoreDraftConfirmTitle": "กู้คืนแบบร่างอุปกรณ์",
+  "serverWorkspaceRestoreDraftConfirmMessage": "การกู้คืนแบบร่างนี้จะแทนที่ข้อความร่างในแชทปัจจุบันของคุณ แบบร่างปัจจุบันของคุณจะถูกบันทึกไว้ในรายการแบบร่างระยะไกล",
+  "serverWorkspaceRestoreDraftConfirm": "กู้คืน",
+  "serverWorkspaceNoDeviceDrafts": "ไม่มีแบบร่างจากอุปกรณ์อื่น",
+  "serverWorkspaceClearCache": "ล้างแคชการซิงค์ในเครื่อง",
+  "serverWorkspaceClearCacheConfirmTitle": "ล้างแคชการซิงค์ในเครื่อง",
+  "serverWorkspaceClearCacheConfirmMessage": "การดำเนินการนี้จะล้างเฉพาะแคชการซิงค์และสถานะในเครื่องเท่านั้น จะไม่ลบข้อมูลระยะไกลหรือการเชื่อมต่อ SSH โดยเด็ดขาด",
+  "serverWorkspaceClearCacheConfirm": "ล้างแคช",
+  "serverWorkspaceCacheCleared": "ล้างแคชการซิงค์ในเครื่องแล้ว",
+  "serverWorkspaceErrorSetupFailed": "การเตรียมสภาพแวดล้อมพื้นที่ทำงานบนเซิร์ฟเวอร์ล้มเหลว",
+  "serverWorkspaceErrorPythonRequired": "เซิร์ฟเวอร์ต้องการ Python 3.9 ขึ้นไป",
+  "serverWorkspaceErrorPathUnsafe": "เส้นทางพื้นที่ทำงานของเซิร์ฟเวอร์ไม่ปลอดภัยหรือสิทธิ์ไม่ถูกต้อง",
+  "serverWorkspaceErrorConflict": "ตรวจพบข้อขัดแย้งของข้อมูลระหว่างการซิงค์",
+  "serverWorkspaceErrorControlHeld": "การควบคุมเซสชันถูกครอบครองโดยอุปกรณ์อื่น",
+  "serverWorkspaceErrorResponseTooLarge": "การตอบกลับของเซิร์ฟเวอร์เกินขีดจำกัดขนาด",
+  "serverWorkspaceErrorGeneric": "ข้อผิดพลาดพื้นที่ทำงาน ({code})",
+  "chatWorkspaceControlActive": "ควบคุมอยู่",
+  "chatWorkspaceControlActiveTooltip": "อุปกรณ์นี้กำลังควบคุมเซสชันอยู่ในขณะนี้",
+  "chatWorkspaceReadOnly": "อ่านอย่างเดียว",
+  "chatWorkspaceReadOnlyDevice": "อ่านอย่างเดียว ({device})",
+  "chatWorkspaceAcquireControl": "รับการควบคุม",
+  "chatWorkspaceTakeover": "เข้าควบคุมแทน",
+  "chatWorkspaceTakeoverDialogTitle": "เข้าควบคุมเซสชันแทน",
+  "chatWorkspaceTakeoverDialogMessage": "การเข้าควบคุมแทนจะช่วยให้อุปกรณ์นี้สามารถส่งข้อความและจัดการเซสชันได้ โดยจะไม่หยุดการทำงานของ Agent และจะไม่เปลี่ยนเซสชัน",
+  "chatWorkspaceTakeoverConfirm": "ยืนยันการเข้าควบคุม",
+  "chatWorkspaceControlFailed": "ไม่สามารถรับการควบคุมพื้นที่ทำงานได้",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "คอมโพเนนต์รันไทม์เวอร์ชันเก่ายังทำงานอยู่ โปรดรอให้เสร็จสิ้นหรือหยุดทำงานบนอุปกรณ์เดิมก่อนอัปเกรด",
+  "serverWorkspaceErrorNotEnabled": "พื้นที่ทำงานของเซิร์ฟเวอร์ยังไม่ได้เปิดใช้งาน",
+  "serverWorkspaceErrorPendingChanges": "ไม่สามารถล้างแคชได้เนื่องจากมีรายการรอการเปลี่ยนแปลง โปรดซิงค์ก่อน",
+  "serverWorkspaceDraftTypeFile": "แบบร่างไฟล์",
+  "serverWorkspaceDraftTypeChat": "แบบร่างแชท",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "กู้คืนแบบร่างไฟล์",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "การกู้คืนแบบร่างไฟล์นี้จะโหลดลงในแบบร่างของตัวแก้ไขในเครื่อง แบบร่างปัจจุบันของคุณจะยังคงบันทึกไว้ในรายการระยะไกล",
+  "persistentRuntimeFeatureWorkspaceTitle": "พื้นที่ทำงานเซิร์ฟเวอร์และการซิงค์สถานะ",
+  "persistentRuntimeFeatureWorkspaceDesc": "สภาพแวดล้อมของผู้ใช้จะคงข้อมูลผลลัพธ์ไว้แม้ปิดแอป โดยข้อมูลรับรอง SSH และคีย์จะถูกเก็บไว้ในเครื่องเท่านั้นและไม่มีการซิงค์",
+  "serverWorkspaceMigrationPendingHint": "กำลังย้ายข้อมูลเดิมในพื้นหลัง การกำหนดค่าได้รับการซิงค์แล้วขณะที่ข้อมูลประวัติกำลังดำเนินการให้เสร็จสิ้นในพื้นหลัง",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "โหลดร่างเพิ่มเติม",
+  "serverWorkspaceLoadingDrafts": "กำลังโหลดร่าง..."
 }

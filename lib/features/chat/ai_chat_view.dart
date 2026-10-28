@@ -19,6 +19,7 @@ import '../../core/providers/ai_chat_provider.dart';
 import '../../core/providers/security_settings_provider.dart';
 import '../../core/providers/server_provider.dart';
 import '../../core/providers/storage_providers.dart';
+import '../../core/providers/remote_workspace_provider.dart';
 import '../../data/models/chat_session.dart';
 import '../../infrastructure/acp/agent_environment_service.dart';
 import '../../widgets/valhalla_card.dart';
@@ -588,6 +589,13 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         chatState.recoveryStatus == SessionRecoveryStatus.syncing;
     if (!isConnected || isRecovering) return;
 
+    final workspaceState = ref.read(remoteWorkspaceProvider);
+    if (workspaceState.enabled &&
+        chatState.activeSession != null &&
+        !chatState.workspaceHasControl) {
+      return;
+    }
+
     final text = _promptController.text.trim();
     if ((text.isEmpty && chatState.attachments.isEmpty) ||
         _isSending ||
@@ -1102,6 +1110,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       return context.l10n.agentAuthRequiredError;
     } else if (errorCode == 'CHAT_SESSION_IDENTITY_MISMATCH') {
       return context.l10n.chatSessionIdentityMismatch;
+    } else if (errorCode == 'WORKSPACE_RUNTIME_UPGRADE_REQUIRED') {
+      return context.l10n.serverWorkspaceErrorRuntimeUpgradeRequired;
+    } else if (errorCode == 'WORKSPACE_CONTROL_REQUIRED' ||
+        errorCode == 'WORKSPACE_CONTROL_HELD') {
+      return context.l10n.serverWorkspaceErrorControlHeld;
     } else {
       return errorCode;
     }
@@ -1554,9 +1567,14 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                           s.activeAgentProfile?.name,
                           s.shareAgentSessions,
                           s.isGenerating,
+                          s.workspaceHasControl,
+                          s.workspaceControlBusy,
+                          s.workspaceControlOwnerDeviceId,
+                          s.activeSession != null,
                         ),
                       ),
                     );
+                    ref.watch(remoteWorkspaceProvider.select((w) => w.enabled));
                     return _buildHeaderBar(ref.read(aiChatProvider), isDesktop);
                   },
                 ),
@@ -1784,10 +1802,244 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     );
   }
 
+  Widget _buildWorkspaceControlBadge(AiChatState state) {
+    final workspaceState = ref.watch(remoteWorkspaceProvider);
+    final isWorkspaceActive =
+        workspaceState.enabled && state.activeSession != null;
+    if (!isWorkspaceActive) return const SizedBox.shrink();
+
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final isCompact = screenWidth < 500 || textScale > 1.15;
+
+    final hasControl = state.workspaceHasControl;
+    final isBusy = state.workspaceControlBusy;
+    final ownerId = state.workspaceControlOwnerDeviceId;
+
+    if (hasControl) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 4),
+        child: Tooltip(
+          message: context.l10n.chatWorkspaceControlActiveTooltip,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            decoration: BoxDecoration(
+              color: context.vSuccess.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(VRadius.pill),
+              border: Border.all(
+                color: context.vSuccess.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 13,
+                  color: context.vSuccess,
+                ),
+                if (!isCompact) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    context.l10n.chatWorkspaceControlActive,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: context.vSuccess,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Read-only / control held by another device
+    final shortOwner = (ownerId != null && ownerId.trim().isNotEmpty)
+        ? (ownerId.trim().length > 8
+            ? ownerId.trim().substring(0, 8)
+            : ownerId.trim())
+        : null;
+
+    final readOnlyLabel = shortOwner != null
+        ? context.l10n.chatWorkspaceReadOnlyDevice(shortOwner)
+        : context.l10n.chatWorkspaceReadOnly;
+
+    final actionLabel = ownerId != null
+        ? context.l10n.chatWorkspaceTakeover
+        : context.l10n.chatWorkspaceAcquireControl;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: Tooltip(
+        message: readOnlyLabel,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: context.vWarning.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(VRadius.pill),
+            border: Border.all(
+              color: context.vWarning.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.visibility_outlined,
+                size: 13,
+                color: context.vWarning,
+              ),
+              if (!isCompact) ...[
+                const SizedBox(width: 4),
+                Text(
+                  readOnlyLabel,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: context.vWarning,
+                  ),
+                ),
+              ],
+              const SizedBox(width: 4),
+              if (isBusy)
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                InkWell(
+                  key: const Key('chat_workspace_control_action_button'),
+                  borderRadius: BorderRadius.circular(VRadius.pill),
+                  onTap: () => _handleAcquireWorkspaceControl(
+                    takeover: ownerId != null,
+                  ),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Text(
+                      actionLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: context.colorScheme.primary,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleAcquireWorkspaceControl({required bool takeover}) async {
+    final initialServer = ref.read(activeServerProvider)?.connectionKey;
+    final initialSessionId = ref.read(aiChatProvider).activeSessionId;
+
+    if (takeover) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(VRadius.dialog),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.shield_outlined, color: ctx.vWarning),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(ctx.l10n.chatWorkspaceTakeoverDialogTitle),
+              ),
+            ],
+          ),
+          content: Text(ctx.l10n.chatWorkspaceTakeoverDialogMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(ctx.l10n.cancel),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: ctx.vWarning),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(ctx.l10n.chatWorkspaceTakeoverConfirm),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true || !mounted) return;
+    }
+
+    // Origin check after dialog await
+    final currentServer = ref.read(activeServerProvider)?.connectionKey;
+    final currentSessionId = ref.read(aiChatProvider).activeSessionId;
+    if (currentServer != initialServer ||
+        currentSessionId != initialSessionId) {
+      return;
+    }
+
+    final ok = await ref
+        .read(aiChatProvider.notifier)
+        .acquireWorkspaceControl(takeover: takeover);
+
+    if (!mounted) return;
+
+    if (!ok) {
+      final error = ref.read(aiChatProvider).lastErrorCode;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_resolveWorkspaceControlError(context, error)),
+            backgroundColor: context.vDanger,
+          ),
+        );
+      }
+    }
+  }
+
+  String _resolveWorkspaceControlError(BuildContext context, String? code) {
+    final l10n = context.l10n;
+    if (code == null) return l10n.chatWorkspaceControlFailed;
+    switch (code) {
+      case 'WORKSPACE_CONTROL_REQUIRED':
+      case 'WORKSPACE_CONTROL_HELD':
+        return l10n.serverWorkspaceErrorControlHeld;
+      case 'WORKSPACE_RUNTIME_UPGRADE_REQUIRED':
+        return l10n.serverWorkspaceErrorRuntimeUpgradeRequired;
+      case 'WORKSPACE_SETUP_FAILED':
+        return l10n.serverWorkspaceErrorSetupFailed;
+      case 'WORKSPACE_PYTHON_REQUIRED':
+        return l10n.serverWorkspaceErrorPythonRequired;
+      case 'WORKSPACE_PATH_UNSAFE':
+        return l10n.serverWorkspaceErrorPathUnsafe;
+      default:
+        return l10n.serverWorkspaceErrorGeneric(code);
+    }
+  }
+
   Widget _buildHeaderBar(AiChatState state, bool isDesktop) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final isCompact = screenWidth < 500 || textScale > 1.15;
+    final btnConstraints = isCompact
+        ? const BoxConstraints(minWidth: 32, minHeight: 32)
+        : const BoxConstraints(minWidth: 40, minHeight: 40);
+    final btnPadding = isCompact
+        ? const EdgeInsets.all(4)
+        : const EdgeInsets.all(8);
+    final headerPadding = isCompact
+        ? const EdgeInsets.symmetric(horizontal: 4)
+        : const EdgeInsets.symmetric(horizontal: 16);
+
     return Container(
       height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: headerPadding,
       color: context.colorScheme.surface,
       child: Row(
         children: [
@@ -1797,6 +2049,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 key: const Key('ai_mobile_session_drawer_button'),
                 icon: const Icon(Icons.view_sidebar_outlined, size: 20),
                 tooltip: context.l10n.chatSessionsTooltip,
+                padding: btnPadding,
+                constraints: btnConstraints,
+                visualDensity: VisualDensity.compact,
                 onPressed: () => Scaffold.of(ctx).openDrawer(),
               ),
             ),
@@ -1809,41 +2064,48 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 onTap: _showAgentSwitcherModal,
                 borderRadius: BorderRadius.circular(VRadius.input),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 2 : 6,
                     vertical: 4,
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        state.activeAgentProfile != null
-                            ? Icons.psychology
-                            : Icons.smart_toy_outlined,
-                        size: 18,
-                        color: state.activeAgentProfile != null
-                            ? context.colorScheme.primary
-                            : context.colorScheme.outline,
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          state.activeAgentProfile?.name ??
-                              context.l10n.noAgentAvailable,
-                          style: context.textTheme.titleSmall?.copyWith(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final showArrow = constraints.maxWidth >= 60;
+                      return Row(
+                        children: [
+                          Icon(
+                            state.activeAgentProfile != null
+                                ? Icons.psychology
+                                : Icons.smart_toy_outlined,
+                            size: 18,
                             color: state.activeAgentProfile != null
-                                ? null
+                                ? context.colorScheme.primary
                                 : context.colorScheme.outline,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const Icon(Icons.arrow_drop_down, size: 18),
-                    ],
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              state.activeAgentProfile?.name ??
+                                  context.l10n.noAgentAvailable,
+                              style: context.textTheme.titleSmall?.copyWith(
+                                color: state.activeAgentProfile != null
+                                    ? null
+                                    : context.colorScheme.outline,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (showArrow)
+                            const Icon(Icons.arrow_drop_down, size: 16),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
             ),
           ),
+          _buildWorkspaceControlBadge(state),
           IconButton(
             key: const Key('shareSessionsHeaderButton'),
             icon: Icon(
@@ -1855,6 +2117,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   ? context.colorScheme.primary
                   : context.colorScheme.outline,
             ),
+            padding: btnPadding,
+            constraints: btnConstraints,
+            visualDensity: VisualDensity.compact,
             tooltip: state.shareAgentSessions
                 ? context.l10n.shareAgentSessionsEnabled
                 : context.l10n.shareAgentSessionsDisabled,
@@ -1867,6 +2132,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           IconButton(
             key: const Key('chat_usage_diagnostics_button'),
             icon: const Icon(Icons.analytics_outlined, size: 18),
+            padding: btnPadding,
+            constraints: btnConstraints,
+            visualDensity: VisualDensity.compact,
             tooltip: context.l10n.chatAccountAndQuotaTitle,
             onPressed: () => _showAccountAndQuotaDialog(context),
           ),
@@ -1879,6 +2147,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               size: 18,
               color: _showWorkbench ? context.colorScheme.primary : null,
             ),
+            padding: btnPadding,
+            constraints: btnConstraints,
+            visualDensity: VisualDensity.compact,
             tooltip: context.l10n.chatWorkbench,
             onPressed: () {
               if (isDesktop) {
@@ -2727,30 +2998,65 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             );
           }
 
+          final chatErrorState = listRef.watch(
+            aiChatProvider.select(
+              (s) => (
+                lastErrorCode: s.lastErrorCode,
+                persistentError: s.persistentRuntimeSetupError,
+                hasAuth:
+                    s.lastErrorCode == AiChatNotifier.disconnectedCode ||
+                    s.lastErrorCode == AiChatNotifier.authRequiredCode ||
+                    s.authChallenge != null ||
+                    s.authError != null,
+              ),
+            ),
+          );
           final hasError =
               frame.recoveryStatus == SessionRecoveryStatus.failed ||
-              listRef.watch(
-                aiChatProvider.select(
-                  (s) =>
-                      s.lastErrorCode != null ||
-                      s.persistentRuntimeSetupError != null,
-                ),
-              );
+              chatErrorState.lastErrorCode != null ||
+              chatErrorState.persistentError != null;
           if (hasError) {
-            final rawError = listRef.watch(
-              aiChatProvider.select(
-                (s) => s.lastErrorCode ?? s.persistentRuntimeSetupError ?? '',
-              ),
-            );
+            final rawError =
+                chatErrorState.lastErrorCode ??
+                chatErrorState.persistentError ??
+                '';
             final isExecChanged = rawError.contains(
               'CHAT_SESSION_EXECUTION_CHANGED',
             );
-            final errorDetail = LogSanitizer.sanitize(rawError);
-            final displayText = isExecChanged
-                ? context.l10n.chatExecutionChangedPrompt
-                : (errorDetail.isNotEmpty
-                      ? errorDetail
-                      : context.l10n.chatStatusFailed);
+            final hasBanner =
+                chatErrorState.lastErrorCode != null &&
+                !chatErrorState.hasAuth &&
+                _dismissedErrorCode != chatErrorState.lastErrorCode;
+
+            final String displayText;
+            if (isExecChanged) {
+              displayText = context.l10n.chatExecutionChangedPrompt;
+            } else if (hasBanner) {
+              displayText = context.l10n.chatStatusFailed;
+            } else {
+              final lastCode = chatErrorState.lastErrorCode;
+              final persistent = chatErrorState.persistentError;
+              if (lastCode != null && lastCode.isNotEmpty) {
+                final resolved = _resolveErrorMessage(lastCode);
+                if (resolved != lastCode) {
+                  displayText = resolved;
+                } else if (lastCode.startsWith('CHAT_SESSION_IDENTITY_MISMATCH')) {
+                  displayText = context.l10n.chatSessionIdentityMismatch;
+                } else {
+                  final sanitized = LogSanitizer.sanitize(lastCode);
+                  displayText = sanitized.isNotEmpty
+                      ? sanitized
+                      : context.l10n.chatStatusFailed;
+                }
+              } else if (persistent != null && persistent.isNotEmpty) {
+                final sanitized = LogSanitizer.sanitize(persistent);
+                displayText = sanitized.isNotEmpty
+                    ? sanitized
+                    : context.l10n.chatStatusFailed;
+              } else {
+                displayText = context.l10n.chatStatusFailed;
+              }
+            }
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -4134,13 +4440,21 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     );
     final activeServer = cardRef.watch(activeServerProvider);
     final expectedServerKey = activeServer?.connectionKey.toString() ?? '';
+    final isReadOnlyWorkspace =
+        cardRef.watch(remoteWorkspaceProvider.select((w) => w.enabled)) &&
+        cardRef.watch(
+          aiChatProvider.select(
+            (s) => s.activeSession != null && !s.workspaceHasControl,
+          ),
+        );
 
     final canRespond =
         isConnected &&
         expectedCompleter != null &&
         !expectedCompleter.isCompleted &&
         recoveryStatus != SessionRecoveryStatus.reconnecting &&
-        recoveryStatus != SessionRecoveryStatus.syncing;
+        recoveryStatus != SessionRecoveryStatus.syncing &&
+        !isReadOnlyWorkspace;
 
     final summaryText = req.description.trim().isNotEmpty
         ? req.description.trim()
@@ -6334,12 +6648,18 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     final isServerBusyWithOtherSession =
         state.isServerBusy && !state.isViewingRun;
 
+    final isReadOnlyWorkspace =
+        inputRef.watch(remoteWorkspaceProvider.select((w) => w.enabled)) &&
+        state.activeSession != null &&
+        !state.workspaceHasControl;
+
     final canSend =
         hasActiveAgent &&
         !isBusy &&
         isConnected &&
         !isRecovering &&
-        !isServerBusyWithOtherSession;
+        !isServerBusyWithOtherSession &&
+        !isReadOnlyWorkspace;
 
     final isDraft = state.activeSession == null;
     final rawWorkingDir =
@@ -6439,7 +6759,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   state.isGenerating ||
                   state.isAuthenticating ||
                   state.isLoadingSettings ||
-                  state.isApplyingSettings,
+                  state.isApplyingSettings ||
+                  isReadOnlyWorkspace,
               isLoadingSettings: state.isLoadingSettings,
               tuneButtonKey: const Key('chat_run_settings_button'),
               onOpenSettings: () => _openRunSettings(refresh: true),
@@ -7018,25 +7339,29 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                         foregroundColor: context.colorScheme.onError,
                       ),
                       tooltip: context.l10n.stopGeneration,
-                      onPressed: () {
-                        final serverKey = ref
-                            .read(activeServerProvider)
-                            ?.connectionKey
-                            .toString();
-                        final sessionId = ref
-                            .read(aiChatProvider)
-                            .activeSessionId;
-                        if (serverKey != null && sessionId != null) {
-                          ref
-                              .read(aiChatProvider.notifier)
-                              .stopViewingRun(
-                                expectedServerKey: serverKey,
-                                expectedSessionId: sessionId,
-                              );
-                        } else {
-                          ref.read(aiChatProvider.notifier).stopGeneration();
-                        }
-                      },
+                      onPressed: isReadOnlyWorkspace
+                          ? null
+                          : () {
+                              final serverKey = ref
+                                  .read(activeServerProvider)
+                                  ?.connectionKey
+                                  .toString();
+                              final sessionId = ref
+                                  .read(aiChatProvider)
+                                  .activeSessionId;
+                              if (serverKey != null && sessionId != null) {
+                                ref
+                                    .read(aiChatProvider.notifier)
+                                    .stopViewingRun(
+                                      expectedServerKey: serverKey,
+                                      expectedSessionId: sessionId,
+                                    );
+                              } else {
+                                ref
+                                    .read(aiChatProvider.notifier)
+                                    .stopGeneration();
+                              }
+                            },
                     ),
                   )
                 else
@@ -7044,9 +7369,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     child: IconButton.filled(
                       key: const Key('sendMessageButton'),
                       icon: const Icon(Icons.send, size: 18),
-                      tooltip: isServerBusyWithOtherSession
-                          ? context.l10n.acpServerBusySendDisabled
-                          : null,
+                      tooltip: isReadOnlyWorkspace
+                          ? context.l10n.chatWorkspaceReadOnly
+                          : (isServerBusyWithOtherSession
+                              ? context.l10n.acpServerBusySendDisabled
+                              : null),
                       onPressed: canSend ? _handleSend : null,
                     ),
                   ),

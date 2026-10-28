@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:acpd/acpd.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/providers/ai_chat_provider.dart';
 import 'package:valhalla/core/providers/agent_registry_provider.dart';
+import 'package:valhalla/core/providers/app_visibility_provider.dart';
 import 'package:valhalla/infrastructure/acp/acp_client_adapter.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
@@ -18,10 +20,12 @@ import 'package:valhalla/data/models/chat_session.dart';
 import 'package:valhalla/data/repositories/chat_repository.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
+import 'package:valhalla/data/workspace/workspace_gateway.dart';
 import 'package:valhalla/infrastructure/acp/acp_runtime_service.dart';
 import 'package:valhalla/infrastructure/acp/acp_ssh_transport.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_host_key_verifier.dart';
+import 'package:valhalla/infrastructure/workspace/remote_workspace_client.dart';
 
 import '../support/fake_acp_transport.dart';
 import '../support/temp_chat_db.dart';
@@ -227,6 +231,179 @@ class _StateOnlyAiChat extends AiChatNotifier {
   void show(AiChatState next) => state = next;
 }
 
+/// Minimal in-memory workspace gateway. It fails the test if the controller
+/// ever asks for an unfiltered runtime catalog scan: a cold device must name the
+/// exact runtime it is looking for instead of paging the top 100 entries.
+class _FakeWorkspaceGateway implements WorkspaceGateway {
+  _FakeWorkspaceGateway({
+    this.runtimeCatalog = const [],
+    this.sessions = const {},
+    this.foreignLease = false,
+  });
+
+  @override
+  final String deviceId = 'device-new';
+  final Set<String> enabledServers = const {'srv-1'};
+  final List<Map<String, dynamic>> runtimeCatalog;
+  final Map<String, Map<String, dynamic>> sessions;
+  final bool foreignLease;
+
+  final List<Map<String, dynamic>> runtimeCatalogRequests = [];
+  final List<Map<String, dynamic>> snapshotRequests = [];
+  final List<Map<String, dynamic>> leaseRequests = [];
+  final List<List<Map<String, dynamic>>> staged = [];
+  final StreamController<WorkspaceChange> _changes =
+      StreamController<WorkspaceChange>.broadcast();
+
+  @override
+  bool isEnabled(String serverId) => enabledServers.contains(serverId);
+
+  @override
+  Stream<WorkspaceChange> get changes => _changes.stream;
+
+  @override
+  Future<void> putRecords(
+    String serverId,
+    List<Map<String, dynamic>> records,
+  ) async {
+    staged.add(records);
+  }
+
+  @override
+  Future<Map<String, dynamic>> request(
+    String serverId,
+    Map<String, dynamic> command,
+  ) async {
+    switch (command['op']) {
+      case 'runtime_catalog':
+        runtimeCatalogRequests.add(Map<String, dynamic>.from(command));
+        final key = command['runtimeKey'];
+        if (key is! String || key.isEmpty) {
+          fail('runtime_catalog must be filtered by an exact runtimeKey');
+        }
+        return {
+          'ok': true,
+          'runtimes': runtimeCatalog
+              .where((entry) => entry['runtimeKey'] == key)
+              .toList(),
+        };
+      case 'snapshot':
+        snapshotRequests.add(Map<String, dynamic>.from(command));
+        final kind = command['kind'];
+        final limit = (command['limit'] as num?)?.toInt() ?? 100;
+        if (kind == 'chat_session' && limit > 2) {
+          fail('workspace metadata reads must stay bounded, got limit=$limit');
+        }
+        if (kind != 'chat_session') return {'ok': true, 'records': const []};
+        final id = command['id'] as String?;
+        final prefix = command['prefix'] as String?;
+        final values = sessions.entries
+            .where(
+              (entry) =>
+                  (id == null || entry.key == id) &&
+                  (prefix == null || entry.key.startsWith(prefix)),
+            )
+            .map(
+              (entry) => {
+                'kind': 'chat_session',
+                'id': entry.key,
+                'version': 1,
+                'value': entry.value,
+              },
+            )
+            .toList();
+        return {'ok': true, 'records': values, 'hasMore': false};
+      case 'lease':
+        leaseRequests.add(Map<String, dynamic>.from(command));
+        if (foreignLease) {
+          throw const WorkspaceException('WORKSPACE_CONTROL_HELD', {
+            'ownerDeviceId': 'device-other',
+          });
+        }
+        return {
+          'ok': true,
+          'ownerDeviceId': deviceId,
+          'token': 'token-1',
+          'generation': 1,
+          'expiresAt': DateTime.now()
+              .toUtc()
+              .add(const Duration(minutes: 5))
+              .toIso8601String(),
+        };
+      default:
+        return {'ok': false, 'error': 'WORKSPACE_OP_UNKNOWN'};
+    }
+  }
+}
+
+typedef _SharedOpen = ({
+  String runtimeKey,
+  int afterSequence,
+  String? remoteSessionId,
+  String? workingDirectory,
+  String? title,
+  Map<String, dynamic> workspace,
+});
+
+/// Opens a real [AcpSshTransport] against a simulated broker stream. The
+/// read-only flag mirrors what `AcpRuntimeService.openShared` computes from a
+/// missing control token, so the production adapter fast path is exercised.
+class _SharedOpener {
+  final List<_SharedOpen> calls = [];
+  final List<_PersistentSession> sessions = [];
+  final List<AcpSshTransport> transports = [];
+  String turnId = 'turn1';
+
+  Future<Transport> open(
+    SSHClient ssh,
+    AgentProfile profile, {
+    required String runtimeKey,
+    required int afterSequence,
+    required Map<String, dynamic> workspace,
+    String? remoteSessionId,
+    String? initialModelId,
+    String? workingDirectory,
+    String? title,
+  }) async {
+    calls.add((
+      runtimeKey: runtimeKey,
+      afterSequence: afterSequence,
+      remoteSessionId: remoteSessionId,
+      workingDirectory: workingDirectory,
+      title: title,
+      workspace: Map<String, dynamic>.from(workspace),
+    ));
+    final session = _PersistentSession();
+    sessions.add(session);
+    final transport = AcpSshTransport(
+      session,
+      runtimeKey: runtimeKey,
+      afterSequence: afterSequence,
+      workspaceReadOnly: workspace['controlToken'] == null,
+    );
+    transports.add(transport);
+    session.emitStdout(
+      '${jsonEncode({'type': 'status', 'state': 'running', 'sessionId': remoteSessionId, 'turnId': turnId, 'seq': afterSequence})}\n',
+    );
+    await transport.attached.timeout(const Duration(seconds: 5));
+    return transport;
+  }
+}
+
+Future<void> _waitForServerRun(
+  ProviderContainer container, {
+  Duration timeout = const Duration(seconds: 5),
+}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (container.read(aiChatProvider).serverRun == null) {
+    if (DateTime.now().isAfter(deadline)) {
+      fail('controller never discovered the running runtime');
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    await pumpEventQueue();
+  }
+}
+
 const _launchKey = 'host|name|null|null|acp --stdio|cli';
 const capabilities = {
   'loadSession': true,
@@ -275,6 +452,7 @@ Future<ProviderContainer> makeContainer({
   bool managedSsh = false,
   bool consent = false,
   bool autoOpen = true,
+  bool connected = true,
   AiChatState? initialState,
   List<String> readyAgents = const [_agentId],
   List<FakeAcpPair>? pairSink,
@@ -302,8 +480,19 @@ Future<ProviderContainer> makeContainer({
   managerOverride,
   ChatRepository Function(LocalStorageService storage, String databasePath)?
   repositoryFactory,
+  WorkspaceGateway? workspaceGateway,
+  String? workspaceId,
+  SharedAcpRuntimeOpener? sharedOpenerOverride,
+  List<ChatSession> seedSessions = const [],
 }) async {
-  SharedPreferences.setMockInitialValues({});
+  final bindingId =
+      workspaceId ?? (workspaceGateway == null ? null : 'ws-test');
+  final initialPrefs = <String, Object>{
+    if (workspaceGateway != null && bindingId != null)
+      'valhalla_workspace_binding_v1::srv-1': jsonEncode({
+        'workspaceId': bindingId,
+      }),
+  };
   if (consent) {
     final server = const ServerProfile(
       id: 'srv-1',
@@ -311,17 +500,22 @@ Future<ProviderContainer> makeContainer({
       host: 'example.test',
       username: 'root',
     );
+    // Shared workspace consent is keyed by the workspace id, exactly like
+    // `_persistentConsentIdentity` does at runtime.
     final identity = AcpRuntimeService.identity(
-      server.connectionKey.toString(),
+      workspaceGateway != null && bindingId != null
+          ? bindingId
+          : server.connectionKey.toString(),
     );
-    SharedPreferences.setMockInitialValues({
-      'valhalla_acp_runtime_consent_v1_$identity': true,
-    });
+    initialPrefs['valhalla_acp_runtime_consent_v1_$identity'] = true;
   }
+  SharedPreferences.setMockInitialValues(initialPrefs);
   final prefs = await SharedPreferences.getInstance();
   final storage = LocalStorageService(prefs);
+  storage.workspaceGateway = workspaceGateway;
   late List<FakeAcpPair> pairs;
   final connection = _ToggleConnection();
+  connection.connected = connected;
   final registry = _MutableRegistry([
     _profile(_agentId),
     _profile('builtin-claude-code'),
@@ -412,6 +606,11 @@ Future<ProviderContainer> makeContainer({
   if (managerOverride != null) {
     overrides.add(acpRuntimeManagerProvider.overrideWithValue(managerOverride));
   }
+  if (sharedOpenerOverride != null) {
+    overrides.add(
+      sharedAcpRuntimeOpenerProvider.overrideWithValue(sharedOpenerOverride),
+    );
+  }
   final created = ProviderContainer(overrides: overrides);
   addTearDown(created.dispose);
   addTearDown(() {
@@ -419,6 +618,14 @@ Future<ProviderContainer> makeContainer({
       pair.close();
     }
   });
+  if (seedSessions.isNotEmpty) {
+    final repository = created.read(chatRepositoryProvider);
+    for (final session in seedSessions) {
+      // Seed local cache only: an observer must never stage remote checkpoints
+      // just to open a session it does not control.
+      await repository.persistLocalRuntimeSession(session);
+    }
+  }
   await settle(created);
   if (autoOpen) {
     await created
@@ -925,6 +1132,395 @@ void main() {
         ChatTurnStatus.completed,
       );
     });
+  });
+
+  group('shared runtime discovery', () {
+    const runtimeKey = 'runtime-shared-1';
+    const chatSessionId = 'chat-shared-1';
+    const acpRemoteId = 'acp-remote-1';
+    const cwd = '/srv/project';
+    const title = 'Shared Project';
+    const workspaceId = 'ws-1';
+
+    Map<String, dynamic> catalogEntry() => {
+      'runtimeKey': runtimeKey,
+      'agentId': _agentId,
+      'sessionId': chatSessionId,
+      'scope': 'srv-1',
+      'meta': {
+        'workingDirectory': cwd,
+        'title': title,
+        'remoteSessionId': acpRemoteId,
+      },
+    };
+
+    Future<List<AcpRuntimeStatus>> busyRuns(SSHClient _, String _) async => [
+      const AcpRuntimeStatus(
+        runtimeKey: runtimeKey,
+        state: 'running',
+        alive: true,
+        childAlive: true,
+        workspaceProtocol: 1,
+        remoteSessionId: acpRemoteId,
+        turnId: 'turn1',
+      ),
+    ];
+
+    test(
+      'cold device hydrates the exact shared chat_session without a new runtime',
+      () async {
+        final gateway = _FakeWorkspaceGateway(
+          runtimeCatalog: [catalogEntry()],
+          sessions: {
+            chatSessionId: {
+              'title': title,
+              'agentId': _agentId,
+              'workingDirectory': cwd,
+              'remoteSessionId': acpRemoteId,
+              'createdAt': DateTime.utc(2026).toIso8601String(),
+              'updatedAt': DateTime.utc(2026).toIso8601String(),
+              'agentContexts': {
+                _agentId: {
+                  'persistentRuntimeKey': runtimeKey,
+                  'remoteSessionId': acpRemoteId,
+                  'runtimeCursor': 3,
+                },
+              },
+            },
+          },
+        );
+        final opener = _SharedOpener();
+        final container = await makeContainer(
+          persistent: true,
+          consent: true,
+          autoOpen: false,
+          workspaceGateway: gateway,
+          workspaceId: workspaceId,
+          serverRunsOverride: busyRuns,
+          sharedOpenerOverride: opener.open,
+        );
+
+        await _waitForServerRun(container);
+
+        expect(opener.calls, hasLength(1));
+        final call = opener.calls.single;
+        expect(call.runtimeKey, runtimeKey);
+        expect(call.workingDirectory, cwd);
+        expect(call.title, title);
+        expect(call.remoteSessionId, acpRemoteId);
+        expect(call.workspace['workspaceSessionId'], chatSessionId);
+        expect(call.workspace['workspaceId'], workspaceId);
+
+        // The controller asked the catalogue for exactly one runtime instead of
+        // scanning the newest 100 entries and guessing.
+        expect(gateway.runtimeCatalogRequests, isNotEmpty);
+        for (final request in gateway.runtimeCatalogRequests) {
+          expect(request['runtimeKey'], runtimeKey);
+        }
+        // Exact metadata hydration stays a bounded one-record lookup (the
+        // subsequent session load may sync the same id again).
+        final metadataRequests = gateway.snapshotRequests
+            .where((request) => request['kind'] == 'chat_session')
+            .toList();
+        expect(metadataRequests, isNotEmpty);
+        for (final request in metadataRequests) {
+          expect(request['limit'], lessThanOrEqualTo(2));
+          if (request['id'] != null) {
+            expect(request['id'], chatSessionId);
+          } else {
+            expect(request['prefix'], startsWith(chatSessionId));
+          }
+        }
+
+        final run = container.read(aiChatProvider).serverRun!;
+        expect(run.sessionId, chatSessionId);
+        expect(run.runtimeKey, runtimeKey);
+        expect(run.agentId, _agentId);
+
+        final repo = container.read(chatRepositoryProvider);
+        final saved = await repo.loadSession(chatSessionId);
+        expect(saved, isNotNull);
+        expect(saved!.workingDirectory, cwd);
+        final context = saved.agentContexts[_agentId]!;
+        expect(context.persistentRuntimeKey, runtimeKey);
+        expect(context.remoteSessionId, acpRemoteId);
+        // No new runtime was created: the observer only attached to the one the
+        // catalogue advertised, and the read-only transport never wrote.
+        expect(opener.sessions.single._stdin.writes, isEmpty);
+      },
+    );
+
+    test(
+      'catalogue-only bootstrap reconstructs a stable session and reopens it',
+      () async {
+        final dir = Directory.systemTemp.createTempSync(
+          'valhalla_reopen_test_',
+        );
+        addTearDown(() async {
+          if (!dir.existsSync()) return;
+          for (var attempt = 0; ; attempt++) {
+            try {
+              await dir.delete(recursive: true);
+              return;
+            } on FileSystemException catch (error) {
+              final code = error.osError?.errorCode;
+              if (code != 39 || attempt >= 4) rethrow;
+            }
+          }
+        });
+        final databasePath = '${dir.path}/chat.sqlite3';
+
+        final firstGateway = _FakeWorkspaceGateway(
+          runtimeCatalog: [catalogEntry()],
+        );
+        final firstOpener = _SharedOpener();
+        final first = await makeContainer(
+          persistent: true,
+          consent: true,
+          autoOpen: false,
+          workspaceGateway: firstGateway,
+          workspaceId: workspaceId,
+          serverRunsOverride: busyRuns,
+          sharedOpenerOverride: firstOpener.open,
+          repositoryFactory: (storage, _) =>
+              ChatRepository(storage, databasePath: databasePath),
+        );
+
+        await _waitForServerRun(first);
+
+        expect(firstOpener.calls, hasLength(1));
+        final firstCall = firstOpener.calls.single;
+        expect(firstCall.runtimeKey, runtimeKey);
+        expect(firstCall.workingDirectory, cwd);
+        expect(firstCall.title, title);
+        expect(firstCall.remoteSessionId, acpRemoteId);
+        expect(firstCall.workspace['workspaceSessionId'], chatSessionId);
+        expect(firstGateway.runtimeCatalogRequests, isNotEmpty);
+        for (final request in firstGateway.runtimeCatalogRequests) {
+          expect(request['runtimeKey'], runtimeKey);
+        }
+        // No chat_session checkpoint exists yet, so the exact lookup is bounded
+        // and misses; the controller must fall back to bootstrap metadata.
+        final firstMetadata = firstGateway.snapshotRequests
+            .where((request) => request['kind'] == 'chat_session')
+            .toList();
+        expect(firstMetadata, isNotEmpty);
+        for (final request in firstMetadata) {
+          expect(request['limit'], lessThanOrEqualTo(2));
+          if (request['id'] != null) {
+            expect(request['id'], chatSessionId);
+          } else {
+            expect(request['prefix'], startsWith(chatSessionId));
+          }
+        }
+
+        final firstRepo = first.read(chatRepositoryProvider);
+        final reconstructed = await firstRepo.loadSession(chatSessionId);
+        expect(reconstructed, isNotNull);
+        expect(reconstructed!.workingDirectory, cwd);
+        expect(reconstructed.title, title);
+        expect(
+          reconstructed.agentContexts[_agentId]!.persistentRuntimeKey,
+          runtimeKey,
+        );
+        expect(
+          reconstructed.agentContexts[_agentId]!.remoteSessionId,
+          acpRemoteId,
+        );
+        // A synthetic fallback id would prove the identity is not stable.
+        expect(await firstRepo.loadSession('runtime/$runtimeKey'), isNull);
+
+        // Reopen in a fresh container against the same local store. The second
+        // controller must find the reconstructed identity locally, without a
+        // catalogue lookup or a second session.
+        final secondGateway = _FakeWorkspaceGateway(
+          runtimeCatalog: [catalogEntry()],
+        );
+        final secondOpener = _SharedOpener();
+        final second = await makeContainer(
+          persistent: true,
+          consent: true,
+          autoOpen: false,
+          workspaceGateway: secondGateway,
+          workspaceId: workspaceId,
+          serverRunsOverride: busyRuns,
+          sharedOpenerOverride: secondOpener.open,
+          repositoryFactory: (storage, _) =>
+              ChatRepository(storage, databasePath: databasePath),
+        );
+
+        await _waitForServerRun(second);
+
+        expect(secondOpener.calls, hasLength(1));
+        final secondCall = secondOpener.calls.single;
+        expect(secondCall.runtimeKey, runtimeKey);
+        expect(secondCall.workingDirectory, cwd);
+        expect(secondCall.remoteSessionId, acpRemoteId);
+        expect(secondCall.workspace['workspaceSessionId'], chatSessionId);
+        expect(
+          secondGateway.runtimeCatalogRequests,
+          isEmpty,
+          reason:
+              'a known local runtime identity must not re-query the catalogue',
+        );
+        final secondRepo = second.read(chatRepositoryProvider);
+        final reopened = await secondRepo.findRuntimeSession(
+          'srv-1',
+          runtimeKey,
+        );
+        expect(reopened?.id, chatSessionId);
+        expect(reopened?.workingDirectory, cwd);
+        expect(reopened?.agentContexts[_agentId]!.remoteSessionId, acpRemoteId);
+      },
+    );
+
+    test(
+      'foreign lease observer never writes initialize/load/prompt or stages chat',
+      () async {
+        var serverBusy = false;
+        final gateway = _FakeWorkspaceGateway(
+          runtimeCatalog: [catalogEntry()],
+          foreignLease: true,
+        );
+        final opener = _SharedOpener();
+        final session = ChatSession(
+          id: 'observer-local',
+          title: title,
+          serverId: 'srv-1',
+          agentId: _agentId,
+          workingDirectory: cwd,
+          createdAt: DateTime.utc(2026),
+          updatedAt: DateTime.utc(2026),
+          messages: [
+            ChatMessage(
+              id: 'turn1',
+              role: MessageRole.assistant,
+              content: 'before',
+              createdAt: DateTime.utc(2026),
+              runtimeTurnId: 'turn1',
+              status: ChatTurnStatus.streaming,
+            ),
+          ],
+          agentContexts: {
+            _agentId: const AgentChatContext(
+              remoteSessionId: acpRemoteId,
+              persistentRuntimeKey: runtimeKey,
+              runtimeCursor: 5,
+            ),
+          },
+        );
+        final container = await makeContainer(
+          persistent: true,
+          consent: true,
+          autoOpen: false,
+          connected: false,
+          readyAgents: const [_agentId, 'builtin-claude-code'],
+          workspaceGateway: gateway,
+          workspaceId: workspaceId,
+          seedSessions: [session],
+          serverRunsOverride: (client, serverId) async =>
+              serverBusy ? await busyRuns(client, serverId) : const [],
+          sharedOpenerOverride: opener.open,
+        );
+
+        // Simulate another device holding the lease before the observer attaches.
+        final notifier = container.read(aiChatProvider.notifier);
+        final seeded = await container
+            .read(chatRepositoryProvider)
+            .findRuntimeSession('srv-1', runtimeKey);
+        expect(seeded?.id, session.id);
+        expect(
+          await notifier.acquireWorkspaceControl(
+            serverId: 'srv-1',
+            sessionId: session.id,
+          ),
+          isFalse,
+        );
+        expect(gateway.leaseRequests, isNotEmpty);
+
+        serverBusy = true;
+        // Connecting runs discovery exactly once, after the foreign lease is
+        // already in place.
+        final connection =
+            container.read(serverConnectionProvider.notifier)
+                as _ToggleConnection;
+        connection.setConnected(true);
+        await pumpEventQueue();
+        await _waitForServerRun(container);
+
+        expect(opener.calls, hasLength(1));
+        final call = opener.calls.single;
+        expect(call.runtimeKey, runtimeKey);
+        expect(call.workingDirectory, cwd);
+        expect(call.remoteSessionId, acpRemoteId);
+        expect(call.workspace['workspaceSessionId'], session.id);
+        expect(call.workspace.containsKey('controlToken'), isFalse);
+        expect(opener.transports.single.workspaceReadOnly, isTrue);
+        // A known local identity is enough; no catalogue or metadata scan.
+        expect(gateway.runtimeCatalogRequests, isEmpty);
+        // Session loads stay bounded: exact/prefix metadata lookups only, plus a
+        // descending message tail. Never an unfiltered top-100 scan.
+        final metadataRequests = gateway.snapshotRequests
+            .where((request) => request['kind'] == 'chat_session')
+            .toList();
+        expect(metadataRequests, isNotEmpty);
+        for (final request in metadataRequests) {
+          expect(request['limit'], lessThanOrEqualTo(2));
+          if (request['id'] != null) {
+            expect(request['id'], session.id);
+          } else {
+            expect(request['prefix'], startsWith(session.id));
+          }
+        }
+        for (final request in gateway.snapshotRequests.where(
+          (request) => request['kind'] == 'chat_message',
+        )) {
+          expect(request['limit'], lessThanOrEqualTo(50));
+          expect(request['descending'], isTrue);
+          expect(request['prefix'], '${session.id}/');
+        }
+
+        // Replayed output arrives while attaching, then the app backgrounds and
+        // the run checkpoints on its timer.
+        opener.sessions.single.emitStdout(
+          '${jsonEncode({
+            'type': 'frame',
+            'turnId': 'turn1',
+            'seq': 6,
+            'frame': {
+              'jsonrpc': '2.0',
+              'method': 'session/update',
+              'params': {
+                'sessionId': acpRemoteId,
+                'update': {
+                  'sessionUpdate': 'agent_message_chunk',
+                  'messageId': 'a1',
+                  'content': {'type': 'text', 'text': 'replayed'},
+                },
+              },
+            },
+          })}\n',
+        );
+        await pumpEventQueue();
+        container.read(appVisibilityProvider.notifier).setForeground(false);
+        await Future<void>.delayed(const Duration(milliseconds: 2200));
+        await pumpEventQueue();
+        container.read(appVisibilityProvider.notifier).setForeground(true);
+        await pumpEventQueue();
+
+        // The real adapter's read-only fast path means the transport never
+        // emitted initialize/session/new/session/load/session/prompt.
+        expect(opener.sessions.single._stdin.writes, isEmpty);
+        // Every checkpoint went to the local store only.
+        expect(gateway.staged, isEmpty);
+
+        final repo = container.read(chatRepositoryProvider);
+        final local = await repo.loadSession(session.id);
+        expect(local, isNotNull);
+        expect(local!.messages.single.content, contains('replayed'));
+        expect(local.agentContexts[_agentId]!.persistentRuntimeKey, runtimeKey);
+      },
+    );
   });
 
   group('ACP session isolation behavior', () {

@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "Aucune commande enregistrée",
   "terminalSavedCommandsPreview": "Aperçu de la commande",
   "terminalSavedCommandsMultilineWarning": "Cette commande contient plusieurs lignes. Êtes-vous sûr de vouloir l'exécuter ?",
-  "terminalModifierHelp": "Appuyez sur un modificateur pour un usage unique ; appui long pour verrouiller. Maintenez les touches pour répéter."
+  "terminalModifierHelp": "Appuyez sur un modificateur pour un usage unique ; appui long pour verrouiller. Maintenez les touches pour répéter.",
+  "serverWorkspaceTitle": "Espace de travail du serveur",
+  "serverWorkspaceSubtitle": "Synchronisation d'état multi-appareils et brouillons d'appareils",
+  "serverWorkspaceOriginServer": "Serveur actif",
+  "serverWorkspaceOriginUser": "Utilisateur distant",
+  "serverWorkspaceNoActiveServer": "Aucun serveur actif sélectionné ou connecté",
+  "serverWorkspacePhaseLocal": "Local uniquement",
+  "serverWorkspacePhaseDiscovering": "Détection en cours...",
+  "serverWorkspacePhaseAvailable": "Prêt à être activé",
+  "serverWorkspacePhaseSyncing": "Synchronisation...",
+  "serverWorkspacePhaseReady": "Synchronisé",
+  "serverWorkspacePhaseOffline": "Hors ligne",
+  "serverWorkspacePhaseError": "Erreur de synchronisation",
+  "serverWorkspaceLastSynced": "Dernière synchronisation : {time}",
+  "serverWorkspaceNeverSynced": "Jamais synchronisé",
+  "serverWorkspacePendingChanges": "{count} modifications en attente",
+  "serverWorkspaceNoPendingChanges": "Toutes les modifications sont synchronisées",
+  "serverWorkspaceEnable": "Activer l'espace de travail du serveur",
+  "serverWorkspaceEnableDialogTitle": "Activer l'espace de travail du serveur",
+  "serverWorkspaceEnableDialogMessage": "L'activation migrera les configurations locales vers le serveur. Vos configurations locales seront conservées.",
+  "serverWorkspaceMigrationPreviewTitle": "Aperçu de migration",
+  "serverWorkspaceEnableConfirm": "Activer et synchroniser",
+  "serverWorkspaceNoDataToMigrate": "Aucune donnée locale à migrer",
+  "serverWorkspaceSyncNow": "Synchroniser maintenant",
+  "serverWorkspaceDisable": "Désactiver la synchronisation",
+  "serverWorkspaceDisableDialogTitle": "Désactiver l'espace de travail du serveur",
+  "serverWorkspaceDisableDialogMessage": "La désactivation arrêtera la synchronisation sur cet appareil. Les données locales et distantes seront conservées et non supprimées.",
+  "serverWorkspaceDisableConfirm": "Désactiver",
+  "serverWorkspacePreferenceSource": "Utiliser comme source de préférences",
+  "serverWorkspacePreferenceSourceDesc": "Synchroniser les paramètres globaux de l'application depuis ce serveur",
+  "serverWorkspaceConflictsTitle": "Conflits de synchronisation ({count})",
+  "serverWorkspaceConflictKeepLocal": "Garder la version locale",
+  "serverWorkspaceConflictKeepServer": "Garder la version serveur",
+  "serverWorkspaceDeviceDraftsTitle": "Brouillons d'autres appareils",
+  "serverWorkspaceRestoreDraft": "Restaurer le brouillon",
+  "serverWorkspaceRestoreDraftConfirmTitle": "Restaurer le brouillon",
+  "serverWorkspaceRestoreDraftConfirmMessage": "La restauration de ce brouillon remplacera le brouillon de saisie actuel. Votre brouillon actuel sera conservé dans les brouillons distants.",
+  "serverWorkspaceRestoreDraftConfirm": "Restaurer",
+  "serverWorkspaceNoDeviceDrafts": "Aucun brouillon d'autres appareils",
+  "serverWorkspaceClearCache": "Vider le cache de synchronisation locale",
+  "serverWorkspaceClearCacheConfirmTitle": "Vider le cache de synchronisation locale",
+  "serverWorkspaceClearCacheConfirmMessage": "Cette action videra uniquement le cache et l'état de synchronisation local. Les données distantes et configurations SSH ne seront jamais supprimées.",
+  "serverWorkspaceClearCacheConfirm": "Vider le cache",
+  "serverWorkspaceCacheCleared": "Cache de synchronisation local vidé",
+  "serverWorkspaceErrorSetupFailed": "L'initialisation de l'espace de travail sur le serveur a échoué",
+  "serverWorkspaceErrorPythonRequired": "Python 3.9+ est requis sur le serveur",
+  "serverWorkspaceErrorPathUnsafe": "Le chemin de l'espace de travail est non sécurisé ou les permissions sont invalides",
+  "serverWorkspaceErrorConflict": "Conflit de données détecté lors de la synchronisation",
+  "serverWorkspaceErrorControlHeld": "Le contrôle de la session est détenu par un autre appareil",
+  "serverWorkspaceErrorResponseTooLarge": "La réponse du serveur a dépassé la limite de taille",
+  "serverWorkspaceErrorGeneric": "Erreur d'espace de travail ({code})",
+  "chatWorkspaceControlActive": "Sous contrôle",
+  "chatWorkspaceControlActiveTooltip": "Cet appareil contrôle actuellement la session",
+  "chatWorkspaceReadOnly": "Lecture seule",
+  "chatWorkspaceReadOnlyDevice": "Lecture seule ({device})",
+  "chatWorkspaceAcquireControl": "Prendre le contrôle",
+  "chatWorkspaceTakeover": "Prendre le relais",
+  "chatWorkspaceTakeoverDialogTitle": "Prendre le contrôle de la session",
+  "chatWorkspaceTakeoverDialogMessage": "Prendre le contrôle permet à cet appareil d'envoyer des messages et d'utiliser la session active. L'agent en cours d'exécution ne sera pas interrompu et la session ne sera pas modifiée.",
+  "chatWorkspaceTakeoverConfirm": "Confirmer",
+  "chatWorkspaceControlFailed": "Échec de la prise de contrôle de l'espace de travail",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "Un composant d'exécution plus ancien est en cours d'exécution. Veuillez le terminer sur l'appareil d'origine avant la mise à niveau.",
+  "serverWorkspaceErrorNotEnabled": "L'espace de travail du serveur n'est pas activé",
+  "serverWorkspaceErrorPendingChanges": "Impossible de vider le cache avec des modifications en attente. Veuillez d'abord synchroniser.",
+  "serverWorkspaceDraftTypeFile": "Brouillon de fichier",
+  "serverWorkspaceDraftTypeChat": "Brouillon de chat",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "Restaurer le brouillon de fichier",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "La restauration de ce brouillon de fichier le chargera dans les brouillons de l'éditeur local. Votre brouillon actuel sera conservé dans les brouillons distants.",
+  "persistentRuntimeFeatureWorkspaceTitle": "Espace de travail serveur et synchronisation",
+  "persistentRuntimeFeatureWorkspaceDesc": "L'environnement propre à l'utilisateur conserve la sortie après fermeture ; les identifiants et clés SSH restent locaux et ne sont jamais synchronisés.",
+  "serverWorkspaceMigrationPendingHint": "Migration des anciennes données en arrière-plan en cours. La configuration est synchronisée tandis que l'historique se termine en arrière-plan.",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "Charger plus de brouillons",
+  "serverWorkspaceLoadingDrafts": "Chargement des brouillons..."
 }

@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/application_center.dart';
 import '../../data/models/nas_source.dart';
 import '../../data/models/server_profile.dart';
+import '../../data/workspace/workspace_gateway.dart';
 import '../../infrastructure/nas/nas_ssh_tunnel_service.dart';
 import '../logging/sanitizer.dart';
 import '../localization/app_locales.dart';
@@ -96,6 +97,7 @@ final applicationCenterProvider =
 class ApplicationCenterNotifier extends Notifier<ApplicationCenterState>
     with WidgetsBindingObserver {
   Timer? _poll;
+  StreamSubscription<WorkspaceChange>? _workspaceChanges;
   int _epoch = 0, _catalogEpoch = 0;
   String? _catalogLocale;
   String? _sudoPassword;
@@ -137,6 +139,12 @@ class ApplicationCenterNotifier extends Notifier<ApplicationCenterState>
         ? null
         : ref.read(activeServerProvider);
     final storage = ref.read(localStorageServiceProvider);
+    unawaited(_workspaceChanges?.cancel());
+    _workspaceChanges = storage.workspaceGateway?.changes.listen((change) {
+      if (!_current(epoch) || change.serverId != _boundServer?.id) return;
+      if (!change.records.any(_isApplicationMetadataRecord)) return;
+      unawaited(_hydrateWorkspaceMetadata());
+    });
     var sources = const [ApplicationSource.official];
     var deployments = <ApplicationDeployment>[];
     var tasks = <ApplicationTask>[];
@@ -192,6 +200,7 @@ class ApplicationCenterNotifier extends Notifier<ApplicationCenterState>
     ref.onDispose(() {
       WidgetsBinding.instance.removeObserver(this);
       _poll?.cancel();
+      unawaited(_workspaceChanges?.cancel());
       _sudoPassword = null;
     });
     var inspectionTicks = 0;
@@ -227,6 +236,103 @@ class ApplicationCenterNotifier extends Notifier<ApplicationCenterState>
       tasks: tasks,
       error: error,
     );
+  }
+
+  static bool _isApplicationMetadataRecord(Map<String, dynamic> record) {
+    final id = record['id'];
+    return record['kind'] == 'config' &&
+        id is String &&
+        id.startsWith('valhalla_app_center_v1::');
+  }
+
+  /// Wait until no local application-center write is queued.
+  ///
+  /// Workspace metadata can land while an install task or refresh is being
+  /// persisted; reading the mirror too early would resurrect stale records.
+  Future<void> _awaitPendingPersist() async {
+    while (true) {
+      final pending = _persistQueue;
+      await pending;
+      if (identical(pending, _persistQueue)) return;
+    }
+  }
+
+  Future<void> _hydrateWorkspaceMetadata() async {
+    final epoch = _epoch;
+    await _awaitPendingPersist();
+    if (!_current(epoch)) return;
+    final storage = ref.read(localStorageServiceProvider);
+    try {
+      final sources = storage.hasApplicationCenterRecords('sources', 'global')
+          ? storage
+                .getApplicationCenterRecords('sources', 'global')
+                .map(ApplicationSource.fromJson)
+                .toList()
+          : const [ApplicationSource.official];
+      final key = serverKey;
+      final incoming = key == null
+          ? <ApplicationDeployment>[]
+          : storage
+                .getApplicationCenterRecords('deployments', key)
+                .map(ApplicationDeployment.fromJson)
+                .where((deployment) => deployment.serverKey == key)
+                .toList();
+      // A metadata refresh must not replace a locally running installation.
+      final busyIds = state.tasks
+          .where((task) => task.isBusy)
+          .map((task) => task.deploymentId)
+          .toSet();
+      final preserved = {
+        for (final deployment in state.deployments)
+          if (busyIds.contains(deployment.id)) deployment.id: deployment,
+      };
+      final deployments = [
+        for (final deployment in incoming)
+          preserved[deployment.id] ?? deployment,
+        for (final deployment in preserved.values)
+          if (!incoming.any((item) => item.id == deployment.id)) deployment,
+      ];
+      final sourcesChanged =
+          jsonEncode(state.sources.map((source) => source.toJson()).toList()) !=
+          jsonEncode(sources.map((source) => source.toJson()).toList());
+      final deploymentsChanged =
+          jsonEncode(
+            state.deployments.map((deployment) => deployment.toJson()).toList(),
+          ) !=
+          jsonEncode(
+            deployments.map((deployment) => deployment.toJson()).toList(),
+          );
+      if (!sourcesChanged && !deploymentsChanged) return;
+      var next = state.copyWith(
+        sources: sourcesChanged ? sources : null,
+        deployments: deploymentsChanged ? deployments : null,
+      );
+      if (sourcesChanged) {
+        ++_catalogEpoch;
+        _catalogRequests.clear();
+        final enabledIds = sources
+            .where((source) => source.enabled)
+            .map((source) => source.id)
+            .toSet();
+        next = next.copyWith(
+          catalog: state.catalog
+              .where((app) => enabledIds.contains(app.sourceId))
+              .toList(),
+          sourceErrors: Map.unmodifiable({
+            for (final entry in state.sourceErrors.entries)
+              if (enabledIds.contains(entry.key)) entry.key: entry.value,
+          }),
+          sourceRefreshedAt: Map.unmodifiable({
+            for (final entry in state.sourceRefreshedAt.entries)
+              if (enabledIds.contains(entry.key)) entry.key: entry.value,
+          }),
+        );
+      }
+      state = next;
+      if (sourcesChanged) unawaited(refreshCatalog());
+    } catch (error) {
+      if (_current(epoch)) state = state.copyWith(error: _error(error));
+    }
   }
 
   String get _locale {

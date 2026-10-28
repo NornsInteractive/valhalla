@@ -38,9 +38,16 @@ class _TestActiveServerNotifier extends ActiveServerNotifier {
 }
 
 class _TerminalTestBridge extends TerminalSessionBridge {
-  _TerminalTestBridge() : super(terminal: Terminal(), serverName: 'test');
+  _TerminalTestBridge() : super(terminal: Terminal(), serverName: 'test') {
+    // The shell only enables terminal input for a connected session; keep the
+    // fixture connected so the explicit keyboard button can attach the IME.
+    stateListenable.value = TerminalConnectionState.connected;
+  }
 
   bool disposed = false;
+
+  @override
+  TerminalConnectionState get state => stateListenable.value;
 
   @override
   void dispose() {

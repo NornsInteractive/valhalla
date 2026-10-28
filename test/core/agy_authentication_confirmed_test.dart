@@ -48,6 +48,16 @@ class _AllReadyRegistry extends AgentRegistryNotifier {
       ),
     ],
   );
+
+  /// Keeps the fixture's "always ready" invariant.
+  ///
+  /// The real implementation re-probes the agent over SSH before recording the
+  /// confirmation. This fake SSH manager only answers [getClient], so that
+  /// probe reports `SSH_DISCONNECTED` and the registry drops the agent from
+  /// `readyAgents`, which then makes a subsequent `sendMessage` exit with
+  /// `AGENT_NOT_READY` before it ever reaches the agent.
+  @override
+  Future<void> confirmAuthentication(AgentProfile profile) async {}
 }
 
 class _StaticConnection extends ServerConnectionNotifier {

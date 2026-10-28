@@ -1,3 +1,5 @@
+import 'workspace_preferences.dart';
+import '../workspace/workspace_gateway.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -585,9 +587,12 @@ class LocalStorageService {
   static const _keyWindowOriginX = 'valhalla_window_origin_x_v1';
   static const _keyWindowOriginY = 'valhalla_window_origin_y_v1';
 
-  final SharedPreferences _prefs;
+  final WorkspacePreferences _prefs;
+  WorkspaceGateway? workspaceGateway;
+  WorkspacePreferences get workspacePreferences => _prefs;
 
-  LocalStorageService(this._prefs);
+  LocalStorageService(SharedPreferences prefs)
+    : _prefs = WorkspacePreferences(prefs);
 
   static const configurationPreferenceTypes = <String, String>{
     _keyThemeMode: 'string',
@@ -615,6 +620,7 @@ class LocalStorageService {
     _keyFilePathDisplayMode: 'string',
     _keyPickerPathDisplayMode: 'string',
     'valhalla_file_view_mode_v1': 'string',
+    'valhalla_nas_open_policies_v1': 'string',
   };
 
   Map<String, Object> exportConfigurationPreferences() => {

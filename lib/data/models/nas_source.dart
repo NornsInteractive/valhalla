@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 import 'nas_media.dart';
 import 'remote_browser.dart';
@@ -6,6 +8,23 @@ import 'remote_browser.dart';
 enum NasSourceType { sftp, webdav, smb, jellyfin, emby }
 
 enum NasPlaybackQuality { original, auto, mbps4, mbps10, mbps20 }
+
+String nasCredentialBindingKey(String id) =>
+    'valhalla_nas_credential_target_v1::$id';
+
+String nasCredentialTarget(NasSource source) => sha256
+    .convert(
+      utf8.encode(
+        jsonEncode([
+          source.type.name,
+          source.endpoint,
+          source.username,
+          source.userId,
+          source.sshServerId,
+        ]),
+      ),
+    )
+    .toString();
 
 class NasSource {
   final String id;
@@ -147,6 +166,7 @@ abstract class NasSourceAdapter {
   Future<NasResource> resolveForDownload(NasMediaItem item) => resolve(item);
   NasSource get source;
   Future<void> probe();
+
   /// Lists one directory, or the accessible media libraries at `/`.
   Stream<List<RemoteBrowserEntry>> browse(
     String path,

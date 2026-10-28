@@ -6340,4 +6340,241 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       '수정자 키를 탭하면 1회 적용, 길게 누르면 고정됩니다. 키를 길게 누르면 반복 입력됩니다.';
+
+  @override
+  String get serverWorkspaceTitle => '서버 워크스페이스';
+
+  @override
+  String get serverWorkspaceSubtitle => '다중 기기 상태 동기화 및 기기 임시보관함';
+
+  @override
+  String get serverWorkspaceOriginServer => '활성 서버';
+
+  @override
+  String get serverWorkspaceOriginUser => '원격 사용자';
+
+  @override
+  String get serverWorkspaceNoActiveServer => '선택되거나 연결된 활성 서버가 없습니다';
+
+  @override
+  String get serverWorkspacePhaseLocal => '로컬 전용';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => '탐색 중...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => '활성화 가능';
+
+  @override
+  String get serverWorkspacePhaseSyncing => '동기화 중...';
+
+  @override
+  String get serverWorkspacePhaseReady => '동기화 완료';
+
+  @override
+  String get serverWorkspacePhaseOffline => '오프라인';
+
+  @override
+  String get serverWorkspacePhaseError => '동기화 오류';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return '최근 동기화: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => '동기화된 적 없음';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '대기 중인 변경사항 $count개';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges => '모든 변경사항 동기화됨';
+
+  @override
+  String get serverWorkspaceEnable => '서버 워크스페이스 활성화';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle => '서버 워크스페이스 활성화';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      '활성화하면 로컬 설정이 서버로 마이그레이션됩니다. 로컬 데이터는 보존되며 지워지지 않습니다.';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => '마이그레이션 미리보기';
+
+  @override
+  String get serverWorkspaceEnableConfirm => '확인 및 활성화';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate => '마이그레이션할 로컬 데이터가 없습니다';
+
+  @override
+  String get serverWorkspaceSyncNow => '지금 동기화';
+
+  @override
+  String get serverWorkspaceDisable => '동기화 비활성화';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle => '서버 워크스페이스 비활성화';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      '동기화를 비활성화하면 이 기기에서의 동기화가 중지됩니다. 원격 및 로컬 데이터는 보존되며 삭제되지 않습니다.';
+
+  @override
+  String get serverWorkspaceDisableConfirm => '비활성화';
+
+  @override
+  String get serverWorkspacePreferenceSource => '설정 우선 소스로 사용';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc => '이 서버에서 앱 전역 환경설정을 동기화합니다';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return '동기화 충돌 ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => '로컬 유지';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => '서버 유지';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => '다른 기기 임시보관함';
+
+  @override
+  String get serverWorkspaceRestoreDraft => '임시보관함 복원';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle => '임시보관함 복원';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      '이 임시보관함을 복원하면 현재 채팅 입력창의 내용이 바뀝니다. 현재 임시보관함은 원격 목록에 보존됩니다.';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => '복원';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts => '다른 기기의 임시보관함이 없습니다';
+
+  @override
+  String get serverWorkspaceClearCache => '로컬 동기화 캐시 정리';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle => '로컬 동기화 캐시 정리';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      '이 작업은 로컬 동기화 캐시와 메타데이터 상태만 정리합니다. 원격 데이터나 SSH 설정은 절대 삭제되지 않습니다.';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => '캐시 정리';
+
+  @override
+  String get serverWorkspaceCacheCleared => '로컬 동기화 캐시가 정리되었습니다';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed => '서버 워크스페이스 환경 초기화 실패';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired => '서버에 Python 3.9 이상이 필요합니다';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      '서버 워크스페이스 경로가 안전하지 않거나 권한이 올바르지 않습니다';
+
+  @override
+  String get serverWorkspaceErrorConflict => '동기화 중 데이터 충돌 감지됨';
+
+  @override
+  String get serverWorkspaceErrorControlHeld => '세션 제어권이 다른 기기에서 사용 중입니다';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge => '서버 응답 크기가 한도를 초과했습니다';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return '워크스페이스 오류 ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => '제어 중';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip => '현재 이 기기가 세션을 제어하고 있습니다';
+
+  @override
+  String get chatWorkspaceReadOnly => '읽기 전용';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return '읽기 전용 ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => '제어권 획득';
+
+  @override
+  String get chatWorkspaceTakeover => '제어권 인수';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => '세션 제어권 인수';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      '제어권을 인수하면 이 기기에서 메시지를 전송하고 세션을 조작할 수 있습니다. 실행 중인 Agent는 종료되지 않으며 세션도 전환되지 않습니다.';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => '인수 확인';
+
+  @override
+  String get chatWorkspaceControlFailed => '워크스페이스 제어권 획득 실패';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      '이전 런타임 구성요소가 실행 중입니다. 업그레이드하기 전에 원래 기기에서 완료하거나 중지해 주세요.';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled => '서버 워크스페이스가 활성화되지 않았습니다';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      '대기 중인 변경사항이 있어 캐시를 정리할 수 없습니다. 먼저 동기화해 주세요.';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => '파일 임시보관함';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => '채팅 임시보관함';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle => '파일 임시보관함 복원';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      '이 파일 임시보관함을 복원하면 로컬 편집기 임시보관함으로 불러옵니다. 현재 임시보관함은 원격 목록에 보존됩니다.';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle => '서버 워크스페이스 및 상태 동기화';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      '앱이 닫혀도 사용자 전용 런타임이 출력을 보존합니다. SSH 자격 증명과 키는 로컬에만 보관되며 동기화되지 않습니다.';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      '백그라운드에서 이전 데이터를 마이그레이션 중입니다. 설정이 동기화되었으며 기존 데이터는 백그라운드에서 계속 완료됩니다.';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => '초안 더 불러오기';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => '초안을 불러오는 중...';
 }

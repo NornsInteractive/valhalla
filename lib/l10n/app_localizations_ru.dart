@@ -6660,4 +6660,264 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get terminalModifierHelp =>
       'Нажмите модификатор для однократного ввода; долгое нажатие фиксирует. Удерживайте клавишу для повтора.';
+
+  @override
+  String get serverWorkspaceTitle => 'Серверное рабочее пространство';
+
+  @override
+  String get serverWorkspaceSubtitle =>
+      'Синхронизация состояния между устройствами и черновики';
+
+  @override
+  String get serverWorkspaceOriginServer => 'Активный сервер';
+
+  @override
+  String get serverWorkspaceOriginUser => 'Удаленный пользователь';
+
+  @override
+  String get serverWorkspaceNoActiveServer =>
+      'Активный сервер не выбран или не подключен';
+
+  @override
+  String get serverWorkspacePhaseLocal => 'Только локально';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => 'Обнаружение...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => 'Доступно для включения';
+
+  @override
+  String get serverWorkspacePhaseSyncing => 'Синхронизация...';
+
+  @override
+  String get serverWorkspacePhaseReady => 'Синхронизировано';
+
+  @override
+  String get serverWorkspacePhaseOffline => 'Не в сети';
+
+  @override
+  String get serverWorkspacePhaseError => 'Ошибка синхронизации';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return 'Последняя синхронизация: $time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => 'Никогда не синхронизировалось';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count изменений ожидает отправки';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges =>
+      'Все изменения синхронизированы';
+
+  @override
+  String get serverWorkspaceEnable => 'Включить серверное рабочее пространство';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle =>
+      'Включить серверное рабочее пространство';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      'Включение перенесет локальные конфигурации на сервер. Локальные данные будут сохранены.';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle =>
+      'Предварительный просмотр миграции';
+
+  @override
+  String get serverWorkspaceEnableConfirm => 'Включить и синхронизировать';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate =>
+      'Нет локальных данных для миграции';
+
+  @override
+  String get serverWorkspaceSyncNow => 'Синхронизировать сейчас';
+
+  @override
+  String get serverWorkspaceDisable => 'Отключить синхронизацию';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle =>
+      'Отключить серверное рабочее пространство';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      'Отключение остановит синхронизацию на этом устройстве. Данные на сервере и локально останутся без изменений.';
+
+  @override
+  String get serverWorkspaceDisableConfirm => 'Отключить';
+
+  @override
+  String get serverWorkspacePreferenceSource =>
+      'Использовать как источник настроек';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc =>
+      'Синхронизировать общие настройки приложения с этого сервера';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return 'Конфликты синхронизации ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => 'Оставить локальные';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => 'Оставить серверные';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => 'Черновики с других устройств';
+
+  @override
+  String get serverWorkspaceRestoreDraft => 'Восстановить черновик';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle => 'Восстановить черновик';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      'Восстановление черновика заменит текущий текст в поле ввода. Ваш текущий черновик сохранится в списке удаленных черновиков.';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => 'Восстановить';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts =>
+      'Нет черновиков с других устройств';
+
+  @override
+  String get serverWorkspaceClearCache =>
+      'Очистить локальный кэш синхронизации';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle =>
+      'Очистить локальный кэш синхронизации';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      'Будут очищены только локальный кэш и метаданные синхронизации. Удаленные данные и настройки SSH никогда не будут удалены.';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => 'Очистить кэш';
+
+  @override
+  String get serverWorkspaceCacheCleared =>
+      'Локальный кэш синхронизации очищен';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed =>
+      'Не удалось инициализировать рабочее пространство на сервере';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired =>
+      'На сервере требуется Python 3.9+';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe =>
+      'Путь рабочего пространства небезопасен или права доступа некорректны';
+
+  @override
+  String get serverWorkspaceErrorConflict =>
+      'Обнаружен конфликт данных при синхронизации';
+
+  @override
+  String get serverWorkspaceErrorControlHeld =>
+      'Управление сессией удерживается другим устройством';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge =>
+      'Ответ сервера превысил допустимый размер';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return 'Ошибка рабочего пространства ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => 'Управление активно';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip =>
+      'Это устройство в данный момент управляет сессией';
+
+  @override
+  String get chatWorkspaceReadOnly => 'Только чтение';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return 'Только чтение ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => 'Получить управление';
+
+  @override
+  String get chatWorkspaceTakeover => 'Перехватить';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => 'Перехват управления сессией';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      'Перехват управления позволит этому устройству отправлять сообщения и управлять сессией. Работающий агент не будет остановлен, а сессия не переключится.';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => 'Перехватить';
+
+  @override
+  String get chatWorkspaceControlFailed =>
+      'Не удалось получить управление рабочим пространством';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      'Работает устаревший компонент среды выполнения. Завершите его на исходном устройстве перед обновлением.';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled =>
+      'Серверное рабочее пространство не включено';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges =>
+      'Нельзя очистить кэш при наличии ожидающих изменений. Сначала выполните синхронизацию.';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => 'Черновик файла';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => 'Черновик чата';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle =>
+      'Восстановить черновик файла';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      'Восстановление черновика файла загрузит его в локальные черновики редактора. Текущий черновик сохранится в удаленном списке.';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle =>
+      'Серверное рабочее пространство и синхронизация';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      'Пользовательская среда сохраняет вывод после закрытия приложения; учетные данные SSH и ключи хранятся локально и никогда не синхронизируются.';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      'Выполняется фоновый перенос устаревших данных. Конфигурация синхронизирована, обработка истории продолжается в фоне.';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => 'Загрузить больше черновиков';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => 'Загрузка черновиков...';
 }

@@ -16,9 +16,11 @@ import select
 import signal
 import sqlite3
 import stat
+import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 
@@ -27,6 +29,12 @@ BROKER = (
     / "assets"
     / "runtime"
     / "acp_broker.py"
+)
+WORKSPACE_SOURCE = (
+    pathlib.Path(__file__).resolve().parents[2]
+    / "assets"
+    / "runtime"
+    / "workspace_store.py"
 )
 
 BROKER_SPEC = importlib.util.spec_from_file_location("acp_broker", BROKER)
@@ -230,8 +238,10 @@ class BrokerTestCase(unittest.TestCase):
     def _socket_path(self) -> pathlib.Path:
         return self._runtime_root() / (self.key[:24] + ".sock")
 
-    def _start_attach(self, argv: list, after_seq: int = 0) -> subprocess.Popen:
+    def _start_attach(self, argv: list, after_seq: int = 0,
+                      extra: dict | None = None) -> subprocess.Popen:
         config = {"key": self.key, "argv": argv, "afterSeq": after_seq}
+        config.update(extra or {})
         payload = base64.b64encode(
             json.dumps(config, separators=(",", ":")).encode()
         ).decode()
@@ -1713,6 +1723,556 @@ os._exit(0)
 
         import shutil
         shutil.rmtree(folder_v1)
+
+    # -- workspace fencing ----------------------------------------------
+    def _install_workspace_store(self):
+        folder = self.home / ".local/share/valhalla/workspace-v1"
+        folder.mkdir(parents=True, mode=0o700, exist_ok=True)
+        installed = folder / "store.py"
+        shutil.copyfile(WORKSPACE_SOURCE, installed)
+        os.chmod(installed, 0o600)
+        spec = importlib.util.spec_from_file_location(
+            "broker_workspace_store_%s" % self.home.name, installed)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.ROOT = folder
+        return module
+
+    def test_workspace_enabled_rejects_mutations_without_control_token(self):
+        store = self._install_workspace_store()
+        device = "device-reader"
+        sid = "workspace-session"
+        self.assertTrue(store.handle({"op": "bootstrap", "deviceId": device})["ok"])
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv, extra={
+            "workspaceSessionId": sid, "workspaceDeviceId": device,
+        })
+        self._send(proc, {
+            "jsonrpc": "2.0", "id": "nocontrol-init", "method": "initialize",
+            "params": {},
+        })
+        self._read_frames(
+            proc, lambda f: f.get("type") == "frame"
+            and f.get("frame", {}).get("id") == "nocontrol-init")
+        self._send(proc, {
+            "jsonrpc": "2.0", "id": "nocontrol-new", "method": "session/new",
+            "params": {},
+        })
+        frames = self._read_frames(
+            proc, lambda f: f.get("type") == "runtime_error"
+            and f.get("error") == "WORKSPACE_CONTROL_LOST")
+        self.assertTrue(any(f.get("error") == "WORKSPACE_CONTROL_LOST"
+                            for f in frames), frames)
+        self.assertEqual(self._count_lines(self.prompt_count_file), 0)
+        self._stop_attach(proc)
+
+    def test_workspace_enabled_mutation_requires_live_control_and_never_kills_agent(self):
+        store = self._install_workspace_store()
+        device = "device-writer"
+        sid = "workspace-session"
+        self.assertTrue(store.handle({"op": "bootstrap", "deviceId": device})["ok"])
+        lease = store.handle({"op": "lease", "sessionId": sid,
+                              "deviceId": device, "action": "acquire"})
+        self.assertTrue(lease["ok"], lease)
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv, extra={
+            "workspaceSessionId": sid, "workspaceDeviceId": device,
+            "controlToken": lease["token"],
+            "controlGeneration": lease["generation"],
+        })
+        self._handshake(proc, "ws")
+        serve_pid = self._serve_pid()
+        self._send(proc, {
+            "jsonrpc": "2.0", "id": "ws-prompt-1", "method": "session/prompt",
+            "params": {"sessionId": self.session_id,
+                       "prompt": [{"type": "text", "text": "one"}]},
+        }, turn_id="turn-ws-1")
+        self._read_frames(
+            proc, lambda f: f.get("type") == "frame"
+            and f.get("frame", {}).get("id") == "ws-prompt-1"
+            and "result" in f.get("frame", {}))
+        self.assertEqual(self._count_lines(self.prompt_count_file), 1)
+
+        takeover = store.handle({"op": "lease", "sessionId": sid,
+                                 "deviceId": "device-taker",
+                                 "action": "takeover"})
+        self.assertTrue(takeover["ok"], takeover)
+        self._send(proc, {
+            "jsonrpc": "2.0", "id": "ws-prompt-2", "method": "session/prompt",
+            "params": {"sessionId": self.session_id,
+                       "prompt": [{"type": "text", "text": "two"}]},
+        }, turn_id="turn-ws-2")
+        frames = self._read_frames(
+            proc, lambda f: f.get("type") == "runtime_error"
+            and f.get("error") == "WORKSPACE_CONTROL_LOST")
+        self.assertTrue(any(f.get("error") == "WORKSPACE_CONTROL_LOST"
+                            for f in frames), frames)
+        self.assertEqual(self._count_lines(self.prompt_count_file), 1)
+        self._assert_alive(serve_pid)
+        self._stop_attach(proc)
+
+    # -- workspace lease / protocol regressions -------------------------
+    def _run_manage(self, command: dict, timeout: float = 10.0):
+        payload = base64.b64encode(
+            json.dumps(command, separators=(",", ":")).encode()
+        ).decode()
+        return subprocess.run(
+            [sys.executable, str(BROKER), "manage", payload],
+            capture_output=True, text=True, timeout=timeout,
+            env={**os.environ, "HOME": str(self.home)},
+        )
+
+    def _expire_lease(self, session_id: str):
+        db = self.home / ".local/share/valhalla/workspace-v1/store.sqlite3"
+        conn = sqlite3.connect(db)
+        try:
+            conn.execute("UPDATE leases SET expires_at=0 WHERE session_id=?",
+                         (session_id,))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _send_heartbeat(self, proc, device, token, generation):
+        line = json.dumps({
+            "type": "control_heartbeat", "deviceId": device,
+            "controlToken": token, "controlGeneration": generation,
+        }, separators=(",", ":")) + "\n"
+        proc.stdin.write(line.encode())
+        proc.stdin.flush()
+
+    def test_snapshot_reports_legacy_workspace_protocol_zero(self):
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv)
+        frames = self._read_until_caught_up(proc)
+        status = frames[0]
+        self.assertEqual(status["type"], "status")
+        self.assertEqual(status["protocolVersion"], 2)
+        self.assertEqual(status["workspaceProtocol"], 0)
+        self.assertNotIn("workspaceSessionId", status)
+        self._stop_attach(proc)
+
+    def test_snapshot_reports_workspace_protocol_and_session_when_enabled(self):
+        store = self._install_workspace_store()
+        device = "device-snapshot"
+        sid = "workspace-snapshot"
+        self.assertTrue(store.handle({"op": "bootstrap",
+                                      "deviceId": device})["ok"])
+        lease = store.handle({"op": "lease", "sessionId": sid,
+                              "deviceId": device, "action": "acquire"})
+        self.assertTrue(lease["ok"], lease)
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv, extra={
+            "workspaceSessionId": sid, "workspaceDeviceId": device,
+            "controlToken": lease["token"],
+            "controlGeneration": lease["generation"],
+        })
+        frames = self._read_until_caught_up(proc)
+        status = frames[0]
+        self.assertEqual(status["protocolVersion"], 2)
+        self.assertEqual(status["workspaceProtocol"], 1)
+        self.assertEqual(status["workspaceSessionId"], sid)
+        self._stop_attach(proc)
+
+    def test_workspace_lease_expiry_allows_new_owner_and_output_continues(self):
+        store = self._install_workspace_store()
+        device_a, device_b = "device-a", "device-b"
+        sid = "workspace-expiry"
+        self.assertTrue(store.handle({"op": "bootstrap",
+                                      "deviceId": device_a})["ok"])
+        lease = store.handle({"op": "lease", "sessionId": sid,
+                              "deviceId": device_a, "action": "acquire"})
+        self.assertTrue(lease["ok"], lease)
+        argv = self._agent_config(chunks=4, chunk_delay=0.2)
+        proc = self._start_attach(argv, extra={
+            "workspaceSessionId": sid, "workspaceDeviceId": device_a,
+            "controlToken": lease["token"],
+            "controlGeneration": lease["generation"],
+        })
+        self._handshake(proc, "expiry")
+        serve_pid = self._serve_pid()
+        self._send(proc, {
+            "jsonrpc": "2.0", "id": "expiry-1", "method": "session/prompt",
+            "params": {"sessionId": self.session_id,
+                       "prompt": [{"type": "text", "text": "one"}]},
+        }, turn_id="turn-expiry-1")
+        self._read_frames(proc, lambda f: self._is_chunk_event(f, "chunk-0"))
+
+        # The device is gone (lease expired); no server-side heartbeat may
+        # resurrect it.  A different device can acquire immediately.
+        self._expire_lease(sid)
+        takeover = store.handle({"op": "lease", "sessionId": sid,
+                                 "deviceId": device_b, "action": "acquire"})
+        self.assertTrue(takeover["ok"], takeover)
+        self.assertGreater(takeover["generation"], lease["generation"])
+        self.assertTrue(store.check_control(sid, device_b, takeover["token"],
+                                            takeover["generation"]))
+
+        self._send(proc, {
+            "jsonrpc": "2.0", "id": "expiry-2", "method": "session/prompt",
+            "params": {"sessionId": self.session_id,
+                       "prompt": [{"type": "text", "text": "two"}]},
+        }, turn_id="turn-expiry-2")
+        frames = self._read_frames(
+            proc, lambda f: f.get("type") == "frame"
+            and f.get("frame", {}).get("id") == "expiry-1")
+        self.assertTrue(any(f.get("error") == "WORKSPACE_CONTROL_LOST"
+                            for f in frames), frames)
+        # The computation kept running after control was lost.
+        self.assertTrue(any(self._is_chunk_event(f, "chunk-3")
+                            for f in frames), frames)
+        self.assertEqual(self._count_lines(self.prompt_count_file), 1)
+        self._assert_alive(serve_pid)
+        self._stop_attach(proc)
+
+    def test_workspace_readonly_client_observes_events_but_cannot_mutate(self):
+        store = self._install_workspace_store()
+        device = "device-writer"
+        sid = "workspace-readonly"
+        self.assertTrue(store.handle({"op": "bootstrap",
+                                      "deviceId": device})["ok"])
+        lease = store.handle({"op": "lease", "sessionId": sid,
+                              "deviceId": device, "action": "acquire"})
+        self.assertTrue(lease["ok"], lease)
+        argv = self._agent_config(chunks=3, chunk_delay=0.2)
+        writer = self._start_attach(argv, extra={
+            "workspaceSessionId": sid, "workspaceDeviceId": device,
+            "controlToken": lease["token"],
+            "controlGeneration": lease["generation"],
+        })
+        self._handshake(writer, "ro-writer")
+        reader = self._start_attach(argv, after_seq=0)
+        frames = self._read_until_caught_up(reader)
+        self.assertEqual(frames[0]["workspaceProtocol"], 1)
+        self.assertEqual(frames[0]["workspaceSessionId"], sid)
+
+        self._send(writer, {
+            "jsonrpc": "2.0", "id": "ro-1", "method": "session/prompt",
+            "params": {"sessionId": self.session_id,
+                       "prompt": [{"type": "text", "text": "one"}]},
+        }, turn_id="turn-ro-1")
+        observed = self._read_frames(
+            reader, lambda f: self._is_chunk_event(f, "chunk-0"))
+        self.assertTrue(any(self._is_chunk_event(f, "chunk-0")
+                            for f in observed), observed)
+
+        self._send(reader, {
+            "jsonrpc": "2.0", "id": "ro-2", "method": "session/prompt",
+            "params": {"sessionId": self.session_id,
+                       "prompt": [{"type": "text", "text": "two"}]},
+        }, turn_id="turn-ro-2")
+        denied = self._read_frames(
+            reader, lambda f: f.get("type") == "runtime_error"
+            and f.get("error") == "WORKSPACE_CONTROL_LOST")
+        self.assertTrue(any(f.get("error") == "WORKSPACE_CONTROL_LOST"
+                            for f in denied), denied)
+        self.assertEqual(self._count_lines(self.prompt_count_file), 1)
+        self._read_frames(
+            writer, lambda f: f.get("type") == "frame"
+            and f.get("frame", {}).get("id") == "ro-1")
+        self._stop_attach(reader)
+        self._stop_attach(writer)
+
+    def test_workspace_client_heartbeat_renews_only_with_live_token(self):
+        store = self._install_workspace_store()
+        device = "device-heartbeat"
+        sid = "workspace-heartbeat"
+        self.assertTrue(store.handle({"op": "bootstrap",
+                                      "deviceId": device})["ok"])
+        lease = store.handle({"op": "lease", "sessionId": sid,
+                              "deviceId": device, "action": "acquire"})
+        self.assertTrue(lease["ok"], lease)
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv, extra={
+            "workspaceSessionId": sid, "workspaceDeviceId": device,
+            "controlToken": lease["token"],
+            "controlGeneration": lease["generation"],
+        })
+        self._handshake(proc, "heartbeat")
+        serve_pid = self._serve_pid()
+
+        self._send_heartbeat(proc, device, lease["token"],
+                             lease["generation"])
+        frames = self._read_frames(
+            proc, lambda f: f.get("type") == "control_heartbeat")
+        self.assertTrue(frames[-1]["allowed"], frames)
+        self._send_heartbeat(proc, device, "wrong-token",
+                             lease["generation"])
+        frames = self._read_frames(
+            proc, lambda f: f.get("type") == "control_heartbeat")
+        self.assertFalse(frames[-1]["allowed"], frames)
+        self._expire_lease(sid)
+        self._send_heartbeat(proc, device, lease["token"],
+                             lease["generation"])
+        frames = self._read_frames(
+            proc, lambda f: f.get("type") == "control_heartbeat")
+        self.assertFalse(frames[-1]["allowed"], frames)
+        self._assert_alive(serve_pid)
+        self._stop_attach(proc)
+
+    def test_workspace_manage_retire_requires_live_control(self):
+        store = self._install_workspace_store()
+        device_a, device_b = "device-a", "device-b"
+        sid = "workspace-manage-retire"
+        self.assertTrue(store.handle({"op": "bootstrap",
+                                      "deviceId": device_a})["ok"])
+        lease = store.handle({"op": "lease", "sessionId": sid,
+                              "deviceId": device_a, "action": "acquire"})
+        self.assertTrue(lease["ok"], lease)
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv, extra={
+            "workspaceSessionId": sid, "workspaceDeviceId": device_a,
+            "controlToken": lease["token"],
+            "controlGeneration": lease["generation"],
+        })
+        self._handshake(proc, "manage")
+        serve_pid = self._serve_pid()
+
+        inspected = self._run_manage({"key": self.key, "action": "inspect"})
+        self.assertEqual(inspected.returncode, 0, inspected.stderr)
+        self.assertEqual(json.loads(inspected.stdout)["state"], "ready")
+
+        denied = self._run_manage({"key": self.key, "action": "retire",
+                                   "stopRunning": True})
+        self.assertEqual(denied.returncode, 1, denied.stdout)
+        self.assertIn("WORKSPACE_CONTROL_LOST", denied.stdout)
+        self._assert_alive(serve_pid)
+
+        takeover = store.handle({"op": "lease", "sessionId": sid,
+                                 "deviceId": device_b, "action": "takeover"})
+        self.assertTrue(takeover["ok"], takeover)
+        stale = self._run_manage({
+            "key": self.key, "action": "retire", "stopRunning": True,
+            "workspaceDeviceId": device_a,
+            "controlToken": lease["token"],
+            "controlGeneration": lease["generation"],
+        })
+        self.assertEqual(stale.returncode, 1, stale.stdout)
+        self.assertIn("WORKSPACE_CONTROL_LOST", stale.stdout)
+        self._assert_alive(serve_pid)
+
+        allowed = self._run_manage({
+            "key": self.key, "action": "retire", "stopRunning": True,
+            "workspaceDeviceId": device_b,
+            "controlToken": takeover["token"],
+            "controlGeneration": takeover["generation"],
+        })
+        self.assertEqual(allowed.returncode, 0, allowed.stdout + allowed.stderr)
+        self.assertEqual(json.loads(allowed.stdout)["state"], "retired")
+        self._assert_dead(serve_pid)
+        self._stop_attach(proc)
+
+    def test_workspace_manage_purge_requires_live_control(self):
+        store = self._install_workspace_store()
+        device = "device-purge"
+        sid = "workspace-manage-purge"
+        self.assertTrue(store.handle({"op": "bootstrap",
+                                      "deviceId": device})["ok"])
+        lease = store.handle({"op": "lease", "sessionId": sid,
+                              "deviceId": device, "action": "acquire"})
+        self.assertTrue(lease["ok"], lease)
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv, extra={
+            "workspaceSessionId": sid, "workspaceDeviceId": device,
+            "controlToken": lease["token"],
+            "controlGeneration": lease["generation"],
+        })
+        self._handshake(proc, "purge-ws")
+        serve_pid = self._serve_pid()
+
+        denied = self._run_manage({"key": self.key, "action": "purge",
+                                   "stopRunning": True})
+        self.assertEqual(denied.returncode, 1, denied.stdout)
+        self.assertIn("WORKSPACE_CONTROL_LOST", denied.stdout)
+        self.assertTrue(self._folder().exists())
+        self._assert_alive(serve_pid)
+
+        allowed = self._run_manage({
+            "key": self.key, "action": "purge", "stopRunning": True,
+            "workspaceDeviceId": device,
+            "controlToken": lease["token"],
+            "controlGeneration": lease["generation"],
+        })
+        self.assertEqual(allowed.returncode, 0, allowed.stdout + allowed.stderr)
+        self.assertEqual(json.loads(allowed.stdout)["state"], "purged")
+        self.assertFalse(self._folder().exists())
+        self._assert_dead(serve_pid)
+        self._stop_attach(proc)
+
+    def test_workspace_manage_process_path_fences_v1_runtime(self):
+        """A workspace-enabled v1 runtime with no broker socket must still
+        require a live lease before the process kill path runs."""
+        store = self._install_workspace_store()
+        device_a, device_b = "device-v1-a", "device-v1-b"
+        sid = "workspace-v1-manage"
+        self.assertTrue(store.handle({"op": "bootstrap",
+                                      "deviceId": device_a})["ok"])
+        lease = store.handle({"op": "lease", "sessionId": sid,
+                              "deviceId": device_a, "action": "acquire"})
+        self.assertTrue(lease["ok"], lease)
+
+        key_v1 = "4" * 64
+        folder_v1 = self._runtime_root() / key_v1
+        folder_v1.mkdir(parents=True, mode=0o700)
+        leader = self._spawn_fixture(self._fake_serve_argv(folder_v1))
+        child = self._spawn_fixture([sys.executable, "-c", "import time; time.sleep(60)"])
+        child_identity = self._identity_for_child(child)
+        self._make_v1_runtime(
+            key_v1, state="running", pid=leader.pid,
+            argv=self._fake_serve_argv(folder_v1),
+            child_identity=child_identity,
+        )
+        (folder_v1 / "config.json").write_text(json.dumps({
+            "key": key_v1, "argv": self._fake_serve_argv(folder_v1),
+            "launchIdentity": "v1-identity",
+            "workspaceSessionId": sid, "workspaceDeviceId": device_a,
+        }))
+
+        denied = self._run_manage({"key": key_v1, "action": "retire",
+                                   "stopRunning": True})
+        self.assertEqual(denied.returncode, 1, denied.stdout)
+        self.assertIn("WORKSPACE_CONTROL_LOST", denied.stdout)
+        self.assertIsNone(leader.poll())
+        self.assertIsNone(child.poll())
+
+        takeover = store.handle({"op": "lease", "sessionId": sid,
+                                 "deviceId": device_b, "action": "takeover"})
+        self.assertTrue(takeover["ok"], takeover)
+        stale = self._run_manage({
+            "key": key_v1, "action": "retire", "stopRunning": True,
+            "workspaceDeviceId": device_a, "controlToken": lease["token"],
+            "controlGeneration": lease["generation"],
+        })
+        self.assertEqual(stale.returncode, 1, stale.stdout)
+        self.assertIn("WORKSPACE_CONTROL_LOST", stale.stdout)
+        self.assertIsNone(leader.poll())
+        self.assertIsNone(child.poll())
+
+        allowed = self._run_manage({
+            "key": key_v1, "action": "retire", "stopRunning": True,
+            "workspaceDeviceId": device_b, "controlToken": takeover["token"],
+            "controlGeneration": takeover["generation"],
+        })
+        self.assertEqual(allowed.returncode, 0, allowed.stdout + allowed.stderr)
+        self.assertEqual(json.loads(allowed.stdout)["state"], "retired")
+        leader.wait(timeout=5.0)
+        self._assert_no_live_process(child.pid, timeout=5.0)
+        shutil.rmtree(folder_v1)
+
+    def test_broker_fence_renews_lease_in_the_same_check(self):
+        calls = []
+
+        class FakeStore:
+            @staticmethod
+            def check_control(session_id, device_id, token, generation, renew=False):
+                calls.append((session_id, device_id, token, generation, renew))
+                return True
+
+        broker = object.__new__(acp_broker.Broker)
+        broker.config = {"workspaceSessionId": "sess"}
+        broker.control_lock = threading.Lock()
+        broker.control = {"deviceId": "dev", "token": "tok", "generation": 3}
+        original = acp_broker.workspace_module
+        acp_broker.workspace_module = lambda: FakeStore
+        try:
+            self.assertTrue(broker.fence())
+        finally:
+            acp_broker.workspace_module = original
+        self.assertEqual(calls, [("sess", "dev", "tok", 3, True)])
+
+    def test_runtime_bootstrap_meta_is_bounded_and_secret_free(self):
+        captured = {}
+
+        class FakeStore:
+            @staticmethod
+            def register_runtime(runtime_key, session_id=None, device_id=None,
+                                 scope=None, meta=None, agent_id=None):
+                captured.update(runtime_key=runtime_key, session_id=session_id,
+                                device_id=device_id, scope=scope, meta=meta,
+                                agent_id=agent_id)
+
+            @staticmethod
+            def append_runtime_event(*_a, **_k):
+                pass
+
+        broker = object.__new__(acp_broker.Broker)
+        broker.folder = type("F", (), {"name": "a" * 64})()
+        broker.db = sqlite3.connect(":memory:")
+        broker.db.execute(
+            "CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+        broker.db.execute(
+            "INSERT INTO meta VALUES('sessionId', ?)",
+            (json.dumps("acp-run-session-xyz"),))
+        broker.config = {
+            "workspaceSessionId": "ws-sess",
+            "workspaceDeviceId": "dev-a",
+            "agentId": "agent-7",
+            "serverScope": "scope-9",
+            "workingDirectory": "/work/dir",
+            "title": "Recovered run",
+            # Secrets that must never reach the registry metadata.
+            "controlToken": "SECRET-TOKEN",
+            "controlGeneration": 4,
+            "targetIdentity": "leak-me",
+            "argv": ["/bin/sh", "-c", "x"],
+        }
+        original = acp_broker.workspace_module
+        acp_broker.workspace_module = lambda: FakeStore
+        try:
+            broker._register_runtime()
+        finally:
+            acp_broker.workspace_module = original
+
+        self.assertEqual(captured["runtime_key"], "a" * 64)
+        self.assertEqual(captured["agent_id"], "agent-7")
+        self.assertEqual(captured["session_id"], "ws-sess")
+        meta = captured["meta"]
+        self.assertEqual(meta["agentId"], "agent-7")
+        self.assertEqual(meta["runtimeKey"], "a" * 64)
+        self.assertEqual(meta["workingDirectory"], "/work/dir")
+        self.assertEqual(meta["title"], "Recovered run")
+        # The ACP runtime session id is learned from the journal meta.
+        self.assertEqual(meta["remoteSessionId"], "acp-run-session-xyz")
+        for forbidden in ("controlToken", "token", "controlGeneration",
+                          "targetIdentity", "argv", "generation"):
+            self.assertNotIn(forbidden, meta)
+
+    def test_runtime_catalog_populated_before_first_output(self):
+        # Closing the new-device discovery gap: registration must exist right
+        # after the runtime starts, not only after the first event/output.
+        store = self._install_workspace_store()
+        device = "device-start"
+        sid = "workspace-start-session"
+        self.assertTrue(store.handle({"op": "bootstrap", "deviceId": device})["ok"])
+        argv = self._agent_config(chunks=0)
+        proc = self._start_attach(argv, extra={
+            "workspaceSessionId": sid,
+            "workspaceDeviceId": device,
+            "agentId": "agent-integration",
+            "workingDirectory": "/srv/work",
+            "title": "Pre-output run",
+        })
+        try:
+            row = None
+            deadline = time.time() + 8.0
+            while time.time() < deadline:
+                row = store.handle({"op": "runtime_catalog", "sessionId": sid})
+                if row.get("ok") and row.get("runtimes"):
+                    break
+                time.sleep(0.1)
+            self.assertTrue(row.get("ok"), row)
+            runtimes = row["runtimes"]
+            self.assertEqual(len(runtimes), 1, runtimes)
+            rt = runtimes[0]
+            self.assertEqual(rt["agentId"], "agent-integration")
+            self.assertEqual(rt["sessionId"], sid)
+            meta = rt["meta"]
+            self.assertEqual(meta.get("workingDirectory"), "/srv/work")
+            self.assertEqual(meta.get("title"), "Pre-output run")
+            self.assertEqual(meta.get("runtimeKey"), self.key)
+            self.assertNotIn("controlToken", meta)
+        finally:
+            self._stop_attach(proc)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "Nenhum comando salvo",
   "terminalSavedCommandsPreview": "Visualização do comando",
   "terminalSavedCommandsMultilineWarning": "Este comando contém várias linhas. Tem certeza de que deseja executá-lo?",
-  "terminalModifierHelp": "Toque no modificador para uso único; pressione e segure para travar. Segure as teclas para repetir."
+  "terminalModifierHelp": "Toque no modificador para uso único; pressione e segure para travar. Segure as teclas para repetir.",
+  "serverWorkspaceTitle": "Espaço de trabalho do servidor",
+  "serverWorkspaceSubtitle": "Sincronização de estado multidispositivo e rascunhos de dispositivos",
+  "serverWorkspaceOriginServer": "Servidor ativo",
+  "serverWorkspaceOriginUser": "Usuário remoto",
+  "serverWorkspaceNoActiveServer": "Nenhum servidor ativo selecionado ou conectado",
+  "serverWorkspacePhaseLocal": "Apenas local",
+  "serverWorkspacePhaseDiscovering": "Detectando...",
+  "serverWorkspacePhaseAvailable": "Disponível para ativar",
+  "serverWorkspacePhaseSyncing": "Sincronizando...",
+  "serverWorkspacePhaseReady": "Sincronizado",
+  "serverWorkspacePhaseOffline": "Offline",
+  "serverWorkspacePhaseError": "Erro de sincronização",
+  "serverWorkspaceLastSynced": "Última sincronização: {time}",
+  "serverWorkspaceNeverSynced": "Nunca sincronizado",
+  "serverWorkspacePendingChanges": "{count} alterações pendentes",
+  "serverWorkspaceNoPendingChanges": "Todas as alterações sincronizadas",
+  "serverWorkspaceEnable": "Ativar espaço de trabalho do servidor",
+  "serverWorkspaceEnableDialogTitle": "Ativar espaço de trabalho do servidor",
+  "serverWorkspaceEnableDialogMessage": "A ativação migrará as configurações locais para o servidor. Suas configurações locais serão preservadas.",
+  "serverWorkspaceMigrationPreviewTitle": "Pré-visualização da migração",
+  "serverWorkspaceEnableConfirm": "Ativar e sincronizar",
+  "serverWorkspaceNoDataToMigrate": "Sem dados locais para migrar",
+  "serverWorkspaceSyncNow": "Sincronizar agora",
+  "serverWorkspaceDisable": "Desativar sincronização",
+  "serverWorkspaceDisableDialogTitle": "Desativar espaço de trabalho do servidor",
+  "serverWorkspaceDisableDialogMessage": "Desativar interromperá a sincronização neste dispositivo. Os dados locais e remotos serão preservados e não excluídos.",
+  "serverWorkspaceDisableConfirm": "Desativar",
+  "serverWorkspacePreferenceSource": "Usar como fonte de preferências",
+  "serverWorkspacePreferenceSourceDesc": "Sincronizar configurações do aplicativo a partir deste servidor",
+  "serverWorkspaceConflictsTitle": "Conflitos de sincronização ({count})",
+  "serverWorkspaceConflictKeepLocal": "Manter local",
+  "serverWorkspaceConflictKeepServer": "Manter servidor",
+  "serverWorkspaceDeviceDraftsTitle": "Rascunhos de outros dispositivos",
+  "serverWorkspaceRestoreDraft": "Restaurar rascunho",
+  "serverWorkspaceRestoreDraftConfirmTitle": "Restaurar rascunho",
+  "serverWorkspaceRestoreDraftConfirmMessage": "Restaurar este rascunho substituirá a entrada atual do chat. Seu rascunho atual será preservado nos rascunhos remotos.",
+  "serverWorkspaceRestoreDraftConfirm": "Restaurar",
+  "serverWorkspaceNoDeviceDrafts": "Nenhum rascunho de outros dispositivos",
+  "serverWorkspaceClearCache": "Limpar cache de sincronização local",
+  "serverWorkspaceClearCacheConfirmTitle": "Limpar cache de sincronização local",
+  "serverWorkspaceClearCacheConfirmMessage": "Isso limpará apenas o cache e estado de sincronização local. Dados remotos e configurações SSH nunca serão excluídos.",
+  "serverWorkspaceClearCacheConfirm": "Limpar cache",
+  "serverWorkspaceCacheCleared": "Cache de sincronização local limpo",
+  "serverWorkspaceErrorSetupFailed": "Falha ao inicializar o espaço de trabalho no servidor",
+  "serverWorkspaceErrorPythonRequired": "Python 3.9+ é necessário no servidor",
+  "serverWorkspaceErrorPathUnsafe": "Caminho do espaço de trabalho inseguro ou permissões inválidas",
+  "serverWorkspaceErrorConflict": "Conflito de dados detectado durante a sincronização",
+  "serverWorkspaceErrorControlHeld": "O controle da sessão está retido por outro dispositivo",
+  "serverWorkspaceErrorResponseTooLarge": "A resposta do servidor excedeu o limite de tamanho",
+  "serverWorkspaceErrorGeneric": "Erro do espaço de trabalho ({code})",
+  "chatWorkspaceControlActive": "No controle",
+  "chatWorkspaceControlActiveTooltip": "Este dispositivo controla a sessão atualmente",
+  "chatWorkspaceReadOnly": "Somente leitura",
+  "chatWorkspaceReadOnlyDevice": "Somente leitura ({device})",
+  "chatWorkspaceAcquireControl": "Obter controle",
+  "chatWorkspaceTakeover": "Assumir controle",
+  "chatWorkspaceTakeoverDialogTitle": "Assumir controle da sessão",
+  "chatWorkspaceTakeoverDialogMessage": "Assumir o controle permite que este dispositivo envie mensagens e opere a sessão. O agente em execução não será encerrado e a sessão não será trocada.",
+  "chatWorkspaceTakeoverConfirm": "Assumir",
+  "chatWorkspaceControlFailed": "Falha ao obter controle do espaço de trabalho",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "Um componente de tempo de execução anterior está em execução. Conclua-o no dispositivo original antes de atualizar.",
+  "serverWorkspaceErrorNotEnabled": "O espaço de trabalho do servidor não está ativado",
+  "serverWorkspaceErrorPendingChanges": "Não é possível limpar o cache com alterações pendentes. Sincronize primeiro.",
+  "serverWorkspaceDraftTypeFile": "Rascunho de arquivo",
+  "serverWorkspaceDraftTypeChat": "Rascunho de chat",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "Restaurar rascunho de arquivo",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "Restaurar este rascunho de arquivo o carregará nos rascunhos do editor local. Seu rascunho atual será preservado nos remotos.",
+  "persistentRuntimeFeatureWorkspaceTitle": "Espaço de trabalho do servidor e sincronização",
+  "persistentRuntimeFeatureWorkspaceDesc": "O ambiente do usuário preserva a saída ao fechar o app; credenciais e chaves SSH ficam locais e nunca são sincronizadas.",
+  "serverWorkspaceMigrationPendingHint": "Migração de dados legados em segundo plano em andamento. A configuração foi sincronizada enquanto os dados históricos são concluídos em segundo plano.",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "Carregar mais rascunhos",
+  "serverWorkspaceLoadingDrafts": "Carregando rascunhos..."
 }

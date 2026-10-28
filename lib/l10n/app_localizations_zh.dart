@@ -6241,6 +6241,241 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get terminalModifierHelp => '点按修饰键单次生效，长按锁定；普通键长按可重复输入';
+
+  @override
+  String get serverWorkspaceTitle => '服务端工作区';
+
+  @override
+  String get serverWorkspaceSubtitle => '跨设备状态同步与设备草稿';
+
+  @override
+  String get serverWorkspaceOriginServer => '所属服务器';
+
+  @override
+  String get serverWorkspaceOriginUser => '远程用户';
+
+  @override
+  String get serverWorkspaceNoActiveServer => '未选择或未连接活动服务器';
+
+  @override
+  String get serverWorkspacePhaseLocal => '仅本地';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => '探测中...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => '可启用';
+
+  @override
+  String get serverWorkspacePhaseSyncing => '同步中...';
+
+  @override
+  String get serverWorkspacePhaseReady => '已同步';
+
+  @override
+  String get serverWorkspacePhaseOffline => '离线';
+
+  @override
+  String get serverWorkspacePhaseError => '同步异常';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return '上次同步：$time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => '从未同步';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count 项待推送';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges => '已全部同步';
+
+  @override
+  String get serverWorkspaceEnable => '启用服务端工作区';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle => '启用服务端工作区';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      '启用后将把本地配置迁移至服务端工作区。本地数据将予以保留，绝不清空。';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => '迁移项预览';
+
+  @override
+  String get serverWorkspaceEnableConfirm => '确认并启用';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate => '无本地数据需要迁移';
+
+  @override
+  String get serverWorkspaceSyncNow => '立即同步';
+
+  @override
+  String get serverWorkspaceDisable => '停用同步';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle => '停用服务端工作区';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      '停用同步仅停止此设备同步，本地与远端数据均完整保留，不会被删除。';
+
+  @override
+  String get serverWorkspaceDisableConfirm => '确认停用';
+
+  @override
+  String get serverWorkspacePreferenceSource => '设为应用级偏好来源';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc => '从此服务器同步应用全局偏好';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return '同步冲突 ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => '保留本地';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => '保留远端';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => '其他设备草稿';
+
+  @override
+  String get serverWorkspaceRestoreDraft => '恢复草稿';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle => '恢复设备草稿';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      '恢复此草稿将载入到当前聊天输入框，你当前的草稿将自动备份至远端草稿列表。';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => '恢复';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts => '暂无其他设备草稿';
+
+  @override
+  String get serverWorkspaceClearCache => '清理本地同步缓存';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle => '清理本地同步缓存';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      '此操作仅清理本机的同步缓存和元数据状态。绝不会删除远端数据或 SSH 连接配置。';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => '清理缓存';
+
+  @override
+  String get serverWorkspaceCacheCleared => '本地同步缓存已清理';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed => '服务端工作区环境初始化失败';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired => '服务端需要 Python 3.9 或更高版本';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe => '服务端工作区目录不安全或权限异常';
+
+  @override
+  String get serverWorkspaceErrorConflict => '同步过程中检测到数据冲突';
+
+  @override
+  String get serverWorkspaceErrorControlHeld => '会话控制权被另一台设备占用';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge => '服务端响应超出大小限制';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return '工作区异常 ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => '已取得控制权';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip => '当前设备持有会话控制权';
+
+  @override
+  String get chatWorkspaceReadOnly => '只读模式';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return '只读 ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => '取得控制权';
+
+  @override
+  String get chatWorkspaceTakeover => '接管';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => '接管会话控制权';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      '接管后此设备将获得对当前会话的控制权，可以发送消息和执行操作。此操作不会终止正在运行的 Agent，也不会切换会话。';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => '确认接管';
+
+  @override
+  String get chatWorkspaceControlFailed => '获取工作区控制权失败';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      '旧版本运行组件仍在运行，请等待其执行结束或在原设备终止后再升级。';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled => '服务端工作区未启用';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges => '存在待推送变更，无法清理缓存，请先同步。';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => '文件草稿';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => '对话草稿';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle => '恢复文件草稿';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      '恢复此文件草稿将载入到本地编辑器草稿中。你当前的草稿将自动备份至远端草稿列表。';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle => '服务端工作区与状态同步';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      '用户专属运行环境在应用关闭后仍保留运行输出与任务状态；SSH 凭据与敏感密钥仅保存在本机，绝不同步。';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      '后台正在迁移历史数据。配置已同步，旧版本数据将在后台继续完成。';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => '加载更多草稿';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => '正在加载草稿...';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -12482,4 +12717,239 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get terminalModifierHelp => '點按修飾鍵單次生效，長按鎖定；普通鍵長按可重複輸入';
+
+  @override
+  String get serverWorkspaceTitle => '伺服端工作區';
+
+  @override
+  String get serverWorkspaceSubtitle => '跨裝置狀態同步與裝置草稿';
+
+  @override
+  String get serverWorkspaceOriginServer => '所屬伺服器';
+
+  @override
+  String get serverWorkspaceOriginUser => '遠端使用者';
+
+  @override
+  String get serverWorkspaceNoActiveServer => '未選取或未連線活動伺服器';
+
+  @override
+  String get serverWorkspacePhaseLocal => '僅本機';
+
+  @override
+  String get serverWorkspacePhaseDiscovering => '探測中...';
+
+  @override
+  String get serverWorkspacePhaseAvailable => '可啟用';
+
+  @override
+  String get serverWorkspacePhaseSyncing => '同步中...';
+
+  @override
+  String get serverWorkspacePhaseReady => '已同步';
+
+  @override
+  String get serverWorkspacePhaseOffline => '離線';
+
+  @override
+  String get serverWorkspacePhaseError => '同步異常';
+
+  @override
+  String serverWorkspaceLastSynced(String time) {
+    return '上次同步：$time';
+  }
+
+  @override
+  String get serverWorkspaceNeverSynced => '從未同步';
+
+  @override
+  String serverWorkspacePendingChanges(int count) {
+    return '$count 項待推送';
+  }
+
+  @override
+  String get serverWorkspaceNoPendingChanges => '已全部同步';
+
+  @override
+  String get serverWorkspaceEnable => '啟用伺服端工作區';
+
+  @override
+  String get serverWorkspaceEnableDialogTitle => '啟用伺服端工作區';
+
+  @override
+  String get serverWorkspaceEnableDialogMessage =>
+      '啟用後將把本機設定移轉至伺服端工作區。本機資料將予以保留，絕不清空。';
+
+  @override
+  String get serverWorkspaceMigrationPreviewTitle => '移轉項預覽';
+
+  @override
+  String get serverWorkspaceEnableConfirm => '確認並啟用';
+
+  @override
+  String get serverWorkspaceNoDataToMigrate => '無本機資料需要移轉';
+
+  @override
+  String get serverWorkspaceSyncNow => '立即同步';
+
+  @override
+  String get serverWorkspaceDisable => '停用同步';
+
+  @override
+  String get serverWorkspaceDisableDialogTitle => '停用伺服端工作區';
+
+  @override
+  String get serverWorkspaceDisableDialogMessage =>
+      '停用同步僅停止此裝置同步，本機與遠端資料均完整保留，不會被刪除。';
+
+  @override
+  String get serverWorkspaceDisableConfirm => '確認停用';
+
+  @override
+  String get serverWorkspacePreferenceSource => '設為應用程式級偏好來源';
+
+  @override
+  String get serverWorkspacePreferenceSourceDesc => '從此伺服器同步應用程式全域偏好';
+
+  @override
+  String serverWorkspaceConflictsTitle(int count) {
+    return '同步衝突 ($count)';
+  }
+
+  @override
+  String get serverWorkspaceConflictKeepLocal => '保留本機';
+
+  @override
+  String get serverWorkspaceConflictKeepServer => '保留遠端';
+
+  @override
+  String get serverWorkspaceDeviceDraftsTitle => '其他裝置草稿';
+
+  @override
+  String get serverWorkspaceRestoreDraft => '還原草稿';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmTitle => '還原裝置草稿';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirmMessage =>
+      '還原此草稿將載入到目前聊天輸入框，你目前的草稿將自動備份至遠端草稿清單。';
+
+  @override
+  String get serverWorkspaceRestoreDraftConfirm => '還原';
+
+  @override
+  String get serverWorkspaceNoDeviceDrafts => '暫無其他裝置草稿';
+
+  @override
+  String get serverWorkspaceClearCache => '清除本機同步快取';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmTitle => '清除本機同步快取';
+
+  @override
+  String get serverWorkspaceClearCacheConfirmMessage =>
+      '此操作僅清除本機的同步快取和中繼資料狀態。絕不會刪除遠端資料或 SSH 連線設定。';
+
+  @override
+  String get serverWorkspaceClearCacheConfirm => '清除快取';
+
+  @override
+  String get serverWorkspaceCacheCleared => '本機同步快取已清除';
+
+  @override
+  String get serverWorkspaceErrorSetupFailed => '伺服端工作區環境初始化失敗';
+
+  @override
+  String get serverWorkspaceErrorPythonRequired => '伺服端需要 Python 3.9 或更高版本';
+
+  @override
+  String get serverWorkspaceErrorPathUnsafe => '伺服端工作區目錄不安全或權限異常';
+
+  @override
+  String get serverWorkspaceErrorConflict => '同步過程中偵測到資料衝突';
+
+  @override
+  String get serverWorkspaceErrorControlHeld => '工作階段控制權被另一台裝置佔用';
+
+  @override
+  String get serverWorkspaceErrorResponseTooLarge => '伺服端回應超出大小限制';
+
+  @override
+  String serverWorkspaceErrorGeneric(String code) {
+    return '工作區異常 ($code)';
+  }
+
+  @override
+  String get chatWorkspaceControlActive => '已取得控制權';
+
+  @override
+  String get chatWorkspaceControlActiveTooltip => '目前裝置持有工作階段控制權';
+
+  @override
+  String get chatWorkspaceReadOnly => '唯讀模式';
+
+  @override
+  String chatWorkspaceReadOnlyDevice(String device) {
+    return '唯讀 ($device)';
+  }
+
+  @override
+  String get chatWorkspaceAcquireControl => '取得控制權';
+
+  @override
+  String get chatWorkspaceTakeover => '接管';
+
+  @override
+  String get chatWorkspaceTakeoverDialogTitle => '接管工作階段控制權';
+
+  @override
+  String get chatWorkspaceTakeoverDialogMessage =>
+      '接管後此裝置將獲得對目前工作階段的控制權，可以傳送訊息和執行操作。此操作不會終止正在執行的 Agent，也不會切換工作階段。';
+
+  @override
+  String get chatWorkspaceTakeoverConfirm => '確認接管';
+
+  @override
+  String get chatWorkspaceControlFailed => '取得工作區控制權失敗';
+
+  @override
+  String get serverWorkspaceErrorRuntimeUpgradeRequired =>
+      '舊版本執行元件仍在執行，請等待其執行結束或在原裝置終止後再升級。';
+
+  @override
+  String get serverWorkspaceErrorNotEnabled => '伺服端工作區未啟用';
+
+  @override
+  String get serverWorkspaceErrorPendingChanges => '存在待推送變更，無法清除快取，請先同步。';
+
+  @override
+  String get serverWorkspaceDraftTypeFile => '檔案草稿';
+
+  @override
+  String get serverWorkspaceDraftTypeChat => '對話草稿';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmTitle => '還原檔案草稿';
+
+  @override
+  String get serverWorkspaceRestoreFileDraftConfirmMessage =>
+      '還原此檔案草稿將載入到本機編輯器草稿中。你目前的草稿將自動備份至遠端草稿清單。';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceTitle => '伺服端工作區與狀態同步';
+
+  @override
+  String get persistentRuntimeFeatureWorkspaceDesc =>
+      '使用者專屬執行環境在應用程式關閉後仍保留執行輸出與任務狀態；SSH 憑據與敏感金鑰僅儲存在本機，絕不同步。';
+
+  @override
+  String get serverWorkspaceMigrationPendingHint =>
+      '後台正在遷移歷史資料。配置已同步，舊版本資料將在後台繼續完成。';
+
+  @override
+  String get serverWorkspaceLoadMoreDrafts => '載入更多草稿';
+
+  @override
+  String get serverWorkspaceLoadingDrafts => '正在載入草稿...';
 }

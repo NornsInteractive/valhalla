@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "Tidak ada perintah tersimpan",
   "terminalSavedCommandsPreview": "Pratinjau perintah",
   "terminalSavedCommandsMultilineWarning": "Perintah ini berisi beberapa baris. Apakah Anda yakin ingin menjalankannya?",
-  "terminalModifierHelp": "Ketuk pengubah untuk satu kali pakai; tekan lama untuk mengunci. Tahan tombol untuk mengulang."
+  "terminalModifierHelp": "Ketuk pengubah untuk satu kali pakai; tekan lama untuk mengunci. Tahan tombol untuk mengulang.",
+  "serverWorkspaceTitle": "Ruang Kerja Server",
+  "serverWorkspaceSubtitle": "Sinkronisasi status multi-perangkat dan draf perangkat",
+  "serverWorkspaceOriginServer": "Server Aktif",
+  "serverWorkspaceOriginUser": "Pengguna Jarak Jauh",
+  "serverWorkspaceNoActiveServer": "Tidak ada server aktif yang dipilih atau terhubung",
+  "serverWorkspacePhaseLocal": "Hanya Lokal",
+  "serverWorkspacePhaseDiscovering": "Mendeteksi...",
+  "serverWorkspacePhaseAvailable": "Tersedia untuk Diaktifkan",
+  "serverWorkspacePhaseSyncing": "Menyinkronkan...",
+  "serverWorkspacePhaseReady": "Tersinkronisasi",
+  "serverWorkspacePhaseOffline": "Offline",
+  "serverWorkspacePhaseError": "Kesalahan Sinkronisasi",
+  "serverWorkspaceLastSynced": "Terakhir disinkronkan: {time}",
+  "serverWorkspaceNeverSynced": "Belum pernah disinkronkan",
+  "serverWorkspacePendingChanges": "{count} perubahan tertunda",
+  "serverWorkspaceNoPendingChanges": "Semua perubahan disinkronkan",
+  "serverWorkspaceEnable": "Aktifkan Ruang Kerja Server",
+  "serverWorkspaceEnableDialogTitle": "Aktifkan Ruang Kerja Server",
+  "serverWorkspaceEnableDialogMessage": "Mengaktifkan akan memigrasikan konfigurasi lokal ke server. Konfigurasi lokal Anda akan tetap disimpan.",
+  "serverWorkspaceMigrationPreviewTitle": "Pratinjau Migrasi",
+  "serverWorkspaceEnableConfirm": "Aktifkan & Sinkronkan",
+  "serverWorkspaceNoDataToMigrate": "Tidak ada data lokal untuk dimigrasikan",
+  "serverWorkspaceSyncNow": "Sinkronkan Sekarang",
+  "serverWorkspaceDisable": "Nonaktifkan Sinkronisasi",
+  "serverWorkspaceDisableDialogTitle": "Nonaktifkan Ruang Kerja Server",
+  "serverWorkspaceDisableDialogMessage": "Menonaktifkan akan menghentikan sinkronisasi pada perangkat ini. Data lokal dan jarak jauh tetap aman dan tidak dihapus.",
+  "serverWorkspaceDisableConfirm": "Nonaktifkan",
+  "serverWorkspacePreferenceSource": "Gunakan sebagai Sumber Preferensi",
+  "serverWorkspacePreferenceSourceDesc": "Sinkronkan pengaturan tingkat aplikasi dari server ini",
+  "serverWorkspaceConflictsTitle": "Konflik Sinkronisasi ({count})",
+  "serverWorkspaceConflictKeepLocal": "Simpan Lokal",
+  "serverWorkspaceConflictKeepServer": "Simpan Server",
+  "serverWorkspaceDeviceDraftsTitle": "Draf Perangkat Lain",
+  "serverWorkspaceRestoreDraft": "Pulihkan Draf",
+  "serverWorkspaceRestoreDraftConfirmTitle": "Pulihkan Draf Perangkat",
+  "serverWorkspaceRestoreDraftConfirmMessage": "Memulihkan draf ini akan menggantikan input chat saat ini. Draf Anda saat ini akan disimpan dalam daftar draf jarak jauh.",
+  "serverWorkspaceRestoreDraftConfirm": "Pulihkan",
+  "serverWorkspaceNoDeviceDrafts": "Tidak ada draf dari perangkat lain",
+  "serverWorkspaceClearCache": "Hapus Cache Sinkronisasi Lokal",
+  "serverWorkspaceClearCacheConfirmTitle": "Hapus Cache Sinkronisasi Lokal",
+  "serverWorkspaceClearCacheConfirmMessage": "Ini hanya akan menghapus cache sinkronisasi dan status lokal. Data jarak jauh dan konfigurasi SSH tidak akan pernah dihapus.",
+  "serverWorkspaceClearCacheConfirm": "Hapus Cache",
+  "serverWorkspaceCacheCleared": "Cache sinkronisasi lokal berhasil dihapus",
+  "serverWorkspaceErrorSetupFailed": "Inisialisasi ruang kerja di server gagal",
+  "serverWorkspaceErrorPythonRequired": "Python 3.9+ diperlukan di server",
+  "serverWorkspaceErrorPathUnsafe": "Jalur ruang kerja server tidak aman atau izin tidak valid",
+  "serverWorkspaceErrorConflict": "Konflik data terdeteksi saat sinkronisasi",
+  "serverWorkspaceErrorControlHeld": "Kontrol sesi sedang dipegang oleh perangkat lain",
+  "serverWorkspaceErrorResponseTooLarge": "Respons server melebihi batas ukuran",
+  "serverWorkspaceErrorGeneric": "Kesalahan ruang kerja ({code})",
+  "chatWorkspaceControlActive": "Dalam Kendali",
+  "chatWorkspaceControlActiveTooltip": "Perangkat ini saat ini mengendalikan sesi",
+  "chatWorkspaceReadOnly": "Hanya-Baca",
+  "chatWorkspaceReadOnlyDevice": "Hanya-Baca ({device})",
+  "chatWorkspaceAcquireControl": "Ambil Kendali",
+  "chatWorkspaceTakeover": "Ambil Alih",
+  "chatWorkspaceTakeoverDialogTitle": "Ambil Alih Kendali Sesi",
+  "chatWorkspaceTakeoverDialogMessage": "Mengambil alih kendali memungkinkan perangkat ini mengirim pesan dan mengoperasikan sesi. Agen yang sedang berjalan tidak akan dihentikan dan sesi tidak akan berganti.",
+  "chatWorkspaceTakeoverConfirm": "Ambil Alih",
+  "chatWorkspaceControlFailed": "Gagal memperoleh kendali ruang kerja",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "Komponen runtime lama sedang berjalan. Harap selesaikan atau hentikan di perangkat asal sebelum meningkatkan.",
+  "serverWorkspaceErrorNotEnabled": "Ruang kerja server belum diaktifkan",
+  "serverWorkspaceErrorPendingChanges": "Tidak dapat menghapus cache saat ada perubahan tertunda. Harap sinkronkan terlebih dahulu.",
+  "serverWorkspaceDraftTypeFile": "Draf Berkas",
+  "serverWorkspaceDraftTypeChat": "Draf Obrolan",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "Pulihkan Draf Berkas",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "Memulihkan draf berkas ini akan memuatnya ke draf editor lokal. Draf Anda saat ini akan tetap tersimpan di draf jarak jauh.",
+  "persistentRuntimeFeatureWorkspaceTitle": "Ruang Kerja Server & Sinkronisasi Status",
+  "persistentRuntimeFeatureWorkspaceDesc": "Runtime milik pengguna mempertahankan output saat aplikasi ditutup; kredensial dan kunci SSH tetap di perangkat dan tidak pernah disinkronkan.",
+  "serverWorkspaceMigrationPendingHint": "Migrasi data lama sedang berlangsung di latar belakang. Konfigurasi telah disinkronkan dan data riwayat akan diselesaikan di latar belakang.",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "Muat lebih banyak draf",
+  "serverWorkspaceLoadingDrafts": "Memuat draf..."
 }

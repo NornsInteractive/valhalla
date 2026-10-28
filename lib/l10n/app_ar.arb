@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "لا توجد أوامر محفوظة",
   "terminalSavedCommandsPreview": "معاينة الأمر",
   "terminalSavedCommandsMultilineWarning": "يحتوي هذا الأمر على أسطر متعددة. هل أنت متأكد أنك تريد تشغيله؟",
-  "terminalModifierHelp": "اضغط على مفتاح التعديل للاستخدام لمرة واحدة؛ اضغط مطولاً للقفل. استمر في الضغط لتكرار الإدخال."
+  "terminalModifierHelp": "اضغط على مفتاح التعديل للاستخدام لمرة واحدة؛ اضغط مطولاً للقفل. استمر في الضغط لتكرار الإدخال.",
+  "serverWorkspaceTitle": "مساحة عمل الخادم",
+  "serverWorkspaceSubtitle": "مزامنة الحالة متعددة الأجهزة ومسودات الأجهزة",
+  "serverWorkspaceOriginServer": "الخادم النشط",
+  "serverWorkspaceOriginUser": "المستخدم البعيد",
+  "serverWorkspaceNoActiveServer": "لم يتم تحديد أو اتصال خادم نشط",
+  "serverWorkspacePhaseLocal": "محلي فقط",
+  "serverWorkspacePhaseDiscovering": "جارٍ الاكتشاف...",
+  "serverWorkspacePhaseAvailable": "متاح للتمكين",
+  "serverWorkspacePhaseSyncing": "جارٍ المزامنة...",
+  "serverWorkspacePhaseReady": "متزامن",
+  "serverWorkspacePhaseOffline": "غير متصل",
+  "serverWorkspacePhaseError": "خطأ في المزامنة",
+  "serverWorkspaceLastSynced": "آخر مزامنة: {time}",
+  "serverWorkspaceNeverSynced": "لم تتم المزامنة من قبل",
+  "serverWorkspacePendingChanges": "{count} من التغييرات المعلقة",
+  "serverWorkspaceNoPendingChanges": "تمت مزامنة جميع التغييرات",
+  "serverWorkspaceEnable": "تمكين مساحة عمل الخادم",
+  "serverWorkspaceEnableDialogTitle": "تمكين مساحة عمل الخادم",
+  "serverWorkspaceEnableDialogMessage": "سيؤدي التمكين إلى نقل الإعدادات المحلية إلى الخادم. سيتم الحفاظ على إعداداتك المحلية بالكامل.",
+  "serverWorkspaceMigrationPreviewTitle": "معاينة النقل",
+  "serverWorkspaceEnableConfirm": "تأكيد وتمكين",
+  "serverWorkspaceNoDataToMigrate": "لا توجد بيانات محلية للنقل",
+  "serverWorkspaceSyncNow": "مزامنة الآن",
+  "serverWorkspaceDisable": "تعطيل المزامنة",
+  "serverWorkspaceDisableDialogTitle": "تعطيل مساحة عمل الخادم",
+  "serverWorkspaceDisableDialogMessage": "سيؤدي التعطيل إلى إيقاف المزامنة على هذا الجهاز. سيتم الاحتفاظ بالبيانات المحلية والبعيدة ولن يتم حذفها.",
+  "serverWorkspaceDisableConfirm": "تعطيل",
+  "serverWorkspacePreferenceSource": "استخدام كمصدر التفضيلات",
+  "serverWorkspacePreferenceSourceDesc": "مزامنة إعدادات التطبيق العامة من هذا الخادم",
+  "serverWorkspaceConflictsTitle": "تعارضات المزامنة ({count})",
+  "serverWorkspaceConflictKeepLocal": "الاحتفاظ بالمحلي",
+  "serverWorkspaceConflictKeepServer": "الاحتفاظ بالخادم",
+  "serverWorkspaceDeviceDraftsTitle": "مسودات الأجهزة الأخرى",
+  "serverWorkspaceRestoreDraft": "استعادة المسودة",
+  "serverWorkspaceRestoreDraftConfirmTitle": "استعادة مسودة الجهاز",
+  "serverWorkspaceRestoreDraftConfirmMessage": "ستؤدي استعادة هذه المسودة إلى استبدال مدخلات الدردشة الحالية. سيتم حفظ مسودتك الحالية في قائمة المسودات البعيدة.",
+  "serverWorkspaceRestoreDraftConfirm": "استعادة",
+  "serverWorkspaceNoDeviceDrafts": "لا توجد مسودات من أجهزة أخرى",
+  "serverWorkspaceClearCache": "مسح ذاكرة التخزين المؤقت للمزامنة المحلية",
+  "serverWorkspaceClearCacheConfirmTitle": "مسح ذاكرة التخزين المؤقت للمزامنة المحلية",
+  "serverWorkspaceClearCacheConfirmMessage": "سيؤدي هذا الإجراء إلى مسح ذاكرة التخزين المؤقت وحالة المزامنة المحلية فقط. لن يتم مطلقاً حذف بيانات الخادم أو اتصالات SSH.",
+  "serverWorkspaceClearCacheConfirm": "مسح الذاكرة المؤقتة",
+  "serverWorkspaceCacheCleared": "تم مسح ذاكرة التخزين المؤقت للمزامنة المحلية",
+  "serverWorkspaceErrorSetupFailed": "فشل تهيئة مساحة عمل الخادم",
+  "serverWorkspaceErrorPythonRequired": "يتطلب الخادم إصدار Python 3.9 أو أحدث",
+  "serverWorkspaceErrorPathUnsafe": "مسار مساحة عمل الخادم غير آمن أو أذوناته غير صحيحة",
+  "serverWorkspaceErrorConflict": "تم اكتشاف تعارض في البيانات أثناء المزامنة",
+  "serverWorkspaceErrorControlHeld": "التحكم في الجلسة مشغول بواسطة جهاز آخر",
+  "serverWorkspaceErrorResponseTooLarge": "تجاوزت استجابة الخادم الحد الأقصى المسموح به",
+  "serverWorkspaceErrorGeneric": "خطأ في مساحة العمل ({code})",
+  "chatWorkspaceControlActive": "تحت السيطرة",
+  "chatWorkspaceControlActiveTooltip": "يتحكم هذا الجهاز حالياً في الجلسة",
+  "chatWorkspaceReadOnly": "للقراءة فقط",
+  "chatWorkspaceReadOnlyDevice": "للقراءة فقط ({device})",
+  "chatWorkspaceAcquireControl": "اكتساب التحكم",
+  "chatWorkspaceTakeover": "استلام التحكم",
+  "chatWorkspaceTakeoverDialogTitle": "استلام التحكم في الجلسة",
+  "chatWorkspaceTakeoverDialogMessage": "يتيح استلام التحكم لهذا الجهاز إرسال الرسائل وتشغيل الجلسة الحالية. لن يتم إنهاء الوكيل المشغل ولن يتم تبديل الجلسة.",
+  "chatWorkspaceTakeoverConfirm": "تأكيد الاستلام",
+  "chatWorkspaceControlFailed": "فشل الحصول على التحكم في مساحة العمل",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "يوجد مكون وقت تشغيل قديم يعمل حالياً. يرجى إنهاؤه على الجهاز الأصلي قبل الترقية.",
+  "serverWorkspaceErrorNotEnabled": "مساحة عمل الخادم غير ممكّنة",
+  "serverWorkspaceErrorPendingChanges": "لا يمكن مسح الذاكرة المؤقتة مع وجود تغييرات معلقة. يرجى المزامنة أولاً.",
+  "serverWorkspaceDraftTypeFile": "مسودة ملف",
+  "serverWorkspaceDraftTypeChat": "مسودة دردشة",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "استعادة مسودة الملف",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "ستؤدي استعادة مسودة الملف هذه إلى تحميلها في مسودات المحرر المحلي. سيتم حفظ مسودتك الحالية في المسودات البعيدة.",
+  "persistentRuntimeFeatureWorkspaceTitle": "مساحة عمل الخادم ومزامنة الحالة",
+  "persistentRuntimeFeatureWorkspaceDesc": "تحتفظ بيئة التشغيل الخاصة بالمستخدم بالمخرجات عند إغلاق التطبيق؛ تظل بيانات اعتماد ومفاتيح SSH محلية ولا تتم مزامنتها مطلقاً.",
+  "serverWorkspaceMigrationPendingHint": "يجري ترحيل البيانات السابقة في الخلفية. تمت مزامنة الإعدادات بينما يكتمل ترحيل السجل في الخلفية.",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "تحميل المزيد من المسودات",
+  "serverWorkspaceLoadingDrafts": "جارٍ تحميل المسودات..."
 }

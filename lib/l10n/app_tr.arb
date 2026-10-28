@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "Kayıtlı komut yok",
   "terminalSavedCommandsPreview": "Komut Önizleme",
   "terminalSavedCommandsMultilineWarning": "Bu komut birden fazla satır içeriyor. Çalıştırmak istediğinizden emin misiniz?",
-  "terminalModifierHelp": "Niteleyiciyi tek seferlik dokunun; kilitlemek için uzun basın. Tekrarlamak için tuşları basılı tutun."
+  "terminalModifierHelp": "Niteleyiciyi tek seferlik dokunun; kilitlemek için uzun basın. Tekrarlamak için tuşları basılı tutun.",
+  "serverWorkspaceTitle": "Sunucu Çalışma Alanı",
+  "serverWorkspaceSubtitle": "Çoklu cihaz durum senkronizasyonu ve cihaz taslakları",
+  "serverWorkspaceOriginServer": "Etkin Sunucu",
+  "serverWorkspaceOriginUser": "Uzak Kullanıcı",
+  "serverWorkspaceNoActiveServer": "Seçili veya bağlı etkin sunucu yok",
+  "serverWorkspacePhaseLocal": "Yalnızca Yerel",
+  "serverWorkspacePhaseDiscovering": "Keşfediliyor...",
+  "serverWorkspacePhaseAvailable": "Etkinleştirilebilir",
+  "serverWorkspacePhaseSyncing": "Senkronize ediliyor...",
+  "serverWorkspacePhaseReady": "Senkronize",
+  "serverWorkspacePhaseOffline": "Çevrimdışı",
+  "serverWorkspacePhaseError": "Senkronizasyon Hatası",
+  "serverWorkspaceLastSynced": "Son senkronizasyon: {time}",
+  "serverWorkspaceNeverSynced": "Hiç senkronize edilmedi",
+  "serverWorkspacePendingChanges": "{count} değişiklik bekleniyor",
+  "serverWorkspaceNoPendingChanges": "Tüm değişiklikler senkronize edildi",
+  "serverWorkspaceEnable": "Sunucu Çalışma Alanını Etkinleştir",
+  "serverWorkspaceEnableDialogTitle": "Sunucu Çalışma Alanını Etkinleştir",
+  "serverWorkspaceEnableDialogMessage": "Etkinleştirildiğinde yerel yapılandırmalar sunucuya taşınacaktır. Yerel verileriniz korunacaktır.",
+  "serverWorkspaceMigrationPreviewTitle": "Geçiş Önizlemesi",
+  "serverWorkspaceEnableConfirm": "Etkinleştir ve Senkronize Et",
+  "serverWorkspaceNoDataToMigrate": "Geçirilecek yerel veri yok",
+  "serverWorkspaceSyncNow": "Şimdi Senkronize Et",
+  "serverWorkspaceDisable": "Senkronizasyonu Devre Dışı Bırak",
+  "serverWorkspaceDisableDialogTitle": "Sunucu Çalışma Alanını Devre Dışı Bırak",
+  "serverWorkspaceDisableDialogMessage": "Devre dışı bırakıldığında bu cihazdaki senkronizasyon durur. Yerel ve uzak veriler korunur ve silinmez.",
+  "serverWorkspaceDisableConfirm": "Devre Dışı Bırak",
+  "serverWorkspacePreferenceSource": "Tercih Kaynağı Olarak Kullan",
+  "serverWorkspacePreferenceSourceDesc": "Uygulama düzeyindeki ayarları bu sunucudan senkronize et",
+  "serverWorkspaceConflictsTitle": "Senkronizasyon Çakışmaları ({count})",
+  "serverWorkspaceConflictKeepLocal": "Yereli Koru",
+  "serverWorkspaceConflictKeepServer": "Sunucuyu Koru",
+  "serverWorkspaceDeviceDraftsTitle": "Diğer Cihaz Taslakları",
+  "serverWorkspaceRestoreDraft": "Taslağı Geri Yükle",
+  "serverWorkspaceRestoreDraftConfirmTitle": "Taslağı Geri Yükle",
+  "serverWorkspaceRestoreDraftConfirmMessage": "Bu taslağın geri yüklenmesi geçerli sohbet giriş taslağının yerini alacaktır. Mevcut taslağınız uzak taslak listesinde saklanacaktır.",
+  "serverWorkspaceRestoreDraftConfirm": "Geri Yükle",
+  "serverWorkspaceNoDeviceDrafts": "Diğer cihazlardan taslak yok",
+  "serverWorkspaceClearCache": "Yerel Senkronizasyon Önbelleğini Temizle",
+  "serverWorkspaceClearCacheConfirmTitle": "Yerel Senkronizasyon Önbelleğini Temizle",
+  "serverWorkspaceClearCacheConfirmMessage": "Bu işlem yalnızca yerel senkronizasyon önbelleğini ve durumunu temizler. Uzak veriler ve SSH yapılandırmaları asla silinmez.",
+  "serverWorkspaceClearCacheConfirm": "Önbelleği Temizle",
+  "serverWorkspaceCacheCleared": "Yerel senkronizasyon önbelleği temizlendi",
+  "serverWorkspaceErrorSetupFailed": "Sunucuda çalışma alanı ortamı başlatılamadı",
+  "serverWorkspaceErrorPythonRequired": "Sunucuda Python 3.9+ gereklidir",
+  "serverWorkspaceErrorPathUnsafe": "Sunucu çalışma alanı yolu güvensiz veya izinler geçersiz",
+  "serverWorkspaceErrorConflict": "Senkronizasyon sırasında veri çakışması tespit edildi",
+  "serverWorkspaceErrorControlHeld": "Oturum denetimi başka bir cihaz tarafından tutuluyor",
+  "serverWorkspaceErrorResponseTooLarge": "Sunucu yanıtı boyut sınırını aştı",
+  "serverWorkspaceErrorGeneric": "Çalışma alanı hatası ({code})",
+  "chatWorkspaceControlActive": "Kontrol Altında",
+  "chatWorkspaceControlActiveTooltip": "Bu cihaz şu anda oturumu kontrol ediyor",
+  "chatWorkspaceReadOnly": "Salt Okunur",
+  "chatWorkspaceReadOnlyDevice": "Salt Okunur ({device})",
+  "chatWorkspaceAcquireControl": "Kontrolü Al",
+  "chatWorkspaceTakeover": "Devral",
+  "chatWorkspaceTakeoverDialogTitle": "Oturum Kontrolünü Devral",
+  "chatWorkspaceTakeoverDialogMessage": "Kontrolü devralmak bu cihazın mesaj göndermesine ve oturumu yönetmesine olanak tanır. Çalışan ajan sonlandırılmaz ve oturum değiştirilmez.",
+  "chatWorkspaceTakeoverConfirm": "Devral",
+  "chatWorkspaceControlFailed": "Çalışma alanı kontrolü alınamadı",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "Daha eski bir çalışma zamanı bileşeni çalışıyor. Lütfen yükseltmeden önce orijinal cihazda tamamlayın veya durdurun.",
+  "serverWorkspaceErrorNotEnabled": "Sunucu çalışma alanı etkin değil",
+  "serverWorkspaceErrorPendingChanges": "Bekleyen değişiklikler varken önbellek temizlenemez. Lütfen önce senkronize edin.",
+  "serverWorkspaceDraftTypeFile": "Dosya Taslağı",
+  "serverWorkspaceDraftTypeChat": "Sohbet Taslağı",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "Dosya Taslağını Geri Yükle",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "Bu dosya taslağını geri yüklemek yerel düzenleyici taslaklarına yükleyecektir. Mevcut taslağınız uzak taslak listesinde saklanacaktır.",
+  "persistentRuntimeFeatureWorkspaceTitle": "Sunucu Çalışma Alanı ve Durum Senkronizasyonu",
+  "persistentRuntimeFeatureWorkspaceDesc": "Kullanıcıya ait çalışma ortamı uygulama kapandığında çıktıyı korur; SSH kimlik bilgileri ve anahtarlar yerel kalır ve asla senkronize edilmez.",
+  "serverWorkspaceMigrationPendingHint": "Eski verilerin arka planda taşınması devam ediyor. Yapılandırma senkronize edildi, geçmiş veriler arka planda tamamlanacak.",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "Daha fazla taslak yükle",
+  "serverWorkspaceLoadingDrafts": "Taslaklar yükleniyor..."
 }

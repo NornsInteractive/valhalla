@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/providers/infrastructure_providers.dart';
 import 'package:valhalla/core/providers/nas_sources_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
@@ -12,6 +13,7 @@ import 'package:valhalla/data/models/nas_source.dart';
 import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/data/storage/secure_storage_service.dart';
+import 'package:valhalla/data/storage/workspace_preferences.dart';
 import 'package:valhalla/infrastructure/ssh/ssh_client_manager.dart';
 
 const _saved = NasSource(
@@ -46,7 +48,12 @@ class _Storage extends Fake implements LocalStorageService {
   int selectionWrites = 0;
   bool failMetadata = false;
   bool failSelection = false;
-  _Storage(NasSource source) : sources = [source], selected = source.id;
+  @override
+  final WorkspacePreferences workspacePreferences;
+  _Storage(SharedPreferences prefs, NasSource source)
+    : workspacePreferences = WorkspacePreferences(prefs),
+      sources = [source],
+      selected = source.id;
   @override
   List<NasSource> getNasSources() => List.of(sources);
   @override
@@ -132,11 +139,13 @@ class _Fixture {
       container.read(serverListProvider.notifier) as _Servers;
 }
 
+late SharedPreferences _prefs;
+
 _Fixture _fixture({
   NasSource source = _saved,
   NasCredentials credentials = _oldCredentials,
 }) {
-  final storage = _Storage(source);
+  final storage = _Storage(_prefs, source);
   final secrets = _Secrets()..values[source.id] = credentials;
   final executor = _Executor();
   final container = ProviderContainer(
@@ -155,6 +164,11 @@ _Fixture _fixture({
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = null;
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    _prefs = await SharedPreferences.getInstance();
+  });
 
   test(
     'draft browser neither saves nor selects a source or reads blank credentials',
@@ -412,7 +426,7 @@ void main() {
   }
 
   test(
-    'failed secure write preserves the current browser and prior credentials',
+    'failed secure write preserves prior credentials and invalidates the browser',
     () async {
       final fixture = _fixture();
       final browser = await fixture.notifier.openSavedBrowser(_saved);
@@ -421,7 +435,12 @@ void main() {
         fixture.notifier.save(_saved, _newCredentials, probe: false),
         throwsStateError,
       );
-      expect(browser.isCurrent, isTrue);
+      expect(
+        browser.isCurrent,
+        isFalse,
+        reason:
+            'a failed secure write leaves the credential binding incomplete',
+      );
       expect(fixture.secrets.values['source'], same(_oldCredentials));
       expect(fixture.storage.metadataWrites, 0);
       await browser.dispose();

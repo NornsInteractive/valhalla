@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valhalla/core/providers/nas_sources_provider.dart';
 import 'package:valhalla/core/providers/server_provider.dart';
 import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/data/models/nas_source.dart';
 import 'package:valhalla/data/models/server_profile.dart';
+import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/data/storage/secure_storage_service.dart';
 
 const source = NasSource(
@@ -77,13 +79,19 @@ void main() {
   late _Secrets secrets;
   late _Sources sources;
   late _Servers servers;
+  late LocalStorageService storage;
   late ProviderContainer container;
-  setUp(() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({
+      nasCredentialBindingKey(source.id): nasCredentialTarget(source),
+    });
+    storage = LocalStorageService(await SharedPreferences.getInstance());
     secrets = _Secrets();
     sources = _Sources();
     servers = _Servers();
     container = ProviderContainer(
       overrides: [
+        localStorageServiceProvider.overrideWithValue(storage),
         secureStorageServiceProvider.overrideWithValue(secrets),
         nasSourcesProvider.overrideWith(() => sources),
         serverListProvider.overrideWith(() => servers),

@@ -99,9 +99,139 @@ class NasPlaylistPage {
   const NasPlaylistPage(this.items, this.nextPosition, this.hasMore);
 }
 
+/// One bounded batch of the existing local NAS index for workspace upload.
+class NasMigrationPage {
+  final List<NasMediaItem> items;
+  final Map<String, int> favoriteEpochs;
+  final int nextRowId;
+  final bool done;
+  const NasMigrationPage({
+    required this.items,
+    required this.favoriteEpochs,
+    required this.nextRowId,
+    required this.done,
+  });
+}
+
+/// Optional durable bridge to a remote workspace. A local write must never fail
+/// because the remote outbox is unavailable, so implementations must swallow
+/// transport errors and queue the record locally instead.
+abstract interface class NasRemoteSink {
+  Future<void> mediaChanged(String sourceId, List<NasMediaItem> items);
+  Future<void> mediaDeleted(String sourceId, List<String> paths);
+  Future<void> favoriteChanged(
+    String sourceId,
+    String path,
+    bool value,
+    int updatedEpoch,
+  );
+  Future<void> playbackChanged(NasPlaybackState playback);
+  Future<void> playlistChanged(String sourceId, NasPlaylist playlist);
+  Future<void> playlistDeleted(String sourceId, String playlistId);
+  Future<void> playlistItemChanged(
+    String sourceId,
+    String playlistId,
+    String path,
+    int position,
+  );
+  Future<void> playlistItemDeleted(
+    String sourceId,
+    String playlistId,
+    String path,
+  );
+}
+
+/// Read side of the remote workspace NAS index.
+///
+/// Every method returns `null` when the workspace is disabled, offline, or the
+/// backend does not support the operation; callers then fall back to the local
+/// SQLite cache. Implementations must never throw for those cases.
+abstract interface class NasRemoteIndex {
+  bool isAvailable(String sourceId);
+  Future<NasIndexPage?> queryPage(
+    String sourceId, {
+    NasMediaKind? kind,
+    String search = '',
+    bool favoritesOnly = false,
+    String? folder,
+    String? artist,
+    String? album,
+    String? albumKey,
+    int? modifiedFromEpoch,
+    int? modifiedBeforeEpoch,
+    NasIndexCursor? cursor,
+    bool before = false,
+    bool inclusive = false,
+    NasSortKey sortKey = NasSortKey.modified,
+    bool sortAscending = false,
+    int limit = 200,
+  });
+  Future<List<NasMediaItem>?> query(
+    String sourceId, {
+    NasMediaKind? kind,
+    String search = '',
+    int limit = 200,
+    int offset = 0,
+  });
+  Future<int?> count(
+    String sourceId, {
+    NasMediaKind? kind,
+    String search = '',
+    bool favoritesOnly = false,
+    String? folder,
+    String? artist,
+    String? album,
+    String? albumKey,
+    int? modifiedFromEpoch,
+    int? modifiedBeforeEpoch,
+  });
+  Future<NasIndexTotals?> totals(String sourceId);
+  Future<List<NasIndexGroupCount>?> groups(
+    String sourceId,
+    NasIndexGroup group, {
+    String? after,
+    NasMediaKind? kind,
+    String search = '',
+    bool favoritesOnly = false,
+    String? folder,
+    String? artist,
+    String? albumKey,
+    int? modifiedFromEpoch,
+    int? modifiedBeforeEpoch,
+    int limit = 200,
+  });
+  Future<List<NasPlaylist>?> playlistsFor(
+    String sourceId, {
+    int limit = 1000,
+    int offset = 0,
+  });
+  Future<NasPlaylistPage?> playlistMediaPage(
+    String sourceId,
+    String playlistId, {
+    int? afterPosition,
+    int limit = 200,
+  });
+  Future<Map<String, NasPlaybackState>?> playbackForItems(
+    String sourceId,
+    Iterable<String> paths,
+  );
+  Future<NasPlaybackState?> playbackFor(String sourceId, String path);
+  Future<List<NasMediaItem>?> recentPlayback(
+    String sourceId, {
+    int limit = 8,
+    NasMediaKind kind = NasMediaKind.video,
+  });
+}
+
 class NasIndexRepository {
   final String databasePath;
-  const NasIndexRepository(this.databasePath);
+
+  /// Attached by the NAS provider once a workspace gateway is available.
+  NasRemoteSink? remoteSink;
+
+  /// Optional remote index. Queries prefer it and fall back to this database.
+  NasRemoteIndex? remoteIndex;
+  NasIndexRepository(this.databasePath);
 
   // ponytail: global lock, per-database queues only if concurrent libraries
   // become a measured throughput problem. The player and index share one file.
@@ -147,6 +277,11 @@ class NasIndexRepository {
         _addColumn(db, 'nas_media', 'disc_number INTEGER');
         _addColumn(db, 'nas_media', 'track_number INTEGER');
         _addColumn(db, 'nas_media', 'is_favorite INTEGER NOT NULL DEFAULT 0');
+        _addColumn(
+          db,
+          'nas_media',
+          'favorite_epoch INTEGER NOT NULL DEFAULT 0',
+        );
         _addColumn(db, 'nas_media', 'source_path TEXT');
         _addColumn(
           db,
@@ -252,6 +387,24 @@ class NasIndexRepository {
           server_id TEXT PRIMARY KEY,
           generation INTEGER NOT NULL
         ) STRICT;
+        CREATE TABLE IF NOT EXISTS nas_workspace_migration (
+          server_id TEXT NOT NULL,
+          workspace_id TEXT NOT NULL DEFAULT '',
+          last_rowid INTEGER NOT NULL DEFAULT 0,
+          boundary_rowid INTEGER NOT NULL DEFAULT 0,
+          done INTEGER NOT NULL DEFAULT 0,
+          playlist_offset INTEGER NOT NULL DEFAULT 0,
+          playlists_done INTEGER NOT NULL DEFAULT 0,
+          playback_offset INTEGER NOT NULL DEFAULT 0,
+          playback_done INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (server_id, workspace_id)
+        ) STRICT;
+        CREATE TABLE IF NOT EXISTS nas_workspace_changes (
+          server_id TEXT NOT NULL,
+          workspace_id TEXT NOT NULL DEFAULT '',
+          cursor INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (server_id, workspace_id)
+        ) STRICT;
         CREATE TABLE IF NOT EXISTS nas_playback (
           server_id TEXT NOT NULL,
           path TEXT NOT NULL,
@@ -309,6 +462,23 @@ class NasIndexRepository {
             );
           }
         }
+        db.execute('''CREATE TABLE IF NOT EXISTS nas_workspace_changes (
+          server_id TEXT NOT NULL,
+          workspace_id TEXT NOT NULL DEFAULT '',
+          cursor INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (server_id, workspace_id)
+        ) STRICT''');
+        for (final column in [
+          "workspace_id TEXT NOT NULL DEFAULT ''",
+          'boundary_rowid INTEGER NOT NULL DEFAULT 0',
+          'playlist_offset INTEGER NOT NULL DEFAULT 0',
+          'playlists_done INTEGER NOT NULL DEFAULT 0',
+          'playback_offset INTEGER NOT NULL DEFAULT 0',
+          'playback_done INTEGER NOT NULL DEFAULT 0',
+        ]) {
+          _addColumn(db, 'nas_workspace_migration', column);
+        }
+
         if (needsIndexMigration) {
           db.execute(
             '''WITH ranks AS (SELECT rowid AS rid,
@@ -394,14 +564,19 @@ class NasIndexRepository {
     List<NasMediaItem> items,
     int generation, {
     bool syncFavorites = false,
-  }) => _write(
-    () => Isolate.run(() {
-      if (items.length > 10000) throw ArgumentError('NAS_BATCH_TOO_LARGE');
-      final db = _open(databasePath);
-      try {
-        _transaction(db, () {
-          _checkGeneration(db, serverId, generation);
-          final insert = db.prepare('''INSERT INTO nas_media
+    bool requireGeneration = true,
+    bool notifyRemote = true,
+  }) async {
+    await _write(
+      () => Isolate.run(() {
+        if (items.length > 10000) throw ArgumentError('NAS_BATCH_TOO_LARGE');
+        final db = _open(databasePath);
+        try {
+          _transaction(db, () {
+            if (requireGeneration) {
+              _checkGeneration(db, serverId, generation);
+            }
+            final insert = db.prepare('''INSERT INTO nas_media
           (server_id,path,kind,size_bytes,modified_epoch,mime_type,duration_millis,
            width,height,title,artist,album,track_number,is_favorite,scan_generation,sort_epoch,folder,source_path,sort_name,
            album_id,album_artist,disc_number,album_key,disc_order,track_order)
@@ -427,76 +602,105 @@ class NasIndexRepository {
             sort_name=CASE WHEN excluded.title IS NULL AND nas_media.title IS NOT NULL THEN nas_media.sort_name
               WHEN excluded.title IS NULL AND excluded.source_path IS NULL AND nas_media.source_path IS NOT NULL THEN nas_media.sort_name
               ELSE excluded.sort_name END''');
-          try {
-            for (final item in items) {
-              if (item.serverId != serverId) {
-                throw ArgumentError('NAS_SOURCE_MISMATCH');
+            try {
+              for (final item in items) {
+                if (item.serverId != serverId) {
+                  throw ArgumentError('NAS_SOURCE_MISMATCH');
+                }
+                insert.execute([
+                  serverId,
+                  item.path,
+                  item.kind.name,
+                  item.sizeBytes,
+                  item.modifiedEpoch,
+                  item.mimeType,
+                  item.durationMillis,
+                  item.width,
+                  item.height,
+                  item.title,
+                  item.artist,
+                  item.album,
+                  item.trackNumber,
+                  item.isFavorite ? 1 : 0,
+                  generation,
+                  -item.modifiedEpoch,
+                  _folder(item.sourcePath ?? item.path),
+                  item.sourcePath,
+                  _sortName(item.path, item.sourcePath, item.title),
+                  item.albumId,
+                  item.albumArtist,
+                  item.discNumber,
+                  item.albumKey,
+                  _numberOrder(item.discNumber),
+                  _numberOrder(item.trackNumber),
+                  syncFavorites ? 1 : 0,
+                ]);
+                // COALESCE may preserve previously enriched tags during a file
+                // rescan; derive identity from the stored row, not the bare item.
+                _refreshAlbumIdentity(db, serverId, item.path);
               }
-              insert.execute([
-                serverId,
-                item.path,
-                item.kind.name,
-                item.sizeBytes,
-                item.modifiedEpoch,
-                item.mimeType,
-                item.durationMillis,
-                item.width,
-                item.height,
-                item.title,
-                item.artist,
-                item.album,
-                item.trackNumber,
-                item.isFavorite ? 1 : 0,
-                generation,
-                -item.modifiedEpoch,
-                _folder(item.sourcePath ?? item.path),
-                item.sourcePath,
-                _sortName(item.path, item.sourcePath, item.title),
-                item.albumId,
-                item.albumArtist,
-                item.discNumber,
-                item.albumKey,
-                _numberOrder(item.discNumber),
-                _numberOrder(item.trackNumber),
-                syncFavorites ? 1 : 0,
-              ]);
-              // COALESCE may preserve previously enriched tags during a file
-              // rescan; derive identity from the stored row, not the bare item.
-              _refreshAlbumIdentity(db, serverId, item.path);
+            } finally {
+              insert.dispose();
             }
-          } finally {
-            insert.dispose();
-          }
-        });
-      } finally {
-        db.dispose();
+          });
+        } finally {
+          db.dispose();
+        }
+      }),
+    );
+    if (notifyRemote && items.isNotEmpty) {
+      try {
+        await remoteSink?.mediaChanged(serverId, items);
+      } catch (_) {
+        // A durable outbox failure must not roll back a completed local scan.
       }
-    }),
-  );
+    }
+  }
 
   /// Call only after the remote scan succeeds. Interrupted scans keep old rows.
-  Future<void> finishScan(
+  ///
+  /// Returns the paths removed by this generation so a workspace bridge can
+  /// stage explicit tombstones. A canceled scan never reaches the delete.
+  Future<List<String>> finishScan(
     String serverId,
     int generation, {
     NasCancellation? cancellation,
-  }) => _write(() {
-    cancellation?.check();
-    return _finishScan(databasePath, serverId, generation);
-  });
+  }) async {
+    final removed = await _write(() {
+      cancellation?.check();
+      return _finishScan(databasePath, serverId, generation);
+    });
+    if (removed.isNotEmpty) {
+      try {
+        await remoteSink?.mediaDeleted(serverId, removed);
+      } catch (_) {
+        // Local tombstoning is authoritative; the remote outbox is best effort.
+      }
+    }
+    return removed;
+  }
 
-  static Future<void> _finishScan(
+  static Future<List<String>> _finishScan(
     String databasePath,
     String serverId,
     int generation,
   ) => Isolate.run(() {
     final db = _open(databasePath);
     try {
-      _transaction(db, () {
+      return _transaction(db, () {
         _checkGeneration(db, serverId, generation);
+        final removed = db
+            .select(
+              'SELECT path FROM nas_media WHERE server_id = ? AND scan_generation <> ?',
+              [serverId, generation],
+            )
+            .map((row) => row['path'] as String)
+            .toList();
         db.execute(
           'DELETE FROM nas_media WHERE server_id = ? AND scan_generation <> ?',
           [serverId, generation],
         );
+        return removed;
       });
     } finally {
       db.dispose();
@@ -623,6 +827,37 @@ class NasIndexRepository {
     String search = '',
     int limit = 200,
     int offset = 0,
+  }) async {
+    final remote = remoteIndex;
+    if (remote != null) {
+      try {
+        final items = await remote.query(
+          serverId,
+          kind: kind,
+          search: search,
+          limit: limit,
+          offset: offset,
+        );
+        if (items != null) return items;
+      } catch (_) {
+        // Fall through to the local cache.
+      }
+    }
+    return _queryLocal(
+      serverId,
+      kind: kind,
+      search: search,
+      limit: limit,
+      offset: offset,
+    );
+  }
+
+  Future<List<NasMediaItem>> _queryLocal(
+    String serverId, {
+    NasMediaKind? kind,
+    String search = '',
+    int limit = 200,
+    int offset = 0,
   }) => Isolate.run(() {
     final db = _open(databasePath, mode: OpenMode.readOnly);
     try {
@@ -642,6 +877,70 @@ class NasIndexRepository {
   });
 
   Future<NasIndexPage> queryPage(
+    String serverId, {
+    NasMediaKind? kind,
+    String search = '',
+    bool favoritesOnly = false,
+    String? folder,
+    String? artist,
+    String? album,
+    String? albumKey,
+    int? modifiedFromEpoch,
+    int? modifiedBeforeEpoch,
+    NasIndexCursor? cursor,
+    bool before = false,
+    bool inclusive = false,
+    NasSortKey sortKey = NasSortKey.modified,
+    bool sortAscending = false,
+    int limit = 200,
+  }) async {
+    final remote = remoteIndex;
+    if (remote != null) {
+      try {
+        final page = await remote.queryPage(
+          serverId,
+          kind: kind,
+          search: search,
+          favoritesOnly: favoritesOnly,
+          folder: folder,
+          artist: artist,
+          album: album,
+          albumKey: albumKey,
+          modifiedFromEpoch: modifiedFromEpoch,
+          modifiedBeforeEpoch: modifiedBeforeEpoch,
+          cursor: cursor,
+          before: before,
+          inclusive: inclusive,
+          sortKey: sortKey,
+          sortAscending: sortAscending,
+          limit: limit,
+        );
+        if (page != null) return page;
+      } catch (_) {
+        // Fall through to the local cache.
+      }
+    }
+    return _queryPageLocal(
+      serverId,
+      kind: kind,
+      search: search,
+      favoritesOnly: favoritesOnly,
+      folder: folder,
+      artist: artist,
+      album: album,
+      albumKey: albumKey,
+      modifiedFromEpoch: modifiedFromEpoch,
+      modifiedBeforeEpoch: modifiedBeforeEpoch,
+      cursor: cursor,
+      before: before,
+      inclusive: inclusive,
+      sortKey: sortKey,
+      sortAscending: sortAscending,
+      limit: limit,
+    );
+  }
+
+  Future<NasIndexPage> _queryPageLocal(
     String serverId, {
     NasMediaKind? kind,
     String search = '',
@@ -721,6 +1020,52 @@ class NasIndexRepository {
     String? albumKey,
     int? modifiedFromEpoch,
     int? modifiedBeforeEpoch,
+  }) async {
+    final remote = remoteIndex;
+    if (remote != null) {
+      try {
+        final value = await remote.count(
+          serverId,
+          kind: kind,
+          search: search,
+          favoritesOnly: favoritesOnly,
+          folder: folder,
+          artist: artist,
+          album: album,
+          albumKey: albumKey,
+          modifiedFromEpoch: modifiedFromEpoch,
+          modifiedBeforeEpoch: modifiedBeforeEpoch,
+        );
+        if (value != null) return value;
+      } catch (_) {
+        // Fall through to the local cache.
+      }
+    }
+    return _countLocal(
+      serverId,
+      kind: kind,
+      search: search,
+      favoritesOnly: favoritesOnly,
+      folder: folder,
+      artist: artist,
+      album: album,
+      albumKey: albumKey,
+      modifiedFromEpoch: modifiedFromEpoch,
+      modifiedBeforeEpoch: modifiedBeforeEpoch,
+    );
+  }
+
+  Future<int> _countLocal(
+    String serverId, {
+    NasMediaKind? kind,
+    String search = '',
+    bool favoritesOnly = false,
+    String? folder,
+    String? artist,
+    String? album,
+    String? albumKey,
+    int? modifiedFromEpoch,
+    int? modifiedBeforeEpoch,
   }) => Isolate.run(() {
     final db = _open(databasePath, mode: OpenMode.readOnly);
     try {
@@ -748,7 +1093,20 @@ class NasIndexRepository {
     }
   });
 
-  Future<NasIndexTotals> totals(String serverId) => Isolate.run(() {
+  Future<NasIndexTotals> totals(String serverId) async {
+    final remote = remoteIndex;
+    if (remote != null) {
+      try {
+        final value = await remote.totals(serverId);
+        if (value != null) return value;
+      } catch (_) {
+        // Fall through to the local cache.
+      }
+    }
+    return _totalsLocal(serverId);
+  }
+
+  Future<NasIndexTotals> _totalsLocal(String serverId) => Isolate.run(() {
     final db = _open(databasePath, mode: OpenMode.readOnly);
     try {
       final kinds = {
@@ -777,6 +1135,58 @@ class NasIndexRepository {
   });
 
   Future<List<NasIndexGroupCount>> groups(
+    String serverId,
+    NasIndexGroup group, {
+    String? after,
+    NasMediaKind? kind,
+    String search = '',
+    bool favoritesOnly = false,
+    String? folder,
+    String? artist,
+    String? albumKey,
+    int? modifiedFromEpoch,
+    int? modifiedBeforeEpoch,
+    int limit = 200,
+  }) async {
+    final remote = remoteIndex;
+    if (remote != null) {
+      try {
+        final values = await remote.groups(
+          serverId,
+          group,
+          after: after,
+          kind: kind,
+          search: search,
+          favoritesOnly: favoritesOnly,
+          folder: folder,
+          artist: artist,
+          albumKey: albumKey,
+          modifiedFromEpoch: modifiedFromEpoch,
+          modifiedBeforeEpoch: modifiedBeforeEpoch,
+          limit: limit,
+        );
+        if (values != null) return values;
+      } catch (_) {
+        // Fall through to the local cache.
+      }
+    }
+    return _groupsLocal(
+      serverId,
+      group,
+      after: after,
+      kind: kind,
+      search: search,
+      favoritesOnly: favoritesOnly,
+      folder: folder,
+      artist: artist,
+      albumKey: albumKey,
+      modifiedFromEpoch: modifiedFromEpoch,
+      modifiedBeforeEpoch: modifiedBeforeEpoch,
+      limit: limit,
+    );
+  }
+
+  Future<List<NasIndexGroupCount>> _groupsLocal(
     String serverId,
     NasIndexGroup group, {
     String? after,
@@ -1042,14 +1452,44 @@ class NasIndexRepository {
   Future<void> setFavorite(
     String serverId,
     String remotePath,
+    bool value, {
+    int? updatedEpoch,
+  }) async {
+    final epoch = updatedEpoch ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await _write(
+      () => Isolate.run(() {
+        final db = _open(databasePath);
+        try {
+          db.execute(
+            'UPDATE nas_media SET is_favorite = ?, favorite_epoch = ? WHERE server_id = ? AND path = ?',
+            [value ? 1 : 0, epoch, serverId, remotePath],
+          );
+        } finally {
+          db.dispose();
+        }
+      }),
+    );
+    try {
+      await remoteSink?.favoriteChanged(serverId, remotePath, value, epoch);
+    } catch (_) {
+      // The local favorite is already durable; never fail the user action.
+    }
+  }
+
+  /// Applies a remote favorite only when it is newer than the local stamp.
+  Future<void> applyRemoteFavorite(
+    String sourceId,
+    String path,
     bool value,
+    int updatedEpoch,
   ) => _write(
     () => Isolate.run(() {
       final db = _open(databasePath);
       try {
         db.execute(
-          'UPDATE nas_media SET is_favorite = ? WHERE server_id = ? AND path = ?',
-          [value ? 1 : 0, serverId, remotePath],
+          'UPDATE nas_media SET is_favorite = ?, favorite_epoch = ? '
+          'WHERE server_id = ? AND path = ? AND favorite_epoch <= ?',
+          [value ? 1 : 0, updatedEpoch, sourceId, path, updatedEpoch],
         );
       } finally {
         db.dispose();
@@ -1057,20 +1497,58 @@ class NasIndexRepository {
     }),
   );
 
-  Future<void> savePlayback(NasPlaybackState playback) => _write(
+  /// Caches records returned by a remote page. The local favorite stamp wins,
+  /// so a cache refresh never clears a just-tapped favorite.
+  Future<void> applyRemoteMedia(String sourceId, List<NasMediaItem> items) {
+    if (items.isEmpty) return Future.value();
+    return upsertBatch(
+      sourceId,
+      items,
+      0,
+      requireGeneration: false,
+      notifyRemote: false,
+    );
+  }
+
+  /// Applies an explicit remote tombstone. Favorite and playback rows are
+  /// deliberately untouched so another device's state survives a media scan.
+  Future<void> applyRemoteMediaDeleted(
+    String sourceId,
+    List<String> paths,
+  ) => _write(
+    () => Isolate.run(() {
+      if (paths.isEmpty) return;
+      final db = _open(databasePath);
+      try {
+        _transaction(db, () {
+          for (var start = 0; start < paths.length; start += 500) {
+            final end = (start + 500).clamp(0, paths.length);
+            final chunk = paths.sublist(start, end);
+            db.execute(
+              'DELETE FROM nas_media WHERE server_id = ? AND path IN (${List.filled(chunk.length, '?').join(',')})',
+              [sourceId, ...chunk],
+            );
+          }
+        });
+      } finally {
+        db.dispose();
+      }
+    }),
+  );
+
+  Future<void> applyRemotePlayback(NasPlaybackState playback) => _write(
     () => Isolate.run(() {
       final db = _open(databasePath);
       try {
         db.execute(
-          '''
-            INSERT INTO nas_playback
-              (server_id, path, position_millis, duration_millis, updated_epoch)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(server_id, path) DO UPDATE SET
-              position_millis = excluded.position_millis,
-              duration_millis = excluded.duration_millis,
-              updated_epoch = excluded.updated_epoch
-          ''',
+          '''INSERT INTO nas_playback
+            (server_id, path, position_millis, duration_millis, updated_epoch)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(server_id, path) DO UPDATE SET
+            position_millis = excluded.position_millis,
+            duration_millis = excluded.duration_millis,
+            updated_epoch = excluded.updated_epoch
+          WHERE nas_playback.updated_epoch <= excluded.updated_epoch''',
           [
             playback.serverId,
             playback.path,
@@ -1085,7 +1563,392 @@ class NasIndexRepository {
     }),
   );
 
+  Future<void> applyRemotePlaylist(
+    NasPlaylist playlist, {
+    bool deleted = false,
+  }) => _write(
+    () => Isolate.run(() {
+      final db = _open(databasePath);
+      try {
+        if (deleted) {
+          db.execute('DELETE FROM nas_playlist_items WHERE playlist_id = ?', [
+            playlist.id,
+          ]);
+          db.execute('DELETE FROM nas_playlists WHERE id = ?', [playlist.id]);
+        } else {
+          db.execute(
+            '''INSERT INTO nas_playlists (id, server_id, name, created_epoch)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET name = excluded.name
+            WHERE nas_playlists.server_id = excluded.server_id''',
+            [
+              playlist.id,
+              playlist.serverId,
+              playlist.name,
+              playlist.createdAt.millisecondsSinceEpoch ~/ 1000,
+            ],
+          );
+        }
+      } finally {
+        db.dispose();
+      }
+    }),
+  );
+
+  Future<void> applyRemotePlaylistItem({
+    required String sourceId,
+    required String playlistId,
+    required String path,
+    required int position,
+    bool deleted = false,
+  }) => _write(
+    () => Isolate.run(() {
+      final db = _open(databasePath);
+      try {
+        _transaction(db, () {
+          if (!_ownsPlaylist(db, sourceId, playlistId)) return;
+          if (deleted) {
+            db.execute(
+              'DELETE FROM nas_playlist_items WHERE playlist_id = ? AND path = ?',
+              [playlistId, path],
+            );
+            return;
+          }
+          final exists = db.select(
+            'SELECT 1 FROM nas_playlist_items WHERE playlist_id = ? AND path = ?',
+            [playlistId, path],
+          ).isNotEmpty;
+          if (exists) {
+            db.execute(
+              'UPDATE nas_playlist_items SET position = ? WHERE playlist_id = ? AND path = ?',
+              [position, playlistId, path],
+            );
+            return;
+          }
+          final count =
+              db.select(
+                    'SELECT COUNT(*) AS n FROM nas_playlist_items WHERE playlist_id = ?',
+                    [playlistId],
+                  ).single['n']
+                  as int;
+          final target = position.clamp(0, count);
+          db.execute(
+            'UPDATE nas_playlist_items SET position = position + 1 WHERE playlist_id = ? AND position >= ?',
+            [playlistId, target],
+          );
+          db.execute(
+            'INSERT INTO nas_playlist_items(playlist_id, path, position) VALUES (?, ?, ?)',
+            [playlistId, path, target],
+          );
+        });
+      } finally {
+        db.dispose();
+      }
+    }),
+  );
+
+  /// One bounded slice of the existing local index for workspace migration.
+  Future<int> migrationBoundary(
+    String sourceId, {
+    String workspaceId = '',
+  }) => Isolate.run(() {
+    final db = _open(databasePath, mode: OpenMode.readOnly);
+    try {
+      final row = db.select(
+        'SELECT COALESCE(MAX(rowid), 0) AS m FROM nas_media WHERE server_id = ?',
+        [sourceId],
+      ).first;
+      return row['m'] as int;
+    } finally {
+      db.dispose();
+    }
+  });
+
+  Future<NasMigrationPage> migrationPage(
+    String sourceId, {
+    int afterRowId = 0,
+    int limit = 200,
+    String workspaceId = '',
+  }) => Isolate.run(() {
+    if (limit < 1 || limit > 1000) throw ArgumentError.value(limit, 'limit');
+    final db = _open(databasePath, mode: OpenMode.readOnly);
+    try {
+      final boundaryRow = db.select(
+        'SELECT boundary_rowid FROM nas_workspace_migration WHERE server_id = ? AND workspace_id = ?',
+        [sourceId, workspaceId],
+      ).firstOrNull;
+      final boundary = boundaryRow == null
+          ? 0
+          : boundaryRow['boundary_rowid'] as int;
+      final rows = boundaryRow != null && boundary >= 0
+          ? db.select(
+              '''SELECT rowid, * FROM nas_media WHERE server_id = ? AND rowid > ? AND rowid <= ?
+              ORDER BY rowid LIMIT ?''',
+              [sourceId, afterRowId, boundary, limit + 1],
+            )
+          : db.select(
+              '''SELECT rowid, * FROM nas_media WHERE server_id = ? AND rowid > ?
+              ORDER BY rowid LIMIT ?''',
+              [sourceId, afterRowId, limit + 1],
+            );
+      final done = rows.length <= limit;
+      final page = rows.take(limit).toList();
+      return NasMigrationPage(
+        items: page.map(_item).toList(),
+        favoriteEpochs: {
+          for (final row in page)
+            if (row['is_favorite'] == 1)
+              row['path'] as String: row['favorite_epoch'] as int,
+        },
+        nextRowId: page.isEmpty ? afterRowId : page.last['rowid'] as int,
+        done: done,
+      );
+    } finally {
+      db.dispose();
+    }
+  });
+
+  Future<List<NasPlaylist>> allPlaylistsForMigration(
+    String sourceId, {
+    int limit = 200,
+    int offset = 0,
+  }) => _playlistsForLocal(sourceId, limit: limit, offset: offset);
+
+  Future<List<Map<String, dynamic>>> playlistMigrationPage(
+    String sourceId, {
+    int limit = 200,
+    int offset = 0,
+  }) => Isolate.run(() {
+    if (limit < 1 || limit > 200 || offset < 0) {
+      throw ArgumentError('NAS_MIGRATION_PAGE_INVALID');
+    }
+    final db = _open(databasePath, mode: OpenMode.readOnly);
+    try {
+      return db
+          .select(
+            '''
+        SELECT p.id AS playlist_id,p.name,p.created_epoch,NULL AS path,0 AS position,0 AS item
+        FROM nas_playlists p WHERE p.server_id = ?
+        UNION ALL
+        SELECT p.id,p.name,p.created_epoch,i.path,i.position,1
+        FROM nas_playlist_items i JOIN nas_playlists p ON p.id = i.playlist_id
+        WHERE p.server_id = ?
+        ORDER BY playlist_id,item,position,path LIMIT ? OFFSET ?
+      ''',
+            [sourceId, sourceId, limit, offset],
+          )
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList();
+    } finally {
+      db.dispose();
+    }
+  });
+
+  Future<
+    ({
+      int lastRowId,
+      int boundaryRowId,
+      bool done,
+      int playlistOffset,
+      bool playlistsDone,
+      int playbackOffset,
+      bool playbackDone,
+    })
+  >
+  migrationCursor(
+    String sourceId, {
+    String workspaceId = '',
+  }) => Isolate.run(() {
+    final db = _open(databasePath);
+    try {
+      final row = db.select(
+        'SELECT last_rowid, boundary_rowid, done, playlist_offset, playlists_done, playback_offset, playback_done FROM nas_workspace_migration WHERE server_id = ? AND workspace_id = ?',
+        [sourceId, workspaceId],
+      ).firstOrNull;
+      return (
+        lastRowId: row == null ? 0 : row['last_rowid'] as int,
+        boundaryRowId: row == null ? -1 : (row['boundary_rowid'] as int? ?? -1),
+        done: row != null && row['done'] == 1,
+        playlistOffset: row == null ? 0 : (row['playlist_offset'] as int? ?? 0),
+        playlistsDone: row != null && row['playlists_done'] == 1,
+        playbackOffset: row == null ? 0 : (row['playback_offset'] as int? ?? 0),
+        playbackDone: row != null && row['playback_done'] == 1,
+      );
+    } finally {
+      db.dispose();
+    }
+  });
+
+  Future<void> saveMigrationCursor(
+    String sourceId, {
+    String workspaceId = '',
+    required int lastRowId,
+    int boundaryRowId = 0,
+    required bool done,
+    int playlistOffset = 0,
+    bool playlistsDone = false,
+    int playbackOffset = 0,
+    bool playbackDone = false,
+  }) => _write(
+    () => Isolate.run(() {
+      final db = _open(databasePath);
+      try {
+        db.execute(
+          '''INSERT INTO nas_workspace_migration(
+            server_id, workspace_id, last_rowid, boundary_rowid, done,
+            playlist_offset, playlists_done, playback_offset, playback_done)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(server_id, workspace_id) DO UPDATE SET
+            last_rowid = excluded.last_rowid,
+            boundary_rowid = excluded.boundary_rowid,
+            done = excluded.done,
+            playlist_offset = excluded.playlist_offset,
+            playlists_done = excluded.playlists_done,
+            playback_offset = excluded.playback_offset,
+            playback_done = excluded.playback_done''',
+          [
+            sourceId,
+            workspaceId,
+            lastRowId,
+            boundaryRowId,
+            done ? 1 : 0,
+            playlistOffset,
+            playlistsDone ? 1 : 0,
+            playbackOffset,
+            playbackDone ? 1 : 0,
+          ],
+        );
+      } finally {
+        db.dispose();
+      }
+    }),
+  );
+
+  Future<int> changesCursor(
+    String sourceId, {
+    String workspaceId = '',
+  }) => Isolate.run(() {
+    final db = _open(databasePath, mode: OpenMode.readOnly);
+    try {
+      final row = db.select(
+        'SELECT cursor FROM nas_workspace_changes WHERE server_id = ? AND workspace_id = ?',
+        [sourceId, workspaceId],
+      ).firstOrNull;
+      return row == null ? 0 : row['cursor'] as int;
+    } finally {
+      db.dispose();
+    }
+  });
+
+  Future<void> saveChangesCursor(
+    String sourceId, {
+    String workspaceId = '',
+    required int cursor,
+  }) => _write(
+    () => Isolate.run(() {
+      final db = _open(databasePath);
+      try {
+        db.execute(
+          '''INSERT INTO nas_workspace_changes(server_id, workspace_id, cursor)
+          VALUES (?, ?, ?)
+          ON CONFLICT(server_id, workspace_id) DO UPDATE SET
+            cursor = excluded.cursor''',
+          [sourceId, workspaceId, cursor],
+        );
+      } finally {
+        db.dispose();
+      }
+    }),
+  );
+
+  Future<List<NasPlaybackState>> playbackForMigration(
+    String sourceId, {
+    int limit = 200,
+    int offset = 0,
+  }) => Isolate.run(() {
+    final db = _open(databasePath, mode: OpenMode.readOnly);
+    try {
+      return db
+          .select(
+            'SELECT * FROM nas_playback WHERE server_id = ? ORDER BY path LIMIT ? OFFSET ?',
+            [sourceId, limit, offset],
+          )
+          .map(
+            (row) => NasPlaybackState(
+              serverId: sourceId,
+              path: row['path'] as String,
+              position: Duration(milliseconds: row['position_millis'] as int),
+              duration: row['duration_millis'] == null
+                  ? null
+                  : Duration(milliseconds: row['duration_millis'] as int),
+              updatedAt: DateTime.fromMillisecondsSinceEpoch(
+                (row['updated_epoch'] as int) * 1000,
+              ),
+            ),
+          )
+          .toList();
+    } finally {
+      db.dispose();
+    }
+  });
+
+  Future<void> savePlayback(NasPlaybackState playback) async {
+    await _write(
+      () => Isolate.run(() {
+        final db = _open(databasePath);
+        try {
+          db.execute(
+            '''
+            INSERT INTO nas_playback
+              (server_id, path, position_millis, duration_millis, updated_epoch)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(server_id, path) DO UPDATE SET
+              position_millis = excluded.position_millis,
+              duration_millis = excluded.duration_millis,
+              updated_epoch = excluded.updated_epoch
+          ''',
+            [
+              playback.serverId,
+              playback.path,
+              playback.position.inMilliseconds,
+              playback.duration?.inMilliseconds,
+              playback.updatedAt.millisecondsSinceEpoch ~/ 1000,
+            ],
+          );
+        } finally {
+          db.dispose();
+        }
+      }),
+    );
+    try {
+      await remoteSink?.playbackChanged(playback);
+    } catch (_) {
+      // Local playback progress is already durable.
+    }
+  }
+
   Future<List<NasPlaylist>> playlistsFor(
+    String serverId, {
+    int limit = 1000,
+    int offset = 0,
+  }) async {
+    final remote = remoteIndex;
+    if (remote != null) {
+      try {
+        final values = await remote.playlistsFor(
+          serverId,
+          limit: limit,
+          offset: offset,
+        );
+        if (values != null) return values;
+      } catch (_) {
+        // Fall through to the local cache.
+      }
+    }
+    return _playlistsForLocal(serverId, limit: limit, offset: offset);
+  }
+
+  Future<List<NasPlaylist>> _playlistsForLocal(
     String serverId, {
     int limit = 1000,
     int offset = 0,
@@ -1120,50 +1983,64 @@ class NasIndexRepository {
     }
   });
 
-  Future<void> createPlaylist(NasPlaylist playlist) => _write(
-    () => Isolate.run(() {
-      final db = _open(databasePath);
-      try {
-        db.execute(
-          'INSERT INTO nas_playlists (id, server_id, name, created_epoch) VALUES (?, ?, ?, ?)',
-          [
-            playlist.id,
-            playlist.serverId,
-            playlist.name,
-            playlist.createdAt.millisecondsSinceEpoch ~/ 1000,
-          ],
-        );
-      } finally {
-        db.dispose();
-      }
-    }),
-  );
+  Future<void> createPlaylist(NasPlaylist playlist) async {
+    await _write(
+      () => Isolate.run(() {
+        final db = _open(databasePath);
+        try {
+          db.execute(
+            'INSERT INTO nas_playlists (id, server_id, name, created_epoch) VALUES (?, ?, ?, ?)',
+            [
+              playlist.id,
+              playlist.serverId,
+              playlist.name,
+              playlist.createdAt.millisecondsSinceEpoch ~/ 1000,
+            ],
+          );
+        } finally {
+          db.dispose();
+        }
+      }),
+    );
+    try {
+      await remoteSink?.playlistChanged(playlist.serverId, playlist);
+    } catch (_) {
+      // Local playlist creation is already durable.
+    }
+  }
 
-  Future<void> deletePlaylist(String serverId, String playlistId) => _write(
-    () => Isolate.run(() {
-      final db = _open(databasePath);
-      var inTransaction = false;
-      try {
-        db.execute('BEGIN IMMEDIATE');
-        inTransaction = true;
-        db.execute(
-          'DELETE FROM nas_playlist_items WHERE playlist_id IN (SELECT id FROM nas_playlists WHERE id = ? AND server_id = ?)',
-          [playlistId, serverId],
-        );
-        db.execute('DELETE FROM nas_playlists WHERE id = ? AND server_id = ?', [
-          playlistId,
-          serverId,
-        ]);
-        db.execute('COMMIT');
-        inTransaction = false;
-      } catch (_) {
-        if (inTransaction) db.execute('ROLLBACK');
-        rethrow;
-      } finally {
-        db.dispose();
-      }
-    }),
-  );
+  Future<void> deletePlaylist(String serverId, String playlistId) async {
+    await _write(
+      () => Isolate.run(() {
+        final db = _open(databasePath);
+        var inTransaction = false;
+        try {
+          db.execute('BEGIN IMMEDIATE');
+          inTransaction = true;
+          db.execute(
+            'DELETE FROM nas_playlist_items WHERE playlist_id IN (SELECT id FROM nas_playlists WHERE id = ? AND server_id = ?)',
+            [playlistId, serverId],
+          );
+          db.execute(
+            'DELETE FROM nas_playlists WHERE id = ? AND server_id = ?',
+            [playlistId, serverId],
+          );
+          db.execute('COMMIT');
+          inTransaction = false;
+        } catch (_) {
+          if (inTransaction) db.execute('ROLLBACK');
+          rethrow;
+        } finally {
+          db.dispose();
+        }
+      }),
+    );
+    try {
+      await remoteSink?.playlistDeleted(serverId, playlistId);
+    } catch (_) {
+      // Local playlist deletion is already durable.
+    }
+  }
 
   Future<void> addToPlaylist({
     required String serverId,
@@ -1171,41 +2048,78 @@ class NasIndexRepository {
     required String path,
     int? position,
     bool requireOwnership = false,
-  }) => _write(
-    () => Isolate.run(() {
-      final db = _open(databasePath);
+  }) async {
+    var changed = false;
+    await _write(
+      () => Isolate.run(() {
+        final db = _open(databasePath);
+        try {
+          _transaction(db, () {
+            if (!_ownsPlaylist(db, serverId, playlistId)) {
+              if (requireOwnership) throw StateError('NAS_PLAYLIST_NOT_FOUND');
+              return;
+            }
+            final exists = db.select(
+              'SELECT 1 FROM nas_playlist_items WHERE playlist_id = ? AND path = ?',
+              [playlistId, path],
+            ).isNotEmpty;
+            if (exists) return;
+            final count =
+                db.select(
+                      'SELECT COUNT(*) AS n FROM nas_playlist_items WHERE playlist_id = ?',
+                      [playlistId],
+                    ).single['n']
+                    as int;
+            final target = (position ?? count).clamp(0, count);
+            db.execute(
+              'UPDATE nas_playlist_items SET position = position + 1 WHERE playlist_id = ? AND position >= ?',
+              [playlistId, target],
+            );
+            db.execute(
+              'INSERT INTO nas_playlist_items(playlist_id, path, position) VALUES (?, ?, ?)',
+              [playlistId, path, target],
+            );
+            changed = true;
+          });
+        } finally {
+          db.dispose();
+        }
+      }),
+    );
+    if (changed) {
       try {
-        _transaction(db, () {
-          if (!_ownsPlaylist(db, serverId, playlistId)) {
-            if (requireOwnership) throw StateError('NAS_PLAYLIST_NOT_FOUND');
-            return;
-          }
-          final exists = db.select(
-            'SELECT 1 FROM nas_playlist_items WHERE playlist_id = ? AND path = ?',
-            [playlistId, path],
-          ).isNotEmpty;
-          if (exists) return;
-          final count =
-              db.select(
-                    'SELECT COUNT(*) AS n FROM nas_playlist_items WHERE playlist_id = ?',
-                    [playlistId],
-                  ).single['n']
-                  as int;
-          final target = (position ?? count).clamp(0, count);
-          db.execute(
-            'UPDATE nas_playlist_items SET position = position + 1 WHERE playlist_id = ? AND position >= ?',
-            [playlistId, target],
-          );
-          db.execute(
-            'INSERT INTO nas_playlist_items(playlist_id, path, position) VALUES (?, ?, ?)',
-            [playlistId, path, target],
-          );
-        });
-      } finally {
-        db.dispose();
+        await remoteSink?.playlistItemChanged(
+          serverId,
+          playlistId,
+          path,
+          await _playlistItemPosition(serverId, playlistId, path) ?? -1,
+        );
+      } catch (_) {
+        // Local playlist membership is already durable.
       }
-    }),
-  );
+    }
+  }
+
+  Future<int?> _playlistItemPosition(
+    String serverId,
+    String playlistId,
+    String path,
+  ) => Isolate.run(() {
+    final db = _open(databasePath, mode: OpenMode.readOnly);
+    try {
+      return db
+              .select(
+                '''SELECT i.position FROM nas_playlist_items i
+                JOIN nas_playlists p ON p.id = i.playlist_id
+                WHERE p.server_id = ? AND i.playlist_id = ? AND i.path = ?''',
+                [serverId, playlistId, path],
+              )
+              .firstOrNull?['position']
+          as int?;
+    } finally {
+      db.dispose();
+    }
+  });
 
   Future<List<String>> playlistItems(
     String serverId,
@@ -1233,104 +2147,200 @@ class NasIndexRepository {
     String serverId,
     String playlistId,
     String name,
-  ) => _write(
-    () => Isolate.run(() {
-      if (name.trim().isEmpty) {
-        throw ArgumentError('NAS_PLAYLIST_NAME_REQUIRED');
+  ) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('NAS_PLAYLIST_NAME_REQUIRED');
+    }
+    await _write(
+      () => Isolate.run(() {
+        final db = _open(databasePath);
+        try {
+          db.execute(
+            'UPDATE nas_playlists SET name = ? WHERE server_id = ? AND id = ?',
+            [trimmed, serverId, playlistId],
+          );
+        } finally {
+          db.dispose();
+        }
+      }),
+    );
+    try {
+      final playlist = await _playlistById(serverId, playlistId);
+      if (playlist != null) {
+        await remoteSink?.playlistChanged(serverId, playlist);
       }
-      final db = _open(databasePath);
-      try {
-        db.execute(
-          'UPDATE nas_playlists SET name = ? WHERE server_id = ? AND id = ?',
-          [name.trim(), serverId, playlistId],
-        );
-      } finally {
-        db.dispose();
-      }
-    }),
-  );
+    } catch (_) {
+      // Local rename is already durable.
+    }
+  }
+
+  Future<NasPlaylist?> _playlistById(String serverId, String playlistId) =>
+      Isolate.run(() {
+        final db = _open(databasePath, mode: OpenMode.readOnly);
+        try {
+          final row = db
+              .select(
+                '''SELECT p.id, p.server_id, p.name, p.created_epoch,
+                      COUNT(i.path) AS item_count
+               FROM nas_playlists p
+               LEFT JOIN nas_playlist_items i ON i.playlist_id = p.id
+               WHERE p.server_id = ? AND p.id = ?
+               GROUP BY p.id, p.server_id, p.name, p.created_epoch''',
+                [serverId, playlistId],
+              )
+              .firstOrNull;
+          if (row == null) return null;
+          return NasPlaylist(
+            id: row['id'] as String,
+            serverId: row['server_id'] as String,
+            name: row['name'] as String,
+            createdAt: DateTime.fromMillisecondsSinceEpoch(
+              (row['created_epoch'] as int) * 1000,
+            ),
+            itemCount: row['item_count'] as int,
+          );
+        } finally {
+          db.dispose();
+        }
+      });
 
   Future<void> removeFromPlaylist(
     String serverId,
     String playlistId,
     String path, {
     bool requireOwnership = false,
-  }) => _write(
-    () => Isolate.run(() {
-      final db = _open(databasePath);
+  }) async {
+    var changed = false;
+    await _write(
+      () => Isolate.run(() {
+        final db = _open(databasePath);
+        try {
+          _transaction(db, () {
+            if (!_ownsPlaylist(db, serverId, playlistId)) {
+              if (requireOwnership) throw StateError('NAS_PLAYLIST_NOT_FOUND');
+              return;
+            }
+            final row = db.select(
+              'SELECT position FROM nas_playlist_items WHERE playlist_id = ? AND path = ?',
+              [playlistId, path],
+            ).firstOrNull;
+            if (row == null) return;
+            db.execute(
+              'DELETE FROM nas_playlist_items WHERE playlist_id = ? AND path = ?',
+              [playlistId, path],
+            );
+            db.execute(
+              'UPDATE nas_playlist_items SET position = position - 1 WHERE playlist_id = ? AND position > ?',
+              [playlistId, row['position']],
+            );
+            changed = true;
+          });
+        } finally {
+          db.dispose();
+        }
+      }),
+    );
+    if (changed) {
       try {
-        _transaction(db, () {
-          if (!_ownsPlaylist(db, serverId, playlistId)) {
-            if (requireOwnership) throw StateError('NAS_PLAYLIST_NOT_FOUND');
-            return;
-          }
-          final row = db.select(
-            'SELECT position FROM nas_playlist_items WHERE playlist_id = ? AND path = ?',
-            [playlistId, path],
-          ).firstOrNull;
-          if (row == null) return;
-          db.execute(
-            'DELETE FROM nas_playlist_items WHERE playlist_id = ? AND path = ?',
-            [playlistId, path],
-          );
-          db.execute(
-            'UPDATE nas_playlist_items SET position = position - 1 WHERE playlist_id = ? AND position > ?',
-            [playlistId, row['position']],
-          );
-        });
-      } finally {
-        db.dispose();
+        await remoteSink?.playlistItemDeleted(serverId, playlistId, path);
+      } catch (_) {
+        // Local playlist membership is already durable.
       }
-    }),
-  );
+    }
+  }
 
   Future<void> movePlaylistItem(
     String serverId,
     String playlistId,
     String path,
     int index,
-  ) => _write(
-    () => Isolate.run(() {
-      final db = _open(databasePath);
+  ) async {
+    var changed = false;
+    await _write(
+      () => Isolate.run(() {
+        final db = _open(databasePath);
+        try {
+          _transaction(db, () {
+            if (!_ownsPlaylist(db, serverId, playlistId)) return;
+            final row = db.select(
+              'SELECT position FROM nas_playlist_items WHERE playlist_id = ? AND path = ?',
+              [playlistId, path],
+            ).firstOrNull;
+            if (row == null) return;
+            final previous = row['position'] as int;
+            final count =
+                db.select(
+                      'SELECT COUNT(*) AS n FROM nas_playlist_items WHERE playlist_id = ?',
+                      [playlistId],
+                    ).single['n']
+                    as int;
+            final target = index.clamp(0, count - 1);
+            if (previous < target) {
+              db.execute(
+                'UPDATE nas_playlist_items SET position = position - 1 WHERE playlist_id = ? AND position > ? AND position <= ?',
+                [playlistId, previous, target],
+              );
+            } else if (previous > target) {
+              db.execute(
+                'UPDATE nas_playlist_items SET position = position + 1 WHERE playlist_id = ? AND position >= ? AND position < ?',
+                [playlistId, target, previous],
+              );
+            }
+            db.execute(
+              'UPDATE nas_playlist_items SET position = ? WHERE playlist_id = ? AND path = ?',
+              [target, playlistId, path],
+            );
+            changed = true;
+          });
+        } finally {
+          db.dispose();
+        }
+      }),
+    );
+    if (changed) {
       try {
-        _transaction(db, () {
-          if (!_ownsPlaylist(db, serverId, playlistId)) return;
-          final row = db.select(
-            'SELECT position FROM nas_playlist_items WHERE playlist_id = ? AND path = ?',
-            [playlistId, path],
-          ).firstOrNull;
-          if (row == null) return;
-          final previous = row['position'] as int;
-          final count =
-              db.select(
-                    'SELECT COUNT(*) AS n FROM nas_playlist_items WHERE playlist_id = ?',
-                    [playlistId],
-                  ).single['n']
-                  as int;
-          final target = index.clamp(0, count - 1);
-          if (previous < target) {
-            db.execute(
-              'UPDATE nas_playlist_items SET position = position - 1 WHERE playlist_id = ? AND position > ? AND position <= ?',
-              [playlistId, previous, target],
-            );
-          } else if (previous > target) {
-            db.execute(
-              'UPDATE nas_playlist_items SET position = position + 1 WHERE playlist_id = ? AND position >= ? AND position < ?',
-              [playlistId, target, previous],
-            );
-          }
-          db.execute(
-            'UPDATE nas_playlist_items SET position = ? WHERE playlist_id = ? AND path = ?',
-            [target, playlistId, path],
-          );
-        });
-      } finally {
-        db.dispose();
+        await remoteSink?.playlistItemChanged(
+          serverId,
+          playlistId,
+          path,
+          await _playlistItemPosition(serverId, playlistId, path) ?? -1,
+        );
+      } catch (_) {
+        // Local playlist ordering is already durable.
       }
-    }),
-  );
+    }
+  }
 
   Future<NasPlaylistPage> playlistMediaPage(
+    String serverId,
+    String playlistId, {
+    int? afterPosition,
+    int limit = 200,
+  }) async {
+    final remote = remoteIndex;
+    if (remote != null) {
+      try {
+        final page = await remote.playlistMediaPage(
+          serverId,
+          playlistId,
+          afterPosition: afterPosition,
+          limit: limit,
+        );
+        if (page != null) return page;
+      } catch (_) {
+        // Fall through to the local cache.
+      }
+    }
+    return _playlistMediaPageLocal(
+      serverId,
+      playlistId,
+      afterPosition: afterPosition,
+      limit: limit,
+    );
+  }
+
+  Future<NasPlaylistPage> _playlistMediaPageLocal(
     String serverId,
     String playlistId, {
     int? afterPosition,
@@ -1361,6 +2371,22 @@ class NasIndexRepository {
   Future<NasPlaybackState?> playbackFor(
     String serverId,
     String remotePath,
+  ) async {
+    final remote = remoteIndex;
+    if (remote != null) {
+      try {
+        final value = await remote.playbackFor(serverId, remotePath);
+        if (value != null) return value;
+      } catch (_) {
+        // Fall through to the local cache.
+      }
+    }
+    return _playbackForLocal(serverId, remotePath);
+  }
+
+  Future<NasPlaybackState?> _playbackForLocal(
+    String serverId,
+    String remotePath,
   ) => Isolate.run(() {
     final db = _open(databasePath, mode: OpenMode.readOnly);
     try {
@@ -1389,8 +2415,24 @@ class NasIndexRepository {
   Future<Map<String, NasPlaybackState>> playbackForItems(
     String sourceId,
     Iterable<String> itemPaths,
-  ) {
+  ) async {
     final paths = itemPaths.toSet().toList();
+    final remote = remoteIndex;
+    if (remote != null) {
+      try {
+        final values = await remote.playbackForItems(sourceId, paths);
+        if (values != null) return values;
+      } catch (_) {
+        // Fall through to the local cache.
+      }
+    }
+    return _playbackForItemsLocal(sourceId, paths);
+  }
+
+  Future<Map<String, NasPlaybackState>> _playbackForItemsLocal(
+    String sourceId,
+    List<String> paths,
+  ) {
     if (paths.length > 600) throw ArgumentError('NAS_PLAYBACK_BATCH_TOO_LARGE');
     if (paths.isEmpty) return Future.value(const {});
     return Isolate.run(() {
@@ -1471,6 +2513,27 @@ class NasIndexRepository {
   );
 
   Future<List<NasMediaItem>> recentPlayback(
+    String sourceId, {
+    int limit = 8,
+    NasMediaKind kind = NasMediaKind.video,
+  }) async {
+    final remote = remoteIndex;
+    if (remote != null) {
+      try {
+        final items = await remote.recentPlayback(
+          sourceId,
+          limit: limit,
+          kind: kind,
+        );
+        if (items != null) return items;
+      } catch (_) {
+        // Fall through to the local cache.
+      }
+    }
+    return _recentPlaybackLocal(sourceId, limit: limit, kind: kind);
+  }
+
+  Future<List<NasMediaItem>> _recentPlaybackLocal(
     String sourceId, {
     int limit = 8,
     NasMediaKind kind = NasMediaKind.video,

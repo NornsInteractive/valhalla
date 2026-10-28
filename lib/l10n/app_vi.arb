@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "Không có lệnh đã lưu",
   "terminalSavedCommandsPreview": "Xem trước lệnh",
   "terminalSavedCommandsMultilineWarning": "Lệnh này chứa nhiều dòng. Bạn có chắc chắn muốn chạy không?",
-  "terminalModifierHelp": "Chạm phím bổ trợ để dùng một lần; nhấn giữ để khóa. Giữ phím để lặp lại."
+  "terminalModifierHelp": "Chạm phím bổ trợ để dùng một lần; nhấn giữ để khóa. Giữ phím để lặp lại.",
+  "serverWorkspaceTitle": "Không gian làm việc máy chủ",
+  "serverWorkspaceSubtitle": "Đồng bộ hóa trạng thái đa thiết bị và bản nháp thiết bị",
+  "serverWorkspaceOriginServer": "Máy chủ đang hoạt động",
+  "serverWorkspaceOriginUser": "Người dùng từ xa",
+  "serverWorkspaceNoActiveServer": "Chưa chọn hoặc chưa kết nối máy chủ đang hoạt động",
+  "serverWorkspacePhaseLocal": "Chỉ cục bộ",
+  "serverWorkspacePhaseDiscovering": "Đang phát hiện...",
+  "serverWorkspacePhaseAvailable": "Có thể bật",
+  "serverWorkspacePhaseSyncing": "Đang đồng bộ...",
+  "serverWorkspacePhaseReady": "Đã đồng bộ",
+  "serverWorkspacePhaseOffline": "Ngoại tuyến",
+  "serverWorkspacePhaseError": "Lỗi đồng bộ",
+  "serverWorkspaceLastSynced": "Đồng bộ lần cuối: {time}",
+  "serverWorkspaceNeverSynced": "Chưa từng đồng bộ",
+  "serverWorkspacePendingChanges": "{count} thay đổi đang chờ",
+  "serverWorkspaceNoPendingChanges": "Tất cả thay đổi đã đồng bộ",
+  "serverWorkspaceEnable": "Bật không gian làm việc máy chủ",
+  "serverWorkspaceEnableDialogTitle": "Bật không gian làm việc máy chủ",
+  "serverWorkspaceEnableDialogMessage": "Bật tính năng này sẽ di chuyển cấu hình cục bộ lên máy chủ. Dữ liệu cục bộ của bạn sẽ được giữ nguyên.",
+  "serverWorkspaceMigrationPreviewTitle": "Xem trước di chuyển",
+  "serverWorkspaceEnableConfirm": "Bật và đồng bộ",
+  "serverWorkspaceNoDataToMigrate": "Không có dữ liệu cục bộ cần di chuyển",
+  "serverWorkspaceSyncNow": "Đồng bộ ngay",
+  "serverWorkspaceDisable": "Tắt đồng bộ hóa",
+  "serverWorkspaceDisableDialogTitle": "Tắt không gian làm việc máy chủ",
+  "serverWorkspaceDisableDialogMessage": "Tắt tính năng sẽ dừng đồng bộ trên thiết bị này. Dữ liệu trên máy chủ và cục bộ đều được bảo toàn, không bị xóa.",
+  "serverWorkspaceDisableConfirm": "Tắt",
+  "serverWorkspacePreferenceSource": "Dùng làm nguồn tùy chọn ưu tiên",
+  "serverWorkspacePreferenceSourceDesc": "Đồng bộ cài đặt ứng dụng từ máy chủ này",
+  "serverWorkspaceConflictsTitle": "Xung đột đồng bộ ({count})",
+  "serverWorkspaceConflictKeepLocal": "Giữ bản cục bộ",
+  "serverWorkspaceConflictKeepServer": "Giữ bản máy chủ",
+  "serverWorkspaceDeviceDraftsTitle": "Bản nháp từ thiết bị khác",
+  "serverWorkspaceRestoreDraft": "Khôi phục bản nháp",
+  "serverWorkspaceRestoreDraftConfirmTitle": "Khôi phục bản nháp thiết bị",
+  "serverWorkspaceRestoreDraftConfirmMessage": "Khôi phục bản nháp này sẽ thay thế văn bản đang nhập trong ô trò chuyện. Bản nháp hiện tại của bạn sẽ được lưu vào danh sách bản nháp từ xa.",
+  "serverWorkspaceRestoreDraftConfirm": "Khôi phục",
+  "serverWorkspaceNoDeviceDrafts": "Không có bản nháp từ thiết bị khác",
+  "serverWorkspaceClearCache": "Xóa bộ nhớ đệm đồng bộ cục bộ",
+  "serverWorkspaceClearCacheConfirmTitle": "Xóa bộ nhớ đệm đồng bộ cục bộ",
+  "serverWorkspaceClearCacheConfirmMessage": "Thao tác này chỉ xóa bộ nhớ đệm và trạng thái đồng bộ trên máy này. Dữ liệu từ xa và cấu hình SSH sẽ không bao giờ bị xóa.",
+  "serverWorkspaceClearCacheConfirm": "Xóa bộ nhớ đệm",
+  "serverWorkspaceCacheCleared": "Đã xóa bộ nhớ đệm đồng bộ cục bộ",
+  "serverWorkspaceErrorSetupFailed": "Khởi tạo môi trường không gian làm việc trên máy chủ thất bại",
+  "serverWorkspaceErrorPythonRequired": "Yêu cầu Python 3.9+ trên máy chủ",
+  "serverWorkspaceErrorPathUnsafe": "Đường dẫn không an toàn hoặc quyền truy cập không hợp lệ",
+  "serverWorkspaceErrorConflict": "Phát hiện xung đột dữ liệu trong khi đồng bộ",
+  "serverWorkspaceErrorControlHeld": "Quyền kiểm soát phiên đang do thiết bị khác nắm giữ",
+  "serverWorkspaceErrorResponseTooLarge": "Phản hồi từ máy chủ vượt quá giới hạn kích thước",
+  "serverWorkspaceErrorGeneric": "Lỗi không gian làm việc ({code})",
+  "chatWorkspaceControlActive": "Đang kiểm soát",
+  "chatWorkspaceControlActiveTooltip": "Thiết bị này hiện đang kiểm soát phiên",
+  "chatWorkspaceReadOnly": "Chỉ đọc",
+  "chatWorkspaceReadOnlyDevice": "Chỉ đọc ({device})",
+  "chatWorkspaceAcquireControl": "Lấy quyền kiểm soát",
+  "chatWorkspaceTakeover": "Tiếp quản",
+  "chatWorkspaceTakeoverDialogTitle": "Tiếp quản quyền kiểm soát phiên",
+  "chatWorkspaceTakeoverDialogMessage": "Tiếp quản quyền kiểm soát cho phép thiết bị này gửi tin nhắn và thao tác trên phiên hiện tại. Agent đang chạy sẽ không bị dừng và phiên sẽ không bị chuyển đổi.",
+  "chatWorkspaceTakeoverConfirm": "Xác nhận tiếp quản",
+  "chatWorkspaceControlFailed": "Không thể lấy quyền kiểm soát không gian làm việc",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "Thành phần môi trường thực thi cũ vẫn đang chạy. Vui lòng đợi hoàn tất hoặc dừng trên thiết bị gốc trước khi nâng cấp.",
+  "serverWorkspaceErrorNotEnabled": "Không gian làm việc máy chủ chưa được bật",
+  "serverWorkspaceErrorPendingChanges": "Không thể xóa bộ nhớ đệm khi còn thay đổi đang chờ. Vui lòng đồng bộ trước.",
+  "serverWorkspaceDraftTypeFile": "Bản nháp tệp",
+  "serverWorkspaceDraftTypeChat": "Bản nháp trò chuyện",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "Khôi phục bản nháp tệp",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "Khôi phục bản nháp tệp này sẽ tải vào bản nháp trình chỉnh sửa cục bộ. Bản nháp hiện tại của bạn sẽ được lưu trong danh sách bản nháp từ xa.",
+  "persistentRuntimeFeatureWorkspaceTitle": "Không gian làm việc máy chủ & Đồng bộ trạng thái",
+  "persistentRuntimeFeatureWorkspaceDesc": "Môi trường thực thi riêng của người dùng giữ nguyên đầu ra khi đóng ứng dụng; thông tin đăng nhập và khóa SSH chỉ lưu cục bộ, không bao giờ đồng bộ.",
+  "serverWorkspaceMigrationPendingHint": "Đang di chuyển dữ liệu cũ trong nền. Cấu hình đã đồng bộ trong khi dữ liệu lịch sử tiếp tục hoàn tất trong nền.",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "Tải thêm bản nháp",
+  "serverWorkspaceLoadingDrafts": "Đang tải bản nháp..."
 }

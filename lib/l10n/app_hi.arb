@@ -2566,5 +2566,117 @@
   "terminalSavedCommandsEmpty": "कोई सहेजा गया कमांड नहीं है",
   "terminalSavedCommandsPreview": "कमांड पूर्वावलोकन",
   "terminalSavedCommandsMultilineWarning": "इस कमांड में कई पंक्तियाँ हैं। क्या आप निश्चित रूप से इसे चलाना चाहते हैं?",
-  "terminalModifierHelp": "एकल उपयोग के लिए संशोधक टैप करें; लॉक करने के लिए देर तक दबाएँ। दोहराने के लिए कुंजियों को दबाकर रखें।"
+  "terminalModifierHelp": "एकल उपयोग के लिए संशोधक टैप करें; लॉक करने के लिए देर तक दबाएँ। दोहराने के लिए कुंजियों को दबाकर रखें।",
+  "serverWorkspaceTitle": "सर्वर कार्यक्षेत्र",
+  "serverWorkspaceSubtitle": "मल्टी-डिवाइस स्थिति सिंक्रनाइज़ेशन और डिवाइस ड्राफ्ट",
+  "serverWorkspaceOriginServer": "सक्रिय सर्वर",
+  "serverWorkspaceOriginUser": "दूरस्थ उपयोगकर्ता",
+  "serverWorkspaceNoActiveServer": "कोई सक्रिय सर्वर चयनित या कनेक्ट नहीं है",
+  "serverWorkspacePhaseLocal": "केवल स्थानीय",
+  "serverWorkspacePhaseDiscovering": "खोज जारी है...",
+  "serverWorkspacePhaseAvailable": "सक्षम करने के लिए उपलब्ध",
+  "serverWorkspacePhaseSyncing": "सिंक हो रहा है...",
+  "serverWorkspacePhaseReady": "सिंक हो गया",
+  "serverWorkspacePhaseOffline": "ऑफ़लाइन",
+  "serverWorkspacePhaseError": "सिंक त्रुटि",
+  "serverWorkspaceLastSynced": "पिछला सिंक: {time}",
+  "serverWorkspaceNeverSynced": "कभी सिंक नहीं किया गया",
+  "serverWorkspacePendingChanges": "{count} परिवर्तन लंबित हैं",
+  "serverWorkspaceNoPendingChanges": "सभी परिवर्तन सिंक हो गए हैं",
+  "serverWorkspaceEnable": "सर्वर कार्यक्षेत्र सक्षम करें",
+  "serverWorkspaceEnableDialogTitle": "सर्वर कार्यक्षेत्र सक्षम करें",
+  "serverWorkspaceEnableDialogMessage": "सक्षम करने से स्थानीय कॉन्फ़िगरेशन सर्वर पर माइग्रेट हो जाएगा। आपका स्थानीय डेटा सुरक्षित रहेगा।",
+  "serverWorkspaceMigrationPreviewTitle": "माइग्रेशन पूर्वावलोकन",
+  "serverWorkspaceEnableConfirm": "सक्षम करें और सिंक करें",
+  "serverWorkspaceNoDataToMigrate": "माइग्रेट करने के लिए कोई स्थानीय डेटा नहीं है",
+  "serverWorkspaceSyncNow": "अभी सिंक करें",
+  "serverWorkspaceDisable": "सिंक अक्षम करें",
+  "serverWorkspaceDisableDialogTitle": "सर्वर कार्यक्षेत्र अक्षम करें",
+  "serverWorkspaceDisableDialogMessage": "अक्षम करने से इस डिवाइस पर सिंक बंद हो जाएगा। रिमोट और स्थानीय डेटा सुरक्षित रहेगा और हटाया नहीं जाएगा।",
+  "serverWorkspaceDisableConfirm": "अक्षम करें",
+  "serverWorkspacePreferenceSource": "वरीयता स्रोत के रूप में उपयोग करें",
+  "serverWorkspacePreferenceSourceDesc": "इस सर्वर से एप्लिकेशन-स्तरीय सेटिंग्स सिंक करें",
+  "serverWorkspaceConflictsTitle": "सिंक टकराव ({count})",
+  "serverWorkspaceConflictKeepLocal": "स्थानीय रखें",
+  "serverWorkspaceConflictKeepServer": "सर्वर रखें",
+  "serverWorkspaceDeviceDraftsTitle": "अन्य डिवाइस ड्राफ्ट",
+  "serverWorkspaceRestoreDraft": "ड्राफ्ट पुनर्स्थापित करें",
+  "serverWorkspaceRestoreDraftConfirmTitle": "ड्राफ्ट पुनर्स्थापित करें",
+  "serverWorkspaceRestoreDraftConfirmMessage": "इस ड्राफ्ट को पुनर्स्थापित करने से वर्तमान चैट इनपुट बदल जाएगा। आपका वर्तमान ड्राफ्ट रिमोट सूची में सुरक्षित रहेगा।",
+  "serverWorkspaceRestoreDraftConfirm": "पुनर्स्थापित करें",
+  "serverWorkspaceNoDeviceDrafts": "अन्य डिवाइस से कोई ड्राफ्ट नहीं",
+  "serverWorkspaceClearCache": "स्थानीय सिंक कैश साफ़ करें",
+  "serverWorkspaceClearCacheConfirmTitle": "स्थानीय सिंक कैश साफ़ करें",
+  "serverWorkspaceClearCacheConfirmMessage": "यह केवल स्थानीय सिंक कैश और स्थिति को साफ़ करेगा। रिमोट डेटा और SSH कॉन्फ़िगरेशन कभी नहीं हटाए जाएंगे।",
+  "serverWorkspaceClearCacheConfirm": "कैश साफ़ करें",
+  "serverWorkspaceCacheCleared": "स्थानीय सिंक कैश साफ़ कर दिया गया",
+  "serverWorkspaceErrorSetupFailed": "सर्वर पर कार्यक्षेत्र प्रारंभ करने में विफल",
+  "serverWorkspaceErrorPythonRequired": "सर्वर पर Python 3.9+ आवश्यक है",
+  "serverWorkspaceErrorPathUnsafe": "सर्वर कार्यक्षेत्र पथ असुरक्षित है या अनुमतियाँ अमान्य हैं",
+  "serverWorkspaceErrorConflict": "सिंक के दौरान डेटा टकराव का पता चला",
+  "serverWorkspaceErrorControlHeld": "सत्र नियंत्रण किसी अन्य डिवाइस के पास है",
+  "serverWorkspaceErrorResponseTooLarge": "सर्वर प्रतिक्रिया आकार सीमा से अधिक हो गई",
+  "serverWorkspaceErrorGeneric": "कार्यक्षेत्र त्रुटि ({code})",
+  "chatWorkspaceControlActive": "नियंत्रण में",
+  "chatWorkspaceControlActiveTooltip": "वर्तमान में यह डिवाइस सत्र को नियंत्रित कर रहा है",
+  "chatWorkspaceReadOnly": "केवल पढ़ने योग्य",
+  "chatWorkspaceReadOnlyDevice": "केवल पढ़ने योग्य ({device})",
+  "chatWorkspaceAcquireControl": "नियंत्रण प्राप्त करें",
+  "chatWorkspaceTakeover": "अधिग्रहण करें",
+  "chatWorkspaceTakeoverDialogTitle": "सत्र नियंत्रण का अधिग्रहण करें",
+  "chatWorkspaceTakeoverDialogMessage": "नियंत्रण लेने से यह डिवाइस संदेश भेज सकता है और सत्र संचालित कर सकता है। चल रहा एजेंट समाप्त नहीं होगा और सत्र नहीं बदलेगा।",
+  "chatWorkspaceTakeoverConfirm": "पुष्टि करें",
+  "chatWorkspaceControlFailed": "कार्यक्षेत्र नियंत्रण प्राप्त करने में विफल",
+  "serverWorkspaceErrorRuntimeUpgradeRequired": "एक पुराना रनटाइम घटक चल रहा है। कृपया अपग्रेड करने से पहले इसे मूल डिवाइस पर समाप्त करें।",
+  "serverWorkspaceErrorNotEnabled": "सर्वर कार्यक्षेत्र सक्षम नहीं है",
+  "serverWorkspaceErrorPendingChanges": "लंबित परिवर्तनों के साथ कैश साफ़ नहीं किया जा सकता। कृपया पहले सिंक करें।",
+  "serverWorkspaceDraftTypeFile": "फ़ाइल ड्राफ्ट",
+  "serverWorkspaceDraftTypeChat": "चैट ड्राफ्ट",
+  "serverWorkspaceRestoreFileDraftConfirmTitle": "फ़ाइल ड्राफ्ट पुनर्स्थापित करें",
+  "serverWorkspaceRestoreFileDraftConfirmMessage": "इस फ़ाइल ड्राफ्ट को पुनर्स्थापित करने से यह स्थानीय संपादक ड्राफ्ट में लोड हो जाएगा। आपका वर्तमान ड्राफ्ट रिमोट सूची में सुरक्षित रहेगा।",
+  "persistentRuntimeFeatureWorkspaceTitle": "सर्वर कार्यक्षेत्र और स्थिति सिंक",
+  "persistentRuntimeFeatureWorkspaceDesc": "ऐप बंद होने पर भी उपयोगकर्ता का रनटाइम आउटपुट सुरक्षित रखता है; SSH क्रेडेंशियल और कुंजियाँ स्थानीय रहती हैं और कभी सिंक नहीं होती हैं।",
+  "serverWorkspaceMigrationPendingHint": "पृष्ठभूमि में लीगेसी डेटा माइग्रेशन जारी है। कॉन्फ़िगरेशन सिंक हो चुका है और ऐतिहासिक डेटा पृष्ठभूमि में पूरा हो रहा है।",
+  "@serverWorkspaceLastSynced": {
+    "description": "Timestamp of last successful workspace synchronization",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@serverWorkspacePendingChanges": {
+    "description": "Number of pending local changes waiting to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceConflictsTitle": {
+    "description": "Title for conflicts section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@serverWorkspaceErrorGeneric": {
+    "description": "Fallback error message with stable error code",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatWorkspaceReadOnlyDevice": {
+    "description": "Badge label showing which short device ID holds control",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "serverWorkspaceLoadMoreDrafts": "और ड्राफ़्ट लोड करें",
+  "serverWorkspaceLoadingDrafts": "ड्राफ़्ट लोड हो रहे हैं..."
 }
