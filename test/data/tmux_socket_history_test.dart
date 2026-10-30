@@ -113,12 +113,17 @@ void main() {
       expect(named.value, 'team-1_A');
       expect(named.isBuiltin, isFalse);
 
+      // Dots are permitted in named sockets (e.g. FQDN-style team identifiers).
+      final dotted = TmuxSocketSource.named('team.1');
+      expect(dotted.kind, TmuxSocketKind.named);
+      expect(dotted.value, 'team.1');
+      expect(dotted.isBuiltin, isFalse);
+
       final invalid = [
         '',
         ' ',
         'team 1',
         'team/1',
-        'team.1',
         'a' * 65,
         'тест',
         'team\n1',
