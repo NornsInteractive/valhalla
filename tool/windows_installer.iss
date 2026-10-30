@@ -1,14 +1,26 @@
 ; Compile after building and preparing the complete Windows Release bundle.
+; tool/package_windows_exe.ps1 passes these values from pubspec.yaml (or a
+; validated -Version), so no release version is hardcoded here.
+#ifndef ValhallaAppVersion
+  #error ValhallaAppVersion is required; run tool/package_windows_exe.ps1
+#endif
+#ifndef ValhallaAppBuild
+  #define ValhallaAppBuild "0"
+#endif
+#ifndef ValhallaOutputBaseFilename
+  #error ValhallaOutputBaseFilename is required; run tool/package_windows_exe.ps1
+#endif
+
 [Setup]
 AppId={{B13B0A56-4DB8-4C33-9271-621B05A019D5}
 AppName=Valhalla
-AppVersion=1.0.15
-AppVerName=Valhalla 1.0.15
+AppVersion={#ValhallaAppVersion}
+AppVerName=Valhalla {#ValhallaAppVersion}
 AppPublisher=Norns
 AppPublisherURL=https://norns.cc.cd
 AppSupportURL=https://norns.cc.cd
 AppUpdatesURL=https://norns.cc.cd
-VersionInfoVersion=1.0.15.16
+VersionInfoVersion={#ValhallaAppVersion}.{#ValhallaAppBuild}
 SourceDir=..
 DefaultDirName={localappdata}\Programs\Norns\Valhalla
 DefaultGroupName=Valhalla
@@ -18,7 +30,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.19041
 OutputDir=build\windows-artifacts
-OutputBaseFilename=valhalla-1.0.15-windows-x64-setup
+OutputBaseFilename={#ValhallaOutputBaseFilename}
 SetupIconFile=windows\runner\resources\app_icon.ico
 UninstallDisplayIcon={app}\valhalla.exe
 LicenseFile=LICENSE

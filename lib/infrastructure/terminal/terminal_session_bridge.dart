@@ -338,24 +338,46 @@ class TerminalSessionBridge {
     }
     final sessions = <TmuxSessionInfo>[];
     for (final line in const LineSplitter().convert(result.stdout)) {
-      final fields = line.split('\t');
+      if (line.isEmpty) continue;
       if (includeExternal) {
+        // 结构化字段使用碰撞安全的 U+001F 分隔符，允许尾部的 name 字段包含任意
+        // 字符（含制表符、空格、UTF-8、metacharacter），不会被错误拆分。
+        final fields = line.split(TmuxSessionPlanner.fieldSeparator);
         if (fields.length != 6 ||
+            !RegExp(r'^\$\d+$').hasMatch(fields[0]) ||
             fields[5].isEmpty ||
-            RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(fields[5])) {
+            fields[5].contains(TmuxSessionPlanner.fieldSeparator) ||
+            RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(fields[4]) ||
+            !fields[4].startsWith('/')) {
           throw SSHConnectionException(
             'TMUX_HISTORY_INVALID_RESPONSE',
             _queryDetails(result),
           );
         }
-        final identity = TmuxSessionIdentity.fromJson({
-          'sessionId': fields[0],
-          'createdSeconds': int.tryParse(fields[1]),
-          'serverPid': int.tryParse(fields[3]),
-          'socketPath': fields[4],
-        });
+        final created = int.tryParse(fields[1]);
         final attached = int.tryParse(fields[2]);
-        if (attached == null || attached < 0) {
+        final pid = int.tryParse(fields[3]);
+        if (created == null ||
+            created < 0 ||
+            created > 8640000000000 ||
+            attached == null ||
+            attached < 0 ||
+            pid == null ||
+            pid <= 0) {
+          throw SSHConnectionException(
+            'TMUX_HISTORY_INVALID_RESPONSE',
+            _queryDetails(result),
+          );
+        }
+        final TmuxSessionIdentity identity;
+        try {
+          identity = TmuxSessionIdentity.fromJson({
+            'sessionId': fields[0],
+            'createdSeconds': created,
+            'serverPid': pid,
+            'socketPath': fields[4],
+          });
+        } on Object {
           throw SSHConnectionException(
             'TMUX_HISTORY_INVALID_RESPONSE',
             _queryDetails(result),
@@ -375,6 +397,7 @@ class TerminalSessionBridge {
         );
         continue;
       }
+      final fields = line.split('\t');
       if (fields.isEmpty ||
           !TmuxSessionPlanner.isSessionForServer(fields.first, serverId)) {
         continue;
@@ -431,27 +454,40 @@ class TerminalSessionBridge {
     );
     if (result.exitCode == 0) {
       if (identity == null) return true;
-      final fields = result.stdout.trimRight().split('\t');
+      // 身份查询使用与发现一致的 U+001F 分隔符。
+      final fields =
+          result.stdout.trimRight().split(TmuxSessionPlanner.fieldSeparator);
       if (fields.length != 4) {
         throw SSHConnectionException(
           'TMUX_HISTORY_INVALID_RESPONSE',
           _queryDetails(result),
         );
       }
-      // Missing targets can exit 0 with empty session fields and valid server fields.
-      if (fields[0].isEmpty &&
-          fields[1].isEmpty &&
-          (int.tryParse(fields[2]) ?? 0) > 0 &&
-          fields[3].startsWith('/') &&
-          !RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(fields[3])) {
-        return false;
+      // 目标不存在时 display-message 可能仍 exit 0 但会话 id 为空。
+      if (fields[0].isEmpty) return false;
+      if (!fields[3].startsWith('/') ||
+          RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(fields[3])) {
+        throw SSHConnectionException(
+          'TMUX_HISTORY_INVALID_RESPONSE',
+          _queryDetails(result),
+        );
       }
-      final actual = TmuxSessionIdentity.fromJson({
-        'sessionId': fields[0],
-        'createdSeconds': int.tryParse(fields[1]),
-        'serverPid': int.tryParse(fields[2]),
-        'socketPath': fields[3],
-      });
+      final created = int.tryParse(fields[1]);
+      final pid = int.tryParse(fields[2]);
+      final TmuxSessionIdentity actual;
+      try {
+        actual = TmuxSessionIdentity.fromJson({
+          'sessionId': fields[0],
+          'createdSeconds': created,
+          'serverPid': pid,
+          'socketPath': fields[3],
+        });
+      } on Object {
+        throw SSHConnectionException(
+          'TMUX_HISTORY_INVALID_RESPONSE',
+          _queryDetails(result),
+        );
+      }
       return actual.key == identity.key;
     }
     if (result.exitCode == 1 &&
@@ -533,6 +569,179 @@ class TerminalSessionBridge {
 
   static Future<String> tmuxExecutable(SSHClient client) =>
       _queryTmuxPath(client);
+
+  /// 单次发现候选 socket 的软上限：超过此数仍会全部扫描（绝不悄悄丢弃活跃会话），
+  /// 但会记一条非致命诊断，便于发现异常的 socket 目录膨胀。并发由下方 worker
+  /// 池（固定 8）与单次探测 10s 超时共同约束，输出受 `_runTmuxQuery` 1MB 上限约束。
+  static const int maxDiscoveredSockets = 256;
+
+  /// 在远端「当前 SSH 用户」的常规 tmux socket 目录下自动发现所有可访问的
+  /// tmux socket，返回去重后的 `(source, resolvedSocketPath)` 列表。
+  ///
+  /// 设计约束（与任务要求一致）：
+  /// - 仅读取，不创建/修改/删除任何会话，也不向任意文件写入 Agent 提示。
+  /// - 目录严格限定为 `$TMPDIR/tmux-<uid>`（`/tmp` 兜底、取 effective uid），
+  ///   不递归遍历文件系统、不绕过权限、不使用 sudo，也绝不会把任意文件当成 socket。
+  /// - socket 数量、输出与时间都做了上限保护；同一个 socket 的 `-L <name>` 与
+  ///   `-S <path>` 别名按解析后的真实 socket 路径去重。
+  /// - 任何一步失败（缺 tmux、无权限、超时、不是 tmux socket）只跳过该 socket，
+  ///   绝不抛出，保证调用方历史刷新不被阻断。
+  static Future<List<({TmuxSocketSource source, String socketPath})>>
+      discoverSocketSources(SSHClient client) async {
+    if (client.isClosed) return const [];
+
+    // 1) 解析常规 tmux socket 目录（仅使用常量命令，不拼接任何不可信数据）。
+    late final String dir;
+    try {
+      final dirResult = await _runTmuxQuery(
+        client,
+        "sh -c 'printf \"%s\" \"\${TMPDIR:-/tmp}/tmux-\$(id -u)\"'",
+      );
+      final candidate = dirResult.stdout.trim();
+      if (dirResult.exitCode != 0 ||
+          candidate.isEmpty ||
+          !candidate.startsWith('/') ||
+          RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(candidate)) {
+        return const [];
+      }
+      dir = candidate;
+    } catch (_) {
+      return const [];
+    }
+
+    // 2) 确认远端存在 tmux（否则没有可发现源）。
+    late final String tmuxPath;
+    try {
+      tmuxPath = await _queryTmuxPath(client);
+    } catch (_) {
+      return const [];
+    }
+
+    // 3) 非递归列出目录条目（仅文件名，不触碰内容）。过滤掉含斜杠与控制字符
+    //    （含换行）的名字以保护行解析；点号、空格等合法 socket 名一律纳入，
+    //    不提前按名字白名单过滤，避免漏掉带点号的命名 socket。是否真的是 tmux
+    //    socket 由第 4 步只读探测判定，绝不凭名字臆测。
+    late final List<String> names;
+    try {
+      final listResult = await _runTmuxQuery(
+        client,
+        "sh -c 'ls -1 -- \"\$1\" 2>/dev/null' sh ${cliShellQuote(dir)}",
+      );
+      if (listResult.exitCode != 0) return const [];
+      names = const LineSplitter()
+          .convert(listResult.stdout)
+          .where((n) => n.isNotEmpty)
+          .where((n) => RegExp(r'^[^/\x00-\x1f\x7f-\x9f]{1,255}$').hasMatch(n))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+
+    // 4) 对每个候选 socket 做只读探测，确认是可达的 tmux 服务器并取回真实路径。
+    final found = <({TmuxSocketSource source, String socketPath})>[];
+    final seenPaths = <String>{};
+    var cursor = 0;
+    Future<void> worker() async {
+      while (cursor < names.length) {
+        final name = names[cursor++];
+        try {
+          await _probeDiscoveredSocket(
+            client,
+            name,
+            tmuxPath,
+            found,
+            seenPaths,
+          );
+        } catch (_) {
+          // 单个 socket 探测失败（权限/超时/不是 tmux socket）不影响其余发现。
+        }
+      }
+    }
+
+    final workers = <Future<void>>[];
+    if (names.length > maxDiscoveredSockets) {
+      unawaited(
+        AppDiagnostics.instance.record(
+          'terminal.tmux.discovery.overflow',
+          'discovered ${names.length} candidate sockets (> soft cap '
+          '$maxDiscoveredSockets); scanning all with bounded concurrency',
+          StackTrace.current,
+        ),
+      );
+    }
+    for (var i = 0; i < 8 && i <= names.length; i++) {
+      workers.add(worker());
+    }
+    await Future.wait(workers);
+
+    found.sort((a, b) => a.source.id.compareTo(b.source.id));
+    return found;
+  }
+
+  static Future<void> _probeDiscoveredSocket(
+    SSHClient client,
+    String name,
+    String tmuxPath,
+    List<({TmuxSocketSource source, String socketPath})> found,
+    Set<String> seenPaths,
+  ) async {
+    // 先按 `-L <name>` 探测（name 来自常规 tmux 目录，tmux 本身接受点号等字符，
+    // 不必先通过 Dart 的 named() 校验）。拿到真实 socket 路径后再决定如何表示来源。
+    final probeArgs = '-L ${cliShellQuote(name)}';
+    final probe = await _runTmuxQuery(
+      client,
+      '$tmuxPath $probeArgs list-sessions -F \'#{socket_path}\'',
+    );
+    String? socketPath;
+    if (probe.exitCode == 0) {
+      socketPath = const LineSplitter()
+          .convert(probe.stdout)
+          .where((l) => l.isNotEmpty)
+          .where((l) => l.startsWith('/'))
+          .where((l) => !RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(l))
+          .firstOrNull;
+    } else if (probe.exitCode == 1 && !_isMissingTmuxServer(probe.stderr)) {
+      // 服务器在运行但没有任何会话：用 display-message 取回 socket 路径。
+      final dm = await _runTmuxQuery(
+        client,
+        '$tmuxPath $probeArgs display-message -p \'#{socket_path}\'',
+      );
+      if (dm.exitCode == 0) {
+        final p = dm.stdout.trim();
+        if (p.startsWith('/') &&
+            !RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(p)) {
+          socketPath = p;
+        }
+      }
+    } else {
+      // 没有运行的服务器 / 权限不足 / 不是 tmux socket：跳过，绝不臆测为 socket。
+      return;
+    }
+    if (socketPath == null || socketPath.isEmpty) return;
+    final String resolvedPath = socketPath;
+    if (seenPaths.contains(resolvedPath)) return;
+
+    // 分类来源：内置 app/standard 仍用内置来源；其余优先用 `-L <name>` 命名来源，
+    // 当名字含 named() 不允许的字符（如空格）时回退到 `-S <path>` 路径来源，
+    // 保证任何合法 socket 都能被发现，而不是被白名单悄悄丢弃。
+    final TmuxSocketSource source;
+    if (name == TmuxSocketSource.app.value) {
+      source = TmuxSocketSource.app;
+    } else if (name == TmuxSocketSource.standard.value) {
+      source = TmuxSocketSource.standard;
+    } else {
+      source = (() {
+        try {
+          return TmuxSocketSource.named(name);
+        } on Object {
+          return TmuxSocketSource.path(resolvedPath);
+        }
+      })();
+    }
+
+    seenPaths.add(resolvedPath);
+    found.add((source: source, socketPath: resolvedPath));
+  }
 
   static Future<String> _queryTmuxPath(SSHClient client) async {
     final result = await _runTmuxQuery(

@@ -17,7 +17,9 @@ class TmuxSocketSource {
   );
 
   factory TmuxSocketSource.named(String name) {
-    if (!RegExp(r'^[A-Za-z0-9_-]{1,64}$').hasMatch(name)) {
+    // 允许字母数字、下划线、连字符与点号：tmux 的 `-L <name>` 实际接受点号
+    // （例如 `team.alpha`），发现阶段不能把这类合法 socket 漏掉。
+    if (!RegExp(r'^[A-Za-z0-9._-]{1,64}$').hasMatch(name)) {
       throw const FormatException('TMUX_INVALID_SOCKET');
     }
     if (name == 'valhalla') return app;

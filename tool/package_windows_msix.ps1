@@ -1,77 +1,107 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [string]$DisplayName,
+    [string]$Version,
     [string]$Project,
-    [string]$SdkBin = 'D:\Data\Env\windows-sdk-buildtools\bin\10.0.26100.0\x64',
-    [string]$PackageName = 'Norns.Valhalla-',
-    [string]$Publisher = 'CN=257586C2-E7B0-47F3-BAED-A744A66748A1',
-    [string]$PublisherDisplayName = 'Norns',
-    [string]$Version = '1.0.15.0'
+    [string]$SdkBin,
+    [string]$MakeAppx,
+    [string]$IdentityFile,
+    [string]$PackageName,
+    [string]$Publisher,
+    [string]$PublisherDisplayName,
+    [string]$DisplayName,
+    [switch]$RequireVCRuntime,
+    [switch]$ValidateOnly
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'windows_packaging.ps1')
 if (-not $Project) { $Project = Split-Path -Parent $PSScriptRoot }
-if ([string]::IsNullOrWhiteSpace($DisplayName)) { throw 'The exact reserved Store display name is required' }
-if ($Version -notmatch '^[1-9][0-9]*\.[0-9]+\.[0-9]+\.0$') {
-    throw 'Store package version must have four parts and end in .0'
-}
-$makeappx = Join-Path $SdkBin 'makeappx.exe'
-if (-not (Test-Path -LiteralPath $makeappx)) { throw 'Windows SDK MakeAppx is required' }
+$versionInfo = Get-ValhallaWindowsVersionInfo -Project $Project -Version $Version
+$names = Get-ValhallaWindowsArtifactNames -VersionInfo $versionInfo
+$identity = Get-ValhallaWindowsStoreIdentity -Project $Project -IdentityFile $IdentityFile
+if (-not [string]::IsNullOrWhiteSpace($PackageName)) { $identity.Name = $PackageName }
+if (-not [string]::IsNullOrWhiteSpace($Publisher)) { $identity.Publisher = $Publisher }
+if (-not [string]::IsNullOrWhiteSpace($PublisherDisplayName)) { $identity.PublisherDisplayName = $PublisherDisplayName }
+if (-not [string]::IsNullOrWhiteSpace($DisplayName)) { $identity.DisplayName = $DisplayName }
+$makeappx = Resolve-ValhallaMakeAppx -SdkBin $SdkBin -MakeAppx $MakeAppx
 $bundle = Join-Path $Project 'build\windows\x64\runner\Release'
-foreach ($required in @('valhalla.exe', 'flutter_windows.dll', 'data\app.so', 'data\flutter_assets\PRIVACY.md', 'data\flutter_assets\PRIVACY.en.md', 'vcruntime140.dll', 'msvcp140.dll')) {
-    if (-not (Test-Path -LiteralPath (Join-Path $bundle $required))) { throw "Missing release file: $required" }
+$payload = Get-ValhallaWindowsPayloadStatus -Bundle $bundle
+if ($payload.Missing.Count -gt 0) {
+    throw "Missing release file(s): $($payload.Missing -join ', ')"
+}
+if ($payload.MissingRuntime.Count -gt 0) {
+    throw "VC++ runtime DLL(s) are not in the release bundle: $($payload.MissingRuntime -join ', '). The Store package requires the Microsoft Visual C++ 2015-2022 x64 runtime. Install the official Microsoft VC++ redistributable x64 DLLs from installed VS redist to stage in the isolated bundle."
 }
 $output = Join-Path $Project 'build\windows-artifacts'
+$package = Join-Path $output $names.StoreMsix
+if (Test-Path -LiteralPath $package) {
+    throw "Refusing to overwrite existing artifact: $package"
+}
+if ($ValidateOnly) {
+    $manifest = New-ValhallaWindowsMsixManifest -Identity $identity -VersionInfo $versionInfo
+    $doc = New-Object System.Xml.XmlDocument
+    $doc.LoadXml($manifest)
+    $identityNode = $doc.SelectSingleNode("/*[local-name()='Package']/*[local-name()='Identity']")
+    Write-Output 'validate-only=msix'
+    Write-Output "version=$($versionInfo.Full)"
+    Write-Output "msix_version=$($versionInfo.Msix)"
+    Write-Output "artifact=$package"
+    Write-Output "makeappx=$makeappx"
+    Write-Output "name=$($identityNode.GetAttribute('Name'))"
+    Write-Output "publisher=$($identityNode.GetAttribute('Publisher'))"
+    Write-Output "display_name=$($identity.DisplayName)"
+    Write-Output "publisher_display_name=$($identity.PublisherDisplayName)"
+    Write-Output "missing_runtime=$($payload.MissingRuntime -join ',')"
+    Write-Output 'VALIDATE_OK'
+    return
+}
+New-Item -ItemType Directory -Path $output -Force | Out-Null
 $stage = Join-Path $output ('msix-staging-' + [Guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Path $stage -Force | Out-Null
-Get-ChildItem -LiteralPath $bundle | Where-Object {
-    $_.PSIsContainer -or $_.Extension -in @('.exe', '.dll')
-} | Copy-Item -Destination $stage -Recurse -Force
-
-foreach ($notice in @('LICENSE', 'NOTICE')) {
-    Copy-Item -LiteralPath (Join-Path $Project $notice) -Destination $stage -Force
-}
-$smbNotices = Join-Path $stage 'licenses\libsmb2'
-$xtermNotices = Join-Path $stage 'licenses\xterm'
-New-Item -ItemType Directory -Path $xtermNotices -Force | Out-Null
-foreach ($notice in @('packages\xterm\LICENSE', 'packages\xterm\NOTICE')) {
-    Copy-Item -LiteralPath (Join-Path $Project $notice) -Destination $xtermNotices -Force
-}
-New-Item -ItemType Directory -Path $smbNotices -Force | Out-Null
-foreach ($notice in @('packages\valhalla_smb\NOTICE', 'packages\valhalla_smb\vendor\libsmb2\COPYING', 'packages\valhalla_smb\vendor\libsmb2\LICENCE-LGPL-2.1.txt')) {
-    Copy-Item -LiteralPath (Join-Path $Project $notice) -Destination $smbNotices -Force
-}
-
-# Generate Windows tile assets from the existing app icon, without new artwork.
-Add-Type -AssemblyName System.Drawing
-$images = Join-Path $stage 'Images'
-New-Item -ItemType Directory -Path $images | Out-Null
-$source = [Drawing.Image]::FromFile((Join-Path $Project 'assets\icons\valhalla_icon.png'))
+$completed = $false
 try {
-    foreach ($asset in @(@('StoreLogo', 50), @('Square44x44Logo', 44), @('Square150x150Logo', 150))) {
-        foreach ($scale in @(100, 125, 150, 200, 400)) {
-            $size = [int]([int]$asset[1] * $scale / 100)
-            $bitmap = New-Object Drawing.Bitmap($size, $size)
-            $graphics = [Drawing.Graphics]::FromImage($bitmap)
-            try {
-                $graphics.Clear([Drawing.Color]::Transparent)
-                $graphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-                $graphics.CompositingQuality = [Drawing.Drawing2D.CompositingQuality]::HighQuality
-                $padding = [int]($size * 0.12)
-                $graphics.DrawImage($source, $padding, $padding, $size - 2 * $padding, $size - 2 * $padding)
-                $name = if ($scale -eq 100) { "$($asset[0]).png" } else { "$($asset[0]).scale-$scale.png" }
-                $bitmap.Save((Join-Path $images $name), [Drawing.Imaging.ImageFormat]::Png)
-            } finally { $graphics.Dispose(); $bitmap.Dispose() }
-        }
-    }
-} finally { $source.Dispose() }
+    New-Item -ItemType Directory -Path $stage -Force | Out-Null
+    Get-ChildItem -LiteralPath $bundle | Where-Object {
+        $_.PSIsContainer -or $_.Extension -in @('.exe', '.dll')
+    } | Copy-Item -Destination $stage -Recurse -Force
 
-$nameXml = [Security.SecurityElement]::Escape($PackageName)
-$publisherXml = [Security.SecurityElement]::Escape($Publisher)
-$publisherDisplayXml = [Security.SecurityElement]::Escape($PublisherDisplayName)
-$displayNameXml = [Security.SecurityElement]::Escape($DisplayName)
-# Ask Windows to derive the family name; this also catches copied identity typos.
-Add-Type -TypeDefinition @'
+    foreach ($notice in @('LICENSE', 'NOTICE')) {
+        Copy-Item -LiteralPath (Join-Path $Project $notice) -Destination $stage -Force
+    }
+    $smbNotices = Join-Path $stage 'licenses\libsmb2'
+    $xtermNotices = Join-Path $stage 'licenses\xterm'
+    New-Item -ItemType Directory -Path $xtermNotices -Force | Out-Null
+    foreach ($notice in @('packages\xterm\LICENSE', 'packages\xterm\NOTICE')) {
+        Copy-Item -LiteralPath (Join-Path $Project $notice) -Destination $xtermNotices -Force
+    }
+    New-Item -ItemType Directory -Path $smbNotices -Force | Out-Null
+    foreach ($notice in @('packages\valhalla_smb\NOTICE', 'packages\valhalla_smb\vendor\libsmb2\COPYING', 'packages\valhalla_smb\vendor\libsmb2\LICENCE-LGPL-2.1.txt')) {
+        Copy-Item -LiteralPath (Join-Path $Project $notice) -Destination $smbNotices -Force
+    }
+
+    # Generate Windows tile assets from the existing app icon, without new artwork.
+    Add-Type -AssemblyName System.Drawing
+    $images = Join-Path $stage 'Images'
+    New-Item -ItemType Directory -Path $images | Out-Null
+    $source = [Drawing.Image]::FromFile((Join-Path $Project 'assets\icons\valhalla_icon.png'))
+    try {
+        foreach ($asset in @(@('StoreLogo', 50), @('Square44x44Logo', 44), @('Square150x150Logo', 150))) {
+            foreach ($scale in @(100, 125, 150, 200, 400)) {
+                $size = [int]([int]$asset[1] * $scale / 100)
+                $bitmap = New-Object Drawing.Bitmap($size, $size)
+                $graphics = [Drawing.Graphics]::FromImage($bitmap)
+                try {
+                    $graphics.Clear([Drawing.Color]::Transparent)
+                    $graphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+                    $graphics.CompositingQuality = [Drawing.Drawing2D.CompositingQuality]::HighQuality
+                    $padding = [int]($size * 0.12)
+                    $graphics.DrawImage($source, $padding, $padding, $size - 2 * $padding, $size - 2 * $padding)
+                    $name = if ($scale -eq 100) { "$($asset[0]).png" } else { "$($asset[0]).scale-$scale.png" }
+                    $bitmap.Save((Join-Path $images $name), [Drawing.Imaging.ImageFormat]::Png)
+                } finally { $graphics.Dispose(); $bitmap.Dispose() }
+            }
+        }
+    } finally { $source.Dispose() }
+
+    # Ask Windows to derive the family name; this also catches copied identity typos.
+    Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -98,50 +128,30 @@ public static class ValhallaPackageIdentity {
     }
 }
 '@
-$familyName = [ValhallaPackageIdentity]::FamilyName($PackageName, $Publisher)
-if ($PackageName -eq 'Norns.Valhalla-' -and $familyName -ne 'Norns.Valhalla-_sxt4q0tm9x2xr') {
-    throw "Store identity mismatch: $familyName"
+    $familyName = [ValhallaPackageIdentity]::FamilyName($identity.Name, $identity.Publisher)
+    if ($identity.Name -eq 'Norns.Valhalla-' -and $familyName -ne 'Norns.Valhalla-_sxt4q0tm9x2xr') {
+        throw "Store identity mismatch: $familyName"
+    }
+    Write-Output "Package family name: $familyName"
+
+    $manifest = New-ValhallaWindowsMsixManifest -Identity $identity -VersionInfo $versionInfo
+    $manifestPath = Join-Path $stage 'AppxManifest.xml'
+    [IO.File]::WriteAllText($manifestPath, $manifest, (New-Object Text.UTF8Encoding($false)))
+    & $makeappx pack /d $stage /p $package /h SHA256
+    if ($LASTEXITCODE -ne 0) { throw 'MakeAppx packaging/validation failed' }
+    if (-not (Test-Path -LiteralPath $package)) { throw "MakeAppx did not produce the expected artifact: $package" }
+    Copy-Item -LiteralPath $manifestPath -Destination (Join-Path $output $names.Manifest) -Force
+    $completed = $true
+} finally {
+    if ($completed) {
+        Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
+    } else {
+        Write-Warning "MSIX staging preserved for diagnosis: $stage"
+    }
 }
-Write-Output "Package family name: $familyName"
-$languages = @('en', 'zh-Hans', 'zh-Hant', 'ja', 'ko', 'de', 'fr', 'es', 'pt', 'ru', 'ar', 'hi', 'id', 'it', 'tr', 'vi', 'th')
-$resourceXml = ($languages | ForEach-Object { "    <Resource Language=`"$_`" />" }) -join "`n"
-$manifest = @"
-<?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
-         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-         IgnorableNamespaces="uap rescap">
-  <Identity Name="$nameXml" Publisher="$publisherXml" Version="$Version" ProcessorArchitecture="x64" />
-  <Properties>
-    <DisplayName>$displayNameXml</DisplayName>
-    <PublisherDisplayName>$publisherDisplayXml</PublisherDisplayName>
-    <Description>Remote server management, SSH terminals and file transfers.</Description>
-    <Logo>Images\StoreLogo.png</Logo>
-  </Properties>
-  <Resources>
-$resourceXml
-  </Resources>
-  <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
-  </Dependencies>
-  <Applications>
-    <Application Id="Valhalla" Executable="valhalla.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements DisplayName="$displayNameXml" Description="Remote server management, SSH terminals and file transfers."
-          Square150x150Logo="Images\Square150x150Logo.png" Square44x44Logo="Images\Square44x44Logo.png" BackgroundColor="transparent" />
-    </Application>
-  </Applications>
-  <Capabilities>
-    <rescap:Capability Name="runFullTrust" />
-  </Capabilities>
-</Package>
-"@
-[IO.File]::WriteAllText((Join-Path $stage 'AppxManifest.xml'), $manifest, (New-Object Text.UTF8Encoding($false)))
-$package = Join-Path $output "valhalla-$Version-windows-x64-store.msix"
-& $makeappx pack /d $stage /p $package /h SHA256 /o
-if ($LASTEXITCODE -ne 0) { throw 'MakeAppx packaging/validation failed' }
 $digest = (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash.ToLowerInvariant()
 "$digest  $([IO.Path]::GetFileName($package))" | Set-Content -LiteralPath "$package.sha256" -Encoding ASCII
-Copy-Item -LiteralPath (Join-Path $stage 'AppxManifest.xml') -Destination (Join-Path $output 'store-AppxManifest.xml') -Force
 Get-Item -LiteralPath $package | Select-Object FullName, Length, LastWriteTime
+Write-Output "Version: $($versionInfo.Full)"
 Write-Output "SHA256: $digest"
 Write-Output 'Unsigned Store submission package. Microsoft signs the package after certification.'

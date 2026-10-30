@@ -19,6 +19,11 @@ UI仍只交给AgY，不由发布脚本修改UI。
 
 需要装机验收后再公开时，在首次命令附加 `--build-only`。它仍递增版本、提交显式文件、完成本地构建与冻结，但不推送或创建任何外部发布；验收完成后用同一目录 `--resume` 继续，无需再升号。设备离线时保持此状态，不能把未安装当作通过。
 
+Windows 三包在 `--build-only` 与 `--resume` 之间用已核验目录注册：
+```bash
+python3 tool/register_windows_release.py --release <workdir> --windows-dir <verified-dir>
+```
+它只在 built=True、源码/树干净、GitHub/Ygg 未尝试或发布、17 个旧冻结附件完全匹配时运行；要求三个精确文件名、非空普通文件、受信任委托报告 JSON、未签名 EXE/MSIX、MSIX 身份与版本正确，并在全部校验后原子更新冻结清单。
 失败后查看打印的日志，在同一源码干净工作区续跑：
 
 ```bash

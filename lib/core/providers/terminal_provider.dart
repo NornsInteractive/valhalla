@@ -1055,11 +1055,44 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     final client = _clientFor(workspace);
     if (client == null) return;
     final epoch = workspace.connectionEpoch;
-    final sources = [
+
+    // 快照已配置来源，用于刷新过程中的一致性校验（防止刷新期间来源被并发改动）。
+    final configuredSources = <TmuxSocketSource>[
       TmuxSocketSource.app,
       TmuxSocketSource.standard,
       ...workspace.value.socketSources,
     ];
+    final expectedSourceKey = configuredSources.map((s) => s.id).join('\n');
+
+    // 自动发现当前 SSH 用户常规目录下的其它 tmux socket（app / standard / 命名），
+    // 与已配置来源去重后一并扫描。发现失败（缺 tmux、无权限、超时、不是 tmux
+    // socket）只跳过，绝不静默清空或覆盖已有历史记录。
+    List<({TmuxSocketSource source, String socketPath})> discovered = const [];
+    try {
+      discovered = await TerminalSessionBridge.discoverSocketSources(client);
+    } catch (_) {
+      // 发现本身失败：保留既有来源，不阻断历史刷新。
+    }
+    if (!_isCurrent(workspace) || epoch != workspace.connectionEpoch) return;
+
+    final sources = <TmuxSocketSource>[];
+    final sourceIds = <String>{};
+    final sourcePaths = <String>{};
+    void addSource(TmuxSocketSource s, [String? resolvedPath]) {
+      if (sourceIds.contains(s.id)) return;
+      if (resolvedPath != null && sourcePaths.contains(resolvedPath)) return;
+      sourceIds.add(s.id);
+      if (resolvedPath != null) sourcePaths.add(resolvedPath);
+      sources.add(s);
+    }
+
+    for (final s in configuredSources) {
+      addSource(s, s.kind == TmuxSocketKind.path ? s.value : null);
+    }
+    for (final d in discovered) {
+      addSource(d.source, d.socketPath);
+    }
+
     _publish(workspace, workspace.value.copyWith(isHistoryLoading: true));
     final found = <TmuxSessionInfo>[];
     final errors = <String, String>{};
@@ -1108,14 +1141,13 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
           !identical(client, _clientFor(workspace))) {
         return;
       }
-      if (sources.map((s) => s.id).join('\n') !=
-          [
-            TmuxSocketSource.app,
-            TmuxSocketSource.standard,
-            ...workspace.value.socketSources,
-          ].map((s) => s.id).join('\n')) {
-        return;
-      }
+      // 刷新期间若来源配置被并发改动，放弃本次结果，下次刷新会重新覆盖。
+      final currentSourceKey = [
+        TmuxSocketSource.app,
+        TmuxSocketSource.standard,
+        ...workspace.value.socketSources,
+      ].map((s) => s.id).join('\n');
+      if (currentSourceKey != expectedSourceKey) return;
       found.sort(
         (a, b) => sources
             .indexWhere((s) => s.id == a.socket.id)
@@ -1216,6 +1248,36 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
         statuses[id] = TerminalHistoryStatus.available;
       }
       records.sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
+
+      // 把本次新发现、尚未持久化的命名 socket 写回配置，使其在后续刷新与 UI
+      // 中持续可见；已存在（按 id 或解析路径）的来源不会重复添加。这样即便某次
+      // 发现因瞬时故障失败，已发现的来源仍在 sources 中，历史不会被误判消失。
+      final persistedIds = workspace.value.socketSources.map((s) => s.id).toSet();
+      final persistedPaths = {
+        for (final s in workspace.value.socketSources)
+          if (s.kind == TmuxSocketKind.path) s.value,
+      };
+      final newNamed = discovered
+          .where((d) =>
+              d.source.id != TmuxSocketSource.app.id &&
+              d.source.id != TmuxSocketSource.standard.id)
+          .where((d) =>
+              !persistedIds.contains(d.source.id) &&
+              !persistedPaths.contains(d.socketPath))
+          .map((d) => d.source)
+          .toList();
+      if (newNamed.isNotEmpty) {
+        await _saveHistory(
+          workspace,
+          (current) => current,
+          updateSocketSources: (list) => [
+            ...list,
+            for (final s in newNamed)
+              if (!list.any((e) => e.id == s.id)) s,
+          ],
+        );
+      }
+
       _publish(
         workspace,
         workspace.value.copyWith(

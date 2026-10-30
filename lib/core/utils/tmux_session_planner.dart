@@ -38,8 +38,24 @@ abstract final class TmuxSessionPlanner {
     return 'tmux ${socketArguments(socket)} $verb -t ${cliShellQuote(target)}';
   }
 
+  /// 协议输出字段分隔符（碰撞安全）。
+  ///
+  /// 使用单个 UNIT SEPARATOR (U+001F)。tmux 的会话名可以包含制表符、空格、
+  /// 任意 UTF-8、甚至换行（见本地 `tmux new-session -s` 实测），因此用
+  /// 空白/制表符做分隔符会把一条合法记录拆成多条字段而误报
+  /// `TMUX_HISTORY_INVALID_RESPONSE`。U+001F 不可能出现在 tmux 会话名或
+  /// socket 路径里（二者都是 NUL 结尾的 C 字符串），所以即使尾部的
+  /// name/path 字段包含任意字符，前面的结构化字段也能被正确切分。
+  ///
+  /// 该字符通过 `sh -c` 的单引号原样传给 tmux，本地实测可在 SSH exec
+  /// 非交互通道上稳定往返。
+  static const String fieldSeparator = '\u001f';
+
   static String discoverCommand(TmuxSocketSource socket) =>
-      "tmux ${socketArguments(socket)} list-sessions -F '#{session_id}\t#{session_created}\t#{session_attached}\t#{pid}\t#{socket_path}\t#{session_name}'";
+      'tmux ${socketArguments(socket)} list-sessions -F '
+      "'#{session_id}$fieldSeparator#{session_created}$fieldSeparator"
+      "#{session_attached}$fieldSeparator#{pid}$fieldSeparator"
+      "#{socket_path}$fieldSeparator#{session_name}'";
 
   static String identityCommand(
     TmuxSocketSource socket,
@@ -47,7 +63,8 @@ abstract final class TmuxSessionPlanner {
   ) {
     identity.validate();
     return 'tmux ${socketArguments(socket)} display-message -p -t ${cliShellQuote(identity.sessionId)} '
-        "'#{session_id}\t#{session_created}\t#{pid}\t#{socket_path}'";
+        "'#{session_id}$fieldSeparator#{session_created}$fieldSeparator"
+        "#{pid}$fieldSeparator#{socket_path}'";
   }
 
   /// 专用 tmux socket 名。

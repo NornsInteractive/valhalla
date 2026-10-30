@@ -266,7 +266,9 @@ class _Client implements SSHClient {
         if (name != null && _namesFor(socketId).contains(name)) {
           final id = _idFor(name);
           return _Session.result(
-            '\$$id\t1730000000\t12345\t${_socketPathFor(socketId)}\n',
+            '\$$id${TmuxSessionPlanner.fieldSeparator}1730000000'
+            '${TmuxSessionPlanner.fieldSeparator}12345'
+            '${TmuxSessionPlanner.fieldSeparator}${_socketPathFor(socketId)}\n',
           );
         }
         return _Session.result(
@@ -286,8 +288,13 @@ class _Client implements SSHClient {
             names
                 .map(
                   (name) =>
-                      '\$${_idFor(name)}\t1730000000\t0\t12345\t'
-                      '${_socketPathFor(socketId)}\t$name\n',
+                      '\$${_idFor(name)}'
+                      '${TmuxSessionPlanner.fieldSeparator}1730000000'
+                      '${TmuxSessionPlanner.fieldSeparator}0'
+                      '${TmuxSessionPlanner.fieldSeparator}12345'
+                      '${TmuxSessionPlanner.fieldSeparator}'
+                      '${_socketPathFor(socketId)}'
+                      '${TmuxSessionPlanner.fieldSeparator}$name\n',
                 )
                 .join(),
           );

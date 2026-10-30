@@ -12,6 +12,8 @@ class ChatRunSettingsStrip extends StatelessWidget {
   final VoidCallback onOpenSettings;
   final VoidCallback? onRefreshSettings;
   final Key? tuneButtonKey;
+  final Widget? leading;
+  final Widget? trailing;
 
   const ChatRunSettingsStrip({
     super.key,
@@ -23,6 +25,8 @@ class ChatRunSettingsStrip extends StatelessWidget {
     required this.onOpenSettings,
     this.onRefreshSettings,
     this.tuneButtonKey,
+    this.leading,
+    this.trailing,
   });
 
   String _getModelLabel(BuildContext context) {
@@ -85,7 +89,7 @@ class ChatRunSettingsStrip extends StatelessWidget {
       onTap: isBusy ? null : onTap,
       borderRadius: BorderRadius.circular(VRadius.pill),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerHighest.withValues(
             alpha: 0.6,
@@ -104,7 +108,8 @@ class ChatRunSettingsStrip extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 160),
               child: Text(
                 label,
-                style: theme.textTheme.labelSmall?.copyWith(
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontSize: 12,
                   color: isBusy ? theme.colorScheme.outline : null,
                 ),
                 maxLines: 1,
@@ -124,7 +129,7 @@ class ChatRunSettingsStrip extends StatelessWidget {
     return Container(
       key: const Key('chat_run_settings_strip'),
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLowest,
         border: Border(
@@ -140,20 +145,20 @@ class ChatRunSettingsStrip extends StatelessWidget {
           children: [
             IconButton(
               key: tuneButtonKey ?? const Key('chat_run_settings_button'),
-              icon: const Icon(Icons.tune, size: 16),
+              icon: const Icon(Icons.tune, size: 18),
               tooltip: context.l10n.chatRunSettingsTitle,
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               onPressed: isBusy ? null : onOpenSettings,
             ),
             if (onRefreshSettings != null) ...[
               const SizedBox(width: 2),
               IconButton(
                 key: const Key('chat_run_settings_strip_refresh_button'),
-                icon: const Icon(Icons.refresh, size: 16),
+                icon: const Icon(Icons.refresh, size: 18),
                 tooltip: context.l10n.cliRefreshSessions,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                 onPressed: isBusy ? null : onRefreshSettings,
               ),
             ],
@@ -168,6 +173,10 @@ class ChatRunSettingsStrip extends StatelessWidget {
                   color: theme.colorScheme.primary,
                 ),
               ),
+            ],
+            if (leading != null) ...[
+              const SizedBox(width: 6),
+              leading!,
             ],
             const SizedBox(width: 6),
             _buildChip(
@@ -207,6 +216,10 @@ class ChatRunSettingsStrip extends StatelessWidget {
                   '${context.l10n.chatRunSettingsPermissions}: ${_getPermissionLabel(context)}',
               onTap: onOpenSettings,
             ),
+            if (trailing != null) ...[
+              const SizedBox(width: 6),
+              trailing!,
+            ],
           ],
         ),
       ),

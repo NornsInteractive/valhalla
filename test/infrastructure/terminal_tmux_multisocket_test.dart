@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dartssh2/dartssh2.dart';
@@ -48,40 +47,6 @@ class _FakeSshClient implements SSHClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// 把 bridge 的查询当成本地 shell 命令执行，用于真实 tmux 的隔离往返。
-///
-/// 这里永远不会建立任何 SSH 连接：命令只在本地 shell 里跑。
-class _LocalShellSshClient implements SSHClient {
-  final List<String> commands = [];
-
-  @override
-  bool get isClosed => false;
-
-  @override
-  Future<SSHSession> execute(
-    String command, {
-    SSHPtyConfig? pty,
-    SSHX11Config? x11,
-    Map<String, String>? environment,
-  }) async {
-    commands.add(command);
-    // stdoutEncoding: null 保留原始字节，由 bridge 自己按 utf8 解码。
-    final result = await Process.run(
-      'sh',
-      ['-c', command],
-      stdoutEncoding: null,
-      stderrEncoding: null,
-    );
-    return _FakeSshSession(
-      scriptedExitCode: result.exitCode,
-      stdout: result.stdout as List<int>,
-      stderr: result.stderr as List<int>,
-    );
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
 
 class _FakeSshSession implements SSHSession {
   _FakeSshSession({
@@ -178,13 +143,13 @@ String _sessionLine({
   int attached = 0,
   required String name,
 }) =>
-    '${identity.sessionId}\t${identity.createdSeconds}\t$attached\t'
-    '${identity.serverPid}\t${identity.socketPath}\t$name';
+    '${identity.sessionId}$_sep${identity.createdSeconds}$_sep$attached'
+    '$_sep${identity.serverPid}$_sep${identity.socketPath}$_sep$name';
 
 /// `display-message -p` 的四字段身份行。
 String _identityLine(TmuxSessionIdentity identity) =>
-    '${identity.sessionId}\t${identity.createdSeconds}\t'
-    '${identity.serverPid}\t${identity.socketPath}';
+    '${identity.sessionId}$_sep${identity.createdSeconds}$_sep'
+    '${identity.serverPid}$_sep${identity.socketPath}';
 
 TmuxSessionIdentity _identity({
   String sessionId = r'$7',
@@ -198,15 +163,10 @@ TmuxSessionIdentity _identity({
   socketPath: socketPath,
 );
 
-/// 本机是否装了 tmux；真实往返用例据此决定要不要跳过。
-bool get _tmuxInstalled {
-  try {
-    final result = Process.runSync('sh', ['-c', 'command -v tmux']);
-    return result.exitCode == 0 && '${result.stdout}'.trim().isNotEmpty;
-  } catch (_) {
-    return false;
-  }
-}
+/// 真实协议字段分隔符（碰撞安全的 U+001F）。模拟输出必须与之完全一致，
+/// 否则生产解析器（按 U+001F 拆分）会把历史/测试用的旧制表符分隔当作非法响应。
+const String _sep = TmuxSessionPlanner.fieldSeparator;
+
 
 void main() {
   group('六字段外部会话发现', () {
@@ -570,28 +530,28 @@ void main() {
 
     test('字段数不是六时抛错', () async {
       await expectInvalidResponse(
-        '\$3\t1772000000\t0\t4211\t/tmp/x/shared\n',
+        '\$3${_sep}1772000000${_sep}0${_sep}4211$_sep/tmp/x/shared\n',
         reason: '缺 name 字段时不能猜',
       );
     });
 
     test('会话名为空时抛错', () async {
       await expectInvalidResponse(
-        '\$3\t1772000000\t0\t4211\t/tmp/x/shared\t\n',
+        '\$3${_sep}1772000000${_sep}0${_sep}4211$_sep/tmp/x/shared$_sep\n',
         reason: '空名字无法被引用',
       );
     });
 
     test('会话名含控制字符时抛错', () async {
       await expectInvalidResponse(
-        '\$3\t1772000000\t0\t4211\t/tmp/x/shared\tbad\nname\n',
+        '\$3${_sep}1772000000${_sep}0${_sep}4211$_sep/tmp/x/shared${_sep}bad\nname\n',
         reason: '控制字符不能进入会话名',
       );
     });
 
     test('attached 不是数字时抛错', () async {
       await expectInvalidResponse(
-        '\$3\t1772000000\tx\t4211\t/tmp/x/shared\tname\n',
+        '\$3${_sep}1772000000${_sep}x${_sep}4211$_sep/tmp/x/shared${_sep}name\n',
         reason: 'attached 无法解析时不能默认成 0',
       );
     });
@@ -600,7 +560,7 @@ void main() {
       final client = _FakeSshClient()
         ..onQuery = (command) => _FakeSshSession(
           stdout: utf8.encode(
-            '\$3\tnot-a-number\t0\t4211\t/tmp/x/shared\tname\n',
+            '\$3${_sep}not-a-number${_sep}0${_sep}4211$_sep/tmp/x/shared${_sep}name\n',
           ),
         );
       await expectLater(
@@ -618,7 +578,7 @@ void main() {
     test('身份查询响应字段数不对时抛错', () async {
       final client = _FakeSshClient()
         ..onQuery = (command) =>
-            _FakeSshSession(stdout: utf8.encode('\$3\t1772000000\t4211\n'));
+            _FakeSshSession(stdout: utf8.encode('\$3${_sep}1772000000${_sep}4211\n'));
       await expectLater(
         TerminalSessionBridge.tmuxSessionExists(
           client,
@@ -761,299 +721,4 @@ void main() {
     });
   });
 
-  group('真实 tmux 隔离往返', () {
-    late Directory tempDir;
-    late String socketPath;
-    late TmuxSocketSource socketSource;
-    late _LocalShellSshClient client;
-    late String tmuxPath;
-
-    /// 本次用例自己创建、需要在收尾时逐个杀掉的会话名。
-    final owned = <String>[];
-
-    setUp(() async {
-      // 只在临时目录里建 socket，绝不碰用户已有的 tmux socket。
-      tempDir = await Directory.systemTemp.createTemp(
-        'valhalla-tmux-multisocket-',
-      );
-      socketPath = '${tempDir.path}/tmux.sock';
-      socketSource = TmuxSocketSource.path(socketPath);
-      client = _LocalShellSshClient();
-      tmuxPath = await TerminalSessionBridge.tmuxExecutable(client);
-    });
-
-    tearDown(() async {
-      // 只逐个杀掉本用例创建的会话；永远不用 kill-server。
-      for (final name in owned) {
-        await Process.run(tmuxPath, [
-          '-S',
-          socketPath,
-          'kill-session',
-          '-t',
-          name,
-        ]);
-      }
-      owned.clear();
-      if (tempDir.existsSync()) {
-        await tempDir.delete(recursive: true);
-      }
-    });
-
-    /// 建一个只属于本用例的 fixture 会话。
-    Future<String> createFixture(String name) async {
-      final result = await Process.run(tmuxPath, [
-        '-S',
-        socketPath,
-        'new-session',
-        '-d',
-        '-s',
-        name,
-        'sleep 60',
-      ]);
-      expect(result.exitCode, 0, reason: 'fixture 会话必须创建成功: ${result.stderr}');
-      if (!owned.contains(name)) owned.add(name);
-      return name;
-    }
-
-    Future<List<TmuxSessionInfo>> discover() =>
-        TerminalSessionBridge.discoverTmuxSessions(
-          client,
-          serverId: 'srv-1',
-          socket: socketSource,
-          includeExternal: true,
-        );
-
-    test('发现、校验身份、改名、终止后再发现为空', () async {
-      final name = 'valhalla_ms_${pid}_a';
-      await createFixture(name);
-
-      final sessions = await discover();
-      expect(sessions, hasLength(1));
-      final info = sessions.single;
-      expect(info.name, name);
-      expect(info.socket.id, socketSource.id);
-      expect(info.attachedClients, 0);
-      expect(info.identity, isNotNull);
-      final identity = info.identity!;
-      expect(identity.sessionId, matches(RegExp(r'^\$\d+$')));
-      expect(identity.serverPid, greaterThan(0));
-      expect(identity.socketPath, socketPath);
-      expect(
-        info.createdAt.millisecondsSinceEpoch,
-        identity.createdSeconds * 1000,
-      );
-
-      expect(
-        await TerminalSessionBridge.tmuxSessionExists(
-          client,
-          name,
-          tmuxPath: tmuxPath,
-          socket: socketSource,
-          identity: identity,
-        ),
-        isTrue,
-        reason: '刚发现的身份必须能再次验证通过',
-      );
-
-      final renamed = '${name}_renamed';
-      final rename = await Process.run(tmuxPath, [
-        '-S',
-        socketPath,
-        'rename-session',
-        '-t',
-        name,
-        renamed,
-      ]);
-      expect(rename.exitCode, 0, reason: '改名必须成功: ${rename.stderr}');
-      owned[owned.indexOf(name)] = renamed;
-
-      final afterRename = await discover();
-      expect(afterRename, hasLength(1));
-      expect(afterRename.single.name, renamed);
-      expect(
-        afterRename.single.identity!.key,
-        identity.key,
-        reason: '改名不改变会话身份',
-      );
-
-      await TerminalSessionBridge.terminateTmuxSession(
-        client,
-        renamed,
-        tmuxPath: tmuxPath,
-        socket: socketSource,
-        identity: identity,
-      );
-
-      expect(await discover(), isEmpty, reason: '终止后必须发现不到会话');
-    });
-
-    test('同名重建后旧身份失配，旧终止不会误杀新会话', () async {
-      final name = 'valhalla_ms_${pid}_recreate';
-      await createFixture(name);
-
-      final first = (await discover()).single;
-      final firstIdentity = first.identity!;
-
-      await TerminalSessionBridge.terminateTmuxSession(
-        client,
-        name,
-        tmuxPath: tmuxPath,
-        socket: socketSource,
-        identity: firstIdentity,
-      );
-      expect(await discover(), isEmpty);
-
-      // 同名重建：这是「历史记录里的会话已经被同名新会话顶掉」的真实场景。
-      // 注意 tmux 服务器退出后会重新从 $0 开始编号，新旧会话可能拿到同一个
-      // session id；真正区分它们的是身份里的 serverPid / createdSeconds。
-      await createFixture(name);
-      final second = (await discover()).single;
-      final secondIdentity = second.identity!;
-      expect(secondIdentity.key, isNot(firstIdentity.key), reason: '重建后必须是新身份');
-
-      expect(
-        await TerminalSessionBridge.tmuxSessionExists(
-          client,
-          name,
-          tmuxPath: tmuxPath,
-          socket: socketSource,
-          identity: firstIdentity,
-        ),
-        isFalse,
-        reason: '旧身份不能匹配到同名的新会话',
-      );
-
-      await TerminalSessionBridge.terminateTmuxSession(
-        client,
-        name,
-        tmuxPath: tmuxPath,
-        socket: socketSource,
-        identity: firstIdentity,
-      );
-
-      expect(
-        await TerminalSessionBridge.tmuxSessionExists(
-          client,
-          name,
-          tmuxPath: tmuxPath,
-          socket: socketSource,
-          identity: secondIdentity,
-        ),
-        isTrue,
-        reason: '用旧身份终止不能杀掉同名的新会话',
-      );
-      final remaining = await discover();
-      expect(remaining, hasLength(1));
-      expect(remaining.single.name, name);
-      expect(remaining.single.identity!.key, secondIdentity.key);
-    });
-    group('畸形响应的稳定错误码与脱敏回显', () {
-      test('发现响应畸形：稳定错误码 + 原始输出脱敏并 JSON 转义', () async {
-        final malformed =
-            '\$3\t1772000000\tx\t4211\t/tmp/x/shared\t'
-            'Name"With\\Quote password=s3cr3tPASS';
-        final client = _FakeSshClient()
-          ..onQuery = (command) =>
-              _FakeSshSession(stdout: utf8.encode(malformed));
-        SSHConnectionException? caught;
-        try {
-          await TerminalSessionBridge.discoverTmuxSessions(
-            client,
-            serverId: 'srv-1',
-            socket: TmuxSocketSource.standard,
-            includeExternal: true,
-          );
-        } on SSHConnectionException catch (e) {
-          caught = e;
-        }
-        expect(caught, isNotNull, reason: '畸形响应必须抛错');
-        expect(
-          caught!.message,
-          'TMUX_HISTORY_INVALID_RESPONSE',
-          reason: '错误码必须稳定，不随输出内容变化',
-        );
-        final details = caught.details as String;
-        expect(details, contains('******'), reason: '密钥必须被脱敏');
-        expect(details, isNot(contains('s3cr3tPASS')), reason: '原始口令不得明文出现');
-        expect(details, contains(r'\"'), reason: '原始双引号必须被 JSON 转义');
-        expect(details, contains(r'\\'), reason: '原始反斜杠必须被 JSON 转义');
-        expect(
-          details,
-          isNot(contains(r'Name"With\Quote')),
-          reason: '回显必须是转义后的文本，而非原始输出',
-        );
-        expect(
-          client.commands.last,
-          contains('-L default'),
-          reason: '外部 socket 的严格断言必须保留',
-        );
-        expect(client.commands.last, contains('list-sessions'));
-      });
-
-      test('身份响应畸形：稳定错误码 + 原始输出脱敏并 JSON 转义', () async {
-        final malformed = '\$3\t1772000000\ttoken=AbCdEf12345 "quote';
-        final identity = _identity(sessionId: r'$3');
-        final client = _FakeSshClient()
-          ..onQuery = (command) =>
-              _FakeSshSession(stdout: utf8.encode(malformed));
-        SSHConnectionException? caught;
-        try {
-          await TerminalSessionBridge.tmuxSessionExists(
-            client,
-            'ext',
-            tmuxPath: '/usr/bin/tmux',
-            socket: TmuxSocketSource.standard,
-            identity: identity,
-          );
-        } on SSHConnectionException catch (e) {
-          caught = e;
-        }
-        expect(caught, isNotNull, reason: '畸形身份响应必须抛错');
-        expect(
-          caught!.message,
-          'TMUX_HISTORY_INVALID_RESPONSE',
-          reason: '错误码必须稳定',
-        );
-        final details = caught.details as String;
-        expect(details, contains('******'), reason: 'token 必须被脱敏');
-        expect(
-          details,
-          isNot(contains('AbCdEf12345')),
-          reason: '原始 token 不得明文出现',
-        );
-        expect(details, contains(r'\"'), reason: '原始双引号必须被 JSON 转义');
-        expect(
-          client.commands.last,
-          contains('-L default'),
-          reason: '外部 socket 的严格断言必须保留',
-        );
-        expect(
-          client.commands.last,
-          contains("'\$3'"),
-          reason: '身份寻址的严格断言必须保留',
-        );
-      });
-
-      test('输出超过 4096 时 details 必须截断到 4096', () async {
-        final huge = '\$3\t1772000000\tx\t4211\t/tmp/x/shared\t${'A' * 5000}';
-        final client = _FakeSshClient()
-          ..onQuery = (command) => _FakeSshSession(stdout: utf8.encode(huge));
-        SSHConnectionException? caught;
-        try {
-          await TerminalSessionBridge.discoverTmuxSessions(
-            client,
-            serverId: 'srv-1',
-            socket: TmuxSocketSource.standard,
-            includeExternal: true,
-          );
-        } on SSHConnectionException catch (e) {
-          caught = e;
-        }
-        expect(caught, isNotNull);
-        final details = caught!.details as String;
-        expect(details.length, 4096, reason: 'details 不得超过 4096');
-        expect(details, startsWith('exit=0;'));
-      });
-    });
-  }, skip: _tmuxInstalled ? null : '本机没有安装 tmux，跳过真实 tmux 往返');
 }

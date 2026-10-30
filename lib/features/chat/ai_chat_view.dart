@@ -4465,8 +4465,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     : context.l10n.permissionRequired));
 
     return Container(
-      margin: const EdgeInsets.all(VSpace.md),
-      padding: const EdgeInsets.all(VSpace.md),
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: danger.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(VRadius.card),
@@ -6202,8 +6202,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
     return Container(
       key: const Key('ai_chat_auth_challenge_card'),
-      margin: margin ?? const EdgeInsets.all(VSpace.md),
-      padding: const EdgeInsets.all(VSpace.md),
+      margin: margin ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: warning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(VRadius.card),
@@ -6668,19 +6668,20 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         rawWorkingDir ?? context.l10n.cliDefaultWorkingDir;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
       color: context.colorScheme.surface,
       child: SafeArea(
         top: false,
+        minimum: const EdgeInsets.only(bottom: 2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (!hasActiveAgent) ...[
               Container(
-                margin: const EdgeInsets.only(bottom: 8),
+                margin: const EdgeInsets.only(bottom: 4),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 10,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
                   color: context.colorScheme.surfaceContainerHighest.withValues(
@@ -6765,258 +6766,120 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               tuneButtonKey: const Key('chat_run_settings_button'),
               onOpenSettings: () => _openRunSettings(refresh: true),
               onRefreshSettings: () => _openRunSettings(refresh: true),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: InkWell(
-                          key: const Key('chat_working_dir_button'),
-                          onTap:
-                              (isBusy ||
-                                  !isDraft ||
-                                  !isConnected ||
-                                  isRecovering)
-                              ? null
-                              : () => _showDraftWorkingDirDialog(
-                                  context,
-                                  rawWorkingDir,
-                                ),
+              leading: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InkWell(
+                    key: const Key('chat_working_dir_button'),
+                    onTap: (isBusy || !isDraft || !isConnected || isRecovering)
+                        ? null
+                        : () => _showDraftWorkingDirDialog(
+                            context,
+                            rawWorkingDir,
+                          ),
+                    borderRadius: BorderRadius.circular(VRadius.pill),
+                    child: Tooltip(
+                      message: isDraft
+                          ? context.l10n.chatWorkingDirTooltip
+                          : '${state.activeSession!.workingDirectory} (${context.l10n.sessionTitle})',
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context
+                              .colorScheme
+                              .surfaceContainerHighest
+                              .withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(VRadius.pill),
-                          child: Tooltip(
-                            message: isDraft
-                                ? context.l10n.chatWorkingDirTooltip
-                                : '${state.activeSession!.workingDirectory} (${context.l10n.sessionTitle})',
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
+                          border: Border.all(
+                            color: context.colorScheme.outlineVariant
+                                .withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.folder_outlined,
+                              size: 14,
+                              color: isDraft
+                                  ? context.colorScheme.primary
+                                  : context.colorScheme.outline,
+                            ),
+                            const SizedBox(width: 5),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                maxWidth: 160,
                               ),
-                              decoration: BoxDecoration(
-                                color: context
-                                    .colorScheme
-                                    .surfaceContainerHighest
-                                    .withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(
-                                  VRadius.pill,
+                              child: Text(
+                                currentWorkingDir,
+                                style: monoTextStyle(
+                                  fontSize: 12,
+                                  color: isDraft
+                                      ? context.colorScheme.onSurface
+                                      : context.colorScheme.outline,
                                 ),
-                                border: Border.all(
-                                  color: context.colorScheme.outlineVariant
-                                      .withValues(alpha: 0.5),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.folder_outlined,
-                                    size: 13,
-                                    color: isDraft
-                                        ? context.colorScheme.primary
-                                        : context.colorScheme.outline,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxWidth: 160,
-                                      ),
-                                      child: Text(
-                                        currentWorkingDir,
-                                        style: monoTextStyle(
-                                          fontSize: 11,
-                                          color: isDraft
-                                              ? context.colorScheme.onSurface
-                                              : context.colorScheme.outline,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ),
-                                  ),
-                                  if (isDraft) ...[
-                                    const SizedBox(width: 2),
-                                    Icon(
-                                      Icons.arrow_drop_down,
-                                      size: 14,
-                                      color: context.colorScheme.outline,
-                                    ),
-                                  ],
-                                ],
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
                             ),
-                          ),
+                            if (isDraft) ...[
+                              const SizedBox(width: 2),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                size: 16,
+                                color: context.colorScheme.outline,
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                      if (isDraft && state.draftWorkingDirectory != null) ...[
-                        const SizedBox(width: 4),
-                        IconButton(
-                          key: const Key('chat_clear_draft_working_dir_button'),
-                          tooltip: context.l10n.chatResetDraftWorkingDir,
-                          icon: const Icon(Icons.close, size: 14),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 24,
-                            minHeight: 24,
-                          ),
-                          visualDensity: VisualDensity.compact,
-                          onPressed: (isBusy || !isConnected || isRecovering)
-                              ? null
-                              : () => ref
-                                    .read(aiChatProvider.notifier)
-                                    .clearDraftWorkingDirectory(),
-                        ),
-                      ],
-                      const SizedBox(width: 6),
-                      IconButton(
-                        key: const Key('chat_commands_menu_button'),
-                        tooltip: context.l10n.chatCommandsTooltip,
-                        icon: _isLoadingComposerCommands
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.code, size: 16),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 28,
-                          minHeight: 28,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                        onPressed: (isBusy || _isLoadingComposerCommands)
-                            ? null
-                            : () => _openCommandsAndSkills(context),
-                      ),
-                      const SizedBox(width: 4),
-                      PopupMenuButton<String>(
-                        key: const Key('chat_attachments_button'),
-                        tooltip: context.l10n.chatAttachTooltip,
-                        icon: const Icon(Icons.attach_file, size: 16),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 28,
-                          minHeight: 28,
-                        ),
-                        enabled: !isBusy,
-                        onSelected: (val) {
-                          switch (val) {
-                            case 'image':
-                              _pickLocalImage();
-                              break;
-                            case 'text':
-                              _pickLocalTextFile();
-                              break;
-                            case 'remote':
-                              _promptRemoteTextFile(context);
-                              break;
-                            case 'probe':
-                              ref
-                                  .read(aiChatProvider.notifier)
-                                  .prepareRunSettings(refresh: false);
-                              break;
-                          }
-                        },
-                        itemBuilder: (ctx) => [
-                          PopupMenuItem<String>(
-                            value: 'image',
-                            enabled: state.supportsImages,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.image_outlined,
-                                  size: 16,
-                                  color: state.supportsImages
-                                      ? null
-                                      : ctx.colorScheme.outline,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(context.l10n.chatAttachImage),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'text',
-                            enabled: state.supportsTextAttachments,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.description_outlined,
-                                  size: 16,
-                                  color: state.supportsTextAttachments
-                                      ? null
-                                      : ctx.colorScheme.outline,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(context.l10n.chatAttachLocalText),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'remote',
-                            enabled:
-                                state.supportsTextAttachments &&
-                                isConnected &&
-                                !isRecovering,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.cloud_download_outlined,
-                                  size: 16,
-                                  color: state.supportsTextAttachments
-                                      ? null
-                                      : ctx.colorScheme.outline,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(context.l10n.chatAttachRemoteText),
-                              ],
-                            ),
-                          ),
-                          if (!state.supportsImages &&
-                              !state.supportsTextAttachments)
-                            PopupMenuItem<String>(
-                              value: 'probe',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.refresh, size: 16),
-                                  const SizedBox(width: 8),
-                                  Text(context.l10n.refresh),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (state.activeAgentProfile != null ||
-                    state.usage != null ||
-                    state.diagnostics.isNotEmpty ||
-                    state.account != null)
-                  IconButton(
-                    key: const Key('chat_usage_diagnostics_action_button'),
-                    icon: const Icon(Icons.analytics_outlined, size: 16),
-                    tooltip: context.l10n.chatAccountAndQuotaTitle,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 28,
-                      minHeight: 28,
                     ),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => _showAccountAndQuotaDialog(context),
                   ),
-              ],
+                  if (isDraft && state.draftWorkingDirectory != null) ...[
+                    const SizedBox(width: 2),
+                    IconButton(
+                      key: const Key('chat_clear_draft_working_dir_button'),
+                      tooltip: context.l10n.chatResetDraftWorkingDir,
+                      icon: const Icon(Icons.close, size: 16),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      onPressed: (isBusy || !isConnected || isRecovering)
+                          ? null
+                          : () => ref
+                                .read(aiChatProvider.notifier)
+                                .clearDraftWorkingDirectory(),
+                    ),
+                  ],
+                ],
+              ),
+              trailing: (state.activeAgentProfile != null ||
+                      state.usage != null ||
+                      state.diagnostics.isNotEmpty ||
+                      state.account != null)
+                  ? IconButton(
+                      key: const Key('chat_usage_diagnostics_action_button'),
+                      icon: const Icon(Icons.analytics_outlined, size: 18),
+                      tooltip: context.l10n.chatAccountAndQuotaTitle,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                      onPressed: () => _showAccountAndQuotaDialog(context),
+                    )
+                  : null,
             ),
             if (state.attachments.isNotEmpty) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Wrap(
-                spacing: 8,
-                runSpacing: 6,
+                spacing: 6,
+                runSpacing: 4,
                 children: [
                   for (int i = 0; i < state.attachments.length; i++) ...[
                     Builder(
@@ -7048,8 +6911,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(7),
                                     child: Container(
-                                      width: 64,
-                                      height: 64,
+                                      width: 56,
+                                      height: 56,
                                       color: context
                                           .colorScheme
                                           .surfaceContainerHighest,
@@ -7112,14 +6975,14 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                               .read(aiChatProvider.notifier)
                                               .removeAttachment(i),
                                     child: Container(
-                                      padding: const EdgeInsets.all(2),
+                                      padding: const EdgeInsets.all(4),
                                       decoration: const BoxDecoration(
                                         color: Colors.black54,
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(
                                         Icons.close,
-                                        size: 12,
+                                        size: 14,
                                         color: Colors.white,
                                       ),
                                     ),
@@ -7132,8 +6995,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                         return Container(
                           key: Key('chat_attachment_chip_$i'),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: 10,
+                            vertical: 5,
                           ),
                           decoration: BoxDecoration(
                             color: context.colorScheme.surfaceContainerHighest
@@ -7164,7 +7027,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                     Text(
                                       att.name,
                                       style: const TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
                                       maxLines: 1,
@@ -7173,7 +7036,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                     Text(
                                       _formatBytes(att.bytes.length),
                                       style: TextStyle(
-                                        fontSize: 10,
+                                        fontSize: 11,
                                         color: context.colorScheme.outline,
                                       ),
                                     ),
@@ -7189,7 +7052,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                           .removeAttachment(i),
                                 child: Icon(
                                   Icons.close,
-                                  size: 14,
+                                  size: 16,
                                   color: context.colorScheme.outline,
                                 ),
                               ),
@@ -7214,7 +7077,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     .toList();
                 if (referencedSkills.isEmpty) return const SizedBox.shrink();
                 return Padding(
-                  padding: const EdgeInsets.only(top: 6),
+                  padding: const EdgeInsets.only(top: 4),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Wrap(
@@ -7226,8 +7089,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                             key: Key('chat_skill_chip_${skill.name}'),
                             padding: const EdgeInsets.only(
                               left: 8,
-                              top: 2,
-                              bottom: 2,
+                              top: 3,
+                              bottom: 3,
                               right: 4,
                             ),
                             decoration: BoxDecoration(
@@ -7245,7 +7108,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                               children: [
                                 Icon(
                                   Icons.auto_awesome,
-                                  size: 12,
+                                  size: 13,
                                   color: context.colorScheme.primary,
                                 ),
                                 const SizedBox(width: 4),
@@ -7260,7 +7123,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                     child: Text(
                                       skill.name,
                                       style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.w500,
                                         color: context
                                             .colorScheme
@@ -7279,7 +7142,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                       : () => _removeSkillToken(skill.name),
                                   child: Icon(
                                     Icons.close,
-                                    size: 14,
+                                    size: 16,
                                     color: context
                                         .colorScheme
                                         .onPrimaryContainer
@@ -7295,9 +7158,130 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 );
               },
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                PopupMenuButton<String>(
+                  key: const Key('chat_attachments_button'),
+                  tooltip: context.l10n.chatAttachTooltip,
+                  icon: const Icon(Icons.attach_file, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
+                  enabled: !isBusy,
+                  onSelected: (val) {
+                    switch (val) {
+                      case 'image':
+                        _pickLocalImage();
+                        break;
+                      case 'text':
+                        _pickLocalTextFile();
+                        break;
+                      case 'remote':
+                        _promptRemoteTextFile(context);
+                        break;
+                      case 'probe':
+                        ref
+                            .read(aiChatProvider.notifier)
+                            .prepareRunSettings(refresh: false);
+                        break;
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    PopupMenuItem<String>(
+                      value: 'image',
+                      enabled: state.supportsImages,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.image_outlined,
+                            size: 16,
+                            color: state.supportsImages
+                              ? null
+                              : ctx.colorScheme.outline,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.chatAttachImage),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'text',
+                      enabled: state.supportsTextAttachments,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.description_outlined,
+                            size: 16,
+                            color: state.supportsTextAttachments
+                              ? null
+                              : ctx.colorScheme.outline,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.chatAttachLocalText),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'remote',
+                      enabled:
+                          state.supportsTextAttachments &&
+                          isConnected &&
+                          !isRecovering,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.cloud_download_outlined,
+                            size: 16,
+                            color: state.supportsTextAttachments
+                              ? null
+                              : ctx.colorScheme.outline,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.chatAttachRemoteText),
+                        ],
+                      ),
+                    ),
+                    if (!state.supportsImages &&
+                        !state.supportsTextAttachments)
+                      PopupMenuItem<String>(
+                        value: 'probe',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.refresh, size: 16),
+                            const SizedBox(width: 8),
+                            Text(context.l10n.refresh),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 2),
+                IconButton(
+                  key: const Key('chat_commands_menu_button'),
+                  tooltip: context.l10n.chatCommandsTooltip,
+                  icon: _isLoadingComposerCommands
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.code, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
+                  onPressed: (isBusy || _isLoadingComposerCommands)
+                      ? null
+                      : () => _openCommandsAndSkills(context),
+                ),
+                const SizedBox(width: 6),
                 Expanded(
                   child: TextField(
                     key: const Key('chatPromptInput'),
@@ -7328,15 +7312,17 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     onSubmitted: canSend ? (_) => _handleSend() : null,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 if (state.isGenerating)
                   PressableScale(
                     child: IconButton.filled(
                       key: const Key('stopGenerationButton'),
-                      icon: const Icon(Icons.stop, size: 18),
+                      icon: const Icon(Icons.stop, size: 20),
                       style: IconButton.styleFrom(
                         backgroundColor: context.colorScheme.error,
                         foregroundColor: context.colorScheme.onError,
+                        minimumSize: const Size(40, 40),
+                        padding: EdgeInsets.zero,
                       ),
                       tooltip: context.l10n.stopGeneration,
                       onPressed: isReadOnlyWorkspace
@@ -7368,7 +7354,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   PressableScale(
                     child: IconButton.filled(
                       key: const Key('sendMessageButton'),
-                      icon: const Icon(Icons.send, size: 18),
+                      icon: const Icon(Icons.send, size: 20),
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(40, 40),
+                        padding: EdgeInsets.zero,
+                      ),
                       tooltip: isReadOnlyWorkspace
                           ? context.l10n.chatWorkspaceReadOnly
                           : (isServerBusyWithOtherSession
