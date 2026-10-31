@@ -721,4 +721,120 @@ void main() {
     });
   });
 
+  group('发现响应健壮性（部分可解析 / 全畸形 / 下划线会话名）', () {
+    test('含下划线的会话名照常解析（原始报错样本里的下划线不是分隔符）', () async {
+      final identity = _identity(
+        sessionId: r'$4',
+        socketPath: '/tmp/x/team',
+      );
+      // 真实会话名由 sessionName() 生成，形如 valhalla_<server>_<terminal>，
+      // 天然含下划线；U+001F 帧下这些下划线属于 name 字段的一部分。
+      final client = _FakeSshClient()
+        ..onQuery = (command) => _FakeSshSession(
+          stdout: utf8.encode(
+            '${_sessionLine(identity: identity, name: 'valhalla_srv-1_ab_cd_ef')}\n',
+          ),
+        );
+
+      final sessions = await TerminalSessionBridge.discoverTmuxSessions(
+        client,
+        serverId: 'srv-1',
+        socket: TmuxSocketSource.named('team'),
+        includeExternal: true,
+      );
+
+      expect(sessions, hasLength(1));
+      expect(sessions.single.name, 'valhalla_srv-1_ab_cd_ef');
+      expect(sessions.single.identity!.sessionId, r'$4');
+    });
+
+    test('单条畸形记录不连坐其余会话：部分可解析时抛不完整异常并携带正常会话', () async {
+      final good = _identity(sessionId: r'$5', socketPath: '/tmp/x/team');
+      final good2 = _identity(sessionId: r'$6', socketPath: '/tmp/x/team');
+      // 6 个字段但 session_id 非法（不是 $数字），不会被续行合并逻辑吞掉，
+      // 而是交给逐行解析判定为畸形。
+      final bad = 'NOT_AN_ID${_sep}1772000000${_sep}0${_sep}4211$_sep/tmp/x/team${_sep}evil';
+      final client = _FakeSshClient()
+        ..onQuery = (command) => _FakeSshSession(
+          stdout: utf8.encode(
+            '${_sessionLine(identity: good, name: 'first')}\n'
+            '$bad\n'
+            '${_sessionLine(identity: good2, name: 'third')}\n',
+          ),
+        );
+
+      await expectLater(
+        TerminalSessionBridge.discoverTmuxSessions(
+          client,
+          serverId: 'srv-1',
+          socket: TmuxSocketSource.named('team'),
+          includeExternal: true,
+        ),
+        throwsA(
+          isA<TmuxDiscoveryIncompleteException>().having(
+            (e) => e.sessions.map((s) => s.name).toList(),
+            'sessions',
+            ['first', 'third'],
+          ),
+        ),
+      );
+    });
+
+    test('整段响应全畸形才整体报错 TMUX_HISTORY_INVALID_RESPONSE', () async {
+      final bad = 'NOT_AN_ID${_sep}1772000000${_sep}0${_sep}4211$_sep/tmp/x/team${_sep}evil';
+      final client = _FakeSshClient()
+        ..onQuery = (command) => _FakeSshSession(
+          stdout: utf8.encode('$bad\n'),
+        );
+
+      await expectLater(
+        TerminalSessionBridge.discoverTmuxSessions(
+          client,
+          serverId: 'srv-1',
+          socket: TmuxSocketSource.named('team'),
+          includeExternal: true,
+        ),
+        throwsA(
+          isA<SSHConnectionException>().having(
+            (e) => e.message,
+            'message',
+            'TMUX_HISTORY_INVALID_RESPONSE',
+          ),
+        ),
+      );
+    });
+
+    test('会话名含换行被拆行时合并回一条记录，且不吞掉其它正常会话', () async {
+      final a = _identity(sessionId: r'$7', socketPath: '/tmp/x/team');
+      final b = _identity(sessionId: r'$8', socketPath: '/tmp/x/team');
+      final c = _identity(sessionId: r'$9', socketPath: '/tmp/x/team');
+      // b 的名字含换行：-F 输出会把它拆成两行。续行合并后应还原成一条记录，
+      // 随后因名字含控制字符被判为畸形而跳过；a/c 必须照常返回。
+      final client = _FakeSshClient()
+        ..onQuery = (command) => _FakeSshSession(
+          stdout: utf8.encode(
+            '${_sessionLine(identity: a, name: 'alpha')}\n'
+            '${_sessionLine(identity: b, name: 'multi\nline')}\n'
+            '${_sessionLine(identity: c, name: 'gamma')}\n',
+          ),
+        );
+
+      await expectLater(
+        TerminalSessionBridge.discoverTmuxSessions(
+          client,
+          serverId: 'srv-1',
+          socket: TmuxSocketSource.named('team'),
+          includeExternal: true,
+        ),
+        throwsA(
+          isA<TmuxDiscoveryIncompleteException>().having(
+            (e) => e.sessions.map((s) => s.name).toList(),
+            'sessions',
+            ['alpha', 'gamma'],
+          ),
+        ),
+      );
+    });
+  });
+
 }

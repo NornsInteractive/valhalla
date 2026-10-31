@@ -85,6 +85,51 @@ def build_pe32plus(signed=False, machine=0x8664, magic=0x20B,
     return bytes(data)
 
 
+def build_pe(magic=0x20B, machine=None, signed=False, num_rva_sizes=16,
+             extra_opt_bytes=0):
+    """Build a minimal but structurally genuine PE image for either format.
+
+    magic 0x20B (PE32+) -> Machine 0x8664; data dirs at opt offset 112,
+    NumberOfRvaAndSizes at 108. magic 0x10B (PE32) -> Machine 0x14C; data dirs at
+    opt offset 96, NumberOfRvaAndSizes at 92. `machine` overrides the default.
+    Security (index 4) directory is written at the fixed offset for the format.
+    `extra_opt_bytes` pads SizeOfOptionalHeader past the genuine minimum, exercising
+    the classic `opt_start + size_of_opt` misread trap.
+    """
+    if machine is None:
+        machine = 0x8664 if magic == 0x20B else 0x14C
+    if magic == 0x20B:
+        dir_base = 112
+        rva_off = 108
+    else:  # 0x10B PE32
+        dir_base = 96
+        rva_off = 92
+    e_lfanew = 0x80
+    opt_start = e_lfanew + 24
+    sec_dir = opt_start + dir_base + 4 * 8      # fixed offset of Security dir
+    base_opt = sec_dir + 8
+    size_of_opt = base_opt + extra_opt_bytes
+    cert_offset = opt_start + size_of_opt
+    total = cert_offset + (0x200 if signed else 0)
+    data = bytearray(total)
+    data[0:2] = b'MZ'
+    struct.pack_into('<I', data, 60, e_lfanew)                  # e_lfanew
+    data[e_lfanew:e_lfanew + 4] = b'PE\x00\x00'                 # PE signature
+    struct.pack_into('<H', data, e_lfanew + 4, machine)         # Machine
+    struct.pack_into('<H', data, e_lfanew + 6, 1)              # NumberOfSections
+    struct.pack_into('<H', data, e_lfanew + 20, size_of_opt)    # SizeOfOptionalHeader
+    struct.pack_into('<H', data, e_lfanew + 22, 0x0022)         # Characteristics
+    struct.pack_into('<H', data, opt_start, magic)              # PE magic
+    struct.pack_into('<I', data, opt_start + rva_off, num_rva_sizes)  # NumberOfRvaAndSizes
+    sec_rva = cert_offset if signed else 0
+    sec_size = 0x200 if signed else 0
+    struct.pack_into('<I', data, sec_dir, sec_rva)
+    struct.pack_into('<I', data, sec_dir + 4, sec_size)
+    if signed:
+        data[cert_offset:cert_offset + 0x200] = b'\x00' * 0x200
+    return bytes(data)
+
+
 def build_windows_zip(extra_entries=None, duplicate=None):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -364,6 +409,84 @@ class PeRegressionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / 'few.exe'
             p.write_bytes(build_pe32plus(False, num_rva_sizes=3))
+            with self.assertRaises(RuntimeError):
+                rwr.is_exe_unsigned_from_pe(p)
+
+
+class PeArchitectureTests(unittest.TestCase):
+    """Coverage for the corrected parser: PE32 (i386) installer stub AND PE32+ (x64) app executable.
+
+    The registration tool must accept a genuine 32-bit PE32 Inno Setup bootstrap
+    while still rejecting a non-x64 PE32+ application and any wrong architecture,
+    and it must read each format's Security directory at its fixed offset.
+    """
+
+    def test_pe32_i386_unsigned_installer_accepted(self):
+        # The real Inno Setup 6.x installer is a 32-bit PE32 bootstrap with an
+        # empty Security directory. This is the artifact we must accept.
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / 'setup.exe'
+            p.write_bytes(build_pe(magic=0x10B, signed=False))
+            self.assertTrue(rwr.is_exe_unsigned_from_pe(p))
+
+    def test_pe32_i386_signed_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / 'setup_signed.exe'
+            p.write_bytes(build_pe(magic=0x10B, signed=True))
+            self.assertFalse(rwr.is_exe_unsigned_from_pe(p))
+
+    def test_pe32_padded_unsigned_and_signed(self):
+        # Regression: a padded PE32 must still be read at the fixed offset 128,
+        # not at opt_start + SizeOfOptionalHeader (the classic bug).
+        with tempfile.TemporaryDirectory() as d:
+            u = Path(d) / 'pe32_u.exe'
+            u.write_bytes(build_pe(magic=0x10B, signed=False, extra_opt_bytes=64))
+            self.assertTrue(rwr.is_exe_unsigned_from_pe(u))
+            s = Path(d) / 'pe32_s.exe'
+            s.write_bytes(build_pe(magic=0x10B, signed=True, extra_opt_bytes=64))
+            self.assertFalse(rwr.is_exe_unsigned_from_pe(s))
+
+    def test_pe32plus_x64_unsigned_app_accepted(self):
+        # A genuine 64-bit PE32+ application executable, unsigned, must be accepted.
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / 'app.exe'
+            p.write_bytes(build_pe(magic=0x20B, machine=0x8664, signed=False))
+            self.assertTrue(rwr.is_exe_unsigned_from_pe(p))
+
+    def test_pe32plus_x64_signed_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / 'app_signed.exe'
+            p.write_bytes(build_pe(magic=0x20B, machine=0x8664, signed=True))
+            self.assertFalse(rwr.is_exe_unsigned_from_pe(p))
+
+    def test_pe32_wrong_machine_rejected(self):
+        # PE32 (32-bit) with an x64 machine is an architecture mismatch.
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / 'pe32_x64.exe'
+            p.write_bytes(build_pe(magic=0x10B, machine=0x8664))
+            with self.assertRaises(RuntimeError):
+                rwr.is_exe_unsigned_from_pe(p)
+
+    def test_pe32plus_wrong_machine_rejected(self):
+        # PE32+ (64-bit) with an i386 machine is an architecture mismatch.
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / 'pe32plus_i386.exe'
+            p.write_bytes(build_pe(magic=0x20B, machine=0x14C))
+            with self.assertRaises(RuntimeError):
+                rwr.is_exe_unsigned_from_pe(p)
+
+    def test_wrong_architecture_arm_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / 'arm.exe'
+            p.write_bytes(build_pe(magic=0x20B, machine=0x1C0))  # ARM
+            with self.assertRaises(RuntimeError):
+                rwr.is_exe_unsigned_from_pe(p)
+
+    def test_pe32_truncated_optional_header_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / 'pe32_trunc.exe'
+            blob = build_pe(magic=0x10B, extra_opt_bytes=32)
+            p.write_bytes(blob[: (0x80 + 24 + 136)])  # cut within optional header
             with self.assertRaises(RuntimeError):
                 rwr.is_exe_unsigned_from_pe(p)
 

@@ -27,6 +27,24 @@ class TerminalSessionInterruptedException extends SSHConnectionException {
     : super('TERMINAL_PLAIN_SESSION_INTERRUPTED');
 }
 
+/// 发现结果**部分可用**：同一次 `list-sessions` 响应里既有可解析的会话，又有畸形
+/// 记录（例如会话名含控制字符/换行、字段越界）。
+///
+/// 与 `TMUX_HISTORY_INVALID_RESPONSE`（整段响应全畸形）不同，这里携带已解析出的
+/// [sessions]。调用方应当：
+/// - 把这些会话照常展示；
+/// - 但**不得**把该来源视为「已完全校验」——未在结果中出现的记录只能判为
+///   `unknown`，绝不能因此判 `ended` 或删除仍在运行的会话。
+class TmuxDiscoveryIncompleteException implements Exception {
+  const TmuxDiscoveryIncompleteException(this.sessions);
+
+  final List<TmuxSessionInfo> sessions;
+
+  @override
+  String toString() =>
+      'TmuxDiscoveryIncompleteException(${sessions.length} sessions parsed)';
+}
+
 @immutable
 class TmuxSessionInfo {
   const TmuxSessionInfo({
@@ -336,65 +354,52 @@ class TerminalSessionBridge {
         _queryDetails(result),
       );
     }
+    // 先把 stdout 按行切，再把「字段数不足 6 的续行」拼回上一条记录的 name 字段。
+    // 会话名允许包含换行（tmux 不禁止），会在 -F 输出里把一条记录拆成多行；若不合并，
+    // 上一条会被误判为合法片段、续行会被当成畸形而整体报错，反而让其它正常会话消失。
+    final rawLines = const LineSplitter().convert(result.stdout);
+    final records = <String>[];
+    if (includeExternal) {
+      // 仅外部发现使用 U+001F 六字段帧；只有这种格式才需要把「字段数不足 6 的
+      // 续行」拼回上一条的 name（会话名可能含换行）。app 专用 socket 仍走
+      // 制表符三字段格式，绝不能套用续行合并，否则每行都会被并入上一行。
+      for (final line in rawLines) {
+        if (line.isEmpty) continue;
+        final fieldCount =
+            line.split(TmuxSessionPlanner.fieldSeparator).length;
+        if (records.isNotEmpty && fieldCount < 6) {
+          records[records.length - 1] = '${records.last}\n$line';
+        } else {
+          records.add(line);
+        }
+      }
+    } else {
+      records.addAll(rawLines.where((line) => line.isNotEmpty));
+    }
+
     final sessions = <TmuxSessionInfo>[];
-    for (final line in const LineSplitter().convert(result.stdout)) {
-      if (line.isEmpty) continue;
+    var invalidLine = false;
+    for (final line in records) {
       if (includeExternal) {
         // 结构化字段使用碰撞安全的 U+001F 分隔符，允许尾部的 name 字段包含任意
         // 字符（含制表符、空格、UTF-8、metacharacter），不会被错误拆分。
-        final fields = line.split(TmuxSessionPlanner.fieldSeparator);
-        if (fields.length != 6 ||
-            !RegExp(r'^\$\d+$').hasMatch(fields[0]) ||
-            fields[5].isEmpty ||
-            fields[5].contains(TmuxSessionPlanner.fieldSeparator) ||
-            RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(fields[4]) ||
-            !fields[4].startsWith('/')) {
-          throw SSHConnectionException(
-            'TMUX_HISTORY_INVALID_RESPONSE',
-            _queryDetails(result),
-          );
-        }
-        final created = int.tryParse(fields[1]);
-        final attached = int.tryParse(fields[2]);
-        final pid = int.tryParse(fields[3]);
-        if (created == null ||
-            created < 0 ||
-            created > 8640000000000 ||
-            attached == null ||
-            attached < 0 ||
-            pid == null ||
-            pid <= 0) {
-          throw SSHConnectionException(
-            'TMUX_HISTORY_INVALID_RESPONSE',
-            _queryDetails(result),
-          );
-        }
-        final TmuxSessionIdentity identity;
-        try {
-          identity = TmuxSessionIdentity.fromJson({
-            'sessionId': fields[0],
-            'createdSeconds': created,
-            'serverPid': pid,
-            'socketPath': fields[4],
-          });
-        } on Object {
-          throw SSHConnectionException(
-            'TMUX_HISTORY_INVALID_RESPONSE',
-            _queryDetails(result),
-          );
-        }
-        sessions.add(
-          TmuxSessionInfo(
-            name: fields[5],
-            createdAt: DateTime.fromMillisecondsSinceEpoch(
-              identity.createdSeconds * 1000,
-              isUtc: true,
+        final session = _parseExternalSessionLine(line, socket);
+        if (session == null) {
+          // 单条记录畸形（例如会话名含控制字符、id/路径非法）。只跳过该条
+          // 并记录诊断，绝不因此丢弃同 socket 上其余所有正常会话——否则一个异常
+          // 会话会让用户「所有可访问的实时会话」整体消失，并误报
+          // TMUX_HISTORY_INVALID_RESPONSE。整段响应全部畸形时才整体报错。
+          invalidLine = true;
+          unawaited(
+            AppDiagnostics.instance.record(
+              'terminal.tmux.discovery.invalidLine',
+              'skipped malformed external session line on socket ${socket.id}',
+              StackTrace.current,
             ),
-            attachedClients: attached,
-            socket: socket,
-            identity: identity,
-          ),
-        );
+          );
+          continue;
+        }
+        sessions.add(session);
         continue;
       }
       final fields = line.split('\t');
@@ -431,7 +436,73 @@ class TerminalSessionBridge {
         ),
       );
     }
+    if (invalidLine) {
+      // 整段响应全部畸形（没有任何一条可解析的会话）：整体报错。
+      if (sessions.isEmpty) {
+        throw SSHConnectionException(
+          'TMUX_HISTORY_INVALID_RESPONSE',
+          _queryDetails(result),
+        );
+      }
+      // 部分可解析：携带已解析会话抛出。调用方应展示它们，但**不得**把该来源
+      // 视为完全校验，未出现的记录只能判 unknown，绝不能误判 ended/删除。
+      throw TmuxDiscoveryIncompleteException(List.unmodifiable(sessions));
+    }
     return List.unmodifiable(sessions);
+  }
+
+  /// 解析 `list-sessions -F` 的单条外部会话记录（U+001F 帧）。
+  ///
+  /// 返回 `null` 表示该行畸形（字段数不对、id/路径非法、数字越界、身份无法构造）。
+  /// 调用方据此**跳过**该行而不是中断整段发现，从而让同 socket 上其余正常的实时
+  /// 会话仍然可见。整段响应全畸形时由 [discoverTmuxSessions] 统一报错。
+  static TmuxSessionInfo? _parseExternalSessionLine(
+    String line,
+    TmuxSocketSource socket,
+  ) {
+    final fields = line.split(TmuxSessionPlanner.fieldSeparator);
+    if (fields.length != 6 ||
+        !RegExp(r'^\$\d+$').hasMatch(fields[0]) ||
+        fields[5].isEmpty ||
+        fields[5].contains(TmuxSessionPlanner.fieldSeparator) ||
+        RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(fields[5]) ||
+        RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(fields[4]) ||
+        !fields[4].startsWith('/')) {
+      return null;
+    }
+    final created = int.tryParse(fields[1]);
+    final attached = int.tryParse(fields[2]);
+    final pid = int.tryParse(fields[3]);
+    if (created == null ||
+        created < 0 ||
+        created > 8640000000000 ||
+        attached == null ||
+        attached < 0 ||
+        pid == null ||
+        pid <= 0) {
+      return null;
+    }
+    final TmuxSessionIdentity identity;
+    try {
+      identity = TmuxSessionIdentity.fromJson({
+        'sessionId': fields[0],
+        'createdSeconds': created,
+        'serverPid': pid,
+        'socketPath': fields[4],
+      });
+    } on Object {
+      return null;
+    }
+    return TmuxSessionInfo(
+      name: fields[5],
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        identity.createdSeconds * 1000,
+        isUtc: true,
+      ),
+      attachedClients: attached,
+      socket: socket,
+      identity: identity,
+    );
   }
 
   static Future<bool> tmuxSessionExists(

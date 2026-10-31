@@ -95,6 +95,14 @@ class SshTerminalState {
   final bool isInitialized;
   final bool isInitializing;
   final bool isHistoryLoading;
+
+  /// 最近一次历史刷新的身份是否已经过实时 tmux 校验。
+  ///
+  /// 发现整体失败时保留既有快照，但把此标志置为 false，并禁用销毁类危险操作
+  /// （[closeTabById] 的 `destroyRemote` 与 [deleteHistory] 的 `terminateRemote`），
+  /// 直到下一次成功刷新重新校验。
+  final bool isHistoryVerified;
+  bool get dangerousOperationsDisabled => !isHistoryVerified;
   final String? errorCode;
   final String? errorDetail;
   final String? noticeCode;
@@ -117,6 +125,7 @@ class SshTerminalState {
     this.isInitialized = false,
     this.isInitializing = false,
     this.isHistoryLoading = false,
+    this.isHistoryVerified = true,
     this.errorCode,
     this.errorDetail,
     this.noticeCode,
@@ -147,6 +156,7 @@ class SshTerminalState {
     bool? isInitialized,
     bool? isInitializing,
     bool? isHistoryLoading,
+    bool? isHistoryVerified,
     String? errorCode,
     String? errorDetail,
     bool clearError = false,
@@ -175,6 +185,7 @@ class SshTerminalState {
       isInitialized: isInitialized ?? this.isInitialized,
       isInitializing: isInitializing ?? this.isInitializing,
       isHistoryLoading: isHistoryLoading ?? this.isHistoryLoading,
+      isHistoryVerified: isHistoryVerified ?? this.isHistoryVerified,
       errorCode: clearError ? null : (errorCode ?? this.errorCode),
       errorDetail: clearError
           ? null
@@ -408,12 +419,13 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
         _publish(
           workspace,
           workspace.value.copyWith(
-            history: snapshot.records,
+            history: _visibleHistory(snapshot.records, statuses),
             historyStatuses: statuses,
             defaultHistoryId: snapshot.defaultRecordId,
             clearDefaultHistory: snapshot.defaultRecordId == null,
             socketSources: snapshot.socketSources,
             hiddenRecordIds: snapshot.hiddenRecordIds,
+            isHistoryVerified: true,
           ),
         );
       } catch (error, stack) {
@@ -503,6 +515,18 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     if (!_valid(workspace)) return;
     workspace.value = next;
     if (identical(_current, workspace)) state = next;
+  }
+
+  /// 只显示「活着的」会话。本地元数据仅用于丰富（标题/时间戳）实时发现的会话，
+  /// 绝不能把一个已确认销毁（[TerminalHistoryStatus.ended]）的远程会话重新呈现出来。
+  List<TerminalHistoryRecord> _visibleHistory(
+    List<TerminalHistoryRecord> records,
+    Map<String, TerminalHistoryStatus> statuses,
+  ) {
+    final visible = records.where(
+      (record) => statuses[record.id] != TerminalHistoryStatus.ended,
+    );
+    return List.unmodifiable(visible.toList());
   }
 
   SSHClient? _clientFor(_TerminalWorkspace workspace) {
@@ -681,7 +705,7 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       _publish(
         workspace,
         workspace.value.copyWith(
-          history: List.unmodifiable(records),
+          history: _visibleHistory(records, workspace.value.historyStatuses),
           tabs: [
             for (final tab in workspace.value.tabs)
               titles.containsKey(tab.id) ? tab.withTitle(titles[tab.id]!) : tab,
@@ -1099,6 +1123,9 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     final details = <String, String>{};
     final checkedAt = <String, DateTime>{};
     final complete = <String>{};
+    // 响应「部分可解析」的来源：会话照常展示，但绝不能当作完全校验——
+    // 未出现在结果里的记录只能判 unknown，绝不能误判 ended 或删除仍在运行的会话。
+    final incomplete = <String>{};
     try {
       // Bounded workers: a slow or inaccessible custom socket cannot flood SSH.
       var cursor = 0;
@@ -1114,6 +1141,19 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
             );
             found.addAll(sessions);
             complete.add(source.id);
+          } on TmuxDiscoveryIncompleteException catch (error) {
+            // 有可解析会话、但同一响应里也有畸形记录：展示已解析的会话，
+            // 但不把该来源标记为 complete，避免把未列出的记录误判为 ended。
+            found.addAll(error.sessions);
+            incomplete.add(source.id);
+            details[source.id] = 'TMUX_HISTORY_INVALID_RESPONSE (partial)';
+            unawaited(
+              AppDiagnostics.instance.record(
+                'terminal.tmux.discovery.partial',
+                error,
+                StackTrace.current,
+              ),
+            );
           } catch (error, stack) {
             errors[source.id] = 'TMUX_HISTORY_QUERY_FAILED';
             final detail = LogSanitizer.sanitize(error.toString());
@@ -1139,6 +1179,24 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       if (!_isCurrent(workspace) ||
           epoch != workspace.connectionEpoch ||
           !identical(client, _clientFor(workspace))) {
+        return;
+      }
+      // 所有受信来源都探测失败：保留既有快照，但标记为未校验并禁用危险操作，
+      // 直到下一次成功刷新。绝不因此清空或覆盖已有历史。
+      if (sources.isNotEmpty && complete.isEmpty) {
+        final statuses = {
+          for (final record in workspace.value.history)
+            record.id: TerminalHistoryStatus.unknown,
+        };
+        _publish(
+          workspace,
+          workspace.value.copyWith(
+            historyStatuses: statuses,
+            isHistoryVerified: false,
+            errorCode: 'TERMINAL_HISTORY_REFRESH_FAILED',
+            errorDetail: 'all socket probes failed',
+          ),
+        );
         return;
       }
       // 刷新期间若来源配置被并发改动，放弃本次结果，下次刷新会重新覆盖。
@@ -1215,10 +1273,8 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       for (final session in found) {
         final identity = session.identity!;
         if (!known.add(identity.key)) continue;
-        if (session.socket.id == TmuxSocketSource.app.id &&
-            workspace.forgottenSessionNames.contains(session.name)) {
-          continue;
-        }
+        // 实时发现的外部会话一律展示：本地 forgotten 集合只用于「主动离开的
+        // 本应用会话」，绝不应把别人正在运行的 tmux 会话（含同名）从历史里藏起来。
         final own =
             session.socket.id == TmuxSocketSource.app.id &&
             session.name.startsWith(prefix);
@@ -1281,11 +1337,15 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       _publish(
         workspace,
         workspace.value.copyWith(
-          history: List.unmodifiable(records),
+          history: _visibleHistory(records, statuses),
           historyStatuses: statuses,
           socketErrors: errors,
           socketErrorDetails: details,
           socketCheckedAt: Map.unmodifiable(checkedAt),
+          // 只有「全部受信来源都完整成功」才算完全校验：任何来源报错或部分可解析，
+          // 都说明还有会话状态未知——未列出的记录只能判 unknown（见上面的 else 分支），
+          // 绝不能误判 ended 或删除仍在运行的会话，同时禁用危险操作。
+          isHistoryVerified: errors.isEmpty && incomplete.isEmpty,
         ),
       );
       // Display remote truth immediately; never wait on a pending rename/default disk write.
@@ -1303,7 +1363,30 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       );
     } catch (error, stack) {
       if (_isCurrent(workspace) && epoch == workspace.connectionEpoch) {
-        _report(workspace, 'TERMINAL_HISTORY_REFRESH_FAILED', error, stack);
+        // 发现整体失败时保留既有快照，但标记为未校验：不再信任任何本地元数据，
+        // 并禁用销毁类危险操作（destroyRemote / terminateRemote），直到下次成功刷新。
+        final statuses = {
+          for (final record in workspace.value.history)
+            record.id: TerminalHistoryStatus.unknown,
+        };
+        _publish(
+          workspace,
+          workspace.value.copyWith(
+            historyStatuses: statuses,
+            isHistoryVerified: false,
+            errorCode: 'TERMINAL_HISTORY_REFRESH_FAILED',
+            errorDetail: LogSanitizer.sanitize(error.toString()).length > 4096
+                ? LogSanitizer.sanitize(error.toString()).substring(0, 4096)
+                : LogSanitizer.sanitize(error.toString()),
+          ),
+        );
+        unawaited(
+          AppDiagnostics.instance.record(
+            'terminal.history.refresh.failed',
+            error,
+            stack,
+          ),
+        );
       }
     } finally {
       if (_valid(workspace)) {
@@ -1401,8 +1484,30 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       return;
     }
     if (!exists) {
-      await _handleMissing(workspace, record, isStartup: isStartup);
-      return;
+      // 同名 socket 上身份已失效：按身份在受信来源内重新定位，找到则使用其真实
+      // socket 附着，绝不创建替代会话；任何一个来源失败都跳过，定位不到才判销毁。
+      final live = await _findLiveIdentity(workspace, record, epoch);
+      if (!_isCurrent(workspace) || interaction != workspace.interactionEpoch) {
+        return;
+      }
+      if (live == null) {
+        await _handleMissing(workspace, record, isStartup: isStartup);
+        return;
+      }
+      record = record.copyWith(socket: live.socket, identity: live.identity);
+      await _saveHistory(
+        workspace,
+        (current) => TerminalHistorySnapshot(
+          records: [
+            for (final r in current.records)
+              r.id == record.id ? record : r,
+          ],
+          defaultRecordId: current.defaultRecordId,
+        ),
+      );
+      if (!_isCurrent(workspace) || interaction != workspace.interactionEpoch) {
+        return;
+      }
     }
     // A concurrent click may already have opened this record during discovery.
     final alreadyOpen = workspace.value.tabs.indexWhere(
@@ -1448,6 +1553,49 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
     } else {
       _publish(workspace, workspace.value.copyWith(clearError: true));
     }
+  }
+
+  /// 按身份在受信 socket 来源内定位仍在运行的会话；找不到或任何来源报错都返回 null。
+  ///
+  /// 用于恢复时「原 socket 上的会话已经不在、但身份仍存活在别的来源」的情况：
+  /// 这时应附着到真实的来源，而不是新建一个替代会话。
+  Future<TmuxSessionInfo?> _findLiveIdentity(
+    _TerminalWorkspace workspace,
+    TerminalHistoryRecord record, [
+    int? epoch,
+  ]) async {
+    final identity = record.identity;
+    if (identity == null) return null;
+    final client = _clientFor(workspace);
+    if (client == null) return null;
+    final sources = <TmuxSocketSource>[
+      TmuxSocketSource.app,
+      TmuxSocketSource.standard,
+      ...workspace.value.socketSources,
+    ];
+    for (final socket in sources) {
+      if (epoch != null &&
+          (!_isCurrent(workspace) ||
+              epoch != workspace.connectionEpoch ||
+              !identical(client, _clientFor(workspace)))) {
+        return null;
+      }
+      try {
+        final sessions = await TerminalSessionBridge.discoverTmuxSessions(
+          client,
+          serverId: workspace.server.id,
+          socket: socket,
+          includeExternal: true,
+        );
+        final match = sessions
+            .where((session) => session.identity?.key == identity.key)
+            .firstOrNull;
+        if (match != null) return match;
+      } on Object {
+        // 单个来源探测失败不影响其它来源；最终找不到才判销毁。
+      }
+    }
+    return null;
   }
 
   Future<void> _handleMissing(
@@ -1658,6 +1806,9 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
         throw StateError('TERMINAL_HISTORY_INVALID');
       }
       if (terminateRemote) {
+        if (workspace.value.dangerousOperationsDisabled) {
+          throw StateError('TERMINAL_HISTORY_UNVERIFIED');
+        }
         if (![
           TmuxSocketSource.app.id,
           TmuxSocketSource.standard.id,
@@ -1794,15 +1945,66 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
   Future<void> closeTabById(
     String id, {
     required String expectedTargetKey,
+    bool destroyRemote = false,
   }) async {
     final workspace = _current;
     if (workspace == null || workspace.targetKey != expectedTargetKey) {
       throw StateError('TERMINAL_TARGET_CHANGED');
     }
-    if (workspace.value.tabs.length <= 1) return;
     if (!workspace.value.tabs.any((tab) => tab.id == id)) return;
+    // 可选的安全销毁：仅按身份定位远程会话，校验失败或被禁用时不抛出，
+    // 仍照常关闭标签页，绝不把标签页/历史记录留在撕裂状态。
+    if (destroyRemote) {
+      await _destroyRemoteForTab(workspace, id);
+    }
     workspace.interactionEpoch++;
     _removeTab(workspace, id);
+  }
+
+  /// 按身份安全销毁某个标签页对应的远程 tmux 会话。
+  ///
+  /// 仅在实时校验通过（身份存在且 socket 在受信来源内）时才会真正 `kill-session`；
+  /// 任何一步失败、未校验或记录缺少身份都直接跳过——历史记录与标签页都会被保留。
+  Future<void> _destroyRemoteForTab(
+    _TerminalWorkspace workspace,
+    String id,
+  ) async {
+    final record = workspace.value.history
+        .where((item) => item.id == id)
+        .firstOrNull;
+    if (record == null ||
+        record.identity == null ||
+        workspace.value.dangerousOperationsDisabled ||
+        ![
+          TmuxSocketSource.app.id,
+          TmuxSocketSource.standard.id,
+          ...workspace.value.socketSources.map((s) => s.id),
+        ].contains(record.socket.id)) {
+      return;
+    }
+    final client = _clientFor(workspace);
+    if (client == null) return;
+    try {
+      final tmuxPath = await TerminalSessionBridge.tmuxExecutable(client);
+      final exists = await TerminalSessionBridge.tmuxSessionExists(
+        client,
+        record.remoteSessionName,
+        tmuxPath: tmuxPath,
+        socket: record.socket,
+        identity: record.identity,
+      );
+      if (exists) {
+        await TerminalSessionBridge.terminateTmuxSession(
+          client,
+          record.remoteSessionName,
+          tmuxPath: tmuxPath,
+          socket: record.socket,
+          identity: record.identity,
+        );
+      }
+    } catch (_) {
+      // 失败时保留：不删除历史、不关闭失败的标签页之外的任何东西。
+    }
   }
 
   Future<void> reconnectTab(

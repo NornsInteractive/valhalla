@@ -11,6 +11,7 @@ import '../../../core/providers/terminal_provider.dart';
 import '../../../infrastructure/mosh/mosh_bridge_adapter.dart';
 import '../../../infrastructure/terminal/terminal_session_bridge.dart'
     show TerminalConnectionState, TerminalSessionMode;
+import 'terminal_close_tab_dialog.dart';
 
 String _formatLastUsed(DateTime dt) {
   final local = dt.toLocal();
@@ -1872,14 +1873,12 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                         switch (value) {
                           case 'close_tab':
                             if (matchingTab != null) {
-                              final tabIndex = terminalState.tabs.indexOf(
+                              await confirmAndCloseTerminalTab(
+                                context,
+                                ref,
                                 matchingTab,
+                                expectedTargetKey: currentTarget,
                               );
-                              if (tabIndex >= 0) {
-                                ref
-                                    .read(terminalProvider.notifier)
-                                    .closeTab(tabIndex);
-                              }
                             }
                           case 'restore':
                             FocusManager.instance.primaryFocus?.unfocus();
@@ -2013,8 +2012,7 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                               ],
                             ),
                           ),
-                        if (matchingTab != null &&
-                            terminalState.tabs.length > 1)
+                        if (matchingTab != null)
                           PopupMenuItem(
                             value: 'close_tab',
                             child: Row(
@@ -2363,10 +2361,12 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
             case 'rename':
               await showRenameTabDialog(context, ref, tab.id, tab.title);
             case 'close_tab':
-              final tabIndex = terminalState.tabs.indexOf(tab);
-              if (tabIndex >= 0) {
-                ref.read(terminalProvider.notifier).closeTab(tabIndex);
-              }
+              await confirmAndCloseTerminalTab(
+                context,
+                ref,
+                tab,
+                expectedTargetKey: currentTarget,
+              );
             case 'set_default':
               if (historyRecord != null) {
                 try {
@@ -2558,8 +2558,7 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                 ),
               ),
             ],
-            if (terminalState.tabs.length > 1)
-              PopupMenuItem(
+            PopupMenuItem(
                 value: 'close_tab',
                 child: Row(
                   children: [

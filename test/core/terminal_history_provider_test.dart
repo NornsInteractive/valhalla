@@ -133,6 +133,10 @@ class _Client implements SSHClient {
   bool failQuery = false;
   bool failAttach = false;
   bool failKill = false;
+
+  /// 按 socket id 追加到外部 `list-sessions` 输出末尾的原始行，用于模拟
+  /// 「部分可解析」的畸形响应（必须恰好 6 个字段，避免被续行合并逻辑吞掉）。
+  final Map<String, String> malformedLines = <String, String>{};
   Completer<void>? checkGate;
   String? gatedName;
   final Map<String, int> _sessionIds = <String, int>{};
@@ -284,19 +288,21 @@ class _Client implements SSHClient {
         }
         final names = _namesFor(socketId);
         if (command.contains('#{session_id}')) {
+          final malformed = malformedLines[socketId];
           return _Session.result(
             names
-                .map(
-                  (name) =>
-                      '\$${_idFor(name)}'
-                      '${TmuxSessionPlanner.fieldSeparator}1730000000'
-                      '${TmuxSessionPlanner.fieldSeparator}0'
-                      '${TmuxSessionPlanner.fieldSeparator}12345'
-                      '${TmuxSessionPlanner.fieldSeparator}'
-                      '${_socketPathFor(socketId)}'
-                      '${TmuxSessionPlanner.fieldSeparator}$name\n',
-                )
-                .join(),
+                    .map(
+                      (name) =>
+                          '\$${_idFor(name)}'
+                          '${TmuxSessionPlanner.fieldSeparator}1730000000'
+                          '${TmuxSessionPlanner.fieldSeparator}0'
+                          '${TmuxSessionPlanner.fieldSeparator}12345'
+                          '${TmuxSessionPlanner.fieldSeparator}'
+                          '${_socketPathFor(socketId)}'
+                          '${TmuxSessionPlanner.fieldSeparator}$name\n',
+                    )
+                    .join() +
+                (malformed == null ? '' : '$malformed\n'),
           );
         }
         return _Session.result(
@@ -1984,9 +1990,9 @@ void main() {
       expect(h.state.tabs.single.id, lastId);
       expect(h.state.tabs.single.terminal, same(kept.terminal));
 
+      // 现在支持关闭最后一个标签页：关闭后列表为空，而非保留占位标签。
       await h.notifier.closeTabById(lastId, expectedTargetKey: target);
-      expect(h.state.tabs.single.id, lastId);
-      expect(h.state.tabs.single.terminal, same(kept.terminal));
+      expect(h.state.tabs, isEmpty);
     },
   );
 
@@ -2102,5 +2108,292 @@ void main() {
         isNot(fixtureStamp),
       );
     },
+  );
+
+/// 后端 tmux 历史修复的集中回归：实时会话、已销毁排除、未校验、陈旧身份、
+/// 发现失败、关闭销毁/保留与关闭最后一个标签页。全部使用 mock SSH，绝不触碰
+/// 任何真实 tmux 服务器或已存在的会话。
+group('tmux 历史修复（实时会话与销毁类操作）', () {
+  final target = TerminalHistoryRecord.targetFor(_server);
+
+  test('默认/命名 socket 上的活动外部会话始终展示，不受 forgotten 影响', () async {
+    final storage = _ForgetfulStorage(await SharedPreferences.getInstance());
+    final h = await _Harness.create(storage: storage);
+    await h.notifier.ensureInitialized();
+    await h.drain();
+    // 预置一个会被判为 forgotten 的命名来源外部会话，刷新后仍应展示（live 优先）。
+    h.client.extraNames[TmuxSocketSource.named('team').id] = {'team-ext'};
+    await h.notifier.addSocketSource(
+      TmuxSocketSource.named('team'),
+      expectedTargetKey: target,
+    );
+    await h.drain();
+
+    final external = h.state.history
+        .where((r) => r.isExternal && r.socket.id == TmuxSocketSource.named('team').id)
+        .toList();
+    expect(external, hasLength(1));
+    expect(external.single.remoteSessionName, 'team-ext');
+    expect(
+      h.state.historyStatuses[external.single.id],
+      TerminalHistoryStatus.available,
+    );
+    expect(h.state.isHistoryVerified, isTrue);
+  });
+
+  test('已确认销毁（ended）的会话不再出现在历史中', () async {
+    final h = await _Harness.create();
+    await h.notifier.addNewTab();
+    await h.drain();
+    final record = h.state.history.single;
+    final name = record.remoteSessionName;
+
+    // 关闭唯一标签页（closeTabById 允许关闭最后一个），记录仍保留为元数据。
+    await h.notifier.closeTabById(record.id, expectedTargetKey: target);
+    await h.drain();
+    expect(h.state.tabs, isEmpty);
+
+    // 远端会话实际被销毁。
+    h.client.remoteNames.remove(name);
+    await h.notifier.refreshHistory();
+    await h.drain();
+
+    expect(
+      h.state.history.any((r) => r.id == record.id),
+      isFalse,
+      reason: '已确认销毁的会话不应再展示',
+    );
+    // 内部状态仍保留 ended，便于默认/清理逻辑判断。
+    expect(
+      h.state.historyStatuses[record.id],
+      TerminalHistoryStatus.ended,
+    );
+    expect(h.state.isHistoryVerified, isTrue);
+  });
+
+  test('发现全部失败时保留既有快照为未校验并禁用危险操作', () async {
+    final h = await _Harness.create();
+    await h.notifier.addNewTab();
+    await h.drain();
+    final id = h.state.history.single.id;
+
+    h.client.failingSocketIds.add(TmuxSocketSource.app.id);
+    h.client.failingSocketIds.add(TmuxSocketSource.standard.id);
+    await h.notifier.refreshHistory();
+    await h.drain();
+
+    expect(h.state.isHistoryVerified, isFalse);
+    expect(h.state.dangerousOperationsDisabled, isTrue);
+    expect(h.state.historyStatuses[id], TerminalHistoryStatus.unknown);
+    expect(
+      h.state.history.any((r) => r.id == id),
+      isTrue,
+      reason: '发现失败应保留既有快照',
+    );
+  });
+
+  test('陈旧身份的恢复不会创建替代会话，而是判为销毁', () async {
+    final h = await _Harness.create();
+    await h.notifier.addNewTab();
+    await h.drain();
+    final record = h.state.history.single;
+    final name = record.remoteSessionName;
+
+    // 先关闭标签页（远程会话保留），让 restore 走「未打开→按身份校验」路径。
+    await h.notifier.closeTabById(record.id, expectedTargetKey: target);
+    await h.drain();
+    // 清空累计命令，仅校验恢复阶段是否产生替代会话（new-session）。
+    h.client.commands.clear();
+
+    // 远端会话被重建：同一名字映射到不同的数字 session id，旧身份失效。
+    h.client.seedSession(name, 9999);
+
+    await h.notifier.restoreHistory(record.id);
+    await h.drain();
+
+    expect(
+      h.state.historyStatuses[record.id],
+      TerminalHistoryStatus.ended,
+    );
+    expect(
+      h.client.commands.where((c) => c.contains('new-session')),
+      isEmpty,
+      reason: '恢复绝不能为失效身份创建替代会话',
+    );
+    expect(h.state.tabs, isEmpty);
+  });
+
+  test('closeTabById(destroyRemote) 按身份销毁，失败则保留会话与标签页', () async {
+    final h = await _Harness.create();
+    await h.notifier.addNewTab();
+    await h.drain();
+    final record = h.state.history.single;
+    final name = record.remoteSessionName;
+    expect(h.client.remoteNames, contains(name));
+
+    h.client.failKill = true;
+    await h.notifier.closeTabById(
+      record.id,
+      expectedTargetKey: target,
+      destroyRemote: true,
+    );
+    await h.drain();
+
+    expect(h.state.tabs, isEmpty, reason: '标签页仍应关闭');
+    expect(
+      h.client.remoteNames,
+      contains(name),
+      reason: '销毁失败时远程会话必须保留',
+    );
+    expect(h.state.errorCode, isNull, reason: '保留失败时不应上抛错误');
+  });
+
+  test('closeTabById 可以关闭最后一个标签页', () async {
+    final h = await _Harness.create();
+    await h.notifier.ensureInitialized();
+    await h.drain();
+    final id = h.state.tabs.single.id;
+    await h.notifier.closeTabById(id, expectedTargetKey: target);
+    await h.drain();
+    expect(h.state.tabs, isEmpty);
+  });
+
+  test('未校验时拒绝销毁类操作但照常关闭标签页', () async {
+    final h = await _Harness.create();
+    await h.notifier.addNewTab();
+    await h.drain();
+    final record = h.state.history.single;
+    final name = record.remoteSessionName;
+    expect(h.client.remoteNames, contains(name));
+
+    // 后续发现失败：保留既有快照，但标记为未校验并禁用危险操作。
+    h.client.failQuery = true;
+    await h.notifier.refreshHistory();
+    await h.drain();
+    expect(h.state.isHistoryVerified, isFalse);
+
+    await h.notifier.closeTabById(
+      record.id,
+      expectedTargetKey: target,
+      destroyRemote: true,
+    );
+    await h.drain();
+
+    expect(h.state.tabs, isEmpty, reason: '未校验仍可关闭标签页');
+    expect(
+      h.client.remoteNames,
+      contains(name),
+      reason: '未校验时不得执行远程销毁',
+    );
+
+    // terminateRemote 在未校验（发现失败）时直接拒绝，绝不动手。
+    await expectLater(
+      h.notifier.deleteHistory(
+        record.id,
+        terminateRemote: true,
+        expectedTargetKey: target,
+      ),
+      throwsA(
+        isA<StateError>().having(
+          (e) => e.message,
+          'message',
+          'TERMINAL_HISTORY_UNVERIFIED',
+        ),
+      ),
+    );
+  });
+});
+
+group('部分可解析响应：不误判已校验、不误删未知活动会话', () {
+  final target = TerminalHistoryRecord.targetFor(_server);
+
+  // 6 字段但 session_id 非法，交给逐行解析判为畸形（不会被续行合并吞掉）。
+  const malformed =
+      'NOT_AN_ID\u001f1730000000\u001f0\u001f12345\u001f/tmp/x\u001fevil';
+
+  test('同一响应部分可解析：正常会话照常展示，未出现的记录保持 unknown 而非 ended', () async {
+    final h = await _Harness.create();
+    await h.notifier.addNewTab(); // tab1 -> name1
+    await h.drain();
+    await h.notifier.addNewTab(); // tab2 -> name2
+    await h.drain();
+    final first = h.state.history.firstWhere(
+      (r) => r.socket.id == TmuxSocketSource.app.id,
+    );
+    final second = h.state.history.firstWhere(
+      (r) => r.id != first.id && r.socket.id == TmuxSocketSource.app.id,
+    );
+    // 关闭 tab2（不销毁远端），随后让远端会话消失，制造一条「未在本次结果中
+    // 出现」的记录；再让 standard 来源保持完整，从而只有 app 是「部分可解析」。
+    await h.notifier.closeTabById(second.id, expectedTargetKey: target);
+    await h.drain();
+    h.client.remoteNames.remove(second.remoteSessionName);
+    h.client.defaultNames.add('other-user');
+    h.client.malformedLines[TmuxSocketSource.app.id] = malformed;
+
+    await h.notifier.refreshHistory();
+    await h.drain();
+
+    // 部分可解析的来源绝不能算「已完全校验」。
+    expect(h.state.isHistoryVerified, isFalse);
+    expect(h.state.dangerousOperationsDisabled, isTrue);
+    // 仍在运行的正常会话照常展示（不因同响应里的畸形行而消失）。
+    expect(
+      h.state.historyStatuses[first.id],
+      isNot(TerminalHistoryStatus.ended),
+    );
+    // 未出现在结果中的记录只能是 unknown，绝不能被误判为 ended，也不能被删除。
+    expect(
+      h.state.historyStatuses[second.id],
+      TerminalHistoryStatus.unknown,
+    );
+    expect(h.state.history.any((r) => r.id == second.id), isTrue);
+  });
+
+  test('整段响应全畸形：该来源记入错误且其未出现记录保持 unknown，绝不 ended', () async {
+    final h = await _Harness.create();
+    await h.notifier.addNewTab();
+    await h.drain();
+    await h.notifier.addNewTab();
+    await h.drain();
+    final appRecords = h.state.history
+        .where((r) => r.socket.id == TmuxSocketSource.app.id)
+        .toList();
+    expect(appRecords, hasLength(2));
+    // 让 app socket 的响应只剩一条畸形行（会话名清空），standard 保持完整。
+    h.client.remoteNames.clear();
+    h.client.defaultNames.add('other-user');
+    h.client.malformedLines[TmuxSocketSource.app.id] = malformed;
+
+    await h.notifier.refreshHistory();
+    await h.drain();
+
+    expect(h.state.isHistoryVerified, isFalse);
+    expect(
+      h.state.socketErrors[TmuxSocketSource.app.id],
+      'TMUX_HISTORY_QUERY_FAILED',
+    );
+    for (final record in appRecords) {
+      expect(
+        h.state.historyStatuses[record.id],
+        isNot(TerminalHistoryStatus.ended),
+        reason: '整段响应畸形时绝不能把未知会话判为 ended',
+      );
+      expect(h.state.history.any((r) => r.id == record.id), isTrue);
+    }
+  });
+});
+
+}
+
+/// 返回带 forgotten 集合的快照，用于验证 live 外部会话不被 forgotten 过滤掉。
+class _ForgetfulStorage extends _Storage {
+  _ForgetfulStorage(super.prefs);
+  @override
+  TerminalHistorySnapshot getTerminalHistory(
+    String serverId,
+    String targetKey,
+  ) => const TerminalHistorySnapshot(
+    forgottenSessionNames: ['team-ext'],
   );
 }

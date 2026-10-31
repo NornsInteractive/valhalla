@@ -76,47 +76,49 @@ class ChatRunSettingsStrip extends StatelessWidget {
     };
   }
 
-  Widget _buildChip({
+  Widget _buildTextItem({
     required BuildContext context,
     required Key key,
-    required IconData icon,
-    required String label,
+    required String text,
+    required String tooltip,
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
-    return InkWell(
-      key: key,
-      onTap: isBusy ? null : onTap,
-      borderRadius: BorderRadius.circular(VRadius.pill),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(
-            alpha: 0.6,
-          ),
-          borderRadius: BorderRadius.circular(VRadius.pill),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        key: key,
+        onTap: isBusy ? null : onTap,
+        borderRadius: BorderRadius.circular(VRadius.input),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Text(
+            text,
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: isBusy
+                  ? theme.colorScheme.outline
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: theme.colorScheme.primary),
-            const SizedBox(width: 5),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 160),
-              child: Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontSize: 12,
-                  color: isBusy ? theme.colorScheme.outline : null,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+      ),
+    );
+  }
+
+  Widget _buildSeparator(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Text(
+        '·',
+        style: TextStyle(
+          color: theme.colorScheme.outline.withValues(alpha: 0.5),
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
         ),
       ),
     );
@@ -177,42 +179,55 @@ class ChatRunSettingsStrip extends StatelessWidget {
             if (leading != null) ...[
               const SizedBox(width: 6),
               leading!,
+              const SizedBox(width: 6),
+              SizedBox(
+                height: 16,
+                child: VerticalDivider(
+                  width: 8,
+                  thickness: 1,
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                ),
+              ),
             ],
-            const SizedBox(width: 6),
-            _buildChip(
+            const SizedBox(width: 4),
+            _buildTextItem(
               context: context,
               key: const Key('chat_strip_model_chip'),
-              icon: Icons.psychology_outlined,
-              label:
+              text: isStructuredSend
+                  ? _getModelLabel(context)
+                  : '${context.l10n.chatRunSettingsModel}: ${_getModelLabel(context)}',
+              tooltip:
                   '${context.l10n.chatRunSettingsModel}: ${_getModelLabel(context)}',
               onTap: onOpenSettings,
             ),
-            const SizedBox(width: 6),
-            _buildChip(
+            _buildSeparator(context),
+            _buildTextItem(
               context: context,
               key: const Key('chat_strip_reasoning_chip'),
-              icon: Icons.lightbulb_outline,
-              label:
+              text: isStructuredSend
+                  ? _getReasoningLabel(context)
+                  : '${context.l10n.chatRunSettingsReasoning}: ${_getReasoningLabel(context)}',
+              tooltip:
                   '${context.l10n.chatRunSettingsReasoning}: ${_getReasoningLabel(context)}',
               onTap: onOpenSettings,
             ),
             if (_getModeLabel(context) != null) ...[
-              const SizedBox(width: 6),
-              _buildChip(
+              _buildSeparator(context),
+              _buildTextItem(
                 context: context,
                 key: const Key('chat_strip_mode_chip'),
-                icon: Icons.alt_route_rounded,
-                label:
+                text: _getModeLabel(context)!,
+                tooltip:
                     '${context.l10n.chatRunSettingsAgentMode}: ${_getModeLabel(context)}',
                 onTap: onOpenSettings,
               ),
             ],
-            const SizedBox(width: 6),
-            _buildChip(
+            _buildSeparator(context),
+            _buildTextItem(
               context: context,
               key: const Key('chat_strip_permission_chip'),
-              icon: Icons.shield_outlined,
-              label:
+              text: _getPermissionLabel(context),
+              tooltip:
                   '${context.l10n.chatRunSettingsPermissions}: ${_getPermissionLabel(context)}',
               onTap: onOpenSettings,
             ),

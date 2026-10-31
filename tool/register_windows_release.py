@@ -55,20 +55,28 @@ def is_exe_unsigned_from_pe(path):
     """Independently verify a PE/EXE file has no signing certificate via the Security Data Directory.
 
     Returns True if the file appears unsigned (security directory size == 0),
-    False if signed (security directory size > 0), and raises RuntimeError if the file
-    is not a valid PE executable or is not PE32+ x64.
+    False if signed (security directory size > 0), and raises RuntimeError for a
+    malformed PE or an unsupported/incorrect architecture.
 
-    Genuine PE32+ layout: DOS header (e_lfanew @ offset 60) -> "PE\\0\\0" ->
-    20-byte COFF IMAGE_FILE_HEADER -> optional header. The optional header begins
-    at pe_offset + 24. Within it:
-      * NumberOfRvaAndSizes is at optional-header offset 108 (4 bytes).
-      * The data directories begin at a FIXED optional-header offset 112 — NOT at
-        opt_start + SizeOfOptionalHeader. SizeOfOptionalHeader merely declares how
-        many bytes the optional header occupies (normally 240) and includes the
-        data directories; it does not point to their start.
-      * The Security (certificate table) directory is IMAGE_DIRECTORY_ENTRY index 4,
-        i.e. optional-header offset 112 + 4*8 = 144. Each entry is 8 bytes:
-        VirtualAddress (file offset of the certificate table) then Size.
+    Supports both PE32 (i386, magic 0x10B) and PE32+ (x64, magic 0x20B), because
+    real installers (e.g. Inno Setup) ship a 32-bit PE32 bootstrap while still
+    carrying a genuine 64-bit PE32+ application payload. The two formats differ in
+    where the data directories live inside the optional header:
+
+      * PE32+ (0x20B): NumberOfRvaAndSizes at optional-header offset 108, data
+        directories begin at the FIXED offset 112, Security (index 4) at 112+4*8=144.
+      * PE32  (0x10B): NumberOfRvaAndSizes at optional-header offset 92, data
+        directories begin at the FIXED offset 96, Security (index 4) at 96+4*8=128.
+
+    In both cases the directory start is a FIXED offset within the optional header
+    and does NOT depend on SizeOfOptionalHeader (which merely bounds the header, not
+    the directory start) - computing it as opt_start + size_of_opt is the classic bug.
+
+    Architecture is validated against the image format: a PE32 image must be i386
+    (Machine 0x14C) and a PE32+ image must be AMD64 (Machine 0x8664). Any other
+    machine, or any PE magic other than 0x10B/0x20B, is rejected as an incorrect
+    architecture. This preserves the strict x64 requirement for a PE32+ application
+    executable while accepting a legitimate 32-bit PE32 installer stub.
     """
     import struct
     data = path.read_bytes()
@@ -87,31 +95,41 @@ def is_exe_unsigned_from_pe(path):
     # COFF IMAGE_FILE_HEADER starts right after the 4-byte PE signature.
     # Machine is at COFF+0, i.e. pe_offset + 4.
     machine = struct.unpack('<H', data[pe_offset + 4:pe_offset + 6])[0]
-    if machine != 0x8664:  # IMAGE_FILE_MACHINE_AMD64
-        raise RuntimeError(f'Unsupported PE machine: 0x{machine:04x}, expected x64 PE32+')
     # SizeOfOptionalHeader is a 2-byte field at COFF+16, i.e. pe_offset + 20.
     size_of_opt = struct.unpack('<H', data[pe_offset + 20:pe_offset + 22])[0]
     # Optional header starts at pe_offset + 24 (PE signature + 20-byte COFF header).
     opt_start = pe_offset + 24
-    # The declared optional header must fit inside the file.
     if opt_start + size_of_opt > len(data):
         raise RuntimeError(f'Truncated optional header: {path.name}')
-    # The optional header must be large enough to actually contain the data
-    # directories we are about to read (Security directory ends at offset 152).
-    if size_of_opt < 152:
+    if size_of_opt < 128:
         raise RuntimeError(f'Optional header too small: {size_of_opt}')
-    # PE32+ magic 0x20B at optional-header offset 0.
+    # Optional-header magic selects the format and its directory layout.
     magic = struct.unpack('<H', data[opt_start:opt_start + 2])[0]
-    if magic != 0x20B:
-        raise RuntimeError(f'Not a PE32+ image (magic 0x{magic:04x}): {path.name}')
-    # NumberOfRvaAndSizes at optional-header offset 108; must include Security (index 4).
-    num_rva = struct.unpack('<I', data[opt_start + 108:opt_start + 112])[0]
+    if magic == 0x20B:  # PE32+ (64-bit)
+        expected_machine = 0x8664  # AMD64
+        rva_count_offset = opt_start + 108
+        dir_base = opt_start + 112
+        min_hdr = 152
+    elif magic == 0x10B:  # PE32 (32-bit)
+        expected_machine = 0x14C  # i386
+        rva_count_offset = opt_start + 92
+        dir_base = opt_start + 96
+        min_hdr = 136
+    else:
+        raise RuntimeError(f'Unsupported PE magic 0x{magic:04x}: {path.name}')
+    if machine != expected_machine:
+        raise RuntimeError(
+            f'Incorrect architecture for this PE image: machine 0x{machine:04x}, '
+            f'expected {"x64" if magic == 0x20B else "i386"}')
+    if size_of_opt < min_hdr:
+        raise RuntimeError(f'Optional header too small for data directories: {size_of_opt}')
+    # NumberOfRvaAndSizes must include the Security directory (index 4).
+    num_rva = struct.unpack('<I', data[rva_count_offset:rva_count_offset + 4])[0]
     if num_rva < 5:
-        raise RuntimeError(f'PE32+ data directory count too small: {num_rva}')
-    # Data directories begin at the FIXED optional-header offset 112, and the
-    # Security directory is index 4, i.e. optional-header offset 112 + 4*8 = 144.
-    # (Do NOT use opt_start + size_of_opt here — that is the classic bug.)
-    sec_dir_offset = opt_start + 112 + 4 * 8
+        raise RuntimeError(f'PE data directory count too small: {num_rva}')
+    # Security directory is index 4; read the FIXED directory start (do NOT use
+    # size_of_opt). Each entry is 8 bytes: VirtualAddress then Size.
+    sec_dir_offset = dir_base + 4 * 8
     if sec_dir_offset + 8 > len(data):
         raise RuntimeError(f'Cannot read PE security directory at {path.name}')
     sec_dir_rva = struct.unpack('<I', data[sec_dir_offset:sec_dir_offset + 4])[0]
