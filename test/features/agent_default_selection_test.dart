@@ -73,7 +73,9 @@ class _FakeCliChatNotifier extends CliChatNotifier {
 class _FakeAiChatNotifier extends AiChatNotifier {
   final AiChatState _initial;
   String? capturedDefaultAgentId;
+  String? capturedSwitchedAgentId;
   int setDefaultAgentCalls = 0;
+  int switchAgentCalls = 0;
 
   _FakeAiChatNotifier(this._initial);
 
@@ -84,6 +86,12 @@ class _FakeAiChatNotifier extends AiChatNotifier {
   Future<void> setDefaultAgent(String? agentId) async {
     capturedDefaultAgentId = agentId;
     setDefaultAgentCalls++;
+  }
+
+  @override
+  Future<void> switchAgent(String agentId) async {
+    capturedSwitchedAgentId = agentId;
+    switchAgentCalls++;
   }
 }
 
@@ -230,6 +238,106 @@ void main() {
           find.byKey(const Key('ai_set_default_agent_agent-2')),
           findsNothing,
         );
+      },
+    );
+
+    testWidgets(
+      'allows scrolling agent list up and down when there are many agents on mobile screen',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        final storage = LocalStorageService(prefs);
+
+        final agents = List.generate(
+          12,
+          (i) => AgentProfile(
+            id: 'agent-$i',
+            serverId: 'srv-default-test',
+            name: 'Agent Number $i',
+            description: 'Description for Agent $i',
+            cliCommand: 'cmd-$i',
+          ),
+        );
+
+        final aiState = AiChatState(
+          readyAgents: agents,
+          activeAgentProfile: agents.first,
+        );
+        final fakeAiNotifier = _FakeAiChatNotifier(aiState);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              activeServerProvider.overrideWith(_FakeActiveServerNotifier.new),
+              serverConnectionProvider.overrideWith(
+                _FakeConnectionNotifier.new,
+              ),
+              localStorageServiceProvider.overrideWithValue(storage),
+              tempChatRepositoryOverride(),
+              aiChatProvider.overrideWith(() => fakeAiNotifier),
+            ],
+            child: const MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(body: AiChatView()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Tap header to open agent switcher modal
+        final headerAgentName = find.text('Agent Number 0');
+        expect(headerAgentName, findsWidgets);
+        await tester.tap(headerAgentName.first);
+        await tester.pumpAndSettle();
+
+        // Verify modal opened and list view is present
+        final listFinder = find.byKey(const Key('ai_agent_switcher_list'));
+        expect(listFinder, findsOneWidget);
+
+        // Agent 0 should be visible initially in the switcher list
+        final agent0Item = find.byKey(
+          const Key('ai_agent_switcher_item_agent-0'),
+        );
+        final agent11Item = find.byKey(
+          const Key('ai_agent_switcher_item_agent-11'),
+        );
+        expect(agent0Item, findsOneWidget);
+        expect(agent11Item, findsNothing);
+
+        // Scroll down to Agent Number 11
+        await tester.scrollUntilVisible(
+          agent11Item,
+          200,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.pumpAndSettle();
+
+        // Agent 11 is now visible
+        expect(agent11Item, findsOneWidget);
+
+        // Scroll back up to Agent Number 0
+        await tester.scrollUntilVisible(
+          agent0Item,
+          -200,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.pumpAndSettle();
+        expect(agent0Item, findsOneWidget);
+
+        // Tap Agent 0's card to switch
+        await tester.tap(agent0Item);
+        await tester.pumpAndSettle();
+
+        // Switch agent called and modal closed
+        expect(fakeAiNotifier.switchAgentCalls, 1);
+        expect(fakeAiNotifier.capturedSwitchedAgentId, 'agent-0');
+        expect(listFinder, findsNothing);
       },
     );
   });

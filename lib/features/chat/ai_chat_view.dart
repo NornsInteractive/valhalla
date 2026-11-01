@@ -361,8 +361,13 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     final chatState = ref.read(aiChatProvider);
     final notifier = ref.read(aiChatProvider.notifier);
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
@@ -376,33 +381,37 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   : null;
             } catch (_) {}
 
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 20,
-                  horizontal: 16,
-                ),
+            return ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(ctx).height * 0.85,
+              ),
+              child: SafeArea(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          context.l10n.switchAgent,
-                          style: context.textTheme.titleLarge,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(ctx),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            context.l10n.switchAgent,
+                            style: context.textTheme.titleLarge,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
                     if (chatState.readyAgents.isEmpty)
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 24,
+                          horizontal: 16,
+                        ),
                         child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -442,119 +451,145 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                         ),
                       )
                     else ...[
-                      ...chatState.readyAgents.map((profile) {
-                        final isSelected =
-                            chatState.activeAgentProfile?.id == profile.id;
-                        final isDefault = profile.id == defaultAgentId;
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          color: isSelected
-                              ? context.colorScheme.primaryContainer.withValues(
-                                  alpha: 0.25,
-                                )
-                              : null,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(VRadius.card),
-                            side: BorderSide(
-                              color: isSelected
-                                  ? context.colorScheme.primary
-                                  : Colors.transparent,
-                              width: 1.5,
-                            ),
+                      Flexible(
+                        child: ListView.separated(
+                          key: const Key('ai_agent_switcher_list'),
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
                           ),
-                          child: ListTile(
-                            leading: Icon(
-                              Icons.smart_toy,
+                          itemCount: chatState.readyAgents.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 8),
+                          itemBuilder: (listCtx, index) {
+                            final profile = chatState.readyAgents[index];
+                            final isSelected =
+                                chatState.activeAgentProfile?.id == profile.id;
+                            final isDefault = profile.id == defaultAgentId;
+                            return Card(
+                              key: Key('ai_agent_switcher_item_${profile.id}'),
+                              margin: EdgeInsets.zero,
                               color: isSelected
-                                  ? context.colorScheme.primary
+                                  ? context.colorScheme.primaryContainer
+                                      .withValues(alpha: 0.25)
                                   : null,
-                            ),
-                            title: Row(
-                              children: [
-                                Text(
-                                  profile.name,
-                                  style: context.textTheme.titleSmall,
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(VRadius.card),
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? context.colorScheme.primary
+                                      : Colors.transparent,
+                                  width: 1.5,
                                 ),
-                                if (isDefault) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          context.colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(
-                                        VRadius.pill,
+                              ),
+                              child: ListTile(
+                                leading: Icon(
+                                  Icons.smart_toy,
+                                  color: isSelected
+                                      ? context.colorScheme.primary
+                                      : null,
+                                ),
+                                title: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        profile.name,
+                                        style: context.textTheme.titleSmall,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    child: Text(
-                                      context.l10n.defaultBadge,
-                                      style: context.textTheme.labelSmall
-                                          ?.copyWith(
-                                            color: context
-                                                .colorScheme
-                                                .onPrimaryContainer,
+                                    if (isDefault) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: context
+                                              .colorScheme
+                                              .primaryContainer,
+                                          borderRadius:
+                                              BorderRadius.circular(
+                                            VRadius.pill,
                                           ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            subtitle: Text(
-                              profile.description.isNotEmpty
-                                  ? profile.description
-                                  : profile.cliCommand,
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  key: Key(
-                                    'ai_set_default_agent_${profile.id}',
-                                  ),
-                                  icon: Icon(
-                                    isDefault
-                                        ? Icons.star_rounded
-                                        : Icons.star_outline_rounded,
-                                    color: isDefault
-                                        ? context.colorScheme.primary
-                                        : context.colorScheme.outline,
-                                  ),
-                                  tooltip: isDefault
-                                      ? context.l10n.isDefaultAgent
-                                      : context.l10n.setAsDefaultAgent,
-                                  onPressed: () async {
-                                    await notifier.setDefaultAgent(
-                                      isDefault ? null : profile.id,
-                                    );
-                                    setModalState(() {});
-                                  },
+                                        ),
+                                        child: Text(
+                                          context.l10n.defaultBadge,
+                                          style: context.textTheme.labelSmall
+                                              ?.copyWith(
+                                                color: context
+                                                    .colorScheme
+                                                    .onPrimaryContainer,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                                if (isSelected)
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: context.colorScheme.primary,
-                                  ),
-                              ],
+                                subtitle: Text(
+                                  profile.description.isNotEmpty
+                                      ? profile.description
+                                      : profile.cliCommand,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      key: Key(
+                                        'ai_set_default_agent_${profile.id}',
+                                      ),
+                                      icon: Icon(
+                                        isDefault
+                                            ? Icons.star_rounded
+                                            : Icons.star_outline_rounded,
+                                        color: isDefault
+                                            ? context.colorScheme.primary
+                                            : context.colorScheme.outline,
+                                      ),
+                                      tooltip: isDefault
+                                          ? context.l10n.isDefaultAgent
+                                          : context.l10n.setAsDefaultAgent,
+                                      onPressed: () async {
+                                        await notifier.setDefaultAgent(
+                                          isDefault ? null : profile.id,
+                                        );
+                                        setModalState(() {});
+                                      },
+                                    ),
+                                    if (isSelected)
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: context.colorScheme.primary,
+                                      ),
+                                  ],
+                                ),
+                                onTap: () {
+                                  notifier.switchAgent(profile.id);
+                                  Navigator.pop(ctx);
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Center(
+                          child: TextButton.icon(
+                            icon: const Icon(
+                              Icons.settings_outlined,
+                              size: 16,
                             ),
-                            onTap: () {
-                              notifier.switchAgent(profile.id);
+                            label: Text(context.l10n.manageAgents),
+                            onPressed: () {
                               Navigator.pop(ctx);
+                              _showManageAgentsModal();
                             },
                           ),
-                        );
-                      }),
-                      const SizedBox(height: 8),
-                      Center(
-                        child: TextButton.icon(
-                          icon: const Icon(Icons.settings_outlined, size: 16),
-                          label: Text(context.l10n.manageAgents),
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            _showManageAgentsModal();
-                          },
                         ),
                       ),
                     ],
