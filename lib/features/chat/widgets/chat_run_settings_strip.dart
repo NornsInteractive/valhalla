@@ -83,31 +83,56 @@ class ChatRunSettingsStrip extends StatelessWidget {
   Widget _buildTextItem({
     required BuildContext context,
     required Key key,
+    required IconData icon,
     required String text,
     required String tooltip,
-    required double verticalPadding,
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
     return Tooltip(
       message: tooltip,
-      child: InkWell(
-        key: key,
-        onTap: isBusy ? null : onTap,
-        borderRadius: BorderRadius.circular(VRadius.input),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4, vertical: verticalPadding),
-          child: Text(
-            text,
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: isBusy
-                  ? theme.colorScheme.outline
-                  : theme.colorScheme.onSurfaceVariant,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: key,
+          onTap: isBusy ? null : onTap,
+          borderRadius: BorderRadius.circular(VRadius.input),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            decoration: BoxDecoration(
+              color:
+                  theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(VRadius.input),
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                width: 0.8,
+              ),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 13,
+                  color: isBusy
+                      ? theme.colorScheme.outline
+                      : theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  text,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: isBusy
+                        ? theme.colorScheme.outline
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -115,37 +140,26 @@ class ChatRunSettingsStrip extends StatelessWidget {
   }
 
   Widget _buildSeparator(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Text(
-        '·',
-        style: TextStyle(
-          color: theme.colorScheme.outline.withValues(alpha: 0.5),
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
+    return const SizedBox(width: 6);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final verticalPadding = showTuneButton ? 8.0 : 3.0;
 
     return Container(
       key: const Key('chat_run_settings_strip'),
       width: double.infinity,
       padding: EdgeInsets.symmetric(
         horizontal: showTuneButton ? 10 : 8,
-        vertical: showTuneButton ? 2 : 1,
+        vertical: 3,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLowest,
         border: Border(
           bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+            width: 0.8,
           ),
         ),
       ),
@@ -207,24 +221,24 @@ class ChatRunSettingsStrip extends StatelessWidget {
             _buildTextItem(
               context: context,
               key: const Key('chat_strip_model_chip'),
+              icon: Icons.psychology_outlined,
               text: isStructuredSend
                   ? _getModelLabel(context)
                   : '${context.l10n.chatRunSettingsModel}: ${_getModelLabel(context)}',
               tooltip:
                   '${context.l10n.chatRunSettingsModel}: ${_getModelLabel(context)}',
-              verticalPadding: verticalPadding,
               onTap: onOpenSettings,
             ),
             _buildSeparator(context),
             _buildTextItem(
               context: context,
               key: const Key('chat_strip_reasoning_chip'),
+              icon: Icons.lightbulb_outline,
               text: isStructuredSend
                   ? _getReasoningLabel(context)
                   : '${context.l10n.chatRunSettingsReasoning}: ${_getReasoningLabel(context)}',
               tooltip:
                   '${context.l10n.chatRunSettingsReasoning}: ${_getReasoningLabel(context)}',
-              verticalPadding: verticalPadding,
               onTap: onOpenSettings,
             ),
             if (showMode && _getModeLabel(context) != null) ...[
@@ -232,10 +246,10 @@ class ChatRunSettingsStrip extends StatelessWidget {
               _buildTextItem(
                 context: context,
                 key: const Key('chat_strip_mode_chip'),
+                icon: Icons.smart_toy_outlined,
                 text: _getModeLabel(context)!,
                 tooltip:
                     '${context.l10n.chatRunSettingsAgentMode}: ${_getModeLabel(context)}',
-                verticalPadding: verticalPadding,
                 onTap: onOpenSettings,
               ),
             ],
@@ -243,10 +257,10 @@ class ChatRunSettingsStrip extends StatelessWidget {
             _buildTextItem(
               context: context,
               key: const Key('chat_strip_permission_chip'),
+              icon: Icons.shield_outlined,
               text: _getPermissionLabel(context),
               tooltip:
                   '${context.l10n.chatRunSettingsPermissions}: ${_getPermissionLabel(context)}',
-              verticalPadding: verticalPadding,
               onTap: onOpenSettings,
             ),
             if (trailing != null) ...[

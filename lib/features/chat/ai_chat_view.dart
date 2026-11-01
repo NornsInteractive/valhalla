@@ -6836,17 +6836,27 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                       message: isDraft
                           ? context.l10n.chatWorkingDirTooltip
                           : '${state.activeSession!.workingDirectory} (${context.l10n.sessionTitle})',
-                      child: Padding(
+                      child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
+                          horizontal: 7,
                           vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.colorScheme.surfaceContainerHigh
+                              .withValues(alpha: 0.55),
+                          borderRadius: BorderRadius.circular(VRadius.input),
+                          border: Border.all(
+                            color: context.colorScheme.outlineVariant
+                                .withValues(alpha: 0.35),
+                            width: 0.8,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               Icons.folder_outlined,
-                              size: 14,
+                              size: 13,
                               color: isDraft
                                   ? context.colorScheme.primary
                                   : context.colorScheme.outline,
@@ -6859,9 +6869,10 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                               child: Text(
                                 currentWorkingDir,
                                 style: monoTextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w500,
                                   color: isDraft
-                                      ? context.colorScheme.onSurface
+                                      ? context.colorScheme.onSurfaceVariant
                                       : context.colorScheme.outline,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -6872,7 +6883,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                               const SizedBox(width: 2),
                               Icon(
                                 Icons.arrow_drop_down,
-                                size: 16,
+                                size: 15,
                                 color: context.colorScheme.outline,
                               ),
                             ],
@@ -7192,11 +7203,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 PopupMenuButton<String>(
                   key: const Key('chat_attachments_button'),
                   tooltip: context.l10n.chatAttachTooltip,
-                  icon: const Icon(Icons.attach_file, size: 20),
+                  icon: const Icon(Icons.attach_file, size: 19),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(
-                    minWidth: 40,
-                    minHeight: 40,
+                    minWidth: 32,
+                    minHeight: 36,
                   ),
                   enabled: !isBusy,
                   onSelected: (val) {
@@ -7286,29 +7297,30 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                       ),
                   ],
                 ),
-                const SizedBox(width: 2),
+                const SizedBox(width: 1),
                 IconButton(
                   key: const Key('chat_commands_menu_button'),
                   tooltip: context.l10n.chatCommandsTooltip,
                   icon: _isLoadingComposerCommands
                       ? const SizedBox(
-                          width: 18,
-                          height: 18,
+                          width: 16,
+                          height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                           ),
                         )
-                      : const Icon(Icons.code, size: 20),
+                      : const Icon(Icons.code, size: 19),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(
-                    minWidth: 40,
-                    minHeight: 40,
+                    minWidth: 32,
+                    minHeight: 36,
                   ),
+                  visualDensity: VisualDensity.compact,
                   onPressed: (isBusy || _isLoadingComposerCommands)
                       ? null
                       : () => _openCommandsAndSkills(context),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
                 Expanded(
                   child: TextField(
                     key: const Key('chatPromptInput'),
