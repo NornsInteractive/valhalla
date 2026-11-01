@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'shell_quote.dart';
 import '../../data/models/tmux_socket_source.dart';
 
@@ -38,18 +40,93 @@ abstract final class TmuxSessionPlanner {
     return 'tmux ${socketArguments(socket)} $verb -t ${cliShellQuote(target)}';
   }
 
-  /// 协议输出字段分隔符（碰撞安全）。
+  /// 发现/身份查询的线上帧版本。
+  ///
+  /// - v1：直接按原始 U+001F 切分。
+  /// - v2：tmux 会把 `-F` 输出里的不可打印字节转义成 `\NNN`（三位八进制），
+  ///   并把字面反斜杠转义成 `\\`；我们用作分隔符的 U+001F 属于不可打印字节，
+  ///   因此真实响应里分隔符是四字符序列 `\037`（反斜杠 + `0` + `3` + `7`），
+  ///   而不是单个 0x1F 字节。v2 在切分前先调用 [decodeTmuxFormatEscapes] 还原，
+  ///   同时继续兼容仍返回原始 0x1F 的响应。
+  static const int framingVersion = 2;
+
+  /// 协议输出字段分隔符（逻辑分隔符）。
   ///
   /// 使用单个 UNIT SEPARATOR (U+001F)。tmux 的会话名可以包含制表符、空格、
-  /// 任意 UTF-8、甚至换行（见本地 `tmux new-session -s` 实测），因此用
-  /// 空白/制表符做分隔符会把一条合法记录拆成多条字段而误报
-  /// `TMUX_HISTORY_INVALID_RESPONSE`。U+001F 不可能出现在 tmux 会话名或
-  /// socket 路径里（二者都是 NUL 结尾的 C 字符串），所以即使尾部的
-  /// name/path 字段包含任意字符，前面的结构化字段也能被正确切分。
+  /// 任意 UTF-8、甚至换行，因此用空白/制表符做分隔符会把一条合法记录拆成
+  /// 多条字段而误报 `TMUX_HISTORY_INVALID_RESPONSE`。
   ///
-  /// 该字符通过 `sh -c` 的单引号原样传给 tmux，本地实测可在 SSH exec
-  /// 非交互通道上稳定往返。
+  /// 注意：**不能**假设 tmux 会话名或 socket 路径是「不能含 U+001F 的
+  /// NUL 结尾 C 字符串」——会话名允许任意字节，tmux 会把这些不可打印字节
+  /// 转义后再输出。所以真正的分隔符在线上会以字面量 `\037` 出现，解析前必须
+  /// 先经过 [decodeTmuxFormatEscapes]（见 [framingVersion] v2）。
   static const String fieldSeparator = '\u001f';
+
+  /// 还原 tmux `-F` 输出中的转义。
+  ///
+  /// tmux 在格式化输出时会把不可打印字节转义为 `\NNN`（三位八进制），并把
+  /// 字面反斜杠转义为 `\\`。解码规则严格对应 tmux 的转义方式：
+  /// - `\\`   -> 单个反斜杠
+  /// - `\NNN` -> 三位八进制对应的字节（例如 `\037` -> 0x1F 分隔符）
+  /// - 其它内容（含原始 0x1F、普通文本）原样保留
+  ///
+  /// 只变换真正的转义序列，绝不会把 name/socket 里的普通字符「顺手替换」掉：
+  /// 对本应用生成的会话名（`[A-Za-z0-9_-]`）与文件系统 socket 路径而言解码
+  /// 是恒等操作；对不含反斜杠的响应直接原样返回，因此含原始 0x1F 的旧响应
+  /// 完全向后兼容。
+  static String decodeTmuxFormatEscapes(String raw) {
+    if (!raw.contains(r'\')) return raw;
+    final bytes = <int>[];
+    var i = 0;
+    final n = raw.length;
+    while (i < n) {
+      final c = raw.codeUnitAt(i);
+      if (c == 0x5c) {
+        // 反斜杠：优先处理转义的反斜杠与三位八进制字节。
+        if (i + 1 < n && raw.codeUnitAt(i + 1) == 0x5c) {
+          bytes.add(0x5c);
+          i += 2;
+          continue;
+        }
+        if (i + 3 < n) {
+          final d1 = raw.codeUnitAt(i + 1);
+          final d2 = raw.codeUnitAt(i + 2);
+          final d3 = raw.codeUnitAt(i + 3);
+          if (_isOctal(d1) && _isOctal(d2) && _isOctal(d3)) {
+            bytes.add((d1 - 0x30) * 64 + (d2 - 0x30) * 8 + (d3 - 0x30));
+            i += 4;
+            continue;
+          }
+        }
+        // 未知转义：保留反斜杠本身，避免吞掉数据。
+        bytes.add(0x5c);
+        i += 1;
+        continue;
+      }
+      if (c < 0x80) {
+        bytes.add(c);
+        i += 1;
+        continue;
+      }
+      // 非 ASCII：原始字符已是解码后的码点，重新编码成 UTF-8 字节以保持一致。
+      if (c >= 0xD800 &&
+          c <= 0xDBFF &&
+          i + 1 < n &&
+          raw.codeUnitAt(i + 1) >= 0xDC00 &&
+          raw.codeUnitAt(i + 1) <= 0xDFFF) {
+        bytes.addAll(
+          utf8.encode(String.fromCharCodes([c, raw.codeUnitAt(i + 1)])),
+        );
+        i += 2;
+        continue;
+      }
+      bytes.addAll(utf8.encode(String.fromCharCode(c)));
+      i += 1;
+    }
+    return utf8.decode(bytes, allowMalformed: true);
+  }
+
+  static bool _isOctal(int c) => c >= 0x30 && c <= 0x37;
 
   static String discoverCommand(TmuxSocketSource socket) =>
       'tmux ${socketArguments(socket)} list-sessions -F '

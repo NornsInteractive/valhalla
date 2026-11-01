@@ -837,4 +837,155 @@ void main() {
     });
   });
 
+  group('真实 tmux 八进制转义分隔符（framing v2）', () {
+    test('listing：字面量 \\037 分隔符照常解析，保留真实会话名', () async {
+      // 用户实际 SSH stdout 的形态：分隔符是字面量 `\037`（tmux 对 U+001F
+      // 的八进制转义），而不是原始 0x1F 字节；JSON 诊断里会显示成 `\\037`。
+      const wire =
+          r'$0\0371792822786\0370\03734918\037/tmp/tmux-0/valhalla\037valhalla_ab_cd_ef';
+      final client = _FakeSshClient()
+        ..onQuery = (command) =>
+            _FakeSshSession(stdout: utf8.encode('$wire\n'));
+
+      final sessions = await TerminalSessionBridge.discoverTmuxSessions(
+        client,
+        serverId: 'srv-1',
+        socket: TmuxSocketSource.path('/tmp/tmux-0/valhalla'),
+        includeExternal: true,
+      );
+
+      expect(sessions, hasLength(1));
+      final info = sessions.single;
+      expect(info.name, 'valhalla_ab_cd_ef');
+      expect(info.attachedClients, 0);
+      expect(info.identity!.sessionId, r'$0');
+      expect(info.identity!.createdSeconds, 1792822786);
+      expect(info.identity!.serverPid, 34918);
+      expect(info.identity!.socketPath, '/tmp/tmux-0/valhalla');
+      expect(
+        info.createdAt.millisecondsSinceEpoch,
+        info.identity!.createdSeconds * 1000,
+      );
+    });
+
+    test('listing：两个 socket 的字面量 \\037 记录都能解析且身份不串台', () async {
+      final client = _FakeSshClient()
+        ..onQuery = (command) {
+          if (command.contains("-S '/tmp/tmux-0/valhalla'")) {
+            return _FakeSshSession(
+              stdout: utf8.encode(
+                r'$1\0371792822786\0370\03734918\037/tmp/tmux-0/valhalla\037valhalla_a'
+                '\n',
+              ),
+            );
+          }
+          if (command.contains('-L default')) {
+            return _FakeSshSession(
+              stdout: utf8.encode(
+                r'$2\0371792822790\0372\03734918\037/tmp/tmux-0/default\037valhalla_b'
+                '\n',
+              ),
+            );
+          }
+          throw StateError('Unexpected: $command');
+        };
+
+      final app = await TerminalSessionBridge.discoverTmuxSessions(
+        client,
+        serverId: 'srv-1',
+        socket: TmuxSocketSource.path('/tmp/tmux-0/valhalla'),
+        includeExternal: true,
+      );
+      final standard = await TerminalSessionBridge.discoverTmuxSessions(
+        client,
+        serverId: 'srv-1',
+        socket: TmuxSocketSource.standard,
+        includeExternal: true,
+      );
+
+      expect(app.single.name, 'valhalla_a');
+      expect(app.single.identity!.sessionId, r'$1');
+      expect(app.single.identity!.socketPath, '/tmp/tmux-0/valhalla');
+      expect(standard.single.name, 'valhalla_b');
+      expect(standard.single.identity!.sessionId, r'$2');
+      expect(standard.single.identity!.socketPath, '/tmp/tmux-0/default');
+      expect(
+        app.single.identity!.key,
+        isNot(standard.single.identity!.key),
+        reason: '不同 socket 上的同名/同类会话必须是不同身份',
+      );
+    });
+
+    test('identity：字面量 \\037 身份响应照常还原', () async {
+      final identity = TmuxSessionIdentity(
+        sessionId: r'$5',
+        createdSeconds: 1792822786,
+        serverPid: 34918,
+        socketPath: '/tmp/tmux-0/valhalla',
+      );
+      final client = _FakeSshClient()
+        ..onQuery = (command) => _FakeSshSession(
+          stdout: utf8.encode(
+            r'$5\0371792822786\03734918\037/tmp/tmux-0/valhalla' '\n',
+          ),
+        );
+
+      expect(
+        await TerminalSessionBridge.tmuxSessionExists(
+          client,
+          'ext',
+          tmuxPath: '/usr/bin/tmux',
+          socket: TmuxSocketSource.path('/tmp/tmux-0/valhalla'),
+          identity: identity,
+        ),
+        isTrue,
+        reason: '身份查询也必须先还原 \\037 分隔符',
+      );
+    });
+
+    test('listing：名字里的字面反斜杠（tmux 转义为 \\\\）被正确还原', () async {
+      // 外部会话名可含反斜杠；tmux 输出时把单个反斜杠转义成 `\\`。
+      // 线上名字是 `valhalla_back\\slash`，还原后应是 `valhalla_back\slash`。
+      const wire =
+          r'$3\0371772000000\0370\0374211\037/tmp/x/team\037valhalla_back\\slash';
+      final client = _FakeSshClient()
+        ..onQuery = (command) =>
+            _FakeSshSession(stdout: utf8.encode('$wire\n'));
+
+      final sessions = await TerminalSessionBridge.discoverTmuxSessions(
+        client,
+        serverId: 'srv-1',
+        socket: TmuxSocketSource.named('team'),
+        includeExternal: true,
+      );
+
+      expect(sessions, hasLength(1));
+      expect(sessions.single.name, r'valhalla_back\slash');
+      expect(sessions.single.identity!.sessionId, r'$3');
+    });
+
+    test('listing：字段数不足的字面量 \\037 记录仍然报错（不误接受）', () async {
+      // 5 个字段（缺 name）——即便用 `\037` 分隔也应判为畸形。
+      const wire = r'$3\0371772000000\0370\0374211\037/tmp/x/team';
+      final client = _FakeSshClient()
+        ..onQuery = (command) =>
+            _FakeSshSession(stdout: utf8.encode('$wire\n'));
+
+      await expectLater(
+        TerminalSessionBridge.discoverTmuxSessions(
+          client,
+          serverId: 'srv-1',
+          socket: TmuxSocketSource.named('team'),
+          includeExternal: true,
+        ),
+        throwsA(
+          isA<SSHConnectionException>().having(
+            (e) => e.message,
+            'message',
+            'TMUX_HISTORY_INVALID_RESPONSE',
+          ),
+        ),
+      );
+    });
+  });
 }

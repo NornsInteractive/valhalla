@@ -357,7 +357,13 @@ class TerminalSessionBridge {
     // 先把 stdout 按行切，再把「字段数不足 6 的续行」拼回上一条记录的 name 字段。
     // 会话名允许包含换行（tmux 不禁止），会在 -F 输出里把一条记录拆成多行；若不合并，
     // 上一条会被误判为合法片段、续行会被当成畸形而整体报错，反而让其它正常会话消失。
-    final rawLines = const LineSplitter().convert(result.stdout);
+    //
+    // 关键：tmux 会把不可打印字节（包括我们用作分隔符的 U+001F）转义成 `\NNN`
+    // 再输出，所以真实响应里分隔符是字面量 `\037`。必须在切行/切字段之前先还原，
+    // 否则每一行都会被当成「单字段」→ 全部畸形 → 误报 INVALID_RESPONSE/UNVERIFIED。
+    // 该解码对不含反斜杠的响应是恒等操作，原始 0x1F 响应完全兼容。
+    final stdout = TmuxSessionPlanner.decodeTmuxFormatEscapes(result.stdout);
+    final rawLines = const LineSplitter().convert(stdout);
     final records = <String>[];
     if (includeExternal) {
       // 仅外部发现使用 U+001F 六字段帧；只有这种格式才需要把「字段数不足 6 的
@@ -525,9 +531,11 @@ class TerminalSessionBridge {
     );
     if (result.exitCode == 0) {
       if (identity == null) return true;
-      // 身份查询使用与发现一致的 U+001F 分隔符。
-      final fields =
-          result.stdout.trimRight().split(TmuxSessionPlanner.fieldSeparator);
+      // 身份查询使用与发现一致的 U+001F 分隔符；同样先还原 tmux 的 `\NNN`
+      // 转义（真实响应里分隔符是字面量 `\037`），再按逻辑分隔符切分。
+      final fields = TmuxSessionPlanner.decodeTmuxFormatEscapes(
+        result.stdout.trimRight(),
+      ).split(TmuxSessionPlanner.fieldSeparator);
       if (fields.length != 4) {
         throw SSHConnectionException(
           'TMUX_HISTORY_INVALID_RESPONSE',

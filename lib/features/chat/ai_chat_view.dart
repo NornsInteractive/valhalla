@@ -2131,12 +2131,33 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           ),
           IconButton(
             key: const Key('chat_usage_diagnostics_button'),
-            icon: const Icon(Icons.analytics_outlined, size: 18),
+            icon: const Icon(
+              Icons.analytics_outlined,
+              size: 18,
+              key: Key('chat_usage_diagnostics_action_button'),
+            ),
             padding: btnPadding,
             constraints: btnConstraints,
             visualDensity: VisualDensity.compact,
             tooltip: context.l10n.chatAccountAndQuotaTitle,
             onPressed: () => _showAccountAndQuotaDialog(context),
+          ),
+          IconButton(
+            key: const Key('chat_run_settings_button'),
+            icon: const Icon(Icons.tune, size: 18),
+            padding: btnPadding,
+            constraints: btnConstraints,
+            visualDensity: VisualDensity.compact,
+            tooltip: context.l10n.chatRunSettingsTitle,
+            onPressed: (state.isGenerating ||
+                    state.isAuthenticating ||
+                    state.isLoadingSettings ||
+                    state.isApplyingSettings ||
+                    (ref.watch(remoteWorkspaceProvider.select((w) => w.enabled)) &&
+                        state.activeSession != null &&
+                        !state.workspaceHasControl))
+                ? null
+                : () => _openRunSettings(refresh: true),
           ),
           IconButton(
             key: const Key('chat_workbench_toggle_button'),
@@ -6762,10 +6783,10 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   state.isLoadingSettings ||
                   state.isApplyingSettings ||
                   isReadOnlyWorkspace,
-              isLoadingSettings: state.isLoadingSettings,
-              tuneButtonKey: const Key('chat_run_settings_button'),
+              isLoadingSettings: false,
+              showTuneButton: false,
+              showMode: false,
               onOpenSettings: () => _openRunSettings(refresh: true),
-              onRefreshSettings: () => _openRunSettings(refresh: true),
               leading: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -6777,26 +6798,15 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                             context,
                             rawWorkingDir,
                           ),
-                    borderRadius: BorderRadius.circular(VRadius.pill),
+                    borderRadius: BorderRadius.circular(VRadius.input),
                     child: Tooltip(
                       message: isDraft
                           ? context.l10n.chatWorkingDirTooltip
                           : '${state.activeSession!.workingDirectory} (${context.l10n.sessionTitle})',
-                      child: Container(
+                      child: Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: context
-                              .colorScheme
-                              .surfaceContainerHighest
-                              .withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(VRadius.pill),
-                          border: Border.all(
-                            color: context.colorScheme.outlineVariant
-                                .withValues(alpha: 0.5),
-                          ),
+                          horizontal: 4,
+                          vertical: 3,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -6808,7 +6818,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                   ? context.colorScheme.primary
                                   : context.colorScheme.outline,
                             ),
-                            const SizedBox(width: 5),
+                            const SizedBox(width: 4),
                             ConstrainedBox(
                               constraints: const BoxConstraints(
                                 maxWidth: 160,
@@ -6843,11 +6853,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     IconButton(
                       key: const Key('chat_clear_draft_working_dir_button'),
                       tooltip: context.l10n.chatResetDraftWorkingDir,
-                      icon: const Icon(Icons.close, size: 16),
+                      icon: const Icon(Icons.close, size: 14),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
+                        minWidth: 20,
+                        minHeight: 20,
                       ),
                       onPressed: (isBusy || !isConnected || isRecovering)
                           ? null
@@ -6858,22 +6868,6 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   ],
                 ],
               ),
-              trailing: (state.activeAgentProfile != null ||
-                      state.usage != null ||
-                      state.diagnostics.isNotEmpty ||
-                      state.account != null)
-                  ? IconButton(
-                      key: const Key('chat_usage_diagnostics_action_button'),
-                      icon: const Icon(Icons.analytics_outlined, size: 18),
-                      tooltip: context.l10n.chatAccountAndQuotaTitle,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 40,
-                        minHeight: 40,
-                      ),
-                      onPressed: () => _showAccountAndQuotaDialog(context),
-                    )
-                  : null,
             ),
             if (state.attachments.isNotEmpty) ...[
               const SizedBox(height: 4),

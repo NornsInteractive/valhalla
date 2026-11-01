@@ -14,6 +14,7 @@ import 'package:valhalla/data/models/server_profile.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/chat/ai_chat_view.dart';
 import 'package:valhalla/features/chat/cli_chat_view.dart';
+import 'package:valhalla/features/chat/widgets/chat_run_settings_strip.dart';
 import 'package:valhalla/infrastructure/acp/agent_environment_service.dart';
 import 'package:valhalla/l10n/app_localizations.dart';
 import '../support/temp_chat_db.dart';
@@ -344,6 +345,129 @@ void main() {
       );
       expect(btn.onPressed, isNull);
     });
+
+    testWidgets(
+      'ACP upper strip shows only workdir/model/reasoning/permissions; '
+      'mode hidden but selectable in dialog',
+      (tester) async {
+        final local = await LocalStorageService.init();
+
+        tester.view.physicalSize = const Size(1000, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final aiNotifier = _FakeAiChatNotifier(
+          AiChatState(
+            runSettings: const ChatRunSettings(
+              modelId: 'gpt-4',
+              reasoningId: 'high',
+              modeId: 'plan',
+              permissionPolicy: OperationPermissionPolicy.askEveryTime,
+            ),
+            // Advertise agent modes so hiding the chip proves the ACP
+            // `showMode: false` wiring, not an empty capability list.
+            capabilities: const AgentRuntimeCapabilities(
+              models: [ChatSettingOption('gpt-4', 'GPT-4')],
+              reasoningLevels: [
+                ChatSettingOption('low', 'Low'),
+                ChatSettingOption('high', 'High'),
+              ],
+              modes: [
+                ChatSettingOption('default', 'Default'),
+                ChatSettingOption('plan', 'Plan'),
+              ],
+              currentModeId: 'plan',
+            ),
+            activeAgentProfile: testAcpAgent,
+          ),
+        );
+
+        await tester.pumpWidget(
+          createChatApp(
+            child: const AiChatView(),
+            overrides: [
+              localStorageServiceProvider.overrideWithValue(local),
+              activeServerProvider.overrideWith(
+                () => _TestActiveServerNotifier(testServer),
+              ),
+              serverConnectionProvider.overrideWith(
+                _TestServerConnectionNotifier.new,
+              ),
+              agentRegistryProvider.overrideWith(
+                () => _TestAgentRegistryNotifier([testAcpAgent]),
+              ),
+              aiChatProvider.overrideWith(() => aiNotifier),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final strip = find.byKey(const Key('chat_run_settings_strip'));
+        expect(strip, findsOneWidget);
+
+        // Upper strip contains exactly workdir + model + reasoning + permissions.
+        for (final key in const [
+          'chat_working_dir_button',
+          'chat_strip_model_chip',
+          'chat_strip_reasoning_chip',
+          'chat_strip_permission_chip',
+        ]) {
+          expect(
+            find.descendant(of: strip, matching: find.byKey(Key(key))),
+            findsOneWidget,
+            reason: '$key should be in the upper strip',
+          );
+        }
+
+        // Agent mode chip is hidden in the ACP upper strip.
+        expect(
+          find.descendant(
+            of: strip,
+            matching: find.byKey(const Key('chat_strip_mode_chip')),
+          ),
+          findsNothing,
+        );
+
+        // No other toolbar items above the composer (no tune/refresh controls).
+        expect(
+          find.descendant(
+            of: strip,
+            matching: find.byKey(const Key('chat_run_settings_button')),
+          ),
+          findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: strip,
+            matching: find.byKey(
+              const Key('chat_run_settings_strip_refresh_button'),
+            ),
+          ),
+          findsNothing,
+        );
+        expect(
+          find.descendant(of: strip, matching: find.byIcon(Icons.tune)),
+          findsNothing,
+        );
+
+        // Tune button lives in the input row; opening the dialog still exposes
+        // agent mode selection.
+        final settingsBtn = find.byKey(const Key('chat_run_settings_button'));
+        expect(settingsBtn, findsOneWidget);
+        await tester.tap(settingsBtn);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('chat_run_settings_dialog')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('chat_run_settings_mode_dropdown')),
+          findsOneWidget,
+        );
+      },
+    );
   });
 
   group('CliChatView Run Settings Tests', () {
@@ -519,6 +643,51 @@ void main() {
         find.byKey(const Key('cli_run_settings_button')),
       );
       expect(btn.onPressed, isNull);
+    });
+  });
+
+  // Proves `showMode` genuinely gates the mode chip, so the ACP integration
+  // assertion (`findsNothing`) is meaningful rather than vacuous: with the same
+  // advertised modes, only `showMode` differs between the two renders.
+  group('ChatRunSettingsStrip showMode gating', () {
+    Widget buildStrip({required bool showMode}) {
+      return MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ChatRunSettingsStrip(
+            settings: const ChatRunSettings(
+              modelId: 'gpt-4',
+              reasoningId: 'high',
+              modeId: 'plan',
+              permissionPolicy: OperationPermissionPolicy.askEveryTime,
+            ),
+            capabilities: const AgentRuntimeCapabilities(
+              models: [ChatSettingOption('gpt-4', 'GPT-4')],
+              reasoningLevels: [ChatSettingOption('high', 'High')],
+              modes: [ChatSettingOption('plan', 'Plan')],
+              currentModeId: 'plan',
+            ),
+            isBusy: false,
+            showTuneButton: false,
+            showMode: showMode,
+            onOpenSettings: () {},
+          ),
+        ),
+      );
+    }
+
+    testWidgets('showMode true renders mode chip, false hides it', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildStrip(showMode: true));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('chat_strip_mode_chip')), findsOneWidget);
+
+      await tester.pumpWidget(buildStrip(showMode: false));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('chat_strip_mode_chip')), findsNothing);
     });
   });
 }

@@ -221,4 +221,40 @@ void main() {
       expect(TmuxInstallPlanner.installCommandFor('none'), isNull);
     });
   });
+
+  group('tmux -F 八进制转义还原（framing v2）', () {
+    test('字面量 \\037 还原成 U+001F 分隔符', () {
+      expect(
+        TmuxSessionPlanner.decodeTmuxFormatEscapes(r'$0\0371792822786\037x'),
+        '\$0\u001f1792822786\u001fx',
+      );
+    });
+
+    test('原始 0x1F 响应保持不变（向后兼容）', () {
+      const raw = 'a\u001fb';
+      expect(TmuxSessionPlanner.decodeTmuxFormatEscapes(raw), raw);
+    });
+
+    test('转义反斜杠 \\\\ 还原成单个反斜杠', () {
+      expect(TmuxSessionPlanner.decodeTmuxFormatEscapes(r'a\\b'), r'a\b');
+    });
+
+    test('三位八进制按字节还原（\\101 = A）', () {
+      expect(TmuxSessionPlanner.decodeTmuxFormatEscapes(r'a\101b'), 'aAb');
+    });
+
+    test('普通文本是恒等操作', () {
+      expect(TmuxSessionPlanner.decodeTmuxFormatEscapes('plain'), 'plain');
+    });
+
+    test('转义反斜杠后跟八进制数字不误判（\\\\037 保持字面量 \\037）', () {
+      // tmux 对「字面反斜杠 + 037」会输出 `\\037`：先还原 `\\` 成 `\`，
+      // 后面的 `037` 不再有前导反斜杠，因此保持字面量。
+      expect(TmuxSessionPlanner.decodeTmuxFormatEscapes(r'\\037'), r'\037');
+    });
+
+    test('未知转义保留反斜杠不吞数据', () {
+      expect(TmuxSessionPlanner.decodeTmuxFormatEscapes(r'a\zb'), r'a\zb');
+    });
+  });
 }
