@@ -1,12 +1,15 @@
-# Valhalla 1.0.31+32
+# Valhalla 1.0.32+33
 
-## 智能会话 Agent 切换弹窗滚动修复
-- 修复智能会话（AI Chat）界面切换 Agent 弹窗（Agent Switcher Modal）无法上下滑动的问题：
-  - 弹窗底部抽屉启用 `isScrollControlled: true` 与安全区适配，并添加平滑圆角卡片外观。
-  - 将固定的 Agent 列表重构为弹性滚动的 `ListView.separated`，列表高度自适应内容并在超出屏幕时（最大 85% 屏高）支持流畅上下滑动与惯性滚动。
-  - 智能体名称添加横向溢出截断保护（`Expanded` + `TextOverflow.ellipsis`），防止长名称导致渲染溢出。
-  - 保留顶部固定操作标题与底部“管理 Agent”快捷入口。
-- 新增组件级滑动与切换测试，验证移动端窄屏下多 Agent 列表流畅上下滑动、目标 Agent 滚动可见及切换触发。
+## 智能会话底部输入框操作按钮紧凑化与打字宽度优化
+- 彻底解决输入框左侧附件菜单按钮与命令按钮尺寸占用过宽问题：
+  - 穿透 Material 3 默认 `IconButtonTheme` 最小 40/48dp 约束，显式配置 `style: IconButton.styleFrom(minimumSize: Size.zero, fixedSize: const Size(26, 32), padding: EdgeInsets.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap, visualDensity: VisualDensity.compact)`。
+  - 外层增加显式 `SizedBox(width: 26, height: 32)` 物理约束，彻底消解 Material 默认内边距与点击区域扩张。
+  - 经由真实 Android ADB 实体设备（640dpi）`uiautomator dump` 实测验证：
+    - 附件按钮宽度从 48dp (192px) 缩小至 26dp (104px)；
+    - 命令按钮宽度从 40dp (160px) 缩小至 26dp (104px)；
+    - 双按钮总占用从 88dp (352px) 紧缩至 52dp (208px)，输入框起始位置左移 36dp (144px)，右侧有效打字空间显著扩大。
+- 组件回归测试断言两按钮宽度精确为 26.0dp。
 
-## 移动端构建与发布
-- 发布手机端 ARM 架构（arm64-v8a、armeabi-v7a）签名发布包。
+## 发布与构建
+- 正式证书签名 Android 各架构包（arm64-v8a、armeabi-v7a、x86_64）、AAB 与 Linux x64 包。
+- 零静态分析警告（`flutter analyze --no-pub`），全量回归测试通过。

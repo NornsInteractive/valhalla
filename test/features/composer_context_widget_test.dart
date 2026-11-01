@@ -476,5 +476,21 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 500));
     });
+
+    testWidgets(
+      'composer left action buttons are compact with width exactly 26dp',
+      (tester) async {
+        final notifier = _ContextNotifier(_draftState());
+        await _pumpChat(tester, notifier);
+
+        final attachSize = tester.getSize(find.byKey(_attachmentsKey));
+        final commandSize = tester.getSize(
+          find.byKey(const Key('chat_commands_menu_button')),
+        );
+
+        expect(attachSize.width, equals(26.0));
+        expect(commandSize.width, equals(26.0));
+      },
+    );
   });
 }

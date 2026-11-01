@@ -7244,124 +7244,137 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                PopupMenuButton<String>(
-                  key: const Key('chat_attachments_button'),
-                  tooltip: context.l10n.chatAttachTooltip,
-                  icon: const Icon(Icons.attach_file, size: 17),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 26,
-                    minHeight: 30,
-                  ),
-                  enabled: !isBusy,
-                  onSelected: (val) {
-                    switch (val) {
-                      case 'image':
-                        _pickLocalImage();
-                        break;
-                      case 'text':
-                        _pickLocalTextFile();
-                        break;
-                      case 'remote':
-                        _promptRemoteTextFile(context);
-                        break;
-                      case 'probe':
-                        ref
-                            .read(aiChatProvider.notifier)
-                            .prepareRunSettings(refresh: false);
-                        break;
-                    }
-                  },
-                  itemBuilder: (ctx) => [
-                    PopupMenuItem<String>(
-                      value: 'image',
-                      enabled: state.supportsImages,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.image_outlined,
-                            size: 16,
-                            color: state.supportsImages
-                              ? null
-                              : ctx.colorScheme.outline,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.chatAttachImage),
-                        ],
-                      ),
+                SizedBox(
+                  width: 26,
+                  height: 32,
+                  child: PopupMenuButton<String>(
+                    key: const Key('chat_attachments_button'),
+                    tooltip: context.l10n.chatAttachTooltip,
+                    icon: const Icon(Icons.attach_file, size: 17),
+                    padding: EdgeInsets.zero,
+                    style: IconButton.styleFrom(
+                      minimumSize: Size.zero,
+                      fixedSize: const Size(26, 32),
+                      padding: EdgeInsets.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
                     ),
-                    PopupMenuItem<String>(
-                      value: 'text',
-                      enabled: state.supportsTextAttachments,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.description_outlined,
-                            size: 16,
-                            color: state.supportsTextAttachments
-                              ? null
-                              : ctx.colorScheme.outline,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.chatAttachLocalText),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'remote',
-                      enabled:
-                          state.supportsTextAttachments &&
-                          isConnected &&
-                          !isRecovering,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.cloud_download_outlined,
-                            size: 16,
-                            color: state.supportsTextAttachments
-                              ? null
-                              : ctx.colorScheme.outline,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.chatAttachRemoteText),
-                        ],
-                      ),
-                    ),
-                    if (!state.supportsImages &&
-                        !state.supportsTextAttachments)
+                    enabled: !isBusy,
+                    onSelected: (val) {
+                      switch (val) {
+                        case 'image':
+                          _pickLocalImage();
+                          break;
+                        case 'text':
+                          _pickLocalTextFile();
+                          break;
+                        case 'remote':
+                          _promptRemoteTextFile(context);
+                          break;
+                        case 'probe':
+                          ref
+                              .read(aiChatProvider.notifier)
+                              .prepareRunSettings(refresh: false);
+                          break;
+                      }
+                    },
+                    itemBuilder: (ctx) => [
                       PopupMenuItem<String>(
-                        value: 'probe',
+                        value: 'image',
+                        enabled: state.supportsImages,
                         child: Row(
                           children: [
-                            const Icon(Icons.refresh, size: 16),
+                            Icon(
+                              Icons.image_outlined,
+                              size: 16,
+                              color: state.supportsImages
+                                  ? null
+                                  : ctx.colorScheme.outline,
+                            ),
                             const SizedBox(width: 8),
-                            Text(context.l10n.refresh),
+                            Text(context.l10n.chatAttachImage),
                           ],
                         ),
                       ),
-                  ],
-                ),
-                IconButton(
-                  key: const Key('chat_commands_menu_button'),
-                  tooltip: context.l10n.chatCommandsTooltip,
-                  icon: _isLoadingComposerCommands
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
+                      PopupMenuItem<String>(
+                        value: 'text',
+                        enabled: state.supportsTextAttachments,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.description_outlined,
+                              size: 16,
+                              color: state.supportsTextAttachments
+                                  ? null
+                                  : ctx.colorScheme.outline,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(context.l10n.chatAttachLocalText),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'remote',
+                        enabled:
+                            state.supportsTextAttachments &&
+                            isConnected &&
+                            !isRecovering,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.cloud_download_outlined,
+                              size: 16,
+                              color: state.supportsTextAttachments
+                                  ? null
+                                  : ctx.colorScheme.outline,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(context.l10n.chatAttachRemoteText),
+                          ],
+                        ),
+                      ),
+                      if (!state.supportsImages &&
+                          !state.supportsTextAttachments)
+                        PopupMenuItem<String>(
+                          value: 'probe',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.refresh, size: 16),
+                              const SizedBox(width: 8),
+                              Text(context.l10n.refresh),
+                            ],
                           ),
-                        )
-                      : const Icon(Icons.code, size: 17),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 26,
-                    minHeight: 30,
+                        ),
+                    ],
                   ),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: (isBusy || _isLoadingComposerCommands)
-                      ? null
-                      : () => _openCommandsAndSkills(context),
+                ),
+                SizedBox(
+                  width: 26,
+                  height: 32,
+                  child: IconButton(
+                    key: const Key('chat_commands_menu_button'),
+                    tooltip: context.l10n.chatCommandsTooltip,
+                    icon: _isLoadingComposerCommands
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.code, size: 17),
+                    padding: EdgeInsets.zero,
+                    style: IconButton.styleFrom(
+                      minimumSize: Size.zero,
+                      fixedSize: const Size(26, 32),
+                      padding: EdgeInsets.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: (isBusy || _isLoadingComposerCommands)
+                        ? null
+                        : () => _openCommandsAndSkills(context),
+                  ),
                 ),
                 const SizedBox(width: 2),
                 Expanded(
