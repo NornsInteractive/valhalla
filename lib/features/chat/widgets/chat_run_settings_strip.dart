@@ -80,6 +80,18 @@ class ChatRunSettingsStrip extends StatelessWidget {
     };
   }
 
+  String _getExtraOptionLabel(ChatRuntimeSetting extra) {
+    final currentStr =
+        (settings.configValues[extra.id] ?? extra.currentValue).toString();
+    final option = extra.options.where((o) => o.id == currentStr).firstOrNull;
+    return option?.label ?? currentStr;
+  }
+
+  bool _isExtraBooleanOn(ChatRuntimeSetting extra) {
+    final val = settings.configValues[extra.id] ?? extra.currentValue;
+    return val == true || val == 'true' || val == 1;
+  }
+
   Widget _buildTextItem({
     required BuildContext context,
     required Key key,
@@ -263,6 +275,31 @@ class ChatRunSettingsStrip extends StatelessWidget {
                   '${context.l10n.chatRunSettingsPermissions}: ${_getPermissionLabel(context)}',
               onTap: onOpenSettings,
             ),
+            for (final extra in capabilities.extraSettings) ...[
+              if (extra.isBoolean) ...[
+                if (_isExtraBooleanOn(extra)) ...[
+                  _buildSeparator(context),
+                  _buildTextItem(
+                    context: context,
+                    key: Key('chat_strip_extra_${extra.id}'),
+                    icon: Icons.check_circle_outline,
+                    text: extra.label,
+                    tooltip: '${extra.label}: ON',
+                    onTap: onOpenSettings,
+                  ),
+                ],
+              ] else ...[
+                _buildSeparator(context),
+                _buildTextItem(
+                  context: context,
+                  key: Key('chat_strip_extra_${extra.id}'),
+                  icon: Icons.tune,
+                  text: '${extra.label}: ${_getExtraOptionLabel(extra)}',
+                  tooltip: '${extra.label}: ${_getExtraOptionLabel(extra)}',
+                  onTap: onOpenSettings,
+                ),
+              ],
+            ],
             if (trailing != null) ...[
               const SizedBox(width: 6),
               trailing!,

@@ -406,12 +406,12 @@ void main() {
         final strip = find.byKey(const Key('chat_run_settings_strip'));
         expect(strip, findsOneWidget);
 
-        // Upper strip contains exactly workdir + model + reasoning + permissions.
+        // Upper strip contains all run settings: model + reasoning + permissions + mode.
         for (final key in const [
-          'chat_working_dir_button',
           'chat_strip_model_chip',
           'chat_strip_reasoning_chip',
           'chat_strip_permission_chip',
+          'chat_strip_mode_chip',
         ]) {
           expect(
             find.descendant(of: strip, matching: find.byKey(Key(key))),
@@ -420,14 +420,15 @@ void main() {
           );
         }
 
-        // Agent mode chip is hidden in the ACP upper strip.
+        // Project working directory is moved out of the run settings strip into the session header.
         expect(
           find.descendant(
             of: strip,
-            matching: find.byKey(const Key('chat_strip_mode_chip')),
+            matching: find.byKey(const Key('chat_working_dir_button')),
           ),
           findsNothing,
         );
+        expect(find.byKey(const Key('chat_working_dir_button')), findsOneWidget);
 
         // No other toolbar items above the composer (no tune/refresh controls).
         expect(
@@ -688,6 +689,69 @@ void main() {
       await tester.pumpWidget(buildStrip(showMode: false));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('chat_strip_mode_chip')), findsNothing);
+    });
+  });
+
+  group('ChatRunSettingsStrip extra settings toggle visibility', () {
+    Widget buildStripWithExtra({
+      required bool switchValue,
+    }) {
+      return MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ChatRunSettingsStrip(
+            settings: ChatRunSettings(
+              modelId: 'gpt-4',
+              reasoningId: 'high',
+              permissionPolicy: OperationPermissionPolicy.askEveryTime,
+              configValues: {'extra_switch': switchValue, 'extra_select': 'opt2'},
+            ),
+            capabilities: const AgentRuntimeCapabilities(
+              models: [ChatSettingOption('gpt-4', 'GPT-4')],
+              reasoningLevels: [ChatSettingOption('high', 'High')],
+              extraSettings: [
+                ChatRuntimeSetting(
+                  id: 'extra_switch',
+                  label: '联网搜索',
+                  currentValue: false,
+                  isBoolean: true,
+                ),
+                ChatRuntimeSetting(
+                  id: 'extra_select',
+                  label: '输出风格',
+                  currentValue: 'opt1',
+                  isBoolean: false,
+                  options: [
+                    ChatSettingOption('opt1', '简洁'),
+                    ChatSettingOption('opt2', '详尽'),
+                  ],
+                ),
+              ],
+            ),
+            isBusy: false,
+            showTuneButton: false,
+            onOpenSettings: () {},
+          ),
+        ),
+      );
+    }
+
+    testWidgets('switch extra setting hidden when false, shown when true', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildStripWithExtra(switchValue: false));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('chat_strip_extra_extra_switch')), findsNothing);
+      expect(find.byKey(const Key('chat_strip_extra_extra_select')), findsOneWidget);
+      expect(find.text('输出风格: 详尽'), findsOneWidget);
+
+      await tester.pumpWidget(buildStripWithExtra(switchValue: true));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('chat_strip_extra_extra_switch')), findsOneWidget);
+      expect(find.text('联网搜索'), findsOneWidget);
+      expect(find.byKey(const Key('chat_strip_extra_extra_select')), findsOneWidget);
     });
   });
 }
