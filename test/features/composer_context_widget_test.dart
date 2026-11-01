@@ -478,7 +478,7 @@ void main() {
     });
 
     testWidgets(
-      'composer left action buttons are compact with width exactly 26dp',
+      'composer follows Google Chat layout with circular add button and inline command action',
       (tester) async {
         final notifier = _ContextNotifier(_draftState());
         await _pumpChat(tester, notifier);
@@ -487,9 +487,16 @@ void main() {
         final commandSize = tester.getSize(
           find.byKey(const Key('chat_commands_menu_button')),
         );
+        final sendSize = tester.getSize(
+          find.byKey(const Key('sendMessageButton')),
+        );
 
-        expect(attachSize.width, equals(26.0));
-        expect(commandSize.width, equals(26.0));
+        expect(attachSize.width, equals(40.0));
+        expect(attachSize.height, equals(40.0));
+        expect(commandSize.width, equals(32.0));
+        expect(commandSize.height, equals(32.0));
+        expect(sendSize.width, equals(40.0));
+        expect(sendSize.height, equals(40.0));
       },
     );
   });

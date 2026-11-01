@@ -7245,19 +7245,27 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 SizedBox(
-                  width: 26,
-                  height: 32,
+                  width: 40,
+                  height: 40,
                   child: PopupMenuButton<String>(
                     key: const Key('chat_attachments_button'),
                     tooltip: context.l10n.chatAttachTooltip,
-                    icon: const Icon(Icons.attach_file, size: 17),
+                    icon: Icon(
+                      Icons.add_rounded,
+                      size: 22,
+                      color: context.colorScheme.onSurfaceVariant,
+                    ),
                     padding: EdgeInsets.zero,
                     style: IconButton.styleFrom(
-                      minimumSize: Size.zero,
-                      fixedSize: const Size(26, 32),
+                      backgroundColor:
+                          context.colorScheme.surfaceContainerHigh,
+                      foregroundColor:
+                          context.colorScheme.onSurfaceVariant,
+                      shape: const CircleBorder(),
+                      minimumSize: const Size(40, 40),
+                      fixedSize: const Size(40, 40),
                       padding: EdgeInsets.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
                     ),
                     enabled: !isBusy,
                     onSelected: (val) {
@@ -7270,6 +7278,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                           break;
                         case 'remote':
                           _promptRemoteTextFile(context);
+                          break;
+                        case 'commands':
+                          _openCommandsAndSkills(context);
                           break;
                         case 'probe':
                           ref
@@ -7333,6 +7344,17 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                           ],
                         ),
                       ),
+                      PopupMenuItem<String>(
+                        value: 'commands',
+                        enabled: !isBusy && !_isLoadingComposerCommands,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.code_rounded, size: 16),
+                            const SizedBox(width: 8),
+                            Text(context.l10n.chatCommandsTooltip),
+                          ],
+                        ),
+                      ),
                       if (!state.supportsImages &&
                           !state.supportsTextAttachments)
                         PopupMenuItem<String>(
@@ -7348,118 +7370,176 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     ],
                   ),
                 ),
-                SizedBox(
-                  width: 26,
-                  height: 32,
-                  child: IconButton(
-                    key: const Key('chat_commands_menu_button'),
-                    tooltip: context.l10n.chatCommandsTooltip,
-                    icon: _isLoadingComposerCommands
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(Icons.code, size: 17),
-                    padding: EdgeInsets.zero,
-                    style: IconButton.styleFrom(
-                      minimumSize: Size.zero,
-                      fixedSize: const Size(26, 32),
-                      padding: EdgeInsets.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    onPressed: (isBusy || _isLoadingComposerCommands)
-                        ? null
-                        : () => _openCommandsAndSkills(context),
-                  ),
-                ),
-                const SizedBox(width: 2),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: TextField(
-                    key: const Key('chatPromptInput'),
-                    controller: _promptController,
-                    enabled: hasActiveAgent && !isBusy,
-                    minLines: 1,
-                    maxLines: 4,
-                    style: const TextStyle(fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: hasActiveAgent
-                          ? context.l10n.inputPromptHint
-                          : (hasUnreadyAgents
-                                ? context.l10n.agentNeedsInstallOrReadyHint
-                                : context.l10n.noAgentAvailableHint),
-                      hintStyle: const TextStyle(fontSize: 14),
-                      hintMaxLines: 1,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(VRadius.input),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 40),
+                    decoration: BoxDecoration(
+                      color: context.colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: context.colorScheme.outlineVariant
+                            .withValues(alpha: 0.35),
+                        width: 1,
                       ),
                     ),
-                    onChanged: (text) =>
-                        ref.read(aiChatProvider.notifier).updateDraftText(text),
-                    onSubmitted: canSend ? (_) => _handleSend() : null,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            key: const Key('chatPromptInput'),
+                            controller: _promptController,
+                            enabled: hasActiveAgent && !isBusy,
+                            minLines: 1,
+                            maxLines: 4,
+                            style: const TextStyle(fontSize: 14),
+                            decoration: InputDecoration(
+                              hintText: hasActiveAgent
+                                  ? context.l10n.inputPromptHint
+                                  : (hasUnreadyAgents
+                                        ? context
+                                            .l10n
+                                            .agentNeedsInstallOrReadyHint
+                                        : context.l10n.noAgentAvailableHint),
+                              hintStyle: TextStyle(
+                                fontSize: 14,
+                                color: context.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.7),
+                              ),
+                              hintMaxLines: 1,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                            ),
+                            onChanged: (text) => ref
+                                .read(aiChatProvider.notifier)
+                                .updateDraftText(text),
+                            onSubmitted: canSend ? (_) => _handleSend() : null,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4, bottom: 4),
+                          child: SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: IconButton(
+                              key: const Key('chat_commands_menu_button'),
+                              tooltip: context.l10n.chatCommandsTooltip,
+                              icon: _isLoadingComposerCommands
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.code_rounded,
+                                      size: 19,
+                                      color: context
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                              padding: EdgeInsets.zero,
+                              style: IconButton.styleFrom(
+                                minimumSize: const Size(32, 32),
+                                fixedSize: const Size(32, 32),
+                                padding: EdgeInsets.zero,
+                                tapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              onPressed:
+                                  (isBusy || _isLoadingComposerCommands)
+                                      ? null
+                                      : () =>
+                                          _openCommandsAndSkills(context),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 if (state.isGenerating)
                   PressableScale(
-                    child: IconButton.filled(
-                      key: const Key('stopGenerationButton'),
-                      icon: const Icon(Icons.stop, size: 20),
-                      style: IconButton.styleFrom(
-                        backgroundColor: context.colorScheme.error,
-                        foregroundColor: context.colorScheme.onError,
-                        minimumSize: const Size(40, 40),
-                        padding: EdgeInsets.zero,
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: IconButton.filled(
+                        key: const Key('stopGenerationButton'),
+                        icon: const Icon(Icons.stop_rounded, size: 22),
+                        style: IconButton.styleFrom(
+                          backgroundColor: context.colorScheme.error,
+                          foregroundColor: context.colorScheme.onError,
+                          shape: const CircleBorder(),
+                          minimumSize: const Size(40, 40),
+                          fixedSize: const Size(40, 40),
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        tooltip: context.l10n.stopGeneration,
+                        onPressed: isReadOnlyWorkspace
+                            ? null
+                            : () {
+                                final serverKey = ref
+                                    .read(activeServerProvider)
+                                    ?.connectionKey
+                                    .toString();
+                                final sessionId = ref
+                                    .read(aiChatProvider)
+                                    .activeSessionId;
+                                if (serverKey != null && sessionId != null) {
+                                  ref
+                                      .read(aiChatProvider.notifier)
+                                      .stopViewingRun(
+                                        expectedServerKey: serverKey,
+                                        expectedSessionId: sessionId,
+                                      );
+                                } else {
+                                  ref
+                                      .read(aiChatProvider.notifier)
+                                      .stopGeneration();
+                                }
+                              },
                       ),
-                      tooltip: context.l10n.stopGeneration,
-                      onPressed: isReadOnlyWorkspace
-                          ? null
-                          : () {
-                              final serverKey = ref
-                                  .read(activeServerProvider)
-                                  ?.connectionKey
-                                  .toString();
-                              final sessionId = ref
-                                  .read(aiChatProvider)
-                                  .activeSessionId;
-                              if (serverKey != null && sessionId != null) {
-                                ref
-                                    .read(aiChatProvider.notifier)
-                                    .stopViewingRun(
-                                      expectedServerKey: serverKey,
-                                      expectedSessionId: sessionId,
-                                    );
-                              } else {
-                                ref
-                                    .read(aiChatProvider.notifier)
-                                    .stopGeneration();
-                              }
-                            },
                     ),
                   )
                 else
                   PressableScale(
-                    child: IconButton.filled(
-                      key: const Key('sendMessageButton'),
-                      icon: const Icon(Icons.send, size: 20),
-                      style: IconButton.styleFrom(
-                        minimumSize: const Size(40, 40),
-                        padding: EdgeInsets.zero,
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: IconButton.filled(
+                        key: const Key('sendMessageButton'),
+                        icon: const Icon(Icons.send_rounded, size: 20),
+                        style: IconButton.styleFrom(
+                          shape: const CircleBorder(),
+                          backgroundColor: canSend
+                              ? context.colorScheme.primary
+                              : context.colorScheme.surfaceContainerHigh,
+                          foregroundColor: canSend
+                              ? context.colorScheme.onPrimary
+                              : context.colorScheme.onSurface
+                                  .withValues(alpha: 0.38),
+                          minimumSize: const Size(40, 40),
+                          fixedSize: const Size(40, 40),
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        tooltip: isReadOnlyWorkspace
+                            ? context.l10n.chatWorkspaceReadOnly
+                            : (isServerBusyWithOtherSession
+                                ? context.l10n.acpServerBusySendDisabled
+                                : null),
+                        onPressed: canSend ? _handleSend : null,
                       ),
-                      tooltip: isReadOnlyWorkspace
-                          ? context.l10n.chatWorkspaceReadOnly
-                          : (isServerBusyWithOtherSession
-                              ? context.l10n.acpServerBusySendDisabled
-                              : null),
-                      onPressed: canSend ? _handleSend : null,
                     ),
                   ),
               ],
