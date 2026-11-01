@@ -12,6 +12,7 @@ import 'package:valhalla/core/providers/storage_providers.dart';
 import 'package:valhalla/data/models/application_center.dart';
 import 'package:valhalla/data/storage/local_storage_service.dart';
 import 'package:valhalla/features/app_center/widgets/app_installed_tab.dart';
+import 'package:valhalla/features/app_center/widgets/app_logs_dialog.dart';
 import 'package:valhalla/features/app_center/widgets/app_access_info_dialog.dart';
 import 'package:valhalla/features/app_center/widgets/app_store_tab.dart';
 import 'package:valhalla/features/app_center/application_center_view.dart';
@@ -155,6 +156,29 @@ class _Center extends ApplicationCenterNotifier {
       uninstallSelection: uninstallSelection,
     );
   }
+}
+
+/// Installed-tab fixture whose catalog advertises a newer version/hash.
+class _CenterWithUpdate extends _Center {
+  _CenterWithUpdate(this._deployments, this._catalog);
+  final List<ApplicationDeployment> _deployments;
+  final List<CatalogApplication> _catalog;
+
+  @override
+  ApplicationCenterState build() => ApplicationCenterState(
+    environment: centerEnvironment(),
+    deployments: _deployments,
+    catalog: _catalog,
+  );
+}
+
+/// Logs-dialog fixture returning a long, scrollable log body.
+class _CenterWithLogs extends _Center {
+  _CenterWithLogs(this._logText);
+  final String _logText;
+
+  @override
+  Future<String> logs(ApplicationDeployment deployment) async => _logText;
 }
 
 void main() {
@@ -308,6 +332,94 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'installed card shows version transition and update badge when catalog is newer',
+    (tester) async {
+      final base = centerDeployment();
+      final deployment = ApplicationDeployment(
+        id: base.id,
+        serverKey: base.serverKey,
+        serverId: base.serverId,
+        sourceId: base.sourceId,
+        appId: base.appId,
+        name: base.name,
+        project: base.project,
+        directory: base.directory,
+        targetIdentity: base.targetIdentity,
+        version: '1.0.0',
+        templateHash: 'old-hash',
+        status: 'running',
+      );
+      const catalogApp = CatalogApplication(
+        sourceId: 'fixture',
+        id: 'fixture',
+        title: 'Fixture App',
+        version: '1.1.0',
+        contentHash: 'new-hash',
+        composeUrl: 'https://fixture.invalid/compose.yaml',
+      );
+      final notifier = _CenterWithUpdate([deployment], [catalogApp]);
+      await host(tester, notifier, installed: true, width: 480);
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(AppInstalledTab)),
+      );
+      expect(find.textContaining('v1.0.0 → v1.1.0'), findsOneWidget);
+      expect(find.text(l10n.appCenterUpdateAvailable), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'logs dialog exposes scroll-to-top and follow-latest controls',
+    (tester) async {
+      final logText = List.generate(
+        60,
+        (i) => 'line $i: ${'x' * 40}',
+      ).join('\n');
+      final notifier = _CenterWithLogs(logText);
+      await loadRealTextFonts();
+      SharedPreferences.setMockInitialValues({});
+      final storage = LocalStorageService(
+        await SharedPreferences.getInstance(),
+      );
+      tester.view.physicalSize = const Size(480, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageServiceProvider.overrideWithValue(storage),
+            applicationCenterProvider.overrideWith(() => notifier),
+            activeServerProvider.overrideWith(CenterActiveServer.new),
+            serverConnectionProvider.overrideWith(() => _Connection(true)),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: AppLogsDialog(deployment: centerDeployment()),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final dialogContext = tester.element(find.byType(AppLogsDialog));
+      final top = find.byTooltip(dialogContext.appCenterScrollToTopLabel);
+      final bottom = find.byTooltip(
+        dialogContext.appCenterFollowLatestLogsLabel,
+      );
+      expect(top, findsWidgets);
+      expect(bottom, findsWidgets);
+      await tester.tap(top.first);
+      await tester.pumpAndSettle();
+      await tester.tap(bottom.first);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('stop confirmation cancellation never prepares or executes', (
     tester,

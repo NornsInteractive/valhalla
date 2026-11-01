@@ -146,12 +146,24 @@ class NasMiniPlayer extends StatelessWidget {
                             key: const Key('nas_mini_player_cast_button'),
                             icon: const Icon(Icons.cast, size: 18),
                             tooltip: context.nasCast,
+                            visualDensity: VisualDensity.compact,
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                            padding: EdgeInsets.zero,
                             onPressed: () =>
                                 NasCastSheet.show(context, item: item),
                           ),
                           IconButton(
                             key: const Key('nas_mini_player_close'),
                             icon: const Icon(Icons.close, size: 18),
+                            visualDensity: VisualDensity.compact,
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                            padding: EdgeInsets.zero,
                             onPressed: onClose,
                           ),
                         ],

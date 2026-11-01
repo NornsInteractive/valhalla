@@ -41,6 +41,7 @@ class AppLogsDialog extends ConsumerStatefulWidget {
 }
 
 class _AppLogsDialogState extends ConsumerState<AppLogsDialog> {
+  final ScrollController _scrollController = ScrollController();
   bool _isLoading = true;
   String? _logs;
   String? _error;
@@ -49,6 +50,32 @@ class _AppLogsDialogState extends ConsumerState<AppLogsDialog> {
   void initState() {
     super.initState();
     _fetchLogs();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   Future<void> _fetchLogs() async {
@@ -68,6 +95,11 @@ class _AppLogsDialogState extends ConsumerState<AppLogsDialog> {
       setState(() {
         _logs = logs;
         _isLoading = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        }
       });
     } catch (e) {
       if (mounted &&
@@ -104,6 +136,18 @@ class _AppLogsDialogState extends ConsumerState<AppLogsDialog> {
             overflow: TextOverflow.ellipsis,
           ),
         ),
+        if (_logs != null && _logs!.isNotEmpty) ...[
+          IconButton(
+            icon: const Icon(Icons.vertical_align_top, size: 20),
+            tooltip: context.appCenterScrollToTopLabel,
+            onPressed: _scrollToTop,
+          ),
+          IconButton(
+            icon: const Icon(Icons.vertical_align_bottom, size: 20),
+            tooltip: context.appCenterFollowLatestLogsLabel,
+            onPressed: _scrollToBottom,
+          ),
+        ],
         IconButton(
           icon: const Icon(Icons.refresh, size: 20),
           tooltip: l10n.appCenterRefresh,
@@ -152,11 +196,15 @@ class _AppLogsDialogState extends ConsumerState<AppLogsDialog> {
               borderRadius: BorderRadius.circular(VRadius.card),
             ),
             child: SingleChildScrollView(
-              child: SelectableText(
-                _logs!,
-                style: monoTextStyle(
-                  fontSize: 11,
-                  color: const Color(0xFFE2E8F0),
+              controller: _scrollController,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SelectableText(
+                  _logs!,
+                  style: monoTextStyle(
+                    fontSize: 11,
+                    color: const Color(0xFFE2E8F0),
+                  ),
                 ),
               ),
             ),
@@ -167,6 +215,18 @@ class _AppLogsDialogState extends ConsumerState<AppLogsDialog> {
         appBar: AppBar(
           title: Text(l10n.appCenterLogsTitle(widget.deployment.name)),
           actions: [
+            if (_logs != null && _logs!.isNotEmpty) ...[
+              IconButton(
+                icon: const Icon(Icons.vertical_align_top),
+                tooltip: context.appCenterScrollToTopLabel,
+                onPressed: _scrollToTop,
+              ),
+              IconButton(
+                icon: const Icon(Icons.vertical_align_bottom),
+                tooltip: context.appCenterFollowLatestLogsLabel,
+                onPressed: _scrollToBottom,
+              ),
+            ],
             IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: l10n.appCenterRefresh,

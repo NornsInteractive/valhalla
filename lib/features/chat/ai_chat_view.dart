@@ -3034,6 +3034,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           );
           final hasError =
               frame.recoveryStatus == SessionRecoveryStatus.failed ||
+              frame.recoveryStatus == SessionRecoveryStatus.incomplete ||
               chatErrorState.lastErrorCode != null ||
               chatErrorState.persistentError != null;
           if (hasError) {
@@ -3052,6 +3053,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             final String displayText;
             if (isExecChanged) {
               displayText = context.l10n.chatExecutionChangedPrompt;
+            } else if (frame.recoveryStatus ==
+                SessionRecoveryStatus.incomplete) {
+              displayText = context.l10n.sessionRecoveryIncomplete;
+            } else if (frame.recoveryStatus == SessionRecoveryStatus.failed) {
+              displayText = context.l10n.sessionRecoveryFailed;
             } else if (hasBanner) {
               displayText = context.l10n.chatStatusFailed;
             } else {
@@ -3169,6 +3175,33 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                       color: context.colorScheme.outline,
                     ),
                   ),
+                  if (isRecovering) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: context.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          frame.recoveryStatus ==
+                                  SessionRecoveryStatus.reconnecting
+                              ? context.l10n.sessionRecoveryReconnecting
+                              : context.l10n.sessionRecoverySyncing,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   if (!frame.hasActiveAgent) ...[
                     const SizedBox(height: 16),
                     if (hasUnreadyAgents) ...[
@@ -9265,7 +9298,7 @@ class _ToolExecutionCardState extends ConsumerState<_ToolExecutionCard> {
 
     return ValhallaCard(
       margin: const EdgeInsets.only(bottom: 8),
-      color: Colors.black,
+      color: context.colorScheme.surfaceContainerLow,
       padding: const EdgeInsets.all(10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -9278,15 +9311,42 @@ class _ToolExecutionCardState extends ConsumerState<_ToolExecutionCard> {
               children: [
                 _buildStatusIcon(context),
                 const SizedBox(width: 8),
+                if (widget.tool.name.isNotEmpty &&
+                    widget.tool.command.isNotEmpty &&
+                    widget.tool.name != widget.tool.command) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1.5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      widget.tool.name,
+                      style: monoTextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: context.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 Expanded(
                   child: Text(
                     title,
                     style: monoTextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: widget.tool.status == ToolExecutionStatus.failed
-                          ? context.vDanger
-                          : context.vSuccess,
+                      color: switch (widget.tool.status) {
+                        ToolExecutionStatus.completed => context.vSuccess,
+                        ToolExecutionStatus.running => context.vWarning,
+                        ToolExecutionStatus.failed => context.vDanger,
+                        ToolExecutionStatus.pending =>
+                          context.colorScheme.outline,
+                      },
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -9294,7 +9354,9 @@ class _ToolExecutionCardState extends ConsumerState<_ToolExecutionCard> {
                 if (widget.tool.executionTimeMs != null) ...[
                   const SizedBox(width: 6),
                   Text(
-                    '${widget.tool.executionTimeMs} ms',
+                    widget.tool.executionTimeMs! >= 1000
+                        ? '${(widget.tool.executionTimeMs! / 1000).toStringAsFixed(1)} s'
+                        : '${widget.tool.executionTimeMs} ms',
                     style: monoTextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w400,
@@ -9371,7 +9433,9 @@ class _ToolExecutionCardState extends ConsumerState<_ToolExecutionCard> {
             const SizedBox(height: 8),
             if (!hasOutput)
               Text(
-                '(No output)',
+                widget.tool.status == ToolExecutionStatus.running
+                    ? 'Running...'
+                    : '(No output)',
                 style: monoTextStyle(
                   fontSize: 11,
                   color: context.colorScheme.outline,

@@ -453,4 +453,25 @@ void main() {
       expect(mainClient.closed, isFalse);
     },
   );
+
+  test(
+    'abort during transfer cancels without deleting the partial file',
+    () async {
+      configure('streaming');
+      final handle = await service.startResumableDownload(
+        '/fixture',
+        getLocal(),
+        onSource: (_) {},
+      );
+      while (handle.transferredBytes == 0) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      await handle.abort();
+      await expectLater(handle.done, throwsA(isA<SftpTransferAborted>()));
+      expect(await File(getLocal()).exists(), isTrue);
+      expect(handle.transferredBytes, greaterThan(0));
+      expect(handle.transferredBytes, lessThan(_length));
+      expect(mainClient.closed, isFalse);
+    },
+  );
 }

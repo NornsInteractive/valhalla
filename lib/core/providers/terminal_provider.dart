@@ -1183,7 +1183,7 @@ class TerminalNotifier extends Notifier<SshTerminalState> {
       }
       // 所有受信来源都探测失败：保留既有快照，但标记为未校验并禁用危险操作，
       // 直到下一次成功刷新。绝不因此清空或覆盖已有历史。
-      if (sources.isNotEmpty && complete.isEmpty) {
+      if (sources.isNotEmpty && complete.isEmpty && found.isEmpty) {
         final statuses = {
           for (final record in workspace.value.history)
             record.id: TerminalHistoryStatus.unknown,

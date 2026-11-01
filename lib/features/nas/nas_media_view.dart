@@ -1802,11 +1802,92 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
 
     final mainContent = Column(
       children: [
-        if (state.isScanning)
+        if (state.isScanning) ...[
           const LinearProgressIndicator(
             key: Key('nas_scanning_indicator'),
             minHeight: 2,
           ),
+          Container(
+            key: const Key('nas_scan_progress_banner'),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            color: Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.25),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Text(
+                        switch (state.scanStage) {
+                          NasScanStage.connecting =>
+                            context.l10n.serverConnecting,
+                          NasScanStage.finalizing =>
+                            context.l10n.nasDiagnosticsFinalizing,
+                          _ => context.l10n.nasScanning,
+                        },
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        state.matchingCount > 0
+                            ? '${state.scannedCount} (${state.matchingCount} ${context.l10n.nasItemCount(state.matchingCount)})'
+                            : '${state.scannedCount}',
+                        style: monoTextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                InkWell(
+                  key: const Key('nas_scan_banner_cancel_button'),
+                  onTap: () => ref.read(nasProvider.notifier).cancelScan(),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.stop_circle_outlined,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          context.l10n.cancel,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
 
         // Search Bar Row (collapsible, explicit toggle)
         if (_searchOpen ||
@@ -2094,7 +2175,11 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         Expanded(
           child: Text(
             state.isScanning
-                ? '${context.l10n.nasScanning} (${state.scannedCount})'
+                ? (state.scanStage == NasScanStage.connecting
+                    ? '${context.l10n.serverConnecting}...'
+                    : state.scanStage == NasScanStage.finalizing
+                    ? '${context.l10n.nasDiagnosticsFinalizing}...'
+                    : '${context.l10n.nasScanning} (${state.scannedCount})')
                 : lastScanText,
             style: monoTextStyle(
               fontSize: 11,
@@ -2922,37 +3007,59 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
   Widget _buildErrorBanner(BuildContext context, String errorCode) {
     final theme = Theme.of(context);
     final playlistUnavailable = errorCode == 'NAS_PLAYLIST_LOAD_FAILED';
-    final errorText = playlistUnavailable
-        ? context.l10n.nasPlaylistLoadFailed
-        : errorCode == 'NAS_SCAN_CANCELLED'
-        ? context.l10n.nasScanCancelled
-        : context.l10n.nasScanFailed(errorCode);
+    final isDisconnected = errorCode == 'REMOTE_BROWSER_DISCONNECTED' ||
+        errorCode.contains('DISCONNECTED') ||
+        errorCode == 'NAS_SOURCE_UNREACHABLE';
+
+    final String errorText;
+    if (playlistUnavailable) {
+      errorText = context.l10n.nasPlaylistLoadFailed;
+    } else if (isDisconnected) {
+      errorText = context.nasSanitizedError(errorCode);
+    } else if (errorCode == 'NAS_SCAN_CANCELLED') {
+      errorText = context.l10n.nasScanCancelled;
+    } else if (errorCode == 'NAS_SCAN_FAILED') {
+      errorText = context.l10n.nasScanFailed(errorCode);
+    } else {
+      errorText = context.nasSanitizedError(errorCode);
+    }
 
     return Container(
       width: double.infinity,
-      color: theme.colorScheme.errorContainer,
+      color: isDisconnected
+          ? theme.colorScheme.surfaceContainerHighest
+          : theme.colorScheme.errorContainer,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Icon(Icons.error_outline, size: 18, color: theme.colorScheme.error),
+          Icon(
+            isDisconnected ? Icons.cloud_off_outlined : Icons.error_outline,
+            size: 18,
+            color: isDisconnected
+                ? theme.colorScheme.onSurfaceVariant
+                : theme.colorScheme.error,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               errorText,
-              maxLines: playlistUnavailable ? 3 : null,
+              maxLines: playlistUnavailable ? 3 : 2,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onErrorContainer,
+                color: isDisconnected
+                    ? theme.colorScheme.onSurfaceVariant
+                    : theme.colorScheme.onErrorContainer,
               ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (playlistUnavailable)
-            IconButton(
-              key: const Key('nas_playlist_retry_button'),
-              tooltip: context.l10n.refresh,
-              onPressed: () => ref.read(nasProvider.notifier).refresh(),
-              icon: const Icon(Icons.refresh),
-            ),
+          IconButton(
+            key: playlistUnavailable
+                ? const Key('nas_playlist_retry_button')
+                : const Key('nas_error_retry_button'),
+            tooltip: context.l10n.refresh,
+            onPressed: () => ref.read(nasProvider.notifier).refresh(),
+            icon: const Icon(Icons.refresh, size: 18),
+          ),
         ],
       ),
     );
@@ -2993,6 +3100,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
 
     // Empty index prompt
     if (state.items.isEmpty &&
+        state.totals.total == 0 &&
         !state.isLoading &&
         !state.isScanning &&
         _currentTab != NasMediaTab.folders &&
@@ -3053,11 +3161,36 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 ),
               ),
               const SizedBox(height: 24),
-              FilledButton.icon(
-                key: const Key('nas_empty_scan_button'),
-                icon: const Icon(Icons.sync, size: 18),
-                label: Text(context.l10n.nasScan),
-                onPressed: () => ref.read(nasProvider.notifier).scan(),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  FilledButton.icon(
+                    key: const Key('nas_empty_scan_button'),
+                    icon: const Icon(Icons.sync, size: 18),
+                    label: Text(context.l10n.nasScan),
+                    onPressed: () => ref.read(nasProvider.notifier).scan(),
+                  ),
+                  if (!isMediaServer)
+                    OutlinedButton.icon(
+                      key: const Key('nas_empty_scan_config_button'),
+                      icon: const Icon(Icons.tune, size: 18),
+                      label: Text(context.l10n.nasConfigure),
+                      onPressed: () {
+                        final currentSource =
+                            ref.read(nasSourcesProvider).selected;
+                        NasScanConfigDialog.show(
+                          context,
+                          source: currentSource,
+                          sourceId: currentSource?.id ?? state.serverId,
+                          initialConfig: state.config,
+                          onSave: (cfg) =>
+                              ref.read(nasProvider.notifier).saveConfig(cfg),
+                        );
+                      },
+                    ),
+                ],
               ),
             ],
           ),
@@ -4133,7 +4266,29 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                           ),
                         ),
                       ),
-                      if (progress != null && progress > 0)
+                      if (progress != null && progress > 0) ...[
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.75),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: Text(
+                              '${(progress * 100).toInt()}%',
+                              style: monoTextStyle(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ),
                         Positioned(
                           left: 0,
                           right: 0,
@@ -4147,6 +4302,7 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                             ),
                           ),
                         ),
+                      ],
                     ],
                   ),
                 ),
@@ -5928,11 +6084,31 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
         Expanded(
           child: videos.isEmpty
               ? Center(
-                  child: Text(
-                    context.l10n.nasNoSearchResults,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.movie_outlined,
+                        size: 48,
+                        color: theme.colorScheme.outline,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        state.search.isNotEmpty
+                            ? context.l10n.nasNoSearchResults
+                            : context.l10n.nasFilterVideos,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        context.l10n.nasItemCount(0),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                    ],
                   ),
                 )
               : Builder(
@@ -6848,14 +7024,43 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                           _buildMusicGroupsPaginationFooter(context),
                         ],
                       ))
-              : ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(8),
-                  itemCount: tracks.length,
-                  itemBuilder: (context, index) {
-                    return _buildMediaListItem(context, tracks[index]);
-                  },
-                ),
+              : tracks.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.music_note_outlined,
+                            size: 48,
+                            color: theme.colorScheme.outline,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            state.search.isNotEmpty
+                                ? context.l10n.nasNoSearchResults
+                                : context.l10n.nasTabMusic,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            context.l10n.nasItemCount(0),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(8),
+                      itemCount: tracks.length,
+                      itemBuilder: (context, index) {
+                        return _buildMediaListItem(context, tracks[index]);
+                      },
+                    ),
         ),
         if (_musicGroup == null) _buildPaginationFooter(context, state),
       ],
@@ -7458,17 +7663,66 @@ class _NasMediaViewState extends ConsumerState<NasMediaView> {
                 value: _isItemSelected(item),
                 onChanged: (_) => _toggleSelection(item),
               )
-            : ClipRRect(
-                borderRadius: BorderRadius.circular(VRadius.input),
-                child: SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: NasThumbnailImage(
-                    item: item,
-                    fit: BoxFit.cover,
-                    fallbackIcon: icon,
-                  ),
-                ),
+            : Builder(
+                builder: (context) {
+                  final playbackSnapshot =
+                      ref.watch(nasPlaybackProvider).asData?.value;
+                  final isCurrent =
+                      playbackSnapshot?.current?.path == item.path &&
+                      playbackSnapshot?.current?.serverId == item.serverId;
+                  final savedPlayback =
+                      ref.watch(nasProvider).playbackByPath[item.path];
+                  final isSavedMatch =
+                      savedPlayback != null &&
+                      savedPlayback.serverId == item.serverId &&
+                      savedPlayback.path == item.path &&
+                      savedPlayback.duration != null &&
+                      savedPlayback.duration!.inMilliseconds > 0;
+                  final progress = (isCurrent &&
+                          playbackSnapshot != null &&
+                          playbackSnapshot.duration.inMilliseconds > 0)
+                      ? (playbackSnapshot.position.inMilliseconds /
+                              playbackSnapshot.duration.inMilliseconds)
+                          .clamp(0.0, 1.0)
+                      : (isSavedMatch
+                          ? (savedPlayback.position.inMilliseconds /
+                                  savedPlayback.duration!.inMilliseconds)
+                              .clamp(0.0, 1.0)
+                          : null);
+
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(VRadius.input),
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: NasThumbnailImage(
+                              item: item,
+                              fit: BoxFit.cover,
+                              fallbackIcon: icon,
+                            ),
+                          ),
+                          if (progress != null && progress > 0)
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: LinearProgressIndicator(
+                                value: progress,
+                                minHeight: 2.5,
+                                backgroundColor: Colors.black38,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  theme.colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
         title: Text(
           item.title ?? item.name,

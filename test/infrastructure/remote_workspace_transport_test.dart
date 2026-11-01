@@ -858,4 +858,77 @@ void main() {
       expect(caught.toString(), isNot(contains(_fxUser)));
     });
   });
+
+  group('preflight safety regression (isolated acceptance)', () {
+    test('preflight rejects a future schema before install', () async {
+      final fx = await Fixture.start(
+        seed: (home) async {
+          final wsDir = Directory(
+            '${home.path}/.local/share/valhalla/workspace-v1',
+          );
+          await wsDir.create(recursive: true);
+          await File('${wsDir.path}/store.py').writeAsString(_fakeStoreSchema2);
+        },
+      );
+      addTearDown(() => fx.stop());
+      final ssh = await fx.connect();
+      await expectLater(
+        client.preflight(ssh),
+        throwsA(
+          isA<WorkspaceException>().having(
+            (e) => e.code,
+            'code',
+            'WORKSPACE_SCHEMA_UNSUPPORTED',
+          ),
+        ),
+      );
+    });
+
+    test('preflight rejects a future component before install', () async {
+      final fx = await Fixture.start(
+        seed: (home) async {
+          final wsDir = Directory(
+            '${home.path}/.local/share/valhalla/workspace-v1',
+          );
+          await wsDir.create(recursive: true);
+          await File('${wsDir.path}/store.py').writeAsString(r'''
+import sys, json
+line = ''
+try:
+    line = sys.stdin.readline()
+    req = json.loads(line)
+except Exception:
+    req = {}
+op = req.get('op')
+if op == 'discover':
+    print(json.dumps({"ok": True, "exists": True, "workspaceId": "ws-seeded",
+                      "schema": 1, "component": 999, "revision": 0, "user": "dev"}))
+else:
+    print(json.dumps({"ok": False, "error": "WORKSPACE_OP_UNKNOWN"}))
+''');
+        },
+      );
+      addTearDown(() => fx.stop());
+      final ssh = await fx.connect();
+      await expectLater(
+        client.preflight(ssh),
+        throwsA(
+          isA<WorkspaceException>().having(
+            (e) => e.code,
+            'code',
+            'WORKSPACE_COMPONENT_UNSUPPORTED',
+          ),
+        ),
+      );
+    });
+
+    test('preflight accepts an absent store without writing', () async {
+      final fx = await Fixture.start();
+      addTearDown(() => fx.stop());
+      final ssh = await fx.connect();
+      final value = await client.preflight(ssh);
+      expect(value['ok'], isTrue);
+      expect(value['exists'], isFalse);
+    });
+  });
 }

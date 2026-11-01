@@ -1255,6 +1255,25 @@ extension AppCenterL10n on BuildContext {
     _ => 'Follow latest',
   };
 
+  String get appCenterScrollToTopLabel => switch (_loc) {
+    'zh' => _isHant ? '回到頂部' : '回到顶部',
+    'ja' => '先頭へ戻る',
+    'ko' => '맨 위로 이동',
+    'de' => 'Nach oben',
+    'fr' => 'Haut de page',
+    'es' => 'Ir al principio',
+    'pt' => 'Ir para o topo',
+    'it' => 'Torna all\'inizio',
+    'ru' => 'В начало',
+    'ar' => 'إلى الأعلى',
+    'hi' => 'शीर्ष पर जाएं',
+    'id' => 'Ke atas',
+    'tr' => 'En üste git',
+    'vi' => 'Lên đầu trang',
+    'th' => 'ไปที่ด้านบน',
+    _ => 'Scroll to top',
+  };
+
   String get appCenterSyncUnavailableLabel => switch (_loc) {
     'zh' => _isHant ? '同步暫時無法使用' : '同步暂时不可用',
     'ja' => '同期は利用できません',

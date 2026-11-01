@@ -2384,6 +2384,78 @@ group('部分可解析响应：不误判已校验、不误删未知活动会话'
   });
 });
 
+
+  test('所有来源都部分可解析时仍展示可用项，未匹配项保持 unknown 且禁用危险操作', () async {
+    final h = await _Harness.create();
+    final target = TerminalHistoryRecord.targetFor(_server);
+    await h.notifier.addNewTab(); // app tab 1 -> live session
+    await h.drain();
+    await h.notifier.addNewTab(); // app tab 2 -> later unmatched
+    await h.drain();
+
+    final first = h.state.history.firstWhere(
+      (r) => r.socket.id == TmuxSocketSource.app.id,
+    );
+    final second = h.state.history.firstWhere(
+      (r) => r.id != first.id && r.socket.id == TmuxSocketSource.app.id,
+    );
+
+    // 关闭第二个标签页但不销毁远端，制造一个本次刷新中未出现的记录。
+    await h.notifier.closeTabById(second.id, expectedTargetKey: target);
+    await h.drain();
+    h.client.remoteNames.remove(second.remoteSessionName);
+
+    const malformed =
+        'NOT_AN_ID\u001f1730000000\u001f0\u001f12345\u001f/tmp/x\u001fevil';
+    // 标准 socket 上预先有一个可解析的外部会话，同时两个来源都追加畸形行，
+    // 因此每个来源都是「部分可解析」，而不是单个来源失败。
+    h.client.defaultNames.add('std-live');
+    h.client.malformedLines[TmuxSocketSource.app.id] = malformed;
+    h.client.malformedLines[TmuxSocketSource.standard.id] = malformed;
+
+    await h.notifier.refreshHistory();
+    await h.drain();
+
+    // 任一来源部分可解析，整个刷新就不能算完全校验。
+    expect(h.state.isHistoryVerified, isFalse);
+    expect(h.state.dangerousOperationsDisabled, isTrue);
+    // 仍在运行的 app 会话照常展示，不受同响应里的畸形行影响。
+    expect(
+      h.state.historyStatuses[first.id],
+      TerminalHistoryStatus.open,
+    );
+    // 未出现在结果中的记录只能保持 unknown，不能被误判为 ended，也不能删除。
+    expect(
+      h.state.historyStatuses[second.id],
+      TerminalHistoryStatus.unknown,
+    );
+    expect(h.state.history.any((r) => r.id == second.id), isTrue);
+    // 标准来源的可解析外部会话也应被展示。
+    expect(
+      h.state.history.any(
+        (r) =>
+            r.socket.id == TmuxSocketSource.standard.id &&
+            r.remoteSessionName == 'std-live',
+      ),
+      isTrue,
+    );
+    final standardRecord = h.state.history.firstWhere(
+      (r) =>
+          r.socket.id == TmuxSocketSource.standard.id &&
+          r.remoteSessionName == 'std-live',
+    );
+    expect(
+      h.state.historyStatuses[standardRecord.id],
+      TerminalHistoryStatus.available,
+    );
+    // 两个来源都探测过，且没有被整体失败吞掉。
+    expect(
+      h.state.socketCheckedAt.keys,
+      containsAll([TmuxSocketSource.app.id, TmuxSocketSource.standard.id]),
+    );
+    expect(h.state.socketErrors, isEmpty);
+  });
+
 }
 
 /// 返回带 forgotten 集合的快照，用于验证 live 外部会话不被 forgotten 过滤掉。

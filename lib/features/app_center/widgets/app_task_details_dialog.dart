@@ -903,13 +903,16 @@ class _AppTaskDetailsDialogState extends ConsumerState<AppTaskDetailsDialog> {
             ),
             child: SingleChildScrollView(
               controller: _logScrollController,
-              child: SelectableText(
-                task.logTail.isNotEmpty
-                    ? task.logTail
-                    : l10n.appCenterWaitingForLogs,
-                style: monoTextStyle(
-                  fontSize: 10,
-                  color: const Color(0xFFE2E8F0),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SelectableText(
+                  task.logTail.isNotEmpty
+                      ? task.logTail
+                      : l10n.appCenterWaitingForLogs,
+                  style: monoTextStyle(
+                    fontSize: 10,
+                    color: const Color(0xFFE2E8F0),
+                  ),
                 ),
               ),
             ),

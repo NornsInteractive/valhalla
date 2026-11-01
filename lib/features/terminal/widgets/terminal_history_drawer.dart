@@ -265,7 +265,9 @@ class _TerminalTerminateDialogState extends State<_TerminalTerminateDialog> {
         final err = e.toString();
         final msg = err.contains('TERMINAL_HISTORY_TARGET_CHANGED')
             ? context.l10n.terminalErrorTargetChanged
-            : context.l10n.terminalErrorHistoryTerminateFailed;
+            : (err.contains('TERMINAL_HISTORY_UNVERIFIED')
+                ? context.l10n.terminalStatusUnavailable
+                : context.l10n.terminalErrorHistoryTerminateFailed);
         setState(() {
           _isSubmitting = false;
           _errorMessage = msg;
@@ -1234,9 +1236,18 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
 
     final matchingTabs = q.isEmpty
         ? terminalState.tabs
-        : terminalState.tabs
-              .where((t) => t.title.toLowerCase().contains(q))
-              .toList();
+        : terminalState.tabs.where((t) {
+            if (t.title.toLowerCase().contains(q)) return true;
+            final rec = terminalState.history
+                .where((r) => r.id == t.id)
+                .firstOrNull;
+            if (rec != null) {
+              return rec.remoteSessionName.toLowerCase().contains(q) ||
+                  rec.socket.value.toLowerCase().contains(q) ||
+                  rec.socket.kind.name.toLowerCase().contains(q);
+            }
+            return false;
+          }).toList();
 
     final openTabIds = terminalState.tabs.map((t) => t.id).toSet();
 
@@ -1637,6 +1648,7 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
                   final canTerminateRemote =
                       isConnected &&
                       targetKey == record.targetKey &&
+                      terminalState.isHistoryVerified &&
                       !isEnded &&
                       !isUnavailable &&
                       !isUnknown;
@@ -2431,6 +2443,7 @@ class _TerminalHistoryDrawerState extends ConsumerState<TerminalHistoryDrawer> {
               historyRecord != null &&
               isConnected &&
               targetKey == historyRecord.targetKey &&
+              terminalState.isHistoryVerified &&
               !isEnded &&
               !isUnavailable &&
               !isUnknown;

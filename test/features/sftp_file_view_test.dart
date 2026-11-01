@@ -805,6 +805,95 @@ void main() {
     );
 
     testWidgets(
+      'running non-transferring phase shows its phase badge instead of speed',
+      (tester) async {
+        final txtItem = _makeItem('archive.bin');
+        final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+        final cases = <SftpTransferPhase, String>{
+          SftpTransferPhase.preparing: l10n.transferPhasePreparing,
+          SftpTransferPhase.verifyingPartial: l10n.transferPhaseVerifyingPartial,
+          SftpTransferPhase.verifying: l10n.transferPhaseVerifying,
+        };
+        for (final entry in cases.entries) {
+          final transfer = SftpTransfer(
+            id: 'phase-${entry.key.name}',
+            kind: SftpTransferKind.download,
+            remotePath: '/var/www/archive.bin',
+            localPath: '/tmp/archive.bin',
+            transferredBytes: 100,
+            totalBytes: 100,
+            status: SftpTransferStatus.running,
+            phase: entry.key,
+            bytesPerSecond: 1048576,
+          );
+          final state = SftpState(
+            currentPath: '/var/www',
+            files: [txtItem],
+            transfers: [transfer],
+          );
+          await tester.pumpWidget(
+            _buildTestApp(
+              state: state,
+              notifier: _TestSftpNotifier(state, _FakeOperations()),
+            ),
+          );
+          await tester.pump();
+          expect(find.byKey(const Key('sftpTransferBanner')), findsOneWidget);
+          expect(
+            find.text(entry.value),
+            findsOneWidget,
+            reason: 'phase ${entry.key.name} should render its label',
+          );
+          expect(
+            find.text('${SftpFileItem.formatBytes(1048576)}/s'),
+            findsNothing,
+            reason: 'speed is only shown while transferring',
+          );
+          // Dispose the tree so the next phase gets a fresh provider container
+          // instead of reusing the previous notifier state.
+          await tester.pumpWidget(const SizedBox.shrink());
+        }
+      },
+    );
+
+    testWidgets(
+      'transferring phase shows live speed and hides phase badge',
+      (tester) async {
+        final txtItem = _makeItem('archive.bin');
+        const transfer = SftpTransfer(
+          id: 'phase-transferring',
+          kind: SftpTransferKind.download,
+          remotePath: '/var/www/archive.bin',
+          localPath: '/tmp/archive.bin',
+          transferredBytes: 100,
+          totalBytes: 100,
+          status: SftpTransferStatus.running,
+          bytesPerSecond: 1048576,
+        );
+        final state = SftpState(
+          currentPath: '/var/www',
+          files: [txtItem],
+          transfers: [transfer],
+        );
+        await tester.pumpWidget(
+          _buildTestApp(
+            state: state,
+            notifier: _TestSftpNotifier(state, _FakeOperations()),
+          ),
+        );
+        await tester.pump();
+        final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+        expect(
+          find.text('${SftpFileItem.formatBytes(1048576)}/s'),
+          findsOneWidget,
+        );
+        expect(find.text(l10n.transferPhasePreparing), findsNothing);
+        expect(find.text(l10n.transferPhaseVerifying), findsNothing);
+        expect(find.text(l10n.transferPhaseVerifyingPartial), findsNothing);
+      },
+    );
+
+    testWidgets(
       'tapping completed download or open button calls openCompletedTransfer',
       (tester) async {
         final completedTransfer = const SftpTransfer(

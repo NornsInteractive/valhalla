@@ -1875,6 +1875,111 @@ void main() {
       expect(notifier.cancelScanCalled, isTrue);
     });
 
+    testWidgets('scan progress banner reflects stage, counts, and cancels', (
+      tester,
+    ) async {
+      final notifier = _FakeNasNotifier(
+        const NasState(
+          serverId: 'src-nas',
+          config: NasScanConfig(includePaths: ['/mnt/media']),
+          isScanning: true,
+          scanStage: NasScanStage.connecting,
+          scannedCount: 7,
+          matchingCount: 3,
+        ),
+      );
+
+      await tester.pumpWidget(createNasApp(notifier: notifier));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final banner = find.byKey(const Key('nas_scan_progress_banner'));
+      expect(banner, findsOneWidget);
+      final l10n = AppLocalizations.of(tester.element(banner));
+
+      expect(
+        find.descendant(of: banner, matching: find.text(l10n.serverConnecting)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: banner, matching: find.textContaining('7 (3 ')),
+        findsOneWidget,
+      );
+
+      notifier.state = notifier.state.copyWith(
+        scanStage: NasScanStage.finalizing,
+      );
+      await tester.pump();
+      expect(
+        find.descendant(
+          of: banner,
+          matching: find.text(l10n.nasDiagnosticsFinalizing),
+        ),
+        findsOneWidget,
+      );
+
+      notifier.state = notifier.state.copyWith(
+        scanStage: NasScanStage.scanning,
+      );
+      await tester.pump();
+      expect(
+        find.descendant(of: banner, matching: find.text(l10n.nasScanning)),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('nas_scan_banner_cancel_button')));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(notifier.cancelScanCalled, isTrue);
+    });
+
+    testWidgets('generic scan failure shows a retry banner', (tester) async {
+      final notifier = _FakeNasNotifier(
+        const NasState(serverId: 'src-nas', errorCode: 'NAS_SCAN_FAILED'),
+      );
+      await tester.pumpWidget(createNasApp(notifier: notifier));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('nas_error_retry_button')), findsOneWidget);
+      expect(find.byKey(const Key('nas_playlist_retry_button')), findsNothing);
+      expect(find.byIcon(Icons.error_outline), findsWidgets);
+
+      await tester.tap(find.byKey(const Key('nas_error_retry_button')));
+      await tester.pumpAndSettle();
+      expect(notifier.refreshCalls, 1);
+    });
+
+    testWidgets('disconnected error banner uses offline icon and retry', (
+      tester,
+    ) async {
+      final notifier = _FakeNasNotifier(
+        const NasState(
+          serverId: 'src-nas',
+          errorCode: 'REMOTE_BROWSER_DISCONNECTED',
+        ),
+      );
+      await tester.pumpWidget(createNasApp(notifier: notifier));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.cloud_off_outlined), findsOneWidget);
+      expect(find.byKey(const Key('nas_error_retry_button')), findsOneWidget);
+      expect(find.textContaining('REMOTE_BROWSER_DISCONNECTED'), findsNothing);
+    });
+
+    testWidgets('empty index prompt is suppressed when totals are non-zero', (
+      tester,
+    ) async {
+      final notifier = _FakeNasNotifier(
+        const NasState(
+          serverId: 'src-nas',
+          items: [],
+          totals: NasIndexTotals(total: 5),
+        ),
+      );
+      await tester.pumpWidget(createNasApp(notifier: notifier));
+      await tester.pumpAndSettle();
+
+      expect(find.text('媒体库暂无索引'), findsNothing);
+    });
+
     testWidgets('shows empty index prompt and allows scanning', (tester) async {
       final notifier = _FakeNasNotifier(
         const NasState(

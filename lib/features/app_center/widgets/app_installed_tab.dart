@@ -537,6 +537,19 @@ class _AppInstalledTabState extends ConsumerState<AppInstalledTab>
         ? 'v${deployment.version}'
         : l10n.appCenterVersionLatest;
 
+    final String versionDisplay;
+    if (hasUpdate &&
+        catalogApp != null &&
+        catalogApp.version.isNotEmpty &&
+        catalogApp.version != deployment.version) {
+      final targetVer = catalogApp.version.startsWith('v')
+          ? catalogApp.version
+          : 'v${catalogApp.version}';
+      versionDisplay = '$versionStr → $targetVer';
+    } else {
+      versionDisplay = versionStr;
+    }
+
     final statusLabel = resolveDeploymentStatusLabel(
       context,
       deployment.status,
@@ -594,11 +607,32 @@ class _AppInstalledTabState extends ConsumerState<AppInstalledTab>
                               shape: BoxShape.circle,
                             ),
                           ),
+                          if (hasUpdate) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: context.colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: Text(
+                                l10n.appCenterUpdateAvailable,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '$sourceName · $versionStr · $statusLabel',
+                        '$sourceName · $versionDisplay · $statusLabel',
                         style: TextStyle(
                           fontSize: 10,
                           color: context.colorScheme.outline,
@@ -618,6 +652,12 @@ class _AppInstalledTabState extends ConsumerState<AppInstalledTab>
                         size: 18,
                         color: context.colorScheme.primary,
                       ),
+                      visualDensity: VisualDensity.compact,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      padding: EdgeInsets.zero,
                       onPressed: !canOperate
                           ? null
                           : () => _handleUpdate(deployment),
@@ -626,6 +666,11 @@ class _AppInstalledTabState extends ConsumerState<AppInstalledTab>
                 PopupMenuButton<String>(
                   enabled: canOperate,
                   icon: const Icon(Icons.more_vert, size: 18),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
                   itemBuilder: (ctx) => [
                     PopupMenuItem(
                       value: 'accessInfo',
@@ -706,6 +751,12 @@ class _AppInstalledTabState extends ConsumerState<AppInstalledTab>
                     size: 20,
                   ),
                   tooltip: isRunning ? l10n.appCenterStop : l10n.appCenterStart,
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  padding: EdgeInsets.zero,
                   onPressed: !canOperate
                       ? null
                       : () => isRunning
@@ -718,6 +769,12 @@ class _AppInstalledTabState extends ConsumerState<AppInstalledTab>
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 20),
                   tooltip: l10n.appCenterRestart,
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  padding: EdgeInsets.zero,
                   onPressed: !canOperate
                       ? null
                       : () => _handleRestartWithConfirmation(deployment),
