@@ -288,7 +288,8 @@ void main() {
       await _pumpChat(tester, notifier);
 
       expect(find.byKey(_clearDirKey), findsNothing);
-      expect(find.text('session'), findsOneWidget);
+      expect(find.text('/srv/session'), findsOneWidget);
+      expect(find.text('session'), findsNothing);
 
       await tester.tap(find.byKey(_workingDirKey));
       await tester.pumpAndSettle();

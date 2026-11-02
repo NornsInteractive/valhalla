@@ -2169,52 +2169,115 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ),
             ),
           Expanded(
-            child: Tooltip(
-              message:
-                  state.activeAgentProfile?.name ??
-                  context.l10n.noAgentAvailable,
-              child: InkWell(
-                key: const Key('chat_agent_switcher_button'),
-                onTap: _showAgentSwitcherModal,
-                borderRadius: BorderRadius.circular(VRadius.input),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isCompact ? 2 : 4,
-                    vertical: 4,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        state.activeAgentProfile != null
-                            ? Icons.psychology
-                            : Icons.smart_toy_outlined,
-                        size: 16,
-                        color: state.activeAgentProfile != null
-                            ? context.colorScheme.primary
-                            : context.colorScheme.outline,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Tooltip(
+                  message:
+                      state.activeAgentProfile?.name ??
+                      context.l10n.noAgentAvailable,
+                  child: InkWell(
+                    key: const Key('chat_agent_switcher_button'),
+                    onTap: _showAgentSwitcherModal,
+                    borderRadius: BorderRadius.circular(VRadius.input),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isCompact ? 2 : 4,
+                        vertical: state.activeSession != null ? 1 : 4,
                       ),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          state.activeAgentProfile?.name ??
-                              context.l10n.noAgentAvailable,
-                          style: context.textTheme.titleSmall?.copyWith(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w600,
-                            color: state.activeAgentProfile != null
-                                ? null
-                                : context.colorScheme.outline,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              state.activeAgentProfile != null
+                                  ? Icons.psychology
+                                  : Icons.smart_toy_outlined,
+                              size: state.activeSession != null ? 15 : 16,
+                              color: state.activeAgentProfile != null
+                                  ? context.colorScheme.primary
+                                  : context.colorScheme.outline,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                state.activeAgentProfile?.name ??
+                                    context.l10n.noAgentAvailable,
+                                style: context.textTheme.titleSmall?.copyWith(
+                                  fontSize:
+                                      state.activeSession != null ? 13 : 13.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: state.activeAgentProfile != null
+                                      ? null
+                                      : context.colorScheme.outline,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_drop_down,
+                              size: state.activeSession != null ? 14 : 16,
+                            ),
+                          ],
                         ),
                       ),
-                      const Icon(Icons.arrow_drop_down, size: 16),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                if (state.activeSession != null)
+                  Tooltip(
+                    message:
+                        '${state.activeSession!.workingDirectory} (${context.l10n.chatWorkingDirTooltip})',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        key: const Key('chat_working_dir_button'),
+                        onTap: null,
+                        borderRadius: BorderRadius.circular(VRadius.input),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isCompact ? 2 : 4,
+                            vertical: 1,
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.folder_outlined,
+                                  size: 12,
+                                  color: context.colorScheme.outline,
+                                ),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(
+                                    state.activeSession!.workingDirectory.isNotEmpty
+                                        ? state.activeSession!.workingDirectory
+                                        : context.l10n.cliDefaultWorkingDir,
+                                    style: monoTextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w500,
+                                      color: context.colorScheme.outline,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           _buildWorkspaceControlBadge(state),
@@ -6989,17 +7052,19 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               isLoadingSettings: false,
               showTuneButton: false,
               showMode: true,
-              leading: _buildWorkingDirPill(
-                context,
-                state,
-                !isConnected ||
-                    isRecovering ||
-                    state.isGenerating ||
-                    state.isAuthenticating ||
-                    state.isLoadingSettings ||
-                    state.isApplyingSettings ||
-                    isReadOnlyWorkspace,
-              ),
+              leading: state.activeSession == null
+                  ? _buildWorkingDirPill(
+                      context,
+                      state,
+                      !isConnected ||
+                          isRecovering ||
+                          state.isGenerating ||
+                          state.isAuthenticating ||
+                          state.isLoadingSettings ||
+                          state.isApplyingSettings ||
+                          isReadOnlyWorkspace,
+                    )
+                  : null,
               onOpenSettings: () => _openRunSettings(refresh: true),
             ),
             if (state.attachments.isNotEmpty) ...[
