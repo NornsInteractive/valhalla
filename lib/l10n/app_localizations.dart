@@ -4240,13 +4240,13 @@ abstract class AppLocalizations {
   /// No description provided for @chatAttachLocalText.
   ///
   /// In en, this message translates to:
-  /// **'Attach local text file'**
+  /// **'Attach local file'**
   String get chatAttachLocalText;
 
   /// No description provided for @chatAttachRemoteText.
   ///
   /// In en, this message translates to:
-  /// **'Attach remote text file'**
+  /// **'Attach remote file'**
   String get chatAttachRemoteText;
 
   /// No description provided for @chatAttachRemotePathTitle.

@@ -318,13 +318,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final headerShareBtn = find.byKey(const Key('shareSessionsHeaderButton'));
-      expect(headerShareBtn, findsOneWidget);
-
-      await tester.tap(headerShareBtn);
-      await tester.pumpAndSettle();
-
-      expect(chatNotifier.setShareAgentSessionsCalled, isTrue);
-      expect(chatNotifier.setShareAgentSessionsValue, isTrue);
+      expect(headerShareBtn, findsNothing);
     });
 
     testWidgets(

@@ -37,18 +37,33 @@ abstract final class RemoteWorkspaceBrowserDialog {
 
     if (!current()) return null;
     final path = initialPath?.trim();
+    final effectivePath = (path != null && path.startsWith('/')) ? path : null;
     RemoteBrowserSource? source;
     try {
-      source = await container
-          .read(remoteBrowserFactoryProvider)
-          .agent(
-            profile: profile,
-            initialPath: path != null && path.isNotEmpty
-                ? path
-                : snapshot.activeSession?.workingDirectory ??
-                      snapshot.draftWorkingDirectory,
+      final isDocker = profile.executionTarget == 'docker';
+      if (!isDocker) {
+        source = container.read(remoteBrowserFactoryProvider).host(
+          initialPath: effectivePath ?? '/',
+          isCurrent: current,
+        );
+      } else {
+        try {
+          source = await container
+              .read(remoteBrowserFactoryProvider)
+              .agent(
+                profile: profile,
+                initialPath: effectivePath ??
+                    snapshot.activeSession?.workingDirectory ??
+                    snapshot.draftWorkingDirectory,
+                isCurrent: current,
+              );
+        } catch (_) {
+          source = container.read(remoteBrowserFactoryProvider).host(
+            initialPath: '/',
             isCurrent: current,
           );
+        }
+      }
       if (!context.mounted || !source.isCurrent) return null;
       if (mode == RemoteBrowserMode.directory) {
         final result = await rbd.RemoteBrowserDialog.pickDirectory(

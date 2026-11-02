@@ -325,10 +325,8 @@ void main() {
         incidentController.add('ssh');
         await tester.pump(const Duration(milliseconds: 300));
 
-        // Exactly one SnackBar is visible, displaying the latest incident 'ssh'
-        expect(find.byType(SnackBar), findsOneWidget);
-        expect(find.textContaining('ssh'), findsOneWidget);
-        expect(find.textContaining('storage'), findsNothing);
+        // Incidents are recorded silently without disruptive SnackBars
+        expect(find.byType(SnackBar), findsNothing);
       },
     );
   });

@@ -10,7 +10,6 @@ import '../../core/design/motion.dart';
 import '../../core/design/motion_widgets.dart';
 import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
-import '../../core/providers/diagnostics_provider.dart';
 import '../../core/providers/server_provider.dart';
 import '../../core/providers/settings_provider.dart';
 import '../../core/providers/sftp_provider.dart';
@@ -19,7 +18,6 @@ import '../../data/models/server_profile.dart';
 import '../../widgets/context_inspector.dart';
 import '../../widgets/delete_server_dialog.dart';
 import '../../widgets/valhalla_app_icon.dart';
-import '../settings/widgets/diagnostics_view.dart';
 import '../app_center/application_center_view.dart';
 import '../chat/ai_chat_view.dart';
 import '../chat/cli_chat_view.dart';
@@ -1041,26 +1039,6 @@ class _MainShellState extends ConsumerState<MainShell> {
     //
     // 注意：PopScope 只作用于最近的 ModalRoute，所以编辑器/密码等弹窗会先被
     // 返回键关掉，弹窗全部消失后才会走到这里。
-    ref.listen<AsyncValue<String>>(diagnosticsIncidentProvider, (
-      previous,
-      next,
-    ) {
-      next.whenData((category) {
-        if (!context.mounted) return;
-        final messenger = ScaffoldMessenger.of(context);
-        messenger.clearSnackBars();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.diagnosticsIncidentNotice(category)),
-            action: SnackBarAction(
-              label: context.l10n.viewDiagnostics,
-              onPressed: () => DiagnosticsView.show(context),
-            ),
-          ),
-        );
-      });
-    });
-
     ref.listen<SettingsState>(settingsProvider, (previous, next) {
       final currentSection = viewIndexToAppSection(_currentIndex);
       if (!next.isSectionEnabled(currentSection)) {

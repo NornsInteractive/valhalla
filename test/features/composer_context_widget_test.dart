@@ -394,8 +394,8 @@ void main() {
         await tester.tap(find.byKey(_attachmentsKey));
         await tester.pumpAndSettle();
         expect(item('Attach local image').enabled, isFalse);
-        expect(item('Attach local text file').enabled, isFalse);
-        expect(item('Attach remote text file').enabled, isFalse);
+        expect(item('Attach local file').enabled, isFalse);
+        expect(item('Attach remote file').enabled, isFalse);
         expect(find.text('Refresh'), findsOneWidget);
         expect(notifier.state.sessions, isEmpty);
         expect(notifier.state.activeSessionId, isNull);
@@ -408,8 +408,8 @@ void main() {
         await tester.tap(find.byKey(_attachmentsKey));
         await tester.pumpAndSettle();
         expect(item('Attach local image').enabled, isFalse);
-        expect(item('Attach local text file').enabled, isTrue);
-        expect(item('Attach remote text file').enabled, isTrue);
+        expect(item('Attach local file').enabled, isTrue);
+        expect(item('Attach remote file').enabled, isTrue);
         expect(find.text('Refresh'), findsNothing);
 
         await tester.tapAt(const Offset(4, 4));
@@ -425,8 +425,8 @@ void main() {
         await tester.tap(find.byKey(_attachmentsKey));
         await tester.pumpAndSettle();
         expect(item('Attach local image').enabled, isTrue);
-        expect(item('Attach local text file').enabled, isFalse);
-        expect(item('Attach remote text file').enabled, isFalse);
+        expect(item('Attach local file').enabled, isFalse);
+        expect(item('Attach remote file').enabled, isFalse);
 
         await tester.tapAt(const Offset(4, 4));
         await tester.pumpAndSettle();

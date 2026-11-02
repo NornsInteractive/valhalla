@@ -145,9 +145,14 @@ Future<RemoteBrowserSource> agentRemoteBrowser({
     if (!isCurrent() || client.isClosed) {
       throw StateError('REMOTE_BROWSER_TARGET_CHANGED');
     }
-    final initial = initialPath == null || !initialPath.startsWith('/')
-        ? await files.defaultDirectory()
-        : AcpWorkspaceFiles.normalize(initialPath);
+    String initial;
+    try {
+      initial = initialPath == null || !initialPath.startsWith('/')
+          ? await files.defaultDirectory()
+          : AcpWorkspaceFiles.normalize(initialPath);
+    } catch (_) {
+      initial = '/';
+    }
     if (!isCurrent() || client.isClosed) {
       throw StateError('REMOTE_BROWSER_TARGET_CHANGED');
     }

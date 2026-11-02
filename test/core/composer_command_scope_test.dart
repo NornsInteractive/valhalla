@@ -86,7 +86,8 @@ class _FakeAiChat extends AiChatNotifier {
     );
   }
 
-  void setWorkingDirectory(String? directory) {
+  @override
+  Future<void> setWorkingDirectory(String? directory) async {
     state = state.copyWith(
       draftWorkingDirectory: directory,
       clearDraftWorkingDirectory: directory == null,

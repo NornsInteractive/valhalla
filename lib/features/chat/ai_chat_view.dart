@@ -15,6 +15,7 @@ import '../../core/design/tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/logging/sanitizer.dart';
 import '../../core/providers/agent_registry_provider.dart';
+import '../../core/providers/agent_update_lock_provider.dart';
 import '../../core/providers/ai_chat_provider.dart';
 import '../../core/providers/security_settings_provider.dart';
 import '../../core/providers/server_provider.dart';
@@ -127,6 +128,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           if (mounted) _isShowingPersistentRuntimeConsentDialog = false;
         });
       }
+      _autoLoadRuntimeAndCommands();
     });
   }
 
@@ -317,6 +319,32 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       }
       _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     });
+  }
+
+  void _autoLoadRuntimeAndCommands() {
+    if (!mounted) return;
+    final conn = ref.read(serverConnectionProvider);
+    if (!conn.isConnected) return;
+    final activeServer = ref.read(activeServerProvider);
+    if (activeServer == null) return;
+    final chat = ref.read(aiChatProvider);
+    final profile = chat.activeAgentProfile;
+    if (profile == null ||
+        chat.activeSessionId == null ||
+        chat.lastErrorCode != null ||
+        !chat.readyAgents.any((a) => a.id == profile.id) ||
+        chat.isGenerating ||
+        chat.isAuthenticating ||
+        chat.isLoadingSettings ||
+        chat.isApplyingSettings ||
+        ref.read(agentUpdateLockProvider).contains('server:${profile.serverId}')) {
+      return;
+    }
+    if (chat.commands.isEmpty) {
+      unawaited(
+        ref.read(aiChatProvider.notifier).prepareComposerCatalog(),
+      );
+    }
   }
 
   AgentRuntimeState? _getSingleInstallableCandidate(
@@ -1352,6 +1380,13 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         _dismissedErrorCode = null;
       }
     });
+    ref.listen(serverConnectionProvider.select((c) => c.isConnected), (prev, next) {
+      if (prev != true && next == true) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _autoLoadRuntimeAndCommands();
+        });
+      }
+    });
     ref.listen<AiChatState>(aiChatProvider, (previous, next) {
       final previousUnread = _unreadMessageCount;
       final prevSessionId = previous?.activeSession?.id;
@@ -1369,6 +1404,17 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           nextAgentId != prevAgentId ||
           nextServerId != prevServerId) {
         _dismissedErrorCode = null;
+      }
+      final prevReady = previous?.readyAgents.isNotEmpty ?? false;
+      final nextReady = next.readyAgents.isNotEmpty;
+      final readyAgentsChanged = !prevReady && nextReady;
+      if (nextSessionId != prevSessionId ||
+          nextAgentId != prevAgentId ||
+          nextServerId != prevServerId ||
+          readyAgentsChanged) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _autoLoadRuntimeAndCommands();
+        });
       }
       if (nextSessionId != prevSessionId ||
           nextAgentId != prevAgentId ||
@@ -2177,7 +2223,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     Flexible(
                       child: InkWell(
                         key: const Key('chat_working_dir_button'),
-                        onTap: (isBusy || !isDraft || !isConnected || isRecovering)
+                        onTap: (isBusy || !isConnected || isRecovering)
                             ? null
                             : () => _showDraftWorkingDirDialog(
                                 context,
@@ -2187,7 +2233,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                         child: Tooltip(
                           message: isDraft
                               ? context.l10n.chatWorkingDirTooltip
-                              : '${state.activeSession!.workingDirectory} (${context.l10n.sessionTitle})',
+                              : '${state.activeSession!.workingDirectory} (${context.l10n.chatWorkingDirTooltip})',
                           child: Padding(
                             padding: EdgeInsets.symmetric(
                               horizontal: isCompact ? 2 : 4,
@@ -2218,7 +2264,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                                     maxLines: 1,
                                   ),
                                 ),
-                                if (isDraft) ...[
+                                if (isDraft || isConnected) ...[
                                   const SizedBox(width: 1),
                                   Icon(
                                     Icons.arrow_drop_down,
@@ -2256,29 +2302,6 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             ),
           ),
           _buildWorkspaceControlBadge(state),
-          IconButton(
-            key: const Key('shareSessionsHeaderButton'),
-            icon: Icon(
-              state.shareAgentSessions
-                  ? Icons.folder_shared
-                  : Icons.folder_shared_outlined,
-              size: 18,
-              color: state.shareAgentSessions
-                  ? context.colorScheme.primary
-                  : context.colorScheme.outline,
-            ),
-            padding: btnPadding,
-            constraints: btnConstraints,
-            visualDensity: VisualDensity.compact,
-            tooltip: state.shareAgentSessions
-                ? context.l10n.shareAgentSessionsEnabled
-                : context.l10n.shareAgentSessionsDisabled,
-            onPressed: state.isGenerating
-                ? null
-                : () => ref
-                      .read(aiChatProvider.notifier)
-                      .setShareAgentSessions(!state.shareAgentSessions),
-          ),
           IconButton(
             key: const Key('chat_usage_diagnostics_button'),
             icon: const Icon(
@@ -2588,29 +2611,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   ),
                   const Divider(height: 1),
                 ],
-                Entrance(
-                  index: 3,
-                  child: SwitchListTile.adaptive(
-                    key: const Key('shareAgentSessionsSwitch'),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    dense: true,
-                    title: Text(
-                      context.l10n.shareAgentSessionsTitle,
-                      style: context.textTheme.titleSmall,
-                    ),
-                    subtitle: Text(
-                      context.l10n.shareAgentSessionsSubtitle,
-                      style: context.textTheme.bodySmall?.copyWith(
-                        color: context.colorScheme.outline,
-                      ),
-                    ),
-                    value: projection.shareAgentSessions,
-                    onChanged: projection.isGenerating
-                        ? null
-                        : (val) => notifier.setShareAgentSessions(val),
-                  ),
-                ),
-                const Divider(height: 1),
+
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -5887,11 +5888,15 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     }
     final serverKey = ref.read(activeServerProvider)?.connectionKey;
     Object? selectedDir;
+    final safeInitialPath =
+        (rawWorkingDir != null && rawWorkingDir.startsWith('/'))
+            ? rawWorkingDir
+            : null;
     try {
       selectedDir = await RemoteWorkspaceBrowserDialog.show(
         context,
         mode: RemoteBrowserMode.directory,
-        initialPath: rawWorkingDir,
+        initialPath: safeInitialPath,
       );
     } catch (error) {
       if (!mounted || !context.mounted) return;
@@ -5905,12 +5910,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     if (ref.read(activeServerProvider)?.connectionKey != serverKey ||
         !ref.read(serverConnectionProvider).isConnected ||
         current.activeAgentProfile != snapshot.activeAgentProfile ||
-        current.activeSessionId != snapshot.activeSessionId ||
-        current.draftWorkingDirectory != snapshot.draftWorkingDirectory) {
+        current.activeSessionId != snapshot.activeSessionId) {
       return;
     }
     if (selectedDir is String && selectedDir.isNotEmpty) {
-      ref.read(aiChatProvider.notifier).setDraftWorkingDirectory(selectedDir);
+      await ref.read(aiChatProvider.notifier).setWorkingDirectory(selectedDir);
     }
   }
 
@@ -5942,33 +5946,19 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     }
   }
 
-  Future<void> _pickLocalTextFile() async {
+  Future<void> _pickLocalFile() async {
     try {
       final files = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: [
-          'txt',
-          'md',
-          'json',
-          'yaml',
-          'yml',
-          'dart',
-          'py',
-          'js',
-          'ts',
-          'sh',
-          'c',
-          'cpp',
-          'h',
-        ],
+        type: FileType.any,
       );
       if (files.isEmpty) return;
       final file = files.first;
       final path = file.path;
       if (path == null) return;
+      final mime = AcpWorkspaceFiles.mimeType(file.name) ?? 'application/octet-stream';
       await ref
           .read(aiChatProvider.notifier)
-          .attachLocalFile(path, file.name, 'text/plain');
+          .attachLocalFile(path, file.name, mime);
     } catch (e) {
       if (!mounted) return;
       final message = e.toString().contains('ACP_ATTACHMENT_TOO_LARGE')
@@ -7312,7 +7302,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                             _pickLocalImage();
                             break;
                           case 'text':
-                            _pickLocalTextFile();
+                            _pickLocalFile();
                             break;
                           case 'remote':
                             _promptRemoteTextFile(context);

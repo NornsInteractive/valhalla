@@ -85,6 +85,18 @@ class AcpAttachmentStore {
           uri: resource.uri,
         );
       }
+      if (resource is BlobResourceContents) {
+        final bytes = base64Decode(resource.blob);
+        if (bytes.length > AcpPromptAttachment.maxTextBytes) {
+          throw StateError('ACP_ATTACHMENT_TOO_LARGE');
+        }
+        return save(
+          name,
+          resource.mimeType ?? 'application/octet-stream',
+          bytes,
+          uri: resource.uri,
+        );
+      }
       return ChatAttachment(
         id: resource.uri,
         name: name,

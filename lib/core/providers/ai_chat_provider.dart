@@ -5468,6 +5468,38 @@ class AiChatNotifier extends Notifier<AiChatState> {
     _rememberDraft();
   }
 
+  Future<void> setWorkingDirectory(String? path) async {
+    if (state.isGenerating ||
+        state.isAuthenticating ||
+        state.isLoadingSettings ||
+        state.isApplyingSettings) {
+      return;
+    }
+    if (path != null &&
+        (!path.startsWith('/') ||
+            path.contains('\n') ||
+            path.contains('\u0000'))) {
+      throw ArgumentError('ACP_WORKING_DIRECTORY_INVALID');
+    }
+    _resetAdapter();
+    _draftWorkingDirectory = path;
+    final active = state.activeSession;
+    if (active != null && path != null) {
+      final updated = active.copyWith(
+        workingDirectory: path,
+        updatedAt: DateTime.now(),
+      );
+      await ref.read(chatRepositoryProvider).saveSession(updated);
+      _updateSessionInState(updated);
+    }
+    state = state.copyWith(
+      draftWorkingDirectory: path,
+      clearDraftWorkingDirectory: path == null,
+    );
+    _rememberDraft();
+    unawaited(prepareComposerCatalog());
+  }
+
   Future<List<String>> listWorkspaceDirectories(String path) async {
     return (await listWorkspaceFiles(
       path,

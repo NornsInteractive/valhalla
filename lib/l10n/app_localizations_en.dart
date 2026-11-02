@@ -2199,10 +2199,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatAttachImage => 'Attach local image';
 
   @override
-  String get chatAttachLocalText => 'Attach local text file';
+  String get chatAttachLocalText => 'Attach local file';
 
   @override
-  String get chatAttachRemoteText => 'Attach remote text file';
+  String get chatAttachRemoteText => 'Attach remote file';
 
   @override
   String get chatAttachRemotePathTitle => 'Attach Remote Text File';

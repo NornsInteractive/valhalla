@@ -2106,10 +2106,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatAttachImage => '添加本地图片';
 
   @override
-  String get chatAttachLocalText => '添加本地文本文件';
+  String get chatAttachLocalText => '添加本地文件';
 
   @override
-  String get chatAttachRemoteText => '引入远端文本文件';
+  String get chatAttachRemoteText => '引入远端文件';
 
   @override
   String get chatAttachRemotePathTitle => '引入远端文本文件';

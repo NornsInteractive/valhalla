@@ -57,7 +57,9 @@ class AcpWorkspaceFiles {
       '.bmp': 'image/bmp',
     };
     return images[ext] ??
-        (FilePreview.isTextPreviewable(name) ? 'text/plain' : null);
+        (FilePreview.isTextPreviewable(name)
+            ? 'text/plain'
+            : 'application/octet-stream');
   }
 
   Future<Uint8List> _run(

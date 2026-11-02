@@ -726,16 +726,30 @@ class ACPClientAdapter {
                     )
                   else
                     EmbeddedResource(
-                      resource: TextResourceContents(
-                        uri:
-                            attachment.uri ??
-                            Uri(
-                              scheme: 'file',
-                              path: '/attachments/${attachment.name}',
-                            ).toString(),
-                        text: utf8.decode(attachment.bytes),
-                        mimeType: attachment.mimeType,
-                      ),
+                      resource: _isTextPayload(attachment.mimeType, attachment.bytes)
+                          ? TextResourceContents(
+                              uri:
+                                  attachment.uri ??
+                                  Uri(
+                                    scheme: 'file',
+                                    path: '/attachments/${attachment.name}',
+                                  ).toString(),
+                              text: utf8.decode(
+                                attachment.bytes,
+                                allowMalformed: true,
+                              ),
+                              mimeType: attachment.mimeType,
+                            )
+                          : BlobResourceContents(
+                              uri:
+                                  attachment.uri ??
+                                  Uri(
+                                    scheme: 'file',
+                                    path: '/attachments/${attachment.name}',
+                                  ).toString(),
+                              blob: base64Encode(attachment.bytes),
+                              mimeType: attachment.mimeType,
+                            ),
                     ),
               ],
             );
@@ -1234,3 +1248,22 @@ PlanStep _toPlanStep(PlanEntry entry) => PlanStep(
   title: entry.content,
   status: _toPlanStepStatus(entry.status),
 );
+
+bool _isTextPayload(String mimeType, Uint8List bytes) {
+  if (mimeType.startsWith('text/') ||
+      mimeType == 'application/json' ||
+      mimeType == 'application/xml' ||
+      mimeType == 'application/x-yaml' ||
+      mimeType == 'application/yaml' ||
+      mimeType == 'application/javascript' ||
+      mimeType == 'application/x-sh') {
+    return true;
+  }
+  if (bytes.contains(0)) return false;
+  try {
+    utf8.decode(bytes);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
