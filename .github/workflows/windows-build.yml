@@ -2,6 +2,11 @@ name: Multi-platform Build
 
 on:
   workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build (all, windows, native)'
+        required: false
+        default: 'all'
   push:
     branches: [main]
     tags: ['v[0-9]*']
@@ -53,6 +58,7 @@ jobs:
   build:
     name: Windows x64 release
     needs: preflight
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.platform != 'native'
     runs-on: windows-2022
     timeout-minutes: 45
     defaults:
@@ -113,19 +119,73 @@ jobs:
             'Extract the entire ZIP and launch valhalla.exe. Keep DLLs and data together.'
             'Requires Windows 10/11 x64 and the Microsoft Visual C++ x64 runtime.'
           ) | Set-Content (Join-Path $bundle 'BUILD-INFO.txt') -Encoding utf8
+
+          # Stage VC++ CRT runtime DLLs into release bundle for MSIX, installer, and complete package
+          $redistDirs = @(
+            (Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC\*\x64\Microsoft.VC143.CRT" -ErrorAction SilentlyContinue | Select-Object -First 1),
+            (Get-ChildItem -Path "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC\*\x64\Microsoft.VC143.CRT" -ErrorAction SilentlyContinue | Select-Object -First 1),
+            (Get-ChildItem -Path "C:\Program Files*\Microsoft Visual Studio\*\*\VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT" -ErrorAction SilentlyContinue | Select-Object -First 1)
+          )
+          $redist = ($redistDirs | Where-Object { $_ } | Select-Object -First 1).FullName
+          if ($redist) {
+            Write-Host "Staging VC++ redist DLLs from $redist"
+            foreach ($dll in @('vcruntime140.dll', 'msvcp140.dll', 'vcruntime140_1.dll')) {
+              $src = Join-Path $redist $dll
+              if (Test-Path $src) {
+                Copy-Item $src (Join-Path $bundle $dll) -Force
+              }
+            }
+          }
+          foreach ($dll in @('vcruntime140.dll', 'msvcp140.dll', 'vcruntime140_1.dll')) {
+            $dest = Join-Path $bundle $dll
+            if (-not (Test-Path $dest)) {
+              if (Test-Path "C:\Windows\System32\$dll") {
+                Copy-Item "C:\Windows\System32\$dll" $dest -Force
+                Write-Host "Copied $dll from System32"
+              } else {
+                Write-Warning "Could not find $dll"
+              }
+            }
+          }
+
+          # Portable ZIP
           $zip = Join-Path $output "valhalla-windows-x64-$env:BUILD_RUN.zip"
           Compress-Archive -Path "$bundle/*" -DestinationPath $zip -CompressionLevel Optimal
           $digest = Get-FileHash $zip -Algorithm SHA256
           "$($digest.Hash.ToLower())  $([IO.Path]::GetFileName($zip))" |
             Set-Content "$zip.sha256" -Encoding ascii
+
+          # Package Windows Store MSIX package
+          Write-Host "Packaging Windows Store MSIX package..."
+          & tool\package_windows_msix.ps1 -Project .
+
+          # Package Inno Setup EXE installer
+          try {
+            Write-Host "Installing Inno Setup via Chocolatey..."
+            choco install innosetup --no-progress -y
+            & tool\package_windows_exe.ps1 -Project .
+          } catch {
+            Write-Warning "EXE installer packaging failed: $_"
+          }
+
           @(
             '### Windows x64 release'
             "Developer / team: $env:VALHALLA_PUBLISHER"
             "Commit: ``$env:BUILD_SHA``"
-            "SHA256: ``$($digest.Hash.ToLower())``"
-            'Download the artifact below. Extract the inner ZIP completely before launching valhalla.exe.'
-            'Compilation does not prove real server/Agent or Windows desktop functionality.'
+            "ZIP: ``$([IO.Path]::GetFileName($zip))`` (SHA256: ``$($digest.Hash.ToLower())``)"
           ) | Add-Content $env:GITHUB_STEP_SUMMARY
+          Get-ChildItem -Path $output -Filter "*.msix" | ForEach-Object {
+            $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            @(
+              "MSIX: ``$($_.Name)`` (SHA256: ``$h``)"
+            ) | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          Get-ChildItem -Path $output -Filter "*.exe" | ForEach-Object {
+            $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            @(
+              "EXE: ``$($_.Name)`` (SHA256: ``$h``)"
+            ) | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
 
       - name: Upload Windows package
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -138,6 +198,7 @@ jobs:
   native:
     name: ${{ matrix.platform }} release
     needs: preflight
+    if: github.event_name != 'workflow_dispatch' || (github.event.inputs.platform != 'windows' && github.event.inputs.platform != '')
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
