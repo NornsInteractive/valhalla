@@ -1,11 +1,12 @@
-# Valhalla 1.0.33+34
+# Valhalla 1.0.34+35
 
-## 智能会话底部输入框全面升级为 Google Chat 原生风格
-- **左侧操作区**：改为单一独立的 40x40 紧凑圆形加号按钮（`+`，`chat_attachments_button`），采用 Material 3 `surfaceContainerHigh` 表面背景与圆形容器，支持选择图片、本地文本、远程文件以及快捷调用命令与技能面板。
-- **中央输入容器**：升级为圆角胶囊状（Pill Container，24dp 圆角），浅底微边框（`outlineVariant` 35% 不透明度），内嵌无边框自适应高度输入框（`chatPromptInput`），打字视野与横向有效空间大幅拓展。
-- **胶囊内联快捷动作**：将斜杠命令与技能入口（`chat_commands_menu_button`）内嵌至胶囊右下侧，紧凑精致（32x32dp），不额外占用外部横向间距。
-- **右侧发送/停止动作**：40x40 独立圆形操作按钮（`sendMessageButton` / `stopGenerationButton`），生成过程中平滑切换为红色终止按键。
-- **自动化测试**：更新组件回归测试 `test/features/composer_context_widget_test.dart`，全面断言圆形加号按钮、胶囊内联命令按钮与发送按钮尺寸几何及交互行为。
+## 智能会话底部输入栏高级美学优化与动效系统注入（Taste Skill Polish）
+- **底栏浮动停靠质感**：底部操作区新增 `outlineVariant` 发丝分隔线与漫反射顶阴影，舒适内边距布局，与历史消息流形成清晰的高端停靠层次。
+- **中央胶囊呼吸聚焦态**：输入框胶囊容器支持聚焦动效（`AnimatedContainer`，`VCurves.emphasized`），失焦态温润内敛，聚焦态平滑切换至高亮背景与品牌主色边框，外侧投射 10px 柔光氛围光晕。
+- **全员物理触觉回弹**：加号圆钮、内联命令圆钮、发送与停止操作按键全面包裹 `PressableScale`（缩放比 0.90~0.94），提供实体按键级弹性落位反馈。
+- **打字意图激活与弹簧律动**：发送按钮动态感应草稿输入，有内容时瞬间流动至饱和主色并外扩主色光晕，发送箭头微放 1.05x（`AnimatedScale`）；
+- **发送 ↔ 停止电影级转场**：生成中切换采用 `AnimatedSwitcher`（`ScaleTransition` + `FadeTransition` + `VCurves.springish`），形态平滑形变无闪烁跳动。
+- **动态高度平滑伸缩**：技能词与附件气泡接入 `AnimatedSize`（`VCurves.decelerate`），动态高度伸缩丝滑平顺。
 
 ## 构建与发布
 - 正式证书签名发布 Android 各架构包（arm64-v8a、armeabi-v7a、x86_64）、AAB 与 Linux x64 包。

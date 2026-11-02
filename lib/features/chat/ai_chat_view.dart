@@ -61,6 +61,7 @@ class AiChatView extends ConsumerStatefulWidget {
 
 class _AiChatViewState extends ConsumerState<AiChatView> {
   final TextEditingController _promptController = TextEditingController();
+  final FocusNode _promptFocusNode = FocusNode();
   final TextEditingController _sessionSearchController =
       TextEditingController();
   ScrollController _scrollController = ScrollController(
@@ -109,6 +110,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       _lastSeenTailMessageId = initialSession.messages.lastOrNull?.id;
     }
     _scrollController.addListener(_onScroll);
+    _promptFocusNode.addListener(_onPromptFocusChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _clampToBottom(
         expectedSessionId: initialSessionId,
@@ -149,10 +151,16 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     }
   }
 
+  void _onPromptFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     _sessionSearchController.dispose();
     _scrollController.removeListener(_onScroll);
+    _promptFocusNode.removeListener(_onPromptFocusChanged);
+    _promptFocusNode.dispose();
     _promptController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -6857,9 +6865,27 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         !isServerBusyWithOtherSession &&
         !isReadOnlyWorkspace;
 
+    final isDark = context.colorScheme.brightness == Brightness.dark;
+    final isFocused = _promptFocusNode.hasFocus;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
-      color: context.colorScheme.surface,
+      decoration: BoxDecoration(
+        color: context.colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: context.colorScheme.outlineVariant.withValues(alpha: 0.22),
+            width: 0.8,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
       child: SafeArea(
         top: false,
         minimum: const EdgeInsets.only(bottom: 2),
@@ -7147,241 +7173,274 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 ],
               ),
             ],
-            ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _promptController,
-              builder: (ctx, value, _) {
-                final tokens = value.text
-                    .split(RegExp(r'\s+'))
-                    .where((t) => t.isNotEmpty)
-                    .toSet();
-                final referencedSkills = state.commands
-                    .where((c) => c.isSkill && tokens.contains(c.name))
-                    .toList();
-                if (referencedSkills.isEmpty) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: [
-                        for (final skill in referencedSkills)
-                          Container(
-                            key: Key('chat_skill_chip_${skill.name}'),
-                            padding: const EdgeInsets.only(
-                              left: 8,
-                              top: 3,
-                              bottom: 3,
-                              right: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: context.colorScheme.primaryContainer
-                                  .withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(VRadius.pill),
-                              border: Border.all(
-                                color: context.colorScheme.primary.withValues(
-                                  alpha: 0.3,
+            AnimatedSize(
+              duration: VTiming.base,
+              curve: VCurves.decelerate,
+              alignment: Alignment.topCenter,
+              child: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _promptController,
+                builder: (ctx, value, _) {
+                  final tokens = value.text
+                      .split(RegExp(r'\s+'))
+                      .where((t) => t.isNotEmpty)
+                      .toSet();
+                  final referencedSkills = state.commands
+                      .where((c) => c.isSkill && tokens.contains(c.name))
+                      .toList();
+                  if (referencedSkills.isEmpty) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          for (final skill in referencedSkills)
+                            Container(
+                              key: Key('chat_skill_chip_${skill.name}'),
+                              padding: const EdgeInsets.only(
+                                left: 8,
+                                top: 3,
+                                bottom: 3,
+                                right: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: context.colorScheme.primaryContainer
+                                    .withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(VRadius.pill),
+                                border: Border.all(
+                                  color: context.colorScheme.primary.withValues(
+                                    alpha: 0.3,
+                                  ),
                                 ),
                               ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.auto_awesome,
-                                  size: 13,
-                                  color: context.colorScheme.primary,
-                                ),
-                                const SizedBox(width: 4),
-                                Tooltip(
-                                  message: skill.description.isNotEmpty
-                                      ? '${skill.name}: ${skill.description}'
-                                      : skill.name,
-                                  child: ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      maxWidth: 160,
-                                    ),
-                                    child: Text(
-                                      skill.name,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: context
-                                            .colorScheme
-                                            .onPrimaryContainer,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.auto_awesome,
+                                    size: 13,
+                                    color: context.colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Tooltip(
+                                    message: skill.description.isNotEmpty
+                                        ? '${skill.name}: ${skill.description}'
+                                        : skill.name,
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 160,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                      child: Text(
+                                        skill.name,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: context
+                                              .colorScheme
+                                              .onPrimaryContainer,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 2),
-                                GestureDetector(
-                                  key: Key('chat_remove_skill_${skill.name}'),
-                                  onTap: isBusy
-                                      ? null
-                                      : () => _removeSkillToken(skill.name),
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 16,
-                                    color: context
-                                        .colorScheme
-                                        .onPrimaryContainer
-                                        .withValues(alpha: 0.7),
+                                  const SizedBox(width: 2),
+                                  GestureDetector(
+                                    key: Key('chat_remove_skill_${skill.name}'),
+                                    onTap: isBusy
+                                        ? null
+                                        : () => _removeSkillToken(skill.name),
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 16,
+                                      color: context
+                                          .colorScheme
+                                          .onPrimaryContainer
+                                          .withValues(alpha: 0.7),
+                                    ),
                                   ),
-                                ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 5),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                PressableScale(
+                  pressedScale: 0.94,
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: PopupMenuButton<String>(
+                      key: const Key('chat_attachments_button'),
+                      tooltip: context.l10n.chatAttachTooltip,
+                      icon: Icon(
+                        Icons.add_rounded,
+                        size: 22,
+                        color: context.colorScheme.onSurfaceVariant,
+                      ),
+                      padding: EdgeInsets.zero,
+                      style: IconButton.styleFrom(
+                        backgroundColor:
+                            context.colorScheme.surfaceContainerHigh,
+                        foregroundColor:
+                            context.colorScheme.onSurfaceVariant,
+                        side: BorderSide(
+                          color: context.colorScheme.outlineVariant
+                              .withValues(alpha: 0.35),
+                          width: 1,
+                        ),
+                        shape: const CircleBorder(),
+                        minimumSize: const Size(40, 40),
+                        fixedSize: const Size(40, 40),
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      enabled: !isBusy,
+                      onSelected: (val) {
+                        switch (val) {
+                          case 'image':
+                            _pickLocalImage();
+                            break;
+                          case 'text':
+                            _pickLocalTextFile();
+                            break;
+                          case 'remote':
+                            _promptRemoteTextFile(context);
+                            break;
+                          case 'commands':
+                            _openCommandsAndSkills(context);
+                            break;
+                          case 'probe':
+                            ref
+                                .read(aiChatProvider.notifier)
+                                .prepareRunSettings(refresh: false);
+                            break;
+                        }
+                      },
+                      itemBuilder: (ctx) => [
+                        PopupMenuItem<String>(
+                          value: 'image',
+                          enabled: state.supportsImages,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.image_outlined,
+                                size: 16,
+                                color: state.supportsImages
+                                    ? null
+                                    : ctx.colorScheme.outline,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(context.l10n.chatAttachImage),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'text',
+                          enabled: state.supportsTextAttachments,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.description_outlined,
+                                size: 16,
+                                color: state.supportsTextAttachments
+                                    ? null
+                                    : ctx.colorScheme.outline,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(context.l10n.chatAttachLocalText),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'remote',
+                          enabled:
+                              state.supportsTextAttachments &&
+                              isConnected &&
+                              !isRecovering,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.cloud_download_outlined,
+                                size: 16,
+                                color: state.supportsTextAttachments
+                                    ? null
+                                    : ctx.colorScheme.outline,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(context.l10n.chatAttachRemoteText),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'commands',
+                          enabled: !isBusy && !_isLoadingComposerCommands,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.code_rounded, size: 16),
+                              const SizedBox(width: 8),
+                              Text(context.l10n.chatCommandsTooltip),
+                            ],
+                          ),
+                        ),
+                        if (!state.supportsImages &&
+                            !state.supportsTextAttachments)
+                          PopupMenuItem<String>(
+                            value: 'probe',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.refresh, size: 16),
+                                const SizedBox(width: 8),
+                                Text(context.l10n.refresh),
                               ],
                             ),
                           ),
                       ],
                     ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 4),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: PopupMenuButton<String>(
-                    key: const Key('chat_attachments_button'),
-                    tooltip: context.l10n.chatAttachTooltip,
-                    icon: Icon(
-                      Icons.add_rounded,
-                      size: 22,
-                      color: context.colorScheme.onSurfaceVariant,
-                    ),
-                    padding: EdgeInsets.zero,
-                    style: IconButton.styleFrom(
-                      backgroundColor:
-                          context.colorScheme.surfaceContainerHigh,
-                      foregroundColor:
-                          context.colorScheme.onSurfaceVariant,
-                      shape: const CircleBorder(),
-                      minimumSize: const Size(40, 40),
-                      fixedSize: const Size(40, 40),
-                      padding: EdgeInsets.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    enabled: !isBusy,
-                    onSelected: (val) {
-                      switch (val) {
-                        case 'image':
-                          _pickLocalImage();
-                          break;
-                        case 'text':
-                          _pickLocalTextFile();
-                          break;
-                        case 'remote':
-                          _promptRemoteTextFile(context);
-                          break;
-                        case 'commands':
-                          _openCommandsAndSkills(context);
-                          break;
-                        case 'probe':
-                          ref
-                              .read(aiChatProvider.notifier)
-                              .prepareRunSettings(refresh: false);
-                          break;
-                      }
-                    },
-                    itemBuilder: (ctx) => [
-                      PopupMenuItem<String>(
-                        value: 'image',
-                        enabled: state.supportsImages,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.image_outlined,
-                              size: 16,
-                              color: state.supportsImages
-                                  ? null
-                                  : ctx.colorScheme.outline,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(context.l10n.chatAttachImage),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'text',
-                        enabled: state.supportsTextAttachments,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.description_outlined,
-                              size: 16,
-                              color: state.supportsTextAttachments
-                                  ? null
-                                  : ctx.colorScheme.outline,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(context.l10n.chatAttachLocalText),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'remote',
-                        enabled:
-                            state.supportsTextAttachments &&
-                            isConnected &&
-                            !isRecovering,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.cloud_download_outlined,
-                              size: 16,
-                              color: state.supportsTextAttachments
-                                  ? null
-                                  : ctx.colorScheme.outline,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(context.l10n.chatAttachRemoteText),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'commands',
-                        enabled: !isBusy && !_isLoadingComposerCommands,
-                        child: Row(
-                          children: [
-                            const Icon(Icons.code_rounded, size: 16),
-                            const SizedBox(width: 8),
-                            Text(context.l10n.chatCommandsTooltip),
-                          ],
-                        ),
-                      ),
-                      if (!state.supportsImages &&
-                          !state.supportsTextAttachments)
-                        PopupMenuItem<String>(
-                          value: 'probe',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.refresh, size: 16),
-                              const SizedBox(width: 8),
-                              Text(context.l10n.refresh),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: VTiming.base,
+                    curve: VCurves.emphasized,
                     constraints: const BoxConstraints(minHeight: 40),
                     decoration: BoxDecoration(
-                      color: context.colorScheme.surfaceContainerHigh,
+                      color: isFocused
+                          ? (isDark
+                              ? context.colorScheme.surfaceContainerHighest
+                                  .withValues(alpha: 0.75)
+                              : context.colorScheme.surfaceContainerHigh)
+                          : context.colorScheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: context.colorScheme.outlineVariant
-                            .withValues(alpha: 0.35),
-                        width: 1,
+                        color: isFocused
+                            ? context.colorScheme.primary
+                                .withValues(alpha: 0.65)
+                            : context.colorScheme.outlineVariant
+                                .withValues(alpha: 0.35),
+                        width: isFocused ? 1.2 : 1.0,
                       ),
+                      boxShadow: isFocused
+                          ? [
+                              BoxShadow(
+                                color: context.colorScheme.primary
+                                    .withValues(alpha: 0.10),
+                                blurRadius: 10,
+                                spreadRadius: 0.5,
+                              ),
+                            ]
+                          : const [],
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -7389,11 +7448,18 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                         Expanded(
                           child: TextField(
                             key: const Key('chatPromptInput'),
+                            focusNode: _promptFocusNode,
                             controller: _promptController,
                             enabled: hasActiveAgent && !isBusy,
                             minLines: 1,
                             maxLines: 4,
-                            style: const TextStyle(fontSize: 14),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              height: 1.35,
+                            ),
+                            cursorColor: context.colorScheme.primary,
+                            cursorWidth: 1.8,
+                            cursorRadius: const Radius.circular(1),
                             decoration: InputDecoration(
                               hintText: hasActiveAgent
                                   ? context.l10n.inputPromptHint
@@ -7405,12 +7471,12 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                               hintStyle: TextStyle(
                                 fontSize: 14,
                                 color: context.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.7),
+                                    .withValues(alpha: 0.65),
                               ),
                               hintMaxLines: 1,
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14,
+                                horizontal: 16,
                                 vertical: 10,
                               ),
                               border: InputBorder.none,
@@ -7425,40 +7491,55 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                         ),
                         Padding(
                           padding: const EdgeInsets.only(right: 4, bottom: 4),
-                          child: SizedBox(
-                            width: 32,
-                            height: 32,
-                            child: IconButton(
-                              key: const Key('chat_commands_menu_button'),
-                              tooltip: context.l10n.chatCommandsTooltip,
-                              icon: _isLoadingComposerCommands
-                                  ? const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.code_rounded,
-                                      size: 19,
-                                      color: context
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                              padding: EdgeInsets.zero,
-                              style: IconButton.styleFrom(
-                                minimumSize: const Size(32, 32),
-                                fixedSize: const Size(32, 32),
+                          child: PressableScale(
+                            pressedScale: 0.90,
+                            child: SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: IconButton(
+                                key: const Key('chat_commands_menu_button'),
+                                tooltip: context.l10n.chatCommandsTooltip,
+                                icon: AnimatedSwitcher(
+                                  duration: VTiming.fast,
+                                  child: _isLoadingComposerCommands
+                                      ? const SizedBox(
+                                          key: ValueKey('cmd_spinner'),
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : Icon(
+                                          key: const ValueKey('cmd_icon'),
+                                          Icons.code_rounded,
+                                          size: 19,
+                                          color: isFocused
+                                              ? context.colorScheme.primary
+                                              : context
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                        ),
+                                ),
                                 padding: EdgeInsets.zero,
-                                tapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
+                                style: IconButton.styleFrom(
+                                  backgroundColor: isFocused
+                                      ? context.colorScheme.primary
+                                          .withValues(alpha: 0.1)
+                                      : Colors.transparent,
+                                  shape: const CircleBorder(),
+                                  minimumSize: const Size(32, 32),
+                                  fixedSize: const Size(32, 32),
+                                  padding: EdgeInsets.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed:
+                                    (isBusy || _isLoadingComposerCommands)
+                                        ? null
+                                        : () =>
+                                            _openCommandsAndSkills(context),
                               ),
-                              onPressed:
-                                  (isBusy || _isLoadingComposerCommands)
-                                      ? null
-                                      : () =>
-                                          _openCommandsAndSkills(context),
                             ),
                           ),
                         ),
@@ -7467,81 +7548,152 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                if (state.isGenerating)
-                  PressableScale(
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: IconButton.filled(
-                        key: const Key('stopGenerationButton'),
-                        icon: const Icon(Icons.stop_rounded, size: 22),
-                        style: IconButton.styleFrom(
-                          backgroundColor: context.colorScheme.error,
-                          foregroundColor: context.colorScheme.onError,
-                          shape: const CircleBorder(),
-                          minimumSize: const Size(40, 40),
-                          fixedSize: const Size(40, 40),
-                          padding: EdgeInsets.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        tooltip: context.l10n.stopGeneration,
-                        onPressed: isReadOnlyWorkspace
-                            ? null
-                            : () {
-                                final serverKey = ref
-                                    .read(activeServerProvider)
-                                    ?.connectionKey
-                                    .toString();
-                                final sessionId = ref
-                                    .read(aiChatProvider)
-                                    .activeSessionId;
-                                if (serverKey != null && sessionId != null) {
-                                  ref
-                                      .read(aiChatProvider.notifier)
-                                      .stopViewingRun(
-                                        expectedServerKey: serverKey,
-                                        expectedSessionId: sessionId,
-                                      );
-                                } else {
-                                  ref
-                                      .read(aiChatProvider.notifier)
-                                      .stopGeneration();
-                                }
-                              },
+                AnimatedSwitcher(
+                  duration: VTiming.base,
+                  switchInCurve: VCurves.springish,
+                  switchOutCurve: VCurves.accelerate,
+                  transitionBuilder: (child, animation) {
+                    return ScaleTransition(
+                      scale: animation,
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: child,
                       ),
-                    ),
-                  )
-                else
-                  PressableScale(
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: IconButton.filled(
-                        key: const Key('sendMessageButton'),
-                        icon: const Icon(Icons.send_rounded, size: 20),
-                        style: IconButton.styleFrom(
-                          shape: const CircleBorder(),
-                          backgroundColor: canSend
-                              ? context.colorScheme.primary
-                              : context.colorScheme.surfaceContainerHigh,
-                          foregroundColor: canSend
-                              ? context.colorScheme.onPrimary
-                              : context.colorScheme.onSurface
-                                  .withValues(alpha: 0.38),
-                          minimumSize: const Size(40, 40),
-                          fixedSize: const Size(40, 40),
-                          padding: EdgeInsets.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    );
+                  },
+                  child: state.isGenerating
+                      ? PressableScale(
+                          key: const ValueKey('stopGenerationAction'),
+                          pressedScale: 0.94,
+                          child: AnimatedContainer(
+                            duration: VTiming.base,
+                            curve: VCurves.emphasized,
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: context.colorScheme.error
+                                      .withValues(alpha: 0.35),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: IconButton.filled(
+                              key: const Key('stopGenerationButton'),
+                              icon: const Icon(Icons.stop_rounded, size: 22),
+                              style: IconButton.styleFrom(
+                                backgroundColor: context.colorScheme.error,
+                                foregroundColor: context.colorScheme.onError,
+                                shape: const CircleBorder(),
+                                minimumSize: const Size(40, 40),
+                                fixedSize: const Size(40, 40),
+                                padding: EdgeInsets.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              tooltip: context.l10n.stopGeneration,
+                              onPressed: isReadOnlyWorkspace
+                                  ? null
+                                  : () {
+                                      final serverKey = ref
+                                          .read(activeServerProvider)
+                                          ?.connectionKey
+                                          .toString();
+                                      final sessionId = ref
+                                          .read(aiChatProvider)
+                                          .activeSessionId;
+                                      if (serverKey != null && sessionId != null) {
+                                        ref
+                                            .read(aiChatProvider.notifier)
+                                            .stopViewingRun(
+                                              expectedServerKey: serverKey,
+                                              expectedSessionId: sessionId,
+                                            );
+                                      } else {
+                                        ref
+                                            .read(aiChatProvider.notifier)
+                                            .stopGeneration();
+                                      }
+                                    },
+                            ),
+                          ),
+                        )
+                      : ValueListenableBuilder<TextEditingValue>(
+                          key: const ValueKey('sendAction'),
+                          valueListenable: _promptController,
+                          builder: (context, promptVal, _) {
+                            final hasDraft = promptVal.text.trim().isNotEmpty;
+                            final isReadyToSend = canSend && hasDraft;
+                            return PressableScale(
+                              pressedScale: 0.94,
+                              child: AnimatedContainer(
+                                duration: VTiming.base,
+                                curve: VCurves.emphasized,
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: isReadyToSend
+                                      ? [
+                                          BoxShadow(
+                                            color: context.colorScheme.primary
+                                                .withValues(alpha: 0.32),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : const [],
+                                ),
+                                child: IconButton.filled(
+                                  key: const Key('sendMessageButton'),
+                                  icon: AnimatedScale(
+                                    duration: VTiming.fast,
+                                    curve: VCurves.springish,
+                                    scale: isReadyToSend ? 1.05 : 0.95,
+                                    child: Icon(
+                                      Icons.send_rounded,
+                                      size: 20,
+                                      color: isReadyToSend
+                                          ? context.colorScheme.onPrimary
+                                          : context.colorScheme.onSurface
+                                              .withValues(alpha: 0.38),
+                                    ),
+                                  ),
+                                  style: IconButton.styleFrom(
+                                    shape: const CircleBorder(),
+                                    backgroundColor: isReadyToSend
+                                        ? context.colorScheme.primary
+                                        : context.colorScheme.surfaceContainerHigh,
+                                    foregroundColor: isReadyToSend
+                                        ? context.colorScheme.onPrimary
+                                        : context.colorScheme.onSurface
+                                            .withValues(alpha: 0.38),
+                                    side: isReadyToSend
+                                        ? BorderSide.none
+                                        : BorderSide(
+                                            color: context.colorScheme.outlineVariant
+                                                .withValues(alpha: 0.35),
+                                            width: 1,
+                                          ),
+                                    minimumSize: const Size(40, 40),
+                                    fixedSize: const Size(40, 40),
+                                    padding: EdgeInsets.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  tooltip: isReadOnlyWorkspace
+                                      ? context.l10n.chatWorkspaceReadOnly
+                                      : (isServerBusyWithOtherSession
+                                          ? context.l10n.acpServerBusySendDisabled
+                                          : null),
+                                  onPressed: canSend ? _handleSend : null,
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                        tooltip: isReadOnlyWorkspace
-                            ? context.l10n.chatWorkspaceReadOnly
-                            : (isServerBusyWithOtherSession
-                                ? context.l10n.acpServerBusySendDisabled
-                                : null),
-                        onPressed: canSend ? _handleSend : null,
-                      ),
-                    ),
-                  ),
+                ),
               ],
             ),
           ],
