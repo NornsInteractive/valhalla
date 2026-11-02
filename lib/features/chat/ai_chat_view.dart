@@ -7414,6 +7414,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   child: AnimatedContainer(
                     duration: VTiming.base,
                     curve: VCurves.emphasized,
+                    clipBehavior: Clip.antiAlias,
                     constraints: const BoxConstraints(minHeight: 40),
                     decoration: BoxDecoration(
                       color: isFocused
@@ -7442,108 +7443,118 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                             ]
                           : const [],
                     ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            key: const Key('chatPromptInput'),
-                            focusNode: _promptFocusNode,
-                            controller: _promptController,
-                            enabled: hasActiveAgent && !isBusy,
-                            minLines: 1,
-                            maxLines: 4,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              height: 1.35,
-                            ),
-                            cursorColor: context.colorScheme.primary,
-                            cursorWidth: 1.8,
-                            cursorRadius: const Radius.circular(1),
-                            decoration: InputDecoration(
-                              hintText: hasActiveAgent
-                                  ? context.l10n.inputPromptHint
-                                  : (hasUnreadyAgents
-                                        ? context
-                                            .l10n
-                                            .agentNeedsInstallOrReadyHint
-                                        : context.l10n.noAgentAvailableHint),
-                              hintStyle: TextStyle(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              key: const Key('chatPromptInput'),
+                              focusNode: _promptFocusNode,
+                              controller: _promptController,
+                              enabled: hasActiveAgent && !isBusy,
+                              minLines: 1,
+                              maxLines: 4,
+                              style: const TextStyle(
                                 fontSize: 14,
-                                color: context.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.65),
+                                height: 1.35,
                               ),
-                              hintMaxLines: 1,
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
+                              cursorColor: context.colorScheme.primary,
+                              cursorWidth: 1.8,
+                              cursorRadius: const Radius.circular(1),
+                              decoration: InputDecoration(
+                                hintText: hasActiveAgent
+                                    ? context.l10n.inputPromptHint
+                                    : (hasUnreadyAgents
+                                          ? context
+                                              .l10n
+                                              .agentNeedsInstallOrReadyHint
+                                          : context.l10n.noAgentAvailableHint),
+                                hintStyle: TextStyle(
+                                  fontSize: 14,
+                                  color: context.colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.65),
+                                ),
+                                hintMaxLines: 1,
+                                isDense: true,
+                                filled: false,
+                                fillColor: Colors.transparent,
+                                hoverColor: Colors.transparent,
+                                focusColor: Colors.transparent,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                disabledBorder: InputBorder.none,
+                                errorBorder: InputBorder.none,
+                                focusedErrorBorder: InputBorder.none,
                               ),
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
+                              onChanged: (text) => ref
+                                  .read(aiChatProvider.notifier)
+                                  .updateDraftText(text),
+                              onSubmitted: canSend ? (_) => _handleSend() : null,
                             ),
-                            onChanged: (text) => ref
-                                .read(aiChatProvider.notifier)
-                                .updateDraftText(text),
-                            onSubmitted: canSend ? (_) => _handleSend() : null,
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 4, bottom: 4),
-                          child: PressableScale(
-                            pressedScale: 0.90,
-                            child: SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: IconButton(
-                                key: const Key('chat_commands_menu_button'),
-                                tooltip: context.l10n.chatCommandsTooltip,
-                                icon: AnimatedSwitcher(
-                                  duration: VTiming.fast,
-                                  child: _isLoadingComposerCommands
-                                      ? const SizedBox(
-                                          key: ValueKey('cmd_spinner'),
-                                          width: 14,
-                                          height: 14,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4, bottom: 4),
+                            child: PressableScale(
+                              pressedScale: 0.90,
+                              child: SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: IconButton(
+                                  key: const Key('chat_commands_menu_button'),
+                                  tooltip: context.l10n.chatCommandsTooltip,
+                                  icon: AnimatedSwitcher(
+                                    duration: VTiming.fast,
+                                    child: _isLoadingComposerCommands
+                                        ? const SizedBox(
+                                            key: ValueKey('cmd_spinner'),
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : Icon(
+                                            key: const ValueKey('cmd_icon'),
+                                            Icons.code_rounded,
+                                            size: 19,
+                                            color: isFocused
+                                                ? context.colorScheme.primary
+                                                : context
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
                                           ),
-                                        )
-                                      : Icon(
-                                          key: const ValueKey('cmd_icon'),
-                                          Icons.code_rounded,
-                                          size: 19,
-                                          color: isFocused
-                                              ? context.colorScheme.primary
-                                              : context
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
-                                        ),
-                                ),
-                                padding: EdgeInsets.zero,
-                                style: IconButton.styleFrom(
-                                  backgroundColor: isFocused
-                                      ? context.colorScheme.primary
-                                          .withValues(alpha: 0.1)
-                                      : Colors.transparent,
-                                  shape: const CircleBorder(),
-                                  minimumSize: const Size(32, 32),
-                                  fixedSize: const Size(32, 32),
+                                  ),
                                   padding: EdgeInsets.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: isFocused
+                                        ? context.colorScheme.primary
+                                            .withValues(alpha: 0.1)
+                                        : Colors.transparent,
+                                    shape: const CircleBorder(),
+                                    minimumSize: const Size(32, 32),
+                                    fixedSize: const Size(32, 32),
+                                    padding: EdgeInsets.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  onPressed:
+                                      (isBusy || _isLoadingComposerCommands)
+                                          ? null
+                                          : () =>
+                                              _openCommandsAndSkills(context),
                                 ),
-                                onPressed:
-                                    (isBusy || _isLoadingComposerCommands)
-                                        ? null
-                                        : () =>
-                                            _openCommandsAndSkills(context),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

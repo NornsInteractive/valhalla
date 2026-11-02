@@ -1,13 +1,10 @@
-# Valhalla 1.0.34+35
+# Valhalla 1.0.35+36
 
-## 智能会话底部输入栏高级美学优化与动效系统注入（Taste Skill Polish）
-- **底栏浮动停靠质感**：底部操作区新增 `outlineVariant` 发丝分隔线与漫反射顶阴影，舒适内边距布局，与历史消息流形成清晰的高端停靠层次。
-- **中央胶囊呼吸聚焦态**：输入框胶囊容器支持聚焦动效（`AnimatedContainer`，`VCurves.emphasized`），失焦态温润内敛，聚焦态平滑切换至高亮背景与品牌主色边框，外侧投射 10px 柔光氛围光晕。
-- **全员物理触觉回弹**：加号圆钮、内联命令圆钮、发送与停止操作按键全面包裹 `PressableScale`（缩放比 0.90~0.94），提供实体按键级弹性落位反馈。
-- **打字意图激活与弹簧律动**：发送按钮动态感应草稿输入，有内容时瞬间流动至饱和主色并外扩主色光晕，发送箭头微放 1.05x（`AnimatedScale`）；
-- **发送 ↔ 停止电影级转场**：生成中切换采用 `AnimatedSwitcher`（`ScaleTransition` + `FadeTransition` + `VCurves.springish`），形态平滑形变无闪烁跳动。
-- **动态高度平滑伸缩**：技能词与附件气泡接入 `AnimatedSize`（`VCurves.decelerate`），动态高度伸缩丝滑平顺。
+## 智能会话底部输入框圆角胶囊完美包裹与背景冲突消除
+- **输入框背景冲突根治**：彻底消除 `TextField` 默认继承全局 `inputDecorationTheme` 导致的 `filled: true` 尖角长方体背景覆盖，显式指定 `filled: false` 与透明背景色，避免 90 度尖角遮挡椭圆胶囊。
+- **胶囊容器严格抗锯齿裁剪**：为中央输入框 `AnimatedContainer` 注入 `clipBehavior: Clip.antiAlias`，并为内层 `Row` 增加 `ClipRRect(borderRadius: BorderRadius.circular(24))` 双重裁切，确保任何文字、光标与组件均被外层 24dp 圆角完整包裹。
+- **真机/模拟器 ADB 渲染实测验证**：已通过 ADB 部署并在实体/模拟器界面实测验证，原长方体与椭圆形冲突完全消除，底栏胶囊呈现平滑圆润质感。
 
-## 构建与发布
-- 正式证书签名发布 Android 各架构包（arm64-v8a、armeabi-v7a、x86_64）、AAB 与 Linux x64 包。
-- 零静态分析警告（`flutter analyze` 2 items clean），全量组件测试通过。
+## 构建与测试
+- 静态分析 `flutter analyze` 零告警。
+- 全量组件与控制器测试（`acp_usability_widget_controls_test.dart`、`composer_context_widget_test.dart`、`composer_command_preferences_widget_test.dart`）33 项测试全部通过。
