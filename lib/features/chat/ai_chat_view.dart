@@ -53,6 +53,27 @@ import 'widgets/image_zoom_dialog.dart';
 import 'widgets/persistent_runtime_consent_dialog.dart';
 import 'widgets/remote_workspace_browser_dialog.dart';
 
+/// Extracts only the last directory component for compact pill display,
+/// or returns '/' for root paths and empty/null paths.
+String formatWorkingDirectoryLabel(String? path) {
+  if (path == null) return '/';
+  var trimmed = path.trim();
+  if (trimmed.isEmpty) return '/';
+  if (RegExp(r'^[A-Za-z]:[/\\]?$').hasMatch(trimmed)) {
+    return trimmed;
+  }
+  while (trimmed.length > 1 &&
+      (trimmed.endsWith('/') || trimmed.endsWith(r'\'))) {
+    trimmed = trimmed.substring(0, trimmed.length - 1);
+  }
+  if (trimmed == '/' || trimmed == r'\') return '/';
+  final lastSlash = trimmed.lastIndexOf(RegExp(r'[/\\]'));
+  if (lastSlash != -1 && lastSlash < trimmed.length - 1) {
+    return trimmed.substring(lastSlash + 1);
+  }
+  return trimmed;
+}
+
 class AiChatView extends ConsumerStatefulWidget {
   const AiChatView({super.key});
 
@@ -2129,25 +2150,6 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         ? const EdgeInsets.symmetric(horizontal: 4)
         : const EdgeInsets.symmetric(horizontal: 16);
 
-    final isDraft = state.activeSession == null;
-    final rawWorkingDir =
-        state.activeSession?.workingDirectory ?? state.draftWorkingDirectory;
-    final currentWorkingDir =
-        rawWorkingDir ?? context.l10n.cliDefaultWorkingDir;
-    final isConnected = ref.watch(
-      serverConnectionProvider.select((c) => c.isConnected),
-    );
-    final isRecovering =
-        state.recoveryStatus == SessionRecoveryStatus.reconnecting ||
-        state.recoveryStatus == SessionRecoveryStatus.syncing;
-    final isBusy =
-        !isConnected ||
-        isRecovering ||
-        state.isGenerating ||
-        state.isAuthenticating ||
-        state.isLoadingSettings ||
-        state.isApplyingSettings;
-
     return Container(
       constraints: const BoxConstraints(minHeight: 48),
       padding: headerPadding,
@@ -2167,138 +2169,52 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               ),
             ),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Tooltip(
-                  message:
-                      state.activeAgentProfile?.name ??
-                      context.l10n.noAgentAvailable,
-                  child: InkWell(
-                    onTap: _showAgentSwitcherModal,
-                    borderRadius: BorderRadius.circular(VRadius.input),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isCompact ? 2 : 4,
-                        vertical: 1,
+            child: Tooltip(
+              message:
+                  state.activeAgentProfile?.name ??
+                  context.l10n.noAgentAvailable,
+              child: InkWell(
+                key: const Key('chat_agent_switcher_button'),
+                onTap: _showAgentSwitcherModal,
+                borderRadius: BorderRadius.circular(VRadius.input),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 2 : 4,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        state.activeAgentProfile != null
+                            ? Icons.psychology
+                            : Icons.smart_toy_outlined,
+                        size: 16,
+                        color: state.activeAgentProfile != null
+                            ? context.colorScheme.primary
+                            : context.colorScheme.outline,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            state.activeAgentProfile != null
-                                ? Icons.psychology
-                                : Icons.smart_toy_outlined,
-                            size: 15,
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          state.activeAgentProfile?.name ??
+                              context.l10n.noAgentAvailable,
+                          style: context.textTheme.titleSmall?.copyWith(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
                             color: state.activeAgentProfile != null
-                                ? context.colorScheme.primary
+                                ? null
                                 : context.colorScheme.outline,
                           ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              state.activeAgentProfile?.name ??
-                                  context.l10n.noAgentAvailable,
-                              style: context.textTheme.titleSmall?.copyWith(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: state.activeAgentProfile != null
-                                    ? null
-                                    : context.colorScheme.outline,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                          const Icon(Icons.arrow_drop_down, size: 14),
-                        ],
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
-                    ),
+                      const Icon(Icons.arrow_drop_down, size: 16),
+                    ],
                   ),
                 ),
-                Row(
-                  children: [
-                    Flexible(
-                      child: InkWell(
-                        key: const Key('chat_working_dir_button'),
-                        onTap: (isBusy || !isConnected || isRecovering)
-                            ? null
-                            : () => _showDraftWorkingDirDialog(
-                                context,
-                                rawWorkingDir,
-                              ),
-                        borderRadius: BorderRadius.circular(VRadius.input),
-                        child: Tooltip(
-                          message: isDraft
-                              ? context.l10n.chatWorkingDirTooltip
-                              : '${state.activeSession!.workingDirectory} (${context.l10n.chatWorkingDirTooltip})',
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isCompact ? 2 : 4,
-                              vertical: 1,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.folder_outlined,
-                                  size: 12,
-                                  color: isDraft
-                                      ? context.colorScheme.primary
-                                      : context.colorScheme.outline,
-                                ),
-                                const SizedBox(width: 3),
-                                Flexible(
-                                  child: Text(
-                                    currentWorkingDir,
-                                    style: monoTextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w500,
-                                      color: isDraft
-                                          ? context.colorScheme.onSurfaceVariant
-                                          : context.colorScheme.outline,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                  ),
-                                ),
-                                if (isDraft || isConnected) ...[
-                                  const SizedBox(width: 1),
-                                  Icon(
-                                    Icons.arrow_drop_down,
-                                    size: 13,
-                                    color: context.colorScheme.outline,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (isDraft && state.draftWorkingDirectory != null) ...[
-                      const SizedBox(width: 2),
-                      IconButton(
-                        key: const Key('chat_clear_draft_working_dir_button'),
-                        tooltip: context.l10n.chatResetDraftWorkingDir,
-                        icon: const Icon(Icons.close, size: 12),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 18,
-                          minHeight: 18,
-                        ),
-                        onPressed: (isBusy || !isConnected || isRecovering)
-                            ? null
-                            : () => ref
-                                  .read(aiChatProvider.notifier)
-                                  .clearDraftWorkingDirectory(),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
           _buildWorkspaceControlBadge(state),
@@ -5871,6 +5787,108 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     );
   }
 
+  Widget _buildWorkingDirPill(
+    BuildContext context,
+    AiChatState state,
+    bool isBusy,
+  ) {
+    final theme = Theme.of(context);
+    final isDraft = state.activeSession == null;
+    final rawWorkingDir =
+        state.activeSession?.workingDirectory ?? state.draftWorkingDirectory;
+    final currentWorkingDir =
+        rawWorkingDir ?? context.l10n.cliDefaultWorkingDir;
+    final label = formatWorkingDirectoryLabel(rawWorkingDir);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Tooltip(
+          message: isDraft
+              ? '$currentWorkingDir (${context.l10n.chatWorkingDirTooltip})'
+              : '${state.activeSession!.workingDirectory} (${context.l10n.chatWorkingDirTooltip})',
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const Key('chat_working_dir_button'),
+              onTap: isBusy
+                  ? null
+                  : () => _showDraftWorkingDirDialog(context, rawWorkingDir),
+              borderRadius: BorderRadius.circular(VRadius.input),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHigh
+                      .withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(VRadius.input),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant
+                        .withValues(alpha: 0.35),
+                    width: 0.8,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.folder_outlined,
+                      size: 13,
+                      color: isBusy
+                          ? theme.colorScheme.outline
+                          : theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 120),
+                      child: Text(
+                        label,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: isBusy
+                              ? theme.colorScheme.outline
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.arrow_drop_down,
+                      size: 14,
+                      color: isBusy
+                          ? theme.colorScheme.outline
+                          : theme.colorScheme.outlineVariant,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (isDraft && state.draftWorkingDirectory != null) ...[
+          const SizedBox(width: 2),
+          IconButton(
+            key: const Key('chat_clear_draft_working_dir_button'),
+            tooltip: context.l10n.chatResetDraftWorkingDir,
+            icon: const Icon(Icons.close, size: 12),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 18,
+              minHeight: 18,
+            ),
+            onPressed: isBusy
+                ? null
+                : () => ref
+                    .read(aiChatProvider.notifier)
+                    .clearDraftWorkingDirectory(),
+          ),
+        ],
+      ],
+    );
+  }
+
   Future<void> _showDraftWorkingDirDialog(
     BuildContext context,
     String? rawWorkingDir,
@@ -6971,6 +6989,17 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               isLoadingSettings: false,
               showTuneButton: false,
               showMode: true,
+              leading: _buildWorkingDirPill(
+                context,
+                state,
+                !isConnected ||
+                    isRecovering ||
+                    state.isGenerating ||
+                    state.isAuthenticating ||
+                    state.isLoadingSettings ||
+                    state.isApplyingSettings ||
+                    isReadOnlyWorkspace,
+              ),
               onOpenSettings: () => _openRunSettings(refresh: true),
             ),
             if (state.attachments.isNotEmpty) ...[

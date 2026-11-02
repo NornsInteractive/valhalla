@@ -253,15 +253,15 @@ void main() {
       await _pumpChat(tester, notifier);
 
       expect(find.byKey(_clearDirKey), findsOneWidget);
-      expect(find.text('/srv/project'), findsOneWidget);
+      expect(find.text('project'), findsOneWidget);
       expect(find.byKey(const Key('chat_attachment_chip_0')), findsOneWidget);
 
       await tester.tap(find.byKey(_clearDirKey));
       await tester.pumpAndSettle();
 
       expect(find.byKey(_clearDirKey), findsNothing);
-      expect(find.text('/srv/project'), findsNothing);
-      expect(find.text('Default (/)'), findsOneWidget);
+      expect(find.text('project'), findsNothing);
+      expect(find.text('/'), findsOneWidget);
       expect(notifier.state.draftWorkingDirectory, isNull);
 
       final field = tester.widget<TextField>(find.byKey(_promptKey));
@@ -288,7 +288,7 @@ void main() {
       await _pumpChat(tester, notifier);
 
       expect(find.byKey(_clearDirKey), findsNothing);
-      expect(find.text('/srv/session'), findsOneWidget);
+      expect(find.text('session'), findsOneWidget);
 
       await tester.tap(find.byKey(_workingDirKey));
       await tester.pumpAndSettle();

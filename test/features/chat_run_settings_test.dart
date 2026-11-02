@@ -420,15 +420,14 @@ void main() {
           );
         }
 
-        // Project working directory is moved out of the run settings strip into the session header.
+        // Project working directory is inside the run settings strip as a leading pill.
         expect(
           find.descendant(
             of: strip,
             matching: find.byKey(const Key('chat_working_dir_button')),
           ),
-          findsNothing,
+          findsOneWidget,
         );
-        expect(find.byKey(const Key('chat_working_dir_button')), findsOneWidget);
 
         // No other toolbar items above the composer (no tune/refresh controls).
         expect(
@@ -752,6 +751,23 @@ void main() {
       expect(find.byKey(const Key('chat_strip_extra_extra_switch')), findsOneWidget);
       expect(find.text('联网搜索'), findsOneWidget);
       expect(find.byKey(const Key('chat_strip_extra_extra_select')), findsOneWidget);
+    });
+  });
+
+  group('formatWorkingDirectoryLabel', () {
+    test('formats paths to last directory name or / for roots', () {
+      expect(formatWorkingDirectoryLabel('/workspace/projects/valhalla'), 'valhalla');
+      expect(formatWorkingDirectoryLabel('/workspace/projects/valhalla/'), 'valhalla');
+      expect(formatWorkingDirectoryLabel('/home/dev'), 'dev');
+      expect(formatWorkingDirectoryLabel('/root'), 'root');
+      expect(formatWorkingDirectoryLabel('/'), '/');
+      expect(formatWorkingDirectoryLabel('///'), '/');
+      expect(formatWorkingDirectoryLabel(''), '/');
+      expect(formatWorkingDirectoryLabel(null), '/');
+      expect(formatWorkingDirectoryLabel('   '), '/');
+      expect(formatWorkingDirectoryLabel('~'), '~');
+      expect(formatWorkingDirectoryLabel(r'C:\Users\dev\valhalla'), 'valhalla');
+      expect(formatWorkingDirectoryLabel(r'C:\'), r'C:\');
     });
   });
 }

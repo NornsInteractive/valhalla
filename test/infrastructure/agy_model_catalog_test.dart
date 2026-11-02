@@ -29,20 +29,24 @@ void main() {
   );
 
   group('AgyModelCatalog.parse', () {
-    test('keeps only gemini ids and preserves the full reasoning label', () {
+    test('parses all valid model ids and preserves full reasoning labels', () {
       final models = AgyModelCatalog.parse('''
-gemini-3.8-pro  Gemini 3.8 Pro
-gpt-5-codex     GPT-5 Codex
-claude-sonnet   Claude Sonnet
-gemini-2.5-flash  Gemini 2.5 Flash
+gemini-3.8-flash-high     Gemini 3.8 Flash (High)
+claude-sonnet-4-6         Claude Sonnet 4.6 (Thinking)
+gpt-oss-120b-medium       GPT-OSS 120B (Medium)
+gemini-2.5-flash          Gemini 2.5 Flash
 ''');
 
       expect(models.map((m) => m.id).toList(), [
-        'gemini-3.8-pro',
+        'gemini-3.8-flash-high',
+        'claude-sonnet-4-6',
+        'gpt-oss-120b-medium',
         'gemini-2.5-flash',
       ]);
-      expect(models.first.label, 'Gemini 3.8 Pro');
-      expect(models.last.label, 'Gemini 2.5 Flash');
+      expect(models[0].label, 'Gemini 3.8 Flash (High)');
+      expect(models[1].label, 'Claude Sonnet 4.6 (Thinking)');
+      expect(models[2].label, 'GPT-OSS 120B (Medium)');
+      expect(models[3].label, 'Gemini 2.5 Flash');
     });
 
     test('strips ANSI colour codes before matching', () {
@@ -79,24 +83,26 @@ gemini-3.8-pro  Second label
       expect(models.first.label, 'Second label');
     });
 
-    test('ignores headers, blanks and vendor lines that do not match', () {
+    test('ignores headers, blanks and lines that do not match', () {
       final models = AgyModelCatalog.parse('''
 Available models:
+Fetching available models...
                         
 * gemini-not-a-match  no id column
+# comment line        Ignored
 gemini-3.8-pro  Gemini 3.8 Pro
-  gemini-2.5-flash  Gemini 2.5 Flash
+  claude-sonnet-4-6  Claude Sonnet 4.6
 ''');
 
       expect(models.map((m) => m.id).toList(), [
         'gemini-3.8-pro',
-        'gemini-2.5-flash',
+        'claude-sonnet-4-6',
       ]);
     });
 
-    test('a catalog with no gemini model fails explicitly', () {
+    test('a catalog with only invalid lines fails explicitly', () {
       expect(
-        () => AgyModelCatalog.parse('gpt-5-codex  GPT\n'),
+        () => AgyModelCatalog.parse('Available models:\n* not-valid\n'),
         throwsA(
           isA<StateError>().having(
             (e) => e.message,

@@ -576,6 +576,44 @@ void main() {
     );
   });
 
+  test('switchAgent updates runSettings to target agent defaults or session settings', () async {
+    final codex = _profile('builtin-codex');
+    final claude = _profile('builtin-claude-code');
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer(
+      overrides: [
+        localStorageServiceProvider.overrideWithValue(LocalStorageService(prefs)),
+        tempChatRepositoryOverride(),
+        activeServerProvider.overrideWith(_StubActiveServer.new),
+        agentRegistryProvider.overrideWith(() => _AllReadyRegistry([codex, claude])),
+        serverConnectionProvider.overrideWith(
+          () => _StaticConnection(connected: false),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final storage = container.read(localStorageServiceProvider);
+    await storage.saveChatRunDefault(
+      'srv-1',
+      'builtin-codex',
+      const ChatRunSettings(modelId: 'gpt-5-codex'),
+    );
+    await storage.saveChatRunDefault(
+      'srv-1',
+      'builtin-claude-code',
+      const ChatRunSettings(modelId: 'claude-3-7-sonnet'),
+    );
+
+    final notifier = container.read(aiChatProvider.notifier);
+    await notifier.switchAgent('builtin-codex');
+    expect(container.read(aiChatProvider).runSettings.modelId, 'gpt-5-codex');
+
+    await notifier.switchAgent('builtin-claude-code');
+    expect(container.read(aiChatProvider).runSettings.modelId, 'claude-3-7-sonnet');
+  });
+
   test('switching to a non-ready agent is refused', () async {
     final container = await _container(
       profiles: [_profile('builtin-codex'), _profile('builtin-claude-code')],

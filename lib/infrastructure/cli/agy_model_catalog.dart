@@ -15,13 +15,17 @@ class AgyModelCatalog {
     final clean = output.replaceAll(RegExp(r'\x1b\[[0-?]*[ -/]*[@-~]'), '');
     final models = <String, ChatSettingOption>{};
     for (final line in const LineSplitter().convert(clean)) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty || trimmed.startsWith('*') || trimmed.startsWith('#')) {
+        continue;
+      }
       final match = RegExp(
-        r'^(gemini-[A-Za-z0-9._-]+)\s+(.+)$',
-      ).firstMatch(line.trim());
+        r'^([A-Za-z0-9._/-]+)\s{2,}(.+)$',
+      ).firstMatch(trimmed);
       if (match == null) continue;
-      // Official AgY ACP currently accepts Gemini models, unlike the CLI
-      // catalog which also lists other vendors. Keep full reasoning suffixes.
       final id = match.group(1)!;
+      final lower = id.toLowerCase();
+      if (lower == 'model' || lower == 'id' || lower == 'available') continue;
       models[id] = ChatSettingOption(id, match.group(2)!.trim());
     }
     if (models.isEmpty) throw StateError('AGENT_MODEL_CATALOG_EMPTY');

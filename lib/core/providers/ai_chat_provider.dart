@@ -3069,7 +3069,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
             adapter.agentCapabilities.promptCapabilities?.embeddedContext ==
             true,
         capabilities: _acpCapabilities(adapter),
-        runSettings: state.isApplyingSettings
+        runSettings: state.isApplyingSettings || adapter.sessionId == null
             ? state.runSettings
             : _confirmedSettings(adapter, state.runSettings),
       );
@@ -3885,6 +3885,13 @@ class AiChatNotifier extends Notifier<AiChatState> {
     _blankDraftRequested = false;
     _lastSelectedSessions['$_activeServerId::${state.activeAgentProfile?.id}'] =
         state.activeSessionId;
+    final serverId = _activeServerId;
+    final targetSettings = serverId == null
+        ? const ChatRunSettings()
+        : (state.activeSession?.agentRunSettings[target.id] ??
+            ref
+                .read(localStorageServiceProvider)
+                .getChatRunDefault(serverId, target.id));
     state = state.copyWith(
       activeAgentProfile: target,
       clearError: true,
@@ -3892,6 +3899,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
           .where((s) => state.shareAgentSessions || s.includesAgent(target.id))
           .toList(),
       clearActiveSession: !state.shareAgentSessions,
+      runSettings: targetSettings,
     );
     _restoreDraft();
     _updateWorkspaceControlView();
