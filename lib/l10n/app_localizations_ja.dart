@@ -5597,6 +5597,13 @@ class AppLocalizationsJa extends AppLocalizations {
       'ツールバーに直接固定するアクションを選択します。その他のアクションは「その他」メニューに表示されます。';
 
   @override
+  String get sftpConcurrentTransfersTitle => '転送並行数';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      '帯域幅を最大限に活用するために、並行して転送するファイル数の上限です。';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed => 'ツールバー設定の保存に失敗しました';
 
   @override

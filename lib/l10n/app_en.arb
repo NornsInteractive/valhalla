@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "Details",
   "sftpConfigureToolbar": "Configure Toolbar",
   "sftpConfigureToolbarDesc": "Choose actions to pin directly to the toolbar. Other actions will appear in the More menu.",
+  "sftpConcurrentTransfersTitle": "Transfer Concurrency",
+  "sftpConcurrentTransfersDesc": "Number of files transferred in parallel across isolated streams to maximize network bandwidth.",
   "sftpToolbarPreferenceSaveFailed": "Failed to save toolbar preference",
   "sftpToolbarActionView": "Toggle View",
   "agentUpdateNotice": "{count, plural, =1{1 agent update available} other{{count} agent updates available}}",

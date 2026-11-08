@@ -52,7 +52,7 @@ typedef SSHX11ForwardHandler = void Function(SSHX11Channel channel);
 // /// key exchange.
 // typedef SSHHostKeysHandler = void Function(List<Uint8List>);
 
-const _initialWindowSize = 1024 * 1024 * 2;
+const _initialWindowSize = 1024 * 1024 * 16;
 
 const _maximumPacketSize = 32768;
 

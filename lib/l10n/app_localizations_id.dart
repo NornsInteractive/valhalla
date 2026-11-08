@@ -5834,6 +5834,13 @@ class AppLocalizationsId extends AppLocalizations {
       'Pilih tindakan yang akan disematkan langsung di bilah alat. Tindakan lainnya akan muncul di menu Lainnya.';
 
   @override
+  String get sftpConcurrentTransfersTitle => 'Konkurensi Transfer';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      'Jumlah file yang ditransfer secara paralel melalui aliran terisolasi untuk memaksimalkan bandwidth jaringan.';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed =>
       'Gagal menyimpan preferensi bilah alat';
 

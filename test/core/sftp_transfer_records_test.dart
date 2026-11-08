@@ -354,6 +354,7 @@ _container(
   ServerProfile? seededRecordsFor,
   Map<String, List<Map<String, dynamic>>>? records,
   DownloadPlatformService? downloads,
+  int concurrency = 1,
 }) async {
   SharedPreferences.setMockInitialValues({});
   final storage = LocalStorageService(await SharedPreferences.getInstance());
@@ -372,6 +373,7 @@ _container(
       activeServerProvider.overrideWith(_StubActiveServer.new),
       serverConnectionProvider.overrideWith(_ConnectedNotifier.new),
       sftpOperationsProvider.overrideWithValue(ops),
+      sftpConcurrencyProvider.overrideWithValue(concurrency),
       if (downloads != null)
         downloadPlatformServiceProvider.overrideWithValue(downloads),
     ],

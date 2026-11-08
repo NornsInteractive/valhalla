@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "詳細資料",
   "sftpConfigureToolbar": "自訂工具列",
   "sftpConfigureToolbarDesc": "選擇直接固定在工具列上的操作，其餘操作將顯示在「更多」選單中。",
+  "sftpConcurrentTransfersTitle": "傳輸並發數",
+  "sftpConcurrentTransfersDesc": "多路多流並行傳輸檔案的並發上限，充分跑滿物理網路頻寬。",
   "sftpToolbarPreferenceSaveFailed": "儲存工具列偏好設定失敗",
   "sftpToolbarActionView": "切換檢視",
   "agentUpdateNotice": "{count, plural, other{{count} 個 Agent 可更新}}",

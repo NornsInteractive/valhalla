@@ -5589,6 +5589,13 @@ class AppLocalizationsKo extends AppLocalizations {
       '도구 모음에 직접 고정할 작업을 선택합니다. 다른 작업은 \'더보기\' 메뉴에 표시됩니다.';
 
   @override
+  String get sftpConcurrentTransfersTitle => '전송 동시성';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      '네트워크 대역폭을 최대한 활용하기 위해 병렬로 전송할 파일 수의 상한선입니다。';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed => '도구 모음 설정 저장 실패';
 
   @override

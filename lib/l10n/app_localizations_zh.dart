@@ -5502,6 +5502,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sftpConfigureToolbarDesc => '选择直接固定在工具栏上的操作，其余操作将显示在“更多”菜单中。';
 
   @override
+  String get sftpConcurrentTransfersTitle => '传输并发数';
+
+  @override
+  String get sftpConcurrentTransfersDesc => '多路多流并行传输文件的并发上限，充分跑满物理网络带宽。';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed => '保存工具栏偏好设置失败';
 
   @override
@@ -11975,6 +11981,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get sftpConfigureToolbarDesc => '選擇直接固定在工具列上的操作，其餘操作將顯示在「更多」選單中。';
+
+  @override
+  String get sftpConcurrentTransfersTitle => '傳輸並發數';
+
+  @override
+  String get sftpConcurrentTransfersDesc => '多路多流並行傳輸檔案的並發上限，充分跑滿物理網路頻寬。';
 
   @override
   String get sftpToolbarPreferenceSaveFailed => '儲存工具列偏好設定失敗';

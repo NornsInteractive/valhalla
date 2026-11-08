@@ -5776,6 +5776,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'اختر الإجراءات المراد تثبيتها مباشرة في شريط الأدوات. ستظهر الإجراءات الأخرى في قائمة المزيد.';
 
   @override
+  String get sftpConcurrentTransfersTitle => 'تزامن النقل';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      'عدد الملفات المنقولة بالتوازي عبر مسارات معزولة لتحقيق أقصى استفادة من النطاق الترددي للشبكة.';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed => 'فشل حفظ تفضيلات شريط الأدوات';
 
   @override

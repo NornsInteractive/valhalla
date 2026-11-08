@@ -94,6 +94,11 @@ int cliHistoryPageSizeFromStorage(int value) =>
     ? value
     : defaultCliHistoryPageSize;
 
+const defaultSftpConcurrentTransfers = 3;
+
+int sftpConcurrentTransfersFromStorage(int value) =>
+    value >= 1 && value <= 6 ? value : defaultSftpConcurrentTransfers;
+
 class SettingsState {
   final AppThemeMode themeMode;
   final AppAccentColor accentColor;
@@ -108,6 +113,7 @@ class SettingsState {
   final RemotePathDisplayMode pickerPathDisplayMode;
   final AppSection startupSection;
   final int cliHistoryPageSize;
+  final int sftpConcurrentTransfers;
   final Set<ExperimentalFeature> enabledExperimentalFeatures;
 
   const SettingsState({
@@ -124,6 +130,7 @@ class SettingsState {
     this.pickerPathDisplayMode = RemotePathDisplayMode.scroll,
     this.startupSection = AppSection.dashboard,
     this.cliHistoryPageSize = defaultCliHistoryPageSize,
+    this.sftpConcurrentTransfers = defaultSftpConcurrentTransfers,
     this.enabledExperimentalFeatures = const {},
   });
 
@@ -141,6 +148,7 @@ class SettingsState {
     RemotePathDisplayMode? pickerPathDisplayMode,
     AppSection? startupSection,
     int? cliHistoryPageSize,
+    int? sftpConcurrentTransfers,
     Set<ExperimentalFeature>? enabledExperimentalFeatures,
   }) {
     return SettingsState(
@@ -161,6 +169,8 @@ class SettingsState {
           pickerPathDisplayMode ?? this.pickerPathDisplayMode,
       startupSection: startupSection ?? this.startupSection,
       cliHistoryPageSize: cliHistoryPageSize ?? this.cliHistoryPageSize,
+      sftpConcurrentTransfers:
+          sftpConcurrentTransfers ?? this.sftpConcurrentTransfers,
       enabledExperimentalFeatures:
           enabledExperimentalFeatures ?? this.enabledExperimentalFeatures,
     );
@@ -271,6 +281,9 @@ class SettingsNotifier extends Notifier<SettingsState> {
           AppSection.dashboard,
       cliHistoryPageSize: cliHistoryPageSizeFromStorage(
         storage.getCliHistoryPageSize(),
+      ),
+      sftpConcurrentTransfers: sftpConcurrentTransfersFromStorage(
+        storage.getSftpConcurrentTransfers(),
       ),
       enabledExperimentalFeatures: experimentalFeaturesFromStorage(
         storage.getExperimentalFeatures(),
@@ -454,6 +467,21 @@ class SettingsNotifier extends Notifier<SettingsState> {
     await ref.read(localStorageServiceProvider).setCliHistoryPageSize(value);
   }
 
+  Future<void> setSftpConcurrentTransfers(int value) async {
+    final valid = sftpConcurrentTransfersFromStorage(value);
+    if (valid != value) {
+      throw ArgumentError.value(
+        value,
+        'value',
+        'Expected 1..6',
+      );
+    }
+    state = state.copyWith(sftpConcurrentTransfers: value);
+    await ref
+        .read(localStorageServiceProvider)
+        .setSftpConcurrentTransfers(value);
+  }
+
   Future<void> resetDefaults() async {
     const defaults = SettingsState();
     final storage = ref.read(localStorageServiceProvider);
@@ -490,6 +518,7 @@ class SettingsNotifier extends Notifier<SettingsState> {
     );
     await storage.setStartupSection(defaults.startupSection.name);
     await storage.setCliHistoryPageSize(defaults.cliHistoryPageSize);
+    await storage.setSftpConcurrentTransfers(defaults.sftpConcurrentTransfers);
     await storage.setExperimentalFeatures([]);
   }
 }

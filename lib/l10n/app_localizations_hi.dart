@@ -5827,6 +5827,13 @@ class AppLocalizationsHi extends AppLocalizations {
       'टूलबार पर सीधे पिन करने के लिए क्रियाएं चुनें। अन्य क्रियाएं \'अधिक\' मेनू में दिखाई देंगी।';
 
   @override
+  String get sftpConcurrentTransfersTitle => 'स्थानांतरण समवर्ती';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      'नेटवर्क बैंडविड्थ को अधिकतम करने के लिए अलग-अलग स्ट्रीम में समानांतर स्थानांतरित फ़ाइलों की संख्या।';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed =>
       'टूलबार प्राथमिकता सहेजने में विफल';
 

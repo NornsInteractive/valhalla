@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "Chi tiết",
   "sftpConfigureToolbar": "Cấu hình thanh công cụ",
   "sftpConfigureToolbarDesc": "Chọn các tác vụ cần ghim trực tiếp vào thanh công cụ. Các tác vụ khác sẽ xuất hiện trong menu Thêm.",
+  "sftpConcurrentTransfersTitle": "Đồng thời truyền tệp",
+  "sftpConcurrentTransfersDesc": "Số lượng tệp được truyền song song qua các luồng cô lập để tối đa hóa băng thông mạng.",
   "sftpToolbarPreferenceSaveFailed": "Không thể lưu tùy chọn thanh công cụ",
   "sftpToolbarActionView": "Chuyển chế độ xem",
   "agentUpdateNotice": "{count, plural, other{Có {count} bản cập nhật tác nhân}}",

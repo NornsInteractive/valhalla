@@ -1966,9 +1966,70 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => RemoteFileToolbarDialog.show(context),
             ),
+            const SizedBox(height: 8),
+            ListTile(
+              key: const Key('settings_sftp_concurrency_tile'),
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.speed, color: context.colorScheme.primary),
+              title: Text(
+                context.l10n.sftpConcurrentTransfersTitle,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              subtitle: Text(
+                '${settings.sftpConcurrentTransfers} (${context.l10n.sftpConcurrentTransfersDesc})',
+                style: const TextStyle(fontSize: 11),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showConcurrencyDialog(context, settings, notifier),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showConcurrencyDialog(
+    BuildContext context,
+    SettingsState settings,
+    SettingsNotifier notifier,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          title: Text(context.l10n.sftpConcurrentTransfersTitle),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: [1, 2, 3, 4, 6].map((count) {
+                return RadioListTile<int>(
+                  key: Key('settings_sftp_concurrency_radio_$count'),
+                  dense: true,
+                  title: Text(
+                    count == 1
+                        ? '1 (串行 / 1 stream)'
+                        : '$count (并发 / $count streams)',
+                  ),
+                  value: count,
+                  groupValue: settings.sftpConcurrentTransfers,
+                  onChanged: (val) {
+                    if (val != null) {
+                      notifier.setSftpConcurrentTransfers(val);
+                      Navigator.of(dialogCtx).pop();
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -384,6 +384,7 @@ class _StubActiveServer extends ActiveServerNotifier {
 Future<ProviderContainer> _container(
   _FakeOps ops, {
   DownloadPlatformService? downloads,
+  int concurrency = 1,
 }) async {
   SharedPreferences.setMockInitialValues({});
   final storage = LocalStorageService(await SharedPreferences.getInstance());
@@ -394,6 +395,7 @@ Future<ProviderContainer> _container(
       activeServerProvider.overrideWith(_StubActiveServer.new),
       serverConnectionProvider.overrideWith(_ConnectedNotifier.new),
       sftpOperationsProvider.overrideWithValue(ops),
+      sftpConcurrencyProvider.overrideWithValue(concurrency),
       if (downloads != null)
         downloadPlatformServiceProvider.overrideWithValue(downloads),
     ],
@@ -403,8 +405,9 @@ Future<ProviderContainer> _container(
 /// 同上，但换掉完成通知回调，用来断言「通知发了几次、发的是什么」。
 Future<ProviderContainer> _containerWithNotify(
   _FakeOps ops,
-  void Function(SftpTransfer) notify,
-) async {
+  void Function(SftpTransfer) notify, {
+  int concurrency = 1,
+}) async {
   SharedPreferences.setMockInitialValues({});
   final storage = LocalStorageService(await SharedPreferences.getInstance());
   return ProviderContainer(
@@ -414,6 +417,7 @@ Future<ProviderContainer> _containerWithNotify(
       activeServerProvider.overrideWith(_StubActiveServer.new),
       serverConnectionProvider.overrideWith(_ConnectedNotifier.new),
       sftpOperationsProvider.overrideWithValue(ops),
+      sftpConcurrencyProvider.overrideWithValue(concurrency),
       transferNotificationCallbackProvider.overrideWithValue(notify),
     ],
   );
@@ -1813,5 +1817,56 @@ void main() {
       // 传输记录同理：清错误提示不该把用户的队列一起清空。
       expect(state.transfers.single.status, SftpTransferStatus.failed);
     });
+  });
+
+  group('SftpNotifier concurrency queue', () {
+    test(
+      'starts multiple tasks concurrently up to concurrency limit',
+      () async {
+        final ops = _FakeOps()..uploadGate = Completer<void>();
+        final container = await _container(ops, concurrency: 3);
+        addTearDown(container.dispose);
+        final notifier = container.read(sftpProvider.notifier);
+        await pumpEventQueue();
+
+        await notifier.uploadFrom('/local/a.txt');
+        await notifier.uploadFrom('/local/b.txt');
+        await notifier.uploadFrom('/local/c.txt');
+        await notifier.uploadFrom('/local/d.txt');
+        await pumpEventQueue();
+
+        var state = container.read(sftpProvider);
+        expect(
+          ops.uploads.map((u) => u.$1),
+          ['/local/a.txt', '/local/b.txt', '/local/c.txt'],
+          reason: '并发队列：前 3 个任务并发启动',
+        );
+        expect(state.transfers.length, 4);
+        expect(
+          state.transfers
+              .where((t) => t.status == SftpTransferStatus.running)
+              .length,
+          3,
+        );
+        expect(state.transfers[3].status, SftpTransferStatus.queued);
+
+        // 放行正在跑的任务，第 4 个任务自动接棒并完成
+        ops.uploadGate!.complete();
+        final fourthId = state.transfers[3].id;
+        await _awaitStatus(container, fourthId, SftpTransferStatus.completed);
+
+        state = container.read(sftpProvider);
+        expect(ops.uploads.map((u) => u.$1), [
+          '/local/a.txt',
+          '/local/b.txt',
+          '/local/c.txt',
+          '/local/d.txt',
+        ]);
+        expect(
+          state.transfers.every((t) => t.status == SftpTransferStatus.completed),
+          isTrue,
+        );
+      },
+    );
   });
 }

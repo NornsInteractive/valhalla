@@ -30,7 +30,13 @@ class IsolatedSftpClientService extends SftpClientService {
     String remotePath,
     String localPath, {
     void Function(int)? onProgress,
-  }) => _start(remotePath, localPath, onProgress: onProgress);
+    int? maxPendingRequests,
+  }) => _start(
+    remotePath,
+    localPath,
+    onProgress: onProgress,
+    maxPendingRequests: maxPendingRequests,
+  );
 
   @override
   Future<SftpTransferHandle> startResumableDownload(
@@ -40,6 +46,7 @@ class IsolatedSftpClientService extends SftpClientService {
     required void Function(Map<String, dynamic>) onSource,
     void Function(int)? onProgress,
     SftpPhaseCallback? onPhase,
+    int? maxPendingRequests,
   }) => _start(
     remotePath,
     localPath,
@@ -47,6 +54,7 @@ class IsolatedSftpClientService extends SftpClientService {
     onSource: onSource,
     onProgress: onProgress,
     onPhase: onPhase,
+    maxPendingRequests: maxPendingRequests,
   );
 
   @override
@@ -54,7 +62,14 @@ class IsolatedSftpClientService extends SftpClientService {
     String localPath,
     String remotePath, {
     void Function(int)? onProgress,
-  }) => _start(remotePath, localPath, upload: true, onProgress: onProgress);
+    int? maxPendingRequests,
+  }) => _start(
+    remotePath,
+    localPath,
+    upload: true,
+    onProgress: onProgress,
+    maxPendingRequests: maxPendingRequests,
+  );
 
   @override
   Future<SftpTransferHandle> startResumableUpload(
@@ -65,6 +80,7 @@ class IsolatedSftpClientService extends SftpClientService {
     required void Function(Map<String, dynamic>) onSource,
     void Function(int)? onProgress,
     SftpPhaseCallback? onPhase,
+    int? maxPendingRequests,
   }) => _start(
     remotePath,
     localPath,
@@ -74,6 +90,7 @@ class IsolatedSftpClientService extends SftpClientService {
     onSource: onSource,
     onProgress: onProgress,
     onPhase: onPhase,
+    maxPendingRequests: maxPendingRequests,
   );
 
   Future<SftpTransferHandle> _start(
@@ -85,6 +102,7 @@ class IsolatedSftpClientService extends SftpClientService {
     void Function(Map<String, dynamic>)? onSource,
     void Function(int)? onProgress,
     SftpPhaseCallback? onPhase,
+    int? maxPendingRequests,
   }) async {
     final connection = _connectionFor();
     if (_closed || !isRealConnected || connection == null) {
@@ -127,6 +145,7 @@ class IsolatedSftpClientService extends SftpClientService {
             resumable: onSource != null,
             expectedSource: expectedSource,
             connector: _workerConnector,
+            maxPendingRequests: maxPendingRequests,
           ))
           .then<void>(
             (_) async {
@@ -159,6 +178,7 @@ typedef _TransferRequest = ({
   bool resumable,
   Map<String, dynamic>? expectedSource,
   SftpWorkerConnector? connector,
+  int? maxPendingRequests,
 });
 
 class _WorkerTransfer implements SftpTransferHandle, SftpCommittingTransfer {
@@ -390,6 +410,7 @@ Future<void> _runTransferWorker((_TransferRequest, SendPort) message) async {
     client = await (request.connector ?? _connectWorker)(request.connection);
     if (aborted) throw const SftpTransferAborted();
     service = SftpClientService(client);
+    final maxPending = request.maxPendingRequests ?? 128;
     if (request.upload) {
       handle = request.resumable
           ? await service.startResumableUpload(
@@ -400,11 +421,13 @@ Future<void> _runTransferWorker((_TransferRequest, SendPort) message) async {
               onSource: source,
               onProgress: progress,
               onPhase: phase,
+              maxPendingRequests: maxPending,
             )
           : await service.startUpload(
               request.localPath,
               request.remotePath,
               onProgress: progress,
+              maxPendingRequests: maxPending,
             );
     } else {
       handle = request.resumable
@@ -415,11 +438,13 @@ Future<void> _runTransferWorker((_TransferRequest, SendPort) message) async {
               onSource: source,
               onProgress: progress,
               onPhase: phase,
+              maxPendingRequests: maxPending,
             )
           : await service.startDownload(
               request.remotePath,
               request.localPath,
               onProgress: progress,
+              maxPendingRequests: maxPending,
             );
     }
     // Observe done before cancellation can synchronously complete it with error.

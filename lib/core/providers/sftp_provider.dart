@@ -21,6 +21,7 @@ import 'server_provider.dart';
 import 'infrastructure_providers.dart';
 import 'storage_providers.dart';
 import 'file_bookmarks_provider.dart';
+import 'settings_provider.dart';
 import '../../data/models/server_profile.dart';
 import '../../data/workspace/workspace_file_drafts.dart';
 import '../../data/workspace/workspace_gateway.dart';
@@ -1210,43 +1211,55 @@ class SftpNotifier extends Notifier<SftpState> {
     }
   }
 
-  /// 队列调度：没有正在跑的任务时，取队首的 queued 任务开始执行。
+  /// 队列调度：根据并发度限制取队首的 queued 任务开始执行。
   ///
   /// 这是**唯一**能把任务从 queued 推进到 running 的地方。任何时候
   /// 队列状态发生变化（入队、任务结束、暂停后恢复、删除）都要调它一次，
   /// 否则队列会卡住——例如暂停一个任务后它不再是 running，
   /// 但如果不重新调度，后面的任务永远不会开始。
-  ///
-  /// 正在跑的任务还没结束就再次调用是安全的：直接返回，不会并发执行。
   void _pumpQueue() {
     if (!ref.mounted) return;
-    if (_queuePauseDepth > 0 || _startingTransfers.isNotEmpty) return;
+    if (_queuePauseDepth > 0) return;
     if (!ref.read(serverConnectionProvider).isConnected) return;
-    if (state.activeTransfer != null) return;
 
-    final next = state.transfers
-        .where((t) => t.status == SftpTransferStatus.queued)
-        .firstOrNull;
-    if (next == null) return;
-    final handle = _handles[next.id];
+    final maxConcurrent = ref.read(sftpConcurrencyProvider);
+    var activeCount = state.transfers
+            .where((t) => t.status == SftpTransferStatus.running)
+            .length +
+        _startingTransfers
+            .where((id) =>
+                state.transferById(id)?.status != SftpTransferStatus.running)
+            .length;
+    if (activeCount >= maxConcurrent) return;
 
-    state = state.withTransfer(
-      next.copyWith(
-        status: SftpTransferStatus.running,
-        clearPauseReason: true,
-        clearError: true,
-        phase: handle == null ? SftpTransferPhase.preparing : next.phase,
-        phaseProcessedBytes: handle == null ? 0 : next.phaseProcessedBytes,
-        phaseTotalBytes: handle == null ? 0 : next.phaseTotalBytes,
-        bytesPerSecond: 0,
-      ),
-    );
-    _persistTransfers();
-    // 不 await：调用方（UI 回调、状态变更）不该等整个传输跑完。
-    if (handle == null) {
-      unawaited(_runTransfer(next.id));
-    } else {
-      unawaited(_resumeQueuedHandle(next, handle));
+    while (activeCount < maxConcurrent) {
+      final next = state.transfers
+          .where((t) =>
+              t.status == SftpTransferStatus.queued &&
+              !_startingTransfers.contains(t.id))
+          .firstOrNull;
+      if (next == null) break;
+      final handle = _handles[next.id];
+
+      state = state.withTransfer(
+        next.copyWith(
+          status: SftpTransferStatus.running,
+          clearPauseReason: true,
+          clearError: true,
+          phase: handle == null ? SftpTransferPhase.preparing : next.phase,
+          phaseProcessedBytes: handle == null ? 0 : next.phaseProcessedBytes,
+          phaseTotalBytes: handle == null ? 0 : next.phaseTotalBytes,
+          bytesPerSecond: 0,
+        ),
+      );
+      activeCount++;
+      _persistTransfers();
+      // 不 await：调用方（UI 回调、状态变更）不该等整个传输跑完。
+      if (handle == null) {
+        unawaited(_runTransfer(next.id));
+      } else {
+        unawaited(_resumeQueuedHandle(next, handle));
+      }
     }
   }
 
@@ -2551,4 +2564,15 @@ class SftpNotifier extends Notifier<SftpState> {
 
 final sftpProvider = NotifierProvider<SftpNotifier, SftpState>(() {
   return SftpNotifier();
+});
+
+/// Maximum number of concurrent transfer tasks in SFTP queue.
+/// In production, defaults to the user's setting in [SettingsState.sftpConcurrentTransfers] (3).
+/// In unit tests, can be overridden with [sftpConcurrencyProvider.overrideWithValue(1)].
+final sftpConcurrencyProvider = Provider<int>((ref) {
+  try {
+    return ref.watch(settingsProvider.select((s) => s.sftpConcurrentTransfers));
+  } catch (_) {
+    return 3;
+  }
 });

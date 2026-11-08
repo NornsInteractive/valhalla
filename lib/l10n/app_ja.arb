@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "詳細",
   "sftpConfigureToolbar": "ツールバーをカスタマイズ",
   "sftpConfigureToolbarDesc": "ツールバーに直接固定するアクションを選択します。その他のアクションは「その他」メニューに表示されます。",
+  "sftpConcurrentTransfersTitle": "転送並行数",
+  "sftpConcurrentTransfersDesc": "帯域幅を最大限に活用するために、並行して転送するファイル数の上限です。",
   "sftpToolbarPreferenceSaveFailed": "ツールバー設定の保存に失敗しました",
   "sftpToolbarActionView": "表示切り替え",
   "agentUpdateNotice": "{count, plural, other{{count} 件のエージェントのアップデートが利用可能です}}",

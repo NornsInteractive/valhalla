@@ -5878,6 +5878,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Выберите действия для закрепления на панели инструментов. Остальные действия будут в меню «Еще».';
 
   @override
+  String get sftpConcurrentTransfersTitle => 'Параллельность передачи';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      'Количество файлов, передаваемых параллельно через изолированные потоки для максимальной пропускной способности сети.';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed =>
       'Не удалось сохранить настройки панели инструментов';
 

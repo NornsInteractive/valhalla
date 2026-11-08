@@ -73,11 +73,11 @@ class SSHAlgorithms {
       SSHHostkeyType.ecdsa256,
     ],
     this.cipher = const [
-      SSHCipherType.aes256gcm,
-      SSHCipherType.aes128gcm,
       SSHCipherType.chacha20poly1305,
-      SSHCipherType.aes256ctr,
       SSHCipherType.aes128ctr,
+      SSHCipherType.aes256ctr,
+      SSHCipherType.aes128gcm,
+      SSHCipherType.aes256gcm,
     ],
     this.mac = const [
       // Encrypt-then-MAC is preferred over the encrypt-and-MAC variants.

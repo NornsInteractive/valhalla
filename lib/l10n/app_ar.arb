@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "التفاصيل",
   "sftpConfigureToolbar": "تخصيص شريط الأدوات",
   "sftpConfigureToolbarDesc": "اختر الإجراءات المراد تثبيتها مباشرة في شريط الأدوات. ستظهر الإجراءات الأخرى في قائمة المزيد.",
+  "sftpConcurrentTransfersTitle": "تزامن النقل",
+  "sftpConcurrentTransfersDesc": "عدد الملفات المنقولة بالتوازي عبر مسارات معزولة لتحقيق أقصى استفادة من النطاق الترددي للشبكة.",
   "sftpToolbarPreferenceSaveFailed": "فشل حفظ تفضيلات شريط الأدوات",
   "sftpToolbarActionView": "تبديل طريقة العرض",
   "agentUpdateNotice": "{count, plural, zero{لا توجد تحديثات متاحة للوكيل} one{تحديث واحد متاح للوكيل} two{تحديثان متاحان للوكيل} few{{count} تحديثات متاحة للوكيل} many{{count} تحديثًا متاحًا للوكيل} other{{count} تحديث متاح للوكيل}}",

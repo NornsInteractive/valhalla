@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "รายละเอียด",
   "sftpConfigureToolbar": "กำหนดค่าแถบเครื่องมือ",
   "sftpConfigureToolbarDesc": "เลือกการกระทำที่จะปักหมุดไว้ที่แถบเครื่องมือโดยตรง การกระทำอื่นๆ จะปรากฏในเมนูเพิ่มเติม",
+  "sftpConcurrentTransfersTitle": "การถ่ายโอนพร้อมกัน",
+  "sftpConcurrentTransfersDesc": "จำนวนไฟล์ที่ถ่ายโอนพร้อมกันผ่านสตรีมแยกเพื่อเพิ่มประสิทธิภาพแบนด์วิธเครือข่ายสูงสุด",
   "sftpToolbarPreferenceSaveFailed": "บันทึกการตั้งค่าแถบเครื่องมือไม่สำเร็จ",
   "sftpToolbarActionView": "สลับมุมมอง",
   "agentUpdateNotice": "{count, plural, other{มีอัปเดตเอเจนต์ {count} รายการ}}",

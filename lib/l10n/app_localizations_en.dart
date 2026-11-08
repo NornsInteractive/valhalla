@@ -5793,6 +5793,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose actions to pin directly to the toolbar. Other actions will appear in the More menu.';
 
   @override
+  String get sftpConcurrentTransfersTitle => 'Transfer Concurrency';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      'Number of files transferred in parallel across isolated streams to maximize network bandwidth.';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed =>
       'Failed to save toolbar preference';
 

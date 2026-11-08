@@ -5803,6 +5803,13 @@ class AppLocalizationsTh extends AppLocalizations {
       'เลือกการกระทำที่จะปักหมุดไว้ที่แถบเครื่องมือโดยตรง การกระทำอื่นๆ จะปรากฏในเมนูเพิ่มเติม';
 
   @override
+  String get sftpConcurrentTransfersTitle => 'การถ่ายโอนพร้อมกัน';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      'จำนวนไฟล์ที่ถ่ายโอนพร้อมกันผ่านสตรีมแยกเพื่อเพิ่มประสิทธิภาพแบนด์วิธเครือข่ายสูงสุด';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed =>
       'บันทึกการตั้งค่าแถบเครื่องมือไม่สำเร็จ';
 

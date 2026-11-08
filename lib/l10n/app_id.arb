@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "Detail",
   "sftpConfigureToolbar": "Konfigurasi Bilah Alat",
   "sftpConfigureToolbarDesc": "Pilih tindakan yang akan disematkan langsung di bilah alat. Tindakan lainnya akan muncul di menu Lainnya.",
+  "sftpConcurrentTransfersTitle": "Konkurensi Transfer",
+  "sftpConcurrentTransfersDesc": "Jumlah file yang ditransfer secara paralel melalui aliran terisolasi untuk memaksimalkan bandwidth jaringan.",
   "sftpToolbarPreferenceSaveFailed": "Gagal menyimpan preferensi bilah alat",
   "sftpToolbarActionView": "Alihkan Tampilan",
   "agentUpdateNotice": "{count, plural, other{{count} pembaruan agen tersedia}}",

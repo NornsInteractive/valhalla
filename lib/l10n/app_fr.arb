@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "Détails",
   "sftpConfigureToolbar": "Configurer la barre d'outils",
   "sftpConfigureToolbarDesc": "Choisissez les actions à épingler directement à la barre d'outils. Les autres actions apparaîtront dans le menu Plus.",
+  "sftpConcurrentTransfersTitle": "Simultanéité des transferts",
+  "sftpConcurrentTransfersDesc": "Nombre de fichiers transférés en parallèle via des flux isolés pour maximiser la bande passante réseau.",
   "sftpToolbarPreferenceSaveFailed": "Échec de l'enregistrement des préférences de la barre d'outils",
   "sftpToolbarActionView": "Changer de vue",
   "agentUpdateNotice": "{count, plural, =1{1 mise à jour d'agent disponible} other{{count} mises à jour d'agent disponibles}}",

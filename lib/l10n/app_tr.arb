@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "Ayrıntılar",
   "sftpConfigureToolbar": "Araç Çubuğunu Yapılandır",
   "sftpConfigureToolbarDesc": "Doğrudan araç çubuğuna sabitlenecek eylemleri seçin. Diğer eylemler Daha Fazla menüsünde görünecektir.",
+  "sftpConcurrentTransfersTitle": "Aktarım Eşzamanlılığı",
+  "sftpConcurrentTransfersDesc": "Ağ bant genişliğini en üst düzeye çıkarmak için yalıtılmış akışlar üzerinden paralel aktarılan dosya sayısı.",
   "sftpToolbarPreferenceSaveFailed": "Araç çubuğu tercihi kaydedilemedi",
   "sftpToolbarActionView": "Görünümü Değiştir",
   "agentUpdateNotice": "{count, plural, one{1 ajan güncellemesi mevcut} other{{count} ajan güncellemesi mevcut}}",

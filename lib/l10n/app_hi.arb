@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "विवरण",
   "sftpConfigureToolbar": "टूलबार कॉन्फ़िगर करें",
   "sftpConfigureToolbarDesc": "टूलबार पर सीधे पिन करने के लिए क्रियाएं चुनें। अन्य क्रियाएं 'अधिक' मेनू में दिखाई देंगी।",
+  "sftpConcurrentTransfersTitle": "स्थानांतरण समवर्ती",
+  "sftpConcurrentTransfersDesc": "नेटवर्क बैंडविड्थ को अधिकतम करने के लिए अलग-अलग स्ट्रीम में समानांतर स्थानांतरित फ़ाइलों की संख्या।",
   "sftpToolbarPreferenceSaveFailed": "टूलबार प्राथमिकता सहेजने में विफल",
   "sftpToolbarActionView": "दृश्य बदलें",
   "agentUpdateNotice": "{count, plural, =1{1 एजेंट अपडेट उपलब्ध है} other{{count} एजेंट अपडेट उपलब्ध हैं}}",

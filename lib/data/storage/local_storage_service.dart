@@ -580,6 +580,8 @@ class LocalStorageService {
   static const _keyFilePathDisplayMode = 'valhalla_file_path_display_mode_v1';
   static const _keyPickerPathDisplayMode =
       'valhalla_picker_path_display_mode_v1';
+  static const _keySftpConcurrentTransfers =
+      'valhalla_sftp_concurrent_transfers_v1';
 
   /// 桌面窗口尺寸与坐标
   static const _keyWindowWidth = 'valhalla_window_width_v1';
@@ -619,6 +621,7 @@ class LocalStorageService {
     _keyRemoteFileToolbarActions: 'strings',
     _keyFilePathDisplayMode: 'string',
     _keyPickerPathDisplayMode: 'string',
+    _keySftpConcurrentTransfers: 'int',
     'valhalla_file_view_mode_v1': 'string',
     'valhalla_nas_open_policies_v1': 'string',
   };
@@ -1435,6 +1438,13 @@ class LocalStorageService {
 
   Future<void> setCliHistoryPageSize(int value) async {
     await _prefs.setInt(_keyCliHistoryPageSize, value);
+  }
+
+  int getSftpConcurrentTransfers({int fallback = 3}) =>
+      _prefs.getInt(_keySftpConcurrentTransfers) ?? fallback;
+
+  Future<void> setSftpConcurrentTransfers(int value) async {
+    await _prefs.setInt(_keySftpConcurrentTransfers, value);
   }
 
   // --- File List Sorting ---

@@ -5891,6 +5891,13 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wählen Sie Aktionen aus, die direkt an die Symbolleiste angeheftet werden sollen. Andere Aktionen werden im Menü „Mehr“ angezeigt.';
 
   @override
+  String get sftpConcurrentTransfersTitle => 'Übertragungs-Parallelität';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      'Anzahl der gleichzeitig über isolierte Streams übertragenen Dateien zur Maximierung der Bandbreite.';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed =>
       'Symbolleisteneinstellungen konnten nicht gespeichert werden';
 

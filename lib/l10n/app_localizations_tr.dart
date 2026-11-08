@@ -5828,6 +5828,13 @@ class AppLocalizationsTr extends AppLocalizations {
       'Doğrudan araç çubuğuna sabitlenecek eylemleri seçin. Diğer eylemler Daha Fazla menüsünde görünecektir.';
 
   @override
+  String get sftpConcurrentTransfersTitle => 'Aktarım Eşzamanlılığı';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      'Ağ bant genişliğini en üst düzeye çıkarmak için yalıtılmış akışlar üzerinden paralel aktarılan dosya sayısı.';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed =>
       'Araç çubuğu tercihi kaydedilemedi';
 

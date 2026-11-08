@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "Подробнее",
   "sftpConfigureToolbar": "Настроить панель инструментов",
   "sftpConfigureToolbarDesc": "Выберите действия для закрепления на панели инструментов. Остальные действия будут в меню «Еще».",
+  "sftpConcurrentTransfersTitle": "Параллельность передачи",
+  "sftpConcurrentTransfersDesc": "Количество файлов, передаваемых параллельно через изолированные потоки для максимальной пропускной способности сети.",
   "sftpToolbarPreferenceSaveFailed": "Не удалось сохранить настройки панели инструментов",
   "sftpToolbarActionView": "Переключить вид",
   "agentUpdateNotice": "{count, plural, =1{Доступно 1 обновление агента} few{Доступно {count} обновления агента} many{Доступно {count} обновлений агентов} other{Доступно {count} обновлений агентов}}",

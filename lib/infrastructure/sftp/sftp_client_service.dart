@@ -613,8 +613,14 @@ class SftpClientService
     String remotePath,
     String localPath, {
     void Function(int bytesRead)? onProgress,
+    int? maxPendingRequests,
   }) async {
-    return _startDownload(remotePath, localPath, onProgress: onProgress);
+    return _startDownload(
+      remotePath,
+      localPath,
+      onProgress: onProgress,
+      maxPendingRequests: maxPendingRequests ?? 32,
+    );
   }
 
   @override
@@ -625,6 +631,7 @@ class SftpClientService
     required void Function(Map<String, dynamic>) onSource,
     void Function(int)? onProgress,
     SftpPhaseCallback? onPhase,
+    int? maxPendingRequests,
   }) => _startDownload(
     remotePath,
     localPath,
@@ -632,6 +639,7 @@ class SftpClientService
     onSource: onSource,
     onProgress: onProgress,
     onPhase: onPhase,
+    maxPendingRequests: maxPendingRequests ?? 32,
   );
 
   Future<SftpClient> _openTransferSftp() async {
@@ -668,6 +676,7 @@ class SftpClientService
     void Function(Map<String, dynamic>)? onSource,
     void Function(int)? onProgress,
     SftpPhaseCallback? onPhase,
+    int maxPendingRequests = 32,
   }) async {
     onPhase?.call(SftpTransferPhase.preparing, 0, 0);
     final sftp = await _openTransferSftp();
@@ -720,6 +729,7 @@ class SftpClientService
         onClose: closeChannel,
         onPhase: onPhase,
         initialOffset: offset,
+        maxPendingRequests: maxPendingRequests,
         validateComplete: onSource == null
             ? null
             : () async {
@@ -809,6 +819,7 @@ class SftpClientService
     required void Function(Map<String, dynamic>) onSource,
     void Function(int)? onProgress,
     SftpPhaseCallback? onPhase,
+    int? maxPendingRequests,
   }) async {
     if (!RegExp(r'^[a-zA-Z0-9-]{1,80}$').hasMatch(transferId)) {
       throw ArgumentError.value(transferId, 'transferId');
@@ -875,6 +886,7 @@ class SftpClientService
         source: local.openRead(offset).map(Uint8List.fromList),
         totalBytes: attrs.size,
         initialOffset: offset,
+        maxPendingRequests: maxPendingRequests ?? 64,
         onProgress: onProgress,
         onClose: () => _closeTransferSftp(sftp),
         commit: () async {
@@ -948,6 +960,7 @@ class SftpClientService
     String localPath,
     String remotePath, {
     void Function(int bytesWritten)? onProgress,
+    int? maxPendingRequests,
   }) async {
     final sftp = await _openTransferSftp();
     try {
@@ -964,6 +977,7 @@ class SftpClientService
         remote: remote,
         source: local.openRead().map(Uint8List.fromList),
         totalBytes: attrs.size,
+        maxPendingRequests: maxPendingRequests ?? 64,
         onProgress: onProgress,
         onClose: () => _closeTransferSftp(sftp),
       );
@@ -1037,6 +1051,8 @@ class _DownloadHandle implements SftpTransferHandle {
   /// 每次从暂停切回运行时完成，循环在块边界上等它。
   Completer<void>? _resumeSignal;
 
+  final int _maxPendingRequests;
+
   _DownloadHandle({
     required SftpFile remote,
     required RandomAccessFile local,
@@ -1044,12 +1060,14 @@ class _DownloadHandle implements SftpTransferHandle {
     void Function(int bytesRead)? onProgress,
     void Function()? onClose,
     int initialOffset = 0,
+    int maxPendingRequests = 32,
     Future<void> Function()? validateComplete,
     SftpPhaseCallback? onPhase,
   }) : _remote = remote,
        _local = local,
        _onClose = onClose,
        _transferred = initialOffset,
+       _maxPendingRequests = maxPendingRequests,
        _validateComplete = validateComplete,
        _onPhase = onPhase,
        _onProgress = onProgress;
@@ -1077,7 +1095,7 @@ class _DownloadHandle implements SftpTransferHandle {
             offset: _transferred,
             length: remaining,
             chunkSize: _chunkSize,
-            maxPendingRequests: 32,
+            maxPendingRequests: _maxPendingRequests,
           ),
         );
       }
@@ -1212,6 +1230,7 @@ class _UploadHandle implements SftpTransferHandle, SftpCommittingTransfer {
     required this.totalBytes,
     void Function(int bytesWritten)? onProgress,
     int initialOffset = 0,
+    int maxPendingRequests = 64,
     Future<void> Function()? commit,
     void Function()? onClose,
   }) : _remote = remote,
@@ -1222,6 +1241,7 @@ class _UploadHandle implements SftpTransferHandle, SftpCommittingTransfer {
          source,
          offset: initialOffset,
          chunkSize: 64 * 1024,
+         maxPendingRequests: maxPendingRequests,
          onProgress: onProgress == null
              ? null
              : (bytes) => onProgress(bytes + initialOffset),

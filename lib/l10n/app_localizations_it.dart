@@ -5897,6 +5897,13 @@ class AppLocalizationsIt extends AppLocalizations {
       'Scegli le azioni da fissare direttamente sulla barra degli strumenti. Le altre azioni appariranno nel menu Altro.';
 
   @override
+  String get sftpConcurrentTransfersTitle => 'Concorrenza di trasferimento';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      'Numero di file trasferiti in parallello attraverso flussi isolati per massimizzare la larghezza di banda della rete.';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed =>
       'Impossibile salvare le preferenze della barra degli strumenti';
 

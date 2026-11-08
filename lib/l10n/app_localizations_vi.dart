@@ -5824,6 +5824,13 @@ class AppLocalizationsVi extends AppLocalizations {
       'Chọn các tác vụ cần ghim trực tiếp vào thanh công cụ. Các tác vụ khác sẽ xuất hiện trong menu Thêm.';
 
   @override
+  String get sftpConcurrentTransfersTitle => 'Đồng thời truyền tệp';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      'Số lượng tệp được truyền song song qua các luồng cô lập để tối đa hóa băng thông mạng.';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed =>
       'Không thể lưu tùy chọn thanh công cụ';
 

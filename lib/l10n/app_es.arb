@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "Detalles",
   "sftpConfigureToolbar": "Configurar barra de herramientas",
   "sftpConfigureToolbarDesc": "Elige las acciones fijadas en la barra de herramientas. Las demás aparecerán en el menú Más.",
+  "sftpConcurrentTransfersTitle": "Concurrencia de transferencias",
+  "sftpConcurrentTransfersDesc": "Número de archivos transferidos en paralelo a través de flujos aislados para maximizar el ancho de banda.",
   "sftpToolbarPreferenceSaveFailed": "Error al guardar la preferencia de la barra de herramientas",
   "sftpToolbarActionView": "Cambiar vista",
   "agentUpdateNotice": "{count, plural, =1{1 actualización de agente disponible} other{{count} actualizaciones de agente disponibles}}",

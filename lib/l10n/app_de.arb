@@ -2245,6 +2245,8 @@
   "chatFailureActionDetails": "Details",
   "sftpConfigureToolbar": "Symbolleiste anpassen",
   "sftpConfigureToolbarDesc": "Wählen Sie Aktionen aus, die direkt an die Symbolleiste angeheftet werden sollen. Andere Aktionen werden im Menü „Mehr“ angezeigt.",
+  "sftpConcurrentTransfersTitle": "Übertragungs-Parallelität",
+  "sftpConcurrentTransfersDesc": "Anzahl der gleichzeitig über isolierte Streams übertragenen Dateien zur Maximierung der Bandbreite.",
   "sftpToolbarPreferenceSaveFailed": "Symbolleisteneinstellungen konnten nicht gespeichert werden",
   "sftpToolbarActionView": "Ansicht wechseln",
   "agentUpdateNotice": "{count, plural, =1{1 Agent-Update verfügbar} other{{count} Agent-Updates verfügbar}}",

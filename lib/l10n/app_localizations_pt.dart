@@ -5893,6 +5893,13 @@ class AppLocalizationsPt extends AppLocalizations {
       'Escolha as ações a serem fixadas na barra de ferramentas. As demais aparecerão no menu Mais.';
 
   @override
+  String get sftpConcurrentTransfersTitle => 'Simultaneidade de transferência';
+
+  @override
+  String get sftpConcurrentTransfersDesc =>
+      'Número de arquivos transferidos em paralelo através de fluxos isolados para maximizar a largura de banda.';
+
+  @override
   String get sftpToolbarPreferenceSaveFailed =>
       'Falha ao salvar preferências da barra de ferramentas';
 

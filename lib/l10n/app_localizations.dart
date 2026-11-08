@@ -10503,6 +10503,18 @@ abstract class AppLocalizations {
   /// **'Choose actions to pin directly to the toolbar. Other actions will appear in the More menu.'**
   String get sftpConfigureToolbarDesc;
 
+  /// No description provided for @sftpConcurrentTransfersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Concurrency'**
+  String get sftpConcurrentTransfersTitle;
+
+  /// No description provided for @sftpConcurrentTransfersDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of files transferred in parallel across isolated streams to maximize network bandwidth.'**
+  String get sftpConcurrentTransfersDesc;
+
   /// No description provided for @sftpToolbarPreferenceSaveFailed.
   ///
   /// In en, this message translates to:
