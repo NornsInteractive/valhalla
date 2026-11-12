@@ -148,6 +148,68 @@ void main() {
         reason: 'Dragging up in alt buffer should send simulated wheelDown / arrowDown',
       );
     });
+
+    testWidgets(
+      'vertical drag in tmux (alt buffer + SGR mouse mode) sends standard wheel escape sequences',
+      (tester) async {
+        final terminal = Terminal(maxLines: 500);
+        // Switch terminal to alternate buffer and enable SGR mouse tracking (like tmux with mouse on)
+        terminal.write('\x1b[?1049h\x1b[?1000h\x1b[?1006h');
+        expect(terminal.isUsingAltBuffer, isTrue);
+        expect(terminal.mouseMode, equals(MouseMode.upDownScroll));
+        expect(terminal.mouseReportMode, equals(MouseReportMode.sgr));
+
+        final inputs = <String>[];
+        terminal.onOutput = (data) {
+          inputs.add(data);
+        };
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 600,
+                height: 300,
+                child: TerminalView(terminal),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Drag downwards (pull finger down): should emit SGR WheelUp: \x1b[<64;col;rowM
+        await tester.drag(find.byType(TerminalView), const Offset(0, 100));
+        await tester.pumpAndSettle();
+
+        expect(
+          inputs.any((s) => s.contains('\x1b[<64;')),
+          isTrue,
+          reason: 'Dragging down in tmux SGR mode must emit standard wheelUp (64)',
+        );
+        expect(
+          inputs.any((s) => s.contains('\x1b[<68;')),
+          isFalse,
+          reason: 'Must NOT emit shifted button 68',
+        );
+
+        inputs.clear();
+
+        // Drag upwards (pull finger up): should emit SGR WheelDown: \x1b[<65;col;rowM
+        await tester.drag(find.byType(TerminalView), const Offset(0, -100));
+        await tester.pumpAndSettle();
+
+        expect(
+          inputs.any((s) => s.contains('\x1b[<65;')),
+          isTrue,
+          reason: 'Dragging up in tmux SGR mode must emit standard wheelDown (65)',
+        );
+        expect(
+          inputs.any((s) => s.contains('\x1b[<69;')),
+          isFalse,
+          reason: 'Must NOT emit shifted button 69',
+        );
+      },
+    );
   });
 
   group('Top notice removal and loading spinner tests', () {

@@ -46,6 +46,7 @@ class TerminalScrollGestureHandler extends StatefulWidget {
 class _TerminalScrollGestureHandlerState
     extends State<TerminalScrollGestureHandler> {
   var isAltBuffer = false;
+  var mouseMode = MouseMode.none;
   var lastPointerPosition = Offset.zero;
 
   Drag? _activeScrollDrag;
@@ -57,6 +58,7 @@ class _TerminalScrollGestureHandlerState
   void initState() {
     widget.terminal.addListener(_onTerminalUpdated);
     isAltBuffer = widget.terminal.isUsingAltBuffer;
+    mouseMode = widget.terminal.mouseMode;
     super.initState();
   }
 
@@ -75,13 +77,17 @@ class _TerminalScrollGestureHandlerState
       oldWidget.terminal.removeListener(_onTerminalUpdated);
       widget.terminal.addListener(_onTerminalUpdated);
       isAltBuffer = widget.terminal.isUsingAltBuffer;
+      mouseMode = widget.terminal.mouseMode;
     }
     super.didUpdateWidget(oldWidget);
   }
 
   void _onTerminalUpdated() {
-    if (isAltBuffer != widget.terminal.isUsingAltBuffer) {
-      isAltBuffer = widget.terminal.isUsingAltBuffer;
+    final newAlt = widget.terminal.isUsingAltBuffer;
+    final newMouse = widget.terminal.mouseMode;
+    if (isAltBuffer != newAlt || mouseMode != newMouse) {
+      isAltBuffer = newAlt;
+      mouseMode = newMouse;
       setState(() {});
     }
   }
@@ -160,16 +166,20 @@ class _TerminalScrollGestureHandlerState
       _accumulatedDragDelta += dy;
       final lineHeight = widget.getLineHeight();
       final effectiveLineHeight = lineHeight > 0 ? lineHeight : 16.0;
+      // In mouse reporting mode (e.g. tmux copy-mode, vim, less), each wheel event
+      // usually scrolls 3-5 lines on the host. We use a tuned threshold (effectiveLineHeight * 1.6)
+      // to give comfortable, controllable touch drag without runaway acceleration.
+      final stepThreshold = effectiveLineHeight * 1.6;
 
       // Note: Dragging finger DOWN (dy > 0) pulls content down to see earlier lines -> wheelUp (true).
       // Dragging finger UP (dy < 0) pulls content up to see newer lines -> wheelDown (false).
-      while (_accumulatedDragDelta >= effectiveLineHeight) {
+      while (_accumulatedDragDelta >= stepThreshold) {
         _sendScrollEvent(true);
-        _accumulatedDragDelta -= effectiveLineHeight;
+        _accumulatedDragDelta -= stepThreshold;
       }
-      while (_accumulatedDragDelta <= -effectiveLineHeight) {
+      while (_accumulatedDragDelta <= -stepThreshold) {
         _sendScrollEvent(false);
-        _accumulatedDragDelta += effectiveLineHeight;
+        _accumulatedDragDelta += stepThreshold;
       }
     } else {
       if (_activeScrollDrag != null) {
@@ -210,8 +220,8 @@ class _TerminalScrollGestureHandlerState
   void _performAltFling(double initialVelocity) {
     _flingTimer?.cancel();
     final up = initialVelocity > 0;
-    var stepCount = (initialVelocity.abs() / 350).round().clamp(1, 15);
-    _flingTimer = Timer.periodic(const Duration(milliseconds: 32), (timer) {
+    var stepCount = (initialVelocity.abs() / 400).round().clamp(1, 12);
+    _flingTimer = Timer.periodic(const Duration(milliseconds: 36), (timer) {
       if (!mounted || stepCount <= 0) {
         timer.cancel();
         return;
