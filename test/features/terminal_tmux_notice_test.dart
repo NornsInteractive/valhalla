@@ -141,7 +141,7 @@ void main() {
     );
 
     testWidgets(
-      'shows terminalTmuxSessionRestored on reconnect and hides after 4 seconds',
+      'does not show terminalTmuxSessionRestored on reconnect (top banners removed)',
       (tester) async {
         final bridge = _FakeBridge(
           initialMode: TerminalSessionMode.tmux,
@@ -162,23 +162,7 @@ void main() {
         bridge.setTestState(TerminalConnectionState.connected);
         await tester.pump();
 
-        final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-        expect(
-          find.byKey(const Key('terminalTmuxSessionRestored')),
-          findsOneWidget,
-        );
-        expect(find.text(l10n.terminalTmuxSessionRestored), findsOneWidget);
-        expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
-
-        // Wait 3.9 seconds - still visible just before the 4 second deadline
-        await tester.pump(const Duration(milliseconds: 3900));
-        expect(
-          find.byKey(const Key('terminalTmuxSessionRestored')),
-          findsOneWidget,
-        );
-
-        // Wait another 0.2 seconds - auto hides past the deadline
-        await tester.pump(const Duration(milliseconds: 200));
+        // Top prompt banner is removed as per requirements
         expect(
           find.byKey(const Key('terminalTmuxSessionRestored')),
           findsNothing,

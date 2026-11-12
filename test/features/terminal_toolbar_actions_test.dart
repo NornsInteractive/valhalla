@@ -240,20 +240,14 @@ void main() {
       }
       expect(
         find.byKey(const Key('terminalTmuxSessionRestored')),
-        findsOneWidget,
-      );
-      await tester.pump(const Duration(seconds: 4));
-      expect(
-        find.byKey(const Key('terminalTmuxSessionRestored')),
         findsNothing,
       );
-      expectUnchanged('restored notice dismissed');
 
       notifier.emit(
         notifier.state.copyWith(errorCode: 'TERMINAL_RESTORE_FAILED'),
       );
       await tester.pump();
-      expect(find.byKey(const Key('terminalErrorBanner')), findsOneWidget);
+      expect(find.byKey(const Key('terminalErrorBanner')), findsNothing);
       expectUnchanged('TERMINAL_RESTORE_FAILED');
       bridge.simulatedMode = TerminalSessionMode.plain;
       notifier.emit(
@@ -263,7 +257,7 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.byKey(const Key('terminalNoticeBanner')), findsOneWidget);
+      expect(find.byKey(const Key('terminalNoticeBanner')), findsNothing);
       expectUnchanged('TERMINAL_PLAIN_INTERRUPTED');
       notifier.emit(notifier.state.copyWith(clearNotice: true));
       await tester.pump();

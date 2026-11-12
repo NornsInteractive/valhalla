@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 import '../../core/design/tokens.dart';
@@ -33,15 +32,11 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
   TerminalNotifier? _terminalNotifier;
   String? _lastInitializedTarget;
   bool _dismissedTmuxMissing = false;
-  bool _showSessionRestored = false;
-  TerminalConnectionState? _lastBridgeState;
   TerminalSessionBridge? _lastListenedBridge;
-  Timer? _sessionRestoredTimer;
   final ScrollController _tabScrollController = ScrollController();
   final GlobalKey _tabBarScrollableKey = GlobalKey();
   final Map<String, GlobalKey> _tabKeys = {};
   final Map<String, GlobalKey<SharedTerminalCanvasState>> _canvasKeys = {};
-  bool _hadConnectedOnce = false;
   int _savedCommandEpoch = 0;
 
   void _scheduleTabScroll(String? tabId) {
@@ -155,7 +150,6 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
     _terminalNotifier?.setHistoryVisible(false);
     _terminalNotifier = null;
     _tabScrollController.dispose();
-    _sessionRestoredTimer?.cancel();
     _lastListenedBridge?.stateListenable.removeListener(_onBridgeStateChanged);
     super.dispose();
   }
@@ -164,13 +158,8 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
     if (identical(_lastListenedBridge, bridge)) return;
 
     _savedCommandEpoch++;
-    _sessionRestoredTimer?.cancel();
-    _showSessionRestored = false;
     _lastListenedBridge?.stateListenable.removeListener(_onBridgeStateChanged);
     _lastListenedBridge = bridge;
-    _lastBridgeState = bridge?.stateListenable.value;
-    _hadConnectedOnce =
-        bridge?.stateListenable.value == TerminalConnectionState.connected;
     bridge?.stateListenable.addListener(_onBridgeStateChanged);
   }
 
@@ -181,64 +170,9 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
     if (newState != TerminalConnectionState.connected) {
       _savedCommandEpoch++;
     }
-    final isRestoredOrReconnect =
-        bridge.sessionIntent == TerminalSessionIntent.restoreExisting ||
-        _hadConnectedOnce;
-    if (bridge.mode == TerminalSessionMode.tmux &&
-        isRestoredOrReconnect &&
-        _lastBridgeState != null &&
-        _lastBridgeState != TerminalConnectionState.connected &&
-        newState == TerminalConnectionState.connected) {
-      _sessionRestoredTimer?.cancel();
-      _showSessionRestored = true;
-      _sessionRestoredTimer = Timer(const Duration(seconds: 4), () {
-        if (mounted) {
-          setState(() => _showSessionRestored = false);
-        }
-      });
-    }
-    if (newState == TerminalConnectionState.connected) {
-      _hadConnectedOnce = true;
-    }
-    _lastBridgeState = newState;
     if (mounted) {
       setState(() {});
     }
-  }
-
-  Widget _buildTmuxSessionRestoredBanner(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Material(
-      color: context.colorScheme.surface,
-      elevation: 3,
-      shadowColor: Colors.black26,
-      borderRadius: BorderRadius.circular(VRadius.input),
-      child: Container(
-        key: const Key('terminalTmuxSessionRestored'),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: context.vSuccess.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(VRadius.input),
-          border: Border.all(color: context.vSuccess.withValues(alpha: 0.35)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.check_circle_outline, color: context.vSuccess, size: 16),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                l10n.terminalTmuxSessionRestored,
-                style: TextStyle(
-                  color: context.vSuccess,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildTmuxNotice(BuildContext context, TerminalSessionBridge? bridge) {
@@ -550,167 +484,6 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
     };
   }
 
-  String _localizeNoticeCode(BuildContext context, String code) {
-    final l10n = context.l10n;
-    return switch (code) {
-      'TERMINAL_DEFAULT_MISSING' => l10n.terminalNoticeDefaultMissing,
-      'TERMINAL_SESSION_MISSING' => l10n.terminalNoticeSessionMissing,
-      'TERMINAL_PLAIN_INTERRUPTED' => l10n.terminalNoticePlainInterrupted,
-      _ => code,
-    };
-  }
-
-  Widget _buildErrorBanner(BuildContext context, String code) {
-    final message = _localizeErrorCode(context, code);
-    final errorDetail = ref.watch(
-      terminalProvider.select((s) => s.errorDetail),
-    );
-    final activeTab = ref.watch(terminalProvider.select((s) => s.activeTab));
-    final canRetry =
-        activeTab != null &&
-        (activeTab.bridge.state == TerminalConnectionState.disconnected ||
-            activeTab.bridge.state == TerminalConnectionState.error);
-    return Material(
-      color: context.colorScheme.surface,
-      elevation: 3,
-      shadowColor: Colors.black26,
-      borderRadius: BorderRadius.circular(VRadius.input),
-      child: Container(
-        key: const Key('terminalErrorBanner'),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: context.vDanger.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(VRadius.input),
-          border: Border.all(color: context.vDanger.withValues(alpha: 0.35)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.error_outline, color: context.vDanger, size: 16),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    message,
-                    style: TextStyle(
-                      color: context.vDanger,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (errorDetail != null && errorDetail.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      errorDetail,
-                      style: TextStyle(
-                        color: context.vDanger.withValues(alpha: 0.8),
-                        fontSize: 11,
-                        fontFamily: 'JetBrains Mono',
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (errorDetail != null && errorDetail.isNotEmpty)
-              IconButton(
-                icon: Icon(Icons.copy, size: 14, color: context.vDanger),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                tooltip: context.l10n.chatCopyError,
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: errorDetail));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(context.l10n.updateErrorCopied),
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
-                },
-              ),
-            if (canRetry)
-              TextButton(
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  foregroundColor: context.vDanger,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                ),
-                onPressed: () {
-                  final currentServer = ref.read(activeServerProvider);
-                  if (currentServer == null) return;
-                  final expectedTarget = TerminalHistoryRecord.targetFor(
-                    currentServer,
-                  );
-                  ref
-                      .read(terminalProvider.notifier)
-                      .reconnectTab(
-                        activeTab.id,
-                        expectedTargetKey: expectedTarget,
-                      );
-                },
-                child: Text(context.l10n.stateRetry),
-              ),
-            IconButton(
-              icon: Icon(Icons.close, size: 16, color: context.vDanger),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-              onPressed: () =>
-                  ref.read(terminalProvider.notifier).clearNotice(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoticeBanner(BuildContext context, String code) {
-    final message = _localizeNoticeCode(context, code);
-    return Material(
-      color: context.colorScheme.surface,
-      elevation: 3,
-      shadowColor: Colors.black26,
-      borderRadius: BorderRadius.circular(VRadius.input),
-      child: Container(
-        key: const Key('terminalNoticeBanner'),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: context.vWarning.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(VRadius.input),
-          border: Border.all(color: context.vWarning.withValues(alpha: 0.35)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.info_outline, color: context.vWarning, size: 16),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  color: context.vWarning,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.close, size: 16, color: context.vWarning),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-              onPressed: () =>
-                  ref.read(terminalProvider.notifier).clearNotice(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildEmptyState(BuildContext context, SshTerminalState state) {
     if (state.isInitializing) {
       return const Center(child: CircularProgressIndicator());
@@ -907,53 +680,6 @@ class _SshTerminalViewState extends ConsumerState<SshTerminalView>
                         )
                       : _buildEmptyState(context, terminalState),
                 ),
-                if (terminalState.errorCode != null)
-                  Positioned(
-                    top: 8,
-                    left: 12,
-                    right: 12,
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 560),
-                        child: _buildErrorBanner(
-                          context,
-                          terminalState.errorCode!,
-                        ),
-                      ),
-                    ),
-                  )
-                else if (terminalState.noticeCode != null)
-                  Positioned(
-                    top: 8,
-                    left: 12,
-                    right: 12,
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 560),
-                        child: _buildNoticeBanner(
-                          context,
-                          terminalState.noticeCode!,
-                        ),
-                      ),
-                    ),
-                  )
-                else if (terminalState.tmuxInstallOffer == null &&
-                    activeTab?.bridge.mode == TerminalSessionMode.tmux &&
-                    _showSessionRestored)
-                  Positioned(
-                    top: 8,
-                    left: 12,
-                    right: 12,
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 560),
-                        child: _buildTmuxSessionRestoredBanner(context),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),

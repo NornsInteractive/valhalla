@@ -372,17 +372,25 @@ void main() {
         fixture.files.cached(true);
         fixture.reconnect.change(ReconnectStatus.reconnecting);
         await tester.pump(const Duration(milliseconds: 450));
-        expect(find.byKey(const Key('reconnectingBanner')), findsOneWidget);
+        expect(find.byKey(const Key('reconnectingBanner')), findsNothing);
+        expect(
+          find.byWidgetPredicate(
+            (w) =>
+                w.key == const Key('top_bar_server_loading_indicator') ||
+                w.key == const Key('mobile_top_bar_server_loading_indicator'),
+          ),
+          findsOneWidget,
+        );
         expectStable('SSH reconnecting + cached files');
         fixture.reconnect.change(ReconnectStatus.failed, retryable: false);
         await tester.pump(const Duration(milliseconds: 450));
-        expect(find.byKey(const Key('hostKeyChangedBanner')), findsOneWidget);
+        expect(find.byKey(const Key('hostKeyChangedBanner')), findsNothing);
         expectStable('host key failure');
         fixture.reconnect.change(ReconnectStatus.reconnecting);
         await tester.pump(const Duration(milliseconds: 450));
         fixture.reconnect.change(ReconnectStatus.connected);
         await tester.pump(const Duration(milliseconds: 450));
-        expect(find.byKey(const Key('reconnectedBanner')), findsOneWidget);
+        expect(find.byKey(const Key('reconnectedBanner')), findsNothing);
         expectStable('restored transient');
         await tester.pump(const Duration(seconds: 3));
         expect(find.byKey(const Key('reconnectedBanner')), findsNothing);
@@ -401,18 +409,6 @@ void main() {
         fixture.files.cached(false);
         await tester.pump();
         expectStable('file data refresh finished');
-        fixture.updates.showNotice();
-        await tester.pump(const Duration(milliseconds: 450));
-        expect(
-          find.byKey(const Key('agentUpdateNoticeBanner')),
-          findsOneWidget,
-        );
-        expectStable('agent update notice');
-        await tester.tap(
-          find.byKey(const Key('dismissAgentUpdateNoticeButton')),
-        );
-        await tester.pump(const Duration(milliseconds: 450));
-        expect(fixture.updates.dismissCalls, 1);
         expect(find.byKey(const Key('agentUpdateNoticeBanner')), findsNothing);
         expect(tester.getRect(browser), fileRect);
         expect(tester.getRect(find.byType(AnimatedIndexedStack)), shellRect);

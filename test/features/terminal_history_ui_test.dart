@@ -891,7 +891,7 @@ void main() {
     await tester.pump();
     expect(
       find.byKey(const Key('terminalTmuxSessionRestored')),
-      findsOneWidget,
+      findsNothing,
     );
     await tester.pump(const Duration(seconds: 3));
     expect(tester.takeException(), isNull);
@@ -906,7 +906,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('explicit history restore shows a notice on first attach', (
+  testWidgets('explicit history restore does not show top banner (top banners removed)', (
     tester,
   ) async {
     final bridge = _Bridge(
@@ -931,13 +931,13 @@ void main() {
     await tester.pump();
     expect(
       find.byKey(const Key('terminalTmuxSessionRestored')),
-      findsOneWidget,
+      findsNothing,
     );
     await tester.pump(const Duration(seconds: 3));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('switching tabs clears a different bridge restored notice', (
+  testWidgets('switching tabs has no restored notice at top', (
     tester,
   ) async {
     final restored = _Bridge(testMode: TerminalSessionMode.tmux);
@@ -968,7 +968,7 @@ void main() {
     await tester.pump();
     expect(
       find.byKey(const Key('terminalTmuxSessionRestored')),
-      findsOneWidget,
+      findsNothing,
     );
     notifier.selectTab(1);
     await tester.pump();

@@ -38,10 +38,13 @@ import '../settings/widgets/app_update_dialog.dart';
 import '../settings/widgets/windows_appearance_actions.dart';
 import '../system/system_view.dart';
 import '../terminal/terminal_view.dart';
-import '../../core/utils/session_recovery_summary.dart';
+import '../../core/utils/reconnect_backoff.dart';
 import '../../core/providers/agent_update_provider.dart';
+import '../../core/providers/ai_chat_provider.dart';
 import '../../core/providers/app_update_provider.dart';
 import '../../core/providers/app_visibility_provider.dart';
+import '../../core/providers/cli_chat_provider.dart';
+import '../../core/providers/reconnect_provider.dart';
 import 'widgets/connection_status_banner.dart';
 
 int appSectionToViewIndex(AppSection section) => switch (section) {
@@ -134,15 +137,22 @@ class _MainShellState extends ConsumerState<MainShell> {
   final Set<String> _deletingServerIds = {};
   static const _downloadsChannel = MethodChannel('valhalla/downloads');
 
-  SessionRecoveryMode? get _currentRecoveryMode {
-    final section = viewIndexToAppSection(_currentIndex);
-    if (section == AppSection.aiChat) return SessionRecoveryMode.acp;
-    if (section == AppSection.cliChat) return SessionRecoveryMode.cli;
-    return null;
-  }
-
   ManualConnectionNotice? _manualConnectionNotice;
   Timer? _manualConnectionNoticeTimer;
+  ReconnectController? _hookedReconnectController;
+  void Function()? _unsubscribeReconnect;
+
+  void _hookReconnectController(ReconnectController? controller) {
+    if (identical(_hookedReconnectController, controller)) return;
+    _unsubscribeReconnect?.call();
+    _unsubscribeReconnect = null;
+    _hookedReconnectController = controller;
+    if (controller != null) {
+      _unsubscribeReconnect = controller.addStateListener((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
 
   void _showManualConnectionNotice(ManualConnectionNotice notice) {
     if (!mounted) return;
@@ -476,6 +486,9 @@ class _MainShellState extends ConsumerState<MainShell> {
     _observedModalRoute = null;
     _manualConnectionNoticeTimer?.cancel();
     _manualConnectionNoticeTimer = null;
+    _unsubscribeReconnect?.call();
+    _unsubscribeReconnect = null;
+    _hookedReconnectController = null;
     _downloadsChannel.setMethodCallHandler(null);
     _openTransfersRequest.dispose();
     _contentFocusScopeNode.dispose();
@@ -1033,6 +1046,9 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final reconnectController = ref.watch(reconnectControllerProvider);
+    _hookReconnectController(reconnectController);
+
     // 文件 tab 是 IndexedStack 里的第 3 项，它有自己的目录层级。系统返回键在
     // 该 tab 又有上级目录时应该回上一级，而不是直接退出 app；其余情况一律
     // 保持「返回即退出」的原行为。
@@ -1086,25 +1102,6 @@ class _MainShellState extends ConsumerState<MainShell> {
         }
       },
       child: _buildResponsiveShell(),
-    );
-  }
-
-  Widget _buildConnectionStatusOverlay() {
-    return Positioned(
-      top: 8,
-      left: 12,
-      right: 12,
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: ConnectionStatusBanner(
-            mode: _currentRecoveryMode,
-            manualNotice: _manualConnectionNotice,
-            onDismissManualNotice: _clearManualConnectionNotice,
-          ),
-        ),
-      ),
     );
   }
 
@@ -1167,7 +1164,6 @@ class _MainShellState extends ConsumerState<MainShell> {
                             ],
                           ),
                         ),
-                        _buildConnectionStatusOverlay(),
                       ],
                     ),
                   ),
@@ -1202,16 +1198,9 @@ class _MainShellState extends ConsumerState<MainShell> {
                   _buildTopBar(showInspectorToggle: false),
                   const Divider(height: 1),
                   Expanded(
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: AnimatedIndexedStack(
-                            index: _currentIndex,
-                            children: _buildViews(settings),
-                          ),
-                        ),
-                        _buildConnectionStatusOverlay(),
-                      ],
+                    child: AnimatedIndexedStack(
+                      index: _currentIndex,
+                      children: _buildViews(settings),
                     ),
                   ),
                   _buildGlobalMiniPlayer(),
@@ -1283,6 +1272,22 @@ class _MainShellState extends ConsumerState<MainShell> {
   Widget _buildTopBar({required bool showInspectorToggle}) {
     final activeServer = ref.watch(activeServerProvider);
     final connState = ref.watch(serverConnectionProvider);
+    final reconnectState = ref.watch(reconnectControllerProvider)?.state;
+    final isReconnecting =
+        reconnectState?.status == ReconnectStatus.reconnecting;
+    final aiRecovery = ref.watch(
+      aiChatProvider.select((s) => s.recoveryStatus),
+    );
+    final cliRecovery = ref.watch(
+      cliChatProvider.select((s) => s.recoveryStatus),
+    );
+    final isRecovering =
+        aiRecovery == SessionRecoveryStatus.reconnecting ||
+        aiRecovery == SessionRecoveryStatus.syncing ||
+        cliRecovery == SessionRecoveryStatus.reconnecting ||
+        cliRecovery == SessionRecoveryStatus.syncing;
+    final isServerLoading =
+        connState.isConnecting || isReconnecting || isRecovering;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isTight = screenWidth < 720;
 
@@ -1394,6 +1399,20 @@ class _MainShellState extends ConsumerState<MainShell> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (isServerLoading) ...[
+                        const SizedBox(width: 6),
+                        SizedBox(
+                          width: 13,
+                          height: 13,
+                          child: CircularProgressIndicator(
+                            key: const Key('top_bar_server_loading_indicator'),
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              context.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ],
                       const Icon(Icons.arrow_drop_down, size: 18),
                       if (activeServer != null &&
                           screenWidth > LayoutBreakpoints.topBarHostInfo) ...[
@@ -1428,7 +1447,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               ),
             ),
             const SizedBox(width: 8),
-            if (connState.isConnecting)
+            if (isServerLoading)
               const SizedBox(
                 width: 16,
                 height: 16,
@@ -1538,6 +1557,22 @@ class _MainShellState extends ConsumerState<MainShell> {
   Widget _buildCompactMobileShell() {
     final activeServer = ref.watch(activeServerProvider);
     final connState = ref.watch(serverConnectionProvider);
+    final reconnectState = ref.watch(reconnectControllerProvider)?.state;
+    final isReconnecting =
+        reconnectState?.status == ReconnectStatus.reconnecting;
+    final aiRecovery = ref.watch(
+      aiChatProvider.select((s) => s.recoveryStatus),
+    );
+    final cliRecovery = ref.watch(
+      cliChatProvider.select((s) => s.recoveryStatus),
+    );
+    final isRecovering =
+        aiRecovery == SessionRecoveryStatus.reconnecting ||
+        aiRecovery == SessionRecoveryStatus.syncing ||
+        cliRecovery == SessionRecoveryStatus.reconnecting ||
+        cliRecovery == SessionRecoveryStatus.syncing;
+    final isServerLoading =
+        connState.isConnecting || isReconnecting || isRecovering;
     final isNasSection = viewIndexToAppSection(_currentIndex) == AppSection.nas;
     final nasSourcesState = isNasSection ? ref.watch(nasSourcesProvider) : null;
     final activeNasSource = nasSourcesState?.selected;
@@ -1625,12 +1660,28 @@ class _MainShellState extends ConsumerState<MainShell> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    if (isServerLoading) ...[
+                      const SizedBox(width: 5),
+                      SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          key: const Key(
+                            'mobile_top_bar_server_loading_indicator',
+                          ),
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            context.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
                     const Icon(Icons.arrow_drop_down, size: 20),
                   ],
                 ),
               ),
             ),
-            if (connState.isConnecting)
+            if (isServerLoading)
               const Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
@@ -1694,16 +1745,9 @@ class _MainShellState extends ConsumerState<MainShell> {
         child: Column(
           children: [
             Expanded(
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: AnimatedIndexedStack(
-                      index: _currentIndex,
-                      children: _buildViews(settings),
-                    ),
-                  ),
-                  _buildConnectionStatusOverlay(),
-                ],
+              child: AnimatedIndexedStack(
+                index: _currentIndex,
+                children: _buildViews(settings),
               ),
             ),
             _buildGlobalMiniPlayer(),
