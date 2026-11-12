@@ -17,6 +17,7 @@ import 'package:xterm/src/ui/keyboard_visibility.dart';
 import 'package:xterm/src/ui/render.dart';
 export 'package:xterm/src/ui/render.dart' show clearTerminalScrollState;
 import 'package:xterm/src/ui/scroll_handler.dart';
+import 'package:xterm/src/ui/selection/terminal_selection_overlay.dart';
 import 'package:xterm/src/ui/shortcut/actions.dart';
 import 'package:xterm/src/ui/shortcut/shortcuts.dart';
 import 'package:xterm/src/ui/terminal_text_style.dart';
@@ -52,6 +53,7 @@ class TerminalView extends StatefulWidget {
     this.hardwareKeyboardOnly = false,
     this.simulateScroll = true,
     this.requestKeyboardOnTap = true,
+    this.showSelectionHandles = true,
     this.onPasteText,
     this.onTextInput,
   });
@@ -162,6 +164,10 @@ class TerminalView extends StatefulWidget {
   /// When false, tapping focuses the terminal for hardware keyboard input and
   /// clears selection, but does not call [CustomTextEditState.requestKeyboard].
   final bool requestKeyboardOnTap;
+
+  /// Whether to display touch selection handles to adjust the selected text
+  /// range when text is selected. True by default.
+  final bool showSelectionHandles;
 
   @override
   State<TerminalView> createState() => TerminalViewState();
@@ -340,6 +346,21 @@ class TerminalViewState extends State<TerminalView> {
       readOnly: widget.readOnly,
       child: child,
     );
+
+    if (widget.showSelectionHandles) {
+      child = Stack(
+        fit: StackFit.passthrough,
+        children: [
+          child,
+          TerminalSelectionOverlay(
+            terminalView: this,
+            controller: _controller,
+            scrollController: _scrollController,
+            terminal: widget.terminal,
+          ),
+        ],
+      );
+    }
 
     child = MouseRegion(
       cursor: widget.mouseCursor,

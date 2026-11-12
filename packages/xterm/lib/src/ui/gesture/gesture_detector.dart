@@ -95,6 +95,12 @@ class _TerminalGestureDetectorState extends State<TerminalGestureDetector> {
     _lastTapOffset = null;
   }
 
+  @override
+  void dispose() {
+    _doubleTapTimer?.cancel();
+    super.dispose();
+  }
+
   bool _isWithinDoubleTapTolerance(Offset secondTapOffset) {
     if (_lastTapOffset == null) {
       return false;
